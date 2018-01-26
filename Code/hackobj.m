@@ -18,7 +18,7 @@ intrinsic Print(f::HMF) // this is a procedure, so no return
 end intrinsic;
 
 intrinsic HMFZero(F::FldNum, prec::RngIntElt) -> HMF
-  {Generates the zero HMF over F with precision prec.}
+  {Generates the zero HMF over F with precision prec with integer coefficients.}
   // basic assertions
   assert IsTotallyReal(F);
   assert prec gt 0;
@@ -32,6 +32,32 @@ intrinsic HMFZero(F::FldNum, prec::RngIntElt) -> HMF
   coeffs := AssociativeArray(); // empty Assoc
   for I in Is do
     coeffs[I] := 0;
+  end for;
+  f`HMFCoefficients := coeffs;
+  return f;
+end intrinsic;
+
+intrinsic HMFZero(F::FldNum, K::FldRat, prec::RngIntElt) -> HMF
+  {Generates the zero HMF over F with precision prec with integer coefficients.}
+  return HMFZero(F, prec);
+end intrinsic;
+
+intrinsic HMFZero(F::FldNum, K::FldNum, prec::RngIntElt) -> HMF
+  {Generates the zero HMF over F with precision prec with coefficients in ZK.}
+  // basic assertions
+  assert IsTotallyReal(F);
+  assert prec gt 0;
+  // initialize the object
+  f := HMFInitialize();
+  f`HMFBaseField := F;
+  f`HMFPrecision := prec;
+  f`HMFCoefficientRing := Integers(K);
+  ZK := f`HMFCoefficientRing;
+  // create associative array called coeffs
+  Is := IdealsUpTo(prec, F);
+  coeffs := AssociativeArray(); // empty Assoc
+  for I in Is do
+    coeffs[I] := ZK!0;
   end for;
   f`HMFCoefficients := coeffs;
   return f;
