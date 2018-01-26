@@ -12,9 +12,10 @@ intrinsic HMFInitialize() -> HMF
 end intrinsic;
 
 // TODO printing for levels "Default", "Minimal", "Maximal", "Magma"
+// TODO printing of coefficients?
 intrinsic Print(f::HMF) // this is a procedure, so no return
   {Print HMF.}
-  printf "Hilbert modular form over %o up to precision %o.\n", f`HMFBaseField, f`HMFPrecision;
+  printf "Hilbert modular form over %o up to precision %o with coefficients in %o.\n", f`HMFBaseField, f`HMFPrecision, f`HMFCoefficientRing;
 end intrinsic;
 
 intrinsic HMFZero(F::FldNum, prec::RngIntElt) -> HMF
