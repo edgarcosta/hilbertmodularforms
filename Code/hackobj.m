@@ -7,7 +7,7 @@ declare attributes HMF:
 
 intrinsic HMFInitialize() -> HMF
   {Create an empty HMF object.}
-  f := New(HMV);
+  f := New(HMF);
   return f;
 end intrinsic;
 
