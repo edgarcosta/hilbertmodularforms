@@ -53,8 +53,9 @@ end intrinsic;
 intrinsic '*'(c::RngIntElt, f::HMF) -> HMF
   {scale f by integer c.}
   g := HMFCopy(f); // new instance of f
-  for i in Keys(g`HMFCoefficients) do
-    g`HMFCoefficients[i] := c * g`HMFCoefficients[i];
+  coeffs := g`HMFCoefficients;
+  for i in Keys(coeffs) do
+    coeffs[i] := c * coeffs[i];
   end for;
   return g;
 end intrinsic;
@@ -62,9 +63,12 @@ end intrinsic;
 // TODO
 intrinsic '*'(c::RngOrdElt, f::HMF) -> HMF
   {scale f by integral element c.}
+  ZK := f`HMFCoefficientRing;
+  assert Parent(c) eq ZK;
   g := HMFCopy(f); // new instance of f
-  for i in Keys(g`HMFCoefficients) do
-    g`HMFCoefficients[i] := c * g`HMFCoefficients[i];
+  coeffs := g`HMFCoefficients;
+  for I in Keys(coeffs) do // I an ideal of ZF
+    coeffs[i] *:= ZK!(c); // multiplication in ZK, coercion just to be safe
   end for;
   return g;
 end intrinsic;
