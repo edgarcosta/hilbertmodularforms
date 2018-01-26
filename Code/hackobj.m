@@ -94,7 +94,7 @@ intrinsic '*'(c::RngOrdElt, f::HMF) -> HMF
   g := HMFCopy(f); // new instance of f
   coeffs := g`HMFCoefficients;
   for I in Keys(coeffs) do // I an ideal of ZF
-    coeffs[i] *:= ZK!(c); // multiplication in ZK, coercion just to be safe
+    coeffs[I] *:= ZK!(c); // multiplication in ZK, coercion just to be safe
   end for;
   return g;
 end intrinsic;
