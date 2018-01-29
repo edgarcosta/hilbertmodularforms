@@ -289,9 +289,9 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, pre
   return f;
 end intrinsic;
 
-intrinsic ModFrmHilDEltCopy(f::ModFrmHilD) -> ModFrmHilDElt
+intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   {new instance of ModFrmHilDElt.}
-  g := ModFrmHilDInitialize();
+  g := ModFrmHilDEltInitialize();
   for attr in GetAttributes(Type(f)) do
     if assigned f``attr then
       g``attr := f``attr;

@@ -28,7 +28,7 @@ S,Coefficients,returns associative array of coefficients indexed by IdealsUpTo P
 S,ModFrmHilDEltInitialize,Create an empty ModFrmHilDElt object,0,0,0,0,0,0,0,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,HMFZero,"Generates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZK, and precision prec",1,2,1,82,0,148,5,0,0,0,0,0,0,0,148,,0,0,27,,0,0,82,,0,0,217,,0,0,27,,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,HMFZero,"Generates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZZ, and precision prec",1,2,1,82,0,148,5,0,0,0,0,0,0,0,148,,0,0,262,,0,0,82,,0,0,217,,0,0,27,,ModFrmHilDElt,-38,-38,-38,-38,-38
-S,ModFrmHilDEltCopy,new instance of ModFrmHilDElt,0,1,0,0,0,0,0,0,0,ModFrmHilD,,ModFrmHilDElt,-38,-38,-38,-38,-38
+S,ModFrmHilDEltCopy,new instance of ModFrmHilDElt,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,*,scale f by integer c,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,148,,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,*,scale f by integral element c,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,216,,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,+,return f+g,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,ModFrmHilDElt,,ModFrmHilDElt,-38,-38,-38,-38,-38
