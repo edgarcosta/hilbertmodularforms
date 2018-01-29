@@ -250,8 +250,19 @@ intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
   return M;
 end intrinsic;
 
+intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {new instance of ModFrmHilDElt.}
+  g := ModFrmHilDEltInitialize();
+  for attr in GetAttributes(Type(f)) do
+    if assigned f``attr then
+      g``attr := f``attr;
+    end if;
+  end for;
+  return g;
+end intrinsic;
+
 intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, prec::RngIntElt) -> ModFrmHilDElt
-  {Generates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZK, and precision prec.}
+  {creates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZK, and precision prec.}
   // parent, coefficient ring, precision
   parent := HMFSpace(F, N, k, K);
   f := ModFrmHilDEltInitialize();
@@ -270,7 +281,7 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, pre
 end intrinsic;
 
 intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, prec::RngIntElt) -> ModFrmHilDElt
-  {Generates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZZ, and precision prec.}
+  {creates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZZ, and precision prec.}
   // parent, coefficient ring, precision
   parent := HMFSpace(F, N, k, K);
   f := ModFrmHilDEltInitialize();
@@ -289,15 +300,27 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, pre
   return f;
 end intrinsic;
 
-intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {new instance of ModFrmHilDElt.}
-  g := ModFrmHilDEltInitialize();
-  for attr in GetAttributes(Type(f)) do
-    if assigned f``attr then
-      g``attr := f``attr;
-    end if;
+// TODO other assertions? Is all this checking efficient enough?
+intrinsic HMF(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, coeffs::Assoc, prec::RngIntElt) -> ModFrmHilDElt
+  {creates the corresponding ModFrmHilDElt with some sanity checking.}
+  // parent, coefficient ring, precision
+  parent := HMFSpace(F, N, k, K);
+  f := ModFrmHilDEltInitialize();
+  f`Parent := parent;
+  ZK := Integers(K);
+  f`CoefficientRing := ZK;
+  f`Precision := prec;
+  // coefficients
+  Is := Keys(coeffs); // pull from given coeffs
+  IsUpTo := IdealsUpTo(prec, F);
+  assert Is eq IsUpTo; // index set of Is should be the same as Ideals of F up to prec
+  for I in Is do
+    assert Order(I) eq Integers(F);
+    assert NumberField(Order(I)) eq F; // Ideals indexing the associative array are ideals of ZF
+    assert Order(coeffs[I]) eq ZK;
   end for;
-  return g;
+  f`Coefficients := coeffs;
+  return f;
 end intrinsic;
 
 ////////// ModFrmHilDElt arithmetic //////////
