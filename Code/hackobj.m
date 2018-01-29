@@ -1,27 +1,297 @@
 /*****
-BASIC IMPLEMENTATION OF HMF OBJECT
+ModFrmHilD
 *****/
 
-declare type HMF;
-declare attributes HMF:
-  HMFPrecision, // RngIntElt : precision for the expansion
-  HMFWeights, // SeqEnum[RngIntElt] : a sequence of [HMFBaseField : QQ] integers
-  HMFLevel, // RngOrdIdl : ideal of Integers(HMFBaseField)
-  HMFBaseField, // FldNum : totally real field
-  HMFCoefficientRing, // Integers() or RngOrd : Integers of a number field
-  HMFCoefficients; // Assoc : all ideals of HMFBaseField with norm less than or equal to HMFPrecision
+////////// ModFrmHilD attributes //////////
 
-intrinsic HMFInitialize() -> HMF
-  {Create an empty HMF object.}
-  f := New(HMF);
+declare type ModFrmHilD [ModFrmHilDElt];
+declare attributes ModFrmHilD:
+  Field, // FldNum : totally real field
+  Level, // RngOrdIdl : ideal of Integers(Field)
+  Weight, // SeqEnum[RngIntElt] : a sequence of [ModFrmHilDBaseField : QQ] integers
+  CoefficientRing; // Integers() or RngOrd : Integers of a number field
+  // DirichletCharacter // always assigned: either the integer 1, or a GrpDrchNFElt with modulus Level(M)
+  // CentralCharachter
+  // NewLevel
+  // Dimension
+  // QuaternionOrder
+  // Ambient
+
+////////// ModFrmHilD special intrinsics //////////
+
+intrinsic Print(M::ModFrmHilD)
+  {}
+  printf "Space of Hilbert modular forms over %o.\n", M`Field;
+  printf "Weight: %o\n", M`Weight;
+  printf "Level: %o\n", M`Level;
+  printf "CoefficientRing: %o\n", M`CoefficientRing;
+end intrinsic;
+
+intrinsic 'in'(f::., M::ModFrmHilD) -> BoolElt
+  {}
+  if Type(f) ne ModFrmHilDElt then
+    return false, "The first argument should be a ModFrmHilDElt";
+  else
+    return Parent(f) eq M;
+  end if;
+end intrinsic;
+
+// TODO hack for now
+intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
+  {True iff every attribute of M1 is equal to the corresponding attribute of M2.}
+  ass_attrs_M1 := [];
+  ass_attrs_M2 := [];
+  all_attrs := GetAttributes(Type(M1));
+  for attr in all_attrs do
+    if assigned M1``attr then
+      Append(~ass_attrs_M1, attr);
+    end if;
+    if assigned M2``attr then
+      Append(~ass_attrs_M2, attr);
+    end if;
+  end for;
+  if ass_attrs_M1 ne ass_attrs_M2 then
+    return false;
+  else
+    for attr in ass_attrs_M1 do
+      if M1``attr ne M2``attr then
+        return false;
+      end if;
+    end for;
+    // if we make it through the loop return true
+    return true;
+  end if;
+end intrinsic;
+
+// TODO currently it is illegal to coerce expansions into spaces without matching coefficient rings.
+intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
+  {}
+  if Type(f) eq ModFrmHilDElt and Parent(f) eq M then
+    return true, f;
+  end if;
+  return false;
+end intrinsic;
+
+////////// ModFrmHilD creation functions //////////
+
+intrinsic ModFrmHilDInitialize() -> ModFrmHilD
+  {Create an empty ModFrmHilD object.}
+  M := New(ModFrmHilD);
+  return M;
+end intrinsic;
+
+intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum) -> ModFrmHilD
+  {Generates the space ModFrmHilD over F with level N, weights k, and coefficient ring ZK.}
+  assert IsTotallyReal(F);
+  assert NumberField(Order(N)) eq F;
+  assert IsAdmissibleWeight(F, k);
+  M := ModFrmHilDInitialize();
+  M`Field := F;
+  M`Level := N;
+  M`Weight := k;
+  ZK := Integers(K);
+  M`CoefficientRing := ZK;
+  return M;
+end intrinsic;
+
+intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat) -> ModFrmHilD
+  {Generates the space ModFrmHilD over F with level N, weights k, and coefficient ring ZZ.}
+  assert IsTotallyReal(F);
+  assert NumberField(Order(N)) eq F;
+  assert IsAdmissibleWeight(F, k);
+  M := ModFrmHilDInitialize();
+  M`Field := F;
+  M`Level := N;
+  M`Weight := k;
+  ZK := Integers(K);
+  M`CoefficientRing := ZK;
+  return M;
+end intrinsic;
+
+intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+  {Generates the space ModFrmHilD over F with level N, weights k, and coefficient ring ZZ.}
+  return HMFSpace(F, N, k, Rationals());
+end intrinsic;
+
+intrinsic ModFrmHilDCopy(M::ModFrmHilD) -> ModFrmHilD
+  {new instance of ModFrmHilD.}
+  M1 := ModFrmHilDInitialize();
+  for attr in GetAttributes(Type(M)) do
+    if assigned M``attr then
+      M1``attr := M``attr;
+    end if;
+  end for;
+  return M1;
+end intrinsic;
+
+////////// ModFrmHilD access to basic attributes //////////
+
+intrinsic BaseField(M::ModFrmHilD) -> FldAlg
+  {The base field of the space M of Hilbert modular forms.}
+  return M`Field;
+end intrinsic;
+
+intrinsic Level(M::ModFrmHilD) -> RngOrgIdl
+  {The level of the space M of Hilbert modular forms.}
+  return M`Level;
+end intrinsic;
+
+intrinsic Weight(M::ModFrmHilD) -> SeqEnum[RngIntElt]
+  {The weight of the space M of Hilbert modular forms.}
+  return M`Weight;
+end intrinsic;
+
+intrinsic CoefficientRing(M::ModFrmHilD) -> FldAlg
+  {The coefficient ring of the space M of Hilbert modular forms.}
+  return M`CoefficientRing;
+end intrinsic;
+
+/*****
+ModFrmHilDElt
+*****/
+
+////////// ModFrmHilDElt attributes //////////
+
+declare type ModFrmHilDElt;
+declare attributes ModFrmHilDElt:
+  Parent, // M
+  Precision, // RngIntElt : precision for the expansion
+  CoefficientRing, // Integers() or RngOrd : Integers of a number field
+  Coefficients; // Assoc : all ideals of ModFrmHilDBaseField with norm less than or equal to ModFrmHilDPrecision
+
+////////// ModFrmHilDElt special intrinsics //////////
+
+// TODO print expansion more cleanly, currently just for debugging
+intrinsic Print(f::ModFrmHilDElt)
+  {}
+  printf "Hilbert modular form expansion with precision %o.\n", f`Precision;
+  printf "\nParent: \n%o", f`Parent;
+  printf "\nCoefficientRing: %o\n", f`CoefficientRing;
+  printf "\nCoefficients: \n%o\n", f`Coefficients;
+end intrinsic;
+
+intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
+  {}
+  return false;
+end intrinsic;
+
+intrinsic IsCoercible(x::ModFrmHilDElt, y::.) -> BoolElt, .
+  {}
+  return false;
+end intrinsic;
+
+// TODO default way to deal with precision?
+intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
+  {check compatibility and coefficient equality up to minimum precision.}
+  prec, which_one := Min([Precision(f), Precision(g)]);
+  if Parent(f) ne Parent(g) then
+    return false;
+  else
+    coeffs_f := Coefficients(f);
+    coeffs_g := Coefficients(g);
+    if which_one eq 1 then // f has smaller precision
+      Is := Keys(coeffs_f);
+      prec := Precision(f);
+    else // g has smaller precision
+      assert which_one eq 2;
+      Is := Keys(coeffs_g);
+      prec := Precision(g);
+    end if;
+    for I in Is do
+      if coeffs_f[I] ne coeffs_g[I] then
+        return false;
+      end if;
+    end for;
+    // if we make it out of the loop then return true
+    return true;
+  end if;
+end intrinsic;
+
+intrinsic Preceq(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
+  {check compatibility and coefficient equality and see if both have the same precision.}
+  if Precision(f) ne Precision(g) then
+    return false;
+  else
+    if Parent(f) ne Parent(g) then
+      return false;
+    else
+      return f eq g; // "normal equal"
+    end if;
+  end if;
+end intrinsic;
+
+////////// ModFrmHilDElt access to basic attributes //////////
+
+intrinsic Parent(f::ModFrmHilDElt) -> ModFrmHilD
+  {returns ModFrmHilD space where f lives.}
+  return f`Parent;
+end intrinsic;
+
+intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
+  {returns precision of expansion for f which bounds the norm of ideals in the expansion.}
+  return f`Precision;
+end intrinsic;
+
+intrinsic CoefficientRing(f::ModFrmHilDElt) -> RngOrdIdl
+  {returns coefficient ring of expansion f which is ZK or ZZ}
+  return f`CoefficientRing;
+end intrinsic;
+
+intrinsic Coefficients(f::ModFrmHilDElt) -> Assoc
+  {returns associative array of coefficients indexed by IdealsUpTo Precision(f).}
+  return f`Coefficients;
+end intrinsic;
+
+////////// ModFrmHilDElt creation functions //////////
+
+intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
+  {Create an empty ModFrmHilDElt object.}
+  M := New(ModFrmHilDElt);
+  return M;
+end intrinsic;
+
+intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, prec::RngIntElt) -> ModFrmHilDElt
+  {Generates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZK, and precision prec.}
+  // parent, coefficient ring, precision
+  parent := HMFSpace(F, N, k, K);
+  f := ModFrmHilDEltInitialize();
+  f`Parent := parent;
+  ZK := Integers(K);
+  f`CoefficientRing := ZK;
+  f`Precision := prec;
+  // coefficients
+  Is := IdealsUpTo(prec, F);
+  coeffs := AssociativeArray(); // empty
+  for I in Is do
+    coeffs[I] := ZK!0;
+  end for;
+  f`Coefficients := coeffs;
   return f;
 end intrinsic;
 
-intrinsic HMFCopy(f::HMF) -> HMF
-  {Copy HMF.}
-  F := f`HMFBaseField;
-  prec := f`HMFPrecision;
-  g := HMFZero(F, prec);
+intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, prec::RngIntElt) -> ModFrmHilDElt
+  {Generates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZZ, and precision prec.}
+  // parent, coefficient ring, precision
+  parent := HMFSpace(F, N, k, K);
+  f := ModFrmHilDEltInitialize();
+  f`Parent := parent;
+  ZK := Integers(K);
+  f`CoefficientRing := ZK;
+  assert ZK eq Integers();
+  f`Precision := prec;
+  // coefficients
+  Is := IdealsUpTo(prec, F);
+  coeffs := AssociativeArray(); // empty
+  for I in Is do
+    coeffs[I] := ZK!0;
+  end for;
+  f`Coefficients := coeffs;
+  return f;
+end intrinsic;
+
+intrinsic ModFrmHilDEltCopy(f::ModFrmHilD) -> ModFrmHilDElt
+  {new instance of ModFrmHilDElt.}
+  g := ModFrmHilDInitialize();
   for attr in GetAttributes(Type(f)) do
     if assigned f``attr then
       g``attr := f``attr;
@@ -30,143 +300,86 @@ intrinsic HMFCopy(f::HMF) -> HMF
   return g;
 end intrinsic;
 
-// TODO printing for levels "Default", "Minimal", "Maximal", "Magma"
-// TODO printing of coefficients?
-intrinsic Print(f::HMF) // this is a procedure, so no return
-  {Print HMF.}
-  printf "Hilbert modular form over %o.\n", f`HMFBaseField;
-  printf "Weights: %o\n", f`HMFWeights;
-  printf "Level: %o\n", f`HMFLevel;
-  printf "Coefficient ring: %o\n", f`HMFCoefficientRing;
-  printf "Precision: %o\n", f`HMFPrecision;
-end intrinsic;
+////////// ModFrmHilDElt arithmetic //////////
 
-// TODO
-intrinsic HMFIsAdmissibleWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> BoolElt
-  {Decide if the sequence of weights k is admissible.}
-  return true; // TODO
-end intrinsic;
-
-intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], prec::RngIntElt) -> HMF
-  {Generates the zero HMF over F with level N, weights k, with precision prec with integer coefficients.}
-  // basic assertions
-  assert IsTotallyReal(F);
-  assert NumberFiedl(N) eq F;
-  assert HMFIsAdmissibleWeight(F, k);
-  assert prec gt 0;
-  // initialize the object
-  f := HMFInitialize();
-  f`HMFBaseField := F;
-  f`HMFLevel := N;
-  f`HMFWeights := k;
-  f`HMFPrecision := prec;
-  f`HMFCoefficientRing := Integers();
-  // create associative array called coeffs
-  Is := IdealsUpTo(prec, F);
-  coeffs := AssociativeArray(); // empty Assoc
-  for I in Is do
-    coeffs[I] := 0;
-  end for;
-  f`HMFCoefficients := coeffs;
-  return f;
-end intrinsic;
-
-/*
-// TODO
-intrinsic HMFZero(F::FldNum, K::FldRat, prec::RngIntElt) -> HMF
-  {Generates the zero HMF over F with precision prec with integer coefficients.}
-  return HMFZero(F, prec);
-end intrinsic;
-
-intrinsic HMFZero(F::FldNum, N::RngOrdIdl, K::FldNum, prec::RngIntElt) -> HMF
-  {Generates the zero HMF over F with precision prec with coefficients in ZK.}
-  // basic assertions
-  assert IsTotallyReal(F);
-  assert prec gt 0;
-  // initialize the object
-  f := HMFInitialize();
-  f`HMFBaseField := F;
-  f`HMFPrecision := prec;
-  f`HMFCoefficientRing := Integers(K);
-  ZK := f`HMFCoefficientRing;
-  // create associative array called coeffs
-  Is := IdealsUpTo(prec, F);
-  coeffs := AssociativeArray(); // empty Assoc
-  for I in Is do
-    coeffs[I] := ZK!0;
-  end for;
-  f`HMFCoefficients := coeffs;
-  return f;
-end intrinsic;
-*/
-
-
-
-// TODO Parent?
-// TODO IsCoercible?
-
-/*
-// TODO
-intrinsic 'eq'(s::HMF, t::HMF) -> BoolElt
-  {}
-  isSame := true;
-  for attr in GetAttributes(Type(s)) do
-    if Type(s``attr) ne Type(t``attr) then
-      isSame := false;
-    elif s``attr ne t``attr then
-      isSame := false;
-    end if;
-  end for;
-  return isSame;
-end intrinsic;
-*/
-
-/*****
-ARITHMETIC
-*****/
-
-intrinsic '*'(c::RngIntElt, f::HMF) -> HMF
+intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integer c.}
-  g := HMFCopy(f); // new instance of f
-  coeffs := g`HMFCoefficients;
-  for i in Keys(coeffs) do
-    coeffs[i] := c * coeffs[i];
+  g := ModFrmHilDEltCopy(f); // new instance of f
+  ZK := g`CoefficientRing;
+  assert Parent(c) eq ZK;
+  coeffs := g`Coefficients;
+  for I in Keys(coeffs) do // loop over ideal of F up to precision
+    coeffs[I] *:= ZK!(c); // coercion here is overkill
   end for;
+  g`Coefficients := coeffs; // do we need to reassign?
   return g;
 end intrinsic;
 
-intrinsic '*'(c::RngOrdElt, f::HMF) -> HMF
+intrinsic '*'(c::RngOrdElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integral element c.}
-  ZK := f`HMFCoefficientRing;
+  g := ModFrmHilDEltCopy(f); // new instance of f
+  ZK := g`CoefficientRing;
   assert Parent(c) eq ZK;
-  g := HMFCopy(f); // new instance of f
-  coeffs := g`HMFCoefficients;
-  for I in Keys(coeffs) do // I an ideal of ZF
+  coeffs := g`Coefficients;
+  for I in Keys(coeffs) do // loop over ideals of F up to precision
     coeffs[I] *:= ZK!(c); // multiplication in ZK, coercion just to be safe
   end for;
+  g`Coefficients := coeffs; // do we need to reassign?
   return g;
 end intrinsic;
 
-/*
-intrinsic '+'(f::HMF, g::HMF) -> HMF
-  {return f+g}
-  Ff := f`HMFBaseField;
-  ZKf := f`HMFCoefficientRing;
-  Fg := g`HMFBaseField;
-  ZKg := g`HMFCoefficientRing;
-  assert Ff eq Fg;
-  assert ZKf eq ZKg;
+intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
+  {return f+g.}
+  assert Parent(f) eq Parent(g);
+  // pull information about the ambient space
+  M := Parent(f);
+  F := BaseField(M);
+  N := Level(M);
+  k := Weight(M);
+  ZK := M`CoefficientRing;
+  K := NumberField(ZK);
+  // precision
+  prec_f := Precision(f);
+  prec_g := Precision(g);
+  prec := Min([prec_f, prec_g]);
+  // create new expansion h with correct parent and precision
+  h := HMFZero(F, N, k, K, prec);
+  // overkill assertions
+  assert ZK eq f`CoefficientRing;
+  assert ZK eq g`CoefficientRing;
+  assert ZK eq h`CoefficientRing;
+  coeffs_f := f`Coefficients;
+  coeffs_g := g`Coefficients;
+  // create coefficients
+  coeffs := h`Coefficients;
+  for I in Keys(coeffs) do
+    coeffs[I] := ZK!(ZK!(coeffs_f[I])+ZK!(coeffs_g[I]));
+  end for;
+  h`Coefficients := coeffs;
+  return h;
 end intrinsic;
-*/
 
-/*
-// TODO
-intrinsic '*'(f::HMF, g::HMF) -> HMF
+intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   {return f*g}
+  error "multiplication of HMF expansions not implemented yet!";
 end intrinsic;
-*/
 
-/*****
-USER CONVENIENCE
-*****/
-// TODO Coefficients(f)
+////////// ModFrmHilDElt misc functions //////////
+
+// TODO currently only allows even nonnegative...
+intrinsic IsAdmissibleWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> BoolElt
+  {Decide if the sequence of weights k can be used for the weight of a ModFrmHilD.}
+  n := Degree(F);
+  if #k ne n then
+    return false;
+  end if;
+  if Min(k) lt 0 then
+    return false;
+  end if;
+  for wt in k do
+    if IsOdd(wt) then
+      return false;
+    end if;
+  end for;
+  return true;
+end intrinsic;
