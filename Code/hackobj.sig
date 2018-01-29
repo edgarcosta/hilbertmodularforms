@@ -19,7 +19,7 @@ A,ModFrmHilDElt,4,Parent,Precision,CoefficientRing,Coefficients
 S,Print,,0,1,0,0,1,0,0,0,0,ModFrmHilDElt,,-38,-38,-38,-38,-38,-38
 S,in,,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,-1,,36,-38,-38,-38,-38,-38
 S,IsCoercible,,0,2,0,0,0,0,0,0,0,-1,,0,0,ModFrmHilDElt,,36,-1,-38,-38,-38,-38
-S,eq,check compatibility and coefficient equality up to minimum precision,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,ModFrmHilDElt,,36,148,-38,-38,-38,-38
+S,eq,check compatibility and coefficient equality up to minimum precision,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,ModFrmHilDElt,,36,-38,-38,-38,-38,-38
 S,Preceq,check compatibility and coefficient equality and see if both have the same precision,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,ModFrmHilDElt,,36,-38,-38,-38,-38,-38
 S,Parent,returns ModFrmHilD space where f lives,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,ModFrmHilD,-38,-38,-38,-38,-38
 S,Precision,returns precision of expansion for f which bounds the norm of ideals in the expansion,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,148,-38,-38,-38,-38,-38
