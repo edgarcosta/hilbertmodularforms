@@ -64,6 +64,7 @@ intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
 end intrinsic;
 
 // TODO currently it is illegal to coerce expansions into spaces without matching coefficient rings.
+// TODO should be coercible if coefficient rings are coercible
 intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   {}
   if Type(f) eq ModFrmHilDElt and Parent(f) eq M then
@@ -156,7 +157,6 @@ declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent, // M
   Precision, // RngIntElt : precision for the expansion
-  CoefficientRing, // Integers() or RngOrd : Integers of a number field
   Coefficients; // Assoc : all ideals of ModFrmHilDBaseField with norm less than or equal to ModFrmHilDPrecision
 
 ////////// ModFrmHilDElt special intrinsics //////////
@@ -166,7 +166,6 @@ intrinsic Print(f::ModFrmHilDElt)
   {}
   printf "Hilbert modular form expansion with precision %o.\n", f`Precision;
   printf "\nParent: \n%o", f`Parent;
-  printf "\nCoefficientRing: %o\n", f`CoefficientRing;
   printf "\nCoefficients: \n%o\n", f`Coefficients;
 end intrinsic;
 
@@ -232,15 +231,31 @@ intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   return f`Precision;
 end intrinsic;
 
-intrinsic CoefficientRing(f::ModFrmHilDElt) -> RngOrdIdl
-  {returns coefficient ring of expansion f which is ZK or ZZ}
-  return f`CoefficientRing;
-end intrinsic;
-
 intrinsic Coefficients(f::ModFrmHilDElt) -> Assoc
   {returns associative array of coefficients indexed by IdealsUpTo Precision(f).}
   return f`Coefficients;
 end intrinsic;
+
+intrinsic BaseField(f::ModFrmHilDElt) -> FldNum
+  {returns base field of parent of f.}
+  return BaseField(f`Parent);
+end intrinsic;
+
+intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
+  {returns level of parent of f.}
+  return Level(f`Parent);
+end intrinsic;
+
+intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
+  {returns weight of parent of f.}
+  return Weight(f`Parent);
+end intrinsic;
+
+intrinsic CoefficientRing(f::ModFrmHilDElt) -> Rng
+  {returns coefficient ring of expansion f which is ZK or ZZ}
+  return CoefficientRing(f`Parent);
+end intrinsic;
+
 
 ////////// ModFrmHilDElt creation functions //////////
 
@@ -268,7 +283,6 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, pre
   f := ModFrmHilDEltInitialize();
   f`Parent := parent;
   ZK := Integers(K);
-  f`CoefficientRing := ZK;
   f`Precision := prec;
   // coefficients
   Is := IdealsUpTo(prec, F);
@@ -287,8 +301,6 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, pre
   f := ModFrmHilDEltInitialize();
   f`Parent := parent;
   ZK := Integers(K);
-  f`CoefficientRing := ZK;
-  assert ZK eq Integers();
   f`Precision := prec;
   // coefficients
   Is := IdealsUpTo(prec, F);
@@ -308,7 +320,6 @@ intrinsic HMF(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, coeffs:
   f := ModFrmHilDEltInitialize();
   f`Parent := parent;
   ZK := Integers(K);
-  f`CoefficientRing := ZK;
   f`Precision := prec;
   // coefficients
   Is := Keys(coeffs); // pull from given coeffs
@@ -323,12 +334,38 @@ intrinsic HMF(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, coeffs:
   return f;
 end intrinsic;
 
+intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntElt) -> ModFrmHilDElt
+  {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
+  // pull info from M
+  F := BaseField(M);
+  k := Weight(M);
+  N := Level(M);
+  ZK := CoefficientRing(M);
+  K := NumberField(ZK);
+  // assertions
+  primes := Keys(hecke_eigenvalues);
+  primes_check := PrimesUpTo(prec, F);
+  assert primes eq primes_check;
+  // power series ring
+  R<T> := PowerSeriesRing(ZK);
+  for pp in primes do
+    q := Norm(pp);
+    log_prec := Floor(Log(prec)/Log(q)); // q^log_prec < prec < q^(log_prec+1)
+    // TODO edgar
+  end for;
+  // create the new element
+  f := HMFZero(F, N, k, K, prec);
+  assert Parent(f) eq M;
+  Is := IdealsUpTo(prec, F);
+  coeffs := AssociativeArray(Is);
+end intrinsic;
+
 ////////// ModFrmHilDElt arithmetic //////////
 
 intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integer c.}
   g := ModFrmHilDEltCopy(f); // new instance of f
-  ZK := g`CoefficientRing;
+  ZK := CoefficientRing(g);
   assert Parent(c) eq ZK;
   coeffs := g`Coefficients;
   for I in Keys(coeffs) do // loop over ideal of F up to precision
@@ -341,7 +378,7 @@ end intrinsic;
 intrinsic '*'(c::RngOrdElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integral element c.}
   g := ModFrmHilDEltCopy(f); // new instance of f
-  ZK := g`CoefficientRing;
+  ZK := CoefficientRing(g);
   assert Parent(c) eq ZK;
   coeffs := g`Coefficients;
   for I in Keys(coeffs) do // loop over ideals of F up to precision
@@ -368,9 +405,9 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   // create new expansion h with correct parent and precision
   h := HMFZero(F, N, k, K, prec);
   // overkill assertions
-  assert ZK eq f`CoefficientRing;
-  assert ZK eq g`CoefficientRing;
-  assert ZK eq h`CoefficientRing;
+  assert ZK eq CoefficientRing(f);
+  assert ZK eq CoefficientRing(g);
+  assert ZK eq CoefficientRing(h);
   coeffs_f := f`Coefficients;
   coeffs_g := g`Coefficients;
   // create coefficients

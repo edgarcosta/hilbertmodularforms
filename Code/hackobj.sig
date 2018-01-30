@@ -15,7 +15,7 @@ S,Level,The level of the space M of Hilbert modular forms,0,1,0,0,0,0,0,0,0,ModF
 S,Weight,The weight of the space M of Hilbert modular forms,0,1,0,0,0,0,0,0,0,ModFrmHilD,,82,-38,-38,-38,-38,-38
 S,CoefficientRing,The coefficient ring of the space M of Hilbert modular forms,0,1,0,0,0,0,0,0,0,ModFrmHilD,,-9,-38,-38,-38,-38,-38
 T,ModFrmHilDElt,-,0
-A,ModFrmHilDElt,4,Parent,Precision,CoefficientRing,Coefficients
+A,ModFrmHilDElt,3,Parent,Precision,Coefficients
 S,Print,,0,1,0,0,1,0,0,0,0,ModFrmHilDElt,,-38,-38,-38,-38,-38,-38
 S,in,,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,-1,,36,-38,-38,-38,-38,-38
 S,IsCoercible,,0,2,0,0,0,0,0,0,0,-1,,0,0,ModFrmHilDElt,,36,-1,-38,-38,-38,-38
@@ -23,12 +23,17 @@ S,eq,check compatibility and coefficient equality up to minimum precision,0,2,0,
 S,Preceq,check compatibility and coefficient equality and see if both have the same precision,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,ModFrmHilDElt,,36,-38,-38,-38,-38,-38
 S,Parent,returns ModFrmHilD space where f lives,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,ModFrmHilD,-38,-38,-38,-38,-38
 S,Precision,returns precision of expansion for f which bounds the norm of ideals in the expansion,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,148,-38,-38,-38,-38,-38
-S,CoefficientRing,returns coefficient ring of expansion f which is ZK or ZZ,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,217,-38,-38,-38,-38,-38
 S,Coefficients,returns associative array of coefficients indexed by IdealsUpTo Precision(f),0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,457,-38,-38,-38,-38,-38
+S,BaseField,returns base field of parent of f,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,27,-38,-38,-38,-38,-38
+S,Level,returns level of parent of f,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,217,-38,-38,-38,-38,-38
+S,Weight,returns weight of parent of f,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,82,-38,-38,-38,-38,-38
+S,CoefficientRing,returns coefficient ring of expansion f which is ZK or ZZ,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,-44,-38,-38,-38,-38,-38
 S,ModFrmHilDEltInitialize,Create an empty ModFrmHilDElt object,0,0,0,0,0,0,0,ModFrmHilDElt,-38,-38,-38,-38,-38
-S,HMFZero,"Generates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZK, and precision prec",1,2,1,82,0,148,5,0,0,0,0,0,0,0,148,,0,0,27,,0,0,82,,0,0,217,,0,0,27,,ModFrmHilDElt,-38,-38,-38,-38,-38
-S,HMFZero,"Generates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZZ, and precision prec",1,2,1,82,0,148,5,0,0,0,0,0,0,0,148,,0,0,262,,0,0,82,,0,0,217,,0,0,27,,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,ModFrmHilDEltCopy,new instance of ModFrmHilDElt,0,1,0,0,0,0,0,0,0,ModFrmHilDElt,,ModFrmHilDElt,-38,-38,-38,-38,-38
+S,HMFZero,"creates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZK, and precision prec",1,2,1,82,0,148,5,0,0,0,0,0,0,0,148,,0,0,27,,0,0,82,,0,0,217,,0,0,27,,ModFrmHilDElt,-38,-38,-38,-38,-38
+S,HMFZero,"creates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZZ, and precision prec",1,2,1,82,0,148,5,0,0,0,0,0,0,0,148,,0,0,262,,0,0,82,,0,0,217,,0,0,27,,ModFrmHilDElt,-38,-38,-38,-38,-38
+S,HMF,creates the corresponding ModFrmHilDElt with some sanity checking,1,2,1,82,0,148,6,0,0,0,0,0,0,0,148,,0,0,457,,0,0,27,,0,0,82,,0,0,217,,0,0,27,,ModFrmHilDElt,-38,-38,-38,-38,-38
+S,EigenformToHMF,Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues,0,3,0,0,0,0,0,0,0,148,,0,0,457,,0,0,ModFrmHilD,,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,*,scale f by integer c,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,148,,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,*,scale f by integral element c,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,216,,ModFrmHilDElt,-38,-38,-38,-38,-38
 S,+,return f+g,0,2,0,0,0,0,0,0,0,ModFrmHilDElt,,0,0,ModFrmHilDElt,,ModFrmHilDElt,-38,-38,-38,-38,-38
