@@ -391,18 +391,21 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
       pp := ideals[i];
       assert IsPrime(pp);
       coeffs[i] := hecke_eigenvalues[pp];
+      print coeffs[i];
       if N subset pp then
         recursion := bad_recursion;
       else
         recursion := good_recursion;
       end if;
 
-      r := 1;
-      pp_power := pp;
+      r := 2;
+      pp_power := pp * pp;
       //deals with powers of p
       while pp_power in Keys(dict) do
         ipower := dict[pp_power];
-        coeffs[ipower] := Evaluate(recursion[r], coeffs[i]);
+        print pp_power;
+        coeffs[ipower] := Evaluate(recursion[r + 1], coeffs[i]);
+        print coeffs[ipower];
         set[ipower] := true;
         pp_power *:= pp;
         r +:= 1;
@@ -430,6 +433,8 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
     end if; // check if it's set
   end for; // loop in i
   f`Coefficients := coeffs;
+  print coeffs;
+  print set;
   return f;
 end intrinsic;
 
