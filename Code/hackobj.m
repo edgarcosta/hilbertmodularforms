@@ -23,8 +23,8 @@ intrinsic Print(M::ModFrmHilD)
   {}
   printf "Space of Hilbert modular forms over %o.\n", M`Field;
   printf "Weight: %o\n", M`Weight;
-  printf "Level: %o\n", M`Level;
-  printf "CoefficientRing: %o\n", M`CoefficientRing;
+  printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(M`Level),  Generators(M`Level);
+  printf "CoefficientRing: %o", M`CoefficientRing;
 end intrinsic;
 
 intrinsic 'in'(f::., M::ModFrmHilD) -> BoolElt
@@ -168,7 +168,11 @@ intrinsic Print(f::ModFrmHilDElt)
   {}
   printf "Hilbert modular form expansion with precision %o.\n", f`Precision;
   printf "\nParent: \n%o", f`Parent;
-  printf "\nCoefficients: \n%o\n", f`Coefficients;
+  printf "\nCoefficients:";
+  printf "\n\t(Norm, nn)  |--->   a_nn";
+  for i:= 1 to #Coefficients(f) do
+    printf "\n\t(%o, %o)  |--->   %o", Norm(Ideals(f)[i]),  Generators(Ideals(f)[i]), Coefficients(f)[i];
+  end for;
 end intrinsic;
 
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
@@ -415,10 +419,10 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
           mm := ideals[j];
           pp_power := pp;
           mmpp_power := mm * pp_power;
-          while mmpp_power in Keys(dict) do 
-            assert set[mmpp_power] eq false;
-            ipower := dict[pp_power];
+          while mmpp_power in Keys(dict) do
             k := dict[mmpp_power];
+            assert set[k] eq false;
+            ipower := dict[pp_power];
             // a_{m * pp_power} := a_{m} * a_{pp_power}
             coeffs[k] := coeffs[j] * coeffs[ipower];
             set[k] := true;
