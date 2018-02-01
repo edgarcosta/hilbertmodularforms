@@ -1,0 +1,11 @@
+# High priority
+- Test eigenforms
+
+
+# Low Priority
+- Print should take an optional argument for the number of coeffs to print
+
+
+
+# Wouldn't it be nice if
+- we had tests and nice documentiation
