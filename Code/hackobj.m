@@ -157,7 +157,9 @@ declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent, // M
   Precision, // RngIntElt : precision for the expansion
-  Coefficients; // Assoc : all ideals of ModFrmHilDBaseField with norm less than or equal to ModFrmHilDPrecision
+  Ideals, // SeqEnum[RngOrdIdl]
+  Dict, // Assoc maps Ideals[i] to i
+  Coefficients; // SeqEnum[RngOrdElt]
 
 ////////// ModFrmHilDElt special intrinsics //////////
 
@@ -180,6 +182,7 @@ intrinsic IsCoercible(x::ModFrmHilDElt, y::.) -> BoolElt, .
 end intrinsic;
 
 // TODO default way to deal with precision?
+// FIXME
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   {check compatibility and coefficient equality up to minimum precision.}
   prec, which_one := Min([Precision(f), Precision(g)]);
@@ -206,6 +209,7 @@ intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   end if;
 end intrinsic;
 
+// FIXME
 intrinsic Preceq(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   {check compatibility and coefficient equality and see if both have the same precision.}
   if Precision(f) ne Precision(g) then
@@ -231,8 +235,8 @@ intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   return f`Precision;
 end intrinsic;
 
-intrinsic Coefficients(f::ModFrmHilDElt) -> Assoc
-  {returns associative array of coefficients indexed by IdealsUpTo Precision(f).}
+intrinsic Coefficients(f::ModFrmHilDElt) -> SeqEnum
+  {returns coefficients of f.}
   return f`Coefficients;
 end intrinsic;
 
