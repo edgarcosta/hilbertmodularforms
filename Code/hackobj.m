@@ -158,7 +158,7 @@ declare attributes ModFrmHilDElt:
   Parent, // M
   Precision, // RngIntElt : precision for the expansion
   Ideals, // SeqEnum[RngOrdIdl]
-  Dict, // Assoc maps Ideals[i] to i
+  Dictionary, // Assoc maps Ideals[i] to i
   Coefficients; // SeqEnum[RngOrdElt]
 
 ////////// ModFrmHilDElt special intrinsics //////////
@@ -255,11 +255,25 @@ intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
   return Weight(f`Parent);
 end intrinsic;
 
+intrinsic Ideals(f::ModFrmHilDElt) -> SeqEnum[RngOrdIdl]
+  {returns ideals indexing f up to bound on the norm.}
+  return f`Ideals;
+end intrinsic;
+
+intrinsic Dictionary(f::ModFrmHilDElt) -> Assoc
+  {returns dictionary of f.}
+  return f`Dictionary;
+end intrinsic;
+
 intrinsic CoefficientRing(f::ModFrmHilDElt) -> Rng
   {returns coefficient ring of expansion f which is ZK or ZZ}
   return CoefficientRing(f`Parent);
 end intrinsic;
 
+intrinsic Coefficient(f::ModFrmHilDElt, I::RngOrdIdl) -> FldNum
+  {returns ideal of f corresponding to ideal I.}
+  return Coefficients(f)[Dictionary(f)[I]];
+end intrinsic;
 
 ////////// ModFrmHilDElt creation functions //////////
 
@@ -288,13 +302,15 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, pre
   f`Parent := parent;
   ZK := Integers(K);
   f`Precision := prec;
-  // coefficients
   Is := IdealsUpTo(prec, F);
-  coeffs := AssociativeArray(); // empty
-  for I in Is do
-    coeffs[I] := ZK!0;
-  end for;
+  f`Ideals := Is;
+  coeffs := [ZK!0 : i in [1..#Is]];
   f`Coefficients := coeffs;
+  dictionary := AssociativeArray();
+  for i := 1 to #Is do
+    dictionary[Is[i]] := i;
+  end for;
+  f`Dictionary := dictionary;
   return f;
 end intrinsic;
 
@@ -308,11 +324,14 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, pre
   f`Precision := prec;
   // coefficients
   Is := IdealsUpTo(prec, F);
-  coeffs := AssociativeArray(); // empty
-  for I in Is do
-    coeffs[I] := ZK!0;
-  end for;
+  f`Ideals := Is;
+  coeffs := [ZK!0 : i in [1..#Is]];
   f`Coefficients := coeffs;
+  dictionary := AssociativeArray();
+  for i := 1 to #Is do
+    dictionary[Is[i]] := i;
+  end for;
+  f`Dictionary := dictionary;
   return f;
 end intrinsic;
 
@@ -422,11 +441,12 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   g := ModFrmHilDEltCopy(f); // new instance of f
   ZK := CoefficientRing(g);
   assert Parent(c) eq ZK;
-  coeffs := g`Coefficients;
-  for I in Keys(coeffs) do // loop over ideal of F up to precision
-    coeffs[I] *:= ZK!(c); // coercion here is overkill
+  coeffs := Coefficients(g);
+  Is := Ideals(g);
+  for i := 1 to #Is do
+    coeffs[i] *:= ZK!(c);
   end for;
-  g`Coefficients := coeffs; // do we need to reassign?
+  g`Coefficients := coeffs;
   return g;
 end intrinsic;
 
@@ -435,11 +455,12 @@ intrinsic '*'(c::RngOrdElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   g := ModFrmHilDEltCopy(f); // new instance of f
   ZK := CoefficientRing(g);
   assert Parent(c) eq ZK;
-  coeffs := g`Coefficients;
-  for I in Keys(coeffs) do // loop over ideals of F up to precision
-    coeffs[I] *:= ZK!(c); // multiplication in ZK, coercion just to be safe
+  coeffs := Coefficients(g);
+  Is := Ideals(g);
+  for i := 1 to #Is do
+    coeffs[i] *:= ZK!(c);
   end for;
-  g`Coefficients := coeffs; // do we need to reassign?
+  g`Coefficients := coeffs;
   return g;
 end intrinsic;
 
@@ -451,7 +472,7 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   F := BaseField(M);
   N := Level(M);
   k := Weight(M);
-  ZK := M`CoefficientRing;
+  ZK := CoefficientRing(M);
   K := NumberField(ZK);
   // precision
   prec_f := Precision(f);
@@ -463,12 +484,18 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   assert ZK eq CoefficientRing(f);
   assert ZK eq CoefficientRing(g);
   assert ZK eq CoefficientRing(h);
-  coeffs_f := f`Coefficients;
-  coeffs_g := g`Coefficients;
+  coeffs_f := Coefficients(f);
+  coeffs_g := Coefficients(g);
+  Is_f := Ideals(f);
+  Is_g := Ideals(g);
+  Is_h := Ideals(h);
+  assert Is_f eq Is_g;
+  assert Is_f eq Is_h;
+  Is := Is_h;
   // create coefficients
-  coeffs := h`Coefficients;
-  for I in Keys(coeffs) do
-    coeffs[I] := ZK!(ZK!(coeffs_f[I])+ZK!(coeffs_g[I]));
+  coeffs := Coefficients(h);
+  for i := 1 to #Is do
+    coeffs[i] := ZK!(ZK!(coeffs_f[i])+ZK!(coeffs_g[i]));
   end for;
   h`Coefficients := coeffs;
   return h;
