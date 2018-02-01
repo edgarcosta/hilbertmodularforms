@@ -270,6 +270,10 @@ intrinsic CoefficientRing(f::ModFrmHilDElt) -> Rng
   return CoefficientRing(f`Parent);
 end intrinsic;
 
+intrinsic Coefficient(f::ModFrmHilDElt, I::RngOrdIdl) -> FldNum
+  {returns ideal of f corresponding to ideal I.}
+  return Coefficients(f)[Dictionary(f)[I]];
+end intrinsic;
 
 ////////// ModFrmHilDElt creation functions //////////
 
@@ -299,6 +303,7 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, pre
   ZK := Integers(K);
   f`Precision := prec;
   Is := IdealsUpTo(prec, F);
+  f`Ideals := Is;
   coeffs := [ZK!0 : i in [1..#Is]];
   f`Coefficients := coeffs;
   dictionary := AssociativeArray();
@@ -319,6 +324,7 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, pre
   f`Precision := prec;
   // coefficients
   Is := IdealsUpTo(prec, F);
+  f`Ideals := Is;
   coeffs := [ZK!0 : i in [1..#Is]];
   f`Coefficients := coeffs;
   dictionary := AssociativeArray();
@@ -384,11 +390,12 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   g := ModFrmHilDEltCopy(f); // new instance of f
   ZK := CoefficientRing(g);
   assert Parent(c) eq ZK;
-  coeffs := g`Coefficients;
-  for I in Keys(coeffs) do // loop over ideal of F up to precision
-    coeffs[I] *:= ZK!(c); // coercion here is overkill
+  coeffs := Coefficients(g);
+  Is := Ideals(g);
+  for i := 1 to #Is do
+    coeffs[i] *:= ZK!(c);
   end for;
-  g`Coefficients := coeffs; // do we need to reassign?
+  g`Coefficients := coeffs;
   return g;
 end intrinsic;
 
@@ -397,11 +404,12 @@ intrinsic '*'(c::RngOrdElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   g := ModFrmHilDEltCopy(f); // new instance of f
   ZK := CoefficientRing(g);
   assert Parent(c) eq ZK;
-  coeffs := g`Coefficients;
-  for I in Keys(coeffs) do // loop over ideals of F up to precision
-    coeffs[I] *:= ZK!(c); // multiplication in ZK, coercion just to be safe
+  coeffs := Coefficients(g);
+  Is := Ideals(g);
+  for i := 1 to #Is do
+    coeffs[i] *:= ZK!(c);
   end for;
-  g`Coefficients := coeffs; // do we need to reassign?
+  g`Coefficients := coeffs;
   return g;
 end intrinsic;
 
@@ -413,7 +421,7 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   F := BaseField(M);
   N := Level(M);
   k := Weight(M);
-  ZK := M`CoefficientRing;
+  ZK := CoefficientRing(M);
   K := NumberField(ZK);
   // precision
   prec_f := Precision(f);
@@ -425,12 +433,18 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   assert ZK eq CoefficientRing(f);
   assert ZK eq CoefficientRing(g);
   assert ZK eq CoefficientRing(h);
-  coeffs_f := f`Coefficients;
-  coeffs_g := g`Coefficients;
+  coeffs_f := Coefficients(f);
+  coeffs_g := Coefficients(g);
+  Is_f := Ideals(f);
+  Is_g := Ideals(g);
+  Is_h := Ideals(h);
+  assert Is_f eq Is_g;
+  assert Is_f eq Is_h;
+  Is := Is_h;
   // create coefficients
-  coeffs := h`Coefficients;
-  for I in Keys(coeffs) do
-    coeffs[I] := ZK!(ZK!(coeffs_f[I])+ZK!(coeffs_g[I]));
+  coeffs := Coefficients(h);
+  for i := 1 to #Is do
+    coeffs[i] := ZK!(ZK!(coeffs_f[i])+ZK!(coeffs_g[i]));
   end for;
   h`Coefficients := coeffs;
   return h;
