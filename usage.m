@@ -19,3 +19,5 @@ f := HMFZero(F, N, k, K, prec);
 g := HMFZero(F, N, k, K, 200);
 
 // arithmetic (currently only scalar multiplication and addition are implemented)
+
+// EigenEdgar
