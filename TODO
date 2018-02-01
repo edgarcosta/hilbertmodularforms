@@ -1,5 +1,6 @@
 # High priority
 - Test eigenforms
+- The number field or the hmfd should hold the the list of ideals and dict, and max_prec.
 
 
 # Low Priority
