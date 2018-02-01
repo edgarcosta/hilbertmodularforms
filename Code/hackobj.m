@@ -158,7 +158,7 @@ declare attributes ModFrmHilDElt:
   Parent, // M
   Precision, // RngIntElt : precision for the expansion
   Ideals, // SeqEnum[RngOrdIdl]
-  Dict, // Assoc maps Ideals[i] to i
+  Dictionary, // Assoc maps Ideals[i] to i
   Coefficients; // SeqEnum[RngOrdElt]
 
 ////////// ModFrmHilDElt special intrinsics //////////
@@ -255,6 +255,16 @@ intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
   return Weight(f`Parent);
 end intrinsic;
 
+intrinsic Ideals(f::ModFrmHilDElt) -> SeqEnum[RngOrdIdl]
+  {returns ideals indexing f up to bound on the norm.}
+  return f`Ideals;
+end intrinsic;
+
+intrinsic Dictionary(f::ModFrmHilDElt) -> Assoc
+  {returns dictionary of f.}
+  return f`Dictionary;
+end intrinsic;
+
 intrinsic CoefficientRing(f::ModFrmHilDElt) -> Rng
   {returns coefficient ring of expansion f which is ZK or ZZ}
   return CoefficientRing(f`Parent);
@@ -288,13 +298,14 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, pre
   f`Parent := parent;
   ZK := Integers(K);
   f`Precision := prec;
-  // coefficients
   Is := IdealsUpTo(prec, F);
-  coeffs := AssociativeArray(); // empty
-  for I in Is do
-    coeffs[I] := ZK!0;
-  end for;
+  coeffs := [ZK!0 : i in [1..#Is]];
   f`Coefficients := coeffs;
+  dictionary := AssociativeArray();
+  for i := 1 to #Is do
+    dictionary[Is[i]] := i;
+  end for;
+  f`Dictionary := dictionary;
   return f;
 end intrinsic;
 
@@ -308,11 +319,13 @@ intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, pre
   f`Precision := prec;
   // coefficients
   Is := IdealsUpTo(prec, F);
-  coeffs := AssociativeArray(); // empty
-  for I in Is do
-    coeffs[I] := ZK!0;
-  end for;
+  coeffs := [ZK!0 : i in [1..#Is]];
   f`Coefficients := coeffs;
+  dictionary := AssociativeArray();
+  for i := 1 to #Is do
+    dictionary[Is[i]] := i;
+  end for;
+  f`Dictionary := dictionary;
   return f;
 end intrinsic;
 
