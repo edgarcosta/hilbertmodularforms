@@ -1,4 +1,5 @@
 # High priority
+- The eigenform recursion is wrong, it's missing (Np)^(k-1) on the T^2
 - Test eigenforms
 - The number field or the HMFD should hold:
  * max_prec
