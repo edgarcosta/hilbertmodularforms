@@ -8,6 +8,8 @@
  * dicts: ideal --> coordinate(ideal) and repr --> coordinate(repr).
 - The form gets the weight and not the space
 
+# Medium priority
+- Get and Set coeffiencients 
 
 # Low Priority
 - Print should take an optional argument for the number of coeffs to print
