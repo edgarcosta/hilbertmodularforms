@@ -1,6 +1,11 @@
 # High priority
 - Test eigenforms
-- The number field or the hmfd should hold the the list of ideals and dict, and max_prec.
+- The number field or the HMFD should hold:
+ * max_prec
+ * list of ideals
+ * list of representatives of the ideals
+ * dicts: ideal --> coordinate(ideal) and repr --> coordinate(repr).
+- The form gets the weight and not the space
 
 
 # Low Priority
