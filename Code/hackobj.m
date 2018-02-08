@@ -369,13 +369,13 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
   assert Keys(hecke_eigenvalues) eq Set(PrimesUpTo(prec, F));
 
   // power series ring
-  log_prec := Floor(Log(prec)/Log(2)); // 2^log_prec < prec < 2^(log_prec+1)
+  log_prec := Floor(Log(prec)/Log(2)); // prec < 2^(log_prec+1)
   ZKX<X> := PolynomialRing(ZK);
   R<T> := PowerSeriesRing(ZKX : Precision := log_prec + 1);
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
   // If good, then 1/(1 - a_p T + T^2) = 1 + a_p T + a_{p^2} T^2 + ...
-  bad_recursion := Coefficients(1 - X*T);
-  good_recursion := Coefficients(1 - X*T + T^2);
+  bad_recursion := Coefficients(1/(1 - X*T));
+  good_recursion := Coefficients(1/(1 - X*T + T^2));
   // create the new element
   f := HMFZero(F, N, k, K, prec);
   assert Parent(f) eq M;
@@ -391,7 +391,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
       pp := ideals[i];
       assert IsPrime(pp);
       coeffs[i] := hecke_eigenvalues[pp];
-      print coeffs[i];
+      set[i] := true;
       if N subset pp then
         recursion := bad_recursion;
       else
@@ -403,9 +403,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
       //deals with powers of p
       while pp_power in Keys(dict) do
         ipower := dict[pp_power];
-        print pp_power;
         coeffs[ipower] := Evaluate(recursion[r + 1], coeffs[i]);
-        print coeffs[ipower];
         set[ipower] := true;
         pp_power *:= pp;
         r +:= 1;
@@ -433,8 +431,6 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
     end if; // check if it's set
   end for; // loop in i
   f`Coefficients := coeffs;
-  print coeffs;
-  print set;
   return f;
 end intrinsic;
 
