@@ -7,6 +7,7 @@
  * dicts: ideal --> coordinate(ideal) and repr --> coordinate(repr).
 - The form gets the weight and not the space
 - constant coefficient
+- SetCoefficients( AssociativeArray --> coeffiencients);
 
 # Medium priority
 - Get and Set coeffiencients

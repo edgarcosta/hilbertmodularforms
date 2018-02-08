@@ -373,13 +373,9 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
   // assertions
   assert Keys(hecke_eigenvalues) eq Set(PrimesUpTo(prec, F));
   // create the new element
-  printf "F = %o\n", F;
-  printf "N = %o\n", N ;
-  printf "k = %o\n", k;
-  printf "K = %o\n", K ;
-  print prec;
   f := HMFZero(F, N, k, K, prec);
-  assert Parent(f) eq M;
+  //FIXME
+  //assert Parent(f) eq M;
 
   //only parallel weight
   for elt in k do
@@ -447,6 +443,27 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
   end for; // loop in i
   f`Coefficients := coeffs;
   return f;
+end intrinsic;
+
+intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], prec::RngIntElt) -> SeqEnum[ModFrmHilDElt]
+  {returns Hilbert newforms}
+  F := BaseField(M);
+  N := Level(M);
+  MF := HilbertCuspForms(F, N, k);
+  S := NewSubspace(MF);
+  newspaces  := NewformDecomposition(S);
+  newforms := [* Eigenform(U) : U in newspaces *];
+  eigenvalues := AssociativeArray();
+  primes := PrimesUpTo(prec, F);
+  HMFnewforms := [];
+  for newform in newforms do
+    for pp in primes do
+        eigenvalues[pp] := HeckeEigenvalue(newform, pp);
+    end for;
+    ef := EigenformToHMF(M, k, eigenvalues, prec);
+    Append(~HMFnewforms, ef);
+  end for;
+  return HMFnewforms;
 end intrinsic;
 
 ////////// ModFrmHilDElt arithmetic //////////

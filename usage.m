@@ -36,26 +36,17 @@ print ef;
 // Compare with http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
 // a_n = \sum a_nn where Norm(nn) = n
 
-
-
-// http://www.lmfdb.org/L/EllipticCurve/2.2.5.1/31.1/a/
+// basic inputs to creation functions
 F := QuadraticField(5);
-ZF<a> := Integers(F);
-N := ideal<ZF | {31, -5*a + 2}>;
+ZF<w> := Integers(F);
+N := ideal<ZF | {10}>;
 k := [2, 2];
 K := Rationals();
-M := HMFSpace(F, N, k, K);
 prec := 100;
-MF := HilbertCuspForms(F, N);
-S := NewSubspace(MF);
+M := HMFSpace(F, N, k, K);
+efs := NewformsToHMF(M, k, prec);
+assert #efs ef 2;
 
-newspaces  := NewformDecomposition(S);
-newforms := [Eigenform(U) : U in newspaces];
-eigenvalues := AssociativeArray();
-primes := PrimesUpTo(prec, F);
-for pp in primes do
-    eigenvalues[pp] := HeckeEigenvalue(newforms[1],pp);
-end for;
 
-ef2 := EigenformToHMF(M, k, eigenvalues, prec);
-print ef2;
+
+
