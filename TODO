@@ -1,6 +1,5 @@
 # High priority
-- The eigenform recursion is wrong, it's missing (Np)^(k-1) on the T^2
-- Test eigenforms
+- Test eigenforms (only one done)
 - The number field or the HMFD should hold:
  * max_prec
  * list of ideals
@@ -9,7 +8,7 @@
 - The form gets the weight and not the space
 
 # Medium priority
-- Get and Set coeffiencients 
+- Get and Set coeffiencients
 
 # Low Priority
 - Print should take an optional argument for the number of coeffs to print

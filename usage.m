@@ -20,7 +20,7 @@ g := HMFZero(F, N, k, K, 200);
 
 // arithmetic (currently only scalar multiplication and addition are implemented)
 
-
+// http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
 M2 := HilbertCuspForms(F, N);
 S := NewSubspace(M2);
 prec := 100;
@@ -34,3 +34,5 @@ end for;
 
 ef := EigenformToHMF(M, eigenvalues, prec);
 print ef;
+// Compare with http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
+// a_n = \sum a_nn where Norm(nn) = n
