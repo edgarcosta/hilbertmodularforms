@@ -361,16 +361,30 @@ intrinsic HMF(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, coeffs:
   return f;
 end intrinsic;
 
-intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntElt) -> ModFrmHilDElt
+intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc, prec::RngIntElt) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
   // pull info from M
   F := BaseField(M);
-  k := Weight(M);
   N := Level(M);
-  ZK := CoefficientRing(M);
+  // a prime
+  pp := Random(Keys(hecke_eigenvalues));
+  ZK := Parent(hecke_eigenvalues[pp]);
   K := NumberField(ZK);
   // assertions
   assert Keys(hecke_eigenvalues) eq Set(PrimesUpTo(prec, F));
+  // create the new element
+  printf "F = %o\n", F;
+  printf "N = %o\n", N ;
+  printf "k = %o\n", k;
+  printf "K = %o\n", K ;
+  print prec;
+  f := HMFZero(F, N, k, K, prec);
+  assert Parent(f) eq M;
+
+  //only parallel weight
+  for elt in k do
+    assert elt eq k[1];
+  end for;
 
   // power series ring
   log_prec := Floor(Log(prec)/Log(2)); // prec < 2^(log_prec+1)
@@ -379,9 +393,6 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
   // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
   recursion := Coefficients(1/(1 - X*T + Y*T^2));
-  // create the new element
-  f := HMFZero(F, N, k, K, prec);
-  assert Parent(f) eq M;
   ideals := Ideals(f);
   coeffs := [ZK!0: i in ideals];
   set := [false : c in coeffs];
@@ -395,7 +406,8 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
       assert IsPrime(pp);
       coeffs[i] := hecke_eigenvalues[pp];
       set[i] := true;
-      Np := Norm(pp)^(k-1);
+      //FIXME, only parallel weight at the moment
+      Np := Norm(pp)^(k[1]-1);
       // if pp is bad
       if N subset pp then
         Np := 0;
@@ -419,12 +431,12 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
           pp_power := pp;
           mmpp_power := mm * pp_power;
           while mmpp_power in Keys(dict) do
-            k := dict[mmpp_power];
-            assert set[k] eq false;
+            l := dict[mmpp_power];
+            assert set[l] eq false;
             ipower := dict[pp_power];
             // a_{m * pp_power} := a_{m} * a_{pp_power}
-            coeffs[k] := coeffs[j] * coeffs[ipower];
-            set[k] := true;
+            coeffs[l] := coeffs[j] * coeffs[ipower];
+            set[l] := true;
             mmpp_power *:= pp;
             pp_power *:= pp;
           end while;
