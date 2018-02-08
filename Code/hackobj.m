@@ -366,9 +366,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
   ZK := CoefficientRing(M);
   K := NumberField(ZK);
   // assertions
-  primes := Keys(hecke_eigenvalues);
-  primes_check := PrimesUpTo(prec, F);
-  assert primes eq primes_check;
+  assert Keys(hecke_eigenvalues) eq Set(PrimesUpTo(prec, F));
 
   // power series ring
   log_prec := Floor(Log(prec)/Log(2)); // 2^log_prec < prec < 2^(log_prec+1)
@@ -382,7 +380,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
   f := HMFZero(F, N, k, K, prec);
   assert Parent(f) eq M;
   ideals := Ideals(f);
-  coeffs := [ZK!0: i in Ideals];
+  coeffs := [ZK!0: i in ideals];
   set := [false : c in coeffs];
   coeffs[1] := 1;
   set[1] := true;
@@ -393,7 +391,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
       pp := ideals[i];
       assert IsPrime(pp);
       coeffs[i] := hecke_eigenvalues[pp];
-      if N in pp then
+      if N subset pp then
         recursion := bad_recursion;
       else
         recursion := good_recursion;
@@ -411,19 +409,19 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
       end while;
 
       //deal with multiples of its powers by smaller numbers
-      for j := 2 to #coeffs:
-        if set[j] and not (ideals[j] in pp) then
+      for j := 2 to #coeffs do
+        if set[j] and not (ideals[j] subset pp) then
           mm := ideals[j];
           pp_power := pp;
-          mpp_power := m*pp_power;
-          while mpp_power in Keys(dict) do 
-            assert set[mpp_power] eq false;
+          mmpp_power := mm * pp_power;
+          while mmpp_power in Keys(dict) do 
+            assert set[mmpp_power] eq false;
             ipower := dict[pp_power];
-            k := dict[mpp_power];
+            k := dict[mmpp_power];
             // a_{m * pp_power} := a_{m} * a_{pp_power}
             coeffs[k] := coeffs[j] * coeffs[ipower];
             set[k] := true;
-            mpp_power *:= pp;
+            mmpp_power *:= pp;
             pp_power *:= pp;
           end while;
         end if; //check if it's set
@@ -432,6 +430,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
     end if; // check if it's set
   end for; // loop in i
   f`Coefficients := coeffs;
+  return f;
 end intrinsic;
 
 ////////// ModFrmHilDElt arithmetic //////////
