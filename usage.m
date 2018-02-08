@@ -40,7 +40,7 @@ print ef;
 
 // http://www.lmfdb.org/L/EllipticCurve/2.2.5.1/31.1/a/
 F := QuadraticField(5);
-ZF<w> := Integers(F);
+ZF<a> := Integers(F);
 N := ideal<ZF | {31, -5*a + 2}>;
 k := [2, 2];
 K := Rationals();
