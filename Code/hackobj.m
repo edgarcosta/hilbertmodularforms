@@ -350,18 +350,69 @@ intrinsic EigenformToHMF(M::ModFrmHilD, hecke_eigenvalues::Assoc, prec::RngIntEl
   primes := Keys(hecke_eigenvalues);
   primes_check := PrimesUpTo(prec, F);
   assert primes eq primes_check;
+
   // power series ring
-  R<T> := PowerSeriesRing(ZK);
-  for pp in primes do
-    q := Norm(pp);
-    log_prec := Floor(Log(prec)/Log(q)); // q^log_prec < prec < q^(log_prec+1)
-    // TODO edgar
-  end for;
+  log_prec := Floor(Log(prec)/Log(2)); // 2^log_prec < prec < 2^(log_prec+1)
+  ZKX<X> := PolynomialRing(ZK);
+  R<T> := PowerSeriesRing(ZKX : Precision := log_prec + 1);
+  // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
+  // If good, then 1/(1 - a_p T + T^2) = 1 + a_p T + a_{p^2} T^2 + ...
+  bad_recursion := Coefficients(1 - X*T);
+  good_recursion := Coefficients(1 - X*T + T^2);
   // create the new element
   f := HMFZero(F, N, k, K, prec);
   assert Parent(f) eq M;
-  Is := IdealsUpTo(prec, F);
-  coeffs := AssociativeArray(Is);
+  ideals := Ideals(f);
+  coeffs := [ZK!0: i in Ideals];
+  set := [false : c in coeffs];
+  coeffs[1] := 1;
+  set[1] := true;
+  dict := Dictionary(f);
+  for i := 1 to #coeffs do
+    if not set[i] then
+      // is[i] is a prime
+      pp := ideals[i];
+      assert IsPrime(pp);
+      coeffs[i] := hecke_eigenvalues[pp];
+      if N in pp then
+        recursion := bad_recursion;
+      else
+        recursion := good_recursion;
+      end if;
+
+      r := 1;
+      pp_power := pp;
+      //deals with powers of p
+      while pp_power in Keys(dict) do
+        ipower := dict[pp_power];
+        coeffs[ipower] := Evaluate(recursion[r], coeffs[i]);
+        set[ipower] := true;
+        pp_power *:= pp;
+        r +:= 1;
+      end while;
+
+      //deal with multiples of its powers by smaller numbers
+      for j := 2 to #coeffs:
+        if set[j] and not (ideals[j] in pp) then
+          mm := ideals[j];
+          pp_power := pp;
+          mpp_power := m*pp_power;
+          while mpp_power in Keys(dict) do 
+            assert set[mpp_power] eq false;
+            ipower := dict[pp_power];
+            k := dict[mpp_power];
+            // a_{m * pp_power} := a_{m} * a_{pp_power}
+            coeffs[k] := coeffs[j] * coeffs[ipower];
+            set[k] := true;
+            mpp_power *:= pp;
+            pp_power *:= pp;
+          end while;
+        end if; //check if it's set
+      end for; //loop in j
+
+    end if; // check if it's set
+  end for; // loop in i
+  f`Coefficients := coeffs;
 end intrinsic;
 
 ////////// ModFrmHilDElt arithmetic //////////
