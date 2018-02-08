@@ -45,7 +45,7 @@ K := Rationals();
 prec := 100;
 M := HMFSpace(F, N, k, K);
 efs := NewformsToHMF(M, k, prec);
-assert #efs ef 2;
+assert #efs eq 2;
 
 
 
