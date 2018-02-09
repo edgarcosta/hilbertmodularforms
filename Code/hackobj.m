@@ -281,8 +281,11 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
 end intrinsic;
 
+
 intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
-  {Given M and a SeqEnum of coefficients, return ModFrmHilDElt with parent M.}
+  {Given M and a SeqEnum of coefficients, return ModFrmHilDElt with parent M.
+  WARNING: user is responsible for coefficients and order...proceed with caution.
+  }
   // assertions
   ideals := Ideals(M);
   if #coeffs ne #ideals then
@@ -294,7 +297,6 @@ intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHi
   f`Parent := M;
   f`Weight := k;
   f`Coefficients := coeffs;
-  printf "WARNING: user is responsible for coefficients and order...proceed with caution.\n";
   return f;
 end intrinsic;
 
@@ -319,21 +321,19 @@ end intrinsic;
 
 ////////// ModFrmHilDElt creation functions //////////
 
-intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc, prec::RngIntElt) -> ModFrmHilDElt
+intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
   // pull info from M
   F := BaseField(M);
   N := Level(M);
+  prec := Precision(M);
   // a prime
   pp := Random(Keys(hecke_eigenvalues));
-  ZK := Parent(hecke_eigenvalues[pp]);
-  K := NumberField(ZK);
   // assertions
-  assert Keys(hecke_eigenvalues) eq Set(PrimesUpTo(prec, F));
-  // create the new element
-  f := HMFZero(M, k);
-  //FIXME
-  //assert Parent(f) eq M;
+  if not Set(PrimesUpTo(prec, F)) subset Keys(hecke_eigenvalues) then
+    print "Not enough primes";
+    assert false;
+  end if;
 
   //only parallel weight
   for elt in k do
@@ -342,17 +342,20 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
 
   // power series ring
   log_prec := Floor(Log(prec)/Log(2)); // prec < 2^(log_prec+1)
+  ZK := Parent(hecke_eigenvalues[pp]);
   ZKX<X, Y> := PolynomialRing(ZK, 2);
   R<T> := PowerSeriesRing(ZKX : Precision := log_prec + 1);
   // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
   recursion := Coefficients(1/(1 - X*T + Y*T^2));
-  ideals := Ideals(f);
+  ideals := Ideals(M);
   coeffs := [ZK!0: i in ideals];
   set := [false : c in coeffs];
-  coeffs[1] := 1;
+  coeffs[1] := 0; //a_0
+  coeffs[2] := 1; //a_1
   set[1] := true;
-  dict := Dictionary(f);
+  set[2] := true;
+  dict := Dictionary(M);
   for i := 1 to #coeffs do
     if not set[i] then
       // is[i] is a prime
@@ -379,7 +382,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
       end while;
 
       //deal with multiples of its powers by smaller numbers
-      for j := 2 to #coeffs do
+      for j := 3 to #coeffs do
         if set[j] and not (ideals[j] subset pp) then
           mm := ideals[j];
           pp_power := pp;
@@ -399,14 +402,17 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
 
     end if; // check if it's set
   end for; // loop in i
-  f`Coefficients := coeffs;
-  return f;
+  for i := 1 to #coeffs do
+    assert set[i];
+  end for;
+  return HMF(M, k, coeffs);
 end intrinsic;
 
-intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], prec::RngIntElt) -> SeqEnum[ModFrmHilDElt]
+intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
   {returns Hilbert newforms}
   F := BaseField(M);
   N := Level(M);
+  prec := Precision(M);
   MF := HilbertCuspForms(F, N, k);
   S := NewSubspace(MF);
   newspaces  := NewformDecomposition(S);
@@ -418,7 +424,7 @@ intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], prec::RngIntElt) -
     for pp in primes do
         eigenvalues[pp] := HeckeEigenvalue(newform, pp);
     end for;
-    ef := EigenformToHMF(M, k, eigenvalues, prec);
+    ef := EigenformToHMF(M, k, eigenvalues);
     Append(~HMFnewforms, ef);
   end for;
   return HMFnewforms;
@@ -431,6 +437,7 @@ intrinsic SetCoefficients(M::ModFrmHilD, coeffs::Assoc) -> ModFrmHilDElt
   {given a ModFrmHilD and an associative array of coefficients, return ModFrmHilDElt.}
   error "not implemented yet!";
 end intrinsic;
+
 
 // TODO
 intrinsic GetCoefficients(f::ModFrmHilDElt) -> Assoc

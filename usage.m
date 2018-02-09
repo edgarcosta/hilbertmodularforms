@@ -11,16 +11,15 @@ ZF<w> := Integers(F);
 N := ideal<ZF | { 3}>;
 k := [2, 2];
 K := Rationals();
-prec := 100;
-max_prec := 200;
+prec := 200;
 
 // ModFrmHilD creation and access to attributes
-M := HMFSpace(F, N, max_prec);
+M := HMFSpace(F, N, prec);
 BaseField(M); // F
 Level(M); // N
-MaxPrecision(M); // max_prec
-Ideals(M); // ideals of ZF (including 0) up to norm max_prec
-Dictionary(M); // internal
+Precision(M); // prec
+//Ideals(M); // ideals of ZF (including 0) up to norm max_prec
+// Dictionary(M); // internal
 
 // ModFrmHilDElt can be made by providing space and coefficients
 // WARNING: no checking is done to verify result is a modular form
@@ -44,11 +43,12 @@ newspaces := NewformDecomposition(S);
 newforms := [Eigenform(U) : U in newspaces];
 eigenvalues := AssociativeArray();
 primes := PrimesUpTo(prec, F);
+print primes;
 for pp in primes do
     eigenvalues[pp] := HeckeEigenvalue(newforms[1],pp);
 end for;
 
-ef := EigenformToHMF(M, k, eigenvalues, prec);
+ef := EigenformToHMF(M, k, eigenvalues);
 print ef;
 // Compare with http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
 // a_n = \sum a_nn where Norm(nn) = n
@@ -60,6 +60,6 @@ N := ideal<ZF | {10}>;
 k := [2, 2];
 K := Rationals();
 prec := 100;
-M := HMFSpace(F, N, k, K);
-efs := NewformsToHMF(M, k, prec);
+M := HMFSpace(F, N, prec);
+efs := NewformsToHMF(M, k);
 assert #efs eq 2;
