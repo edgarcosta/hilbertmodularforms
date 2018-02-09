@@ -1,11 +1,11 @@
 # High priority
-- Test eigenforms (only one done)
-- SetCoefficients( AssociativeArray --> coeffiencients);
+- HMF( AssociativeArray --> coeffiencients);
 - better equality functions for ModFrmHilD and ModFrmHilDElt
 - Coercion such as M!0 for ModFrmHilDElts see classical code for examples
 
 # Medium priority
-- Get and Set coeffiencients
+- Get coeffiencients
+- Set one coefficient
 
 # Low Priority
 - Print should take an optional argument for the number of coeffs to print

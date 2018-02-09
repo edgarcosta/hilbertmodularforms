@@ -58,7 +58,6 @@ F := QuadraticField(5);
 ZF<w> := Integers(F);
 N := ideal<ZF | {10}>;
 k := [2, 2];
-K := Rationals();
 prec := 100;
 M := HMFSpace(F, N, prec);
 efs := NewformsToHMF(M, k);

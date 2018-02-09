@@ -300,14 +300,10 @@ intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHi
   return f;
 end intrinsic;
 
-intrinsic HMFZero(F::FldNum, N::RngOrdIdl, prec::RngIntElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
-  {create zero ModHilFrmDElt of weight k.}
-  M := HMFSpace(F, N, prec);
-  coeffs := [];
-  for i := 1 to #Ideals(M) do
-    Append(~coeffs, 0);
-  end for;
-  return HMF(M, k, coeffs);
+// TODO
+intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::Assoc) -> ModFrmHilDElt
+  {given a ModFrmHilD, a weight k, and an associative array of coefficients, return ModFrmHilDElt.}
+  error "not implemented yet!";
 end intrinsic;
 
 intrinsic HMFZero(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
@@ -431,13 +427,6 @@ intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
 end intrinsic;
 
 ////////// ModFrmHilDElt user convenience functions //////////
-
-// TODO
-intrinsic SetCoefficients(M::ModFrmHilD, coeffs::Assoc) -> ModFrmHilDElt
-  {given a ModFrmHilD and an associative array of coefficients, return ModFrmHilDElt.}
-  error "not implemented yet!";
-end intrinsic;
-
 
 // TODO
 intrinsic GetCoefficients(f::ModFrmHilDElt) -> Assoc
