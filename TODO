@@ -1,3 +1,8 @@
+# questions
+- given space M and list of coeffs get precision of form
+- coeffs should be a list right? then use the dictionary?
+- what if 2 ideals have the same norm? what should the order be?
+
 # High priority
 - Test eigenforms (only one done)
 - The number field or the HMFD should hold:
@@ -8,6 +13,8 @@
 - The form gets the weight and not the space
 - constant coefficient
 - SetCoefficients( AssociativeArray --> coeffiencients);
+- better equality functions for ModFrmHilD and ModFrmHilDElt
+- Coercion such as M!0 for ModFrmHilDElts see classical code for examples
 
 # Medium priority
 - Get and Set coeffiencients

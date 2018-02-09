@@ -12,13 +12,17 @@ N := ideal<ZF | { 3}>;
 k := [2, 2];
 K := Rationals();
 prec := 100;
+max_prec := 200;
 
-// creation
-M := HMFSpace(F, N, k, K);
-f := HMFZero(F, N, k, K, prec);
-g := HMFZero(F, N, k, K, 200);
+// ModFrmHilD creation and access to attributes
+M := HMFSpace(F, N, max_prec);
+BaseField(M); // F
+Level(M); // N
+MaxPrecision(M); // max_prec
+Ideals(M); // ideals of ZF (including 0) up to norm max_prec
+Dictionary(M); // internal
 
-// arithmetic (currently only scalar multiplication and addition are implemented)
+// ModFrmHilDElt can be made by providing space and coefficients
 
 // http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
 MF := HilbertCuspForms(F, N);

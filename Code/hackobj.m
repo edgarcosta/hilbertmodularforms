@@ -113,7 +113,8 @@ intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, max_prec::RngIntElt) -> ModFrmHilD
   // max_prec
   M`MaxPrecision := max_prec;
   // ideals
-  Is := IdealsUpTo(max_prec, F);
+  zero_ideal := ideal<Integers(F)|0>;
+  Is := [zero_ideal] cat IdealsUpTo(max_prec, F);
   M`Ideals := Is;
   dictionary := AssociativeArray();
   for i := 1 to #Is do
@@ -148,7 +149,7 @@ declare attributes ModFrmHilDElt:
   Parent, // M
   Precision, // RngIntElt
   Weight, // SeqEnum[RngIntElt] : a sequence of [ModFrmHilDBaseField : QQ] integers
-  Coefficients; // SeqEnum[RngOrdElt] or SeqEnum[RngIntElt]
+  Coefficients; // SeqEnum
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
@@ -164,7 +165,8 @@ intrinsic Print(f::ModFrmHilDElt : num_coeffs := 10)
   printf "\nParent: \n%o", M;
   printf "\nCoefficients:";
   printf "\n\t(Norm, nn)  |--->   a_nn";
-  for i:= 1 to Min(num_coeffs, #coeffs) do
+  printf "\n\t(%o, %o)  |--->   %o", 0,  Generators(ideals[1]), coeffs[1];
+  for i:= 2 to Min(num_coeffs, #coeffs) do
     printf "\n\t(%o, %o)  |--->   %o", Norm(ideals[i]),  Generators(ideals[i]), coeffs[i];
   end for;
 end intrinsic;
@@ -238,7 +240,7 @@ intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
 end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDElt) -> SeqEnum
-  {returns coefficients of f.}
+  {returns coefficients of f as SeqEnum.}
   return f`Coefficients;
 end intrinsic;
 
@@ -286,67 +288,52 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
 end intrinsic;
 
-intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, prec::RngIntElt) -> ModFrmHilDElt
-  {creates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZK, and precision prec.}
-  // parent, coefficient ring, precision
-  parent := HMFSpace(F, N, k, K);
-  f := ModFrmHilDEltInitialize();
-  f`Parent := parent;
-  ZK := Integers(K);
-  f`Precision := prec;
-  Is := IdealsUpTo(prec, F);
-  f`Ideals := Is;
-  coeffs := [ZK!0 : i in [1..#Is]];
-  f`Coefficients := coeffs;
-  dictionary := AssociativeArray();
-  for i := 1 to #Is do
-    dictionary[Is[i]] := i;
-  end for;
-  f`Dictionary := dictionary;
-  return f;
-end intrinsic;
-
-intrinsic HMFZero(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldRat, prec::RngIntElt) -> ModFrmHilDElt
-  {creates the zero ModFrmHilDElt over F with level N, weights k, coefficient ring ZZ, and precision prec.}
-  // parent, coefficient ring, precision
-  parent := HMFSpace(F, N, k, K);
-  f := ModFrmHilDEltInitialize();
-  f`Parent := parent;
-  ZK := Integers(K);
-  f`Precision := prec;
-  // coefficients
-  Is := IdealsUpTo(prec, F);
-  f`Ideals := Is;
-  coeffs := [ZK!0 : i in [1..#Is]];
-  f`Coefficients := coeffs;
-  dictionary := AssociativeArray();
-  for i := 1 to #Is do
-    dictionary[Is[i]] := i;
-  end for;
-  f`Dictionary := dictionary;
-  return f;
-end intrinsic;
-
-// TODO other assertions? Is all this checking efficient enough?
-intrinsic HMF(F::FldNum, N::RngOrdIdl, k::SeqEnum[RngIntElt], K::FldNum, coeffs::Assoc, prec::RngIntElt) -> ModFrmHilDElt
+intrinsic HMF(F::FldNum, N::RngOrdIdl, prec::RngIntElt, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
   {creates the corresponding ModFrmHilDElt with some sanity checking.}
-  // parent, coefficient ring, precision
-  parent := HMFSpace(F, N, k, K);
+  M := HMFSpace(F, N, prec);
   f := ModFrmHilDEltInitialize();
-  f`Parent := parent;
-  ZK := Integers(K);
+  f`Parent := M;
   f`Precision := prec;
-  // coefficients
-  Is := Keys(coeffs); // pull from given coeffs
-  IsUpTo := IdealsUpTo(prec, F);
-  assert Is eq IsUpTo; // index set of Is should be the same as Ideals of F up to prec
-  for I in Is do
-    assert Order(I) eq Integers(F);
-    assert NumberField(Order(I)) eq F; // Ideals indexing the associative array are ideals of ZF
-    assert Order(coeffs[I]) eq ZK;
-  end for;
+  f`Weight := k;
   f`Coefficients := coeffs;
   return f;
+end intrinsic;
+
+// TODO currently only allowed if #coeffs eq #ideals, i.e. form is at max_prec
+intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
+  {Given M and a SeqEnum of coefficients, return ModFrmHilDElt with parent M.}
+  // assertions
+  ideals := Ideals(M);
+  if #coeffs ne #ideals then
+    error "not enough coefficients to match precision of M.";
+  end if;
+  assert #k eq Degree(BaseField(M));
+  // make form f
+  f := ModFrmHilDEltInitialize();
+  f`Parent := M;
+  f`Precision := MaxPrecision(M);
+  f`Weight := k;
+  f`Coefficients := coeffs;
+  return f;
+end intrinsic;
+
+intrinsic HMFZero(F::FldNum, N::RngOrdIdl, prec::RngIntElt, k::SeqEnum[RngIntElt], K::FldNum) -> ModFrmHilDElt
+  {create zero ModHilFrmDElt of weight k.}
+  M := HMFSpace(F, N, prec);
+  coeffs := [];
+  for i := 1 to #Ideals(M) do
+    Append(~coeffs, 0);
+  end for;
+  return HMF(M, k, coeffs);
+end intrinsic;
+
+intrinsic HMFZero(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
+  {create zero ModHilFrmDElt of weight k.}
+  coeffs := [];
+  for i := 1 to #Ideals(M) do
+    Append(~coeffs, 0);
+  end for;
+  return HMF(M, k, coeffs);
 end intrinsic;
 
 intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc, prec::RngIntElt) -> ModFrmHilDElt
@@ -361,7 +348,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
   // assertions
   assert Keys(hecke_eigenvalues) eq Set(PrimesUpTo(prec, F));
   // create the new element
-  f := HMFZero(F, N, k, K, prec);
+  f := HMFZero(M, k);
   //FIXME
   //assert Parent(f) eq M;
 
@@ -456,6 +443,7 @@ end intrinsic;
 
 ////////// ModFrmHilDElt arithmetic //////////
 
+/*
 intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integer c.}
   g := ModFrmHilDEltCopy(f); // new instance of f
@@ -525,3 +513,4 @@ intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   {return f*g}
   error "multiplication of HMF expansions not implemented yet!";
 end intrinsic;
+*/
