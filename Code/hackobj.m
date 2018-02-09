@@ -281,17 +281,6 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
 end intrinsic;
 
-intrinsic HMF(F::FldNum, N::RngOrdIdl, prec::RngIntElt, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
-  {creates the corresponding ModFrmHilDElt.}
-  M := HMFSpace(F, N, prec);
-  f := ModFrmHilDEltInitialize();
-  f`Parent := M;
-  f`Weight := k;
-  f`Coefficients := coeffs;
-  printf "WARNING: user is responsible for coefficients and order...proceed with caution.\n";
-  return f;
-end intrinsic;
-
 intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
   {Given M and a SeqEnum of coefficients, return ModFrmHilDElt with parent M.}
   // assertions
