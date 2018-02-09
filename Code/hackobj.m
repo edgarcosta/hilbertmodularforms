@@ -8,7 +8,7 @@ declare type ModFrmHilD [ModFrmHilDElt];
 declare attributes ModFrmHilD:
   Field, // FldNum : totally real field
   Level, // RngOrdIdl : ideal of Integers(Field)
-  MaxPrecision, // RngIntElt : precision for the expansion
+  Precision, // RngIntElt : precision for all expansions with this parent
   Ideals, // SeqEnum[RngOrdIdl]
   Dictionary; // Assoc maps Ideals[i] to i
 
@@ -17,7 +17,7 @@ declare attributes ModFrmHilD:
 intrinsic Print(M::ModFrmHilD)
   {}
   printf "Space of Hilbert modular forms over %o.\n", M`Field;
-  printf "MaxPrecision: %o\n", M`MaxPrecision;
+  printf "Precision: %o\n", M`Precision;
   printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(M`Level),  Generators(M`Level);
 end intrinsic;
 
@@ -30,7 +30,7 @@ intrinsic 'in'(f::., M::ModFrmHilD) -> BoolElt
   end if;
 end intrinsic;
 
-// TODO
+// currently this checks everything is equal except dictionaries
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff every attribute of M1 is equal to the corresponding attribute of M2.}
   ass_attrs_M1 := [];
@@ -48,8 +48,10 @@ intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
     return false;
   else
     for attr in ass_attrs_M1 do
-      if M1``attr ne M2``attr then
-        return false;
+      if attr ne "Dictionary" then
+        if M1``attr ne M2``attr then
+          return false;
+        end if;
       end if;
     end for;
     // if we make it through the loop return true
@@ -78,9 +80,9 @@ intrinsic Level(M::ModFrmHilD) -> RngOrgIdl
   return M`Level;
 end intrinsic;
 
-intrinsic MaxPrecision(M::ModFrmHilD) -> RngOrgIdl
-  {The MaxPrecision of the space M of Hilbert modular forms.}
-  return M`MaxPrecision;
+intrinsic Precision(M::ModFrmHilD) -> RngOrgIdl
+  {The Precision of the space M of Hilbert modular forms.}
+  return M`Precision;
 end intrinsic;
 
 intrinsic Ideals(M::ModFrmHilD) -> RngOrgIdl
@@ -101,7 +103,7 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   return M;
 end intrinsic;
 
-intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, max_prec::RngIntElt) -> ModFrmHilD
+intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, prec::RngIntElt) -> ModFrmHilD
   {Generates the space ModFrmHilD over F with level N.}
   assert IsTotallyReal(F);
   assert NumberField(Order(N)) eq F;
@@ -110,11 +112,11 @@ intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, max_prec::RngIntElt) -> ModFrmHilD
   M`Field := F;
   // level
   M`Level := N;
-  // max_prec
-  M`MaxPrecision := max_prec;
+  // prec
+  M`Precision := prec;
   // ideals
   zero_ideal := ideal<Integers(F)|0>;
-  Is := [zero_ideal] cat IdealsUpTo(max_prec, F);
+  Is := [zero_ideal] cat IdealsUpTo(prec, F);
   M`Ideals := Is;
   dictionary := AssociativeArray();
   for i := 1 to #Is do
@@ -135,9 +137,6 @@ intrinsic ModFrmHilDCopy(M::ModFrmHilD) -> ModFrmHilD
   return M1;
 end intrinsic;
 
-////////// ModFrmHilD convenience functions //////////
-// TODO
-
 /*****
 ModFrmHilDElt
 *****/
@@ -147,9 +146,8 @@ ModFrmHilDElt
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent, // M
-  Precision, // RngIntElt
   Weight, // SeqEnum[RngIntElt] : a sequence of [ModFrmHilDBaseField : QQ] integers
-  Coefficients; // SeqEnum
+  Coefficients; // SeqEnum : this also keeps track of coefficient ring
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
@@ -229,11 +227,6 @@ intrinsic Parent(f::ModFrmHilDElt) -> ModFrmHilD
   return f`Parent;
 end intrinsic;
 
-intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
-  {returns precision of expansion for f which bounds the norm of ideals in the expansion.}
-  return f`Precision;
-end intrinsic;
-
 intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
   {returns weight of f.}
   return f`Weight;
@@ -254,9 +247,9 @@ intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   return Level(Parent(f));
 end intrinsic;
 
-intrinsic MaxPrecision(f::ModFrmHilDElt) -> RngIntElt
-  {returns max_prec of parent of f.}
-  return MaxPrecision(Parent(f));
+intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
+  {returns precision of parent of f.}
+  return Precision(Parent(f));
 end intrinsic;
 
 intrinsic Ideals(f::ModFrmHilDElt) -> SeqEnum[RngOrdIdl]
@@ -269,7 +262,7 @@ intrinsic Dictionary(f::ModFrmHilDElt) -> Assoc
   return Dictionary(Parent(f));
 end intrinsic;
 
-////////// ModFrmHilDElt creation functions //////////
+////////// ModFrmHilDElt elementary creation functions //////////
 
 intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
   {Create an empty ModFrmHilDElt object.}
@@ -289,17 +282,16 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
 end intrinsic;
 
 intrinsic HMF(F::FldNum, N::RngOrdIdl, prec::RngIntElt, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
-  {creates the corresponding ModFrmHilDElt with some sanity checking.}
+  {creates the corresponding ModFrmHilDElt.}
   M := HMFSpace(F, N, prec);
   f := ModFrmHilDEltInitialize();
   f`Parent := M;
-  f`Precision := prec;
   f`Weight := k;
   f`Coefficients := coeffs;
+  printf "WARNING: user is responsible for coefficients and order...proceed with caution.\n";
   return f;
 end intrinsic;
 
-// TODO currently only allowed if #coeffs eq #ideals, i.e. form is at max_prec
 intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
   {Given M and a SeqEnum of coefficients, return ModFrmHilDElt with parent M.}
   // assertions
@@ -311,13 +303,13 @@ intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHi
   // make form f
   f := ModFrmHilDEltInitialize();
   f`Parent := M;
-  f`Precision := MaxPrecision(M);
   f`Weight := k;
   f`Coefficients := coeffs;
+  printf "WARNING: user is responsible for coefficients and order...proceed with caution.\n";
   return f;
 end intrinsic;
 
-intrinsic HMFZero(F::FldNum, N::RngOrdIdl, prec::RngIntElt, k::SeqEnum[RngIntElt], K::FldNum) -> ModFrmHilDElt
+intrinsic HMFZero(F::FldNum, N::RngOrdIdl, prec::RngIntElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
   {create zero ModHilFrmDElt of weight k.}
   M := HMFSpace(F, N, prec);
   coeffs := [];
@@ -335,6 +327,8 @@ intrinsic HMFZero(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
   end for;
   return HMF(M, k, coeffs);
 end intrinsic;
+
+////////// ModFrmHilDElt creation functions //////////
 
 intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc, prec::RngIntElt) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
@@ -441,31 +435,44 @@ intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], prec::RngIntElt) -
   return HMFnewforms;
 end intrinsic;
 
+////////// ModFrmHilDElt user convenience functions //////////
+
+// TODO
+intrinsic SetCoefficients(M::ModFrmHilD, coeffs::Assoc) -> ModFrmHilDElt
+  {given a ModFrmHilD and an associative array of coefficients, return ModFrmHilDElt.}
+  error "not implemented yet!";
+end intrinsic;
+
+// TODO
+intrinsic GetCoefficients(f::ModFrmHilDElt) -> Assoc
+  {given a ModFrmHilDElt, return associative array of coefficients.}
+  error "not implemented yet!";
+end intrinsic;
+
 ////////// ModFrmHilDElt arithmetic //////////
 
-/*
 intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integer c.}
   g := ModFrmHilDEltCopy(f); // new instance of f
-  ZK := CoefficientRing(g);
-  assert Parent(c) eq ZK;
   coeffs := Coefficients(g);
-  Is := Ideals(g);
-  for i := 1 to #Is do
+  ZK := Parent(coeffs[1]);
+  assert Parent(c) eq ZK;
+  num_ideals := #Ideals(g);
+  for i := 1 to num_ideals do
     coeffs[i] *:= ZK!(c);
   end for;
   g`Coefficients := coeffs;
   return g;
 end intrinsic;
 
-intrinsic '*'(c::RngOrdElt, f::ModFrmHilDElt) -> ModFrmHilDElt
-  {scale f by integral element c.}
+intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
+  {scale f by integer c.}
   g := ModFrmHilDEltCopy(f); // new instance of f
-  ZK := CoefficientRing(g);
-  assert Parent(c) eq ZK;
   coeffs := Coefficients(g);
-  Is := Ideals(g);
-  for i := 1 to #Is do
+  ZK := Parent(coeffs[1]);
+  assert Parent(c) eq ZK;
+  num_ideals := #Ideals(g);
+  for i := 1 to num_ideals do
     coeffs[i] *:= ZK!(c);
   end for;
   g`Coefficients := coeffs;
@@ -479,30 +486,33 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   M := Parent(f);
   F := BaseField(M);
   N := Level(M);
-  k := Weight(M);
-  ZK := CoefficientRing(M);
-  K := NumberField(ZK);
+  // pull weight
+  k_f := Weight(f);
+  k_g := Weight(g);
+  assert k_f eq k_g;
+  k := k_f;
+  // pull coefficient information
+  coeffs_f := Coefficients(f);
+  coeffs_g := Coefficients(g);
+  ZKf := Parent(coeffs_f[1]);
+  ZKg := Parent(coeffs_g[1]);
+  assert ZKf eq ZKg;
+  ZK := ZKf;
   // precision
   prec_f := Precision(f);
   prec_g := Precision(g);
   prec := Min([prec_f, prec_g]);
   // create new expansion h with correct parent and precision
-  h := HMFZero(F, N, k, K, prec);
-  // overkill assertions
-  assert ZK eq CoefficientRing(f);
-  assert ZK eq CoefficientRing(g);
-  assert ZK eq CoefficientRing(h);
-  coeffs_f := Coefficients(f);
-  coeffs_g := Coefficients(g);
-  Is_f := Ideals(f);
-  Is_g := Ideals(g);
-  Is_h := Ideals(h);
-  assert Is_f eq Is_g;
-  assert Is_f eq Is_h;
-  Is := Is_h;
+  h := HMFZero(M, k);
+  // pull ideals
+  ideals_f := Ideals(f);
+  ideals_g := Ideals(g);
+  ideals_h := Ideals(h);
+  assert #ideals_h le #ideals_f;
+  assert #ideals_h le #ideals_g;
   // create coefficients
   coeffs := Coefficients(h);
-  for i := 1 to #Is do
+  for i := 1 to #ideals_h do
     coeffs[i] := ZK!(ZK!(coeffs_f[i])+ZK!(coeffs_g[i]));
   end for;
   h`Coefficients := coeffs;
@@ -513,4 +523,3 @@ intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   {return f*g}
   error "multiplication of HMF expansions not implemented yet!";
 end intrinsic;
-*/

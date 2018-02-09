@@ -23,6 +23,19 @@ Ideals(M); // ideals of ZF (including 0) up to norm max_prec
 Dictionary(M); // internal
 
 // ModFrmHilDElt can be made by providing space and coefficients
+// WARNING: no checking is done to verify result is a modular form
+num_ideals := #Ideals(M);
+random_coeffs_f := [];
+random_coeffs_g := [];
+for i := 1 to num_ideals do
+  Append(~random_coeffs_f, Random(1,100000));
+  Append(~random_coeffs_g, Random(1,100000));
+end for;
+f := HMF(M, k, random_coeffs_f);
+g := HMF(M, k, random_coeffs_g);
+
+// addition and scalar multiplication
+h := 12351426*(f+g);
 
 // http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
 MF := HilbertCuspForms(F, N);
@@ -50,7 +63,3 @@ prec := 100;
 M := HMFSpace(F, N, k, K);
 efs := NewformsToHMF(M, k, prec);
 assert #efs eq 2;
-
-
-
-
