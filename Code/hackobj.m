@@ -10,7 +10,7 @@ declare attributes ModFrmHilD:
   Level, // RngOrdIdl : ideal of Integers(Field)
   MaxPrecision, // RngIntElt : precision for the expansion
   Ideals, // SeqEnum[RngOrdIdl]
-  Dictionary, // Assoc maps Ideals[i] to i
+  Dictionary; // Assoc maps Ideals[i] to i
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
