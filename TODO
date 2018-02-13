@@ -1,17 +1,20 @@
 # High priority
 - Multiplication table
-- HMF( AssociativeArray --> coeffiencients);
-- better equality functions for ModFrmHilD and ModFrmHilDElt
+- better equality functions for ModFrmHilDElt (Done?)
 - Coercion such as M!0 for ModFrmHilDElts see classical code for examples
-- Galois orbit...full orbit
+// what is the weight ???
+//Fixme, should be a RngOrdElt
+intrinsic '!'(M::ModFrmHilD, elt::RngElt) -> ModFrmHilDElt
+{
+  {returns f such that a_0 := c}
+  coeffs := [0 : c in [1..Ideals(M)]];
+  coeffs[0] := elt;
+  return HMF(M, ????, coeffs);
+end intrinsic;
 
 # Medium priority
-- Get coeffiencients
-- Set one coefficient
-- access attribute functions for MultiplicationTable and DictionaryMultiplicationTable
 
 # Low Priority
-- Print should take an optional argument for the number of coeffs to print
 
 # Wouldn't it be nice if
 - we had tests and nice documentiation
