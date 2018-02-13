@@ -492,6 +492,22 @@ intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
   return HMFnewforms;
 end intrinsic;
 
+intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
+  {returns the full Galois orbit of a modular form}
+  M := Parent(f);
+  k := Weight(f);
+  coeff := Coefficients(f);
+  F := Parent(coeff[1]);
+  G, Pmap, Gmap := AutomorphismGroup(F);
+  result := [];
+  for g in G do
+    Append(~result, HMF(M, k, [Gmap(g)(elt) : elt in coeff]) );
+  end for;
+  return result;
+end intrinsic;
+
+
+
 ////////// ModFrmHilDElt user convenience functions //////////
 
 // TODO
