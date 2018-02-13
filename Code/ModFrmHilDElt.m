@@ -399,7 +399,6 @@ end intrinsic;
 
 // FIXME: this should be RngOrd
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
-{
   {returns f such that a_I := R!a_I}
   coeffs := [R!c : c in Coefficients(f)];
   return HMF(Parent(f), Weight(f), coeffs);
