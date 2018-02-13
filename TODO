@@ -8,6 +8,7 @@
 # Medium priority
 - Get coeffiencients
 - Set one coefficient
+- access attribute functions for MultiplicationTable and DictionaryMultiplicationTable
 
 # Low Priority
 - Print should take an optional argument for the number of coeffs to print
