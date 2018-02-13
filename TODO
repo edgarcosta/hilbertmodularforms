@@ -1,7 +1,9 @@
 # High priority
+- Multiplication table
 - HMF( AssociativeArray --> coeffiencients);
 - better equality functions for ModFrmHilD and ModFrmHilDElt
 - Coercion such as M!0 for ModFrmHilDElts see classical code for examples
+- Galois orbit...full orbit
 
 # Medium priority
 - Get coeffiencients
