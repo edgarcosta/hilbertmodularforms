@@ -6,7 +6,6 @@ ModFrmHilD
 
 declare type ModFrmHilD [ModFrmHilDElt];
 declare attributes ModFrmHilD:
-//TODO Add a hash string as a unique identifier
   Field, // FldNum : totally real field
   Integers, // RngOrd : ZF
   Level, // RngOrdIdl : ideal of Integers(Field)
@@ -37,31 +36,8 @@ end intrinsic;
 
 // currently this checks everything is equal except dictionaries
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
-  {True iff every attribute of M1 is equal to the corresponding attribute of M2.}
-  ass_attrs_M1 := [];
-  ass_attrs_M2 := [];
-  all_attrs := GetAttributes(Type(M1));
-  for attr in all_attrs do
-    if assigned M1``attr then
-      Append(~ass_attrs_M1, attr);
-    end if;
-    if assigned M2``attr then
-      Append(~ass_attrs_M2, attr);
-    end if;
-  end for;
-  if ass_attrs_M1 ne ass_attrs_M2 then
-    return false;
-  else
-    for attr in ass_attrs_M1 do
-      if attr ne "Dictionary" then
-        if M1``attr ne M2``attr then
-          return false;
-        end if;
-      end if;
-    end for;
-    // if we make it through the loop return true
-    return true;
-  end if;
+  {True iff the two spaces of Hilbert modular forms are identically the same}
+  return IsIdentical(M1, M2);
 end intrinsic;
 
 // TODO see classical case /Applications/Magma/package/Geometry/ModFrm/creation.m
@@ -90,17 +66,17 @@ intrinsic Level(M::ModFrmHilD) -> RngOrdIdl
   return M`Level;
 end intrinsic;
 
-intrinsic Precision(M::ModFrmHilD) -> RngOrgIdl
+intrinsic Precision(M::ModFrmHilD) -> RngIntElt
   {The Precision of the space M of Hilbert modular forms.}
   return M`Precision;
 end intrinsic;
 
-intrinsic Ideals(M::ModFrmHilD) -> RngOrgIdl
+intrinsic Ideals(M::ModFrmHilD) -> SeqEnum[RngOrdIdl]
   {The Ideals of the space M of Hilbert modular forms.}
   return M`Ideals;
 end intrinsic;
 
-intrinsic Dictionary(M::ModFrmHilD) -> RngOrgIdl
+intrinsic Dictionary(M::ModFrmHilD) -> Assoc
   {The dictionary for ideals of the space M of Hilbert modular forms.}
   return M`Dictionary;
 end intrinsic;
@@ -179,9 +155,13 @@ intrinsic GetPosition(M::ModFrmHilD, nu::RngOrdElt) -> RngIntElt
     assert Order(nu) eq ZF;
     I_nu := ideal< ZF | nu >;
     assert Norm(I_nu) le Precision(M);
-    dict := Dictionary(M);
-    return dict[I_nu];
+    return Dictionary(M)[I_nu];
   end if;
+end intrinsic;
+
+intrinsic GetPosition(M::ModFrmHilD, I::RngOrdIdl) -> RngIntElt
+  {returns the position of ideal.}
+  return Dictionary(M)[I];
 end intrinsic;
 
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
@@ -192,14 +172,14 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   for nu in reps do
     dict_reps[nu] := GetPosition(M, nu);
   end for;
-  mult_table := [[] : for nu in reps];
+  mult_table := [[] : nu in reps];
   for i := 1 to #indices do
     nu_i := indices[i][1];
     pairs_i := indices[i][2];
     list_i := [[dict_reps[elt[1]], dict_reps[elt[2]]] : elt in pairs_i];
     mult_table[dict_reps[nu_i]] := list_i;
   end for;
-  M`MultiplicationTable := mult_table
+  M`MultiplicationTable := mult_table;
   M`DictionaryRepresentatives := dict_reps;
   return M;
 end intrinsic;
@@ -252,39 +232,14 @@ intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   prec, which_one := Min([Precision(f), Precision(g)]);
   if Parent(f) ne Parent(g) then
     return false;
-  else
-    coeffs_f := Coefficients(f);
-    coeffs_g := Coefficients(g);
-    if which_one eq 1 then // f has smaller precision
-      Is := Keys(coeffs_f);
-      prec := Precision(f);
-    else // g has smaller precision
-      assert which_one eq 2;
-      Is := Keys(coeffs_g);
-      prec := Precision(g);
-    end if;
-    for I in Is do
-      if coeffs_f[I] ne coeffs_g[I] then
-        return false;
-      end if;
-    end for;
-    // if we make it out of the loop then return true
-    return true;
   end if;
-end intrinsic;
-
-// TODO
-intrinsic Preceq(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
-  {check compatibility and coefficient equality and see if both have the same precision.}
-  if Precision(f) ne Precision(g) then
+  if Weight(f) ne Weight(g) then
     return false;
-  else
-    if Parent(f) ne Parent(g) then
-      return false;
-    else
-      return f eq g; // "normal equal"
-    end if;
   end if;
+  if Coefficients(f) ne Coefficients(g) then
+    return false;
+  end if;
+  return true;
 end intrinsic;
 
 ////////// ModFrmHilDElt access to attributes //////////
@@ -356,7 +311,7 @@ intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHi
   // assertions
   ideals := Ideals(M);
   if #coeffs ne #ideals then
-    error "not enough coefficients to match precision of M.";
+    error "not the right amount of coefficients to match precision of M.";
   end if;
   assert #k eq Degree(BaseField(M));
   // make form f
@@ -511,10 +466,55 @@ end intrinsic;
 
 ////////// ModFrmHilDElt user convenience functions //////////
 
-// TODO
-intrinsic GetCoefficients(f::ModFrmHilDElt) -> Assoc
-  {given a ModFrmHilDElt, return associative array of coefficients.}
-  error "not implemented yet!";
+intrinsic GetCoefficientsIdeal(f::ModFrmHilDElt) -> Assoc
+  {given a ModFrmHilDElt, return associative array of coefficients on the ideals.}
+  coeffs := Coefficients(f);
+  ideals := Ideals(f);
+  result := AssociativeArray();
+  for i := 1 to #ideals do
+    result[ideals[i]] := coeffs[i];
+  end for;
+  return result;
+end intrinsic;
+
+intrinsic GetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl) -> RngOrdElt
+  {returns a_I}
+  return Coefficients(f)[Dictionary(f)[I]];
+end intrinsic;
+
+intrinsic SetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl, c::RngOrdElt)
+  {sets a_I to c}
+  f`Coefficients[Dictionary(f)[I]] := c;
+end intrinsic;
+
+intrinsic GetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt) -> RngOrdElt
+  {returns a_nu}
+  if not assigned Parent(f)`Representatives then
+    error "You must first equip the space with a multiplication table";
+  end if;
+  return Coefficients(f)[DictionaryRepresentatives(f)[nu]];
+end intrinsic;
+
+intrinsic GetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt, c::RngOrdElt)
+  {sets a_nu := c}
+  if not assigned Parent(f)`Representatives then
+    error "You must first equip the space with a multiplication table";
+  end if;
+  f`Coefficients[DictionaryRepresentatives(f)[nu]] := c;
+end intrinsic;
+
+intrinsic GetCoefficientsRepresentatives(f::ModFrmHilDElt) -> Assoc
+  {given a ModFrmHilDElt, return associative array of coefficients on the ideals.}
+  if not assigned Parent(f)`Representatives then
+    error "You must first equip the space with a multiplication table";
+  end if;
+  coeffs := Coefficients(f);
+  reps := Representatives(f);
+  result := AssociativeArray();
+  for i := 1 to #reps do
+    result[reps[i]] := coeffs[i];
+  end for;
+  return result;
 end intrinsic;
 
 ////////// ModFrmHilDElt arithmetic //////////
@@ -589,9 +589,8 @@ end intrinsic;
 
 intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   {return f*g}
-  M := Parent(M);
-  // FIXME
-  //assert Parent(M) eq Parent(M)
+  M := Parent(f);
+  assert Parent(f) eq Parent(g);
   if not assigned M`MultiplicationTable then
     error "The Parent is not equipped with a Multiplication Table!";
   end if;
@@ -600,8 +599,8 @@ intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   gcoeffs := Coefficients(g);
   ZC := Parent(fcoeffs[0]);
   MTable := MultiplicationTable(M);
-  assert ZC eq Parent(gcoeffs[0])
-  coeffs := [ZC!0 : for i in [1..#Coefficients(f)[0]]];
+  assert ZC eq Parent(gcoeffs[0]);
+  coeffs := [ZC!0 :  i in [1..#Coefficients(f)[0]]];
   for i := 1 to #Coefficients(f)[0] do
     c := ZC!0;
     for pair in MTable[i] do
@@ -611,6 +610,6 @@ intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   end for;
   kf := Weight(f);
   kg := Weight(g);
-  k := [ kf[i] + kf[g] : for i in [1..#kf] ];
+  k := [ kf[i] + kf[g] : i in [1..#kf] ];
   return HMF(M, k, coeffs);
 end intrinsic;
