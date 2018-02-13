@@ -6,6 +6,7 @@ ModFrmHilD
 
 declare type ModFrmHilD [ModFrmHilDElt];
 declare attributes ModFrmHilD:
+//TODO Add a hash string as a unique identifier
   Field, // FldNum : totally real field
   Integers, // RngOrd : ZF
   Level, // RngOrdIdl : ideal of Integers(Field)
@@ -588,5 +589,28 @@ end intrinsic;
 
 intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   {return f*g}
-  error "multiplication of HMF expansions not implemented yet!";
+  M := Parent(M);
+  // FIXME
+  //assert Parent(M) eq Parent(M)
+  if not assigned M`MultiplicationTable then
+    error "The Parent is not equipped with a Multiplication Table!";
+  end if;
+  prec := Precision(M);
+  fcoeffs := Coefficients(f);
+  gcoeffs := Coefficients(g);
+  ZC := Parent(fcoeffs[0]);
+  MTable := MultiplicationTable(M);
+  assert ZC eq Parent(gcoeffs[0])
+  coeffs := [ZC!0 : for i in [1..#Coefficients(f)[0]]];
+  for i := 1 to #Coefficients(f)[0] do
+    c := ZC!0;
+    for pair in MTable[i] do
+      c +:= fcoeffs[ pair[1] ] * gcoeffs[ pair[2] ];
+    end for;
+    coeffs[i] := c;
+  end for;
+  kf := Weight(f);
+  kg := Weight(g);
+  k := [ kf[i] + kf[g] : for i in [1..#kf] ];
+  return HMF(M, k, coeffs);
 end intrinsic;
