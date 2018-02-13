@@ -77,5 +77,6 @@ f2 := orbits[k][2];
 f3 := f1 + f2;
 f3;
 print "And we may coerce its coefficients";
-f3ZZ := Integers() ! f3; 
+f3ZZ := Integers() ! f3;
+f3ZZ;
 
