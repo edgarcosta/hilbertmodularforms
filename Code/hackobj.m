@@ -167,7 +167,7 @@ end intrinsic;
 
 intrinsic GetIndices(M::ModFrmHilD) -> List
   {returns list of [nu, [[nu1,nu2],...] ] up to precision.}
-  // TODO
+  // TODO 144 in HilbertMult.m
 end intrinsic;
 
 intrinsic GetPosition(M::ModFrmHilD, nu::RngOrdElt) -> RngIntElt
