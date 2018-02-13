@@ -71,11 +71,11 @@ else
   k := 2;
   assert #orbits[2] eq 2;
 end if;
-print "If we add the two elements in the two dimensional orbit, we obtain something integral"
+print "If we add the two elements in the two dimensional orbit, we obtain something integral";
 f1 := orbits[k][1];
 f2 := orbits[k][2];
 f3 := f1 + f2;
 f3;
-print "And we may coerce its coefficients"
+print "And we may coerce its coefficients";
 f3ZZ := Integers() ! f3; 
 
