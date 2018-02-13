@@ -56,9 +56,13 @@ print ef;
 // basic inputs to creation functions
 F := QuadraticField(5);
 ZF<w> := Integers(F);
-N := ideal<ZF | {10}>;
+N := ideal<ZF | {11}>;
 k := [2, 2];
 prec := 100;
 M := HMFSpace(F, N, prec);
-efs := NewformsToHMF(M, k);
-assert #efs eq 2;
+orbit_representatives := NewformsToHMF(M, k);
+print "Do we have two Galois orbits?", #orbit_representatives eq 2;
+print "One of dimension 1 and another of dimension 2";
+orbits := [GaloisOrbit(elt) : elt in orbit_representatives];
+printf "Orbits dimensions = %o\n", [#o : o in orbits];
+
