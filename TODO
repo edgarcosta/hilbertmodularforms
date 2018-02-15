@@ -1,9 +1,13 @@
 # High priority
 - GetPosition line 153: ZF vs. Different showdown
-- Naive multipication?
-- Multiplication table
 - better equality functions for ModFrmHilDElt (Done?)
-- Coercion such as M!0 for ModFrmHilDElts see classical code for examples
+
+# Medium priority
+Test multiplication
+
+# Low Priority
+
+-Coercion such as M!0 for ModFrmHilDElts see classical code for examples
 // what is the weight ???
 //Fixme, should be a RngOrdElt
 intrinsic '!'(M::ModFrmHilD, elt::RngElt) -> ModFrmHilDElt
@@ -13,10 +17,6 @@ intrinsic '!'(M::ModFrmHilD, elt::RngElt) -> ModFrmHilDElt
   coeffs[0] := elt;
   return HMF(M, ????, coeffs);
 end intrinsic;
-
-# Medium priority
-
-# Low Priority
 
 # Wouldn't it be nice if
 - we had tests and nice documentiation
