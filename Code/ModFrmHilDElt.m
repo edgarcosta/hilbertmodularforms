@@ -403,9 +403,9 @@ intrinsic NaiveMultiplication(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
 
   coeffs := [ZC!0 : i in [1..#Coefficients(f)];
   for i := 1 to #fcoeffs do
-    nui := ShantaniGenerator(ideals[i]);
+    nui := ShintaniGenerator(ideals[i]);
     for j := 1 to #gcoeffs do
-      nuj := ShantaniGenerator(ideals[j]);
+      nuj := ShintaniGenerator(ideals[j]);
       nu := nui + nuj;
       ideal := nu * dF;
       coeffs[dict_ideals[ideal]] +:= fcoeffs[i] * fcoeffs[j];
