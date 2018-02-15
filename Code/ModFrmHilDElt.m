@@ -227,10 +227,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
     assert false;
   end if;
 
-  //only parallel weight
-  for elt in k do
-    assert elt eq k[1];
-  end for;
+  k0 := Max(k);
 
   // power series ring
   log_prec := Floor(Log(prec)/Log(2)); // prec < 2^(log_prec+1)
@@ -255,8 +252,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
       assert IsPrime(pp);
       coeffs[i] := hecke_eigenvalues[pp];
       set[i] := true;
-      //FIXME, only parallel weight at the moment
-      Np := Norm(pp)^(k[1]-1);
+      Np := Norm(pp)^(k0-1);
       // if pp is bad
       if N subset pp then
         Np := 0;
