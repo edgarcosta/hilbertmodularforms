@@ -1,4 +1,5 @@
 # High priority
+- GetPosition line 153: ZF vs. Different showdown
 - Naive multipication?
 - Multiplication table
 - better equality functions for ModFrmHilDElt (Done?)

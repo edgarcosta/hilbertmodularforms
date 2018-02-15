@@ -29,6 +29,10 @@ intrinsic IndicesByTrace(ZF::RngOrd, T::RngIntElt) -> SeqEnum
     Input: ZF ring of integers of a number field (currently just for Q(sqrt(5))), T nonnegative integer
     Output: All elements of ZFgeq0 with trace T
   }
+  d := Discriminant(ZF);
+  if d mod 4 eq 0 then
+    d := d div 4;
+  end if;
   eps := FundamentalUnit(ZF);
   I := [];
   if d mod 4 eq 1 then
@@ -129,9 +133,10 @@ end intrinsic;
 
 intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
   {returns list of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to precision.}
+  ZF := Integers(BaseField(M));
   HMFIndicesList := [];
   ideals := Ideals(M);
-  gens := [ShintaniGenerator(I) : I in ideals];
+  gens := [ZF!ShintaniGenerator(I) : I in ideals];
   IndexList := [];
   T_lower := 0;
   for nu in gens do
@@ -139,7 +144,7 @@ intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
     T_upper := Ceiling(Trace(ZF!nu)/2);
     if T_upper gt T_lower then
       for T in [T_lower..T_upper] do
-        IndexList := IndexList cat IndicesByTrace(T);
+        IndexList := IndexList cat IndicesByTrace(ZF, T);
       end for;
       T_lower := T_upper;
     end if;
