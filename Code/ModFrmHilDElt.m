@@ -373,7 +373,7 @@ intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(Parent(f), Weight(f), new_coeffs);
 end intrinsic;
 
-intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
+intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f*g}
   M := Parent(f);
   assert Parent(f) eq Parent(g);
@@ -400,7 +400,7 @@ intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   return HMF(M, k, coeffs);
 end intrinsic;
 
-intrinsic NaiveMultiplication(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
+intrinsic NaiveMultiplication(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f*g}
   M := Parent(f);
   ideals := Ideals(f);
