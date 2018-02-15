@@ -400,8 +400,11 @@ intrinsic NaiveMultiplication(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   ZF := Integers(BaseField(M));
   dF := Different(ZF);
   dict_ideals := Dictionary(M);
-
-  coeffs := [ZC!0 : i in [1..#Coefficients(f)];
+  fcoeffs := Coefficients(f);
+  gcoeffs := Coefficients(g);
+  ZC := Parent(fcoeffs[1]);
+  assert ZC eq Parent(Coefficients(g)[1]);
+  coeffs := [ZC!0 : i in [1..#Coefficients(f)]];
   for i := 1 to #fcoeffs do
     nui := ShintaniGenerator(ideals[i]);
     for j := 1 to #gcoeffs do
