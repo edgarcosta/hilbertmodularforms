@@ -1,4 +1,5 @@
 # High priority
+- Naive multipication?
 - Multiplication table
 - better equality functions for ModFrmHilDElt (Done?)
 - Coercion such as M!0 for ModFrmHilDElts see classical code for examples
