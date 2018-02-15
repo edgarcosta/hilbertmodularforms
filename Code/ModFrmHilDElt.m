@@ -333,7 +333,15 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
 end intrinsic;
 
 
-
+intrinsic HeckeOperator(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {returns Hecke(f)}
+  M := Parent(f);
+  fcoeffs := Coefficients(f);
+  ZC := Parent(fcoeffs[1]);
+  coeffs := [ZC!0 : i in [1..#fcoeffs]];
+  // Look at form 2.23
+  return HMF(M, Weight(f), coeffs);
+end intrinsic;
 
 
 ////////// ModFrmHilDElt arithmetic //////////
