@@ -2,6 +2,7 @@
 examples using ModFrmHilD, ModFrmHilDElt
 *****/
 
+SetDebugOnError(true);
 // load configuration, spec file, printing, etc.
 load "config.m";
 
