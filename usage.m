@@ -86,6 +86,8 @@ f12 := f1*f2;
 //Sanity check
 squarediff1 := (f1 - f2) * (f1 + f2);
 squarediff2 := f1*f1 - f2*f2;
-assert squarediff1 eq squarediff2;
+assert squarediff1 eq  squarediff2;
+squaresum := f3*f3;
+assert squaresum eq f1*f1 + 2*f1*f2 + f2*f2;
 //TODO check against Naive after fixing Different
 
