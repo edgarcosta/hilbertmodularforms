@@ -81,3 +81,7 @@ print "And we may coerce its coefficients";
 f3ZZ := Integers() ! f3;
 f3ZZ;
 
+HMFEquipWithMultiplication(M);
+f12 := f1*f2;
+//TODO check against Naive after fixing Different
+
