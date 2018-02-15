@@ -13,7 +13,7 @@ declare attributes ModFrmHilD:
   Ideals, // SeqEnum[RngOrdIdl]
   Dictionary, // Assoc maps Ideals[i] to i
   MultiplicationTable, // SeqEnum[pairs of integers] TODO
-  Representatives, // SeqEnum[nu] TODO
+  Representatives, // SeqEnum[nu]
   DictionaryRepresentatives; // Assoc maps Representatives[i] to i TODO
 
 ////////// ModFrmHilD fundamental intrinsics //////////
@@ -167,6 +167,7 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   {Assign representatives and a dictionary for it to M.}
   indices := GetIndices(M);
   reps := [elt[1] : elt in indices];
+  reps_indexed := [ 0 : i in [1..#reps] ];
   dict_reps := AssociativeArray();
   for nu in reps do
     dict_reps[nu] := GetPosition(M, nu);
@@ -177,7 +178,10 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
     pairs_i := indices[i][2];
     list_i := [[dict_reps[elt[1]], dict_reps[elt[2]]] : elt in pairs_i];
     mult_table[dict_reps[nu_i]] := list_i;
+    reps_indexed[dict_reps[nu_i]] := nu_i;
+    // assert nu_i eq ShintaniGenerator(M, Ideals(M)[i]);
   end for;
+  M`Representatives := reps_indexed;
   M`MultiplicationTable := mult_table;
   M`DictionaryRepresentatives := dict_reps;
   return M;
