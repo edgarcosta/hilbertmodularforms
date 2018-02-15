@@ -160,17 +160,17 @@ end intrinsic;
 ////////// ModFrmHilDElt user convenience functions //////////
 
 
-intrinsic GetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl) -> RngOrdElt
+intrinsic GetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl) -> RngElt
   {returns a_I}
   return Coefficients(f)[Dictionary(f)[I]];
 end intrinsic;
 
-intrinsic SetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl, c::RngOrdElt)
+intrinsic SetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl, c::RngElt)
   {sets a_I to c}
   f`Coefficients[Dictionary(f)[I]] := c;
 end intrinsic;
 
-intrinsic GetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt) -> RngOrdElt
+intrinsic GetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt) -> RngElt
   {returns a_nu}
   if not assigned Parent(f)`Representatives then
     error "You must first equip the space with a multiplication table";
@@ -178,7 +178,7 @@ intrinsic GetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt) -> RngOrdElt
   return Coefficients(f)[DictionaryRepresentatives(f)[nu]];
 end intrinsic;
 
-intrinsic SetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt, c::RngOrdElt)
+intrinsic SetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt, c::RngElt)
   {sets a_nu to c}
   if not assigned Parent(f)`Representatives then
     error "You must first equip the space with a multiplication table";
@@ -375,11 +375,11 @@ intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   prec := Precision(M);
   fcoeffs := Coefficients(f);
   gcoeffs := Coefficients(g);
-  ZC := Parent(fcoeffs[0]);
+  ZC := Parent(fcoeffs[1]);
   MTable := MultiplicationTable(M);
-  assert ZC eq Parent(gcoeffs[0]);
-  coeffs := [ZC!0 :  i in [1..#Coefficients(f)[0]]];
-  for i := 1 to #Coefficients(f)[0] do
+  assert ZC eq Parent(gcoeffs[1]);
+  coeffs := [ZC!0 :  i in [1..#fcoeffs]];
+  for i := 1 to #fcoeffs do
     c := ZC!0;
     for pair in MTable[i] do
       c +:= fcoeffs[ pair[1] ] * gcoeffs[ pair[2] ];
@@ -392,8 +392,31 @@ intrinsic '*'(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
   return HMF(M, k, coeffs);
 end intrinsic;
 
+intrinsic NaiveMultiplication(f::ModFrmHilD, g::ModFrmHilD) -> ModFrmHilD
+  {return f*g}
+  M := Parent(f);
+  ideals := Ideals(f);
+  assert M eq Parent(g);
+  ZF := Integers(BaseField(M));
+  dF := Different(ZF);
+  dict_ideals := Dictionary(M);
 
-// FIXME: this should be RngOrd
+  coeffs := [ZC!0 : i in [1..#Coefficients(f)];
+  for i := 1 to #fcoeffs do
+    nui := ShantaniGenerator(ideals[i]);
+    for j := 1 to #gcoeffs do
+      nuj := ShantaniGenerator(ideals[j]);
+      nu := nui + nuj;
+      ideal := nu * dF;
+      coeffs[dict_ideals[ideal]] +:= fcoeffs[i] * fcoeffs[j];
+    end for;
+  end for;
+  kf := Weight(f);
+  kg := Weight(g);
+  k := [ kf[i] + kf[g] : i in [1..#kf] ];
+  return HMF(M, k, coeffs);
+end intrinsic;
+
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_I := R!a_I}
   coeffs := [R!c : c in Coefficients(f)];
