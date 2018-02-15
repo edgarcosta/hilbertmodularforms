@@ -13,7 +13,7 @@ declare attributes ModFrmHilD:
   Ideals, // SeqEnum[RngOrdIdl]
   Dictionary, // Assoc maps Ideals[i] to i
   MultiplicationTable, // SeqEnum[pairs of integers] TODO
-  Representatives, // SeqEnum[nu] TODO
+  Representatives, // SeqEnum[nu]
   DictionaryRepresentatives; // Assoc maps Representatives[i] to i TODO
 
 ////////// ModFrmHilD fundamental intrinsics //////////
