@@ -350,7 +350,7 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integer c.}
   coeffs := Coefficients(f);
   ZK := Parent(coeffs[1]);
-  assert Parent(c) eq ZK;
+  assert c in ZK;
   czk := ZK ! c;
   new_coeffs := [ czk * elt : elt in coeffs];
   return HMF(Parent(f), Weight(f), new_coeffs);
