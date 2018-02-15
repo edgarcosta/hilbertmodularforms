@@ -396,7 +396,7 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   end for;
   kf := Weight(f);
   kg := Weight(g);
-  k := [ kf[i] + kf[g] : i in [1..#kf] ];
+  k := [ kf[i] + kg[i] : i in [1..#kf] ];
   return HMF(M, k, coeffs);
 end intrinsic;
 
@@ -424,7 +424,7 @@ intrinsic NaiveMultiplication(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDE
   end for;
   kf := Weight(f);
   kg := Weight(g);
-  k := [ kf[i] + kf[g] : i in [1..#kf] ];
+  k := [ kf[i] + kg[i] : i in [1..#kf] ];
   return HMF(M, k, coeffs);
 end intrinsic;
 
