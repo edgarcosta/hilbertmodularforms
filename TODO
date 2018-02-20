@@ -1,6 +1,11 @@
 # High priority
 - GetPosition line 153: ZF vs. Different showdown
 - better equality functions for ModFrmHilDElt (Done?)
+- Hecke operator
+- Eisentstein series
+- Inversion (we most likely need truncated multiplication for this)
+- Linear algebra
+
 
 # Medium priority
 Test multiplication
@@ -19,4 +24,4 @@ intrinsic '!'(M::ModFrmHilD, elt::RngElt) -> ModFrmHilDElt
 end intrinsic;
 
 # Wouldn't it be nice if
-- we had tests and nice documentiation
+- we had tests and nice documentation
