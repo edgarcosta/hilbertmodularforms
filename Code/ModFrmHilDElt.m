@@ -332,14 +332,29 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   return result;
 end intrinsic;
 
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
+  {returns T(n)(f) for the trivial character}
+  return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1);
+end intrinsic;
 
-intrinsic HeckeOperator(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {returns Hecke(f)}
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> ModFrmHilDElt
+  {returns T(n)(f)}
   M := Parent(f);
   fcoeffs := Coefficients(f);
+  ideals := Ideal(f);
+  dict := Dictionary(f);
   ZC := Parent(fcoeffs[1]);
+  k0 := Max(Weight(f));
   coeffs := [ZC!0 : i in [1..#fcoeffs]];
-  // Look at form 2.23
+  for i:=1 to #ideals do
+    c := 0;
+    // loop over divisors
+    // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms
+    for aa in Divisors(ideals[i] + nn) do
+      c +:= chi(aa) * Norm(aa)^(k0 - 1) * fcoeffs[ dict[ aa^(-2) * (ideals[i] * nn)]];
+      end for;
+    coeffs[i] := c;
+    end for;
   return HMF(M, Weight(f), coeffs);
 end intrinsic;
 
