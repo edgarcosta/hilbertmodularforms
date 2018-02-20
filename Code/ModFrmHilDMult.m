@@ -133,6 +133,7 @@ end intrinsic;
 
 intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
   {returns list of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to precision.}
+  printf "WARNING: currently only works for narrow class number 1.\n";
   ZF := Integers(BaseField(M));
   HMFIndicesList := [];
   ideals := Ideals(M);

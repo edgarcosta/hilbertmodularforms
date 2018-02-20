@@ -1,4 +1,6 @@
 # High priority
+- f*g should call EquipMult if not already done
+- implement over QQ for sanity checks using classical
 - GetPosition line 153: ZF vs. Different showdown
 - better equality functions for ModFrmHilDElt (Done?)
 - Hecke operator
