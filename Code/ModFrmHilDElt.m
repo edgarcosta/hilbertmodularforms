@@ -393,7 +393,7 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   M := Parent(f);
   assert Parent(f) eq Parent(g);
   if not assigned M`MultiplicationTable then
-    error "The Parent is not equipped with a Multiplication Table!";
+    HMFEquipWithMultiplication(M);
   end if;
   prec := Precision(M);
   fcoeffs := Coefficients(f);
