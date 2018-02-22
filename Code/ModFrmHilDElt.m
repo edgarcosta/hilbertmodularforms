@@ -447,3 +447,13 @@ intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   coeffs := [R!c : c in Coefficients(f)];
   return HMF(Parent(f), Weight(f), coeffs);
 end intrinsic;
+
+intrinsic '!'(M::ModFrmHilD, elt::FldNumElt) -> ModFrmHilDElt
+{
+  {returns f such that a_0 := c with weight = [0,...,0]}
+  P := Parent(elt);
+  coeffs := [P!0 : c in [1..Ideals(M)]];
+  coeffs[1] := elt;
+  k := [0 : c in [1..Degree(BaseField(M))]];
+  return HMF(M, k , coeffs);
+end intrinsic;
