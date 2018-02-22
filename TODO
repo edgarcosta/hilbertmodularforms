@@ -1,7 +1,7 @@
 # High priority
+- get new and old forms for given level
 - implement over QQ for sanity checks using classical
 - GetPosition line 153: ZF vs. Different showdown
-- better equality functions for ModFrmHilDElt (Done?)
 - Eisentstein series
 - Inversion (we most likely need truncated multiplication for this)
 - Linear algebra

@@ -41,8 +41,7 @@ intrinsic IsCoercible(x::ModFrmHilDElt, y::.) -> BoolElt, .
 end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
-  {check compatibility and coefficient equality up to minimum precision.}
-  prec, which_one := Min([Precision(f), Precision(g)]);
+  {compares Parent, Weight, and Coefficients.}
   if Parent(f) ne Parent(g) then
     return false;
   end if;
