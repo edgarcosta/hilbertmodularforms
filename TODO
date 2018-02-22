@@ -1,10 +1,10 @@
 # High priority
-- get new and old forms for given level
-- implement over QQ for sanity checks using classical
-- GetPosition line 153: ZF vs. Different showdown
-- Eisenstein series
-- Inversion (we most likely need truncated multiplication for this)
-- Linear algebra
+- get new and old forms for given level (Edgar)
+- implement over QQ for sanity checks using classical (Musty)
+- GetPosition line 153: ZF vs. Different showdown (Sam, Ben)
+- Eisenstein series (Angie, Sara)
+- Linear algebra (?Edgar)
+- Inversion (we most likely need truncated multiplication for this) (?Edgar)
 
 
 # Medium priority
