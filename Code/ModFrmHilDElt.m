@@ -71,6 +71,11 @@ intrinsic Coefficients(f::ModFrmHilDElt) -> SeqEnum
   return f`Coefficients;
 end intrinsic;
 
+intrinsic CoefficientsParent(f::ModFrmHilDElt) -> SeqEnum
+  {returns coefficients of f as SeqEnum.}
+  return Parent(f`Coefficients[1]);
+end intrinsic;
+
 intrinsic BaseField(f::ModFrmHilDElt) -> FldNum
   {returns base field of parent of f.}
   return BaseField(Parent(f));
@@ -322,13 +327,52 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   M := Parent(f);
   k := Weight(f);
   coeff := Coefficients(f);
-  F := Parent(coeff[1]);
-  G, Pmap, Gmap := AutomorphismGroup(F);
+  K := NumberField(CoefficientsParent(f));
+  G, Pmap, Gmap := AutomorphismGroup(K);
   result := [];
   for g in G do
     Append(~result, HMF(M, k, [Gmap(g)(elt) : elt in coeff]) );
   end for;
   return result;
+end intrinsic;
+
+//FIXME
+intrinsic GaloisOrbitWithRestrictionOfScalars(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
+  {returns the full Galois orbit of a modular form}
+  M := Parent(f);
+  k := Weight(f);
+  coeff := Coefficients(f);
+  K := NumberField(CoefficientsParent(f));
+  G, Pmap, Gmap := AutomorphismGroup(K);
+  result := [];
+  for g in G do
+    Append(~result, HMF(M, k, [Gmap(g)(elt) : elt in coeff]) );
+  end for;
+  return result;
+end intrinsic;
+
+//FIXME
+intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
+  {returns a basis for M of weight k}
+  prec := Precision(M);
+  F := BaseField(M);
+  for dd in Divisors(Level(M)) do
+    print dd;
+    basis := [];
+    Mdd := HMFSpace(F, dd, prec);
+    orbit_representatives := NewformsToHMF(Mdd, k);
+    orbits := [GaloisOrbitWithRestrictionOfScalars(elt) : elt in orbit_representatives];
+    // FIXME loop over e | n/d
+    for orbit in orbits do
+      for elt in orbit do
+        Append(~basis, M!elt);
+      end for;
+    end for;
+    if dd eq Level(M) then
+      newforms_dimension := &+[ #orbit : orbit in orbits];
+    end if;
+  end for;
+  return basis, newforms_dimension;
 end intrinsic;
 
 intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
@@ -457,3 +501,36 @@ intrinsic '!'(M::ModFrmHilD, elt::FldNumElt) -> ModFrmHilDElt
   k := [0 : c in [1..Degree(BaseField(M))]];
   return HMF(M, k , coeffs);
 end intrinsic;
+
+
+intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
+  {}
+  if Type(f) ne ModFrmHilDElt then
+    return false;
+  end if;
+
+  if Parent(f) eq M then
+    return true, f;
+  elif (BaseField(M) eq BaseField(f)) and (Precision(M) eq Precision(f)) then
+    if Level(M) subset Level(f) then
+      coeffs := Coefficients(f);
+      return true, HMF(M, Weight(f) , coeffs);
+    else
+      return false;
+    end if;
+  else
+    return false;
+  end if;
+end intrinsic;
+
+/*
+intrinsic '!'(M::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
+{
+  {returns f with parent M}
+  nn := Level(M);
+  nnf := Level(f);
+  assert nn subset nnf; // nnf divides nn
+  coeffs := Coefficients(f);
+  return HMF(M, Weight(f) , coeffs);
+end intrinsic;
+*/

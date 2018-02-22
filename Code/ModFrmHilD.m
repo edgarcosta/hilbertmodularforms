@@ -39,14 +39,6 @@ intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   return IsIdentical(M1, M2);
 end intrinsic;
 
-// TODO see classical case /Applications/Magma/package/Geometry/ModFrm/creation.m
-intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
-  {}
-  if Type(f) eq ModFrmHilDElt and Parent(f) eq M then
-    return true, f;
-  end if;
-  return false;
-end intrinsic;
 
 ////////// ModFrmHilD access to attributes //////////
 
