@@ -275,6 +275,8 @@ intrinsic ThetaSeries(M::ModFrmHilD, GM::ModMatFldElt) -> ModFrmHilDElt
   for i := 1 to #rep do
     coeffs[i] := theta_coefficient(rep[i], K, GM);
   end for;
+  //we are assuming class number = 1
+  coeffs[1] := ZK ! 1;
   w := NumberOfRows(GM)/2;
   weight := [w : i in [1..Degree(K)];
   retuns HMF(M, weight, coeffs);
