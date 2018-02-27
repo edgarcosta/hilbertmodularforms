@@ -458,34 +458,6 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(M, k, coeffs);
 end intrinsic;
 
-intrinsic NaiveMultiplication(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
-  {return f*g}
-  M := Parent(f);
-  ideals := Ideals(f);
-  assert M eq Parent(g);
-  ZF := Integers(BaseField(M));
-  dF := Different(ZF);
-  dict_ideals := Dictionary(M);
-  fcoeffs := Coefficients(f);
-  gcoeffs := Coefficients(g);
-  ZC := Parent(fcoeffs[1]);
-  assert ZC eq Parent(Coefficients(g)[1]);
-  coeffs := [ZC!0 : i in [1..#Coefficients(f)]];
-  for i := 1 to #fcoeffs do
-    nui := ShintaniGenerator(ideals[i]);
-    for j := 1 to #gcoeffs do
-      nuj := ShintaniGenerator(ideals[j]);
-      nu := nui + nuj;
-      ideal := nu * dF;
-      coeffs[dict_ideals[ideal]] +:= fcoeffs[i] * fcoeffs[j];
-    end for;
-  end for;
-  kf := Weight(f);
-  kg := Weight(g);
-  k := [ kf[i] + kg[i] : i in [1..#kf] ];
-  return HMF(M, k, coeffs);
-end intrinsic;
-
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_I := R!a_I}
   coeffs := [R!c : c in Coefficients(f)];
