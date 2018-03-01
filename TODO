@@ -1,10 +1,9 @@
 # High priority
 - Eisenstein series (Edgar and Musty)
-- get basis, aka, new and old forms, for a given level (Edgar)
+- get basis, aka, new and old forms, for a given level (Edgar) Done?
 - GetPosition line 153: ZF vs. Different showdown (Sam, Ben)
 - implement over QQ for sanity checks using classical (Musty)
 - Theta Series (Angie and Sara)
-- Linear algebra (?Edgar)
 - Inversion (we most likely need truncated multiplication for this) (?Edgar)
 
 
