@@ -362,7 +362,6 @@ intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
   basis := [];
   //TODO we should sieve
   for dd in Divisors(N) do
-    print dd;
     basis := [];
     Mdd := HMFSpace(F, dd, prec);
     orbit_representatives := NewformsToHMF(Mdd, k);
@@ -376,7 +375,6 @@ intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
         if Iee in set_ideals then
           Iee_cord := dict[Iee];
           for j := 1 to #old_space_basis do
-            print j, i;
             new_coeffs_ee[j][Iee_cord] := old_space_coeffs[j][i];
           end for;
         else
