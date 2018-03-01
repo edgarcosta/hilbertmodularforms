@@ -89,5 +89,19 @@ squarediff2 := f1*f1 - f2*f2;
 assert squarediff1 eq  squarediff2;
 squaresum := f3*f3;
 assert squaresum eq f1*f1 + 2*f1*f2 + f2*f2;
-//TODO check against Naive after fixing Different
 
+
+
+F := QuadraticField(5);
+ZF<w> := Integers(F);
+N := Factorization(ideal<ZF| {31}>)[1][1];
+k := [2, 2];
+prec := 1000;
+M := HMFSpace(F, N, prec);
+B2 := CuspFormBasis(M, [2,2]);
+f := B2[1];
+B4 := CuspFormBasis(M, [4,4]);
+f2 := f*f;
+L := [f2] cat B4;
+linear_relation := Matrix(LinearDepedence(L));
+print linear_relation eq Matrix([[383928, 0, 110028,  -7271,  -1117]]);
