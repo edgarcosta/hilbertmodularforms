@@ -92,17 +92,33 @@ assert squaresum eq f1*f1 + 2*f1*f2 + f2*f2;
 
 imwillingtowait8min := false;
 if imwillingtowait8min then
+  prec := 1000;
+else
+  prec := 100;
+end if;
+F := QuadraticField(5);
+ZF<w> := Integers(F);
+N := Factorization(ideal<ZF| {31}>)[1][1];
+k := [2, 2];
+M := HMFSpace(F, N, prec);
+B2 := CuspFormBasis(M, [2,2]);
+f := B2[1];
+B4 := CuspFormBasis(M, [4,4]);
+f2 := f*f;
+L := [f2] cat B4;
+linear_relation := Matrix(LinearDepedence(L));
+print linear_relation eq Matrix([[383928, 0, 110028,  -7271,  -1117]]);
+
+
+
+//ThetaSeries
+if false then
   F := QuadraticField(5);
   ZF<w> := Integers(F);
-  N := Factorization(ideal<ZF| {31}>)[1][1];
-  k := [2, 2];
-  prec := 1000;
+  GM := DiagonalMatrix(ZF, [2,2,2,2]);
+  N := ideal<ZF| Determinant(GM)>;
+  prec := 100;
   M := HMFSpace(F, N, prec);
-  B2 := CuspFormBasis(M, [2,2]);
-  f := B2[1];
-  B4 := CuspFormBasis(M, [4,4]);
-  f2 := f*f;
-  L := [f2] cat B4;
-  linear_relation := Matrix(LinearDepedence(L));
-  print linear_relation eq Matrix([[383928, 0, 110028,  -7271,  -1117]]);
+  HMFEquipWithMultiplication(M);
+  theta := ThetaSeries(M, GM);
 end if;
