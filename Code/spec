@@ -4,4 +4,5 @@
   ModFrmHilDMultShik.m
   LinearAlgebra.m
   ThetaSeries.m
+  recognize.m
 }

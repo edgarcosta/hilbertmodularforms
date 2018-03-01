@@ -417,6 +417,42 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> Mo
   return HMF(M, Weight(f), coeffs);
 end intrinsic;
 
+// TODO
+/*
+intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
+  {}
+  n := Degree(BaseField(M));
+  assert #SequenceToSet(k) eq 1;
+  assert k[1] ge 2; // we can remove this later
+  nn := Level(M);
+  aa := Conductor(eta);
+  bb := Conductor(psi);
+  assert nn subset aa;
+  assert nn subset bb;
+  Haa := HeckeCharacterGroup(aa);
+  Hbb := HeckeCharacterGroup(bb);
+  ideals := Ideals(M);
+  coeffs := [];
+  // constant term
+  if aa eq ideal<Order(aa)|1> then
+    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    zCC := 2^(-n)*eta^(-1)(tt)*LSeries(prim, 1-k);
+  else
+    coeffs[1] := 0;
+  end if;
+  // other terms
+  for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME
+    coeffs[1] :=
+    mm := ideals[i];
+    sum := 0;
+    for rr in Divisors(mm) do
+      sum +:= eta(mm/rr)*psi(rr)*Norm(rr^(k[1]-1));
+    end for;
+    coeffs[i] := sum;
+  end for;
+  return HMF(M, k, coeffs);
+end intrinsic;
+*/
 
 ////////// ModFrmHilDElt arithmetic //////////
 
