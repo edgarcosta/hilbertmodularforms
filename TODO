@@ -8,21 +8,10 @@
 
 
 # Medium priority
-- add CoefficientParent(f);
 - Test multiplication
 
 # Low Priority
 
--Coercion such as M!0 for ModFrmHilDElts see classical code for examples
-// what is the weight, 0??
-//Fixme, should be a RngOrdElt
-intrinsic '!'(M::ModFrmHilD, elt::RngElt) -> ModFrmHilDElt
-{
-  {returns f such that a_0 := c}
-  coeffs := [0 : c in [1..Ideals(M)]];
-  coeffs[0] := elt;
-  return HMF(M, ????, coeffs);
-end intrinsic;
 
 # Wouldn't it be nice if
 - we had tests and nice documentation
