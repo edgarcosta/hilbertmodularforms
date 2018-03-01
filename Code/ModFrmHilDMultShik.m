@@ -118,7 +118,7 @@ end intrinsic;
 
 intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
   {returns list of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to precision.}
-  printf "WARNING: currently only works for narrow class number 1.\n";
+  //printf "WARNING: currently only works for narrow class number 1.\n";
 
   begin := Cputime();
   ZF := Integers(BaseField(M));
@@ -154,6 +154,6 @@ intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
   indices_list := [ [* nu, [ [ZF ! ReduceShintani(x[1], eps, places), ZF ! ReduceShintani(x[2], eps, places)] : x in result[nu] ] *] : nu in gens ];
   print Cputime(begin);
 
-  print indices_list;
+  //print indices_list;
   return indices_list;
 end intrinsic;
