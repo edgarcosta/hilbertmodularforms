@@ -1,23 +1,45 @@
 //Theta series
-/* TODO:  I'm here. Edgar
-intrinsic coefficient_v := function(v, K, M)
-	//Input: v a totally positive element, K totally real field containing v, 
-	// M the Gram matrix of a quadratic form
-	//Output: the coefficient in the theta series for v
+
+intrinsic QuadraticZ(F::FldNum, M::AlgMatElt) -> AlgMatElt
+	{Input: F a otally real field, M the Gram Matrix for quadratic form
+	Output: the Gram matrix for the trace form over Z
+  }
+
+	ZF<w>:=Integers(F);
+	B:=Basis(ZF);
+	n:=#B;
 	d:=Nrows(M);
+	Blocks:=[];
+	for j:= 1 to d do
+		for i:=1 to d do
+			Tr_ij:=ZeroMatrix(RationalField(),n, n );
+			for p:= 1 to n do
+				for q:=1 to n do
+					Tr_ij[p][q]:=Trace(M[i][j]*B[p]*B[q]);
+				end for;
+			end for;
+			Append(~Blocks, Tr_ij);
+		end for;
+	end for;
+	return BlockMatrix(d,d, Blocks);
+end intrinsic;
+
+
+intrinsic ThetaCoefficient(v::RngOrdElt, L::Lat, GM::AlgMatElt) -> FldNumElt
+  {given v a totally positive element in a totally real field and M the Gram matrix of a quadratic form, outputs the coefficient in the theta series for v}
+  K := Parent(v);
+	d:=Dimension(L);
 	BasisK:=Basis(K);
-		if DefiningPolynomial(K) eq DefiningPolynomial(Rationals()) then
-		 ZK<w>:=IntegerRing();
-	else 
-		 ZK<w>:=Integers(K);
-	end if;
+	ZK<w>:=Integers(K);
 	B:=Basis(ZK);
 	n:=#B;
 	t:=Trace(v);
-	L1:=LatticeWithGram(QuadraticZ(K, M)); //Z-lattice corresponding to quadratic (trace) form over Z
-	S:=ShortVectors(L1, t,t); //Preimages of Trace(v) in expanded  Z-lattice
+  print t;
+  //Preimages of Trace(v) in expanded  Z-lattice
+	S:=ShortVectors(L, t, t);
 	num_sols := #S;
-	PreimTr:= ZeroMatrix(K, num_sols, d); //Coefficients of linear combinations in basis elements of  of  preimages of Trace(v) by quadratic trace form 
+  //Coefficients of linear combinations in basis elements of  of  preimages of Trace(v) by quadratic trace form
+	PreimTr:= ZeroMatrix(K, num_sols, d);
 	for k:=1 to num_sols do
 		for i:=0 to (d-1) do
 			elt:=0;
@@ -32,7 +54,8 @@ intrinsic coefficient_v := function(v, K, M)
 	end for;
 	checkmult:=[]; // preimages of Trace(v) in ZF-lattice
 	for i:=1 to num_sols do
-		Append(~checkmult, DotProduct(PreimTr[i]*M, PreimTr[i]));
+    // 
+		Append(~checkmult, DotProduct(PreimTr[i]*GM, PreimTr[i]));
 	end for;
 	r_v:=0; //number of preimages of v inside initial lattice; also the Fourier coefficient for element v
 	for i:=1 to #checkmult do
@@ -45,20 +68,28 @@ end intrinsic;
 
 
 
-intrinsic ThetaSeries(M::ModFrmHilD, GM::ModMatFldElt) -> ModFrmHilDElt
-  {generates the Theta series associated to the gram matrix of the quadratic form in the space M}
-  //FIXME assert that level of Theta divides the level of M
+intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
+  {generates the Theta series associated to the gram matrix of the quadratic form in the space GM}
+  K := BaseField(M);
+  ZK := Integers(K);
+  levelGM := ideal<ZK|Determinant(GM)>;
+  //checking that the level of Theta divides the level of M
+  assert Level(M) subset levelGM;
+
+
+  L := LatticeWithGram(QuadraticZ(K, GM));
+
+
   rep := Representatives(M);
   K := BaseField(M);
   ZK := IntegerRing(K);
-  coeffs := [ZK!0 | for nu in rep];
-  for i := 1 to #rep do
-    coeffs[i] := theta_coefficient(rep[i], K, GM);
-  end for;
+  coeffs := [ZK!0 :  nu in rep];
   //we are assuming class number = 1
+  for i := 2 to #rep do
+    coeffs[i] := ThetaCoefficient(rep[i], L, GM);
+  end for;
   coeffs[1] := ZK ! 1;
   w := NumberOfRows(GM)/2;
-  weight := [w : i in [1..Degree(K)];
-  retuns HMF(M, weight, coeffs);
+  weight := [w : i in [1..Degree(K)]];
+  return HMF(M, weight, coeffs);
 end intrinsic;
-*/
