@@ -417,8 +417,8 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> Mo
   return HMF(M, Weight(f), coeffs);
 end intrinsic;
 
-// TODO
-/*
+// TODO save ideal class rep to space
+// FIXME
 intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
   {}
   n := Degree(BaseField(M));
@@ -432,17 +432,24 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
   Haa := HeckeCharacterGroup(aa);
   Hbb := HeckeCharacterGroup(bb);
   ideals := Ideals(M);
-  coeffs := [];
+  coeffs := [ 0 : i in [1..#ideals]];
+  assert IsPrimitive(eta*psi^-1);
   // constant term
   if aa eq ideal<Order(aa)|1> then
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-    zCC := 2^(-n)*eta^(-1)(tt)*LSeries(prim, 1-k);
+    // zCC := 2^(-n)*eta^(-1)(tt)*LSeries(prim, 1-k);
+    Lf := LSeries(prim);
+    zCC := 2^(-n)*Evaluate(Lf, 1-k[1]);
+    precCC := Precision(zCC);
+    zCC := ComplexField(precCC)!zCC;
+    // zCC := 2^(-n)*Evaluate(LSeries(eta*psi^-1), 1-k);
+    bl, QQ, v, conj, _ := MakeK(zCC, 1);
+    coeffs[1] := RecognizeOverK(zCC, QQ, v, conj);
   else
     coeffs[1] := 0;
   end if;
   // other terms
   for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME
-    coeffs[1] :=
     mm := ideals[i];
     sum := 0;
     for rr in Divisors(mm) do
@@ -452,7 +459,6 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
   end for;
   return HMF(M, k, coeffs);
 end intrinsic;
-*/
 
 ////////// ModFrmHilDElt arithmetic //////////
 
