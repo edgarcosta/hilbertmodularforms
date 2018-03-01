@@ -2,4 +2,6 @@
   ModFrmHilD.m
   ModFrmHilDElt.m
   ModFrmHilDMultShik.m
+  LinearAlgebra.m
+  ThetaSeries.m
 }
