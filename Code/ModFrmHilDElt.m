@@ -337,37 +337,54 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   return result;
 end intrinsic;
 
-//FIXME
-intrinsic GaloisOrbitWithRestrictionOfScalars(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
-  {returns the full Galois orbit of a modular form}
+intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
+  {returns the full Galois orbit of a modular form over Q}
   M := Parent(f);
   k := Weight(f);
   coeff := Coefficients(f);
   K := NumberField(CoefficientsParent(f));
-  G, Pmap, Gmap := AutomorphismGroup(K);
   result := [];
-  for g in G do
-    Append(~result, HMF(M, k, [Gmap(g)(elt) : elt in coeff]) );
+  for b in Basis(K) do
+    Append(~result, HMF(M, k, [Trace(b * elt) : elt in coeff]) );
   end for;
   return result;
 end intrinsic;
 
-//FIXME
 intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
   {returns a basis for M of weight k}
   prec := Precision(M);
   F := BaseField(M);
-  for dd in Divisors(Level(M)) do
+  N := Level(M);
+  ideals := Ideals(M);
+  dict := Dictionary(M);
+  set_ideals := Keys(dict);
+  zero_coeffs := [0 : i in [1..#ideals]];
+  basis := [];
+  //TODO we should sieve
+  for dd in Divisors(N) do
     print dd;
     basis := [];
     Mdd := HMFSpace(F, dd, prec);
     orbit_representatives := NewformsToHMF(Mdd, k);
-    orbits := [GaloisOrbitWithRestrictionOfScalars(elt) : elt in orbit_representatives];
-    // FIXME loop over e | n/d
-    for orbit in orbits do
-      for elt in orbit do
-        Append(~basis, M!elt);
+    orbits := [GaloisOrbitDescent(elt) : elt in orbit_representatives];
+    old_space_basis := &cat orbits;
+    old_space_coeffs := [Coefficients(elt) : elt in old_space_basis];
+    for ee in Divisors(N/dd) do
+      new_coeffs_ee := [ zero_coeffs : i in [1..#old_space_basis]];
+      for i := 1 to #ideals do
+        Iee := ideals[i]*ee;
+        if Iee in set_ideals then
+          Iee_cord := dict[Iee];
+          for j := 1 to #old_space_basis do
+            print j, i;
+            new_coeffs_ee[j][Iee_cord] := old_space_coeffs[j][i];
+          end for;
+        else
+          //this assumes ideals are sorted by norm!!
+          break i;
+        end if;
       end for;
+      basis := basis cat [HMF(M, k, elt) : elt in new_coeffs_ee];
     end for;
     if dd eq Level(M) then
       newforms_dimension := &+[ #orbit : orbit in orbits];
