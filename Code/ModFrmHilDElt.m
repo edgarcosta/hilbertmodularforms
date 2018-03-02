@@ -516,19 +516,17 @@ intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(Parent(f), Weight(f), coeffs);
 end intrinsic;
 
-intrinsic '!'(M::ModFrmHilD, elt::FldNumElt) -> ModFrmHilDElt
-{
-  {returns f such that a_0 := c with weight = [0,...,0]}
-  P := Parent(elt);
-  coeffs := [P!0 : c in [1..Ideals(M)]];
-  coeffs[1] := elt;
-  k := [0 : c in [1..Degree(BaseField(M))]];
-  return HMF(M, k , coeffs);
-end intrinsic;
-
 
 intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   {}
+  if ISA(Type(f), RngElt) then
+    P := Parent(f);
+    coeffs := [P!0 : c in [1..#Ideals(M)]];
+    coeffs[1] := f;
+    k := [0 : c in [1..Degree(BaseField(M))]];
+    return true, HMF(M, k , coeffs);
+  end if;
+
   if Type(f) ne ModFrmHilDElt then
     return false;
   end if;
