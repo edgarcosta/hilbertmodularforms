@@ -76,7 +76,7 @@ end intrinsic;
 intrinsic MultiplicationTable(M::ModFrmHilD) -> SeqEnum
   {}
   if not assigned M`MultiplicationTable then
-    HMFEquipWithMultiplication(M);
+    assert HMFEquipWithMultiplication(M);
   end if;
   return M`MultiplicationTable;
 end intrinsic;
@@ -85,7 +85,7 @@ end intrinsic;
 intrinsic DictionaryRepresentatives(M::ModFrmHilD) -> Assoc
   {}
   if not assigned M`DictionaryRepresentatives then
-    HMFEquipWithMultiplication(M);
+    assert HMFEquipWithMultiplication(M);
   end if;
   return M`DictionaryRepresentatives;
 end intrinsic;
@@ -94,7 +94,7 @@ end intrinsic;
 intrinsic Representatives(M::ModFrmHilD) -> SeqEnum
   {}
  if not assigned M`Representatives then
-    HMFEquipWithMultiplication(M);
+    assert HMFEquipWithMultiplication(M);
   end if;
   return M`Representatives;
 end intrinsic;
@@ -185,5 +185,5 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   M`Representatives := reps_indexed;
   M`MultiplicationTable := mult_table;
   M`DictionaryRepresentatives := dict_reps;
-  return M;
+  return true;
 end intrinsic;
