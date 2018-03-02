@@ -5,6 +5,8 @@
 - implement over QQ for sanity checks using classical (Musty)
 - Theta Series (Angie and Sara)
 - Inversion (we most likely need truncated multiplication for this) (?Edgar)
+- printing over QQ (Musty/Edgar)
+- clean up recognition code (Musty)
 
 
 # Medium priority
