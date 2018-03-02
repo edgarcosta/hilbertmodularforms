@@ -153,7 +153,6 @@ intrinsic GetPosition(M::ModFrmHilD, nu::RngOrdElt) -> RngIntElt
     assert nu in ZF;
     // I_nu := ideal< ZF | nu >*Different(ZF);
     I_nu := ideal< ZF | nu >;
-    printf "Norm(I_nu) = %o, prec(M) = %o\n", Norm(I_nu), Precision(M);
     assert Norm(I_nu) le Precision(M);
     return Dictionary(M)[I_nu];
   end if;
