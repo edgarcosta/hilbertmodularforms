@@ -90,22 +90,28 @@ end intrinsic;
 
 intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
   {returns list of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to precision.}
-  printf "WARNING: currently only works for narrow class number 1.\n";
+  if NarrowClassNumber(BaseField(M)) ne 1 then
+    print "WARNING: currently only works for narrow class number 1.\n";
+    assert false;
+  end if;
 
-  begin := Cputime();
-  ZF := Integers(BaseField(M)); d := Discriminant(ZF);
+  ZF := Integers(BaseField(M));
+  d := Discriminant(ZF);
   if d mod 4 eq 0 then
     d := d div 4;
   end if;
 
   places := InfinitePlaces(BaseField(M));
-  eps := FundamentalUnit(ZF); log_slope_funu := Log(Slope_F(eps^2, places));
+  eps := FundamentalUnit(ZF);
+  log_slope_funu := Log(Slope_F(eps^2, places));
 
-  ideals := Ideals(M); trace_bound := 0; gens := [];
+  ideals := Ideals(M);
+  trace_bound := 0; gens := [];
   result := AssociativeArray();
-  for I in ideals do 
+  for I in ideals do
     nu := ZF ! ShintaniGenerator(I, eps, log_slope_funu, places);
-    Append(~gens, nu); result[nu] := [];
+    Append(~gens, nu);
+    result[nu] := [];
     trace_bound := Max(Trace(nu), trace_bound);
   end for;
 
@@ -114,9 +120,9 @@ intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
     s_1 := IndicesByTrace(d, eps, i);
     by_trace[i] := s_1;
 
-    for j in [0..Min(i, trace_bound - i)] do 
+    for j in [0..Min(i, trace_bound - i)] do
       for nu_1 in s_1 do
-        for nu_2 in by_trace[j] do 
+        for nu_2 in by_trace[j] do
           nu := nu_1 + nu_2;
           if IsDefined(result, nu) then
             Append(~result[nu], [nu_1, nu_2]);
@@ -127,22 +133,20 @@ intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
     end for;
   end for;
 
-  indices_list := []; shintani_reps := AssociativeArray();
+  indices_list := [];
+  shintani_reps := AssociativeArray();
   for nu in gens do
     sums_up := [];
     for x in Set(result[nu]) do
       if not IsDefined(shintani_reps, x[1]) then
-        shintani_reps[x[1]] := ZF ! ReduceShintani(x[1], eps, log_slope_funu, places);
+        shintani_reps[x[1]] := ZF ! ReduceShintani(ZF ! x[1], eps, log_slope_funu, places);
       end if;
       if not IsDefined(shintani_reps, x[2]) then
-        shintani_reps[x[2]] := ZF ! ReduceShintani(x[2], eps, log_slope_funu, places);
+        shintani_reps[x[2]] := ZF ! ReduceShintani(ZF ! x[2], eps, log_slope_funu, places);
       end if;
       Append(~sums_up, [shintani_reps[x[1]], shintani_reps[x[2]]]);
     end for;
     Append(~indices_list, [* nu, sums_up *]);
   end for;
-  print Cputime(begin);
-
-  // print indices_list;
   return indices_list;
 end intrinsic;
