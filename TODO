@@ -1,18 +1,23 @@
 # High priority
+- Making multiplication work for other fields
+  - other quadratic fields
+  - other fields
+
 - Eisenstein series (Edgar and Musty)
-- get basis, aka, new and old forms, for a given level (Edgar) Done?
-- GetPosition line 153: ZF vs. Different showdown (Sam, Ben)
+  - clean up recognition code (Musty)
+
 - implement over QQ for sanity checks using classical (Musty)
-- Theta Series (Angie and Sara)
+  - printing over QQ (Musty/Edgar)
+
 - Inversion (we most likely need truncated multiplication for this) (?Edgar)
-- printing over QQ (Musty/Edgar)
-- clean up recognition code (Musty)
 
 
 # Medium priority
-- Test multiplication
+- Test multiplication for other fields not Q(sqrt(5))
+- GetPosition line 153: ZF vs. Different showdown (Sam, Ben)
 
 # Low Priority
+- More tests for Theta Series (Angie and Sara)
 
 
 # Wouldn't it be nice if
