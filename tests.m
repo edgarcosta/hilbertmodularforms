@@ -1,3 +1,5 @@
+load "config.m";
+
 F := QuadraticField(5);
 prec := 100;
 ZF<w> := Integers(F);
