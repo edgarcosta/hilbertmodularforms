@@ -147,20 +147,24 @@ intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
       for T in [T_lower..T_upper] do
         IndexList := IndexList cat IndicesByTrace(ZF, T);
       end for;
-      T_lower := T_upper;
+      T_lower := T_upper + 1;
     end if;
     for nu1 in IndexList do
       nu2 := nu - nu1;
-      //if IsTotallyPositive(nu2) then
-      if nu2 in IndexList then
+      if IsTotallyPositive(nu2) then
+      //if nu2 in IndexList then
         nu1_red := ReduceShintani(nu1);
         nu2_red := ReduceShintani(nu2);
         Append(~pairs_nu, [nu1_red, nu2_red]);
+        //Append(~pairs_nu, [nu1, nu2]);
         if nu1 ne nu2 then // only computing up to half the trace, so have to append reverse pairs, too.  But if nu1 = nu2, don't append twice.
           Append(~pairs_nu, [nu2_red, nu1_red]);
+          //Append(~pairs_nu, [nu2, nu1]);
         end if;
       end if;
     end for;
+    pairs_nu := Set(pairs_nu);
+    pairs_nu := SetToSequence(pairs_nu);
     Append(~HMFIndicesList, [* nu, pairs_nu *]);
   end for;
   return HMFIndicesList;
