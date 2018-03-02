@@ -6,7 +6,7 @@ if parentdir eq "hilbertmodularforms\n" then
 else
   error "make sure your working directory is hilbertmodularforms repository";
 end if;
-AttachSpec("Code/spec");
+AttachSpec("ModFrmHilD/spec");
 // setting
 SetColumns(0);
 // TODO verbose?
