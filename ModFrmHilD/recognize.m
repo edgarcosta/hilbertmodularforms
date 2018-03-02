@@ -106,7 +106,7 @@ intrinsic RecognizeQQ(z::FldComElt) -> FldRatElt
   return Rationals()!RecognizeOverQQ(z);
 end intrinsic;
 
-intrinsic RecognizeQQ(z::FldComElt) -> FldRatElt
+intrinsic RecognizeQQ(z::FldReElt) -> FldRatElt
   {overloaded to take real number.}
   return Rationals()!RecognizeOverQQ(z);
 end intrinsic;

@@ -8,6 +8,10 @@ declare type ModFrmHilD [ModFrmHilDElt];
 declare attributes ModFrmHilD:
   Field, // FldNum : totally real field
   Integers, // RngOrd : ZF
+  NarrowClassGroup, // GrpAb
+  NarrowClassNumber, // RngIntElt
+  NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
+  NarrowClassGroupRepresentatives, // SeqEnum[RngOrdElt/RngFracElt]
   Level, // RngOrdIdl : ideal of Integers(Field)
   Precision, // RngIntElt : precision for all expansions with this parent
   Ideals, // SeqEnum[RngOrdIdl]
@@ -50,6 +54,26 @@ end intrinsic;
 intrinsic Integers(M::ModFrmHilD) -> RngOrd
   {}
   return M`Integers;
+end intrinsic;
+
+intrinsic NarrowClassGroup(M::ModFrmHilD) -> GrpAb
+  {}
+  return M`NarrowClassGroup;
+end intrinsic;
+
+intrinsic NarrowClassNumber(M::ModFrmHilD) -> RngIntElt
+  {}
+  return M`NarrowClassNumber;
+end intrinsic;
+
+intrinsic NarrowClassGroupMap(M::ModFrmHilD) -> Map
+  {}
+  return M`NarrowClassGroupMap;
+end intrinsic;
+
+intrinsic NarrowClassGroupRepresentatives(M::ModFrmHilD) -> Map
+  {}
+  return M`NarrowClassGroupRepresentatives;
 end intrinsic;
 
 intrinsic Level(M::ModFrmHilD) -> RngOrdIdl
@@ -114,6 +138,12 @@ intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, prec::RngIntElt) -> ModFrmHilD
   M := ModFrmHilDInitialize();
   // field
   M`Field := F;
+  // narrow class group
+  Cl, mp := NarrowClassGroup(F);
+  M`NarrowClassGroup := Cl;
+  M`NarrowClassNumber := #Cl;
+  M`NarrowClassGroupMap := mp;
+  M`NarrowClassGroupRepresentatives := [ mp(g) : g in Cl ];
   // level
   M`Level := N;
   // prec

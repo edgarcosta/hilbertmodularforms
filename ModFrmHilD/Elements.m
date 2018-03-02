@@ -421,8 +421,23 @@ end intrinsic;
 // FIXME
 intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
   {}
+  // TODO degree bound comes from eta, psi
+  degree_bound := 5;
+  Cl := NarrowClassGroup(M);
+  mp := NarrowClassGroupMap(M);
+  tt := mp(Cl.1); // TODO remove
+  X := Parent(eta);
+  assert X eq Parent(psi);
+  K := X`TargetRing; // where the character values live
+  /*
+  if #Cl eq 1 then
+    tt := mp(Cl.1);
+  else
+    error "not implemented for narrow class number > 1.";
+  end if;
+  */
   n := Degree(BaseField(M));
-  assert #SequenceToSet(k) eq 1;
+  assert #SequenceToSet(k) eq 1; // parallel weight
   assert k[1] ge 2; // we can remove this later
   nn := Level(M);
   aa := Conductor(eta);
@@ -432,19 +447,20 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
   Haa := HeckeCharacterGroup(aa);
   Hbb := HeckeCharacterGroup(bb);
   ideals := Ideals(M);
-  coeffs := [ 0 : i in [1..#ideals]];
-  assert IsPrimitive(eta*psi^-1);
+  coeffs := [ K!0 : i in [1..#ideals]];
+  assert IsPrimitive(eta*psi^-1); // TODO only primitive for now
   // constant term
   if aa eq ideal<Order(aa)|1> then
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-    // zCC := 2^(-n)*eta^(-1)(tt)*LSeries(prim, 1-k);
-    Lf := LSeries(prim);
-    zCC := 2^(-n)*Evaluate(Lf, 1-k[1]);
-    precCC := Precision(zCC);
-    zCC := ComplexField(precCC)!zCC;
-    // zCC := 2^(-n)*Evaluate(LSeries(eta*psi^-1), 1-k);
-    bl, QQ, v, conj, _ := MakeK(zCC, 1);
-    coeffs[1] := RecognizeOverK(zCC, QQ, v, conj);
+    Lf := LSeries(prim : Precision := 50);
+    Lvalue := Evaluate(Lf, 1-k[1]);
+    Lvalue_recognized := RecognizeNumber(Lvalue, degree_bound);
+    K_Lvalue := Parent(Lvalue_recognized);
+    K_eta := Parent((eta^(-1))(tt));
+    bl, field_mp := IsIsomorphic(K_Lvalue, K_eta);
+    assert bl;
+    Lvalue_recognized := field_mp(Lvalue_recognized);
+    coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
   else
     coeffs[1] := 0;
   end if;
