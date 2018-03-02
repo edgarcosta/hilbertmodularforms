@@ -75,18 +75,27 @@ end intrinsic;
 // TODO add text
 intrinsic MultiplicationTable(M::ModFrmHilD) -> SeqEnum
   {}
+  if not assigned M`MultiplicationTable then
+    HMFEquipWithMultiplication(M);
+  end if;
   return M`MultiplicationTable;
 end intrinsic;
 
 // TODO add text
 intrinsic DictionaryRepresentatives(M::ModFrmHilD) -> Assoc
   {}
+  if not assigned M`DictionaryRepresentatives then
+    HMFEquipWithMultiplication(M);
+  end if;
   return M`DictionaryRepresentatives;
 end intrinsic;
 
 // TODO add text
 intrinsic Representatives(M::ModFrmHilD) -> SeqEnum
   {}
+ if not assigned M`Representatives then
+    HMFEquipWithMultiplication(M);
+  end if;
   return M`Representatives;
 end intrinsic;
 
