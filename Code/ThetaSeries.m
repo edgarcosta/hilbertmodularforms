@@ -25,19 +25,25 @@ intrinsic QuadraticZ(F::FldNum, M::AlgMatElt) -> AlgMatElt
 end intrinsic;
 
 
-intrinsic ThetaCoefficient(v::RngOrdElt, L::Lat, GM::AlgMatElt) -> FldNumElt
+intrinsic ThetaCoefficient(M::ModFrmHilD, v::RngOrdElt, L::Lat, GM::AlgMatElt) -> FldNumElt
   {given v a totally positive element in a totally real field and M the Gram matrix of a quadratic form, outputs the coefficient in the theta series for v}
-  K := Parent(v);
-	d:=Dimension(L);
-	BasisK:=Basis(K);
-	ZK<w>:=Integers(K);
-	B:=Basis(ZK);
-	n:=#B;
-	t:=Trace(v);
-  print t;
+  K := BaseField(M);
+  //force matrix over field
+  GM := Matrix(K, GM);
+	BasisK := Basis(K);
+	ZK<w> := Integers(K);
+	B := Basis(ZK);
+	n := #B;
+	t := Trace(v);
+  assert Dimension(L) mod n eq 0;
+	d := Integers() ! (Dimension(L)/n);
+
   //Preimages of Trace(v) in expanded  Z-lattice
-	S:=ShortVectors(L, t, t);
+	S := ShortVectors(L, t, t);
 	num_sols := #S;
+  if num_sols eq 0 then
+    return 0;
+  end if;
   //Coefficients of linear combinations in basis elements of  of  preimages of Trace(v) by quadratic trace form
 	PreimTr:= ZeroMatrix(K, num_sols, d);
 	for k:=1 to num_sols do
@@ -45,23 +51,22 @@ intrinsic ThetaCoefficient(v::RngOrdElt, L::Lat, GM::AlgMatElt) -> FldNumElt
 			elt:=0;
 			for j:= (i*n+1) to (i+1)*n do
 				if (j mod n) ne 0 then
-					elt+:=S[k][1][j]*B[j mod n];
-				else elt+:=S[k][1][j]*B[n];
+					elt +:= S[k][1][j]*B[j mod n];
+				else
+          elt +:= S[k][1][j]*B[n];
 				end if;
 			end for;
 			PreimTr[k][i+1]:=elt;
 		end for;
 	end for;
-	checkmult:=[]; // preimages of Trace(v) in ZF-lattice
+
+  pgm := PreimTr * GM;
+  r_v := 0;
 	for i:=1 to num_sols do
-    // 
-		Append(~checkmult, DotProduct(PreimTr[i]*GM, PreimTr[i]));
-	end for;
-	r_v:=0; //number of preimages of v inside initial lattice; also the Fourier coefficient for element v
-	for i:=1 to #checkmult do
-		if checkmult[i] eq v then
-			r_v+:=2;
-		end if;
+    //number of preimages of v inside initial lattice; also the Fourier coefficient for element v
+    if DotProduct(pgm[i],PreimTr[i])  eq v then
+      r_v +:= 2;
+    end if;
 	end for;
 	return r_v;
 end intrinsic;
@@ -70,15 +75,14 @@ end intrinsic;
 
 intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
   {generates the Theta series associated to the gram matrix of the quadratic form in the space GM}
+  assert NumberOfRows(GM) mod 2 eq 0;
   K := BaseField(M);
   ZK := Integers(K);
-  levelGM := ideal<ZK|Determinant(GM)>;
+  levelGM := ideal<ZK| 4*Determinant(GM)>;
   //checking that the level of Theta divides the level of M
   assert Level(M) subset levelGM;
 
-
   L := LatticeWithGram(QuadraticZ(K, GM));
-
 
   rep := Representatives(M);
   K := BaseField(M);
@@ -86,10 +90,10 @@ intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
   coeffs := [ZK!0 :  nu in rep];
   //we are assuming class number = 1
   for i := 2 to #rep do
-    coeffs[i] := ThetaCoefficient(rep[i], L, GM);
+    coeffs[i] := ThetaCoefficient(M, rep[i], L, GM);
   end for;
   coeffs[1] := ZK ! 1;
-  w := NumberOfRows(GM)/2;
+  w := Integers()! (NumberOfRows(GM)/2);
   weight := [w : i in [1..Degree(K)]];
   return HMF(M, weight, coeffs);
 end intrinsic;

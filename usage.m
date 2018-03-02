@@ -107,18 +107,27 @@ B4 := CuspFormBasis(M, [4,4]);
 f2 := f*f;
 L := [f2] cat B4;
 linear_relation := Matrix(LinearDepedence(L));
-print linear_relation eq Matrix([[383928, 0, 110028,  -7271,  -1117]]);
-
+assert linear_relation eq Matrix([[383928, 0, 110028,  -7271,  -1117]]);
 
 
 //ThetaSeries
-if false then
-  F := QuadraticField(5);
-  ZF<w> := Integers(F);
-  GM := DiagonalMatrix(ZF, [2,2,2,2]);
-  N := ideal<ZF| Determinant(GM)>;
-  prec := 100;
-  M := HMFSpace(F, N, prec);
-  HMFEquipWithMultiplication(M);
-  theta := ThetaSeries(M, GM);
-end if;
+F := QuadraticField(5);
+ZF<w> := Integers(F);
+GM := Matrix(ZF, [[1,1],[1,2]]);
+N := ideal<ZF| 4* Determinant(GM)>;
+prec := 10;
+M := HMFSpace(F, N, prec);
+theta := ThetaSeries(M, GM);
+assert Coefficients(theta) eq [1,4,4,8,8];
+
+GM := Matrix(F, [[1,-1/2],[-1/2,1]]);
+N := ideal<ZF| 4* Determinant(GM)>;
+prec := 10;
+M := HMFSpace(F, N, prec);
+theta := ThetaSeries(M, GM);
+assert Coefficients(theta) eq [1,6,12,0,6];
+
+
+
+
+
