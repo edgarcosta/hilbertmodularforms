@@ -15,7 +15,7 @@ intrinsic Slope_F(alpha::RngOrdElt, places::SeqEnum) -> FldReElt
 end intrinsic;
 
 // TODO: need to generalize this
-intrinsic IndicesByTrace(d::RngIntElt, eps::RngQuadElt, T::RngIntElt) -> SeqEnum
+intrinsic IndicesByTrace(d::RngIntElt, g1::RngQuadElt, T::RngIntElt) -> SeqEnum
   {
     Input: ZF ring of integers of a number field (currently just for Q(sqrt(5))), T nonnegative integer
     Output: All elements of ZFgeq0 with trace T
@@ -26,7 +26,7 @@ intrinsic IndicesByTrace(d::RngIntElt, eps::RngQuadElt, T::RngIntElt) -> SeqEnum
     L := Ceiling((1 - 1 / Sqrt(d)) * T / 2);
     U := Floor((1 + 1 / Sqrt(d)) * T / 2);
     for a in [L..U] do
-      Append(~I, a + (T - 2 * a) * eps);
+      Append(~I, a + (T - 2 * a) * g1);
     end for;
   else
     if T mod 2 eq 1 then
@@ -35,7 +35,7 @@ intrinsic IndicesByTrace(d::RngIntElt, eps::RngQuadElt, T::RngIntElt) -> SeqEnum
       L := Ceiling(-T / (2 * Sqrt(d)));
       U := Floor(T / (2 * Sqrt(d)));
       for a in [L..U] do
-        Append(~I, T / 2 + a * eps);
+        Append(~I, T / 2 + a * g1);
       end for;
     end if;
   end if;
@@ -117,7 +117,7 @@ intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
 
   by_trace := AssociativeArray();
   for i in [0..trace_bound] do
-    s_1 := IndicesByTrace(d, eps, i);
+    s_1 := IndicesByTrace(d, ZF.2, i);
     by_trace[i] := s_1;
 
     for j in [0..Min(i, trace_bound - i)] do
