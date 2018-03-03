@@ -7,6 +7,8 @@
   - clean up recognition code (Musty)
   - make recognition code great again (\strikethrough{Musty} Sam)
 
+- Basis(M, weight);
+
 - implement over QQ for sanity checks using classical (Musty)
   - printing over QQ (Musty/Edgar)
 
