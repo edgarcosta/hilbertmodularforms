@@ -417,7 +417,6 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> Mo
   return HMF(M, Weight(f), coeffs);
 end intrinsic;
 
-// TODO save ideal class rep to space
 // FIXME
 intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
   {}
