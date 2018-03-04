@@ -1,5 +1,5 @@
 /*****
-ModFrmHilDElt
+odFrmHilDElt
 *****/
 
 ////////// ModFrmHilDElt attributes //////////
@@ -360,7 +360,8 @@ intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
   set_ideals := Keys(dict);
   zero_coeffs := [0 : i in [1..#ideals]];
   basis := [];
-  //TODO we should sieve
+  newforms_dimension := 0;
+  //TODO should we sieve?
   for dd in Divisors(N) do
     basis := [];
     Mdd := HMFSpace(F, dd, prec);
@@ -385,7 +386,11 @@ intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
       basis := basis cat [HMF(M, k, elt) : elt in new_coeffs_ee];
     end for;
     if dd eq Level(M) then
-      newforms_dimension := &+[ #orbit : orbit in orbits];
+      if #orbits eq 0 then
+        newforms_dimension := 0;
+      else
+        newforms_dimension := &+[ #orbit : orbit in orbits];
+      end if;
     end if;
   end for;
   return basis, newforms_dimension;
@@ -488,6 +493,18 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
     coeffs[i] := sum;
   end for;
   return HMF(M, k, coeffs);
+end intrinsic;
+
+
+intrinsic Basis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
+{ returns a Basis for the space }
+  CB, newforms_dimension := CuspFormBasis(M, k);
+  H := HeckeCharacterGroup(Level(M));
+  //FIXME this is wrong!
+  eta := H ! 1;
+  psi := H ! 1;
+  E := EisensteinSeries(M, eta, psi, k);
+  return [E] cat CB, newforms_dimension;
 end intrinsic;
 
 ////////// ModFrmHilDElt arithmetic //////////
