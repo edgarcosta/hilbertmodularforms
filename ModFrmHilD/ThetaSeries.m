@@ -76,8 +76,8 @@ intrinsic Level(K::FldNum, GM::AlgMatElt) -> RngOrdElt
   {given a Gram Matrix returns the level of the Theta series associated to the Gram matrix}
   ZK := Integers(K);
   GM := Matrix(K, GM);
-  GMi := GM^(-1);
-  NN := ideal<ZK | [ 2/GM[i][i] : i in [1..NumberOfRows(GM)] ] >;
+  GMinverse := GM^(-1);
+  NN := ideal<ZK | [ 2/GMinverse[i][i] : i in [1..NumberOfRows(GM)] ] >;
   return NN;
   //ideal<ZK| 4*Determinant(GM)>;
 end intrinsic;
