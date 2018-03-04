@@ -471,14 +471,6 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
     assert #places eq 1;
     pl := places[1];
     Lvalue_recognized := RecognizeOverK(Lvalue, K, pl, false);
-    //FIXME Mike, I don't think we need this anymore
-/*
-    K_Lvalue := Parent(Lvalue_recognized);
-    K_eta := Parent((eta^(-1))(tt));
-    bl, field_mp := IsIsomorphic(K_Lvalue, K_eta);
-    assert bl;
-    Lvalue_recognized := field_mp(Lvalue_recognized);
-    */
     coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
   else
     coeffs[1] := 0;
