@@ -67,3 +67,18 @@ prec := 10;
 M := HMFSpace(F, N, prec);
 theta := ThetaSeries(M, GM);
 assert Coefficients(theta) eq [1,6,12,0,6];
+
+//Multiplication + ThetaSeries
+D := 13;
+F := QuadraticField(D);
+ZF<w> := Integers(F);
+Level := 4*ZF;
+k := [2, 2];
+prec := 100;
+M := HMFSpace(F, Level, prec);
+Mat := DiagonalMatrix([1,1]);
+Mat2 := DiagonalMatrix([1,1,1,1]);
+f := ThetaSeries(M,Mat);
+g := ThetaSeries(M,Mat2);
+assert f*f eq g;
+
