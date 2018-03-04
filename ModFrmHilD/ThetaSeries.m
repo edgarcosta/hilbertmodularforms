@@ -72,15 +72,23 @@ intrinsic ThetaCoefficient(M::ModFrmHilD, v::RngOrdElt, L::Lat, GM::AlgMatElt) -
 end intrinsic;
 
 
+intrinsic Level(K::FldNum, GM::AlgMatElt) -> RngOrdElt
+  {given a Gram Matrix returns the level of the Theta series associated to the Gram matrix}
+  ZK := Integers(K);
+  GM := Matrix(K, GM);
+  GMi := GM^(-1);
+  NN := ideal<ZK | [ 2/GM[i][i] : i in [1..NumberOfRows(GM)] ] >;
+  return NN;
+  //ideal<ZK| 4*Determinant(GM)>;
+end intrinsic;
 
 intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
   {generates the Theta series associated to the gram matrix of the quadratic form in the space GM}
   assert NumberOfRows(GM) mod 2 eq 0;
   K := BaseField(M);
   ZK := Integers(K);
-  levelGM := ideal<ZK| 4*Determinant(GM)>;
   //checking that the level of Theta divides the level of M
-  assert Level(M) subset levelGM;
+  assert Level(M) subset Level(K, GM);
 
   L := LatticeWithGram(QuadraticZ(K, GM));
 
