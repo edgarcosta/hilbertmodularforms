@@ -453,12 +453,27 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
     Lf := LSeries(prim : Precision := 50);
     Lvalue := Evaluate(Lf, 1-k[1]);
-    Lvalue_recognized := RecognizeNumber(Lvalue, degree_bound);
+    //figure out the right place
+    primes := PrimesUpTo(Precision(M), BaseField(M));
+    places := InfinitePlaces(K);
+    i := 1;
+    while #places gt 1 and i le #primes do
+      pp := primes[i];
+      app := prim(pp);
+      places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
+      i +:=1;
+    end while;
+    assert #places eq 1;
+    pl := places[1];
+    Lvalue_recognized := RecognizeOverK(Lvalue, K, pl, false);
+    //FIXME Mike, I don't think we need this anymore
+/*
     K_Lvalue := Parent(Lvalue_recognized);
     K_eta := Parent((eta^(-1))(tt));
     bl, field_mp := IsIsomorphic(K_Lvalue, K_eta);
     assert bl;
     Lvalue_recognized := field_mp(Lvalue_recognized);
+    */
     coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
   else
     coeffs[1] := 0;
