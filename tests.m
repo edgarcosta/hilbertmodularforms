@@ -72,7 +72,7 @@ assert Coefficients(theta) eq [1,6,12,0,6];
 D := 13;
 F := QuadraticField(D);
 ZF<w> := Integers(F);
-Level := 4*ZF;
+NN := 4*ZF;
 k := [2, 2];
 prec := 100;
 M := HMFSpace(F, Level, prec);
