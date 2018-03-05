@@ -439,8 +439,10 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
   assert #SequenceToSet(k) eq 1; // parallel weight
   assert k[1] ge 2; // we can remove this later
   nn := Level(M);
-  aa := Conductor(eta);
-  bb := Conductor(psi);
+  // aa := Conductor(eta);
+  aa := Modulus(eta);
+  // bb := Conductor(psi);
+  bb := Modulus(psi);
   assert nn subset aa;
   assert nn subset bb;
   Haa := HeckeCharacterGroup(aa);
@@ -464,7 +466,8 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
     end while;
     assert #places eq 1;
     pl := places[1];
-    Lvalue_recognized := RecognizeOverK(Lvalue, K, pl, false);
+    CC<I> := ComplexField(Precision(Lvalue));
+    Lvalue_recognized := RecognizeOverK(CC!Lvalue, K, pl, false);
     coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
   else
     coeffs[1] := 0;

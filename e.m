@@ -1,17 +1,19 @@
 load "config.m";
 
-F := QuadraticField(5);
+F<nu> := QuadraticField(5);
 ZF := Integers(F);
-N := (2^3*3^2)*ZF;
+// N := (-5*nu+2)*ZF;
+N := ideal<ZF|[1]>;
 prec := 100;
 M := HMFSpace(F, N, prec);
 
-k := [4,4];
-
 X := HeckeCharacterGroup(N);
-
 triv := X!1;
 eta := Random(X);
 psi := Random(X);
 
-E := EisensteinSeries(M, eta, psi, k);
+// E := EisensteinSeries(M, triv, triv, k);
+E2 := 120*EisensteinSeries(M, eta, psi, [2,2]);
+E4 := 240*EisensteinSeries(M, eta, psi, [4,4]);
+
+assert E2*E2 eq E4;
