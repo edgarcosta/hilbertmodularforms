@@ -72,14 +72,10 @@ intrinsic ThetaCoefficient(M::ModFrmHilD, v::RngOrdElt, L::Lat, GM::AlgMatElt) -
 end intrinsic;
 
 
+//FIXME, this is a multiple of the level
 intrinsic Level(K::FldNum, GM::AlgMatElt) -> RngOrdElt
   {given a Gram Matrix returns the level of the Theta series associated to the Gram matrix}
-  ZK := Integers(K);
-  GM := Matrix(K, GM);
-  GMinverse := GM^(-1);
-  NN := ideal<ZK | [ 2/GMinverse[i][i] : i in [1..NumberOfRows(GM)] ] >;
-  return NN;
-  //ideal<ZK| 4*Determinant(GM)>;
+  return ideal<ZK| 4*Determinant(GM)>;
 end intrinsic;
 
 intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
