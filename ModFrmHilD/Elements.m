@@ -422,24 +422,19 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> Mo
   return HMF(M, Weight(f), coeffs);
 end intrinsic;
 
-// FIXME
+// TODO needs testing
 intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
-  {}
-  // TODO degree bound comes from eta, psi
-  degree_bound := 5;
+  {Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).}
   Cl := NarrowClassGroup(M);
   mp := NarrowClassGroupMap(M);
-  tt := mp(Cl.1); // TODO remove
   X := Parent(eta);
   assert X eq Parent(psi);
   K := X`TargetRing; // where the character values live
-  /*
   if #Cl eq 1 then
-    tt := mp(Cl.1);
+    tt := mp(Cl.0);
   else
     error "not implemented for narrow class number > 1.";
   end if;
-  */
   n := Degree(BaseField(M));
   assert #SequenceToSet(k) eq 1; // parallel weight
   assert k[1] ge 2; // we can remove this later
@@ -452,13 +447,12 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
   Hbb := HeckeCharacterGroup(bb);
   ideals := Ideals(M);
   coeffs := [ K!0 : i in [1..#ideals]];
-  assert IsPrimitive(eta*psi^-1); // TODO only primitive for now
   // constant term
   if aa eq ideal<Order(aa)|1> then
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
     Lf := LSeries(prim : Precision := 50);
     Lvalue := Evaluate(Lf, 1-k[1]);
-    //figure out the right place
+    // figure out the right place
     primes := PrimesUpTo(Precision(M), BaseField(M));
     places := InfinitePlaces(K);
     i := 1;
