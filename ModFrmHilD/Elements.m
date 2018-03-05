@@ -481,9 +481,19 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
     end for;
     coeffs[i] := sum;
   end for;
-  if not (coefs[1] in [0,1]) then
-    factor := 1/coefs[1];
-    coefs := [factor * elt : elt in coeffs];
+  if not (coeffs[1] in [0,1]) then
+    factor := 1/coeffs[1];
+    coeffs := [factor * elt : elt in coeffs];
+    //FIXME: I would to make this integral, but K only comes to me as a relative field...
+    /*
+    kqq, mp := IsIsomorphic(CyclotomicField(1), Rationals());
+    if kqq then
+      ZK := Integers();
+      coeffs := [ZK ! mp(factor * elt) : elt in coeffs];
+    else
+      ZK := Integers(K);
+    end if;
+    */
   end if;
   return HMF(M, k, coeffs);
 end intrinsic;
