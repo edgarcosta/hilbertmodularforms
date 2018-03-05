@@ -26,7 +26,7 @@ end intrinsic;
 
 
 intrinsic ThetaCoefficient(M::ModFrmHilD, v::RngOrdElt, L::Lat, GM::AlgMatElt) -> FldNumElt
-  {given v a totally positive element in a totally real field and M the Gram matrix of a quadratic form, outputs the coefficient in the theta series for v}
+  {given v a totally positive element in a totally real field and M the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis, outputs the coefficient in the theta series for v}
   K := BaseField(M);
   //force matrix over field
   GM := Matrix(K, GM);
