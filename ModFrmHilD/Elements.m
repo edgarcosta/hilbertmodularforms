@@ -488,7 +488,7 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
     factor := 1/coeffs[1];
     coeffs := [factor * elt : elt in coeffs];
   end if;
-  if IsIsomorphic(K, Rationals()) then
+  if IsIsomorphic(K, RationalsAsNumberField()) then
     coeffs := [ Rationals() ! elt : elt in coeffs ];
   end if;
   return HMF(M, k, coeffs);
