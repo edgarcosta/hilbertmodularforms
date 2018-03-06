@@ -106,7 +106,7 @@ f := B2[1];
 B4 := CuspFormBasis(M, [4,4]);
 f2 := f*f;
 L := [f2] cat B4;
-linear_relation := Matrix(LinearDepedence(L));
+linear_relation := Matrix(LinearDependence(L));
 assert linear_relation eq Matrix([[383928, 0, 110028,  -7271,  -1117]]);
 
 
