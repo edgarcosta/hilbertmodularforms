@@ -12,7 +12,7 @@ psi := triv;
 
 E2 := EisensteinSeries(M, eta, psi, [2,2]);
 E6 := EisensteinSeries(M, eta, psi, [4,4]);
-E10 := EisensteinSeries(M, eta, psi, [10,10])
+E10 := EisensteinSeries(M, eta, psi, [10,10]);
 
 B2 := Basis(M, [2,2]);
 B4 := Basis(M, [4,4]);
