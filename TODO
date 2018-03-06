@@ -7,9 +7,12 @@
   - testing
 
 - Basis(M, weight);
+  - Fix it!
 
 - implement over QQ for sanity checks using classical (Musty)
   - printing over QQ (Musty/Edgar)
+
+- decide on scaling
 
 - Inversion (we most likely need truncated multiplication for this) (?Edgar)
 
