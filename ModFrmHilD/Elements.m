@@ -452,7 +452,10 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
   // constant term
   if aa eq ideal<Order(aa)|1> then
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-    Lf := LSeries(prim : Precision := 50);
+    // Lf := LSeries(prim : Precision := 50);
+    // TODO clean up precision
+    Lf := LSeries(prim : Precision := 100);
+    LSetPrecision(Lf, 100);
     Lvalue := Evaluate(Lf, 1-k[1]);
     // figure out the right place
     primes := PrimesUpTo(Precision(M), BaseField(M));
