@@ -10,8 +10,9 @@ triv := X!1;
 eta := triv;
 psi := triv;
 
+//this will end up being recomputed below
 E2 := EisensteinSeries(M, eta, psi, [2,2]);
-E6 := EisensteinSeries(M, eta, psi, [4,4]);
+E6 := EisensteinSeries(M, eta, psi, [6,6]);
 E10 := EisensteinSeries(M, eta, psi, [10,10]);
 
 B2 := Basis(M, [2,2]);
