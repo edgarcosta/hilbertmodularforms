@@ -572,6 +572,29 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(M, k, coeffs);
 end intrinsic;
 
+intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
+  {return f^e}
+  //FIXME when we have division just take the inverse of f
+  assert n ge 0;
+  g := Parent(f) ! (CoefficientsParent(f) ! 1);
+  if n eq 0 then
+    return g;
+  end if;
+  while n gt 1 do
+    if n mod 2 eq 0 then
+      f := f * f;
+      n := Integers() ! (n/2);
+    else
+      g := f * g;
+      f := f * f;
+      n := Integers() ! ((n - 1)/2);
+    end if;
+  end while;
+  return f * g;
+end intrinsic;
+
+
+
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_I := R!a_I}
   coeffs := [R!c : c in Coefficients(f)];
