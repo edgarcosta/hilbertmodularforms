@@ -496,7 +496,7 @@ intrinsic Basis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt],
 { returns a Basis for the space }
   CB, newforms_dimension := CuspFormBasis(M, k);
   H := HeckeCharacterGroup(Level(M));
-  //FIXME this is wrong!
+  //FIXME this is wrong for level not 1!
   eta := H ! 1;
   psi := H ! 1;
   E := EisensteinSeries(M, eta, psi, k);
