@@ -75,7 +75,7 @@ end intrinsic;
 //FIXME, this is a multiple of the level
 intrinsic Level(K::FldNum, GM::AlgMatElt) -> RngOrdElt
   {given a Gram Matrix returns the level of the Theta series associated to the Gram matrix}
-  return ideal<ZK| 4*Determinant(GM)>;
+  return ideal<Integers(K)| 4*Determinant(GM)>;
 end intrinsic;
 
 intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
