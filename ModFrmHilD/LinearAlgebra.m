@@ -7,7 +7,7 @@ end intrinsic;
 
 //TODO add optional flag to limit the number of coefficients
 intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
-  {finds a small non-trivial integral linear combination between components of v. If none can be found return the empty vector.}
+  {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
   M := Matrix( [ Coefficients(elt) : elt in list] );
   B := Basis(Kernel(M));
   if #B ne 0 then
