@@ -22,11 +22,22 @@ declare attributes ModFrmHilD:
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
-intrinsic Print(M::ModFrmHilD)
+intrinsic PercentM(M::ModFrmHilD) -> MonStgElt
+  {returns a string to produce M in a magma session.}
+  return Sprintf("HMFSpace(%m, %m, %m)", BaseField(M), Level(M), Precision(M));
+end intrinsic;
+
+intrinsic Print(M::ModFrmHilD, level::MonStgElt)
   {}
-  printf "Space of Hilbert modular forms over %o.\n", M`Field;
-  printf "Precision: %o\n", M`Precision;
-  printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(M`Level),  Generators(M`Level);
+  if level in ["Default", "Minimal", "Maximal"] then
+    printf "Space of Hilbert modular forms over %o.\n", M`Field;
+    printf "Precision: %o\n", M`Precision;
+    printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(M`Level),  Generators(M`Level);
+  elif level eq "Magma" then
+    printf "%o", PercentM(M);
+  else
+    error "not a valid printing level.";
+  end if;
 end intrinsic;
 
 intrinsic 'in'(f::., M::ModFrmHilD) -> BoolElt
