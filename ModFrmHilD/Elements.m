@@ -12,22 +12,33 @@ declare attributes ModFrmHilDElt:
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
-intrinsic Print(f::ModFrmHilDElt : num_coeffs := 10)
+intrinsic PercentM(f::ModFrmHilDElt) -> MonStgElt
+  {returns a string to produce f in a magma session.}
+  return Sprintf("HMF(%m, %m, %m)", Parent(f), Weight(f), Coefficients(f));
+end intrinsic;
+
+intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
   {}
-  M := Parent(f);
-  ideals := Ideals(M);
-  k := Weight(f);
-  prec := Precision(f);
-  coeffs := Coefficients(f);
-  printf "Hilbert modular form expansion with precision %o.\n", prec;
-  printf "\nWeight: \n%o", k;
-  printf "\nParent: \n%o", M;
-  printf "\nCoefficients:";
-  printf "\n\t(Norm, nn)  |--->   a_nn";
-  printf "\n\t(%o, %o)  |--->   %o", 0,  Generators(ideals[1]), coeffs[1];
-  for i:= 2 to Min(num_coeffs, #coeffs) do
-    printf "\n\t(%o, %o)  |--->   %o", Norm(ideals[i]),  Generators(ideals[i]), coeffs[i];
-  end for;
+  if level in ["Default", "Minimal", "Maximal"] then
+    M := Parent(f);
+    ideals := Ideals(M);
+    k := Weight(f);
+    prec := Precision(f);
+    coeffs := Coefficients(f);
+    printf "Hilbert modular form expansion with precision %o.\n", prec;
+    printf "\nWeight: \n%o", k;
+    printf "\nParent: \n%o", M;
+    printf "\nCoefficients:";
+    printf "\n\t(Norm, nn)  |--->   a_nn";
+    printf "\n\t(%o, %o)  |--->   %o", 0,  Generators(ideals[1]), coeffs[1];
+    for i:= 2 to Min(num_coeffs, #coeffs) do
+      printf "\n\t(%o, %o)  |--->   %o", Norm(ideals[i]),  Generators(ideals[i]), coeffs[i];
+    end for;
+  elif level eq "Magma" then
+    printf "%o", PercentM(f);
+  else
+    error "not a valid printing level.";
+  end if;
 end intrinsic;
 
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
