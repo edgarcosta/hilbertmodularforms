@@ -83,6 +83,7 @@ intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
   assert NumberOfRows(GM) mod 2 eq 0;
   K := BaseField(M);
   ZK := Integers(K);
+
   //checking that the level of Theta divides the level of M
   assert Level(M) subset Level(K, GM);
 
