@@ -582,10 +582,49 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(M, k, coeffs);
 end intrinsic;
 
+intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
+  {return f/g}
+  M := Parent(f);
+  assert Parent(f) eq Parent(g);
+  if not assigned M`MultiplicationTable then
+    assert HMFEquipWithMultiplication(M);
+  end if;
+  prec := Precision(M);
+  fcoeffs := Coefficients(f);
+  gcoeffs := Coefficients(g);
+  require gcoeffs[1] ne 0: "Denominator must have nonzero constant term";
+  ib0 := 1/gcoeffs[1];
+  ZC := CoefficientsParent(f);
+  MTable := MultiplicationTable(M);
+  assert ZC eq CoefficientsParent(g);
+  coeffs := [ZC!0 :  i in [1..#fcoeffs]];
+  for i := 1 to #fcoeffs do
+    c := fcoeffs[i];
+    for pair in MTable[i] do
+      if pair[1] ne 1 then
+        c -:= gcoeffs[ pair[1] ] * coeffs[ pair[2] ];
+      else
+        assert pair[2] eq i;
+      end if;
+    end for;
+    coeffs[i] := c * ib0;
+  end for;
+  kf := Weight(f);
+  kg := Weight(g);
+  k := [ kf[i] - kg[i] : i in [1..#kf] ];
+  return HMF(M, k, coeffs);
+end intrinsic;
+
+intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {return 1/f}
+  return (Parent(f) ! ( CoefficientsParent(f) ! 1) ) / f;
+end intrinsic;
+
 intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
   {return f^e}
-  //FIXME when we have division just take the inverse of f
-  assert n ge 0;
+  if n lt 0 then
+    f := Inverse(f);
+  end if;
   g := Parent(f) ! (CoefficientsParent(f) ! 1);
   if n eq 0 then
     return g;
