@@ -1,20 +1,23 @@
 # High priority
+- %m HMFS (Musty)
+
+- Inversion (Edgar)
+
 - Making multiplication work for other fields
-  - other quadratic fields
-  - other fields
+  - other nonquadratic fields
 
 - Eisenstein series (Edgar and Musty)
-  - testing
+  - change precision with the weight
 
 - Basis(M, weight);
-  - Fix it!
+  - only works for level 1
 
-- implement over QQ for sanity checks using classical (Musty)
-  - printing over QQ (Musty/Edgar)
-
-- decide on scaling
-
-- Inversion (we most likely need truncated multiplication for this) (?Edgar)
+- Higher narrow class numbers
+  - Zeroth tests!
+  - First multiplication
+  Options:
+    - constant coefficients are their own thing?
+    - k-vectors ?
 
 
 # Medium priority

@@ -518,17 +518,13 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(Parent(f), Weight(f), new_coeffs);
 end intrinsic;
 
-// TODO decide on scaling
 intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
-  {scale f by rational c.}
+  {scale f by some scalar c.}
   coeffs := Coefficients(f);
   ZK := Parent(coeffs[1]);
-  // assert c in ZK;
-  // czk := ZK ! c;
   K := FieldOfFractions(ZK);
   ck := K!c;
   new_coeffs := [ ck * elt : elt in coeffs];
-  // new_coeffs := [ czk * elt : elt in coeffs];
   return HMF(Parent(f), Weight(f), new_coeffs);
 end intrinsic;
 
