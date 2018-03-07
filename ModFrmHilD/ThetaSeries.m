@@ -75,7 +75,9 @@ end intrinsic;
 //FIXME, this is a multiple of the level
 intrinsic Level(K::FldNum, GM::AlgMatElt) -> RngOrdElt
   {given a Gram Matrix returns the level of the Theta series associated to the Gram matrix}
-  return ideal<Integers(K)| 4*Determinant(GM)>;
+  // return ideal<Integers(K)| 4*Determinant(GM)>;
+  L := NumberFieldLatticeWithGram(GM);
+  return (1/2*Norm(L))^(-1)*(1/2*Norm(Dual(L)))^(-1);
 end intrinsic;
 
 intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
