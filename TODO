@@ -5,7 +5,10 @@
 - Eisenstein series (Edgar and Musty)
   - change precision with the weight
 
+- Save Space
+
 - Basis(M, weight);
+  - save to space
   - only works for level 1
 
 - Higher narrow class numbers
