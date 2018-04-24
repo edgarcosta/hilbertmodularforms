@@ -76,9 +76,10 @@ N := 4*ZF;
 k := [2, 2];
 prec := 100;
 M := HMFSpace(F, N, prec);
-M1 := DiagonalMatrix([1,1]);
-M2 := DiagonalMatrix([1,1,1,1]);
+M1 := Matrix(ZF,[[1,0],[0,1]]);
+M2 := Matrix(ZF,[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]);
 f := ThetaSeries(M, M1);
 g := ThetaSeries(M, M2);
 assert f*f eq g;
+
 
