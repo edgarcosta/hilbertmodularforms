@@ -12,13 +12,20 @@ declare attributes ModFrmHilD:
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
   NarrowClassGroupRepresentatives, // SeqEnum[RngOrdElt/RngFracElt]
+
+  //TODO: this to be moved to Element and replaced by character
   Level, // RngOrdIdl : ideal of Integers(Field)
   Precision, // RngIntElt : precision for all expansions with this parent
   Ideals, // SeqEnum[RngOrdIdl]
   Dictionary, // Assoc maps Ideals[i] to i
-  MultiplicationTable, // SeqEnum[pairs of integers] TODO
+  MultiplicationTable, // SeqEnum[pairs of integers]
   Representatives, // SeqEnum[nu]
-  DictionaryRepresentatives; // Assoc maps Representatives[i] to i TODO
+  DictionaryRepresentatives, // Assoc maps Representatives[i] to i
+
+  // Book keeping
+  EigenForms, // an Associative Array (character, weight) --> list of eigenforms spanning eigenspace
+  NewForms, // an Associative Array (character, weight) --> list of basis for the NewForms
+  OldForms; // an Associative Array (character, weight) --> list of basis for the NewForms
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
