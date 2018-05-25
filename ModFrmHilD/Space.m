@@ -25,7 +25,7 @@ declare attributes ModFrmHilD:
 
   // Book keeping
   // Caching the computation of EigenForms
-  HeckeEigenvalues,
+  HeckeEigenvalues;
   // a dobule indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
 
 ////////// ModFrmHilD fundamental intrinsics //////////

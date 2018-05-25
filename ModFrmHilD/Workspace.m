@@ -1,6 +1,3 @@
-
-
-
 declare type ModFrmHilDWorkspace [ModFrmHilD];
 declare attributes ModFrmHilDWorkspace:
   // stuff asocieted to the base filed field
