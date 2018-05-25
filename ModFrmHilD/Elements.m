@@ -334,6 +334,42 @@ intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
   return HMFnewforms;
 end intrinsic;
 
+
+intrinsic NewformsToHMF2(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
+// many wrong things
+  {returns Hilbert newforms}
+  F := BaseField(M);
+  N := Level(M); //input
+  prec := Precision(M);
+  HeckeEigenvalue := HeckeEigenvalues(M);
+  key :=  [* N, k *];
+  if not IsDefined(M, key) then
+    MF := HilbertCuspForms(F, N, k);
+    S := NewSubspace(MF);
+    newspaces  := NewformDecomposition(S);
+    newforms := [* Eigenform(U) : U in newspaces *];
+    primes := Primes(M);
+    EVnewforms := [];
+    for newform in newforms do
+      eigenvalues := [];
+      for i in [1..#primes] do
+          eigenvalues[i] := HeckeEigenvalue(newform, primes[i]);
+      end for;
+      Append(~EVnewforms, eigenvalues);
+    end for;
+    HeckeEigenvalue[key] := EVnewforms;
+  else
+    EVnewforms := HeckeEigenvalue[key];
+  end if;
+
+  HMFnewforms := [];
+  for eigenvalues in EVnewforms do
+      ef := EigenformToHMF(M, k, eigenvalues); //FIXME, this is not correct
+      Append(~HMFnewforms, ef);
+    end for;
+  return HMFnewforms;
+end intrinsic;
+
 intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form}
   M := Parent(f);

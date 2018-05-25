@@ -17,6 +17,7 @@ declare attributes ModFrmHilD:
   Level, // RngOrdIdl : ideal of Integers(Field)
   Precision, // RngIntElt : precision for all expansions with this parent
   Ideals, // SeqEnum[RngOrdIdl]
+  Primes, //
   Dictionary, // Assoc maps Ideals[i] to i
   MultiplicationTable, // SeqEnum[pairs of integers]
   Representatives, // SeqEnum[nu]
@@ -24,7 +25,8 @@ declare attributes ModFrmHilD:
 
   // Book keeping
   // Caching the computation of EigenForms
-  EigenForms, // an Associative Array (character, weight) --> list of eigenforms and their corresponding eigenspaces
+  HeckeEigenvalues,
+  // an Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
