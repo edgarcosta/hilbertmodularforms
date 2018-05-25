@@ -23,9 +23,8 @@ declare attributes ModFrmHilD:
   DictionaryRepresentatives, // Assoc maps Representatives[i] to i
 
   // Book keeping
-  EigenForms, // an Associative Array (character, weight) --> list of eigenforms spanning eigenspace
-  NewForms, // an Associative Array (character, weight) --> list of basis for the NewForms
-  OldForms; // an Associative Array (character, weight) --> list of basis for the NewForms
+  // Caching the computation of EigenForms
+  EigenForms, // an Associative Array (character, weight) --> list of eigenforms and their corresponding eigenspaces
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
