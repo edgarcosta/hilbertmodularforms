@@ -137,7 +137,7 @@ intrinsic Save(M::ModFrmHilD, filename::MonStgElt) -> MonStgElt
   {}
   str := SaveText(M);
   str *:= Sprintf("\nreturn M;\n");
-  Write(filename, str);
+  Write(filename, str : Overwrite := true);
   return Sprintf("%o written to file\n", filename);
 end intrinsic;
 
