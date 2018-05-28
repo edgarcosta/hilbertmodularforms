@@ -1,3 +1,156 @@
+/* object to index Assoc array to cache eigenforms to space M */
+
+declare type LevelAndWeight;
+declare attributes LevelAndWeight:
+  Level,
+  Weight;
+
+intrinsic LevelAndWeightInitialize() -> LevelAndWeight
+  {Create an empty LevelAndWeight object.}
+  NNk := New(LevelAndWeight);
+  return NNk;
+end intrinsic;
+
+intrinsic LevelAndWeightInitialize(NN::RngOrdIdl, k::SeqEnum[RngIntElt]) -> LevelAndWeight
+  {}
+  NNk := LevelAndWeightInitialize();
+  NNk`Level := NN;
+  NNk`Weight := k;
+  return NNk;
+end intrinsic;
+
+intrinsic Level(NNk::LevelAndWeight) -> RngOrdIdl
+  {}
+  return NNk`Level;
+end intrinsic;
+
+intrinsic Weight(NNk::LevelAndWeight) -> SeqEnum[RngIntElt]
+  {}
+  return NNk`Weight;
+end intrinsic;
+
+intrinsic 'eq'(NNk1::LevelAndWeight, NNk2::LevelAndWeight) -> BoolElt
+  {}
+  if Level(NNk1) eq Level(NNk2) then
+    if Weight(NNk1) eq Weight(NNk2) then
+      return true;
+    else
+      return false;
+    end if;
+  else
+    return false;
+  end if;
+end intrinsic;
+
+intrinsic Print(NNk::LevelAndWeight)
+  {}
+  if assigned NNk`Level then
+    printf "Level:\n%o\n", Level(NNk);
+  end if;
+  if assigned NNk`Weight then
+    printf "Weight:\n%o", Weight(NNk);
+  end if;
+end intrinsic;
+
+/* Compute */
+
+// TODO move level from space to form
+intrinsic CacheHeckeEigenvalues(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+  {Computes and caches the eigenvalues to the space M and returns M.}
+  F := BaseField(M);
+  N := Level(M); // TODO change this to an input
+  prec := Precision(M);
+  key := LevelAndWeightInitialize(N, k);
+  if assigned M`HeckeEigenvalues then
+    if key in Keys(M`HeckeEigenvalues) then
+      printf "Hecke eigenvalues already computed for\nLevel:\n%o\nWeight\n%o", N, k;
+      return M;
+    else
+      MF := HilbertCuspForms(F, N, k);
+      S := NewSubspace(MF);
+      newspaces  := NewformDecomposition(S);
+      newforms := [* Eigenform(U) : U in newspaces *];
+      primes := Primes(M);
+      EVnewforms := [* *];
+      for newform in newforms do
+        eigenvalues := [];
+        for i in [1..#primes] do
+          eigenvalues[i] := HeckeEigenvalue(newform, primes[i]);
+        end for;
+        Append(~EVnewforms, eigenvalues);
+      end for;
+      M`HeckeEigenvalues[key] := EVnewforms;
+      return M;
+    end if;
+  else
+    // need to make Assoc M`HeckeEigenvalues in this case
+    MF := HilbertCuspForms(F, N, k);
+    S := NewSubspace(MF);
+    newspaces  := NewformDecomposition(S);
+    newforms := [* Eigenform(U) : U in newspaces *];
+    primes := Primes(M);
+    EVnewforms := [];
+    for newform in newforms do
+      eigenvalues := [];
+      for i in [1..#primes] do
+        eigenvalues[i] := HeckeEigenvalue(newform, primes[i]);
+      end for;
+      Append(~EVnewforms, eigenvalues);
+    end for;
+    // M`HeckeEigenvalues not assigned so make new Assoc
+    M`HeckeEigenvalues := AssociativeArray();
+    M`HeckeEigenvalues[key] := EVnewforms;
+    return M;
+  end if;
+end intrinsic;
+
+/* Save */
+
+intrinsic SaveText(M::ModFrmHilD) -> MonStgElt
+  {}
+  str := "";
+  str *:= Sprintf("M := %m;\n", M);
+  if assigned M`HeckeEigenvalues then
+    hecke := HeckeEigenvalues(M);
+    ZF<w> := BaseField(M);
+    str *:= Sprintf("F<w> := BaseField(M);");
+    str *:= Sprintf("ZF := Integers(F);");
+    str *:= Sprintf("M`HeckeEigenvalues := AssociativeArray();\n");
+    for key in Keys(hecke) do
+      NN := Level(key);
+      k := Weight(key);
+      str *:= Sprintf("NN := ideal<ZF|%o>;\n", Basis(NN));
+      str *:= Sprintf("k := %m;\n", k);
+      str *:= Sprintf("key := LevelAndWeightInitialize(NN, k);\n");
+      str *:= Sprintf("EVlist := [* *];\n");
+      for i := 1 to #hecke[key] do
+        str *:= Sprintf("l := %m;\n", hecke[key][i]);
+        str *:= Sprintf("Append(~EVlist, l);\n");
+      end for;
+      str *:= Sprintf("M`HeckeEigenvalues[key] := EVlist;\n");
+    end for;
+  end if;
+  return str;
+end intrinsic;
+
+intrinsic Save(M::ModFrmHilD, filename::MonStgElt) -> MonStgElt
+  {}
+  str := SaveText(M);
+  str *:= Sprintf("\nreturn M;\n");
+  Write(filename, str);
+  return Sprintf("%o written to file\n", filename);
+end intrinsic;
+
+/* Load */
+
+intrinsic Load(filename::MonStgElt) -> MonStgElt
+  {}
+  str := Read(filename);
+  M := eval str;
+  return M;
+end intrinsic;
+
+/*
 declare type ModFrmHilDWorkspace [ModFrmHilD];
 declare attributes ModFrmHilDWorkspace:
   // stuff asocieted to the base filed field
@@ -82,5 +235,4 @@ intrinsic IsDefinedDouble(A::Assoc, x::Any, y::Any) -> BoolElt
   end if;
   return False;
 end intrinsic;
-
-
+*/

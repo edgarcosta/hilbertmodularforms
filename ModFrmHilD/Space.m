@@ -110,6 +110,11 @@ intrinsic Ideals(M::ModFrmHilD) -> SeqEnum[RngOrdIdl]
   return M`Ideals;
 end intrinsic;
 
+intrinsic Primes(M::ModFrmHilD) -> SeqEnum[RngOrdIdl]
+  {}
+  return M`Primes;
+end intrinsic;
+
 intrinsic Dictionary(M::ModFrmHilD) -> Assoc
   {The dictionary for ideals of the space M of Hilbert modular forms.}
   return M`Dictionary;
@@ -136,10 +141,15 @@ end intrinsic;
 // TODO add text
 intrinsic Representatives(M::ModFrmHilD) -> SeqEnum
   {}
- if not assigned M`Representatives then
+  if not assigned M`Representatives then
     assert HMFEquipWithMultiplication(M);
   end if;
   return M`Representatives;
+end intrinsic;
+
+intrinsic HeckeEigenvalues(M::ModFrmHilD) -> Assoc
+  {}
+  return M`HeckeEigenvalues;
 end intrinsic;
 
 ////////// ModFrmHilD creation functions //////////
@@ -171,6 +181,9 @@ intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, prec::RngIntElt) -> ModFrmHilD
   zero_ideal := ideal<Integers(F)|0>;
   Is := [zero_ideal] cat IdealsUpTo(prec, F);
   M`Ideals := Is;
+  // primes
+  M`Primes := PrimesUpTo(prec, F);
+  // dictionary
   dictionary := AssociativeArray();
   for i := 1 to #Is do
     dictionary[Is[i]] := i;

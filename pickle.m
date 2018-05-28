@@ -1,13 +1,14 @@
 load "config.m";
 
-// basic inputs to creation functions
 F := QuadraticField(8);
 ZF<w> := Integers(F);
-N := ideal<ZF | { 3}>;
-k := [2, 2];
+N := ideal<ZF | {3}>;
 K := Rationals();
 prec := 200;
-
-// ModFrmHilD creation and access to attributes
 M := HMFSpace(F, N, prec);
 
+time CacheHeckeEigenvalues(M, [2,2]);
+time CacheHeckeEigenvalues(M, [4,4]);
+time CacheHeckeEigenvalues(M, [8,8]);
+
+Save(M, "save_test.m");

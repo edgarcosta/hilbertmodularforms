@@ -335,8 +335,8 @@ intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
 end intrinsic;
 
 
+/*
 intrinsic NewformsToHMF2(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
-// many wrong things
   {returns Hilbert newforms}
   F := BaseField(M);
   N := Level(M); //input
@@ -361,7 +361,6 @@ intrinsic NewformsToHMF2(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrm
   else
     EVnewforms := HeckeEigenvalue[key];
   end if;
-
   HMFnewforms := [];
   for eigenvalues in EVnewforms do
       ef := EigenformToHMF(M, k, eigenvalues); //FIXME, this is not correct
@@ -369,6 +368,7 @@ intrinsic NewformsToHMF2(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrm
     end for;
   return HMFnewforms;
 end intrinsic;
+*/
 
 intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form}
