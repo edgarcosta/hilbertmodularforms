@@ -47,7 +47,8 @@ primesArray := [
 [ 193, w + 52 ],
 [ 199, w + 20 ],
 [ 199, w + 179 ]
-];M`Primes := [ideal<ZF | {F!x : x in I}> : I in primesArray];
+];
+M`Primes := [ideal<ZF | {F!x : x in I}> : I in primesArray];
 
 M`HeckeEigenvalues := AssociativeArray();
 NN := ideal<ZF|[ 3, 3*w ]>;
