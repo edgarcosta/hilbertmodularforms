@@ -115,7 +115,7 @@ intrinsic SaveText(M::ModFrmHilD) -> MonStgElt
     ZF<w> := BaseField(M);
     str *:= Sprintf("F<w> := BaseField(M);\n");
     str *:= Sprintf("ZF := Integers(F);\n");
-    str *:= Sprintf("primesArray := %o;", [Generators(pp):  pp in Primes(M)]);
+    str *:= Sprintf("primesArray := %o;\n", [Generators(pp):  pp in Primes(M)]);
     str *:= Sprintf("M`Primes := [ideal<ZF | {F!x : x in I}> : I in primesArray];\n\n");
 
     str *:= Sprintf("M`HeckeEigenvalues := AssociativeArray();\n");
