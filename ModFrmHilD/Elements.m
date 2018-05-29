@@ -448,6 +448,12 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
   return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1);
 end intrinsic;
 
+//TODO: 
+//Tests: 
+// - Apply Hecke on a Galois Orbit, and see that it doesn't move
+// - Apply Hecke to a Eisensten series, and check that is a multiple
+// - Apply Hecke to a Theta series, and see if we get the whole space
+
 intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> ModFrmHilDElt
   {returns T(n)(f)}
   M := Parent(f);
