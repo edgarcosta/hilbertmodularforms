@@ -1,5 +1,56 @@
 M := HMFSpace(QuadraticField(2), ideal<Integers(QuadraticField(2)) | \[ 3, 0 ]>, 200);
-F<w> := BaseField(M);ZF := Integers(F);M`HeckeEigenvalues := AssociativeArray();
+F<w> := BaseField(M);
+ZF := Integers(F);
+primesArray := [
+[ 2, w ],
+[ 7, w + 3 ],
+[ 7, w + 4 ],
+[ 3 ],
+[ 17, w + 6 ],
+[ 17, w + 11 ],
+[ 23, w + 18 ],
+[ 23, w + 5 ],
+[ 5 ],
+[ 31, w + 23 ],
+[ 31, w + 8 ],
+[ 41, w + 24 ],
+[ 41, w + 17 ],
+[ 47, w + 7 ],
+[ 47, w + 40 ],
+[ 71, w + 59 ],
+[ 71, w + 12 ],
+[ 73, w + 32 ],
+[ 73, w + 41 ],
+[ 79, w + 9 ],
+[ 79, w + 70 ],
+[ 89, w + 64 ],
+[ 89, w + 25 ],
+[ 97, w + 83 ],
+[ 97, w + 14 ],
+[ 103, w + 38 ],
+[ 103, w + 65 ],
+[ 113, w + 62 ],
+[ 113, w + 51 ],
+[ 11 ],
+[ 127, w + 16 ],
+[ 127, w + 111 ],
+[ 137, w + 31 ],
+[ 137, w + 106 ],
+[ 151, w + 46 ],
+[ 151, w + 105 ],
+[ 167, w + 13 ],
+[ 167, w + 154 ],
+[ 13 ],
+[ 191, w + 57 ],
+[ 191, w + 134 ],
+[ 193, w + 141 ],
+[ 193, w + 52 ],
+[ 199, w + 20 ],
+[ 199, w + 179 ]
+];
+M`Primes := [ideal<ZF | {F!x : x in I}> : I in primesArray];
+
+M`HeckeEigenvalues := AssociativeArray();
 NN := ideal<ZF|[ 3, 3*w ]>;
 k := \[ 2, 2 ];
 key := LevelAndWeightInitialize(NN, k);
