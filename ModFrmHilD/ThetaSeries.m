@@ -77,7 +77,7 @@ intrinsic Level(K::FldNum, GM::AlgMatElt) -> RngOrdElt
   {given a Gram Matrix returns the level of the Theta series associated to the Gram matrix}
   // return ideal<Integers(K)| 4*Determinant(GM)>;
   L := NumberFieldLatticeWithGram(GM);
-  return (1/2*Norm(L))^(-1)*(1/2*Norm(Dual(L)))^(-1);
+  return ideal<Integers(K)|(1/2*Norm(L))^(-1)*(1/2*Norm(Dual(L)))^(-1)>;
 end intrinsic;
 
 intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
@@ -87,7 +87,6 @@ intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
   ZK := Integers(K);
 
   //checking that the level of Theta divides the level of M
-  assert Level(M) subset Level(K, GM);
 
   L := LatticeWithGram(QuadraticZ(K, GM));
 
@@ -102,5 +101,5 @@ intrinsic ThetaSeries(M::ModFrmHilD, GM::AlgMatElt) -> ModFrmHilDElt
   coeffs[1] := ZK ! 1;
   w := Integers()! (NumberOfRows(GM)/2);
   weight := [w : i in [1..Degree(K)]];
-  return HMF(M, weight, coeffs);
+  return HMF(M, Level(K, GM), weight, coeffs);
 end intrinsic;
