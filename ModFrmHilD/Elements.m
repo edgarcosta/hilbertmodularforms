@@ -8,6 +8,7 @@ declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent, // M
   Weight, // SeqEnum[RngIntElt] : a sequence of [ModFrmHilDBaseField : QQ] integers
+  Level, // RngOrdIdl : ideal of Integers(Field)
   Coefficients; // SeqEnum : this also keeps track of coefficient ring
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
@@ -25,10 +26,12 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     k := Weight(f);
     prec := Precision(f);
     coeffs := Coefficients(f);
+    N := Level(f);
     printf "Hilbert modular form expansion with precision %o.\n", prec;
-    printf "\nWeight: \n%o", k;
-    printf "\nParent: \n%o", M;
-    printf "\nCoefficients:";
+    printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
+    printf "Weight: %o\n", k;
+    printf "Parent: %o\n", M;
+    printf "Coefficients:\n";
     printf "\n\t(Norm, nn)  |--->   a_nn";
     printf "\n\t(%o, %o)  |--->   %o", 0,  Generators(ideals[1]), coeffs[1];
     for i:= 2 to Min(num_coeffs, #coeffs) do
@@ -94,7 +97,7 @@ end intrinsic;
 
 intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   {returns level of parent of f.}
-  return Level(Parent(f));
+  return f`Level;
 end intrinsic;
 
 intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
@@ -134,7 +137,7 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
 end intrinsic;
 
 
-intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
+intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
   {Given M and a SeqEnum of coefficients, return ModFrmHilDElt with parent M.
   WARNING: user is responsible for coefficients and order...proceed with caution.
   }
@@ -147,12 +150,13 @@ intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHi
   // make form f
   f := ModFrmHilDEltInitialize();
   f`Parent := M;
+  f`Level := N;
   f`Weight := k;
   f`Coefficients := coeffs;
   return f;
 end intrinsic;
 
-intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], cmap::Assoc) -> ModFrmHilDElt
+intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], cmap::Assoc) -> ModFrmHilDElt
   {given a ModFrmHilD, a weight k, and an associative array of coefficients on the ideals, return ModFrmHilDElt.}
   ideals := Ideals(M);
   if #Keys(cmap) ne #ideals then
@@ -160,13 +164,13 @@ intrinsic HMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], cmap::Assoc) -> ModFrmHilDEl
   end if;
   dict_ideal := Dictionary(M);
   coeffs_seqenum := [ cmap[ideals[i]]  : i in [1..#Keys(cmap)] ];
-  return HMF(M, k, coeffs_seqenum);
+  return HMF(M, N, k, coeffs_seqenum);
 end intrinsic;
 
-intrinsic HMFZero(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
+intrinsic HMFZero(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
   {create zero ModHilFrmDElt of weight k.}
   coeffs := [ 0 : i in [1..#Ideals(M)]];
-  return HMF(M, k, coeffs);
+  return HMF(M, N, k, coeffs);
 end intrinsic;
 
 
@@ -228,12 +232,11 @@ end intrinsic;
 
 ////////// ModFrmHilDElt creation functions //////////
 
-
-intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc) -> ModFrmHilDElt
+//TODO: change hecke_eigenvalues to a list
+intrinsic EigenformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
   // pull info from M
   F := BaseField(M);
-  N := Level(M);
   prec := Precision(M);
   // a prime
   pp := Random(Keys(hecke_eigenvalues));
@@ -309,13 +312,12 @@ intrinsic EigenformToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt], hecke_eigenvalues
   for i := 1 to #coeffs do
     assert set[i];
   end for;
-  return HMF(M, k, coeffs);
+  return HMF(M, N, k, coeffs);
 end intrinsic;
 
-intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
+intrinsic NewformsToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
   {returns Hilbert newforms}
   F := BaseField(M);
-  N := Level(M);
   prec := Precision(M);
   MF := HilbertCuspForms(F, N, k);
   S := NewSubspace(MF);
@@ -328,7 +330,7 @@ intrinsic NewformsToHMF(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
     for pp in primes do
         eigenvalues[pp] := HeckeEigenvalue(newform, pp);
     end for;
-    ef := EigenformToHMF(M, k, eigenvalues);
+    ef := EigenformToHMF(M, N, k, eigenvalues);
     Append(~HMFnewforms, ef);
   end for;
   return HMFnewforms;
@@ -379,7 +381,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   G, Pmap, Gmap := AutomorphismGroup(K);
   result := [];
   for g in G do
-    Append(~result, HMF(M, k, [Gmap(g)(elt) : elt in coeff]) );
+    Append(~result, HMF(M, Level(f), k, [Gmap(g)(elt) : elt in coeff]) );
   end for;
   return result;
 end intrinsic;
@@ -392,16 +394,15 @@ intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   K := NumberField(CoefficientsParent(f));
   result := [];
   for b in Basis(K) do
-    Append(~result, HMF(M, k, [Trace(b * elt) : elt in coeff]) );
+    Append(~result, HMF(M, Level(f), k, [Trace(b * elt) : elt in coeff]) );
   end for;
   return result;
 end intrinsic;
 
-intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
+intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
   {returns a basis for M of weight k}
   prec := Precision(M);
   F := BaseField(M);
-  N := Level(M);
   ideals := Ideals(M);
   dict := Dictionary(M);
   set_ideals := Keys(dict);
@@ -411,8 +412,7 @@ intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
   //TODO should we sieve?
   for dd in Divisors(N) do
     basis := [];
-    Mdd := HMFSpace(F, dd, prec);
-    orbit_representatives := NewformsToHMF(Mdd, k);
+    orbit_representatives := NewformsToHMF(M, N, k);
     orbits := [GaloisOrbitDescent(elt) : elt in orbit_representatives];
     old_space_basis := &cat orbits;
     old_space_coeffs := [Coefficients(elt) : elt in old_space_basis];
@@ -430,9 +430,9 @@ intrinsic CuspFormBasis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmH
           break i;
         end if;
       end for;
-      basis := basis cat [HMF(M, k, elt) : elt in new_coeffs_ee];
+      basis := basis cat [HMF(M, N, k, elt) : elt in new_coeffs_ee];
     end for;
-    if dd eq Level(M) then
+    if dd eq N then
       if #orbits eq 0 then
         newforms_dimension := 0;
       else
@@ -472,11 +472,11 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> Mo
       end for;
     coeffs[i] := c;
     end for;
-  return HMF(M, Weight(f), coeffs);
+  return HMF(M, Level(f), Weight(f), coeffs);
 end intrinsic;
 
 // TODO needs testing
-intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
+intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
   {Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).}
   Cl := NarrowClassGroup(M);
   mp := NarrowClassGroupMap(M);
@@ -491,7 +491,7 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
   n := Degree(BaseField(M));
   assert #SequenceToSet(k) eq 1; // parallel weight
   assert k[1] ge 2; // we can remove this later
-  nn := Level(M);
+  nn := N;
   // aa := Conductor(eta);
   aa := Modulus(eta);
   // bb := Conductor(psi);
@@ -544,15 +544,16 @@ intrinsic EisensteinSeries(M::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt, k:
   if IsIsomorphic(K, RationalsAsNumberField()) then
     coeffs := [ Rationals() ! elt : elt in coeffs ];
   end if;
-  return HMF(M, k, coeffs);
+  return HMF(M, N, k, coeffs);
 end intrinsic;
 
 
-intrinsic Basis(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
+intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
 { returns a Basis for the space }
   CB, newforms_dimension := CuspFormBasis(M, k);
-  H := HeckeCharacterGroup(Level(M));
+  H := HeckeCharacterGroup(N);
   //FIXME this is wrong for level not 1!
+  print "FIXME this is wrong for level not 1!";
   eta := H ! 1;
   psi := H ! 1;
   E := EisensteinSeries(M, eta, psi, k);
@@ -568,7 +569,7 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   assert c in ZK;
   czk := ZK ! c;
   new_coeffs := [ czk * elt : elt in coeffs];
-  return HMF(Parent(f), Weight(f), new_coeffs);
+  return HMF(Parent(f), Level(f), Weight(f), new_coeffs);
 end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
@@ -578,27 +579,30 @@ intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   K := FieldOfFractions(ZK);
   ck := K!c;
   new_coeffs := [ ck * elt : elt in coeffs];
-  return HMF(Parent(f), Weight(f), new_coeffs);
+  return HMF(Parent(f), Level(f), Weight(f), new_coeffs);
 end intrinsic;
 
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f+g.}
   assert Parent(f) eq Parent(g);
+  assert Level(f) eq Level(g);
   assert Weight(f) eq Weight(g);
   new_coeffs := [ Coefficients(f)[i] + Coefficients(g)[i] : i in [1..#Coefficients(f)] ];
-  return HMF(Parent(f), Weight(f), new_coeffs);
+  return HMF(Parent(f), Level(f) meet Level(g), Weight(f), new_coeffs);
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f-g.}
   assert Parent(f) eq Parent(g);
+  assert Level(f) eq Level(g);
   assert Weight(f) eq Weight(g);
   new_coeffs := [ Coefficients(f)[i] - Coefficients(g)[i] : i in [1..#Coefficients(f)] ];
-  return HMF(Parent(f), Weight(f), new_coeffs);
+  return HMF(Parent(f), Level(f) meet Level(g), Weight(f), new_coeffs);
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f*g}
+  N := Level(f) meet Level(g);
   M := Parent(f);
   assert Parent(f) eq Parent(g);
   if not assigned M`MultiplicationTable then
@@ -621,11 +625,12 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   kf := Weight(f);
   kg := Weight(g);
   k := [ kf[i] + kg[i] : i in [1..#kf] ];
-  return HMF(M, k, coeffs);
+  return HMF(M, N, k, coeffs);
 end intrinsic;
 
 intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f/g}
+  N := Level(f) meet Level(g);
   M := Parent(f);
   assert Parent(f) eq Parent(g);
   if not assigned M`MultiplicationTable then
@@ -654,7 +659,7 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   kf := Weight(f);
   kg := Weight(g);
   k := [ kf[i] - kg[i] : i in [1..#kf] ];
-  return HMF(M, k, coeffs);
+  return HMF(M, N, k, coeffs);
 end intrinsic;
 
 intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
@@ -689,7 +694,7 @@ end intrinsic;
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_I := R!a_I}
   coeffs := [R!c : c in Coefficients(f)];
-  return HMF(Parent(f), Weight(f), coeffs);
+  return HMF(Parent(f), Level(f), Weight(f), coeffs);
 end intrinsic;
 
 
@@ -697,10 +702,11 @@ intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   {}
   if ISA(Type(f), RngElt) then
     P := Parent(f);
+    N := Integers(M);
     coeffs := [P!0 : c in [1..#Ideals(M)]];
     coeffs[1] := f;
     k := [0 : c in [1..Degree(BaseField(M))]];
-    return true, HMF(M, k , coeffs);
+    return true, HMF(M, N, k , coeffs);
   end if;
 
   if Type(f) ne ModFrmHilDElt then
@@ -710,12 +716,8 @@ intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   if Parent(f) eq M then
     return true, f;
   elif (BaseField(M) eq BaseField(f)) and (Precision(M) eq Precision(f)) then
-    if Level(M) subset Level(f) then
-      coeffs := Coefficients(f);
-      return true, HMF(M, Weight(f) , coeffs);
-    else
-      return false;
-    end if;
+    coeffs := Coefficients(f);
+    return true, HMF(M, Level(f), Weight(f) , coeffs);
   else
     return false;
   end if;

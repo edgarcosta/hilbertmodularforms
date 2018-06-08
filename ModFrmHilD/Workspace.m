@@ -54,11 +54,9 @@ end intrinsic;
 
 /* Compute */
 
-// TODO move level from space to form
-intrinsic CacheHeckeEigenvalues(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+intrinsic HeckeEigenvalues(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   {Computes and caches the eigenvalues to the space M and returns M.}
   F := BaseField(M);
-  N := Level(M); // TODO change this to an input
   prec := Precision(M);
   key := LevelAndWeightInitialize(N, k);
   if assigned M`HeckeEigenvalues then

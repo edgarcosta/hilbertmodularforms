@@ -15,9 +15,8 @@ K := Rationals();
 prec := 200;
 
 // ModFrmHilD creation and access to attributes
-M := HMFSpace(F, N, prec);
+M := HMFSpace(F,  prec);
 BaseField(M); // F
-Level(M); // N
 Precision(M); // prec
 //Ideals(M); // ideals of ZF (including 0) up to norm max_prec
 // Dictionary(M); // internal
@@ -31,8 +30,8 @@ for i := 1 to num_ideals do
   Append(~random_coeffs_f, Random(1,100000));
   Append(~random_coeffs_g, Random(1,100000));
 end for;
-f := HMF(M, k, random_coeffs_f);
-g := HMF(M, k, random_coeffs_g);
+f := HMF(M, N, k, random_coeffs_f);
+g := HMF(M, N, k, random_coeffs_g);
 
 // addition and scalar multiplication
 h := 12351426*(f+g);
@@ -49,7 +48,7 @@ for pp in primes do
     eigenvalues[pp] := HeckeEigenvalue(newforms[1],pp);
 end for;
 
-ef := EigenformToHMF(M, k, eigenvalues);
+ef := EigenformToHMF(M, N, k, eigenvalues);
 print ef;
 // Compare with http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
 // a_n = \sum a_nn where Norm(nn) = n
@@ -60,8 +59,8 @@ ZF<w> := Integers(F);
 N := ideal<ZF | {11}>;
 k := [2, 2];
 prec := 100;
-M := HMFSpace(F, N, prec);
-orbit_representatives := NewformsToHMF(M, k);
+M := HMFSpace(F,  prec);
+orbit_representatives := NewformsToHMF(M, N, k);
 print "Do we have two Galois orbits?", #orbit_representatives eq 2;
 print "One of dimension 1 and another of dimension 2";
 orbits := [GaloisOrbit(elt) : elt in orbit_representatives];
@@ -100,10 +99,10 @@ F := QuadraticField(5);
 ZF<w> := Integers(F);
 N := Factorization(ideal<ZF| {31}>)[1][1];
 k := [2, 2];
-M := HMFSpace(F, N, prec);
-B2 := CuspFormBasis(M, [2,2]);
+M := HMFSpace(F, prec);
+B2 := CuspFormBasis(M, N, [2,2]);
 f := B2[1];
-B4 := CuspFormBasis(M, [4,4]);
+B4 := CuspFormBasis(M, N, [4,4]);
 f2 := f*f;
 L := [f2] cat B4;
 linear_relation := Matrix(LinearDependence(L));
@@ -114,16 +113,14 @@ assert linear_relation eq Matrix([[383928, 0, 110028,  -7271,  -1117]]);
 F := QuadraticField(5);
 ZF<w> := Integers(F);
 GM := Matrix(ZF, [[1,1],[1,2]]);
-N := ideal<ZF| 4* Determinant(GM)>;
 prec := 10;
-M := HMFSpace(F, N, prec);
+M := HMFSpace(F, prec);
 theta := ThetaSeries(M, GM);
 assert Coefficients(theta) eq [1,4,4,8,8];
 
 GM := Matrix(F, [[1,-1/2],[-1/2,1]]);
-N := ideal<ZF| 4* Determinant(GM)>;
 prec := 10;
-M := HMFSpace(F, N, prec);
+M := HMFSpace(F, prec);
 theta := ThetaSeries(M, GM);
 assert Coefficients(theta) eq [1,6,12,0,6];
 

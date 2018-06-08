@@ -13,8 +13,6 @@ declare attributes ModFrmHilD:
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
   NarrowClassGroupRepresentatives, // SeqEnum[RngOrdElt/RngFracElt]
 
-  //TODO: this to be moved to Element and replaced by character
-  Level, // RngOrdIdl : ideal of Integers(Field)
   Precision, // RngIntElt : precision for all expansions with this parent
   Ideals, // SeqEnum[RngOrdIdl]
   Primes, //
@@ -32,7 +30,7 @@ declare attributes ModFrmHilD:
 
 intrinsic PercentM(M::ModFrmHilD) -> MonStgElt
   {returns a string to produce M in a magma session.}
-  return Sprintf("HMFSpace(%m, %m, %m)", BaseField(M), Level(M), Precision(M));
+  return Sprintf("HMFSpace(%m, %m, %m)", BaseField(M), Precision(M));
 end intrinsic;
 
 intrinsic Print(M::ModFrmHilD, level::MonStgElt)
@@ -40,7 +38,6 @@ intrinsic Print(M::ModFrmHilD, level::MonStgElt)
   if level in ["Default", "Minimal", "Maximal"] then
     printf "Space of Hilbert modular forms over %o.\n", M`Field;
     printf "Precision: %o\n", M`Precision;
-    printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(M`Level),  Generators(M`Level);
   elif level eq "Magma" then
     printf "%o", PercentM(M);
   else
@@ -93,11 +90,6 @@ end intrinsic;
 intrinsic NarrowClassGroupRepresentatives(M::ModFrmHilD) -> Map
   {}
   return M`NarrowClassGroupRepresentatives;
-end intrinsic;
-
-intrinsic Level(M::ModFrmHilD) -> RngOrdIdl
-  {The level of the space M of Hilbert modular forms.}
-  return M`Level;
 end intrinsic;
 
 intrinsic Precision(M::ModFrmHilD) -> RngIntElt
@@ -160,10 +152,9 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   return M;
 end intrinsic;
 
-intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, prec::RngIntElt) -> ModFrmHilD
+intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   {Generates the space ModFrmHilD over F with level N.}
   assert IsTotallyReal(F);
-  assert NumberField(Order(N)) eq F;
   M := ModFrmHilDInitialize();
   // field
   M`Field := F;
@@ -173,8 +164,6 @@ intrinsic HMFSpace(F::FldNum, N::RngOrdIdl, prec::RngIntElt) -> ModFrmHilD
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
   M`NarrowClassGroupRepresentatives := [ mp(g) : g in Cl ];
-  // level
-  M`Level := N;
   // prec
   M`Precision := prec;
   // ideals
