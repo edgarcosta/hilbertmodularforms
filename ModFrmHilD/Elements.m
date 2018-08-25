@@ -448,6 +448,12 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
   return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1);
 end intrinsic;
 
+
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, B::SeqEnum[ModFrmHilDElt]) -> ModFrmHilDElt
+  {returns T(n)(f) for the trivial character}
+  return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1, B);
+end intrinsic;
+
 //TODO: 
 //Tests: 
 // - Apply Hecke on a Galois Orbit, and see that it doesn't move
@@ -458,21 +464,84 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> Mo
   {returns T(n)(f)}
   M := Parent(f);
   fcoeffs := Coefficients(f);
-  ideals := Ideal(f);
+  ideals := Ideals(f);
   dict := Dictionary(f);
   ZC := Parent(fcoeffs[1]);
   k0 := Max(Weight(f));
-  coeffs := [ZC!0 : i in [1..#fcoeffs]];
-  for i:=1 to #ideals do
+  prec:=Precision(M);
+  B:=Basis(M, Level(f),Weight(f));
+  //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn); we then recostruct the rest of the coefficients using the basis B 
+  idealssmallprec:=[ideals[1]];
+  for x:=2 to #ideals do
+    if Norm(ideals[x]) le prec/Norm(nn) then
+      idealssmallprec:= idealssmallprec cat [ideals[x]];
+    end if;
+  end for;
+  coeffssmallprec := [ZC!0 : i in [1..#idealssmallprec]];
+  for i:=1 to #idealssmallprec do
     c := 0;
     // loop over divisors
     // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms
     for aa in Divisors(ideals[i] + nn) do
       c +:= chi(aa) * Norm(aa)^(k0 - 1) * fcoeffs[ dict[ aa^(-2) * (ideals[i] * nn)]];
       end for;
-    coeffs[i] := c;
+    coeffssmallprec[i] := c;
     end for;
-  return HMF(M, Level(f), Weight(f), coeffs);
+   smallprecbasis:=[];
+   for g in B do
+    Append(~smallprecbasis, [Coefficients(g)[i] : i in [1..#idealssmallprec]]);
+   end for;
+   LinComb:=LinearDependence([coeffssmallprec] cat smallprecbasis);
+   if LinComb eq 0 or #Rows(LinComb) ne 1 then
+    return "Error: precision is too small";
+   end if;
+   g:=0*f;
+   for i:=2 to #B+1 do
+    g:=g-LinComb[1][i]*B[i-1];
+   end for;
+  return g;
+end intrinsic;
+
+
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt, B::SeqEnum[ModFrmHilDElt]) -> ModFrmHilDElt
+  {returns T(n)(f)}
+  M := Parent(f);
+  fcoeffs := Coefficients(f);
+  ideals := Ideals(f);
+  dict := Dictionary(f);
+  ZC := Parent(fcoeffs[1]);
+  k0 := Max(Weight(f));
+  prec:=Precision(M);
+  //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn); we then recostruct the rest of the coefficients using the basis B provided
+  idealssmallprec:=[ideals[1]];
+  for x:=2 to #ideals do
+    if Norm(ideals[x]) le prec/Norm(nn) then
+      idealssmallprec:= idealssmallprec cat [ideals[x]];
+    end if;
+  end for;
+  coeffssmallprec := [ZC!0 : i in [1..#idealssmallprec]];
+  for i:=1 to #idealssmallprec do
+    c := 0;
+    // loop over divisors
+    // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms
+    for aa in Divisors(ideals[i] + nn) do
+      c +:= chi(aa) * Norm(aa)^(k0 - 1) * fcoeffs[ dict[ aa^(-2) * (ideals[i] * nn)]];
+      end for;
+    coeffssmallprec[i] := c;
+    end for;
+   smallprecbasis:=[];
+   for g in B do
+    Append(~smallprecbasis, [Coefficients(g)[i] : i in [1..#idealssmallprec]]);
+   end for;
+   LinComb:=LinearDependence([coeffssmallprec] cat smallprecbasis);
+   if LinComb eq 0 or #Rows(LinComb) ne 1 then
+    return "Error: precision is too small";
+   end if;
+   g:=0*f;
+   for i:=2 to #B+1 do
+    g:=g-LinComb[1][i]*B[i-1];
+   end for;
+  return g;
 end intrinsic;
 
 // TODO needs testing
