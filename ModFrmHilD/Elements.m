@@ -443,16 +443,11 @@ intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> S
   return basis, newforms_dimension;
 end intrinsic;
 
-intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : Basis:=[]) -> ModFrmHilDElt
   {returns T(n)(f) for the trivial character}
-  return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1);
+  return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1 : Basis:=Basis);
 end intrinsic;
 
-
-intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, B::SeqEnum[ModFrmHilDElt]) -> ModFrmHilDElt
-  {returns T(n)(f) for the trivial character}
-  return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1, B);
-end intrinsic;
 
 //TODO: 
 //Tests: 
@@ -463,8 +458,8 @@ end intrinsic;
 
 
 
-intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt, B::SeqEnum[ModFrmHilDElt]) -> ModFrmHilDElt
-  {returns T(n)(f)}
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt : Basis:= []) -> ModFrmHilDElt
+  {returns T(n)(f) with loss of precision. If a basis for the space is provided, returns T(n)(f) without loss of precision}
   M := Parent(f);
   fcoeffs := Coefficients(f);
   ideals := Ideals(f);
@@ -472,7 +467,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt, B::Se
   ZC := Parent(fcoeffs[1]);
   k0 := Max(Weight(f));
   prec:=Precision(M);
-  //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn); we then recostruct the rest of the coefficients using the basis B provided
+  //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn)
   idealssmallprec:=[ideals[1]];
   for x:=2 to #ideals do
     if Norm(ideals[x]) le prec/Norm(nn) then
@@ -489,27 +484,29 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt, B::Se
       end for;
     coeffssmallprec[i] := c;
     end for;
-   smallprecbasis:=[];
-   for g in B do
-    Append(~smallprecbasis, [Coefficients(g)[i] : i in [1..#idealssmallprec]]);
-   end for;
-   LinComb:=LinearDependence([coeffssmallprec] cat smallprecbasis);
-   if LinComb eq 0 or #Rows(LinComb) ne 1 then
-    return "Error: precision is too small";
-   end if;
-   g:=0*f;
-   for i:=2 to #B+1 do
-    g:=g-LinComb[1][i]*B[i-1];
-   end for;
-  return g;
+  if #Basis ne 0 then //if provided a basis, we reconstruct the form to the same precision
+    smallprecbasis:=[];
+    for g in Basis do
+      Append(~smallprecbasis, [Coefficients(g)[i] : i in [1..#idealssmallprec]]);
+    end for;
+    LinComb:=LinearDependence([coeffssmallprec] cat smallprecbasis);
+    if ISA(Type(LinComb), RngIntElt) or #Rows(LinComb) ne 1 then
+      return "Error: either precision is too small, or the sequence provided is not a basis";
+    end if;
+    g:=0*f;
+    for i:=2 to #Basis+1 do
+      g:=g-LinComb[1][i]*Basis[i-1];
+    end for;
+    return g;
+  end if;
+  if #Basis eq 0 then
+    M1:=HMFSpace(BaseField(M), Floor(prec/Norm(nn)));
+    print "Warning: the Hecke operator calculation decreases precision to ",
+    Floor(prec/Norm(nn));
+    return HMF(M1, Level(f), Weight(f), coeffssmallprec);
+  end if;
 end intrinsic;
 
-
-intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> ModFrmHilDElt
-  {returns T(n)(f)}
-  B:=Basis(M, Level(f),Weight(f));
-  return HeckeOperator(f, nn, chi, B);
-end intrinsic;
 
 // TODO needs testing
 intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
