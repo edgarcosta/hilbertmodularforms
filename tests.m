@@ -76,3 +76,19 @@ g := ThetaSeries(M, M2);
 assert f*f eq g;
 
 
+//Hecke Operator
+//Basis for level 1 weight [4,4] consists of an eigenstein series and an eigenform
+D := 13;
+F := QuadraticField(D);
+ZF := Integers(F);
+k := [4,4];
+prec := 100;
+M := HMFSpace(F, prec);
+I:=Ideals(M);
+B:=Basis(M, 1*ZF, k);
+f:=B[1];
+g:=B[2];
+assert HeckeOperator(f, 2*ZF : Basis:=B) eq 65*f; // f is an Eisenstein series and is indeed an eigenvalue
+for x:=2 to 7 do
+	assert HeckeOperator(g, I[x] : Basis:=B) eq Coefficients(g)[x]*g; //g is an eigenform
+end for;
