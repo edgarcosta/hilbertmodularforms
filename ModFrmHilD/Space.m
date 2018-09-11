@@ -30,7 +30,7 @@ declare attributes ModFrmHilD:
 
 intrinsic PercentM(M::ModFrmHilD) -> MonStgElt
   {returns a string to produce M in a magma session.}
-  return Sprintf("HMFSpace(%m, %m, %m)", BaseField(M), Precision(M));
+  return Sprintf("HMFSpace(%m, %m)", BaseField(M), Precision(M));
 end intrinsic;
 
 intrinsic Print(M::ModFrmHilD, level::MonStgElt)

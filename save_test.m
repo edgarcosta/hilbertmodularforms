@@ -1,4 +1,4 @@
-M := HMFSpace(QuadraticField(2), ideal<Integers(QuadraticField(2)) | \[ 3, 0 ]>, 200);
+M := HMFSpace(QuadraticField(2), 200);
 F<w> := BaseField(M);
 ZF := Integers(F);
 primesArray := [
