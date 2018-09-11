@@ -2,7 +2,7 @@ load "config.m";
 
 F := QuadraticField(8);
 ZF<w> := Integers(F);
-N := ideal<ZF | {3}>;
+N := ideal<ZF | {1}>;
 K := Rationals();
 prec := 200;
 M := HMFSpace(F, prec);

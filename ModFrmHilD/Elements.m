@@ -617,11 +617,19 @@ end intrinsic;
 
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f+g.}
-  assert Parent(f) eq Parent(g);
+  // assert Parent(f) eq Parent(g);
   assert Level(f) eq Level(g);
   assert Weight(f) eq Weight(g);
-  new_coeffs := [ Coefficients(f)[i] + Coefficients(g)[i] : i in [1..#Coefficients(f)] ];
-  return HMF(Parent(f), Level(f) meet Level(g), Weight(f), new_coeffs);
+  assert BaseField(Parent(f)) eq BaseField(Parent(g));
+  prec_f := Precision(Parent(f));
+  prec_g := Precision(Parent(g));
+  if prec_f lt prec_g then
+    new_coeffs := [ Coefficients(f)[i] + Coefficients(g)[i] : i in [1..#Coefficients(f)] ];
+    return HMF(Parent(f), Level(f) meet Level(g), Weight(f), new_coeffs);
+  else
+    new_coeffs := [ Coefficients(f)[i] + Coefficients(g)[i] : i in [1..#Coefficients(g)] ];
+    return HMF(Parent(g), Level(g) meet Level(f), Weight(g), new_coeffs);
+  end if;
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
