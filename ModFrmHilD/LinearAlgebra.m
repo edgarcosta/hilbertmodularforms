@@ -19,10 +19,13 @@ intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
 end intrinsic;
 
 //TODO add optional flag to limit the number of coefficients
+//TODO make outputs to be of the same type
+
 intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
   {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
   return LinearDependence([ Coefficients(elt) : elt in list] );
 end intrinsic;
+
 
 
 //EchelonBasis
