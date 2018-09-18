@@ -5,5 +5,6 @@
   LinearAlgebra.m
   ThetaSeries.m
   Recognize.m
-	Workspace.m
+  Workspace.m
+  Dimension.m
 }
