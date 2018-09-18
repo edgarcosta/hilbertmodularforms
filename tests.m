@@ -1,3 +1,4 @@
+// These are tests
 load "config.m";
 
 prec := 200;
