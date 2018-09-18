@@ -14,20 +14,3 @@ time HeckeEigenvalues(M, N, [4,4]);
 
 Save(M, "save_test.m");
 M := Load("save_test.m");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
->>>>>>> 29364eeaf2df05b537da8fea4a6001ce18bb6d42
