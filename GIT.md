@@ -19,7 +19,12 @@
   where you replace `YOURUSERNAME` and `NAMEDESIRED`.
   `NAMEDESIRED` is the name of the folder where it will store your personal copy of `hilbertmodularforms`
 
-4. 
+5. Change directory to the directory you just created, e.g, `cd NAMEDESIRED`
+
+6. You also want to be able the changes of other people on the main repository, for that we need to manually add it, by doing:
+  ```
+  git remote add upstream git@github.com:edgarcosta/hilbertmodularforms.git
+  ```
 
 
 # The development routine
@@ -37,9 +42,9 @@
   ```
   git commit
   ```
-  alternatively, you can also do:
+  alternatively, if you want to skip the editor, you can also do:
   ```
-  git commit -m "fixed something really important
+  git commit -m "fixed something really important"
   ```
   4. Push your changes to the internet
   ```
@@ -55,8 +60,17 @@
   You can switch between branches by doing:
   `git checkout BRANCHNAME`
 
+## Merging the changes from the main repository
+Imagine that someone has been working hard, and just merged some code that you need to the main repository.
+You can merge this changes, with your current branch by doing
+  ```
+  git pull usptream master
+  ```
+
 # Remarks
 
-# Exercise
+# Exercises
+
+1. Edit the `README.md` and `LICENSE` file and add your name
 
 
