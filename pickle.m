@@ -10,7 +10,24 @@ M := HMFSpace(F, prec);
 time HeckeEigenvalues(M, N, [2,2]);
 time HeckeEigenvalues(M, N, [4,4]);
 // time HeckeEigenvalues(M, N, [8,8]);
+// test edit
 
 Save(M, "save_test.m");
 M := Load("save_test.m");
-// tickle tickle
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+>>>>>>> 29364eeaf2df05b537da8fea4a6001ce18bb6d42
