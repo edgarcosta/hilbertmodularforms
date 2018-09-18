@@ -69,7 +69,7 @@ and add it to `https://github.com/settings/keys`.
 Imagine that someone has been working hard, and just merged some code that you need to the main repository.
 You can merge this changes, with your current branch by doing
   ```
-  git pull usptream master
+  git pull upstream master
   ```
 
 # Remarks
