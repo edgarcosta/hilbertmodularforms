@@ -32,13 +32,13 @@
 ## Creating a branch which is up to date with the main repository
 1. Download the latest changes of the main repository to your computer with
   `git fetch upstream master`
-  2. Change the code on your directory to reflect the latest changes with `git checkout -f upstream/master`
+  2. Change the code on your directory to reflect the latest changes with `git checkout upstream/master`
   3. Now that you are up to date, you should create a branch which will track the new changes, with ` git checkout -b NEWBRANCHNAME`
 
 ## Saving changes
   1. Do `git status` to see what files you have edited
   2. Do `git add FILENAME` for each file you would like submit changes
-  3. Commit your changes on your computer with 
+  3. Commit your changes on your computer with
   ```
   git commit
   ```
