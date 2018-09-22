@@ -5,5 +5,7 @@
   LinearAlgebra.m
   ThetaSeries.m
   Recognize.m
-	Workspace.m
+  Workspace.m
+  CanonicalRing.m
+  HilbertSeries.m
 }
