@@ -17,7 +17,10 @@ PolyList2 := [27*(X14)^2 + (X4*(X6-4*X2*X4))*X6*(-4*(X2^2 +12*X4)^3 + (27*X6 + 2
 P_wtd := Proj(P);
 S := Scheme(P_wtd, PolyList);
 S_vdG := Scheme(P_wtd, PolyList2);
+eqns_S := DefiningEquations(S);
 eqns_S_vdG := DefiningEquations(S_vdG);
+F_S := eqns_S[1];
+F_S_vdG := eqns_S_vdG[1];
 
 Pvars<a2_1, a4_1, a4_2, a6_1, a6_2, a6_3, a14_1, a14_2, a14_3, a14_4, a14_5, a14_6, a14_7, a14_8, a14_9> := PolynomialRing(QQ,15);
 Pa<X2, X4, X6, X14> := ChangeRing(P,Pvars);
