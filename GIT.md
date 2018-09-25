@@ -9,19 +9,24 @@
  * go to https://github.com/edgarcosta/hilbertmodularforms/
  * click the fork button
 
-3. Open a terminal on your computer, and go to a folder where you would like to store your personal copy of `hilbertmodularforms`
+3. If you don't have a pair of public/private RSA keys, create one, by doing:
+`ssh-keygen`.
+Now copy the content of your public key `~/.ssh/id_rsa.pub`, you can access the content of the file by doing `cat ~/.ssh/id_rsa.pub`,
+and add it to `https://github.com/settings/keys`.
+
+4. Open a terminal on your computer, and go to a folder where you would like to store your personal copy of `hilbertmodularforms`
  For example: `cd secretprojets/`
 
-4. Clone your repository by doing:
+5. Clone your repository to your computer by doing:
   ```
   git clone git@github.com:YOURUSERNAME/hilbertmodularforms.git NAMEDESIRED
   ```
   where you replace `YOURUSERNAME` and `NAMEDESIRED`.
   `NAMEDESIRED` is the name of the folder where it will store your personal copy of `hilbertmodularforms`
 
-5. Change directory to the directory you just created, e.g, `cd NAMEDESIRED`
+6. Change directory to the directory you just created, e.g, `cd NAMEDESIRED`
 
-6. You also want to be able the changes of other people on the main repository, for that we need to manually add it, by doing:
+7. You also want to be able the changes of other people on the main repository, for that we need to manually add it, by doing:
   ```
   git remote add upstream git@github.com:edgarcosta/hilbertmodularforms.git
   ```
@@ -64,7 +69,7 @@
 Imagine that someone has been working hard, and just merged some code that you need to the main repository.
 You can merge this changes, with your current branch by doing
   ```
-  git pull usptream master
+  git pull upstream master
   ```
 
 # Remarks

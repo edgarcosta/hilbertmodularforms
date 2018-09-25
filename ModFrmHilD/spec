@@ -6,5 +6,6 @@
   ThetaSeries.m
   Recognize.m
   Workspace.m
-  Dimension.m
+  CanonicalRing.m
+  HilbertSeries.m
 }
