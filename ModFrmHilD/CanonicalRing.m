@@ -301,7 +301,7 @@ end intrinsic;
 
 
 
-///////////////////////// Bens Functions /////////////////
+///////////////////////// Aux Functions /////////////////
 
 
 intrinsic QuadSpace(D::RngIntElt, prec::RngIntElt)-> any
