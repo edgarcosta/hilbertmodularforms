@@ -752,7 +752,7 @@ intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   {}
   if ISA(Type(f), RngElt) then
     P := Parent(f);
-    N := 1*Integers(M);
+    N := 1*Integers(M); // FIXME only level 1 for now
     coeffs := [P!0 : c in [1..#Ideals(M)]];
     coeffs[1] := f;
     k := [0 : c in [1..Degree(BaseField(M))]];
@@ -775,7 +775,6 @@ end intrinsic;
 
 /*
 intrinsic '!'(M::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
-{
   {returns f with parent M}
   nn := Level(M);
   nnf := Level(f);
