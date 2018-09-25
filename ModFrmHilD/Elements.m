@@ -586,7 +586,7 @@ intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[M
   CB, newforms_dimension := CuspFormBasis(M, N, k);
   H := HeckeCharacterGroup(N);
   //FIXME this is wrong for level not 1!
-  print "FIXME this is wrong for level not 1!";
+  //print "FIXME this is wrong for level not 1!";
   eta := H ! 1;
   psi := H ! 1;
   E := EisensteinSeries(M, N, eta, psi, k);
@@ -752,11 +752,11 @@ intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   {}
   if ISA(Type(f), RngElt) then
     P := Parent(f);
-    N := Integers(M);
+    N := 1*Integers(M);
     coeffs := [P!0 : c in [1..#Ideals(M)]];
     coeffs[1] := f;
     k := [0 : c in [1..Degree(BaseField(M))]];
-    return true, HMF(M, N, k , coeffs);
+    return true, HMF(M, N, k, coeffs);
   end if;
 
   if Type(f) ne ModFrmHilDElt then

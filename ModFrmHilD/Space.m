@@ -158,6 +158,7 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M := ModFrmHilDInitialize();
   // field
   M`Field := F;
+  M`Integers := Integers(F);
   // narrow class group
   Cl, mp := NarrowClassGroup(F);
   M`NarrowClassGroup := Cl;
