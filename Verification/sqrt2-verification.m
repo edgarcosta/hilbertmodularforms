@@ -26,7 +26,13 @@ Pvars<a2_1, a4_1, a4_2, a6_1, a6_2, a6_3, a14_1, a14_2, a14_3, a14_4, a14_5, a14
 Pa<X2, X4, X6, X14> := ChangeRing(P,Pvars);
 F2 := a2_1*X2;
 F4 := a4_1*X2^2 + a4_2*X4;
-F6 := a6_1*X2^3 + a6_2*X2*X4 + a6_3*X6
+F6 := a6_1*X2^3 + a6_2*X2*X4 + a6_3*X6;
 F14 := a14_1*X2^7 + a14_2*X2^5*X4 + a14_3*X2^3*X4^2 + a14_4*X2*X4^3 + a14_5*X2^4*X6 + a14_6*X2^2*X4*X6 + a14_7*X4^2*X6 + a14_8*X2*X6^2 + a14_9*X14;
 aut_polys := [F2, F4, F6, F14];
+F_S_aut := Evaluate(F_S, aut_polys);
+difference := F_S_aut - Pa!F_S_vdG;
+coeffs := Coefficients(difference);
+I := ideal< Pvars | coeffs>;
+G := GroebnerBasis(I);
+solns := SolveZeroDimIdeal(I);
 
