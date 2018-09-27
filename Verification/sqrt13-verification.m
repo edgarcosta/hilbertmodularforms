@@ -32,7 +32,8 @@ S_vdG := Scheme(P_wtd, PolynomialList);
 eqns_S_vdG := DefiningEquations(S_vdG);
 
 // write an map with undetermined coefficients to try to find an isomorphism between S and S_vdG
-Pvars<a2_1, a4_1, a4_2, a6_1, a6_2, a6_3, a6_4, a6_5, a6_6, a6_7, a6_8, a8_1, a8_2, a8_3, a8_4, a8_5, a8_6> := PolynomialRing(QQ,17);
+//Pvars<a2_1, a4_1, a4_2, a6_1, a6_2, a6_3, a6_4, a6_5, a6_6, a6_7, a6_8, a8_1, a8_2, a8_3, a8_4, a8_5, a8_6> := PolynomialRing(QQ,17);
+Pvars<a2_1, a4_1, a4_2, a6_1, a6_2, a6_3, a6_4, a6_5, a6_6, a6_7, a6_8, a8_1, a8_2, a8_3, a8_4, a8_5, a8_6> := FunctionField(QQ,17);
 Pa<X2,X4,X6,Y6,X8> := ChangeRing(P,Pvars);
 F2 := a2_1*X2;
 F4 := a4_1*X2^2 + a4_2*X4;
@@ -49,6 +50,18 @@ F8 := a8_1*X2^8 + a8_2*X2^2*X4 + a8_3*X4^2 + a8_4*X2*X6 + a8_5*X2*Y6 + a8_6*X8;
 */
 aut_polys := [F2, F4, F6, F6_2, F8];
 eqns_S_aut := [Evaluate(poly, aut_polys) : poly in eqns_S];
+// form Groebner basis for equations of S_vdG
+// reduce polys in eqns_S_aut to normal form wrt to this Groeber basis
+eqns_S_vdG_vars := [Pa!eqn : eqn in eqns_S_vdG];
+G := GroebnerBasis(eqns_S_vdG_vars);
+reduced := [NormalForm(poly,G) : poly in eqns_S_aut];
+coeffs := [];
+for f in reduced do
+  coeffs cat:= Coefficients(f);
+end for;
+coeffs := [Numerator(el) : el in coeffs];
+SetVerbose("Groebner",3);
+G_vars := GroebnerBasis(coeffs);
 /*
   diffs := [eqns_S_aut[i] - (Pa!eqns_S_vdG[i]) : i in [1..#eqns_S_vdG]];
   coeffs := [];
