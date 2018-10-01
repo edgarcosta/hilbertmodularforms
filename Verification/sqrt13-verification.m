@@ -59,9 +59,14 @@ coeffs := [];
 for f in reduced do
   coeffs cat:= Coefficients(f);
 end for;
+// not working...try to guess some "obvious" relations
+//coeffs cat:= [a4_1, a4_2 + 1];
+coeffs cat:= [a4_2 + 1];
 coeffs := [Numerator(el) : el in coeffs];
 SetVerbose("Groebner",3);
 G_vars := GroebnerBasis(coeffs);
+Pvars_poly := Integers(Pvars);
+I := ideal< Pvars_poly | G_vars >;
 /*
   diffs := [eqns_S_aut[i] - (Pa!eqns_S_vdG[i]) : i in [1..#eqns_S_vdG]];
   coeffs := [];
