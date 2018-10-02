@@ -522,8 +522,7 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
     error "not implemented for narrow class number > 1.";
   end if;
   n := Degree(BaseField(M));
-  assert #SequenceToSet(k) eq 1; // parallel weight
-  assert k[1] ge 2; // we can remove this later
+  assert #SequenceToSet(k) eq 1; // only parallel weight for now
   nn := N;
   // aa := Conductor(eta);
   aa := Modulus(eta);
@@ -535,60 +534,65 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
   Hbb := HeckeCharacterGroup(bb);
   ideals := Ideals(M);
   coeffs := [ K!0 : i in [1..#ideals]];
-  // constant term
-  if aa eq ideal<Order(aa)|1> then
-    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-    // Lf := LSeries(prim : Precision := 50);
-    // TODO clean up precision
-    Lf := LSeries(prim : Precision := 100);
-    LSetPrecision(Lf, 100);
-    Lvalue := Evaluate(Lf, 1-k[1]);
-    // figure out the right place
-    primes := PrimesUpTo(Precision(M), BaseField(M));
-    places := InfinitePlaces(K);
-    i := 1;
-    while #places gt 1 and i le #primes do
-      pp := primes[i];
-      app := prim(pp);
-      places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
-      i +:=1;
-    end while;
-    assert #places eq 1;
-    pl := places[1];
-    CC<I> := ComplexField(Precision(Lvalue));
-    Lvalue_recognized := RecognizeOverK(CC!Lvalue, K, pl, false);
-    coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
-  else
-    coeffs[1] := 0;
-  end if;
-  // other terms
-  for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME
-    mm := ideals[i];
-    sum := 0;
-    for rr in Divisors(mm) do
-      sum +:= eta(mm/rr)*psi(rr)*Norm(rr^(k[1]-1));
+  if k[1] ge 2 then
+    // constant term
+    if aa eq ideal<Order(aa)|1> then
+      prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+      // Lf := LSeries(prim : Precision := 50);
+      // TODO clean up precision
+      Lf := LSeries(prim : Precision := 100);
+      LSetPrecision(Lf, 100);
+      Lvalue := Evaluate(Lf, 1-k[1]);
+      // figure out the right place
+      primes := PrimesUpTo(Precision(M), BaseField(M));
+      places := InfinitePlaces(K);
+      i := 1;
+      while #places gt 1 and i le #primes do
+        pp := primes[i];
+        app := prim(pp);
+        places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
+        i +:=1;
+      end while;
+      assert #places eq 1;
+      pl := places[1];
+      CC<I> := ComplexField(Precision(Lvalue));
+      Lvalue_recognized := RecognizeOverK(CC!Lvalue, K, pl, false);
+      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
+    else
+      coeffs[1] := 0;
+    end if;
+    // other terms
+    for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME
+      mm := ideals[i];
+      sum := 0;
+      for rr in Divisors(mm) do
+        sum +:= eta(mm/rr)*psi(rr)*Norm(rr^(k[1]-1));
+      end for;
+      coeffs[i] := sum;
     end for;
-    coeffs[i] := sum;
-  end for;
-  if not (coeffs[1] in [0,1]) then
-    factor := 1/coeffs[1];
-    coeffs := [factor * elt : elt in coeffs];
+    if not (coeffs[1] in [0,1]) then
+      factor := 1/coeffs[1];
+      coeffs := [factor * elt : elt in coeffs];
+    end if;
+    if IsIsomorphic(K, RationalsAsNumberField()) then
+      coeffs := [ Rationals() ! elt : elt in coeffs ];
+    end if;
+    return HMF(M, N, k, coeffs);
+  else // wt 1 case
+    error "Grant will implement this :)";
   end if;
-  if IsIsomorphic(K, RationalsAsNumberField()) then
-    coeffs := [ Rationals() ! elt : elt in coeffs ];
-  end if;
-  return HMF(M, N, k, coeffs);
 end intrinsic;
 
 
 intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
-{ returns a Basis for the space }
+  { returns a Basis for the space }
   CB, newforms_dimension := CuspFormBasis(M, N, k);
   H := HeckeCharacterGroup(N);
   //FIXME this is wrong for level not 1!
   //print "FIXME this is wrong for level not 1!";
   eta := H ! 1;
-  psi := H ! 1;
+  /* psi := H ! 1; */
+  psi := eta;
   E := EisensteinSeries(M, N, eta, psi, k);
   return [E] cat CB, newforms_dimension;
 end intrinsic;
@@ -689,6 +693,7 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   prec := Precision(M);
   fcoeffs := Coefficients(f);
   gcoeffs := Coefficients(g);
+  // TODO make it work if Valuation(g) <= Valuation(f)
   require gcoeffs[1] ne 0: "Denominator must have nonzero constant term";
   ib0 := 1/gcoeffs[1];
   ZC := CoefficientsParent(f);
