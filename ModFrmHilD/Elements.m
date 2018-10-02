@@ -449,8 +449,8 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : Basis:=[]) -> ModFrmHi
 end intrinsic;
 
 
-//TODO: 
-//Tests: 
+//TODO:
+//Tests:
 // - Apply Hecke on a Galois Orbit, and see that it doesn't move
 // - Apply Hecke to a Eisensten series, and check that is a multiple
 // - Apply Hecke to a Theta series, and see if we get the whole space
@@ -561,26 +561,28 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
     else
       coeffs[1] := 0;
     end if;
-    // other terms
-    for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME
-      mm := ideals[i];
-      sum := 0;
-      for rr in Divisors(mm) do
-        sum +:= eta(mm/rr)*psi(rr)*Norm(rr^(k[1]-1));
-      end for;
-      coeffs[i] := sum;
-    end for;
-    if not (coeffs[1] in [0,1]) then
-      factor := 1/coeffs[1];
-      coeffs := [factor * elt : elt in coeffs];
-    end if;
-    if IsIsomorphic(K, RationalsAsNumberField()) then
-      coeffs := [ Rationals() ! elt : elt in coeffs ];
-    end if;
-    return HMF(M, N, k, coeffs);
-  else // wt 1 case
+  elif k[1] eq 1 then // wt 1 case
     error "Grant will implement this :)";
+  else
+    error "Not implemented";
   end if;
+  // other terms
+  for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME
+    mm := ideals[i];
+    sum := 0;
+    for rr in Divisors(mm) do
+      sum +:= eta(mm/rr)*psi(rr)*Norm(rr^(k[1]-1));
+    end for;
+    coeffs[i] := sum;
+  end for;
+  if not (coeffs[1] in [0,1]) then
+    factor := 1/coeffs[1];
+    coeffs := [factor * elt : elt in coeffs];
+  end if;
+  if IsIsomorphic(K, RationalsAsNumberField()) then
+    coeffs := [ Rationals() ! elt : elt in coeffs ];
+  end if;
+  return HMF(M, N, k, coeffs);
 end intrinsic;
 
 
