@@ -1,4 +1,4 @@
-load "config.m";
+//load "config.m";
 QQ := Rationals();
 // hardcoded the equations, so don't have to recompute
 /*
