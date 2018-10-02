@@ -26,7 +26,7 @@ and add it to `https://github.com/settings/keys`.
 
 6. Change directory to the directory you just created, e.g, `cd NAMEDESIRED`
 
-7. You also want to be able the changes of other people on the main repository, for that we need to manually add it, by doing:
+7. You also want to be able to access the changes of other people on the main repository, for that we need to manually add it, by doing:
   ```
   git remote add upstream git@github.com:edgarcosta/hilbertmodularforms.git
   ```
