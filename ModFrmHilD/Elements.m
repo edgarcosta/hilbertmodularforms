@@ -540,8 +540,9 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
       prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
       // Lf := LSeries(prim : Precision := 50);
       // TODO clean up precision
+      // Maybe a separate function to compute L-values?
       Lf := LSeries(prim : Precision := 100);
-      LSetPrecision(Lf, 100);
+      LSetPrecision(Lf, 100); // do we need this?
       Lvalue := Evaluate(Lf, 1-k[1]);
       // figure out the right place
       primes := PrimesUpTo(Precision(M), BaseField(M));
@@ -551,6 +552,7 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
         pp := primes[i];
         app := prim(pp);
         places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
+        // why is this the right way to find the correct place to recognize?
         i +:=1;
       end while;
       assert #places eq 1;
@@ -562,8 +564,12 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
       coeffs[1] := 0;
     end if;
   elif k[1] eq 1 then // wt 1 case
-    error "Grant will implement this :)";
-  else
+    if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
+      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
+    elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
+    elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
+    elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
+  else // nonpositive and half-integral weights...
     error "Not implemented";
   end if;
   // other terms
@@ -585,6 +591,25 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
   return HMF(M, N, k, coeffs);
 end intrinsic;
 
+// TODO finish this and use in EisensteinSeries intrinsic
+/*
+intrinsic GetLValuePlace(M::ModFrmHilD, Lf::LSer, Lvalue::FldComElt, chi::GrpHeckeElt) -> PlcNumElt
+  {Given an Lvalue as a complex number in the image of chi, compute the associated place used to recognize the Lvalue over a number field.}
+  K := chi`TargetRing; // where the character values live
+  primes := PrimesUpTo(Precision(M), BaseField(M));
+  places := InfinitePlaces(K);
+  i := 1;
+  while #places gt 1 and i le #primes do
+    pp := primes[i];
+    app := chi(pp);
+    places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
+    // why is this the right way to find the correct place to recognize?
+    i +:=1;
+  end while;
+  assert #places eq 1;
+  return pl;
+end intrinsic;
+*/
 
 intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
   { returns a Basis for the space }
