@@ -561,8 +561,15 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
     else
       coeffs[1] := 0;
     end if;
-  elif k[1] eq 1 then // wt 1 case
-    error "Grant will implement this :)";
+  elif k[1] eq 1 then // wt 1 case, following prop 2.1 of Dasgupta, Darmon, Pollack
+    if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(aa)|1> then
+      error "Grant will implement this :)";
+    elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(aa)|1> then
+      error "Grant will implement this :)";
+    elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(aa)|1> then
+      error "Grant will implement this :)";
+    else
+      coeffs[1] := 0;
   else
     error "Not implemented";
   end if;
