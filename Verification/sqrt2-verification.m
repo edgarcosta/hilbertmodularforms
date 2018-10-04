@@ -5,9 +5,9 @@ QQ := Rationals();
   M := QuadSpace(2,100);
   K<nu> := CoefficientField(M);
   ZK := Integers(K);
-  G,R := ConstructGeneratorsAndRelations(M,1*ZK,2,18);
+  G,R := ConstructGeneratorsAndRelations(M,1*ZK,2,16);
   //G1,R1,Q1 := ConstructGeneratorsAndRelationsV2(M,G,R,18);
-  G1,R1 := Relations(M,G,R,18);
+  G1,R1 := Relations(M,G,R,30);
   S := MakeScheme(G1,R1);
 
   //G,R,Q := ConstructGeneratorsAndRelations(M,2,16);
