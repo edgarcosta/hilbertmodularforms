@@ -3,9 +3,16 @@ QQ := Rationals();
 // hardcoded the equations, so don't have to recompute
 /*
   M := QuadSpace(2,100);
-  G,R,Q := ConstructGeneratorsAndRelations(M,2,16);
-  G1,R1,Q1 := ConstructGeneratorsAndRelationsV2(M,G,R,30);
+  K<nu> := CoefficientField(M);
+  ZK := Integers(K);
+  G,R := ConstructGeneratorsAndRelations(M,1*ZK,2,18);
+  //G1,R1,Q1 := ConstructGeneratorsAndRelationsV2(M,G,R,18);
+  G1,R1 := Relations(M,G,R,18);
   S := MakeScheme(G1,R1);
+
+  //G,R,Q := ConstructGeneratorsAndRelations(M,2,16);
+  //G1,R1,Q1 := ConstructGeneratorsAndRelationsV2(M,G,R,30);
+  //S := MakeScheme(G1,R1);
 
   P_wtd<X2, X14, X4, X6> := Ambient(S);
   eqns_S := DefiningEquations(S);
