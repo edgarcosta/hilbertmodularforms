@@ -564,11 +564,13 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
       coeffs[1] := 0;
     end if;
   elif k[1] eq 1 then // wt 1 case
+  /*
     if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
       coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
     elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
     elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
     elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
+  */
   else // nonpositive and half-integral weights...
     error "Not implemented";
   end if;

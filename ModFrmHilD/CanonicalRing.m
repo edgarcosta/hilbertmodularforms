@@ -355,8 +355,3 @@ intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
 	return H;
 end intrinsic;
 
-
-
-
-
-
