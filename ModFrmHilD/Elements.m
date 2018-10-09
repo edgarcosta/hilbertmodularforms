@@ -538,39 +538,25 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
     // constant term
     if aa eq ideal<Order(aa)|1> then
       prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-      // Lf := LSeries(prim : Precision := 50);
-      // TODO clean up precision
-      // Maybe a separate function to compute L-values?
-      Lf := LSeries(prim : Precision := 100);
-      LSetPrecision(Lf, 100); // do we need this?
-      Lvalue := Evaluate(Lf, 1-k[1]);
-      // figure out the right place
-      primes := PrimesUpTo(Precision(M), BaseField(M));
-      places := InfinitePlaces(K);
-      i := 1;
-      while #places gt 1 and i le #primes do
-        pp := primes[i];
-        app := prim(pp);
-        places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
-        // why is this the right way to find the correct place to recognize?
-        i +:=1;
-      end while;
-      assert #places eq 1;
-      pl := places[1];
-      CC<I> := ComplexField(Precision(Lvalue));
-      Lvalue_recognized := RecognizeOverK(CC!Lvalue, K, pl, false);
-      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
+      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k);
     else
       coeffs[1] := 0;
     end if;
   elif k[1] eq 1 then // wt 1 case
-  /*
     if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
-      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
+      prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k);
     elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
+      prim := AssociatedPrimitiveCharacter(psi^(-1)*eta);
+      coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, N, prim, k);
     elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
+      prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1));
+      prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta);
+      coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, N, prim1, k)
+                          +(psi^(-1))(tt)*LValue_Recognized(M, N, prim2, k));
     elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
-  */
+      coeffs[1] := 0;
+    end if;
   else // nonpositive and half-integral weights...
     error "Not implemented";
   end if;
@@ -594,24 +580,33 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
 end intrinsic;
 
 // TODO finish this and use in EisensteinSeries intrinsic
-/*
-intrinsic GetLValuePlace(M::ModFrmHilD, Lf::LSer, Lvalue::FldComElt, chi::GrpHeckeElt) -> PlcNumElt
-  {Given an Lvalue as a complex number in the image of chi, compute the associated place used to recognize the Lvalue over a number field.}
-  K := chi`TargetRing; // where the character values live
-  primes := PrimesUpTo(Precision(M), BaseField(M));
-  places := InfinitePlaces(K);
-  i := 1;
-  while #places gt 1 and i le #primes do
-    pp := primes[i];
-    app := chi(pp);
-    places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
-    // why is this the right way to find the correct place to recognize?
-    i +:=1;
-  end while;
-  assert #places eq 1;
-  return pl;
+
+//Toolbox function to use in the Eisenstein series function--gives us an L value
+intrinsic LValue_Recognized(M::ModFrmHilD, N::RngOrdIdl, prim::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> FldNumElt
+{This is a toolbox function to compute L values in the right space}
+// Lf := LSeries(prim : Precision := 50);
+// TODO clean up precision
+// Maybe a separate function to compute L-values?
+K := Parent(prim)`TargetRing; // where the character values live
+Lf := LSeries(prim : Precision := 100);
+LSetPrecision(Lf, 100); // do we need this?
+Lvalue := Evaluate(Lf, 1-k[1]);
+// figure out the right place
+primes := PrimesUpTo(Precision(M), BaseField(M));
+places := InfinitePlaces(K);
+i := 1;
+while #places gt 1 and i le #primes do
+  pp := primes[i];
+  app := prim(pp);
+  places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
+  // why is this the right way to find the correct place to recognize?
+  i +:=1;
+end while;
+assert #places eq 1;
+pl := places[1];
+CC<I> := ComplexField(Precision(Lvalue));
+return RecognizeOverK(CC!Lvalue, K, pl, false);
 end intrinsic;
-*/
 
 intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
   { returns a Basis for the space }
