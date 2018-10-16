@@ -169,6 +169,7 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`Precision := prec;
   // ideals
   zero_ideal := ideal<Integers(F)|0>;
+  // needs to be updated to deal with narrow class number > 1
   Is := [zero_ideal] cat IdealsUpTo(prec, F);
   M`Ideals := Is;
   // primes
