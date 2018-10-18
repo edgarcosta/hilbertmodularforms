@@ -1,4 +1,4 @@
-/////////// Multiplication for Cubic Fields ////////////
+/////////// Multiplication ////////////
 
 /*
 
