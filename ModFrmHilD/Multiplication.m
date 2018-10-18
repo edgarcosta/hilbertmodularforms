@@ -2,9 +2,6 @@
 
 /*
 
-If you want to use this for cubic fields, replace Multiplication.m 
-in the HMF folder by this file.
-
 TODO 
 
 1) Clean up IndicesbyTrace. Currently messy but fast.
