@@ -449,8 +449,8 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : Basis:=[]) -> ModFrmHi
 end intrinsic;
 
 
-//TODO: 
-//Tests: 
+//TODO:
+//Tests:
 // - Apply Hecke on a Galois Orbit, and see that it doesn't move
 // - Apply Hecke to a Eisensten series, and check that is a multiple
 // - Apply Hecke to a Theta series, and see if we get the whole space
@@ -522,8 +522,7 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
     error "not implemented for narrow class number > 1.";
   end if;
   n := Degree(BaseField(M));
-  assert #SequenceToSet(k) eq 1; // parallel weight
-  assert k[1] ge 2; // we can remove this later
+  assert #SequenceToSet(k) eq 1; // only parallel weight for now
   nn := N;
   // aa := Conductor(eta);
   aa := Modulus(eta);
@@ -535,31 +534,31 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
   Hbb := HeckeCharacterGroup(bb);
   ideals := Ideals(M);
   coeffs := [ K!0 : i in [1..#ideals]];
-  // constant term
-  if aa eq ideal<Order(aa)|1> then
-    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-    // Lf := LSeries(prim : Precision := 50);
-    // TODO clean up precision
-    Lf := LSeries(prim : Precision := 100);
-    LSetPrecision(Lf, 100);
-    Lvalue := Evaluate(Lf, 1-k[1]);
-    // figure out the right place
-    primes := PrimesUpTo(Precision(M), BaseField(M));
-    places := InfinitePlaces(K);
-    i := 1;
-    while #places gt 1 and i le #primes do
-      pp := primes[i];
-      app := prim(pp);
-      places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
-      i +:=1;
-    end while;
-    assert #places eq 1;
-    pl := places[1];
-    CC<I> := ComplexField(Precision(Lvalue));
-    Lvalue_recognized := RecognizeOverK(CC!Lvalue, K, pl, false);
-    coeffs[1] := 2^(-n)*(eta^(-1))(tt)*Lvalue_recognized;
-  else
-    coeffs[1] := 0;
+  if k[1] ge 2 then
+    // constant term
+    if aa eq ideal<Order(aa)|1> then
+      prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k);
+    else
+      coeffs[1] := 0;
+    end if;
+  elif k[1] eq 1 then // wt 1 case
+    if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
+      prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k);
+    elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
+      prim := AssociatedPrimitiveCharacter(psi^(-1)*eta);
+      coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, N, prim, k);
+    elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
+      prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1));
+      prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta);
+      coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, N, prim1, k)
+                          +(psi^(-1))(tt)*LValue_Recognized(M, N, prim2, k));
+    elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
+      coeffs[1] := 0;
+    end if;
+  else // nonpositive and half-integral weights...
+    error "Not implemented";
   end if;
   // other terms
   for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME
@@ -580,15 +579,44 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
   return HMF(M, N, k, coeffs);
 end intrinsic;
 
+// TODO finish this and use in EisensteinSeries intrinsic
+
+//Toolbox function to use in the Eisenstein series function--gives us an L value
+intrinsic LValue_Recognized(M::ModFrmHilD, N::RngOrdIdl, prim::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> FldNumElt
+{This is a toolbox function to compute L values in the right space}
+// Lf := LSeries(prim : Precision := 50);
+// TODO clean up precision
+// Maybe a separate function to compute L-values?
+K := Parent(prim)`TargetRing; // where the character values live
+Lf := LSeries(prim : Precision := 100);
+LSetPrecision(Lf, 100); // do we need this?
+Lvalue := Evaluate(Lf, 1-k[1]);
+// figure out the right place
+primes := PrimesUpTo(Precision(M), BaseField(M));
+places := InfinitePlaces(K);
+i := 1;
+while #places gt 1 and i le #primes do
+  pp := primes[i];
+  app := prim(pp);
+  places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
+  // why is this the right way to find the correct place to recognize?
+  i +:=1;
+end while;
+assert #places eq 1;
+pl := places[1];
+CC<I> := ComplexField(Precision(Lvalue));
+return RecognizeOverK(CC!Lvalue, K, pl, false);
+end intrinsic;
 
 intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
-{ returns a Basis for the space }
+  { returns a Basis for the space }
   CB, newforms_dimension := CuspFormBasis(M, N, k);
   H := HeckeCharacterGroup(N);
   //FIXME this is wrong for level not 1!
-  print "FIXME this is wrong for level not 1!";
+  //print "FIXME this is wrong for level not 1!";
   eta := H ! 1;
-  psi := H ! 1;
+  /* psi := H ! 1; */
+  psi := eta;
   E := EisensteinSeries(M, N, eta, psi, k);
   return [E] cat CB, newforms_dimension;
 end intrinsic;
@@ -689,6 +717,7 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   prec := Precision(M);
   fcoeffs := Coefficients(f);
   gcoeffs := Coefficients(g);
+  // TODO make it work if Valuation(g) <= Valuation(f)
   require gcoeffs[1] ne 0: "Denominator must have nonzero constant term";
   ib0 := 1/gcoeffs[1];
   ZC := CoefficientsParent(f);
@@ -752,11 +781,11 @@ intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   {}
   if ISA(Type(f), RngElt) then
     P := Parent(f);
-    N := Integers(M);
+    N := 1*Integers(M); // FIXME only level 1 for now
     coeffs := [P!0 : c in [1..#Ideals(M)]];
     coeffs[1] := f;
     k := [0 : c in [1..Degree(BaseField(M))]];
-    return true, HMF(M, N, k , coeffs);
+    return true, HMF(M, N, k, coeffs);
   end if;
 
   if Type(f) ne ModFrmHilDElt then
@@ -775,7 +804,6 @@ end intrinsic;
 
 /*
 intrinsic '!'(M::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
-{
   {returns f with parent M}
   nn := Level(M);
   nnf := Level(f);

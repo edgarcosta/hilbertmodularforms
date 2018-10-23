@@ -26,7 +26,7 @@ and add it to `https://github.com/settings/keys`.
 
 6. Change directory to the directory you just created, e.g, `cd NAMEDESIRED`
 
-7. You also want to be able the changes of other people on the main repository, for that we need to manually add it, by doing:
+7. You also want to be able to access the changes of other people on the main repository, for that we need to manually add it, by doing:
   ```
   git remote add upstream git@github.com:edgarcosta/hilbertmodularforms.git
   ```
@@ -69,7 +69,7 @@ and add it to `https://github.com/settings/keys`.
 Imagine that someone has been working hard, and just merged some code that you need to the main repository.
 You can merge this changes, with your current branch by doing
   ```
-  git pull usptream master
+  git pull upstream master
   ```
 
 # Remarks
