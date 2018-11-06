@@ -812,3 +812,20 @@ intrinsic '!'(M::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(M, Weight(f) , coeffs);
 end intrinsic;
 */
+
+/*swap map
+*/
+
+intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+  M:=Parent(f);
+  g:=M!(1*f);
+  F:=BaseField(M);
+  ZF<w>:=Integers(F);
+  ideals:=Ideals(f);
+  for i in ideals do
+    x:=GetCoefficient(f, Conjugate(i));
+    SetCoefficient(g, i, x);
+  end for;
+  return g;
+  end intrinsic;
