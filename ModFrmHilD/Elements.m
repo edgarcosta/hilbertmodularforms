@@ -830,7 +830,7 @@ intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
   end intrinsic;
 
-  intrinsic GaloisInvariantSubspace(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
+  intrinsic GaloisInvariantBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for the GaLois invariant subspace}
   B:=Basis(M,N,k);
   InvariantGenerators:=[];
