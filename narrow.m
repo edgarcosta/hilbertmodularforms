@@ -1,6 +1,7 @@
 
 load "config.m";
 
+// yo mama
 F<nu> := QuadraticField(6);
 ZF := Integers(F);
 N := ideal<ZF|[1]>;
