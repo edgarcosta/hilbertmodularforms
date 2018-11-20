@@ -14,4 +14,4 @@ bb := mp(Cl.1);
 basis := Basis(bb);
 t := 5;
 
-Attach("ModFrmHilD/deprecated/ModFrmHilDMult.m");
+// Attach("ModFrmHilD/deprecated/ModFrmHilDMult.m");

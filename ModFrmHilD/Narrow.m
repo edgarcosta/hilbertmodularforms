@@ -4,12 +4,10 @@ intrinsic ShintaniWalls(bb::RngOrdFracIdl) -> Any
   assert Degree(F) le 2;
   places := InfinitePlaces(F);
   eps := FundamentalUnit(F);
+  // TODO some fixes based on narrow equals class..
   if not IsTotallyPositive(eps) then
-    eps := -1*eps;
     eps := eps^2;
   end if;
-
-
   eps1 := Evaluate(eps, places[1]);
   eps2 := Evaluate(eps, places[2]);
   if eps1/eps2 le eps2/eps1 then
