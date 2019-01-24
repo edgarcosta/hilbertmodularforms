@@ -233,6 +233,63 @@ intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilD, N::RngOrdIdl, LowestWei
 	return Gens,Relations;
 end intrinsic;
 
+intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilD, N::RngOrdIdl, LowestWeight::RngIntElt, MaxWeight::RngIntElt) -> Any
+	{Finds all Generators and Relations}
+	
+	Gens := AssociativeArray();
+	Relations := AssociativeArray();
+
+	Gens[LowestWeight] := [i : i in GaloisInvariantBasis(M,N,[LowestWeight,LowestWeight])];
+
+
+	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
+		
+		k := 2*i;
+
+		R := ConstructRing(Gens);
+		MonomialsinR := MonomialsOfWeightedDegree(R,k);
+		MonomialsGens := MonomialGenerators(R,Relations,k);
+		EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens);	
+		
+		// I first compute the relations in R/I. 
+		RelationsinQuotient := LinearDependence(EvaluatedMonomials);
+
+		// This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k). 
+		// Mainly for storage.
+		RelationsinR := [];
+		for rel in RelationsinQuotient do
+			relR := [];
+			for j in MonomialsinR do
+				I := Index(MonomialsGens,j);
+				if I ne 0 then
+					Append(~relR,rel[I]);
+				else 
+					Append(~relR,0);
+				end if;
+			end for;
+			Append(~RelationsinR,relR);
+		end for;
+
+		if #RelationsinR ne 0 then 
+			Relations[k] := RelationsinR;		
+		end if;
+
+		Basisweightk := GaloisInvariantBasis(M,N,[k,k]);
+
+		NewGens := [];
+		if #MonomialsGens - #RelationsinR ne #Basisweightk then 
+			NewGens := FindNewGenerators(M, N, k, EvaluatedMonomials, Basisweightk);
+			Gens[k] := NewGens;
+		end if;	
+
+		print "Level:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+	
+	end for;
+
+	return Gens,Relations;
+end intrinsic;
+
+
 
 // Important! In order to run this version you must have already computed the generators for the ring using either ConstructGeneratorsAndRelations or ConstructGeneratorsAndRelationsV1. 
 // This version DOES NOT look for any new generators, it only checks for relations amoung the generators you have found.
@@ -286,6 +343,8 @@ intrinsic Relations(M::ModFrmHilD, Gens::Assoc, Relations::Assoc, MaxWeight::Rng
 		print "Level:", k,  "    Dimension:", #MonomialsGens - #RelationsinR, Dimension(M,k), "      Relations", #RelationsinR;;
 
 	end for;
+
+	
 
 	print "Relations";
 	for i in Keys(Relations) do
