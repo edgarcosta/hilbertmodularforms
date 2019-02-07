@@ -6,7 +6,7 @@ ModFrmHilDElt
 
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
-  Parent, // M
+  Parent, //
   Weight, // SeqEnum[RngIntElt] : a sequence of [ModFrmHilDBaseField : QQ] integers
   Level, // RngOrdIdl : ideal of Integers(Field)
   Coefficients; // SeqEnum : this also keeps track of coefficient ring

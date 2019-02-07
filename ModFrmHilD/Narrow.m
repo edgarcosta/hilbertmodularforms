@@ -1,33 +1,33 @@
-intrinsic ShintaniWalls(bb::RngOrdFracIdl) -> Any
-  {returns lower, upper}
-  F := NumberField(Parent(Order(bb).1));
-  assert Degree(F) le 2;
-  places := InfinitePlaces(F);
-  eps := FundamentalUnit(F);
-  // TODO some fixes based on narrow equals class..
-  if not IsTotallyPositive(eps) then
-    eps := eps^2;
-  end if;
-  eps1 := Evaluate(eps, places[1]);
-  eps2 := Evaluate(eps, places[2]);
-  if eps1/eps2 le eps2/eps1 then
-    return Sqrt(eps1/eps2), Sqrt(eps2/eps1);
-  else
-    return Sqrt(eps2/eps1), Sqrt(eps1/eps2);
-  end if;
-end intrinsic;
+/* intrinsic ShintaniWalls(bb::RngOrdFracIdl) -> Any */
+/*   {returns lower, upper} */
+/*   F := NumberField(Parent(Order(bb).1)); */
+/*   assert Degree(F) le 2; */
+/*   places := InfinitePlaces(F); */
+/*   eps := FundamentalUnit(F); */
+/*   // TODO some fixes based on narrow equals class.. */
+/*   if not IsTotallyPositive(eps) then */
+/*     eps := eps^2; */
+/*   end if; */
+/*   eps1 := Evaluate(eps, places[1]); */
+/*   eps2 := Evaluate(eps, places[2]); */
+/*   if eps1/eps2 le eps2/eps1 then */
+/*     return Sqrt(eps1/eps2), Sqrt(eps2/eps1); */
+/*   else */
+/*     return Sqrt(eps2/eps1), Sqrt(eps1/eps2); */
+/*   end if; */
+/* end intrinsic; */
 
-// TODO
-intrinsic ShintaniCone(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
-  {Given bb and element of the narrow class group, t a trace, }
-  F := NumberField(Parent(Order(bb).1));
-  basis := Basis(bb);
-end intrinsic;
+/* // TODO */
+/* intrinsic ShintaniCone(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl] */
+/*   {Given bb and element of the narrow class group, t a trace, } */
+/*   F := NumberField(Parent(Order(bb).1)); */
+/*   basis := Basis(bb); */
+/* end intrinsic; */
 
-// TODO
-intrinsic ShintaniCone(bb::RngOrdFracIdl, t::RngIntElt) -> Any
-  {returns all totally positive elements in the shintani cone for bb up to trace t}
-end intrinsic;
+/* // TODO */
+/* intrinsic ShintaniCone(bb::RngOrdFracIdl, t::RngIntElt) -> Any */
+/*   {returns all totally positive elements in the shintani cone for bb up to trace t} */
+/* end intrinsic; */
 
 
 
@@ -163,12 +163,12 @@ All totally positive elements of given trace t will satisfy
 Eq 1) determines the value for x while Eq 2) allows us to loop over values of y
 */
 
-intrinsic Pos_elt_of_Trace(bb::RngOrdFracIdl, t::RngIntElt, places::[PlcNumElt]) -> SeqEnum[RngOrdFracIdl]
+intrinsic PositiveElementsOfTraceForIdealOfGivenTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
   {Input: bb: fractional ideal.    t: bound on the trace.    places: The infinite places of the numberfield.
    Output: The totally positive elements of bb with trace t}
   Basis := Nice_Basis(bb);
+  places := InfinitePlaces(NumberField(Parent(Basis[1])));
   SmallestTrace := Trace(Basis[1]);
-
   T := [];
   if t mod SmallestTrace eq 0 then
     x := t div SmallestTrace;
@@ -177,11 +177,21 @@ intrinsic Pos_elt_of_Trace(bb::RngOrdFracIdl, t::RngIntElt, places::[PlcNumElt])
     Lower := Ceiling(Min(-x*a_1/b_1,-x*a_2/b_2));
     Upper := Floor(Max(-x*a_1/b_1,-x*a_2/b_2));
     for y in [Lower .. Upper] do
-      Append(~T, [x*Basis[1]+y*Basis[2]]);
+      /* Append(~T, [x*Basis[1]+y*Basis[2]]); */
+      Append(~T, x*Basis[1]+y*Basis[2]);
     end for;
   end if;
   return T;
 end intrinsic;
 
-
-
+intrinsic PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
+  {}
+  l := [];
+  for i := 1 to t do
+    elts_of_trace_i := PositiveElementsOfTraceForIdealOfGivenTrace(bb, i);
+    if #elts_of_trace_i gt 0 then
+      l cat:= elts_of_trace_i;
+    end if;
+  end for;
+  return l;
+end intrinsic;

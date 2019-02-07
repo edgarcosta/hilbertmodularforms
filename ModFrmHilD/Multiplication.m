@@ -180,37 +180,58 @@ intrinsic ShintaniDomain(M::ModFrmHilD, ZF::RngOrd, places::[PlcNumElt]) -> any
 end intrinsic;
 
 
+/* intrinsic GetIndexPairs(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum */
+/*   {returns list of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound t.} */
+/*   nus := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, t); */
+/*   shintani_domain := Shintani_Domain(bb, t); */
+/*   /1* Shintanielts, result, trace_bound := ShintaniDomain(M,ZF,places); gens := Keys(result); *1/ */
+/*   by_trace := AssociativeArray(); */
+/*   for i := 0 to t do */
+/*     s_1 := PositiveElementsOfTraceForIdealOfGivenTrace(bb, i); */
+/*     by_trace[i] := s_1; */
+/*     for j in [0..Min(i, trace_bound - i)] do */
+/*       for nu_1 in s_1 do */
+/*         for nu_2 in by_trace[j] do */
+/*           nu := nu_1 + nu_2; */
+/*           if IsDefined(result, nu) then */
+/*             Append(~result[nu], [nu_1, nu_2]); */
+/*             Append(~result[nu], [nu_2, nu_1]); */
+/*           end if; */
+/*         end for; */
+/*       end for; */
+/*     end for; */
+/*   end for; */
+/*   indices_list := []; */
+/*   shintani_reps := AssociativeArray(); */
+/*   for nu in gens do */
+/*     sums_up := []; */
+/*     for x in Set(result[nu]) do */
+/*       if not IsDefined(shintani_reps, x[1]) then */
+/*         shintani_reps[x[1]] := Shintanielts[ideal<ZF |x[1]>]; */
+/*       end if; */
+/*       if not IsDefined(shintani_reps, x[2]) then */
+/*         shintani_reps[x[2]] := Shintanielts[ideal<ZF |x[2]>];; */
+/*       end if; */
+/*       Append(~sums_up, [shintani_reps[x[1]], shintani_reps[x[2]]]); */
+/*     end for; */
+/*     Append(~indices_list, [* nu, sums_up *]); */
+/*   end for; */
+/*   return indices_list; */
+/* end intrinsic; */
 
-
-
-intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
-  {returns list of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to precision.}
-  if NarrowClassNumber(BaseField(M)) ne 1 then
-    print "WARNING: currently only works for narrow class number 1.\n";
-    assert false;
-  end if;
-
-  ZF := Integers(BaseField(M));
-  places := InfinitePlaces(BaseField(M));
-  ideals := Ideals(M);
-  n := Precision(M);
-  d := Degree(ZF);
-
-  Shintanielts, result, trace_bound := ShintaniDomain(M,ZF,places); gens := Keys(result);
-
+/* intrinsic GetIndexPairs(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum */
+intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> SeqEnum
+  {returns list of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
+  t := Precision(M);
+  positive_reps := PositiveElementReps(M);
+  shintani_reps := ShintaniReps(M);
+  /* nus := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, t); */
+  /* shintani_domain := Shintani_Domain(bb, t); */
+  /* Shintanielts, result, trace_bound := ShintaniDomain(M,ZF,places); gens := Keys(result); */
   by_trace := AssociativeArray();
-  for i in [0..trace_bound] do
-    
-    if d eq 2 then
-      s_1 := IndicesByTraceQuadratic(i, ZF, places);
-    elif d eq 3 then 
-      s_1 := IndicesByTraceCubic(i, ZF, places);
-    else
-      print "Not Implemented";
-    end if;
-    
+  for i := 0 to t do
+    s_1 := PositiveElementsOfTraceForIdealOfGivenTrace(bb, i);
     by_trace[i] := s_1;
-
     for j in [0..Min(i, trace_bound - i)] do
       for nu_1 in s_1 do
         for nu_2 in by_trace[j] do
@@ -223,7 +244,6 @@ intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
       end for;
     end for;
   end for;
-
   indices_list := [];
   shintani_reps := AssociativeArray();
   for nu in gens do
@@ -241,6 +261,3 @@ intrinsic GetIndexPairs(M::ModFrmHilD) -> SeqEnum
   end for;
   return indices_list;
 end intrinsic;
-
-
-
