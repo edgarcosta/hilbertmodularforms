@@ -13,12 +13,11 @@ declare attributes ModFrmHilD:
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
   NarrowClassGroupRepresentatives, // SeqEnum[RngOrdElt/RngFracElt]
 
-  /* Precision, // RngIntElt : precision for all expansions with this parent */
-  Precision, // trace bound
+  Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
   ClassGroupReps, // an ideal bb for each element of the class group
-  PositiveElementReps, // AssociativeArray indexed by bb
-  ShintaniReps, // AssociativeArray indexed by bb
+  PositiveReps, // PositiveReps[bb][t] = nu with trace t, under equivalence relation of equality >_<
+  ShintaniReps, // ShintaniReps[bb][t] = nu in Shintani with trace t
   /* Ideals, // SeqEnum[RngOrdIdl] */
   /* Primes, // */
   /* Dictionary, // Assoc maps Ideals[i] to i */
@@ -112,9 +111,9 @@ intrinsic ClassGroupReps(M::ModFrmHilD) -> Any
   return M`ClassGroupReps;
 end intrinsic;
 
-intrinsic PositiveElementReps(M::ModFrmHilD) -> Any
+intrinsic PositiveReps(M::ModFrmHilD) -> Any
   {}
-  return M`PositiveElementReps;
+  return M`PositiveReps;
 end intrinsic;
 
 intrinsic ShintaniReps(M::ModFrmHilD) -> Any
@@ -212,11 +211,19 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`ClassGroupReps := [mp(g) : g in Cl];
   // positive element reps and Shintani reps for each class group rep
   // up to trace bound prec
-  M`PositiveElementReps := AssociativeArray();
+  M`PositiveReps := AssociativeArray();
   M`ShintaniReps := AssociativeArray();
+  /* for bb in M`ClassGroupReps do */
+  /*   M`PositiveElementReps[bb] := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, prec); */
+  /*   M`ShintaniReps[bb] := Shintani_Domain(bb, prec); */
+  /* end for; */
   for bb in M`ClassGroupReps do
-    M`PositiveElementReps[bb] := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, prec);
-    M`ShintaniReps[bb] := Shintani_Domain(bb, prec);
+    M`PositiveReps[bb] := AssociativeArray();
+    M`ShintaniReps[bb] := AssociativeArray();
+    for t := 0 to prec do
+      M`PositiveReps[bb][t] := PositiveElementsOfTrace(bb, t);
+      M`ShintaniReps[bb][t] := ShintaniDomainOfTrace(bb, t);
+    end for;
   end for;
   // now for each class group rep
   /* for bb in M`ClassGroupReps do */
@@ -265,8 +272,8 @@ end intrinsic;
 
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   {Assign representatives and a dictionary for it to M.}
-  bbs := ClassGroupReps(M);
-  positive_reps := PositiveElementReps(M);
+  class_group_reps := ClassGroupReps(M);
+  positive_reps := PositiveReps(M);
   shintani_reps := ShintaniReps(M);
   /* ZF := Integers(BaseField(M)); */
   /* // loop for ideal classes */
@@ -290,5 +297,5 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   /* M`MultiplicationTable := mult_table; */
   /* M`DictionaryRepresentatives := dict_reps; */
   /* return true; */
-  /* return M; */
-/* end intrinsic; */
+  return M;
+end intrinsic;

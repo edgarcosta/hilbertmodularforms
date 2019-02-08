@@ -222,12 +222,16 @@ end intrinsic;
 /* intrinsic GetIndexPairs(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum */
 intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> SeqEnum
   {returns list of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
+  assert bb in ClassGroupReps(M);
   t := Precision(M);
-  positive_reps := PositiveElementReps(M);
-  shintani_reps := ShintaniReps(M);
-  /* nus := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, t); */
-  /* shintani_domain := Shintani_Domain(bb, t); */
-  /* Shintanielts, result, trace_bound := ShintaniDomain(M,ZF,places); gens := Keys(result); */
+  /* positive_reps := PositiveElementReps(M); */
+  /* shintani_reps := ShintaniReps(M); */
+  F := BaseField(M);
+  ZF := Integers(F);
+  places := InfinitePlaces(F);
+  nus := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, t);
+  shintani_domain := Shintani_Domain(bb, t);
+  Shintanielts, result, trace_bound := ShintaniDomain(M,ZF,places); gens := Keys(result);
   by_trace := AssociativeArray();
   for i := 0 to t do
     s_1 := PositiveElementsOfTraceForIdealOfGivenTrace(bb, i);
