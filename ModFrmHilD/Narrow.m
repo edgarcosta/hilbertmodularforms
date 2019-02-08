@@ -143,8 +143,9 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
     end for;
   end for;
   pairs_shintani := AssociativeArray(); // now move pairs inside shintani domain
-  for nu in Keys(pairs) do
-    pairs_nu := Set(pairs[nu]);
+  // TODO: pairs need to be in shintani domain right now only sum is in Shintani
+  /* for nu in Keys(pairs) do */
+  /*   pairs_nu := Set(pairs[nu]); */
   return pairs;
 end intrinsic;
   /* F := BaseField(M); */
