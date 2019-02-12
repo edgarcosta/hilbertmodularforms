@@ -126,7 +126,7 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
   shintani_reps := ShintaniReps(M);
   pairs := AssociativeArray(); // indexed by nu
   for i := 0 to t do
-    for j in [0..Min(i, t - i)] do
+    for j in [0..Min(i, t - i)] do // this min guarantees Tr(nu1+nu2) < trace bound
       for nu1 in positive_reps[bb][i] do
         for nu2 in positive_reps[bb][j] do
           nu := nu1 + nu2;
@@ -136,17 +136,22 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
               Append(~pairs[nu], [nu2, nu1]);
             else
               pairs[nu] := [[nu1, nu2]];
+              pairs[nu] := [[nu2, nu1]];
             end if;
           end if;
         end for;
       end for;
     end for;
   end for;
-  pairs_shintani := AssociativeArray(); // now move pairs inside shintani domain
-  // TODO: pairs need to be in shintani domain right now only sum is in Shintani
-  /* for nu in Keys(pairs) do */
-  /*   pairs_nu := Set(pairs[nu]); */
-  return pairs;
+  pairs_with_redundancies_eliminated := AssociativeArray();
+  for key in Keys(pairs) do
+    /* printf "key=%o\n", key; */
+    /* printf "trace(key)=%o\n", Trace(key); */
+    /* printf "pairs=%o\n", pairs[key]; */
+    pairs_with_redundancies_eliminated[key] := SequenceToSet(pairs[key]);
+    /* printf "new pairs=%o\n", pairs_with_redundancies_eliminated[key]; */
+  end for;
+  return pairs_with_redundancies_eliminated;
 end intrinsic;
   /* F := BaseField(M); */
   /* ZF := Integers(F); */
