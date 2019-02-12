@@ -223,7 +223,7 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   reps_indexed := [ ZF!0 : i in [1..#reps] ];
   dict_reps := AssociativeArray();
   for nu in reps do
-    dict_reps[nu] := GetPosition(M, nu);
+    dict_reps[nu] := GetPosition(M, ZF!nu);
   end for;
   mult_table := [[] : nu in reps];
   for i := 1 to #indices do
