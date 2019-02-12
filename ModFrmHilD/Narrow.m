@@ -151,6 +151,7 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
     pairs_with_redundancies_eliminated[key] := SequenceToSet(pairs[key]);
     /* printf "new pairs=%o\n", pairs_with_redundancies_eliminated[key]; */
   end for;
+  // TODO move pairs [nu1,nu2] into shintani domain
   return pairs_with_redundancies_eliminated;
 end intrinsic;
   /* F := BaseField(M); */
