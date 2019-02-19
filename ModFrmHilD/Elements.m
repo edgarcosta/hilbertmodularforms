@@ -821,7 +821,7 @@ intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
   M:=Parent(f);
   g:=M!(1*f);
   F:=BaseField(M);
-  ZF<w>:=Integers(F);
+  ZF:=Integers(F);
   ideals:=Ideals(f);
   for i in ideals do
     x:=GetCoefficient(f, Conjugate(i));
