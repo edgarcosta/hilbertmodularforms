@@ -122,10 +122,10 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
   {returns list (assoc array) of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
   assert bb in ClassGroupReps(M);
   t := Precision(M);
-  positive_reps := PositiveReps(M);
-  shintani_reps := ShintaniReps(M);
+  positive_reps := PositiveReps(M); // indexed by ideal class and then trace
+  shintani_reps := ShintaniReps(M); // indexed by ideal class and then trace
   pairs := AssociativeArray(); // indexed by nu
-  for i := 0 to t do
+  for i := 0 to t do // loop over trace
     for j in [0..Min(i, t - i)] do // this min guarantees Tr(nu1+nu2) < trace bound
       for nu1 in positive_reps[bb][i] do
         for nu2 in positive_reps[bb][j] do
@@ -143,16 +143,16 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
       end for;
     end for;
   end for;
+  // at this point pairs[nu] = [[nu1,nu2],...] with nu in the Shintani domain
+  // and nu1,nu2,... totally positive (not necessarily in Shintani)
+  // first eliminate multiple pairs [nu1,nu2],[nu1,nu2]
   pairs_with_redundancies_eliminated := AssociativeArray();
   for key in Keys(pairs) do
-    /* printf "key=%o\n", key; */
-    /* printf "trace(key)=%o\n", Trace(key); */
-    /* printf "pairs=%o\n", pairs[key]; */
     pairs_with_redundancies_eliminated[key] := SequenceToSet(pairs[key]);
-    /* printf "new pairs=%o\n", pairs_with_redundancies_eliminated[key]; */
   end for;
-  // TODO move pairs [nu1,nu2] into shintani domain
-  return pairs_with_redundancies_eliminated;
+  pairs := pairs_with_redundancies_eliminated;
+  // TODO now move pairs [nu1,nu2] into shintani domain
+  return pairs;
 end intrinsic;
   /* F := BaseField(M); */
   /* ZF := Integers(F); */
@@ -193,4 +193,40 @@ end intrinsic;
   /*   Append(~indices_list, [* nu, sums_up *]); */
   /* end for; */
   /* return indices_list; */
+/* end intrinsic; */
+
+/*
+Reduction to Shintani Domain
+*/
+
+/* intrinsic EmbedNumberField(nu::RngOrdElt, places::SeqEnum) -> SeqEnum */
+/*   { */
+/*     Input: nu an element of ZF where F is totally real */
+/*     Output: A tuple of the real embeddings of nu in RR */
+/*   } */
+/*   return [Evaluate(nu, pl) : pl in places]; */
+/* end intrinsic; */
+
+/* intrinsic Slope_F(alpha::RngOrdElt, places::SeqEnum) -> FldReElt */
+/*   { */
+/*     Input:  alpha, an element of ZF for F a totally real quadratic number field */
+/*     Output: The "slope" defined by alpha: sigma_2(alpha)/sigma_1(alpha) where sigma_i is the ith embedding of F */
+/*   } */
+/*   return Evaluate(alpha, places[2]) / Evaluate(alpha, places[1]); */
+/* end intrinsic; */
+
+/* intrinsic ReduceToShintani(nu::RngOrdElt, eps::RngQuadElt, log_slope_funu::FldReElt, places::SeqEnum) -> FldNumElt */
+/* intrinsic ReduceToShintani(nu::RngOrdElt) -> FldNumElt */
+/*   { */
+/*     Input: nu a totally nonnegative element of ZF */
+/*     Output: a representative for nu in the Shintani cone */
+/*   } */
+/*   assert (IsTotallyPositive(nu) or (nu eq 0)); // only for totally nonnegative elements */
+/*   if nu eq 0 then */
+/*     return 0; */
+/*   else */
+/*     m_nu := Slope_F(nu, places); */
+/*     r := -Floor(RealField(100) ! (Log(m_nu) / log_slope_funu)); */
+/*     return nu * (eps^2)^r; */
+/*   end if; */
 /* end intrinsic; */

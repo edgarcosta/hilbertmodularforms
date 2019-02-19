@@ -16,7 +16,7 @@ declare attributes ModFrmHilD:
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
   ClassGroupReps, // an ideal bb for each element of the class group
-  PositiveReps, // PositiveReps[bb][t] = nu with trace t, under equivalence relation of equality >_<
+  PositiveReps, // PositiveReps[bb][t] = nu with trace t
   ShintaniReps, // ShintaniReps[bb][t] = nu in Shintani with trace t
   /* Ideals, // SeqEnum[RngOrdIdl] */
   /* Primes, // */
