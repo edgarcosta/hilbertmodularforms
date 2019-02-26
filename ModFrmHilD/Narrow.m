@@ -118,6 +118,70 @@ intrinsic PositiveElements(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFra
   return l;
 end intrinsic;
 
+intrinsic EmbedNumberField(nu::RngOrdElt, places::SeqEnum) -> SeqEnum
+  {
+    Input: nu an element of ZF where F is totally real
+    Output: A tuple of the real embeddings of nu in RR
+  }
+  return [Evaluate(nu, pl) : pl in places];
+end intrinsic;
+
+intrinsic Slope(alpha::RngOrdElt) -> FldReElt
+  {
+    Input:  alpha, an element of ZF for F a totally real quadratic number field
+    Output: The "slope" defined by alpha: sigma_2(alpha)/sigma_1(alpha) where sigma_i is the ith embedding of F
+  }
+  OK := Parent(alpha);
+  K := NumberField(OK);
+  places := InfinitePlaces(K);
+  return Evaluate(alpha, places[2]) / Evaluate(alpha, places[1]);
+end intrinsic;
+
+intrinsic ReduceShintani(nu::RngOrdElt) -> Any
+  {}
+  if nu eq 0 then
+    return Parent(nu)!0;
+  end if;
+  assert IsTotallyPositive(nu);
+  ZF := Parent(nu);
+  F := NumberField(ZF);
+  places := InfinitePlaces(F);
+  eps := FundamentalUnit(ZF);
+  // determine signs of eps and make eps totally positive
+  eps_RR := EmbedNumberField(eps, places);
+  assert #eps_RR eq 2; // only for quadratic fields right now
+  pos_count := 0;
+  for i := 1 to #places do
+    if eps_RR[i] gt 0 then
+      pos_count +:= 1;
+    end if;
+  end for;
+  if pos_count eq 0 then
+    eps := -eps;
+  elif pos_count eq 1 then
+    eps := eps^2;
+  else
+    eps := eps;
+  end if;
+  eps_RR := EmbedNumberField(eps, places);
+  slope_eps := Slope(eps);
+  slope_nu := Slope(nu);
+  // TODO: do we know calculus?
+  // r := -Floor( RealField(100)!(Log(slope_nu)/Log(slope_eps)) ); // old formula
+  RR := RealField(100);
+  ratio := Log(RR!slope_nu)/Log(RR!eps_RR[1]);
+  ratio_ceiling := Ceiling(ratio);
+  ratio_floor := Floor(ratio);
+  if IsEven(ratio_ceiling) then
+    r := ratio_ceiling;
+  else
+    assert IsEven(ratio_floor);
+    r := ratio_floor;
+  end if;
+  /* r := Integers()!((1/2)*Round(Log(RealField(100)!slope_nu)/Log(RealField(100)!eps_RR[1]))); */
+  return nu*eps^r;
+end intrinsic;
+
 intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
   {returns list (assoc array) of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
   assert bb in ClassGroupReps(M);

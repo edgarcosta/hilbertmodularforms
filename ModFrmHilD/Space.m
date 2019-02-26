@@ -16,6 +16,7 @@ declare attributes ModFrmHilD:
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
   ClassGroupReps, // an ideal bb for each element of the class group
+  // TODO store pairs [nu,nn] where nn = (nu)*bb^-1? to keep track of ideal?
   PositiveReps, // PositiveReps[bb][t] = nu with trace t
   ShintaniReps, // ShintaniReps[bb][t] = nu in Shintani with trace t
   /* Ideals, // SeqEnum[RngOrdIdl] */
@@ -120,8 +121,6 @@ intrinsic ShintaniReps(M::ModFrmHilD) -> Any
   {}
   return M`ShintaniReps;
 end intrinsic;
-
-
 
 /* intrinsic Ideals(M::ModFrmHilD) -> SeqEnum[RngOrdIdl] */
 /*   {The Ideals of the space M of Hilbert modular forms.} */
