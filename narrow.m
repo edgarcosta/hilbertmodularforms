@@ -4,11 +4,11 @@ SetDebugOnError(true);
 
 load "config.m";
 
-/* F<nu> := QuadraticField(6); */
-F<nu> := QuadraticField(5);
+F<nu> := QuadraticField(6);
+/* F<nu> := QuadraticField(5); */
 ZF := Integers(F);
 NN := ideal<ZF|[1]>;
-prec := 12;
+prec := 20;
 
 // space
 M := HMFSpace(F, prec);
@@ -17,10 +17,10 @@ bbs := class_group_reps;
 positive_reps := PositiveReps(M);
 shintani_reps := ShintaniReps(M);
 
-nus := positive_reps[bbs[1]][5];
-nu := nus[1];
-nu in shintani_reps[bbs[1]][Trace(nu)];
-/* ReduceShintani(nu); */
+/* nus := positive_reps[bbs[1]][5]; */
+/* nu := nus[1]; */
+/* nu in shintani_reps[bbs[1]][Trace(nu)]; */
+/* ReduceShintani(nu, shintani_reps); */
 
 /* for i := 1 to #bbs do */
 /*   printf "%o:\n", bbs[i]; */
@@ -33,6 +33,7 @@ nu in shintani_reps[bbs[1]][Trace(nu)];
 /*       for j := 1 to #pos_reps do */
 /*         printf "\t\tpos_reps[%o]=%o\n", j, pos_reps[j]; */
 /*         new_nu := ReduceShintani(pos_reps[j]); */
+/*         printf "new_nu = %o\n", new_nu; */
 /*         assert new_nu in shintani_reps[bb][Trace(new_nu)]; */
 /*       end for; */
 /*     end if; */

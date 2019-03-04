@@ -1,6 +1,6 @@
-intrinsic ShintaniWalls(bb::RngOrdFracIdl) -> Any
+intrinsic ShintaniWalls(ZF::RngOrd) -> Any
   {returns lower and upper walls of the Shintani domain}
-  F := NumberField(Parent(Order(bb).1));
+  F := NumberField(ZF);
   assert Degree(F) le 2;
   places := InfinitePlaces(F);
   eps := FundamentalUnit(F);
@@ -15,6 +15,7 @@ intrinsic ShintaniWalls(bb::RngOrdFracIdl) -> Any
   end if;
   eps1 := Evaluate(eps, places[1]);
   eps2 := Evaluate(eps, places[2]);
+  // always returns smallest first
   if eps1/eps2 le eps2/eps1 then
     return Sqrt(eps1/eps2), Sqrt(eps2/eps1);
   else
@@ -48,12 +49,14 @@ where C1 and C2 are the slope bounds on the shintani domain. Eq 1) determines th
 intrinsic ShintaniDomainOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
   {Given bb a fractional ideal, t a trace bound, returns the totally positive elements of bb in the balanced Shintani cone with trace t.}
   Basis := NiceBasis(bb);
+  F := NumberField(Parent(Basis[1]));
+  ZF := Integers(F);
   places := InfinitePlaces(NumberField(Parent(Basis[1])));
   SmallestTrace := Trace(Basis[1]);
   T := [];
   if t mod SmallestTrace eq 0 then
     x := t div SmallestTrace;
-    C1,C2 := ShintaniWalls(bb);
+    C1,C2 := ShintaniWalls(ZF);
     a_1 := Evaluate(Basis[1],places[1]); b_1 := Evaluate(Basis[2],places[1]);
     a_2 := Evaluate(Basis[1],places[2]); b_2 := Evaluate(Basis[2],places[2]);
     B1 := (C1*x*a_2 -x*a_1)/(b_1-C1*b_2); B2 := (C2*x*a_2 -x*a_1)/(b_1-C2*b_2);
@@ -137,7 +140,52 @@ intrinsic Slope(alpha::RngOrdElt) -> FldReElt
   return Evaluate(alpha, places[2]) / Evaluate(alpha, places[1]);
 end intrinsic;
 
-intrinsic ReduceShintani(nu::RngOrdElt) -> Any
+intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
+  {}
+  // wall1<wall2
+  wall1, wall2 := ShintaniWalls(Parent(nu));
+  slope := Slope(nu);
+  prec := Precision(Parent(slope));
+  // walls with fuzz
+  if (wall1-10^(-prec/2) le slope) and (slope le wall2+10^(-prec/2)) then
+    return true;
+  else
+    return false;
+  end if;
+end intrinsic;
+
+intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, shintani_reps::Assoc) -> Any
+  {}
+  reps := [];
+  for I in Keys(shintani_reps) do
+    for t in Keys(shintani_reps[I]) do
+      reps cat:= shintani_reps[I][t];
+    end for;
+  end for;
+  return ReduceShintaniComputeIdeal(nu, reps);
+end intrinsic;
+
+intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, shintani_reps::SeqEnum[RngOrdElt]) -> Any
+  {}
+  if nu eq 0 then
+    return Parent(nu)!0;
+  end if;
+  assert IsTotallyPositive(nu);
+  ZF := Parent(nu);
+  nu_ideal := ideal<ZF|nu>;
+  shintani_ideals := [ideal<ZF|a> : a in shintani_reps];
+  matches := [];
+  for i := 1 to #Keys(shintani_reps) do
+    I := ideal<ZF|shintani_reps[i]>;
+    if nu_ideal eq I then
+      Append(~matches, [* I, i *]);
+    end if;
+  end for;
+  assert #matches eq 1;
+  return shintani_reps[matches[1][2]];
+end intrinsic;
+
+intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   {}
   if nu eq 0 then
     return Parent(nu)!0;
@@ -168,18 +216,42 @@ intrinsic ReduceShintani(nu::RngOrdElt) -> Any
   slope_nu := Slope(nu);
   // TODO: do we know calculus?
   // r := -Floor( RealField(100)!(Log(slope_nu)/Log(slope_eps)) ); // old formula
+  /* r := Integers()!((1/2)*Round(Log(RealField(100)!slope_nu)/Log(RealField(100)!eps_RR[1]))); */
   RR := RealField(100);
-  ratio := Log(RR!slope_nu)/Log(RR!eps_RR[1]);
+  ratio := RR!(1/2)*Log(RR!slope_nu)/Log(RR!eps_RR[1]);
   ratio_ceiling := Ceiling(ratio);
   ratio_floor := Floor(ratio);
-  if IsEven(ratio_ceiling) then
-    r := ratio_ceiling;
+  nu_ceiling := eps^ratio_ceiling*nu;
+  nu_floor := eps^ratio_floor*nu;
+  slope_nu_ceiling := Slope(nu_ceiling);
+  slope_nu_floor := Slope(nu_floor);
+  slopes := [slope_nu_floor, slope_nu_ceiling];
+  nus := [nu_floor, nu_ceiling];
+  ParallelSort(~slopes, ~nus);
+  if IsShintaniReduced(nus[1]) then
+    return nus[1];
   else
-    assert IsEven(ratio_floor);
-    r := ratio_floor;
+    assert IsShintaniReduced(nus[2]);
+    return nus[2];
   end if;
-  /* r := Integers()!((1/2)*Round(Log(RealField(100)!slope_nu)/Log(RealField(100)!eps_RR[1]))); */
-  return nu*eps^r;
+end intrinsic;
+
+intrinsic ReduceShintani(nu::RngOrdElt, shintani_reps::Assoc) -> Any
+  {}
+  nu_reduced_by_ideal := ReduceShintaniComputeIdeal(nu, shintani_reps);
+  nu_reduced_by_trace := ReduceShintaniMinimizeTrace(nu);
+  return nu_reduced_by_ideal;
+  // sanity check using trace when ready
+  /* if nu_reduced_by_ideal eq nu_reduced_by_trace then */
+  /*   return nu_reduced_by_ideal; */
+  /* else */
+  /*   error_message := Sprintf("Shintani walls?\n"); */
+  /*   error_message *:= Sprintf("nu using ideals = %o\n", nu_reduced_by_ideal); */
+  /*   error_message *:= Sprintf("Trace(nu using ideals) = %o\n", Trace(nu_reduced_by_ideal)); */
+  /*   error_message *:= Sprintf("nu using trace = %o\n", nu_reduced_by_trace); */
+  /*   error_message *:= Sprintf("Trace(nu using trace) = %o\n", Trace(nu_reduced_by_trace)); */
+  /*   error error_message; */
+  /* end if; */
 end intrinsic;
 
 intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
