@@ -17,6 +17,13 @@ bbs := class_group_reps;
 positive_reps := PositiveReps(M);
 shintani_reps := ShintaniReps(M);
 
+nu := shintani_reps[bbs[1]][12][1];
+
+SetDebugOnError(true);
+ReduceShintani(nu, bbs[1], shintani_reps);
+
+
+
 /* nus := positive_reps[bbs[1]][5]; */
 /* nu := nus[1]; */
 /* nu in shintani_reps[bbs[1]][Trace(nu)]; */

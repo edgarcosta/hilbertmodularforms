@@ -154,13 +154,11 @@ intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
   end if;
 end intrinsic;
 
-intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, shintani_reps::Assoc) -> Any
+intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, bb::RngOrdFracIdl, shintani_reps::Assoc) -> Any
   {}
   reps := [];
-  for I in Keys(shintani_reps) do
-    for t in Keys(shintani_reps[I]) do
-      reps cat:= shintani_reps[I][t];
-    end for;
+  for t in Keys(shintani_reps[bb]) do
+    reps cat:= shintani_reps[bb][t];
   end for;
   return ReduceShintaniComputeIdeal(nu, reps);
 end intrinsic;
@@ -178,6 +176,7 @@ intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, shintani_reps::SeqEnum[RngOr
   for i := 1 to #Keys(shintani_reps) do
     I := ideal<ZF|shintani_reps[i]>;
     if nu_ideal eq I then
+      printf "i=%o\n", i;
       Append(~matches, [* I, i *]);
     end if;
   end for;
@@ -236,9 +235,9 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   end if;
 end intrinsic;
 
-intrinsic ReduceShintani(nu::RngOrdElt, shintani_reps::Assoc) -> Any
+intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, shintani_reps::Assoc) -> Any
   {}
-  nu_reduced_by_ideal := ReduceShintaniComputeIdeal(nu, shintani_reps);
+  nu_reduced_by_ideal := ReduceShintaniComputeIdeal(nu, bb, shintani_reps);
   nu_reduced_by_trace := ReduceShintaniMinimizeTrace(nu);
   return nu_reduced_by_ideal;
   // sanity check using trace when ready
