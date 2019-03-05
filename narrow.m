@@ -29,23 +29,23 @@ ReduceShintani(nu, bbs[1], shintani_reps);
 /* nu in shintani_reps[bbs[1]][Trace(nu)]; */
 /* ReduceShintani(nu, shintani_reps); */
 
-/* for i := 1 to #bbs do */
-/*   printf "%o:\n", bbs[i]; */
-/*   bb := bbs[i]; */
-/*   for t := 2 to prec do */
-/*     printf "\tt=%o:\n", t; */
-/*     pos_reps := positive_reps[bb][t]; */
-/*     if #pos_reps gt 0 then */
-/*       printf "\t#pos_reps=%o:\n", #pos_reps; */
-/*       for j := 1 to #pos_reps do */
-/*         printf "\t\tpos_reps[%o]=%o\n", j, pos_reps[j]; */
-/*         new_nu := ReduceShintani(pos_reps[j]); */
-/*         printf "new_nu = %o\n", new_nu; */
-/*         assert new_nu in shintani_reps[bb][Trace(new_nu)]; */
-/*       end for; */
-/*     end if; */
-/*   end for; */
-/* end for; */
+for i := 1 to #bbs do 
+   printf "%o:\n", bbs[i]; 
+   bb := bbs[i]; 
+   for t := 2 to prec do 
+     printf "\tt=%o:\n", t; 
+     pos_reps := positive_reps[bb][t]; 
+    if #pos_reps gt 0 then 
+       printf "\t#pos_reps=%o:\n", #pos_reps; 
+      for j := 1 to #pos_reps do 
+        printf "\t\tpos_reps[%o]=%o\n", j, pos_reps[j]; 
+         new_nu := ReduceShintani(pos_reps[j],bb, shintani_reps ); 
+        printf "new_nu = %o\n", new_nu; 
+         assert new_nu in shintani_reps[bb][Trace(new_nu)]; 
+       end for; 
+     end if; 
+   end for; 
+ end for; 
 
 /* pairs := GetIndexPairs(class_group_reps[1], M); */
 

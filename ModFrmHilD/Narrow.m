@@ -52,6 +52,10 @@ intrinsic ShintaniDomainOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngO
   F := NumberField(Parent(Basis[1]));
   ZF := Integers(F);
   places := InfinitePlaces(NumberField(Parent(Basis[1])));
+  // Orienting basis
+  if Evaluate(Basis[2],places[1]) lt 0 then
+    Basis := [Basis[1], -Basis[2]];
+  end if;
   SmallestTrace := Trace(Basis[1]);
   T := [];
   if t mod SmallestTrace eq 0 then
