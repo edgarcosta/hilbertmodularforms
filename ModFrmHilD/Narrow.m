@@ -53,6 +53,7 @@ intrinsic ShintaniDomainOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngO
   ZF := Integers(F);
   places := InfinitePlaces(NumberField(Parent(Basis[1])));
   // Orienting basis
+  /* if Evaluate(Basis[2],places[2]) lt 0 then */
   if Evaluate(Basis[2],places[1]) lt 0 then
     Basis := [Basis[1], -Basis[2]];
   end if;
@@ -146,6 +147,10 @@ end intrinsic;
 
 intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
   {}
+  // zero is Shintani Reduced
+  if nu eq Parent(nu)!0 then
+    return true;
+  end if;
   // wall1<wall2
   wall1, wall2 := ShintaniWalls(Parent(nu));
   slope := Slope(nu);
@@ -180,7 +185,6 @@ intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, shintani_reps::SeqEnum[RngOr
   for i := 1 to #Keys(shintani_reps) do
     I := ideal<ZF|shintani_reps[i]>;
     if nu_ideal eq I then
-      printf "i=%o\n", i;
       Append(~matches, [* I, i *]);
     end if;
   end for;
@@ -242,7 +246,7 @@ end intrinsic;
 intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, shintani_reps::Assoc) -> Any
   {}
   nu_reduced_by_ideal := ReduceShintaniComputeIdeal(nu, bb, shintani_reps);
-  nu_reduced_by_trace := ReduceShintaniMinimizeTrace(nu);
+  /* nu_reduced_by_trace := ReduceShintaniMinimizeTrace(nu); */
   return nu_reduced_by_ideal;
   // sanity check using trace when ready
   /* if nu_reduced_by_ideal eq nu_reduced_by_trace then */
@@ -257,7 +261,14 @@ intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, shintani_reps::Assoc)
   /* end if; */
 end intrinsic;
 
-intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
+intrinsic ReduceShintani(pair::SeqEnum, bb::RngOrdFracIdl, shintani_reps::Assoc) -> SeqEnum
+  {}
+  assert #pair eq 2;
+  return [ReduceShintani(nu, bb, shintani_reps) : nu in pair];
+end intrinsic;
+
+// TODO: optimize
+intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Any
   {returns list (assoc array) of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
   assert bb in ClassGroupReps(M);
   t := Precision(M);
@@ -282,56 +293,65 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Assoc
       end for;
     end for;
   end for;
-  // at this point pairs[nu] = [[nu1,nu2],...] with nu in the Shintani domain
-  // and nu1,nu2,... totally positive (not necessarily in Shintani)
-  // first eliminate multiple pairs [nu1,nu2],[nu1,nu2]
   pairs_with_redundancies_eliminated := AssociativeArray();
+  pairs_shintani := AssociativeArray();
   for key in Keys(pairs) do
-    pairs_with_redundancies_eliminated[key] := SequenceToSet(pairs[key]);
+    // first eliminate multiple pairs [nu1,nu2],[nu1,nu2]
+    pairs_with_redundancies_eliminated[key] := SetToSequence(SequenceToSet(pairs[key]));
+    // at this point pairs[nu] = [[nu1,nu2],...] with nu in the Shintani domain
+    // and nu1,nu2,... totally positive (not necessarily in Shintani)
+    assert IsShintaniReduced(key);
+    pairs_shintani[key] := [ReduceShintani(pair, bb, shintani_reps) : pair in pairs_with_redundancies_eliminated[key]];
+    assert #pairs_with_redundancies_eliminated[key] le #pairs[key];
+    assert #pairs_shintani[key] eq #pairs_with_redundancies_eliminated[key];
+    for pair in pairs_shintani[key] do
+      assert #pair eq 2;
+      assert IsShintaniReduced(pair[1]);
+      assert IsShintaniReduced(pair[2]);
+    end for;
   end for;
-  pairs := pairs_with_redundancies_eliminated;
-  // TODO now move pairs [nu1,nu2] into shintani domain
-  return pairs;
+  return pairs_shintani, pairs_with_redundancies_eliminated, pairs;
 end intrinsic;
-  /* F := BaseField(M); */
-  /* ZF := Integers(F); */
-  /* places := InfinitePlaces(F); */
-  /* nus := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, t); */
-  /* shintani_domain := Shintani_Domain(bb, t); */
-  /* Shintanielts, result, trace_bound := ShintaniDomain(M,ZF,places); gens := Keys(result); */
-  /* by_trace := AssociativeArray(); */
-  /* for i := 0 to t do */
-  /*   s_1 := PositiveElementsOfTraceForIdealOfGivenTrace(bb, i); */
-  /*   by_trace[i] := s_1; */
-  /*   for j in [0..Min(i, trace_bound - i)] do */
-  /*     for nu_1 in s_1 do */
-  /*       for nu_2 in by_trace[j] do */
-  /*         nu := nu_1 + nu_2; */
-  /*         if IsDefined(result, nu) then */
-  /*           Append(~result[nu], [nu_1, nu_2]); */
-  /*           Append(~result[nu], [nu_2, nu_1]); */
-  /*         end if; */
-  /*       end for; */
-  /*     end for; */
-  /*   end for; */
-  /* end for; */
 
-  /* indices_list := []; */
-  /* shintani_reps := AssociativeArray(); */
-  /* for nu in gens do */
-  /*   sums_up := []; */
-  /*   for x in Set(result[nu]) do */
-  /*     if not IsDefined(shintani_reps, x[1]) then */
-  /*       shintani_reps[x[1]] := Shintanielts[ideal<ZF |x[1]>]; */
-  /*     end if; */
-  /*     if not IsDefined(shintani_reps, x[2]) then */
-  /*       shintani_reps[x[2]] := Shintanielts[ideal<ZF |x[2]>];; */
-  /*     end if; */
-  /*     Append(~sums_up, [shintani_reps[x[1]], shintani_reps[x[2]]]); */
-  /*   end for; */
-  /*   Append(~indices_list, [* nu, sums_up *]); */
-  /* end for; */
-  /* return indices_list; */
+/* F := BaseField(M); */
+/* ZF := Integers(F); */
+/* places := InfinitePlaces(F); */
+/* nus := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, t); */
+/* shintani_domain := Shintani_Domain(bb, t); */
+/* Shintanielts, result, trace_bound := ShintaniDomain(M,ZF,places); gens := Keys(result); */
+/* by_trace := AssociativeArray(); */
+/* for i := 0 to t do */
+/*   s_1 := PositiveElementsOfTraceForIdealOfGivenTrace(bb, i); */
+/*   by_trace[i] := s_1; */
+/*   for j in [0..Min(i, trace_bound - i)] do */
+/*     for nu_1 in s_1 do */
+/*       for nu_2 in by_trace[j] do */
+/*         nu := nu_1 + nu_2; */
+/*         if IsDefined(result, nu) then */
+/*           Append(~result[nu], [nu_1, nu_2]); */
+/*           Append(~result[nu], [nu_2, nu_1]); */
+/*         end if; */
+/*       end for; */
+/*     end for; */
+/*   end for; */
+/* end for; */
+
+/* indices_list := []; */
+/* shintani_reps := AssociativeArray(); */
+/* for nu in gens do */
+/*   sums_up := []; */
+/*   for x in Set(result[nu]) do */
+/*     if not IsDefined(shintani_reps, x[1]) then */
+/*       shintani_reps[x[1]] := Shintanielts[ideal<ZF |x[1]>]; */
+/*     end if; */
+/*     if not IsDefined(shintani_reps, x[2]) then */
+/*       shintani_reps[x[2]] := Shintanielts[ideal<ZF |x[2]>];; */
+/*     end if; */
+/*     Append(~sums_up, [shintani_reps[x[1]], shintani_reps[x[2]]]); */
+/*   end for; */
+/*   Append(~indices_list, [* nu, sums_up *]); */
+/* end for; */
+/* return indices_list; */
 /* end intrinsic; */
 
 /*
