@@ -20,7 +20,6 @@ intrinsic PercentM(f::ModFrmHilDElt) -> MonStgElt
   return Sprintf("HMF(%m, %m, %m)", Parent(f), Weight(f), Coefficients(f));
 end intrinsic;
 
-// TODO: narrow>1
 intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
   {}
   if level in ["Default", "Minimal", "Maximal"] then
@@ -49,32 +48,6 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     error "not a valid printing level.";
   end if;
 end intrinsic;
-
-/* intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10) */
-/*   {} */
-/*   if level in ["Default", "Minimal", "Maximal"] then */
-/*     M := Parent(f); */
-/*     ideals := Ideals(M); */
-/*     k := Weight(f); */
-/*     prec := Precision(f); */
-/*     coeffs := Coefficients(f); */
-/*     N := Level(f); */
-/*     printf "Hilbert modular form expansion with precision %o.\n", prec; */
-/*     printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N); */
-/*     printf "Weight: %o\n", k; */
-/*     printf "Parent: %o\n", M; */
-/*     printf "Coefficients:\n"; */
-/*     printf "\n\t(Norm, nn)  |--->   a_nn"; */
-/*     printf "\n\t(%o, %o)  |--->   %o", 0,  Generators(ideals[1]), coeffs[1]; */
-/*     for i:= 2 to Min(num_coeffs, #coeffs) do */
-/*       printf "\n\t(%o, %o)  |--->   %o", Norm(ideals[i]),  Generators(ideals[i]), coeffs[i]; */
-/*     end for; */
-/*   elif level eq "Magma" then */
-/*     printf "%o", PercentM(f); */
-/*   else */
-/*     error "not a valid printing level."; */
-/*   end if; */
-/* end intrinsic; */
 
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
   {}
@@ -137,16 +110,6 @@ intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   {returns precision of parent of f.}
   return Precision(Parent(f));
 end intrinsic;
-
-/* intrinsic Ideals(f::ModFrmHilDElt) -> SeqEnum[RngOrdIdl] */
-/*   {returns ideals indexing f up to bound on the norm.} */
-/*   return Ideals(Parent(f)); */
-/* end intrinsic; */
-
-/* intrinsic Dictionary(f::ModFrmHilDElt) -> Assoc */
-/*   {returns dictionary of (parent of) f.} */
-/*   return Dictionary(Parent(f)); */
-/* end intrinsic; */
 
 ////////// ModFrmHilDElt elementary creation functions //////////
 
@@ -278,7 +241,6 @@ end intrinsic;
 
 ////////// ModFrmHilDElt creation functions //////////
 
-// TODO: narrow>1
 //TODO: change hecke_eigenvalues to a list
 /* intrinsic EigenformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc) -> ModFrmHilDElt */
 /*   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.} */
@@ -292,9 +254,7 @@ end intrinsic;
 /*     print "Not enough primes"; */
 /*     assert false; */
 /*   end if; */
-
 /*   k0 := Max(k); */
-
 /*   // power series ring */
 /*   log_prec := Floor(Log(prec)/Log(2)); // prec < 2^(log_prec+1) */
 /*   ZK := Parent(hecke_eigenvalues[pp]); */
@@ -323,7 +283,6 @@ end intrinsic;
 /*       if N subset pp then */
 /*         Np := 0; */
 /*       end if; */
-
 /*       r := 2; */
 /*       pp_power := pp * pp; */
 /*       //deals with powers of p */

@@ -267,6 +267,18 @@ intrinsic ReduceShintani(pair::SeqEnum, bb::RngOrdFracIdl, shintani_reps::Assoc)
   return [ReduceShintani(nu, bb, shintani_reps) : nu in pair];
 end intrinsic;
 
+intrinsic IdealToShintaniRepresentative(M::ModFrmHilD, nn::RngOrdIdl) -> Any
+  {}
+  Cl := NarrowClassGroup(M);
+  mp := NarrowClassGroupMap(M);
+  mp_inv := Inverse(mp);
+  bb := mp(-mp_inv(nn));
+  bl, nu := IsPrincipal(nn*bb); // will this always give a totally positive generator? probably not
+  assert bl;
+  assert IsTotallyPositive(nu);
+  return ReduceShintani(nu, bb, ShintaniReps(M)), bb;
+end intrinsic;
+
 // TODO: optimize
 intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Any
   {returns list (assoc array) of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
