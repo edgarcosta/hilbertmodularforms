@@ -51,24 +51,24 @@ intrinsic ShintaniDomainOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngO
   Basis := NiceBasis(bb);
   F := NumberField(Parent(Basis[1]));
   ZF := Integers(F);
-  places := InfinitePlaces(NumberField(Parent(Basis[1])));
+  places := InfinitePlaces(F);
+  
   // Orienting basis
-  /* if Evaluate(Basis[2],places[2]) lt 0 then */
-  if Evaluate(Basis[2],places[1]) lt 0 then
+  if Evaluate(Basis[2],places[2]) lt 0 then
     Basis := [Basis[1], -Basis[2]];
   end if;
+
   SmallestTrace := Trace(Basis[1]);
   T := [];
   if t mod SmallestTrace eq 0 then
     x := t div SmallestTrace;
     C1,C2 := ShintaniWalls(ZF);
-    a_1 := Evaluate(Basis[1],places[1]); b_1 := Evaluate(Basis[2],places[1]);
-    a_2 := Evaluate(Basis[1],places[2]); b_2 := Evaluate(Basis[2],places[2]);
-    B1 := (C1*x*a_2 -x*a_1)/(b_1-C1*b_2); B2 := (C2*x*a_2 -x*a_1)/(b_1-C2*b_2);
-    Lower := Ceiling(Min(B1,B2));
-    Upper := Max(B1,B2);
-    // I need to make sure I don't include points that lie on both walls. This is bad code but removes points that lie on upper wall
-    if (Upper - Floor(Upper)) lt 10^(-70) then Upper := Floor(Upper)-1; else Upper := Floor(Upper); end if;
+    a1 := Evaluate(Basis[1],places[1]); b1 := Evaluate(Basis[2],places[1]);
+    a2 := Evaluate(Basis[1],places[2]); b2 := Evaluate(Basis[2],places[2]);
+    Lower := (C2*x*a2 -x*a1)/(b1-C2*b2); Upper := (C1*x*a2 -x*a1)/(b1-C1*b2); 
+    // Magma has some extreme problems with .999999999 /= 1. That is why this is defined in a terrible manner. I've removed points that lie on the upper wall
+    if Abs(Round(Lower) - Lower) lt 10^(-70) then Lower := Round(Lower); else Lower := Ceiling(Lower); end if;
+    if Abs(Round(Upper) - Upper) lt 10^(-70) then Upper := Round(Upper)-1; else Upper := Floor(Upper); end if;
     for y in [Lower .. Upper] do
       Append(~T, x*Basis[1]+y*Basis[2]);
     end for;
