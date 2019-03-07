@@ -66,9 +66,10 @@ intrinsic ShintaniDomainOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngO
     a1 := Evaluate(Basis[1],places[1]); b1 := Evaluate(Basis[2],places[1]);
     a2 := Evaluate(Basis[1],places[2]); b2 := Evaluate(Basis[2],places[2]);
     Lower := (C2*x*a2 -x*a1)/(b1-C2*b2); Upper := (C1*x*a2 -x*a1)/(b1-C1*b2); 
-    // Magma has some extreme problems with .999999999 /= 1. That is why this is defined in a terrible manner. I've removed points that lie on the upper wall
-    if Abs(Round(Lower) - Lower) lt 10^(-70) then Lower := Round(Lower); else Lower := Ceiling(Lower); end if;
-    if Abs(Round(Upper) - Upper) lt 10^(-70) then Upper := Round(Upper)-1; else Upper := Floor(Upper); end if;
+    // Magma has some extreme problems with .999999999 /= 1. That is why this is defined in a terrible manner. It removes points that lie on the upper wall
+    prec := Precision(Lower);
+    if Abs(Round(Lower) - Lower) lt 10^(-prec/2) then Lower := Round(Lower); else Lower := Ceiling(Lower); end if;
+    if Abs(Round(Upper) - Upper) lt 10^(-prec/2) then Upper := Round(Upper)-1; else Upper := Floor(Upper); end if;
     for y in [Lower .. Upper] do
       Append(~T, x*Basis[1]+y*Basis[2]);
     end for;
@@ -192,6 +193,18 @@ intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, shintani_reps::SeqEnum[RngOr
   return shintani_reps[matches[1][2]];
 end intrinsic;
 
+intrinsic ReduceShintaniIdealClass(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilD) -> SeqEnum
+  {Speed up for Reduce Shintani}
+  ZF := Integers(M); 
+  I := nu*ZF;
+  if nu eq 0 then 
+    ShintaniRep := ZF!0; 
+  else 
+    ShintaniRep := ShintaniIdeals(M)[bb][I];
+  end if;
+  return ShintaniRep;
+end intrinsic;
+
 intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   {}
   if nu eq 0 then
@@ -279,7 +292,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilD, nn::RngOrdIdl) -> Any
   return ReduceShintani(nu, bb, ShintaniReps(M)), bb;
 end intrinsic;
 
-// TODO: optimize
+// TODO: optimize 
 intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Any
   {returns list (assoc array) of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
   assert bb in ClassGroupReps(M);
@@ -307,13 +320,15 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Any
   end for;
   pairs_with_redundancies_eliminated := AssociativeArray();
   pairs_shintani := AssociativeArray();
+  // I've turned off asserts since they slow the code down by a lot. Can put back on since we are still testing
   for key in Keys(pairs) do
     // first eliminate multiple pairs [nu1,nu2],[nu1,nu2]
     pairs_with_redundancies_eliminated[key] := SetToSequence(SequenceToSet(pairs[key]));
     // at this point pairs[nu] = [[nu1,nu2],...] with nu in the Shintani domain
     // and nu1,nu2,... totally positive (not necessarily in Shintani)
-    assert IsShintaniReduced(key);
-    pairs_shintani[key] := [ReduceShintani(pair, bb, shintani_reps) : pair in pairs_with_redundancies_eliminated[key]];
+    //assert IsShintaniReduced(key);
+    pairs_shintani[key] := [[ReduceShintaniIdealClass(pair[1], bb, M),ReduceShintaniIdealClass(pair[2], bb, M)] : pair in pairs_with_redundancies_eliminated[key]];
+    /*
     assert #pairs_with_redundancies_eliminated[key] le #pairs[key];
     assert #pairs_shintani[key] eq #pairs_with_redundancies_eliminated[key];
     for pair in pairs_shintani[key] do
@@ -321,6 +336,7 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Any
       assert IsShintaniReduced(pair[1]);
       assert IsShintaniReduced(pair[2]);
     end for;
+    */
   end for;
   return pairs_shintani, pairs_with_redundancies_eliminated, pairs;
 end intrinsic;

@@ -20,6 +20,7 @@ declare attributes ModFrmHilD:
   PositiveReps, // PositiveReps[bb][t] = nu with trace t
   AllPositiveReps, // AllPositiveReps[bb] = nu with trace at most Precision(M)
   ShintaniReps, // ShintaniReps[bb][t] = nu in Shintani with trace t
+  ShintaniIdeals, // ShintaniReps[bb][I] = nu in Shintani with (nu) = I
   AllShintaniReps, // AllShintaniReps[bb] = nu in Shintani with trace at most Precision(M)
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
   /* Ideals, // SeqEnum[RngOrdIdl] */
@@ -155,6 +156,11 @@ intrinsic AllShintaniReps(M::ModFrmHilD) -> Any
   return M`AllShintaniReps;
 end intrinsic;
 
+intrinsic ShintaniIdeals(M::ModFrmHilD) -> Any
+  {}
+  return M`ShintaniIdeals;
+end intrinsic;
+
 
 /* intrinsic Ideals(M::ModFrmHilD) -> SeqEnum[RngOrdIdl] */
 /*   {The Ideals of the space M of Hilbert modular forms.} */
@@ -247,6 +253,7 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`AllPositiveReps := AssociativeArray();
   M`ShintaniReps := AssociativeArray();
   M`AllShintaniReps := AssociativeArray();
+  M`ShintaniIdeals := AssociativeArray();
   /* for bb in M`ClassGroupReps do */
   /*   M`PositiveElementReps[bb] := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, prec); */
   /*   M`ShintaniReps[bb] := Shintani_Domain(bb, prec); */
@@ -254,12 +261,16 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   for bb in M`ClassGroupReps do
     M`PositiveReps[bb] := AssociativeArray();
     M`ShintaniReps[bb] := AssociativeArray();
+    M`ShintaniIdeals[bb] := AssociativeArray();
     for t := 0 to prec do
       M`PositiveReps[bb][t] := PositiveElementsOfTrace(bb, t);
       M`ShintaniReps[bb][t] := ShintaniDomainOfTrace(bb, t);
     end for;
     M`AllPositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
     M`AllShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
+    for nu in ShintaniRepsUpToTrace(M, bb, prec) do
+      M`ShintaniIdeals[bb][ideal<Integers(F)|nu>] := nu;
+    end for;
   end for;
   // now for each class group rep
   /* for bb in M`ClassGroupReps do */
