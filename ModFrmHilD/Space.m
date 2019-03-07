@@ -12,24 +12,15 @@ declare attributes ModFrmHilD:
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
   NarrowClassGroupRepresentatives, // SeqEnum[RngOrdElt/RngFracElt]
-
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
   ClassGroupReps, // an ideal bb for each element of the narrow class group
-  // TODO store pairs [nu,nn] where nn = (nu)*bb^-1? to keep track of ideal?
   PositiveReps, // PositiveReps[bb][t] = nu with trace t
   AllPositiveReps, // AllPositiveReps[bb] = nu with trace at most Precision(M)
   ShintaniReps, // ShintaniReps[bb][t] = nu in Shintani with trace t
-  ShintaniIdeals, // ShintaniReps[bb][I] = nu in Shintani with (nu) = I
   AllShintaniReps, // AllShintaniReps[bb] = nu in Shintani with trace at most Precision(M)
+  ShintaniIdeals, // ShintaniIdeals[bb][I] = nu in Shintani with (nu)bb^-1 = I
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
-  /* Ideals, // SeqEnum[RngOrdIdl] */
-  /* Primes, // */
-  /* Dictionary, // Assoc maps Ideals[i] to i */
-  /* MultiplicationTable, // SeqEnum[pairs of integers] */
-  /* Representatives, // SeqEnum[nu] */
-  /* DictionaryRepresentatives, // Assoc maps Representatives[i] to i */
-
   // Book keeping
   // Caching the computation of EigenForms
   HeckeEigenvalues;
@@ -67,7 +58,6 @@ intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
   return IsIdentical(M1, M2);
 end intrinsic;
-
 
 ////////// ModFrmHilD access to attributes //////////
 
@@ -161,22 +151,6 @@ intrinsic ShintaniIdeals(M::ModFrmHilD) -> Any
   return M`ShintaniIdeals;
 end intrinsic;
 
-
-/* intrinsic Ideals(M::ModFrmHilD) -> SeqEnum[RngOrdIdl] */
-/*   {The Ideals of the space M of Hilbert modular forms.} */
-/*   return M`Ideals; */
-/* end intrinsic; */
-
-/* intrinsic Primes(M::ModFrmHilD) -> SeqEnum[RngOrdIdl] */
-/*   {} */
-/*   return M`Primes; */
-/* end intrinsic; */
-
-/* intrinsic Dictionary(M::ModFrmHilD) -> Assoc */
-/*   {The dictionary for ideals of the space M of Hilbert modular forms.} */
-/*   return M`Dictionary; */
-/* end intrinsic; */
-
 intrinsic MultiplicationTables(M::ModFrmHilD) -> SeqEnum
   {}
   if not assigned M`MultiplicationTables then
@@ -185,30 +159,12 @@ intrinsic MultiplicationTables(M::ModFrmHilD) -> SeqEnum
   return M`MultiplicationTables;
 end intrinsic;
 
-/* // TODO add text */
-/* intrinsic DictionaryRepresentatives(M::ModFrmHilD) -> Assoc */
-/*   {} */
-/*   if not assigned M`DictionaryRepresentatives then */
-/*     assert HMFEquipWithMultiplication(M); */
-/*   end if; */
-/*   return M`DictionaryRepresentatives; */
-/* end intrinsic; */
-
-/* // TODO add text */
-/* intrinsic Representatives(M::ModFrmHilD) -> SeqEnum */
-/*   {} */
-/*   if not assigned M`Representatives then */
-/*     assert HMFEquipWithMultiplication(M); */
-/*   end if; */
-/*   return M`Representatives; */
-/* end intrinsic; */
-
 intrinsic HeckeEigenvalues(M::ModFrmHilD) -> Assoc
   {}
   return M`HeckeEigenvalues;
 end intrinsic;
 
-////////// ModFrmHilD creation functions //////////
+////////// ModFrmHilD creation and multiplication functions //////////
 
 intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   {Create an empty ModFrmHilD object.}
@@ -231,18 +187,6 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`NarrowClassGroupRepresentatives := [ mp(g) : g in Cl ];
   // prec
   M`Precision := prec;
-  /* // ideals */
-  /* zero_ideal := ideal<Integers(F)|0>; */
-  /* Is := [zero_ideal] cat IdealsUpTo(prec, F); */
-  /* M`Ideals := Is; */
-  /* // primes */
-  /* M`Primes := PrimesUpTo(prec, F); */
-  /* // dictionary */
-  /* dictionary := AssociativeArray(); */
-  /* for i := 1 to #Is do */
-  /*   dictionary[Is[i]] := i; */
-  /* end for; */
-  /* M`Dictionary := dictionary; */
   // zero ideal
   M`ZeroIdeal := ideal<Integers(F)|0>;
   // class group reps
@@ -254,10 +198,6 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`ShintaniReps := AssociativeArray();
   M`AllShintaniReps := AssociativeArray();
   M`ShintaniIdeals := AssociativeArray();
-  /* for bb in M`ClassGroupReps do */
-  /*   M`PositiveElementReps[bb] := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, prec); */
-  /*   M`ShintaniReps[bb] := Shintani_Domain(bb, prec); */
-  /* end for; */
   for bb in M`ClassGroupReps do
     M`PositiveReps[bb] := AssociativeArray();
     M`ShintaniReps[bb] := AssociativeArray();
@@ -272,15 +212,6 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
       M`ShintaniIdeals[bb][ideal<Integers(F)|nu>] := nu;
     end for;
   end for;
-  // now for each class group rep
-  /* for bb in M`ClassGroupReps do */
-  /*   dictionary[bb] := AssociativeArray(); */
-  /*   nus := PositiveElementsOfTraceForIdealOfGivenTraceUpTo(bb, prec); */
-  /*   for i := 1 to #nus do */
-  /*     dictionary[bb][nus[i]] := i; */
-  /*   end for; */
-  /* end for; */
-  /* M`Dictionary := dictionary; */
   return M;
 end intrinsic;
 
@@ -295,28 +226,6 @@ intrinsic ModFrmHilDCopy(M::ModFrmHilD) -> ModFrmHilD
   return M1;
 end intrinsic;
 
-/* intrinsic GetPosition(M::ModFrmHilD, nu::RngOrdElt) -> RngIntElt */
-/*   {returns the position of ideal generated by nu.} */
-/*   ZF := Integers(BaseField(M)); */
-/*   if nu eq ZF!0 then */
-/*     return 1; */
-/*   end if; */
-/*   if assigned M`DictionaryRepresentatives then */
-/*     return M`DictionaryRepresentatives[nu]; */
-/*   else */
-/*     assert nu in ZF; */
-/*     // I_nu := ideal< ZF | nu >*Different(ZF); */
-/*     I_nu := ideal< ZF | nu >; */
-/*     assert Norm(I_nu) le Precision(M); */
-/*     return Dictionary(M)[I_nu]; */
-/*   end if; */
-/* end intrinsic; */
-
-/* intrinsic GetPosition(M::ModFrmHilD, I::RngOrdIdl) -> RngIntElt */
-/*   {returns the position of ideal.} */
-/*   return Dictionary(M)[I]; */
-/* end intrinsic; */
-
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   {Assign representatives and a dictionary for it to M.}
   bbs := ClassGroupReps(M);
@@ -328,26 +237,5 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
     mult_tables[bb] := GetIndexPairs(bb, M);
   end for;
   M`MultiplicationTables := mult_tables;
-  /* // loop for ideal classes */
-  /* indices := GetIndexPairs(M); */
-  /* reps := [elt[1] : elt in indices]; */
-  /* reps_indexed := [ ZF!0 : i in [1..#reps] ]; */
-  /* dict_reps := AssociativeArray(); */
-  /* for nu in reps do */
-  /*   dict_reps[nu] := GetPosition(M, nu); */
-  /* end for; */
-  /* mult_table := [[] : nu in reps]; */
-  /* for i := 1 to #indices do */
-  /*   nu_i := indices[i][1]; */
-  /*   pairs_i := indices[i][2]; */
-  /*   list_i := [[dict_reps[elt[1]], dict_reps[elt[2]]] : elt in pairs_i]; */
-  /*   mult_table[dict_reps[nu_i]] := list_i; */
-  /*   reps_indexed[dict_reps[nu_i]] := nu_i; */
-  /*   // assert nu_i eq ShintaniGenerator(M, Ideals(M)[i]); */
-  /* end for; */
-  /* M`Representatives := reps_indexed; */
-  /* M`MultiplicationTable := mult_table; */
-  /* M`DictionaryRepresentatives := dict_reps; */
-  /* return true; */
   return M;
 end intrinsic;
