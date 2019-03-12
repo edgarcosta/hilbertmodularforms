@@ -226,7 +226,7 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
       nn := ShintaniRepesentativeToIdeal(M, bb, nu);
       M`IdealElementPairs[bb] cat:= [[* nn, nu *]];
     end for;
-    // now order IdealElementPairs by Norm
+    // TODO: now order IdealElementPairs by Norm
   end for;
   return M;
 end intrinsic;
