@@ -19,7 +19,8 @@ declare attributes ModFrmHilD:
   AllPositiveReps, // AllPositiveReps[bb] = nu with trace at most Precision(M)
   ShintaniReps, // ShintaniReps[bb][t] = nu in Shintani with trace t
   AllShintaniReps, // AllShintaniReps[bb] = nu in Shintani with trace at most Precision(M)
-  ShintaniIdeals, // ShintaniIdeals[bb][I] = nu in Shintani with (nu)bb^-1 = I
+  ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][I] = nu in Shintani
+  IdealElementPairs, // IdealElementPairs[bb] = list of pairs (nn, nu) for nu in Shintani
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
   // Book keeping
   // Caching the computation of EigenForms
@@ -146,9 +147,14 @@ intrinsic AllShintaniReps(M::ModFrmHilD) -> Any
   return M`AllShintaniReps;
 end intrinsic;
 
-intrinsic ShintaniIdeals(M::ModFrmHilD) -> Any
+intrinsic ReduceIdealToShintaniRep(M::ModFrmHilD) -> Any
   {}
-  return M`ShintaniIdeals;
+  return M`ReduceIdealToShintaniRep;
+end intrinsic;
+
+intrinsic IdealElementPairs(M::ModFrmHilD) -> Any
+  {}
+  return M`IdealElementPairs;
 end intrinsic;
 
 intrinsic MultiplicationTables(M::ModFrmHilD) -> SeqEnum
@@ -185,6 +191,9 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
   M`NarrowClassGroupRepresentatives := [ mp(g) : g in Cl ];
+  // maybe we should make good choices for narrow class group reps
+  // i.e. generators of small trace?
+  // TODO: see above 2 lines
   // prec
   M`Precision := prec;
   // zero ideal
@@ -197,11 +206,13 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`AllPositiveReps := AssociativeArray();
   M`ShintaniReps := AssociativeArray();
   M`AllShintaniReps := AssociativeArray();
-  M`ShintaniIdeals := AssociativeArray();
+  M`ReduceIdealToShintaniRep := AssociativeArray();
+  M`IdealElementPairs := AssociativeArray();
   for bb in M`ClassGroupReps do
     M`PositiveReps[bb] := AssociativeArray();
     M`ShintaniReps[bb] := AssociativeArray();
-    M`ShintaniIdeals[bb] := AssociativeArray();
+    M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
+    M`IdealElementPairs[bb] := [];
     for t := 0 to prec do
       M`PositiveReps[bb][t] := PositiveElementsOfTrace(bb, t);
       M`ShintaniReps[bb][t] := ShintaniDomainOfTrace(bb, t);
@@ -209,8 +220,13 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
     M`AllPositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
     M`AllShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
     for nu in ShintaniRepsUpToTrace(M, bb, prec) do
-      M`ShintaniIdeals[bb][ideal<Integers(F)|nu>] := nu;
+      M`ReduceIdealToShintaniRep[bb][ideal<Integers(F)|nu>] := nu;
     end for;
+    for nu in AllShintaniReps(M)[bb] do
+      nn := ShintaniRepesentativeToIdeal(M, bb, nu);
+      M`IdealElementPairs[bb] cat:= [[* nn, nu *]];
+    end for;
+    // now order IdealElementPairs by Norm
   end for;
   return M;
 end intrinsic;

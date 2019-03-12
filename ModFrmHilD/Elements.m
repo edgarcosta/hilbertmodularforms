@@ -37,8 +37,11 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
       coeffs_bb := coeffs[bb];
       printf "Coefficients for ideal class bb = %o\n", bb;
       printf "\n\t(Trace, nu)  |--->   a_nu = a_(nu)*bb^-1";
-      for nu in Keys(coeffs_bb) do
-        printf "\n\t(%o, %o)  |--->   %o", Trace(nu),  nu, coeffs_bb[nu];
+      for t in Keys(ShintaniReps(M)[bb]) do
+        for nu in ShintaniReps(M)[bb][t] do
+          assert Trace(nu) eq t;
+          printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs_bb[nu];
+        end for;
       end for;
       printf "\n\n";
     end for;
@@ -188,159 +191,156 @@ end intrinsic;
 
 ////////// ModFrmHilDElt user convenience functions //////////
 
-intrinsic GetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl) -> RngElt
-  {returns a_I}
-  return Coefficients(f)[Dictionary(f)[I]];
-end intrinsic;
+/* intrinsic GetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl) -> RngElt */
+/*   {returns a_I} */
+/*   return Coefficients(f)[Dictionary(f)[I]]; */
+/* end intrinsic; */
 
-intrinsic SetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl, c::RngElt)
-  {sets a_I to c}
-  f`Coefficients[Dictionary(f)[I]] := c;
-end intrinsic;
+/* intrinsic SetCoefficient(f::ModFrmHilDElt, I::RngOrdIdl, c::RngElt) */
+/*   {sets a_I to c} */
+/*   f`Coefficients[Dictionary(f)[I]] := c; */
+/* end intrinsic; */
 
-intrinsic GetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt) -> RngElt
-  {returns a_nu}
-  if not assigned Parent(f)`Representatives then
-    error "You must first equip the space with a multiplication table";
-  end if;
-  return Coefficients(f)[DictionaryRepresentatives(f)[nu]];
-end intrinsic;
+/* intrinsic GetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt) -> RngElt */
+/*   {returns a_nu} */
+/*   if not assigned Parent(f)`Representatives then */
+/*     error "You must first equip the space with a multiplication table"; */
+/*   end if; */
+/*   return Coefficients(f)[DictionaryRepresentatives(f)[nu]]; */
+/* end intrinsic; */
 
-intrinsic SetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt, c::RngElt)
-  {sets a_nu to c}
-  if not assigned Parent(f)`Representatives then
-    error "You must first equip the space with a multiplication table";
-  end if;
-  f`Coefficients[DictionaryRepresentatives(f)[nu]] := c;
-end intrinsic;
+/* intrinsic SetCoefficient(f::ModFrmHilDElt, nu::RngOrdElt, c::RngElt) */
+/*   {sets a_nu to c} */
+/*   if not assigned Parent(f)`Representatives then */
+/*     error "You must first equip the space with a multiplication table"; */
+/*   end if; */
+/*   f`Coefficients[DictionaryRepresentatives(f)[nu]] := c; */
+/* end intrinsic; */
 
-intrinsic GetCoefficientsIdeal(f::ModFrmHilDElt) -> Assoc
-  {given a ModFrmHilDElt, return associative array of coefficients on the ideals.}
-  coeffs := Coefficients(f);
-  ideals := Ideals(f);
-  result := AssociativeArray();
-  for i := 1 to #ideals do
-    result[ideals[i]] := coeffs[i];
-  end for;
-  return result;
-end intrinsic;
+/* intrinsic GetCoefficientsIdeal(f::ModFrmHilDElt) -> Assoc */
+/*   {given a ModFrmHilDElt, return associative array of coefficients on the ideals.} */
+/*   coeffs := Coefficients(f); */
+/*   ideals := Ideals(f); */
+/*   result := AssociativeArray(); */
+/*   for i := 1 to #ideals do */
+/*     result[ideals[i]] := coeffs[i]; */
+/*   end for; */
+/*   return result; */
+/* end intrinsic; */
 
-intrinsic GetCoefficientsRepresentatives(f::ModFrmHilDElt) -> Assoc
-  {given a ModFrmHilDElt, return associative array of coefficients on the representatives.}
-  if not assigned Parent(f)`Representatives then
-    error "You must first equip the space with a multiplication table";
-  end if;
-  coeffs := Coefficients(f);
-  reps := Representatives(f);
-  result := AssociativeArray();
-  for i := 1 to #reps do
-    result[reps[i]] := coeffs[i];
-  end for;
-  return result;
-end intrinsic;
+/* intrinsic GetCoefficientsRepresentatives(f::ModFrmHilDElt) -> Assoc */
+/*   {given a ModFrmHilDElt, return associative array of coefficients on the representatives.} */
+/*   if not assigned Parent(f)`Representatives then */
+/*     error "You must first equip the space with a multiplication table"; */
+/*   end if; */
+/*   coeffs := Coefficients(f); */
+/*   reps := Representatives(f); */
+/*   result := AssociativeArray(); */
+/*   for i := 1 to #reps do */
+/*     result[reps[i]] := coeffs[i]; */
+/*   end for; */
+/*   return result; */
+/* end intrinsic; */
 
 ////////// ModFrmHilDElt creation functions //////////
 
-// TODO: narrow>1
-//TODO: change hecke_eigenvalues to a list
-intrinsic EigenformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc) -> ModFrmHilDElt
-  {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
-  // pull info from M
-  F := BaseField(M);
-  prec := Precision(M);
-  // a prime
-  pp := Random(Keys(hecke_eigenvalues));
-  // assertions
-  if not Set(PrimesUpTo(prec, F)) subset Keys(hecke_eigenvalues) then
-    print "Not enough primes";
-    assert false;
-  end if;
-  k0 := Max(k);
-  // power series ring
-  log_prec := Floor(Log(prec)/Log(2)); // prec < 2^(log_prec+1)
-  ZK := Parent(hecke_eigenvalues[pp]);
-  ZKX<X, Y> := PolynomialRing(ZK, 2);
-  R<T> := PowerSeriesRing(ZKX : Precision := log_prec + 1);
-  // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
-  // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
-  recursion := Coefficients(1/(1 - X*T + Y*T^2));
-  ideals := Ideals(M);
-  coeffs := [ZK!0: i in ideals];
-  set := [false : c in coeffs];
-  coeffs[1] := 0; //a_0
-  coeffs[2] := 1; //a_1
-  set[1] := true;
-  set[2] := true;
-  dict := Dictionary(M);
-  for i := 1 to #coeffs do
-    if not set[i] then
-      // is[i] is a prime
-      pp := ideals[i];
-      assert IsPrime(pp);
-      coeffs[i] := hecke_eigenvalues[pp];
-      set[i] := true;
-      Np := Norm(pp)^(k0-1);
-      // if pp is bad
-      if N subset pp then
-        Np := 0;
-      end if;
-      r := 2;
-      pp_power := pp * pp;
-      //deals with powers of p
-      while pp_power in Keys(dict) do
-        ipower := dict[pp_power];
-        coeffs[ipower] := Evaluate(recursion[r + 1], [coeffs[i], Np]);
-        set[ipower] := true;
-        pp_power *:= pp;
-        r +:= 1;
-      end while;
-      //deal with multiples of its powers by smaller numbers
-      for j := 3 to #coeffs do
-        if set[j] and not (ideals[j] subset pp) then
-          mm := ideals[j];
-          pp_power := pp;
-          mmpp_power := mm * pp_power;
-          while mmpp_power in Keys(dict) do
-            l := dict[mmpp_power];
-            assert set[l] eq false;
-            ipower := dict[pp_power];
-            // a_{m * pp_power} := a_{m} * a_{pp_power}
-            coeffs[l] := coeffs[j] * coeffs[ipower];
-            set[l] := true;
-            mmpp_power *:= pp;
-            pp_power *:= pp;
-          end while;
-        end if; //check if it's set
-      end for; //loop in j
-    end if; // check if it's set
-  end for; // loop in i
-  for i := 1 to #coeffs do
-    assert set[i];
-  end for;
-  return HMF(M, N, k, coeffs);
-end intrinsic;
+/* intrinsic EigenformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc) -> ModFrmHilDElt */
+/*   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.} */
+/*   // pull info from M */
+/*   F := BaseField(M); */
+/*   prec := Precision(M); */
+/*   // a prime */
+/*   pp := Random(Keys(hecke_eigenvalues)); */
+/*   // assertions */
+/*   if not Set(PrimesUpTo(prec, F)) subset Keys(hecke_eigenvalues) then */
+/*     print "Not enough primes"; */
+/*     assert false; */
+/*   end if; */
+/*   k0 := Max(k); */
+/*   // power series ring */
+/*   log_prec := Floor(Log(prec)/Log(2)); // prec < 2^(log_prec+1) */
+/*   ZK := Parent(hecke_eigenvalues[pp]); */
+/*   ZKX<X, Y> := PolynomialRing(ZK, 2); */
+/*   R<T> := PowerSeriesRing(ZKX : Precision := log_prec + 1); */
+/*   // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ... */
+/*   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ... */
+/*   recursion := Coefficients(1/(1 - X*T + Y*T^2)); */
+/*   ideals := Ideals(M); */
+/*   coeffs := [ZK!0: i in ideals]; */
+/*   set := [false : c in coeffs]; */
+/*   coeffs[1] := 0; //a_0 */
+/*   coeffs[2] := 1; //a_1 */
+/*   set[1] := true; */
+/*   set[2] := true; */
+/*   dict := Dictionary(M); */
+/*   for i := 1 to #coeffs do */
+/*     if not set[i] then */
+/*       // is[i] is a prime */
+/*       pp := ideals[i]; */
+/*       assert IsPrime(pp); */
+/*       coeffs[i] := hecke_eigenvalues[pp]; */
+/*       set[i] := true; */
+/*       Np := Norm(pp)^(k0-1); */
+/*       // if pp is bad */
+/*       if N subset pp then */
+/*         Np := 0; */
+/*       end if; */
+/*       r := 2; */
+/*       pp_power := pp * pp; */
+/*       //deals with powers of p */
+/*       while pp_power in Keys(dict) do */
+/*         ipower := dict[pp_power]; */
+/*         coeffs[ipower] := Evaluate(recursion[r + 1], [coeffs[i], Np]); */
+/*         set[ipower] := true; */
+/*         pp_power *:= pp; */
+/*         r +:= 1; */
+/*       end while; */
+/*       //deal with multiples of its powers by smaller numbers */
+/*       for j := 3 to #coeffs do */
+/*         if set[j] and not (ideals[j] subset pp) then */
+/*           mm := ideals[j]; */
+/*           pp_power := pp; */
+/*           mmpp_power := mm * pp_power; */
+/*           while mmpp_power in Keys(dict) do */
+/*             l := dict[mmpp_power]; */
+/*             assert set[l] eq false; */
+/*             ipower := dict[pp_power]; */
+/*             // a_{m * pp_power} := a_{m} * a_{pp_power} */
+/*             coeffs[l] := coeffs[j] * coeffs[ipower]; */
+/*             set[l] := true; */
+/*             mmpp_power *:= pp; */
+/*             pp_power *:= pp; */
+/*           end while; */
+/*         end if; //check if it's set */
+/*       end for; //loop in j */
+/*     end if; // check if it's set */
+/*   end for; // loop in i */
+/*   for i := 1 to #coeffs do */
+/*     assert set[i]; */
+/*   end for; */
+/*   return HMF(M, N, k, coeffs); */
+/* end intrinsic; */
 
-// TODO: narrow>1
-intrinsic NewformsToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
-  {returns Hilbert newforms}
-  F := BaseField(M);
-  prec := Precision(M);
-  MF := HilbertCuspForms(F, N, k);
-  S := NewSubspace(MF);
-  newspaces  := NewformDecomposition(S);
-  newforms := [* Eigenform(U) : U in newspaces *];
-  eigenvalues := AssociativeArray();
-  primes := PrimesUpTo(prec, F);
-  HMFnewforms := [];
-  for newform in newforms do
-    for pp in primes do
-        eigenvalues[pp] := HeckeEigenvalue(newform, pp);
-    end for;
-    ef := EigenformToHMF(M, N, k, eigenvalues);
-    Append(~HMFnewforms, ef);
-  end for;
-  return HMFnewforms;
-end intrinsic;
+/* intrinsic NewformsToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt] */
+/*   {returns Hilbert newforms} */
+/*   F := BaseField(M); */
+/*   prec := Precision(M); */
+/*   MF := HilbertCuspForms(F, N, k); */
+/*   S := NewSubspace(MF); */
+/*   newspaces  := NewformDecomposition(S); */
+/*   newforms := [* Eigenform(U) : U in newspaces *]; */
+/*   eigenvalues := AssociativeArray(); */
+/*   primes := PrimesUpTo(prec, F); */
+/*   HMFnewforms := []; */
+/*   for newform in newforms do */
+/*     for pp in primes do */
+/*         eigenvalues[pp] := HeckeEigenvalue(newform, pp); */
+/*     end for; */
+/*     ef := EigenformToHMF(M, N, k, eigenvalues); */
+/*     Append(~HMFnewforms, ef); */
+/*   end for; */
+/*   return HMFnewforms; */
+/* end intrinsic; */
 
 /*
 intrinsic NewformsToHMF2(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
@@ -378,84 +378,84 @@ end intrinsic;
 */
 
 // TODO: narrow>1
-intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
-  {returns the full Galois orbit of a modular form}
-  M := Parent(f);
-  k := Weight(f);
-  coeff := Coefficients(f);
-  K := NumberField(CoefficientsParent(f));
-  G, Pmap, Gmap := AutomorphismGroup(K);
-  result := [];
-  for g in G do
-    Append(~result, HMF(M, Level(f), k, [Gmap(g)(elt) : elt in coeff]) );
-  end for;
-  return result;
-end intrinsic;
+/* intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt] */
+/*   {returns the full Galois orbit of a modular form} */
+/*   M := Parent(f); */
+/*   k := Weight(f); */
+/*   coeff := Coefficients(f); */
+/*   K := NumberField(CoefficientsParent(f)); */
+/*   G, Pmap, Gmap := AutomorphismGroup(K); */
+/*   result := []; */
+/*   for g in G do */
+/*     Append(~result, HMF(M, Level(f), k, [Gmap(g)(elt) : elt in coeff]) ); */
+/*   end for; */
+/*   return result; */
+/* end intrinsic; */
 
 // TODO: narrow>1
-intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
-  {returns the full Galois orbit of a modular form over Q}
-  M := Parent(f);
-  k := Weight(f);
-  coeff := Coefficients(f);
-  K := NumberField(CoefficientsParent(f));
-  result := [];
-  for b in Basis(K) do
-    Append(~result, HMF(M, Level(f), k, [Trace(b * elt) : elt in coeff]) );
-  end for;
-  return result;
-end intrinsic;
+/* intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt] */
+/*   {returns the full Galois orbit of a modular form over Q} */
+/*   M := Parent(f); */
+/*   k := Weight(f); */
+/*   coeff := Coefficients(f); */
+/*   K := NumberField(CoefficientsParent(f)); */
+/*   result := []; */
+/*   for b in Basis(K) do */
+/*     Append(~result, HMF(M, Level(f), k, [Trace(b * elt) : elt in coeff]) ); */
+/*   end for; */
+/*   return result; */
+/* end intrinsic; */
 
 // TODO: narrow>1
-intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
-  {returns a basis for M of weight k}
-  prec := Precision(M);
-  F := BaseField(M);
-  ideals := Ideals(M);
-  dict := Dictionary(M);
-  set_ideals := Keys(dict);
-  zero_coeffs := [0 : i in [1..#ideals]];
-  basis := [];
-  newforms_dimension := 0;
-  //TODO should we sieve?
-  for dd in Divisors(N) do
-    basis := [];
-    orbit_representatives := NewformsToHMF(M, N, k);
-    orbits := [GaloisOrbitDescent(elt) : elt in orbit_representatives];
-    old_space_basis := &cat orbits;
-    old_space_coeffs := [Coefficients(elt) : elt in old_space_basis];
-    for ee in Divisors(N/dd) do
-      new_coeffs_ee := [ zero_coeffs : i in [1..#old_space_basis]];
-      for i := 1 to #ideals do
-        Iee := ideals[i]*ee;
-        if Iee in set_ideals then
-          Iee_cord := dict[Iee];
-          for j := 1 to #old_space_basis do
-            new_coeffs_ee[j][Iee_cord] := old_space_coeffs[j][i];
-          end for;
-        else
-          //this assumes ideals are sorted by norm!!
-          break i;
-        end if;
-      end for;
-      basis := basis cat [HMF(M, N, k, elt) : elt in new_coeffs_ee];
-    end for;
-    if dd eq N then
-      if #orbits eq 0 then
-        newforms_dimension := 0;
-      else
-        newforms_dimension := &+[ #orbit : orbit in orbits];
-      end if;
-    end if;
-  end for;
-  return basis, newforms_dimension;
-end intrinsic;
+/* intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt */
+/*   {returns a basis for M of weight k} */
+/*   prec := Precision(M); */
+/*   F := BaseField(M); */
+/*   ideals := Ideals(M); */
+/*   dict := Dictionary(M); */
+/*   set_ideals := Keys(dict); */
+/*   zero_coeffs := [0 : i in [1..#ideals]]; */
+/*   basis := []; */
+/*   newforms_dimension := 0; */
+/*   //TODO should we sieve? */
+/*   for dd in Divisors(N) do */
+/*     basis := []; */
+/*     orbit_representatives := NewformsToHMF(M, N, k); */
+/*     orbits := [GaloisOrbitDescent(elt) : elt in orbit_representatives]; */
+/*     old_space_basis := &cat orbits; */
+/*     old_space_coeffs := [Coefficients(elt) : elt in old_space_basis]; */
+/*     for ee in Divisors(N/dd) do */
+/*       new_coeffs_ee := [ zero_coeffs : i in [1..#old_space_basis]]; */
+/*       for i := 1 to #ideals do */
+/*         Iee := ideals[i]*ee; */
+/*         if Iee in set_ideals then */
+/*           Iee_cord := dict[Iee]; */
+/*           for j := 1 to #old_space_basis do */
+/*             new_coeffs_ee[j][Iee_cord] := old_space_coeffs[j][i]; */
+/*           end for; */
+/*         else */
+/*           //this assumes ideals are sorted by norm!! */
+/*           break i; */
+/*         end if; */
+/*       end for; */
+/*       basis := basis cat [HMF(M, N, k, elt) : elt in new_coeffs_ee]; */
+/*     end for; */
+/*     if dd eq N then */
+/*       if #orbits eq 0 then */
+/*         newforms_dimension := 0; */
+/*       else */
+/*         newforms_dimension := &+[ #orbit : orbit in orbits]; */
+/*       end if; */
+/*     end if; */
+/*   end for; */
+/*   return basis, newforms_dimension; */
+/* end intrinsic; */
 
 // TODO: narrow>1
-intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : Basis:=[]) -> ModFrmHilDElt
-  {returns T(n)(f) for the trivial character}
-  return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1 : Basis:=Basis);
-end intrinsic;
+/* intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : Basis:=[]) -> ModFrmHilDElt */
+/*   {returns T(n)(f) for the trivial character} */
+/*   return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1 : Basis:=Basis); */
+/* end intrinsic; */
 
 //TODO:
 //Tests:
@@ -464,169 +464,169 @@ end intrinsic;
 // - Apply Hecke to a Theta series, and see if we get the whole space
 
 // TODO: narrow>1
-intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt : Basis:= []) -> ModFrmHilDElt
-  {returns T(n)(f) with loss of precision. If a basis for the space is provided, returns T(n)(f) without loss of precision}
-  M := Parent(f);
-  fcoeffs := Coefficients(f);
-  ideals := Ideals(f);
-  dict := Dictionary(f);
-  ZC := Parent(fcoeffs[1]);
-  k0 := Max(Weight(f));
-  prec:=Precision(M);
-  //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn)
-  idealssmallprec:=[ideals[1]];
-  for x:=2 to #ideals do
-    if Norm(ideals[x]) le prec/Norm(nn) then
-      idealssmallprec:= idealssmallprec cat [ideals[x]];
-    end if;
-  end for;
-  coeffssmallprec := [ZC!0 : i in [1..#idealssmallprec]];
-  for i:=1 to #idealssmallprec do
-    c := 0;
-    // loop over divisors
-    // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms
-    for aa in Divisors(ideals[i] + nn) do
-      c +:= chi(aa) * Norm(aa)^(k0 - 1) * fcoeffs[ dict[ aa^(-2) * (ideals[i] * nn)]];
-      end for;
-    coeffssmallprec[i] := c;
-    end for;
-  if #Basis ne 0 then //if provided a basis, we reconstruct the form to the same precision
-    smallprecbasis:=[];
-    for g in Basis do
-      Append(~smallprecbasis, [Coefficients(g)[i] : i in [1..#idealssmallprec]]);
-    end for;
-    LinComb:=LinearDependence([coeffssmallprec] cat smallprecbasis);
-    if ISA(Type(LinComb), RngIntElt) or #Rows(LinComb) ne 1 then
-      return "Error: either precision is too small, or the sequence provided is not a basis";
-    end if;
-    g:=0*f;
-    for i:=2 to #Basis+1 do
-      g:=g-LinComb[1][i]*Basis[i-1];
-    end for;
-    return g;
-  end if;
-  if #Basis eq 0 then
-    M1:=HMFSpace(BaseField(M), Floor(prec/Norm(nn)));
-    print "Warning: the Hecke operator calculation decreases precision to ",
-    Floor(prec/Norm(nn));
-    return HMF(M1, Level(f), Weight(f), coeffssmallprec);
-  end if;
-end intrinsic;
+/* intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt : Basis:= []) -> ModFrmHilDElt */
+/*   {returns T(n)(f) with loss of precision. If a basis for the space is provided, returns T(n)(f) without loss of precision} */
+/*   M := Parent(f); */
+/*   fcoeffs := Coefficients(f); */
+/*   ideals := Ideals(f); */
+/*   dict := Dictionary(f); */
+/*   ZC := Parent(fcoeffs[1]); */
+/*   k0 := Max(Weight(f)); */
+/*   prec:=Precision(M); */
+/*   //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn) */
+/*   idealssmallprec:=[ideals[1]]; */
+/*   for x:=2 to #ideals do */
+/*     if Norm(ideals[x]) le prec/Norm(nn) then */
+/*       idealssmallprec:= idealssmallprec cat [ideals[x]]; */
+/*     end if; */
+/*   end for; */
+/*   coeffssmallprec := [ZC!0 : i in [1..#idealssmallprec]]; */
+/*   for i:=1 to #idealssmallprec do */
+/*     c := 0; */
+/*     // loop over divisors */
+/*     // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms */
+/*     for aa in Divisors(ideals[i] + nn) do */
+/*       c +:= chi(aa) * Norm(aa)^(k0 - 1) * fcoeffs[ dict[ aa^(-2) * (ideals[i] * nn)]]; */
+/*       end for; */
+/*     coeffssmallprec[i] := c; */
+/*     end for; */
+/*   if #Basis ne 0 then //if provided a basis, we reconstruct the form to the same precision */
+/*     smallprecbasis:=[]; */
+/*     for g in Basis do */
+/*       Append(~smallprecbasis, [Coefficients(g)[i] : i in [1..#idealssmallprec]]); */
+/*     end for; */
+/*     LinComb:=LinearDependence([coeffssmallprec] cat smallprecbasis); */
+/*     if ISA(Type(LinComb), RngIntElt) or #Rows(LinComb) ne 1 then */
+/*       return "Error: either precision is too small, or the sequence provided is not a basis"; */
+/*     end if; */
+/*     g:=0*f; */
+/*     for i:=2 to #Basis+1 do */
+/*       g:=g-LinComb[1][i]*Basis[i-1]; */
+/*     end for; */
+/*     return g; */
+/*   end if; */
+/*   if #Basis eq 0 then */
+/*     M1:=HMFSpace(BaseField(M), Floor(prec/Norm(nn))); */
+/*     print "Warning: the Hecke operator calculation decreases precision to ", */
+/*     Floor(prec/Norm(nn)); */
+/*     return HMF(M1, Level(f), Weight(f), coeffssmallprec); */
+/*   end if; */
+/* end intrinsic; */
 
 // TODO: narrow>1
 // TODO needs testing
-intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
-  {Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).}
-  Cl := NarrowClassGroup(M);
-  mp := NarrowClassGroupMap(M);
-  X := Parent(eta);
-  assert X eq Parent(psi);
-  K := X`TargetRing; // where the character values live
-  if #Cl eq 1 then
-    tt := mp(Cl.0);
-  else
-    error "not implemented for narrow class number > 1.";
-  end if;
-  n := Degree(BaseField(M));
-  assert #SequenceToSet(k) eq 1; // only parallel weight for now
-  nn := N;
-  // aa := Conductor(eta);
-  aa := Modulus(eta);
-  // bb := Conductor(psi);
-  bb := Modulus(psi);
-  assert nn subset aa;
-  assert nn subset bb;
-  Haa := HeckeCharacterGroup(aa);
-  Hbb := HeckeCharacterGroup(bb);
-  ideals := Ideals(M);
-  coeffs := [ K!0 : i in [1..#ideals]];
-  if k[1] ge 2 then
-    // constant term
-    if aa eq ideal<Order(aa)|1> then
-      prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k);
-    else
-      coeffs[1] := 0;
-    end if;
-  elif k[1] eq 1 then // wt 1 case
-    if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
-      prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-      coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k);
-    elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
-      prim := AssociatedPrimitiveCharacter(psi^(-1)*eta);
-      coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, N, prim, k);
-    elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
-      prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1));
-      prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta);
-      coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, N, prim1, k)
-                          +(psi^(-1))(tt)*LValue_Recognized(M, N, prim2, k));
-    elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
-      coeffs[1] := 0;
-    end if;
-  else // nonpositive and half-integral weights...
-    error "Not implemented";
-  end if;
-  // other terms
-  for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME
-    mm := ideals[i];
-    sum := 0;
-    for rr in Divisors(mm) do
-      sum +:= eta(mm/rr)*psi(rr)*Norm(rr^(k[1]-1));
-    end for;
-    coeffs[i] := sum;
-  end for;
-  if not (coeffs[1] in [0,1]) then
-    factor := 1/coeffs[1];
-    coeffs := [factor * elt : elt in coeffs];
-  end if;
-  if IsIsomorphic(K, RationalsAsNumberField()) then
-    coeffs := [ Rationals() ! elt : elt in coeffs ];
-  end if;
-  return HMF(M, N, k, coeffs);
-end intrinsic;
+/* intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt */
+/*   {Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).} */
+/*   Cl := NarrowClassGroup(M); */
+/*   mp := NarrowClassGroupMap(M); */
+/*   X := Parent(eta); */
+/*   assert X eq Parent(psi); */
+/*   K := X`TargetRing; // where the character values live */
+/*   if #Cl eq 1 then */
+/*     tt := mp(Cl.0); */
+/*   else */
+/*     error "not implemented for narrow class number > 1."; */
+/*   end if; */
+/*   n := Degree(BaseField(M)); */
+/*   assert #SequenceToSet(k) eq 1; // only parallel weight for now */
+/*   nn := N; */
+/*   // aa := Conductor(eta); */
+/*   aa := Modulus(eta); */
+/*   // bb := Conductor(psi); */
+/*   bb := Modulus(psi); */
+/*   assert nn subset aa; */
+/*   assert nn subset bb; */
+/*   Haa := HeckeCharacterGroup(aa); */
+/*   Hbb := HeckeCharacterGroup(bb); */
+/*   ideals := Ideals(M); */
+/*   coeffs := [ K!0 : i in [1..#ideals]]; */
+/*   if k[1] ge 2 then */
+/*     // constant term */
+/*     if aa eq ideal<Order(aa)|1> then */
+/*       prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); */
+/*       coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k); */
+/*     else */
+/*       coeffs[1] := 0; */
+/*     end if; */
+/*   elif k[1] eq 1 then // wt 1 case */
+/*     if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then */
+/*       prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); */
+/*       coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k); */
+/*     elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then */
+/*       prim := AssociatedPrimitiveCharacter(psi^(-1)*eta); */
+/*       coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, N, prim, k); */
+/*     elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then */
+/*       prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1)); */
+/*       prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta); */
+/*       coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, N, prim1, k) */
+/*                           +(psi^(-1))(tt)*LValue_Recognized(M, N, prim2, k)); */
+/*     elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then */
+/*       coeffs[1] := 0; */
+/*     end if; */
+/*   else // nonpositive and half-integral weights... */
+/*     error "Not implemented"; */
+/*   end if; */
+/*   // other terms */
+/*   for i := 2 to #ideals do // 2 here assumes #Cl = 1 FIXME */
+/*     mm := ideals[i]; */
+/*     sum := 0; */
+/*     for rr in Divisors(mm) do */
+/*       sum +:= eta(mm/rr)*psi(rr)*Norm(rr^(k[1]-1)); */
+/*     end for; */
+/*     coeffs[i] := sum; */
+/*   end for; */
+/*   if not (coeffs[1] in [0,1]) then */
+/*     factor := 1/coeffs[1]; */
+/*     coeffs := [factor * elt : elt in coeffs]; */
+/*   end if; */
+/*   if IsIsomorphic(K, RationalsAsNumberField()) then */
+/*     coeffs := [ Rationals() ! elt : elt in coeffs ]; */
+/*   end if; */
+/*   return HMF(M, N, k, coeffs); */
+/* end intrinsic; */
 
 // TODO finish this and use in EisensteinSeries intrinsic
 
 //Toolbox function to use in the Eisenstein series function--gives us an L value
-intrinsic LValue_Recognized(M::ModFrmHilD, N::RngOrdIdl, prim::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> FldNumElt
-  {This is a toolbox function to compute L values in the right space}
-  // Lf := LSeries(prim : Precision := 50);
-  // TODO clean up precision
-  // Maybe a separate function to compute L-values?
-  K := Parent(prim)`TargetRing; // where the character values live
-  Lf := LSeries(prim : Precision := 100);
-  LSetPrecision(Lf, 100); // do we need this?
-  Lvalue := Evaluate(Lf, 1-k[1]);
-  // figure out the right place
-  primes := PrimesUpTo(Precision(M), BaseField(M));
-  places := InfinitePlaces(K);
-  i := 1;
-  while #places gt 1 and i le #primes do
-    pp := primes[i];
-    app := prim(pp);
-    places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
-    // why is this the right way to find the correct place to recognize?
-    i +:=1;
-  end while;
-  assert #places eq 1;
-  pl := places[1];
-  CC<I> := ComplexField(Precision(Lvalue));
-  return RecognizeOverK(CC!Lvalue, K, pl, false);
-end intrinsic;
+/* intrinsic LValue_Recognized(M::ModFrmHilD, N::RngOrdIdl, prim::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> FldNumElt */
+/*   {This is a toolbox function to compute L values in the right space} */
+/*   // Lf := LSeries(prim : Precision := 50); */
+/*   // TODO clean up precision */
+/*   // Maybe a separate function to compute L-values? */
+/*   K := Parent(prim)`TargetRing; // where the character values live */
+/*   Lf := LSeries(prim : Precision := 100); */
+/*   LSetPrecision(Lf, 100); // do we need this? */
+/*   Lvalue := Evaluate(Lf, 1-k[1]); */
+/*   // figure out the right place */
+/*   primes := PrimesUpTo(Precision(M), BaseField(M)); */
+/*   places := InfinitePlaces(K); */
+/*   i := 1; */
+/*   while #places gt 1 and i le #primes do */
+/*     pp := primes[i]; */
+/*     app := prim(pp); */
+/*     places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ]; */
+/*     // why is this the right way to find the correct place to recognize? */
+/*     i +:=1; */
+/*   end while; */
+/*   assert #places eq 1; */
+/*   pl := places[1]; */
+/*   CC<I> := ComplexField(Precision(Lvalue)); */
+/*   return RecognizeOverK(CC!Lvalue, K, pl, false); */
+/* end intrinsic; */
 
 // TODO: narrow>1
-intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt
-  { returns a Basis for the space }
-  CB, newforms_dimension := CuspFormBasis(M, N, k);
-  H := HeckeCharacterGroup(N);
-  //FIXME this is wrong for level not 1!
-  //print "FIXME this is wrong for level not 1!";
-  eta := H ! 1;
-  // psi := H ! 1;
-  psi := eta;
-  E := EisensteinSeries(M, N, eta, psi, k);
-  return [E] cat CB, newforms_dimension;
-end intrinsic;
+/* intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt */
+/*   { returns a Basis for the space } */
+/*   CB, newforms_dimension := CuspFormBasis(M, N, k); */
+/*   H := HeckeCharacterGroup(N); */
+/*   //FIXME this is wrong for level not 1! */
+/*   //print "FIXME this is wrong for level not 1!"; */
+/*   eta := H ! 1; */
+/*   // psi := H ! 1; */
+/*   psi := eta; */
+/*   E := EisensteinSeries(M, N, eta, psi, k); */
+/*   return [E] cat CB, newforms_dimension; */
+/* end intrinsic; */
 
 ////////// ModFrmHilDElt arithmetic //////////
 
@@ -821,32 +821,32 @@ end intrinsic;
 */
 
 
-intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
-  M:=Parent(f);
-  g:=M!(1*f);
-  F:=BaseField(M);
-  ZF<w>:=Integers(F);
-  ideals:=Ideals(f);
-  for i in ideals do
-    x:=GetCoefficient(f, Conjugate(i));
-    SetCoefficient(g, i, x);
-  end for;
-  return g;
-end intrinsic;
+/* intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt */
+/*   {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)} */
+/*   M:=Parent(f); */
+/*   g:=M!(1*f); */
+/*   F:=BaseField(M); */
+/*   ZF<w>:=Integers(F); */
+/*   ideals:=Ideals(f); */
+/*   for i in ideals do */
+/*     x:=GetCoefficient(f, Conjugate(i)); */
+/*     SetCoefficient(g, i, x); */
+/*   end for; */
+/*   return g; */
+/* end intrinsic; */
 
-intrinsic GaloisInvariantBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
-  {returns a basis for the GaLois invariant subspace}
-  B:=Basis(M,N,k);
-  InvariantGenerators:=[];
-  for x in B do
-    Append(~InvariantGenerators, 1/2*(x+Swap(x)));
-  end for;
-  InvariantBasis:=[];
-  for x in InvariantGenerators do
-    if #LinearDependence(InvariantBasis cat [x]) eq 0 then
-      Append(~InvariantBasis, x);
-    end if; 
-  end for;
-  return InvariantBasis;
-end intrinsic;
+/* intrinsic GaloisInvariantBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt] */
+/*   {returns a basis for the GaLois invariant subspace} */
+/*   B:=Basis(M,N,k); */
+/*   InvariantGenerators:=[]; */
+/*   for x in B do */
+/*     Append(~InvariantGenerators, 1/2*(x+Swap(x))); */
+/*   end for; */
+/*   InvariantBasis:=[]; */
+/*   for x in InvariantGenerators do */
+/*     if #LinearDependence(InvariantBasis cat [x]) eq 0 then */
+/*       Append(~InvariantBasis, x); */
+/*     end if; */ 
+/*   end for; */
+/*   return InvariantBasis; */
+/* end intrinsic; */

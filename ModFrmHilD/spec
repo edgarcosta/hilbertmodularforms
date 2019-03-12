@@ -8,4 +8,5 @@
   CanonicalRing.m
   HilbertSeries.m
 	Multiplication.m
+  Formatting.m
 }

@@ -198,15 +198,13 @@ intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, shintani_reps::SeqEnum[RngOr
   return shintani_reps[matches[1][2]];
 end intrinsic;
 
+// This is the one that is actually used
+// others are (possibly) for testing
 intrinsic ReduceShintaniIdealClass(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilD) -> SeqEnum
   {Speed up for Reduce Shintani}
   ZF := Integers(M); 
   I := nu*ZF;
-  if nu eq 0 then 
-    ShintaniRep := ZF!0; 
-  else 
-    ShintaniRep := ShintaniIdeals(M)[bb][I];
-  end if;
+  ShintaniRep := ReduceIdealToShintaniRep(M)[bb][I];
   return ShintaniRep;
 end intrinsic;
 
