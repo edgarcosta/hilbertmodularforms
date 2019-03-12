@@ -47,34 +47,39 @@ where C1 and C2 are the slope bounds on the shintani domain. Eq 1) determines th
 
 // renamed Pos_elt_of_Trace_in_Shintani_Domain by ShintaniDomainOfTrace
 intrinsic ShintaniDomainOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
-  {Given bb a fractional ideal, t a trace bound, returns the totally positive elements of bb in the balanced Shintani cone with trace t.}
+  {Given bb a fractional ideal, t a trace bound, returns the totally positive elements of bb in the balanced Shintani cone with trace t.}  
   Basis := NiceBasis(bb);
   F := NumberField(Parent(Basis[1]));
   ZF := Integers(F);
   places := InfinitePlaces(F);
-  
-  // Orienting basis
-  if Evaluate(Basis[2],places[2]) lt 0 then
-    Basis := [Basis[1], -Basis[2]];
-  end if;
 
-  SmallestTrace := Trace(Basis[1]);
-  T := [];
-  if t mod SmallestTrace eq 0 then
-    x := t div SmallestTrace;
-    C1,C2 := ShintaniWalls(ZF);
-    a1 := Evaluate(Basis[1],places[1]); b1 := Evaluate(Basis[2],places[1]);
-    a2 := Evaluate(Basis[1],places[2]); b2 := Evaluate(Basis[2],places[2]);
-    Lower := (C2*x*a2 -x*a1)/(b1-C2*b2); Upper := (C1*x*a2 -x*a1)/(b1-C1*b2); 
-    // Magma has some extreme problems with .999999999 /= 1. That is why this is defined in a terrible manner. It removes points that lie on the upper wall
-    prec := Precision(Lower);
-    if Abs(Round(Lower) - Lower) lt 10^(-prec/2) then Lower := Round(Lower); else Lower := Ceiling(Lower); end if;
-    if Abs(Round(Upper) - Upper) lt 10^(-prec/2) then Upper := Round(Upper)-1; else Upper := Floor(Upper); end if;
-    for y in [Lower .. Upper] do
-      Append(~T, x*Basis[1]+y*Basis[2]);
-    end for;
+
+  if t eq 0 then
+    return [0*Basis[1]];
+  else  
+    // Orienting basis
+    if Evaluate(Basis[2],places[2]) lt 0 then
+      Basis := [Basis[1], -Basis[2]];
+    end if;
+
+    SmallestTrace := Trace(Basis[1]);
+    T := [];
+    if t mod SmallestTrace eq 0 then
+      x := t div SmallestTrace;
+      C1,C2 := ShintaniWalls(ZF);
+      a1 := Evaluate(Basis[1],places[1]); b1 := Evaluate(Basis[2],places[1]);
+      a2 := Evaluate(Basis[1],places[2]); b2 := Evaluate(Basis[2],places[2]);
+      Lower := (C2*x*a2 -x*a1)/(b1-C2*b2); Upper := (C1*x*a2 -x*a1)/(b1-C1*b2); 
+      // Magma has some extreme problems with .999999999 /= 1. That is why this is defined in a terrible manner. It removes points that lie on the upper wall
+      prec := Precision(Lower);
+      if Abs(Round(Lower) - Lower) lt 10^(-prec/2) then Lower := Round(Lower); else Lower := Ceiling(Lower); end if;
+      if Abs(Round(Upper) - Upper) lt 10^(-prec/2) then Upper := Round(Upper)-1; else Upper := Floor(Upper); end if;
+      for y in [Lower .. Upper] do
+        Append(~T, x*Basis[1]+y*Basis[2]);
+      end for;
+    end if;
+    return T;
   end if;
-  return T;
 end intrinsic;
 
 intrinsic ShintaniDomain(bb::RngOrdFracIdl, t::RngIntElt) -> List
