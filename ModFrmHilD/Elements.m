@@ -321,6 +321,71 @@ end intrinsic;
 /*   return HMF(M, N, k, coeffs); */
 /* end intrinsic; */
 
+intrinsic Ideals(M::ModFrmHilD) -> List
+   {Construct all Ideals up to the precision specified by trace}
+   IdealList := []; 
+   for bb in ClassGroupReps(M) do
+    IdealList cat:= [ShintaniRepesentativeToIdeal(M,bb,nu) : nu in AllShintaniReps(M)[bb]];
+   end for;
+   return IdealList;
+end intrinsic;
+
+intrinsic PrimesForRecusion(M::ModFrmHilD) -> List
+   {Construct all Primes Ideals needed for the recursion specified by trace}
+   AllPrimes := &cat[ [pp[1] : pp in Factorization(I)] : I in Ideals(M) | IsZero(I) eq false];
+   return [i : i in Set(AllPrimes)];
+end intrinsic;
+
+// TODO: narrow>1
+//TODO: change hecke_eigenvalues to a list
+intrinsic EigenformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], hecke_eigenvalues::Assoc) -> ModFrmHilDElt
+  {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
+  // pull info from M
+  F := BaseField(M);
+  ZF := Integers(M);
+  prec := Precision(M);
+  k0 := Max(k); 
+  // Coefficient Array by ideal w/ normalized coefficient a_1 = 1
+  coeffs := AssociativeArray(); 
+  coeffs[0*ZF] := 0;
+  coeffs[1*ZF] := 1;
+  // Step 1: a_p for primes 
+  for pp in PrimesForRecusion(M) do
+      coeffs[pp] := hecke_eigenvalues[pp];
+  end for;
+  // Step 2: a_n for Composite ideals
+  // Power series ring for recusion
+  log_prec := 100; // FIXME! this should scale with trace bound!
+  ZFX<X, Y> := PolynomialRing(ZF, 2);
+  R<T> := PowerSeriesRing(ZFX : Precision := log_prec + 1);
+  recursion := Coefficients(1/(1 - X*T + Y*T^2));
+  // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
+  // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
+  CompositeIdeals := [ I : I in Ideals(M) | IsPrime(I) eq false and IsZero(I) eq false];
+  for I in CompositeIdeals do
+    coeff_I := 1;
+    for fact in Factorization(I) do 
+      pp := fact[1];
+      Np := Norm(pp)^(k0-1);
+      // if pp is bad
+      if N subset pp then
+        Np := 0;
+      end if;
+      coeff_I *:= Evaluate(recursion[fact[2]], [coeffs[pp], Np]);
+    end for;
+    coeffs[I] := coeff_I;
+  end for;
+  //Sorting the ideals into a new array indexed by Cl^+(K)
+  CoeffsArray := AssociativeArray();
+  for bb in ClassGroupReps(M) do
+    CoeffsArray[bb] := AssociativeArray();
+    for nu in AllShintaniReps(M)[bb] do
+      CoeffsArray[bb][nu] := coeffs[ShintaniRepesentativeToIdeal(M,bb,nu)];
+    end for;
+  end for;
+  return HMF(M, N, k, CoeffsArray);
+end intrinsic;
+
 /* intrinsic NewformsToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt] */
 /*   {returns Hilbert newforms} */
 /*   F := BaseField(M); */
