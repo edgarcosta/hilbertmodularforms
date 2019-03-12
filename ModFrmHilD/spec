@@ -7,5 +7,5 @@
   Workspace.m
   CanonicalRing.m
   HilbertSeries.m
-	Narrow.m
+	Multiplication.m
 }
