@@ -321,19 +321,15 @@ end intrinsic;
 /*   return HMF(M, N, k, coeffs); */
 /* end intrinsic; */
 
-intrinsic Ideals(M::ModFrmHilD) -> List
-   {Construct all Ideals up to the precision specified by trace}
-   IdealList := []; 
-   for bb in ClassGroupReps(M) do
-    IdealList cat:= [ShintaniRepesentativeToIdeal(M,bb,nu) : nu in AllShintaniReps(M)[bb]];
-   end for;
-   return IdealList;
-end intrinsic;
-
 intrinsic PrimesForRecusion(M::ModFrmHilD) -> List
    {Construct all Primes Ideals needed for the recursion specified by trace}
-   AllPrimes := &cat[ [pp[1] : pp in Factorization(I)] : I in Ideals(M) | IsZero(I) eq false];
-   return [i : i in Set(AllPrimes)];
+   all_ideals := AllIdeals(M);
+   ZF := Order(all_ideals[1]);
+   N := Norm(all_ideals[#all_ideals]);
+   all_primes := PrimesUpTo(ZF, N);
+   /* AllPrimes := &cat[ [pp[1] : pp in Factorization(I)] : I in Ideals(M) | IsZero(I) eq false]; */
+   /* return [i : i in Set(AllPrimes)]; */
+   return all_primes
 end intrinsic;
 
 // TODO: narrow>1
@@ -351,7 +347,7 @@ intrinsic EigenformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], hec
   coeffs[1*ZF] := 1;
   // Step 1: a_p for primes 
   for pp in PrimesForRecusion(M) do
-      coeffs[pp] := hecke_eigenvalues[pp];
+    coeffs[pp] := hecke_eigenvalues[pp];
   end for;
   // Step 2: a_n for Composite ideals
   // Power series ring for recusion

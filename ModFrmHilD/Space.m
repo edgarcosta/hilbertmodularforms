@@ -21,6 +21,7 @@ declare attributes ModFrmHilD:
   AllShintaniReps, // AllShintaniReps[bb] = nu in Shintani with trace at most Precision(M)
   ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][I] = nu in Shintani
   IdealElementPairs, // IdealElementPairs[bb] = list of pairs (nn, nu) for nu in Shintani
+  AllIdeals, // List of all ideals for all bb ordered by norm
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
   // Book keeping
   // Caching the computation of EigenForms
@@ -165,6 +166,11 @@ intrinsic MultiplicationTables(M::ModFrmHilD) -> SeqEnum
   return M`MultiplicationTables;
 end intrinsic;
 
+intrinsic AllIdeals(M::ModFrmHilD) -> SeqEnum
+  {}
+  return M`AllIdeals;
+end intrinsic;
+
 intrinsic HeckeEigenvalues(M::ModFrmHilD) -> Assoc
   {}
   return M`HeckeEigenvalues;
@@ -224,10 +230,18 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
     end for;
     for nu in AllShintaniReps(M)[bb] do
       nn := ShintaniRepesentativeToIdeal(M, bb, nu);
-      M`IdealElementPairs[bb] cat:= [[* nn, nu *]];
+      M`IdealElementPairs[bb] cat:= [[* nn, nu *]]; // ideals are first
     end for;
-    // TODO: now order IdealElementPairs by Norm
   end for;
+  // M`AllIdeals
+  all_ideals := [];
+  for bb in M`ClassGroupReps do
+    all_ideals cat:= [pair[1] : pair in IdealElementPairs(M)[bb]];
+  end for;
+  // sort M`AllIdeals by norm
+  norms := [Norm(I) : I in all_ideals];
+  ParallelSort(~norms, ~all_ideals);
+  M`AllIdeals := all_ideals;
   return M;
 end intrinsic;
 
