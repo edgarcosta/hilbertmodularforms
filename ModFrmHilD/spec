@@ -2,11 +2,27 @@
   Space.m
   Elements.m
   LinearAlgebra.m
-  ThetaSeries.m
   Recognize.m
   Workspace.m
-  CanonicalRing.m
-  HilbertSeries.m
-	Multiplication.m
   Formatting.m
+}
+
+Multiplication
+{  
+   Multiplication.m
+   Shintani.m
+}
+
+CreationofHMFS
+{  
+   Basis.m
+   Newforms.m
+   EisensteinSeries.m
+   ThetaSeries.m
+}
+
+CanonicalRings
+{
+   CanonicalRing.m
+   HilbertSeries.m
 }

@@ -11,17 +11,19 @@ declare attributes ModFrmHilD:
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
-  NarrowClassGroupRepresentatives, // SeqEnum[RngOrdElt/RngFracElt]
+  NarrowClassGroupReps, // SeqEnum[RngOrdElt/RngFracElt]
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
   ClassGroupReps, // an ideal bb for each element of the narrow class group
-  PositiveReps, // PositiveReps[bb][t] = nu with trace t
-  AllPositiveReps, // AllPositiveReps[bb] = nu with trace at most Precision(M)
-  ShintaniReps, // ShintaniReps[bb][t] = nu in Shintani with trace t
-  AllShintaniReps, // AllShintaniReps[bb] = nu in Shintani with trace at most Precision(M)
+  PositiveReps, // PositiveReps[bb] = nu with trace at most Precision(M)
+  PositiveRepsByTrace, // PositiveReps[bb][t] = nu with trace t
+  ShintaniReps, // ShintaniReps[bb] = nu in Shintani with trace at most Precision(M)
+  ShintaniRepsByTrace, // ShintaniReps[bb][t] = nu in Shintani with trace t
   ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][I] = nu in Shintani
-  IdealElementPairs, // IdealElementPairs[bb] = list of pairs (nn, nu) for nu in Shintani
+  IdealElementPairs, // IdealElementPairs[bb][Nm] = list of pairs (nn, nu) for nu in Shintani of Norm Nm
+  IdealsByNarrowClassGroup, // IdealElementPairs[bb] = list of all ideal nn with [nn] = [bb]
   AllIdeals, // List of all ideals for all bb ordered by norm
+  AllPrimes, // List of all ideals for all bb ordered by norm
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
   // Book keeping
   // Caching the computation of EigenForms
@@ -88,9 +90,9 @@ intrinsic NarrowClassGroupMap(M::ModFrmHilD) -> Map
   return M`NarrowClassGroupMap;
 end intrinsic;
 
-intrinsic NarrowClassGroupRepresentatives(M::ModFrmHilD) -> Any
+intrinsic NarrowClassGroupReps(M::ModFrmHilD) -> Any
   {}
-  return M`NarrowClassGroupRepresentatives;
+  return M`NarrowClassGroupReps;
 end intrinsic;
 
 intrinsic Precision(M::ModFrmHilD) -> RngIntElt
@@ -103,19 +105,14 @@ intrinsic ZeroIdeal(M::ModFrmHilD) -> Any
   return M`ZeroIdeal;
 end intrinsic;
 
-intrinsic ClassGroupReps(M::ModFrmHilD) -> Any
-  {}
-  return M`ClassGroupReps;
-end intrinsic;
-
 intrinsic PositiveReps(M::ModFrmHilD) -> Any
   {}
   return M`PositiveReps;
 end intrinsic;
 
-intrinsic AllPositiveReps(M::ModFrmHilD) -> Any
+intrinsic PositiveRepsByTrace(M::ModFrmHilD) -> Any
   {}
-  return M`AllPositiveReps;
+  return M`PositiveRepsByTrace;
 end intrinsic;
 
 intrinsic PositiveRepsUpToTrace(M::ModFrmHilD, bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum
@@ -123,7 +120,7 @@ intrinsic PositiveRepsUpToTrace(M::ModFrmHilD, bb::RngOrdFracIdl, t::RngIntElt) 
   reps := [];
   assert t le Precision(M);
   for i := 0 to t do
-    reps cat:= PositiveReps(M)[bb][i];
+    reps cat:= PositiveRepsByTrace(M)[bb][i];
   end for;
   return reps;
 end intrinsic;
@@ -133,19 +130,19 @@ intrinsic ShintaniReps(M::ModFrmHilD) -> Any
   return M`ShintaniReps;
 end intrinsic;
 
+intrinsic ShintaniRepsByTrace(M::ModFrmHilD) -> Any
+  {}
+  return M`ShintaniRepsByTrace;
+end intrinsic;
+
 intrinsic ShintaniRepsUpToTrace(M::ModFrmHilD, bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum
   {}
   shintani_reps := [];
   assert t le Precision(M);
   for i := 0 to t do
-    shintani_reps cat:= ShintaniReps(M)[bb][i];
+    shintani_reps cat:= ShintaniRepsByTrace(M)[bb][i];
   end for;
   return shintani_reps;
-end intrinsic;
-
-intrinsic AllShintaniReps(M::ModFrmHilD) -> Any
-  {}
-  return M`AllShintaniReps;
 end intrinsic;
 
 intrinsic ReduceIdealToShintaniRep(M::ModFrmHilD) -> Any
@@ -158,17 +155,27 @@ intrinsic IdealElementPairs(M::ModFrmHilD) -> Any
   return M`IdealElementPairs;
 end intrinsic;
 
+intrinsic IdealsByNarrowClassGroup(M::ModFrmHilD) -> Any
+  {}
+  return M`IdealsByNarrowClassGroup;
+end intrinsic;
+
+intrinsic AllIdeals(M::ModFrmHilD) -> SeqEnum
+  {}
+  return M`AllIdeals;
+end intrinsic;
+
+intrinsic AllPrimes(M::ModFrmHilD) -> SeqEnum
+  {}
+  return M`AllPrimes;
+end intrinsic;
+
 intrinsic MultiplicationTables(M::ModFrmHilD) -> SeqEnum
   {}
   if not assigned M`MultiplicationTables then
     assert HMFEquipWithMultiplication(M);
   end if;
   return M`MultiplicationTables;
-end intrinsic;
-
-intrinsic AllIdeals(M::ModFrmHilD) -> SeqEnum
-  {}
-  return M`AllIdeals;
 end intrinsic;
 
 intrinsic HeckeEigenvalues(M::ModFrmHilD) -> Assoc
@@ -196,7 +203,7 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`NarrowClassGroup := Cl;
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
-  M`NarrowClassGroupRepresentatives := [ mp(g) : g in Cl ];
+  M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
   // maybe we should make good choices for narrow class group reps
   // i.e. generators of small trace?
   // TODO: see above 2 lines
@@ -204,46 +211,60 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`Precision := prec;
   // zero ideal
   M`ZeroIdeal := ideal<Integers(F)|0>;
-  // class group reps
-  M`ClassGroupReps := [mp(g) : g in Cl];
   // positive element reps and Shintani reps for each class group rep
   // up to trace bound prec
   M`PositiveReps := AssociativeArray();
-  M`AllPositiveReps := AssociativeArray();
+  M`PositiveRepsByTrace := AssociativeArray();
   M`ShintaniReps := AssociativeArray();
-  M`AllShintaniReps := AssociativeArray();
+  M`ShintaniRepsByTrace := AssociativeArray();
   M`ReduceIdealToShintaniRep := AssociativeArray();
-  M`IdealElementPairs := AssociativeArray();
-  for bb in M`ClassGroupReps do
-    M`PositiveReps[bb] := AssociativeArray();
-    M`ShintaniReps[bb] := AssociativeArray();
+  // Elements and Shintani domains
+  for bb in M`NarrowClassGroupReps do
+    M`PositiveRepsByTrace[bb] := AssociativeArray();
+    M`ShintaniRepsByTrace[bb] := AssociativeArray();
     M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
-    M`IdealElementPairs[bb] := [];
     for t := 0 to prec do
-      M`PositiveReps[bb][t] := PositiveElementsOfTrace(bb, t);
-      M`ShintaniReps[bb][t] := ShintaniDomainOfTrace(bb, t);
+      M`PositiveRepsByTrace[bb][t] := PositiveElementsOfTrace(bb, t);
+      M`ShintaniRepsByTrace[bb][t] := ShintaniDomainOfTrace(bb, t);
     end for;
-    M`AllPositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
-    M`AllShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
-    for nu in ShintaniRepsUpToTrace(M, bb, prec) do
+    M`PositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
+    M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
+    for nu in M`ShintaniReps[bb] do
       M`ReduceIdealToShintaniRep[bb][ideal<Integers(F)|nu>] := nu;
     end for;
-    for nu in AllShintaniReps(M)[bb] do
+  end for;
+  // Ideals
+  M`IdealsByNarrowClassGroup := AssociativeArray();
+  M`IdealElementPairs := AssociativeArray(); 
+  for bb in M`NarrowClassGroupReps do
+    M`IdealElementPairs[bb] := AssociativeArray();
+    M`IdealsByNarrowClassGroup[bb] := [];
+    for nu in ShintaniReps(M)[bb] do
       nn := ShintaniRepesentativeToIdeal(M, bb, nu);
-      M`IdealElementPairs[bb] cat:= [[* nn, nu *]]; // ideals are first
+      if nn eq ZeroIdeal(M) then
+         M`IdealElementPairs[bb][0] := [[* nn, nu *]];
+      else 
+        Nm := Norm(nn);
+        if Nm in Keys(IdealElementPairs(M)[bb]) then
+          M`IdealElementPairs[bb][Nm] cat:= [[* nn, nu *]];  //ideals are first
+        else
+          M`IdealElementPairs[bb][Nm] := [[* nn, nu *]];
+        end if;
+      end if;
+      M`IdealsByNarrowClassGroup[bb] cat:= [nn];
     end for;
   end for;
-  // M`AllIdeals
-  all_ideals := [];
-  for bb in M`ClassGroupReps do
-    all_ideals cat:= [pair[1] : pair in IdealElementPairs(M)[bb]];
-  end for;
-  // sort M`AllIdeals by norm
-  norms := [Norm(I) : I in all_ideals];
-  ParallelSort(~norms, ~all_ideals);
+  // M`Ideals
+  all_ideals := &cat[ IdealsByNarrowClassGroup(M)[bb] : bb in NarrowClassGroupReps(M)];
+  // M`Primes 
+  norms := [Norm(I) : I in all_ideals | I ne ZeroIdeal(M)];
+  M`AllPrimes := PrimesUpTo(Integers()!Max(norms), BaseField(M));
+  // sort M`Ideals by Norm
+  //ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
   return M;
 end intrinsic;
+
 
 intrinsic ModFrmHilDCopy(M::ModFrmHilD) -> ModFrmHilD
   {new instance of ModFrmHilD.}
@@ -258,7 +279,7 @@ end intrinsic;
 
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   {Assign representatives and a dictionary for it to M.}
-  bbs := ClassGroupReps(M);
+  bbs := NarrowClassGroupReps(M);
   positive_reps := PositiveReps(M);
   shintani_reps := ShintaniReps(M);
   ZF := Integers(BaseField(M));
@@ -271,23 +292,4 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
 end intrinsic;
 
 
-
-
-////////// Conversion : Shintani elements < = > Ideals ///////////////
-/* Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F)  */
-
-intrinsic IdealToShintaniRepesentative(M::ModFrmHilD, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
-  {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
-  ZF := Integers(M);
-  _,gen := IsPrincipal(n*bb);
-  ShintaniGenerator := ReduceShintaniIdealClass(gen,bb);
-  return ShintaniGenerator;
-end intrinsic;
-
-intrinsic ShintaniRepesentativeToIdeal(M::ModFrmHilD, bb::RngOrdIdl, nu::RngOrdElt) -> ModFrmHilDElt
-  {Takes a representative [bb] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
-  ZF := Integers(M);
-  n := bb^(-1)*(nu*ZF);
-  return n;
-end intrinsic;
 
