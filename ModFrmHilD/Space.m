@@ -14,7 +14,6 @@ declare attributes ModFrmHilD:
   NarrowClassGroupReps, // SeqEnum[RngOrdElt/RngFracElt]
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
-  ClassGroupReps, // an ideal bb for each element of the narrow class group
   PositiveReps, // PositiveReps[bb] = nu with trace at most Precision(M)
   PositiveRepsByTrace, // PositiveReps[bb][t] = nu with trace t
   ShintaniReps, // ShintaniReps[bb] = nu in Shintani with trace at most Precision(M)
@@ -240,7 +239,7 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
     M`IdealElementPairs[bb] := AssociativeArray();
     M`IdealsByNarrowClassGroup[bb] := [];
     for nu in ShintaniReps(M)[bb] do
-      nn := ShintaniRepesentativeToIdeal(M, bb, nu);
+      nn := ShintaniRepresentativeToIdeal(bb, nu);
       if nn eq ZeroIdeal(M) then
          M`IdealElementPairs[bb][0] := [[* nn, nu *]];
       else 

@@ -236,7 +236,7 @@ end intrinsic;
 // Conversion : Shintani elements < = > Ideals 
 // Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F) 
 
-intrinsic IdealToShintaniRepesentative(M::ModFrmHilD, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
+intrinsic IdealToShintaniRepresentative(M::ModFrmHilD, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   ZF := Integers(M);
   _,gen := IsPrincipal(n*bb);
@@ -244,9 +244,9 @@ intrinsic IdealToShintaniRepesentative(M::ModFrmHilD, bb::RngOrdIdl, n::RngOrdId
   return ShintaniGenerator;
 end intrinsic;
 
-intrinsic ShintaniRepesentativeToIdeal(M::ModFrmHilD, bb::RngOrdIdl, nu::RngOrdElt) -> ModFrmHilDElt
+intrinsic ShintaniRepresentativeToIdeal(bb::RngOrdIdl, nu::RngOrdElt) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
-  ZF := Integers(M);
+  ZF := Parent(nu);
   n := bb^(-1)*(nu*ZF);
   return NicefyIdeal(n);
 end intrinsic;

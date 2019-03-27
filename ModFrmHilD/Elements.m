@@ -9,7 +9,6 @@ declare attributes ModFrmHilDElt:
   Parent, // ModFrmHilD
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
-  ZeroCoefficients, // ZeroCoefficients[bb] = a_(0,bb)
   Coefficients; // Coefficients[bb] = coeffs_bb where coeffs_bb[nu] = a_(bb,nu) = a_(nu)*bb^-1
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
@@ -25,7 +24,7 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
   {}
   if level in ["Default", "Minimal", "Maximal"] then
     M := Parent(f);
-    bbs := ClassGroupReps(M);
+    bbs := NarrowClassGroupReps(M);
     k := Weight(f);
     prec := Precision(f);
     coeffs := Coefficients(f);
@@ -59,7 +58,7 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
   {}
   if level in ["Default", "Minimal", "Maximal"] then
     M := Parent(f);
-    bbs := ClassGroupReps(M);
+    bbs := NarrowClassGroupReps(M);
     k := Weight(f);
     prec := Precision(f);
     coeffs := Coefficients(f);
@@ -101,17 +100,6 @@ intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
   return f`Weight;
 end intrinsic;
 
-intrinsic Coefficients(f::ModFrmHilDElt) -> SeqEnum
-  {returns coefficients of f as SeqEnum.}
-  return f`Coefficients;
-end intrinsic;
-
-// TODO: narrow>1
-intrinsic CoefficientsParent(f::ModFrmHilDElt) -> SeqEnum
-  {returns coefficients of f as SeqEnum.}
-  return Parent(f`Coefficients[1]);
-end intrinsic;
-
 intrinsic BaseField(f::ModFrmHilDElt) -> FldNum
   {returns base field of parent of f.}
   return BaseField(Parent(f));
@@ -125,6 +113,32 @@ end intrinsic;
 intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   {returns precision of parent of f.}
   return Precision(Parent(f));
+end intrinsic;
+
+intrinsic Coefficients(f::ModFrmHilDElt) -> Any
+  {}
+  return f`Coefficients;
+end intrinsic;
+
+intrinsic CoefficientsParents(f::ModFrmHilDElt) -> Any
+  {}
+  M := Parent(f);
+  coeffs := Coefficients(f); // indexed by bb
+  bbs := NarrowClassGroupReps(M);
+  coeff_parents := AssociativeArray();
+  for bb in bbs do
+    key := Random(Keys(coeffs[bb]));
+    coeff_parents[bb] := Parent(key);
+  end for;
+  return coeff_parents;
+end intrinsic;
+
+intrinsic CoefficientsParent(f::ModFrmHilDElt) -> Any
+  {}
+  M := Parent(f);
+  coeffs := Coefficients(f); // indexed by bb
+  bbs := NarrowClassGroupReps(M);
+  return Parent(coeffs[bbs[1]][1]);
 end intrinsic;
 
 ////////// ModFrmHilDElt creation functions //////////
@@ -146,45 +160,25 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
 end intrinsic;
 
-// no longer relevant for narrow>1
-intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::SeqEnum) -> ModFrmHilDElt
-  {Given M and a SeqEnum of coefficients, return ModFrmHilDElt with parent M.
-  WARNING: user is responsible for coefficients and order...proceed with caution.
-  }
-  // assertions
-  ideals := Ideals(M);
-  if #coeffs ne #ideals then
-    error "not the right amount of coefficients to match precision of M.";
-  end if;
-  assert #k eq Degree(BaseField(M));
-  // make form f
-  f := ModFrmHilDEltInitialize();
-  f`Parent := M;
-  f`Level := N;
-  f`Weight := k;
-  f`Coefficients := coeffs;
-  return f;
-end intrinsic;
-
 intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::Assoc) -> ModFrmHilDElt
   {WARNING: user is responsible for coefficients besides some basic structural assertions. Note: coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb)^-1}
   // check coeffs[bb] defined for each ideal class bb
-  if #Keys(coeffs) ne #ClassGroupReps(M) then
+  if #Keys(coeffs) ne #NarrowClassGroupReps(M) then
     error "Associative array of coefficients should be indexed by ideal classes";
   end if;
-  for bb in ClassGroupReps(M) do
-    // check coeffs[bb] has keys equal AllShintaniReps(M)[bb]
-    assert Set(AllShintaniReps(M)[bb]) eq Keys(coeffs[bb]);
-    // check coeffs[bb][nu] has a value for every nu in AllShintaniReps(M)[bb]
-    for nu in AllShintaniReps(M)[bb] do
+  for bb in NarrowClassGroupReps(M) do
+    // check coeffs[bb] has keys equal ShintaniReps(M)[bb]
+    assert Set(ShintaniReps(M)[bb]) eq Keys(coeffs[bb]);
+    // check coeffs[bb][nu] has a value for every nu in ShintaniReps(M)[bb]
+    for nu in ShintaniReps(M)[bb] do
       assert IsDefined(coeffs[bb], nu);
     end for;
   end for;
   // make the HMF
   f := ModFrmHilDEltInitialize();
   f`Parent := M;
-  f`Level := N;
   f`Weight := k;
+  f`Level := N;
   f`Coefficients := coeffs;
   return f;
 end intrinsic;
@@ -192,9 +186,9 @@ end intrinsic;
 intrinsic HMFZero(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
   {create zero ModHilFrmDElt of weight k.}
   coeffs := AssociativeArray();
-  for bb in ClassGroupReps(M) do
+  for bb in NarrowClassGroupReps(M) do
     coeffs_bb := AssociativeArray();
-    for nu in AllShintaniReps(M)[bb] do
+    for nu in ShintaniReps(M)[bb] do
       coeffs_bb[nu] := 0;
     end for;
     coeffs[bb] := coeffs_bb;
@@ -262,10 +256,17 @@ end intrinsic;
 // Coerces HMF coefficients a_n in a ring R
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_I := R!a_I}
-  coeffs := [R!c : c in Coefficients(f)];
-  return HMF(Parent(f), Level(f), Weight(f), coeffs);
+  M := Parent(f);
+  bbs := NarrowClassGroupReps(M);
+  coeffs := Coefficients(f);
+  new_coeffs := AssociativeArray();
+  for bb in bbs do
+    for nn in Keys(coeffs[bb]) do
+      new_coeffs[bb][nn] := R!coeffs[bb][nn];
+    end for;
+  end for;
+  return HMF(Parent(f), Level(f), Weight(f), new_coeffs);
 end intrinsic;
-
 
 intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   {}

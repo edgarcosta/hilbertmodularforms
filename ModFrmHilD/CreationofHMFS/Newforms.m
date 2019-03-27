@@ -29,9 +29,6 @@ intrinsic CoefficientsFromRecursion(M::ModFrmHilD, N::RngOrdIdl, n::RngOrdIdl, k
   return coeff_I;
 end intrinsic;
 
-
-
-
 intrinsic NewformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], newform::ModFrmHilElt) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
   ZF := Integers(M);
@@ -53,10 +50,10 @@ intrinsic NewformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], newfo
 
   //Sorting the ideals into a new array indexed by Cl^+(K)
   CoeffsArray := AssociativeArray();
-  for bb in ClassGroupReps(M) do
+  for bb in NarrowClassGroupReps(M) do
     CoeffsArray[bb] := AssociativeArray();
-    for nu in AllShintaniReps(M)[bb] do
-      CoeffsArray[bb][nu] := coeffs[ShintaniRepesentativeToIdeal(M,bb,nu)];
+    for nu in ShintaniReps(M)[bb] do
+      CoeffsArray[bb][nu] := coeffs[ShintaniRepresentativeToIdeal(bb,nu)];
     end for;
   end for;
   return HMF(M, N, k, CoeffsArray);
