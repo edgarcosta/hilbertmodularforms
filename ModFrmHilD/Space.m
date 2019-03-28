@@ -172,7 +172,7 @@ end intrinsic;
 intrinsic MultiplicationTables(M::ModFrmHilD) -> SeqEnum
   {}
   if not assigned M`MultiplicationTables then
-    assert HMFEquipWithMultiplication(M);
+    HMFEquipWithMultiplication(M);
   end if;
   return M`MultiplicationTables;
 end intrinsic;
@@ -236,30 +236,24 @@ intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
   M`IdealsByNarrowClassGroup := AssociativeArray();
   M`IdealElementPairs := AssociativeArray(); 
   for bb in M`NarrowClassGroupReps do
-    M`IdealElementPairs[bb] := AssociativeArray();
-    M`IdealsByNarrowClassGroup[bb] := [];
+    IdealElementPairsList := [];
     for nu in ShintaniReps(M)[bb] do
       nn := ShintaniRepresentativeToIdeal(bb, nu);
-      if nn eq ZeroIdeal(M) then
-         M`IdealElementPairs[bb][0] := [[* nn, nu *]];
-      else 
-        Nm := Norm(nn);
-        if Nm in Keys(IdealElementPairs(M)[bb]) then
-          M`IdealElementPairs[bb][Nm] cat:= [[* nn, nu *]];  //ideals are first
-        else
-          M`IdealElementPairs[bb][Nm] := [[* nn, nu *]];
-        end if;
-      end if;
-      M`IdealsByNarrowClassGroup[bb] cat:= [nn];
+      IdealElementPairsList cat:= [[* nn, nu *]]; //ideals are first
     end for;
+    //Sort IdealElementPairs by norm of ideal
+    norms := [CorrectNorm(pair[1]) : pair in IdealElementPairsList];
+    ParallelSort(~norms, ~IdealElementPairsList);
+    M`IdealElementPairs[bb] := IdealElementPairsList;
+    M`IdealsByNarrowClassGroup[bb] := [pair[1] : pair in IdealElementPairsList];
   end for;
   // M`Ideals
-  all_ideals := &cat[ IdealsByNarrowClassGroup(M)[bb] : bb in NarrowClassGroupReps(M)];
+  all_ideals := &cat[IdealsByNarrowClassGroup(M)[bb] : bb in NarrowClassGroupReps(M)];
   // M`Primes 
-  norms := [Norm(I) : I in all_ideals | I ne ZeroIdeal(M)];
-  M`AllPrimes := PrimesUpTo(Integers()!Max(norms), BaseField(M));
+  M`AllPrimes := PrimesUpTo(Integers()!Max([CorrectNorm(nn) : nn in all_ideals]), BaseField(M));
   // sort M`Ideals by Norm
-  //ParallelSort(~norms, ~all_ideals);
+  norms := [CorrectNorm(I) : I in all_ideals];
+  ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
   return M;
 end intrinsic;
@@ -279,9 +273,6 @@ end intrinsic;
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   {Assign representatives and a dictionary for it to M.}
   bbs := NarrowClassGroupReps(M);
-  positive_reps := PositiveReps(M);
-  shintani_reps := ShintaniReps(M);
-  ZF := Integers(BaseField(M));
   mult_tables := AssociativeArray();
   for bb in bbs do
     mult_tables[bb] := GetIndexPairs(bb, M);

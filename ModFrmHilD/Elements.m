@@ -9,7 +9,8 @@ declare attributes ModFrmHilDElt:
   Parent, // ModFrmHilD
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
-  Coefficients; // Coefficients[bb] = coeffs_bb where coeffs_bb[nu] = a_(bb,nu) = a_(nu)*bb^-1
+  Coefficients, // Coefficients[bb] = coeffs_bb where coeffs_bb[nu] = a_(bb,nu) = a_(nu)*bb^-1
+  CoefficientsParents; // CoefficientsParents[bb] = Parent of coefficients for Coefficients[bb]
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
@@ -36,12 +37,9 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     for bb in bbs do
       coeffs_bb := coeffs[bb];
       printf "Coefficients for ideal class bb = %o\n", bb;
-      printf "\n\t(Ideal)  |--->   a_nu = a_(nu)*bb^-1";
-      SortedNorms := Sort([i:i in Keys(IdealElementPairs(M)[bb])]);
-      for Nm in SortedNorms do
-        for pair in IdealElementPairs(M)[bb][Nm] do
-          printf "\n\t(%o)  |--->   %o", IdealOneLine(pair[1]), coeffs_bb[pair[2]];
-        end for;
+      printf "\n\t(Ideal)  |--->   a_nn = a_(nu)*bb^-1";
+      for nn in IdealsByNarrowClassGroup(M)[bb] do
+        printf "\n\t(%o)  |--->   %o", IdealOneLine(nn), coeffs_bb[nn];
       end for;
       printf "\n\n";
     end for;
@@ -122,15 +120,7 @@ end intrinsic;
 
 intrinsic CoefficientsParents(f::ModFrmHilDElt) -> Any
   {}
-  M := Parent(f);
-  coeffs := Coefficients(f); // indexed by bb
-  bbs := NarrowClassGroupReps(M);
-  coeff_parents := AssociativeArray();
-  for bb in bbs do
-    key := Random(Keys(coeffs[bb]));
-    coeff_parents[bb] := Parent(key);
-  end for;
-  return coeff_parents;
+  return f`CoefficientsParents;
 end intrinsic;
 
 intrinsic CoefficientsParent(f::ModFrmHilDElt) -> Any
@@ -166,20 +156,27 @@ intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::Assoc)
   if #Keys(coeffs) ne #NarrowClassGroupReps(M) then
     error "Associative array of coefficients should be indexed by ideal classes";
   end if;
-  for bb in NarrowClassGroupReps(M) do
-    // check coeffs[bb] has keys equal ShintaniReps(M)[bb]
-    assert Set(ShintaniReps(M)[bb]) eq Keys(coeffs[bb]);
-    // check coeffs[bb][nu] has a value for every nu in ShintaniReps(M)[bb]
-    for nu in ShintaniReps(M)[bb] do
-      assert IsDefined(coeffs[bb], nu);
+  
+  bbs := NarrowClassGroupReps(M);
+  coeff_parents := AssociativeArray();
+  for bb in bbs do
+    // check coeffs[bb] has keys equal IdealsByNarrowClassGroup(M)[bb]
+    assert Set(IdealsByNarrowClassGroup(M)[bb]) eq Keys(coeffs[bb]);
+    // check coeffs[bb][n] has a value for every n in IdealsByNarrowClassGroup(M)[bb]
+    for nn in IdealsByNarrowClassGroup(M)[bb] do
+      assert IsDefined(coeffs[bb], nn);
     end for;
+    key := Random(Keys(coeffs[bb]));
+    coeff_parents[bb] := Parent(coeffs[bb][key]);
   end for;
+  
   // make the HMF
   f := ModFrmHilDEltInitialize();
   f`Parent := M;
   f`Weight := k;
   f`Level := N;
   f`Coefficients := coeffs;
+  f`CoefficientsParents := coeff_parents;
   return f;
 end intrinsic;
 
@@ -188,7 +185,7 @@ intrinsic HMFZero(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmH
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs_bb := AssociativeArray();
-    for nu in ShintaniReps(M)[bb] do
+    for nu in IdealsByNarrowClassGroup(M)[bb] do
       coeffs_bb[nu] := 0;
     end for;
     coeffs[bb] := coeffs_bb;
@@ -250,7 +247,7 @@ end intrinsic;
 /* end intrinsic; */
 
 
-////////////// ModFrmHilDElt coercion /////////////////////////
+////////////// ModFrmHilDElt: Coercion /////////////////////////
 
 
 // Coerces HMF coefficients a_n in a ring R
@@ -268,6 +265,7 @@ intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(Parent(f), Level(f), Weight(f), new_coeffs);
 end intrinsic;
 
+//FIXME NarrowClassNumber >1 - Ben
 intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   {}
   if ISA(Type(f), RngElt) then
@@ -314,7 +312,7 @@ intrinsic IsCoercible(x::ModFrmHilDElt, y::.) -> BoolElt, .
   return false;
 end intrinsic;
 
-//////////  ModFrmHilDElt Galois action on a_n ////////// 
+//////////  ModFrmHilDElt: Galois action on Coefficients ////////// 
 
 //TODO:
 //Tests:
@@ -352,7 +350,7 @@ end intrinsic;
 /* end intrinsic; */
 
 
-///////////// ModFrmHilDElt Hecke Operators ////////////////
+///////////// ModFrmHilDElt: Hecke Operators ////////////////
 
 
 // TODO: narrow>1
@@ -412,105 +410,125 @@ end intrinsic;
 /*   end if; */
 /* end intrinsic; */
 
-////////// ModFrmHilDElt arithmetic //////////
+////////// ModFrmHilDElt: Arithmetic //////////
+
+//TODO make zero HMF universal so it can be added/multiplied to any HMF
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   {compares Parent, Weight, and Coefficients.}
+  M := Parent(f);
   if Parent(f) ne Parent(g) then
     return false;
   end if;
   if Weight(f) ne Weight(g) then
     return false;
   end if;
-  if Coefficients(f) ne Coefficients(g) then
-    return false;
-  end if;
+  bbs := NarrowClassGroupReps(M);
+  for bb in bbs do
+    assert Keys(Coefficients(f)) eq Keys(Coefficients(g));
+    for nn in Coefficients(f) do
+      if Coefficients(f)[bb][nn] ne Coefficients(g)[bb][nn] then
+        return false;
+      end if;
+    end for;
+  end for;
   return true;
 end intrinsic;
 
+
 intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integer c.}
+  N := Level(f);
+  M := Parent(f);
+  k := Weight(f);
   coeffs := Coefficients(f);
-  ZK := Parent(coeffs[1]);
-  assert c in ZK;
-  czk := ZK ! c;
-  new_coeffs := [ czk * elt : elt in coeffs];
-  return HMF(Parent(f), Level(f), Weight(f), new_coeffs);
+  bbs := NarrowClassGroupReps(M);
+  for bb in bbs do 
+    ZK := CoefficientsParents(f)[bb];
+    print ZK;
+    assert c in ZK;
+    for nn in Keys(Coefficients(f)[bb]) do
+      coeffs[bb][nn] := ZK!(c * Coefficients(f)[bb][nn]);
+    end for;
+  end for;
+  return HMF(M, N, k, coeffs);
 end intrinsic;
+
 
 intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by some scalar c.}
+  N := Level(f);
+  M := Parent(f);
+  k := Weight(f);
   coeffs := Coefficients(f);
-  ZK := Parent(coeffs[1]);
-  K := FieldOfFractions(ZK);
-  ck := K!c;
-  new_coeffs := [ ck * elt : elt in coeffs];
-  return HMF(Parent(f), Level(f), Weight(f), new_coeffs);
+  bbs := NarrowClassGroupReps(M);
+  for bb in bbs do 
+    F := FieldOfFractions(CoefficientsParents(f)[bb]);
+    assert c in F;
+    for nn in Keys(Coefficients(f)[bb]) do
+      coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
+    end for;
+  end for;
+  return HMF(M, N, k, coeffs);
 end intrinsic;
+
 
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f+g.}
+  // Currently returns the lowest precision of the forms 
   // assert Parent(f) eq Parent(g);
   assert Level(f) eq Level(g);
   assert Weight(f) eq Weight(g);
-  assert BaseField(Parent(f)) eq BaseField(Parent(g));
-  prec_f := Precision(Parent(f));
-  prec_g := Precision(Parent(g));
-  if prec_f lt prec_g then
-    new_coeffs := [ Coefficients(f)[i] + Coefficients(g)[i] : i in [1..#Coefficients(f)] ];
-    return HMF(Parent(f), Level(f) meet Level(g), Weight(f), new_coeffs);
-  else
-    new_coeffs := [ Coefficients(f)[i] + Coefficients(g)[i] : i in [1..#Coefficients(g)] ];
-    return HMF(Parent(g), Level(g) meet Level(f), Weight(g), new_coeffs);
-  end if;
+  N := Level(f) meet Level(g);
+  M := Parent(f);
+  k := Weight(f);
+  new_coeffs := AssociativeArray();
+  bbs := NarrowClassGroupReps(M);
+  for bb in bbs do
+    new_coeffs[bb] := AssociativeArray();
+    assert CoefficientsParents(f)[bb] eq CoefficientsParents(g)[bb];
+    New_keys := Keys(Coefficients(f)[bb]) meet Keys(Coefficients(g)[bb]); // Adding drops the precision to the intersection of the precision of the forms
+    for nn in New_keys do
+      new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
+    end for;
+  end for;
+  return HMF(M, N, k, new_coeffs);
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f-g.}
-  // assert Parent(f) eq Parent(g);
-  assert Level(f) eq Level(g);
-  assert Weight(f) eq Weight(g);
-  assert BaseField(Parent(f)) eq BaseField(Parent(g));
-  prec_f := Precision(Parent(f));
-  prec_g := Precision(Parent(g));
-  if prec_f lt prec_g then
-    new_coeffs := [ Coefficients(f)[i] - Coefficients(g)[i] : i in [1..#Coefficients(f)] ];
-    return HMF(Parent(f), Level(f) meet Level(g), Weight(f), new_coeffs);
-  else
-    new_coeffs := [ Coefficients(f)[i] - Coefficients(g)[i] : i in [1..#Coefficients(g)] ];
-    return HMF(Parent(g), Level(g) meet Level(f), Weight(g), new_coeffs);
-  end if;
+  return f + (-1)*g;
 end intrinsic;
 
+// TODO only works when k has even weight
 // TODO for varied precision
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f*g}
   N := Level(f) meet Level(g);
   M := Parent(f);
+  k := [ Weight(g)[i] + Weight(f)[i] : i in [1..#Weight(g)] ];
+
   assert Parent(f) eq Parent(g);
-  if not assigned M`MultiplicationTable then
-    assert HMFEquipWithMultiplication(M);
-  end if;
-  prec := Precision(M);
-  fcoeffs := Coefficients(f);
-  gcoeffs := Coefficients(g);
-  ZC := Parent(fcoeffs[1]);
-  MTable := MultiplicationTable(M);
-  assert ZC eq Parent(gcoeffs[1]);
-  coeffs := [ZC!0 :  i in [1..#fcoeffs]];
-  for i := 1 to #fcoeffs do
-    c := ZC!0;
-    for pair in MTable[i] do
-      c +:= fcoeffs[ pair[1] ] * gcoeffs[ pair[2] ];
+  MTable := MultiplicationTables(M);
+  bbs := NarrowClassGroupReps(M);
+  new_coeff := AssociativeArray();
+  for bb in bbs do
+    new_coeff[bb] := AssociativeArray();
+    ZF := CoefficientsParents(f)[bb];
+    assert ZF eq CoefficientsParents(g)[bb];
+    for nn in Keys(Coefficients(f)[bb]) do
+      c := ZF!0;
+      for pair in MTable[bb][nn] do
+        c +:= Coefficients(f)[bb][ pair[1] ] * Coefficients(g)[bb][ pair[2] ];
+      end for;
+      new_coeff[bb][nn] := c;
     end for;
-    coeffs[i] := c;
   end for;
-  kf := Weight(f);
-  kg := Weight(g);
-  k := [ kf[i] + kg[i] : i in [1..#kf] ];
-  return HMF(M, N, k, coeffs);
+  return HMF(M, N, k, new_coeff);
 end intrinsic;
 
+
+// TODO FIXME Cl^+(F)>1
 intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f/g}
   N := Level(f) meet Level(g);
@@ -546,6 +564,7 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(M, N, k, coeffs);
 end intrinsic;
 
+// TODO FIXME Cl^+(F)>1
 intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
   {return 1/f}
   return (Parent(f) ! ( CoefficientsParent(f) ! 1) ) / f;
@@ -573,7 +592,41 @@ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
   return f * g;
 end intrinsic;
 
-////////// ModFrmHilDElt swap map //////////
+
+////////// ModFrmHilDElt: Linear Algebra  //////////
+
+//TODO add optional flag to limit the number of coefficients
+intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt]) -> AlgMatElt
+  {returns a matrix with the coefficients of each modular form in each row}
+  return Matrix( [ Coefficients(elt) : elt in list] );
+end intrinsic;
+
+
+
+intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
+  {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
+  M := Matrix( [ elt : elt in list] );
+  B := Basis(Kernel(M));
+  if #B ne 0 then
+    Mat := Matrix(LLL(Basis(Kernel(M))));
+    return [Eltseq(i) : i in Rows(Mat)];
+  else
+    return [];
+  end if;
+end intrinsic;
+
+//TODO add optional flag to limit the number of coefficients
+//TODO make outputs to be of the same type
+
+intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
+  {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
+  return LinearDependence([ Coefficients(elt) : elt in list] );
+end intrinsic;
+
+//EchelonBasis
+
+
+////////// ModFrmHilDElt: swap map //////////
 
 /* intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt */
 /*   {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)} */

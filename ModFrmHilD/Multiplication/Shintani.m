@@ -238,7 +238,6 @@ end intrinsic;
 
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilD, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
-  ZF := Integers(M);
   _,gen := IsPrincipal(n*bb);
   ShintaniGenerator := ReduceShintani(gen,bb);
   return ShintaniGenerator;

@@ -47,3 +47,10 @@ intrinsic NicefyIdeal(I::RngOrdFracIdl) -> RngOrdIdl
   end if;
   return I;
 end intrinsic;
+
+
+// Corrects a magma inconvenience that the Norm of the zero ideal is undefined. 
+intrinsic CorrectNorm(I::RngOrdIdl) -> RngIntElt
+  {returns 0 for Norm(0*ZF)}
+  if IsZero(I) then return 0; else return Norm(I); end if;
+end intrinsic;

@@ -27,14 +27,13 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Any
   pairs_shintani := AssociativeArray();
   // I've turned off asserts since they slow the code down by a lot. Can put back on since we are still testing
   for key in Keys(pairs) do
-    // now we index the pairs by the ideal corresponding to nu instead of by nu
-    nn := ShintaniRepresentativeToIdeal(bb, nu); // nn is the ideal corresponding to nu for bb
     // first eliminate multiple pairs [nu1,nu2],[nu1,nu2]
-    pairs_with_redundancies_eliminated[nn] := SetToSequence(SequenceToSet(pairs[key]));
-    // at this point pairs[nn] = [[nu1,nu2],...] with nu in the Shintani domain
+    pairs_with_redundancies_eliminated[key] := SetToSequence(SequenceToSet(pairs[key]));
+    // at this point pairs[nu] = [[nu1,nu2],...] with nu in the Shintani domain
     // and nu1,nu2,... totally positive (not necessarily in Shintani)
     //assert IsShintaniReduced(key);
-    pairs_shintani[nn] := [[ReduceShintani(pair[1], bb, M),ReduceShintani(pair[2], bb, M)] : pair in pairs_with_redundancies_eliminated[key]];
+    pairs_shintani[ShintaniRepresentativeToIdeal(bb,key)] := [[ShintaniRepresentativeToIdeal(bb,pair[1]),ShintaniRepresentativeToIdeal(bb,pair[2])] : pair in pairs_with_redundancies_eliminated[key]];
   end for;
-  return pairs_shintani, pairs_with_redundancies_eliminated, pairs;
+  //return pairs_shintani, pairs_with_redundancies_eliminated, pairs;
+  return pairs_shintani;
 end intrinsic;
