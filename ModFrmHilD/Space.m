@@ -14,11 +14,11 @@ declare attributes ModFrmHilD:
   NarrowClassGroupReps, // SeqEnum[RngOrdElt/RngFracElt]
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
-  PositiveReps, // PositiveReps[bb] = nu with trace at most Precision(M)
-  PositiveRepsByTrace, // PositiveReps[bb][t] = nu with trace t
-  ShintaniReps, // ShintaniReps[bb] = nu in Shintani with trace at most Precision(M)
-  ShintaniRepsByTrace, // ShintaniReps[bb][t] = nu in Shintani with trace t
-  ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][I] = nu in Shintani
+  PositiveReps, // PositiveReps[bb] = [nu with trace at most Precision(M)]
+  PositiveRepsByTrace, // PositiveReps[bb][t] = [nu with trace t]
+  ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
+  ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
+  ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][I] = [nu in Shintani]
   IdealElementPairs, // IdealElementPairs[bb][Nm] = list of pairs (nn, nu) for nu in Shintani of Norm Nm
   IdealsByNarrowClassGroup, // IdealElementPairs[bb] = list of all ideal nn with [nn] = [bb]
   AllIdeals, // List of all ideals for all bb ordered by norm
