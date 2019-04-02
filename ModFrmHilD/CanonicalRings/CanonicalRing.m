@@ -414,7 +414,10 @@ intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
 	return H;
 end intrinsic;
 
-=======
+// TODO
+/*
+BELOW THIS IS FILE FROM NARROW BRANCH MERGE
+*/
 /////////////////////////////////////////////////////
 
 //////////// Canonical Embeddings Code  /////////////
@@ -772,4 +775,3 @@ intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
 	return H;
 end intrinsic;
 
->>>>>>> narrow:ModFrmHilD/CanonicalRings/CanonicalRing.m
