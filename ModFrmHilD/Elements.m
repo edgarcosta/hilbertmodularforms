@@ -271,21 +271,29 @@ intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
   if ISA(Type(f), RngElt) then
     P := Parent(f);
     N := 1*Integers(M); // FIXME only level 1 for now
-    coeffs := [P!0 : c in [1..#Ideals(M)]];
-    coeffs[1] := f;
-    k := [0 : c in [1..Degree(BaseField(M))]];
+    coeffs := AssociativeArray();
+    for bb in NarrowClassGroupReps(M) do
+      coeffs_bb := AssociativeArray();
+      for nu in IdealsByNarrowClassGroup(M)[bb] do
+        if IsZero(nu) then
+          coeffs_bb[nu] := f;
+        else
+          coeffs_bb[nu] := 0;
+        end if;
+      end for;
+      coeffs[bb] := coeffs_bb;
+    end for;
+    h := #NarrowClassGroupReps(M);
+    k := [0 : c in [1..h]];
     return true, HMF(M, N, k, coeffs);
   end if;
-
   if Type(f) ne ModFrmHilDElt then
     return false;
   end if;
-
   if Parent(f) eq M then
     return true, f;
   elif (BaseField(M) eq BaseField(f)) and (Precision(M) eq Precision(f)) then
-    coeffs := Coefficients(f);
-    return true, HMF(M, Level(f), Weight(f) , coeffs);
+    return true, HMF(M, Level(f), Weight(f) , Coefficients(f));
   else
     return false;
   end if;
