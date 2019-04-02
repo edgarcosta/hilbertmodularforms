@@ -79,7 +79,8 @@ end intrinsic;
 intrinsic ShintaniWalls(ZF::RngOrd) -> Any
   {returns lower and upper walls of the Shintani domain}
   F := NumberField(ZF);
-  assert Degree(F) le 2;
+  assert Degree(F) eq 2;
+  _, F := IsQuadratic(F);
   places := InfinitePlaces(F);
   eps := FundamentalUnit(F);
   if Norm(eps) eq -1 then
