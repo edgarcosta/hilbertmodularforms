@@ -8,7 +8,8 @@
 //If it is not, delete g from LE
 //Returns LE
 
-intrinsic Intersection(Spaces::SeqEnum[SeqEnum[ModFrmHilDElt]]) -> SeqEnum[ModFrmHilDElt]
+//intrinsic Intersection(Spaces::SeqEnum[SeqEnum[ModFrmHilDElt]]) -> SeqEnum[ModFrmHilDElt]
+intrinsic Intersection(Spaces::List) -> List
   {Given a list of bases for spaces of forms, find a basis for the intersection of those spaces}
   //Assuming all forms are living in the same spaces, returns parameters associated to them
   M := Parent(Spaces[1][1]);
@@ -23,7 +24,7 @@ intrinsic Intersection(Spaces::SeqEnum[SeqEnum[ModFrmHilDElt]]) -> SeqEnum[ModFr
   //The intersection of all the spaces in A1
   intersection := &meet A1;
   B := Basis(intersection);
-  return [HMF(M,N,k,Eltseq(b)) : b in B]; //We want to take the intersection of the spaces in A1
+  return [*HMF(M,N,k,Eltseq(b)) : b in B*]; //We want to take the intersection of the spaces in A1
   //Converts W back to Hilbert modular forms
 end intrinsic;
 
@@ -38,21 +39,25 @@ intrinsic HeckeStability(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> 
   //If #H = 1 then E doesn't work down below. But that's the case we are in here
   //There's no particular reason to make these characters trivial--but they work.
   //All eisenstein series we are using as candidates
-  for eta, psi in Elements(H) do
-    E := [EisensteinSeries(M, N, eta, psi, ke) : eta, psi in Elements(H)];
-  end for;
+  E := [EisensteinSeries(M, N, eta, H!1, ke) : eta in Elements(H)]; // | eta ne H!1 ];
+  assert E ne [];
   assert #k eq #ke;
   ks := [ke[i] + k[i] : i in [1..#Weight(E[1])] ];
   CB := CuspFormBasis(M, N, ks);
+  assert CB ne [];
+  BaseCandidates := [* [* c/e : c in CB *] : e in E *];
   //Quotients of CB by E, which will span the cusp forms in weight k.
   //Candidates should be the intersection of the BaseCandidate spaces
   Candidates := Intersection(BaseCandidates);
+  return Candidates;
   //Ideals that index the Hecke operators that we will be applying to our forms. We want prime ideals of small norm
-  //prec is how far out we go in generating our prime ideals. I really have no idea what this should be
-  prec := 100;
-  Ideals := PrimesUpTo(prec,BaseField(M));
+  //IdealBound is how far out we go in generating our prime ideals. I really have no idea what this should be
+  IdealBound := Precision(M) div 20;
+  Ideals := PrimesUpTo(IdealBound,BaseField(M));
+  print Ideals;
   //What we get when we apply our Hecke operators to the things in BaseCandidates
-  HeckeCandidates := [[HeckeOperator(Candidates[i], Ideals[j]) : i in [1..#Candidates]] : j in [1..#Ideals]];
+  HeckeCandidates := [* [* HeckeOperator(Candidates[i], Ideals[j]) : i in [1..#Candidates] *] : j in [1..#Ideals] *];
+  //We have a problem because when you apply Hecke operators, you get forms with different numbers of coefficients, and that is bad
   Basis := Intersection(HeckeCandidates);
   return Basis, #Basis;
 end intrinsic;

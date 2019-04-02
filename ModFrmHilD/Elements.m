@@ -722,7 +722,8 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   ib0 := 1/gcoeffs[1];
   ZC := CoefficientsParent(f);
   MTable := MultiplicationTable(M);
-  assert ZC eq CoefficientsParent(g);
+//This assertion is generating errors when the coefficients of f are integers and the coefficients of g are rationals
+//  assert ZC eq CoefficientsParent(g);
   coeffs := [ZC!0 :  i in [1..#fcoeffs]];
   for i := 1 to #fcoeffs do
     c := fcoeffs[i];
@@ -841,8 +842,7 @@ intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
   for x in InvariantGenerators do
     if #LinearDependence(InvariantBasis cat [x]) eq 0 then
       Append(~InvariantBasis, x);
-    end if; 
+    end if;
   end for;
   return InvariantBasis;
 end intrinsic;
-

@@ -8,4 +8,5 @@
   Workspace.m
   CanonicalRing.m
   HilbertSeries.m
+  hecke_stability.m
 }
