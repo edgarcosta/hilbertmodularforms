@@ -18,6 +18,9 @@ CreationofHMFS
    EisensteinSeries.m
    ThetaSeries.m
    Recognize.m
+   Igusa.m
+   Siegel.m
+   UniversalIgusa.m
 }
 
 CanonicalRings
