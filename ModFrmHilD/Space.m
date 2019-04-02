@@ -280,6 +280,3 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
   M`MultiplicationTables := mult_tables;
   return M;
 end intrinsic;
-
-
-
