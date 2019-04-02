@@ -1,5 +1,4 @@
-// user defined verbose flags
-  declare verbose Recognize, 1;
+declare verbose Recognize, 1;
 
 intrinsic MakeK(uCC::Any, m::Any) -> Any, Any, Any, Any, Any
   {MakeK!  What more to say?}
@@ -56,6 +55,25 @@ intrinsic MakeK(uCC::Any, m::Any) -> Any, Any, Any, Any, Any
   return true, Kop, v, conj, uCC;
 end intrinsic;
 
+intrinsic MakeKAutomagic(z::Any, degree_bound::RngIntElt) -> Any
+  {try to MakeK with degree_bound and decrease degree bound as needed.}
+  errors := [];
+  degrees_failed := [];
+  for i := degree_bound to 1 by -1 do
+    vprintf Recognize : "try to MakeK with degree bound %o:\n", i;
+    try
+      return MakeK(z, degree_bound);
+    catch e1
+      Append(~errors, e1);
+      Append(~degrees_failed, i);
+    end try;
+  end for;
+  error_str := Sprintf("Failed to MakeK!\n");
+  error_str *:= Sprintf("Failed degrees : %o\n", degrees_failed);
+  error_str *:= Sprintf("errors :\n%o\n", errors);
+  return error_str;
+end intrinsic;
+
 intrinsic RecognizeOverK(z::FldComElt, K::FldAlg, v::PlcNumElt, conj::BoolElt) -> Any
   {Recognizes a complex number as an element of K with respect to the embedding v, conjugated if conj.}
   CC := Parent(z);
@@ -77,76 +95,4 @@ intrinsic RecognizeOverK(z::FldComElt, K::FldAlg, v::PlcNumElt, conj::BoolElt) -
   z_K := (ZK!lin[1..m])/lin[m+1];
   z_K := K!z_K;
   return z_K;
-end intrinsic;
-
-intrinsic RecognizeOverQQ(z::FldComElt) -> Any
-  {recognize rational number living in RationalsAsNumberField.}
-  bl, QQ, v, conj, zCC := MakeK(z, 1);
-  if bl then
-    return RecognizeOverK(z, QQ, v, conj);
-  else
-    error "unable to make field!";
-  end if;
-end intrinsic;
-
-intrinsic RecognizeOverQQ(z::FldReElt) -> Any
-  {overloaded to take real number.}
-  prec := Precision(Parent(z));
-  z := ComplexField(prec)!z;
-  bl, QQ, v, conj, zCC := MakeK(z, 1);
-  if bl then
-    return RecognizeOverK(z, QQ, v, conj);
-  else
-    error "unable to make field!";
-  end if;
-end intrinsic;
-
-intrinsic RecognizeQQ(z::FldComElt) -> FldRatElt
-  {recognize rational number living in Rationals.}
-  return Rationals()!RecognizeOverQQ(z);
-end intrinsic;
-
-intrinsic RecognizeQQ(z::FldReElt) -> FldRatElt
-  {overloaded to take real number.}
-  return Rationals()!RecognizeOverQQ(z);
-end intrinsic;
-
-intrinsic RecognizeNumber(z::FldComElt, m::RngIntElt : rationals_as_number_field := false, return_errors := false) -> Any
-  {Try to recognize complex number over a number field of degree m and decreasing m as necessary. Setting rationals_as_number_field  true will try to return FldNumElt instead of FldRatElt in the case that z is a rational number. If return_errors is true then a sequence of error messages is returned, SetVerbose("Recognize", 1) for verbose printing.}
-  errors := [];
-  for i := m to 1 by -1 do
-    try
-      if i eq 1 then
-        if rationals_as_number_field then
-          vprintf Recognize : "trying to recognize number in RationalsAsNumberField:\n", i;
-          return RecognizeOverQQ(z);
-        else // Rationals
-          vprintf Recognize : "trying to recognize number in QQ:\n", i;
-          return RecognizeQQ(z);
-        end if;
-      else
-        vprintf Recognize : "trying to recognize number in a degree %o number field:\n", i;
-        bl, K, v, conj, zCC := MakeK(z, i);
-        if bl then
-          return RecognizeOverK(z, K, v, conj);
-        else
-          error "unable to make field!";
-        end if;
-      end if;
-    catch e1
-      Append(~errors, e1);
-    end try;
-  end for;
-  if return_errors then
-    return errors;
-  else
-    error "recogniztion failed, set return_errors := true to see a list of error messages.";
-  end if;
-end intrinsic;
-
-intrinsic RecognizeNumber(z::FldReElt, m::RngIntElt : rationals_as_number_field := false, return_errors := false) -> Any
-  {overloaded to take real number.}
-  prec := Precision(Parent(z));
-  z := ComplexField(prec)!z;
-  return RecognizeNumber(z, m : rationals_as_number_field := rationals_as_number_field, return_errors := return_errors);
 end intrinsic;
