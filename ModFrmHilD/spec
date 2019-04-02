@@ -25,6 +25,7 @@ Creation
 
 CanonicalRings
 {
-   CanonicalRing.m
-   HilbertSeries.m
+  CanonicalRing.m
+  HilbertSeries.m
+  hecke_stability.m
 }
