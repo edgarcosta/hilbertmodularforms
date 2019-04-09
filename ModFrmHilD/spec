@@ -1,11 +1,31 @@
 {
   Space.m
   Elements.m
-  Multiplication.m
-  LinearAlgebra.m
-  ThetaSeries.m
-  Recognize.m
   Workspace.m
+  Formatting.m
+}
+
+Multiplication
+{  
+   Multiplication.m
+   Shintani.m
+}
+
+Creation
+{  
+   Basis.m
+   Newforms.m
+   EisensteinSeries.m
+   ThetaSeries.m
+   Recognize.m
+   Igusa.m
+   Siegel.m
+   UniversalIgusa.m
+}
+
+CanonicalRings
+{
   CanonicalRing.m
   HilbertSeries.m
+  hecke_stability.m
 }

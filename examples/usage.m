@@ -100,8 +100,3 @@ prec := 10;
 M := HMFSpace(F, prec);
 theta := ThetaSeries(M, GM);
 assert Coefficients(theta) eq [1,6,12,0,6];
-
-
-
-
-

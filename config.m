@@ -9,6 +9,3 @@ end if;
 AttachSpec("ModFrmHilD/spec");
 // setting
 SetColumns(0);
-// TODO verbose?
-//Sara was here
-//Yay!
