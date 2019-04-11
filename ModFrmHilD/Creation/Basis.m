@@ -5,29 +5,29 @@
 // Inclusion M_k(N) -> M_k(N1) for N1| N2 
 
 intrinsic Inclusion(f::ModFrmHilDElt, N1::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
-   {Includes a form f of level N into the space of level N1} 
-   M := Parent(f);
-   N := Level(f);
-   k := Weight(f);
-   assert N subset N1; // To contain is to divide
-   bbs := NarrowClassGroupReps(M);
-   mp := NarrowClassGroupMap(M);
-   IncludedForms := [];
-   for ee in Divisors(N1/N) do 
-   		coeff := Coefficients(f);
-   		for bb in bbs do
-   			bbee := mp((bb*ee)@@mp); // Representative of narrow class bbee := bb*ee
-   			for nn in Keys(coeff[bb]) do
-   				if nn*bb in Keys(coeff[bbee]) then
-   					coeff[bbee][nn*bb] := coeff[bb][nn];
-   				else 
-   					coeff[bbee][nn*bb] := 0;
-   				end if;
-   			end for;
-   		end for;
-   		Append(~IncludedForms, HMF(M, N1, k, coeff));
-   	end for;
-   	return IncludedForms;
+  {Includes a form f of level N into the space of level N1} 
+  M := Parent(f);
+  N := Level(f);
+  k := Weight(f);
+  assert N subset N1; // To contain is to divide
+  bbs := NarrowClassGroupReps(M);
+  mp := NarrowClassGroupMap(M);
+  IncludedForms := [];
+  for ee in Divisors(N1/N) do 
+    coeff := Coefficients(f);
+    for bb in bbs do
+      bbee := mp((bb*ee)@@mp); // Representative of narrow class bbee := bb*ee
+      for nn in Keys(coeff[bb]) do
+        if nn*bb in Keys(coeff[bbee]) then
+          coeff[bbee][nn*bb] := coeff[bb][nn];
+        else 
+          coeff[bbee][nn*bb] := 0;
+        end if;
+      end for;
+    end for;
+    Append(~IncludedForms, HMF(M, N1, k, coeff));
+  end for;
+  return IncludedForms;
 end intrinsic; 
 
 // TODO: narrow>1
@@ -39,8 +39,11 @@ intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> S
    for dd in Divisors(N) do 
      basis := []; 
      orbit_representatives := NewformsToHMF(M, dd, k); 
-     orbits := [GaloisOrbitDescent(elt) : elt in orbit_representatives]; 
-     OldSpace := &cat[Inclusion(elt,N) : elt in orbits]; 
+     orbits := [GaloisOrbitDescent(elt) : elt in orbit_representatives]; // this is a sequence of sequences of HMFs
+     OldSpace := [];
+     for orbit in orbits do
+       OldSpace := &cat[Inclusion(elt,N) : elt in orbit]; 
+     end for;
      if dd eq N then 
        if #orbits eq 0 then 
          newforms_dimension := 0; 
@@ -48,6 +51,7 @@ intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> S
         newforms_dimension := &+[ #orbit : orbit in orbits];
        end if; 
      end if; 
+     basis cat:= OldSpace;
   end for; 
   return basis, newforms_dimension; 
 end intrinsic; 

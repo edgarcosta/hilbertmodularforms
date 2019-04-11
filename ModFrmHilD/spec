@@ -3,6 +3,7 @@
   Elements.m
   Workspace.m
   Formatting.m
+  hecke_stability.m
 }
 
 Multiplication
@@ -27,5 +28,4 @@ CanonicalRings
 {
   CanonicalRing.m
   HilbertSeries.m
-  hecke_stability.m
 }

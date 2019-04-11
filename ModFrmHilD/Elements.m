@@ -10,7 +10,7 @@ declare attributes ModFrmHilDElt:
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
   Coefficients, // Coefficients[bb] = coeffs_bb where coeffs_bb[nu] = a_(bb,nu) = a_(nu)*bb^-1
-  CoefficientsParents; // CoefficientsParents[bb] = Parent of coefficients for Coefficients[bb]
+  CoefficientField; // CoefficientField = where the coefficients live (does this depend on bb?)
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
@@ -118,17 +118,9 @@ intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   return f`Coefficients;
 end intrinsic;
 
-intrinsic CoefficientsParents(f::ModFrmHilDElt) -> Any
+intrinsic CoefficientField(f::ModFrmHilDElt) -> Any
   {}
-  return f`CoefficientsParents;
-end intrinsic;
-
-intrinsic CoefficientsParent(f::ModFrmHilDElt) -> Any
-  {}
-  M := Parent(f);
-  coeffs := Coefficients(f); // indexed by bb
-  bbs := NarrowClassGroupReps(M);
-  return Parent(coeffs[bbs[1]][1]);
+  return f`CoefficientField;
 end intrinsic;
 
 ////////// ModFrmHilDElt creation functions //////////
@@ -158,7 +150,7 @@ intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::Assoc)
   end if;
   
   bbs := NarrowClassGroupReps(M);
-  coeff_parents := AssociativeArray();
+  coeffs_as_sequence := []; // to assert all coefficients have the same parent
   for bb in bbs do
     // check coeffs[bb] has keys equal IdealsByNarrowClassGroup(M)[bb]
     assert Set(IdealsByNarrowClassGroup(M)[bb]) eq Keys(coeffs[bb]);
@@ -167,7 +159,7 @@ intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::Assoc)
       assert IsDefined(coeffs[bb], nn);
     end for;
     key := Random(Keys(coeffs[bb]));
-    coeff_parents[bb] := Parent(coeffs[bb][key]);
+    Append(~coeffs_as_sequence, coeffs[bb][key]); // if value of coeffs[bb][key] differs then error here trying to append
   end for;
   
   // make the HMF
@@ -176,7 +168,7 @@ intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::Assoc)
   f`Weight := k;
   f`Level := N;
   f`Coefficients := coeffs;
-  f`CoefficientsParents := coeff_parents;
+  f`CoefficientField := Parent(coeffs_as_sequence[1]);
   return f;
 end intrinsic;
 
@@ -332,7 +324,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form} 
   M := Parent(f); 
   k := Weight(f); 
-  K := NumberField(CoefficientsParent(f)); 
+  K := CoefficientField(f);
   G, Pmap, Gmap := AutomorphismGroup(K); 
   bbs := NarrowClassGroupReps(M);
   result := []; 
@@ -357,7 +349,7 @@ intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   bbs := NarrowClassGroupReps(M);
   for bb in bbs do
     coeff := Coefficients(f);
-    CoefficientsField := CoefficientsParent(f)[bb];
+    CoefficientsField := CoefficientField(f);
     for nn in Keys(Coefficients(f)[bb]) do
       for b in Basis(CoefficientsField) do 
         coeff[bb][nn] := Trace(b * coeff[bb][nn]);
@@ -464,7 +456,7 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   coeffs := Coefficients(f);
   bbs := NarrowClassGroupReps(M);
   for bb in bbs do 
-    ZK := CoefficientsParents(f)[bb];
+    ZK := Integers(CoefficientField(f));
     print ZK;
     assert c in ZK;
     for nn in Keys(Coefficients(f)[bb]) do
@@ -483,7 +475,7 @@ intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   coeffs := Coefficients(f);
   bbs := NarrowClassGroupReps(M);
   for bb in bbs do 
-    F := FieldOfFractions(CoefficientsParents(f)[bb]);
+    F := CoefficientField(f);
     assert c in F;
     for nn in Keys(Coefficients(f)[bb]) do
       coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
@@ -506,7 +498,6 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   bbs := NarrowClassGroupReps(M);
   for bb in bbs do
     new_coeffs[bb] := AssociativeArray();
-    assert CoefficientsParents(f)[bb] eq CoefficientsParents(g)[bb];
     New_keys := Keys(Coefficients(f)[bb]) meet Keys(Coefficients(g)[bb]); // Adding drops the precision to the intersection of the precision of the forms
     for nn in New_keys do
       new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
@@ -534,8 +525,7 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   new_coeff := AssociativeArray();
   for bb in bbs do
     new_coeff[bb] := AssociativeArray();
-    ZF := CoefficientsParents(f)[bb];
-    assert ZF eq CoefficientsParents(g)[bb];
+    ZF := Integers(CoefficientField(f));
     for nn in Keys(Coefficients(f)[bb]) do
       c := ZF!0;
       for pair in MTable[bb][nn] do
@@ -563,9 +553,9 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   // TODO make it work if Valuation(g) <= Valuation(f)
   require gcoeffs[1] ne 0: "Denominator must have nonzero constant term";
   ib0 := 1/gcoeffs[1];
-  ZC := CoefficientsParent(f);
+  ZC := Integers(CoefficientField(f));
   MTable := MultiplicationTable(M);
-  assert ZC eq CoefficientsParent(g);
+  assert ZC eq Integers(CoefficientField(g));
   coeffs := [ZC!0 :  i in [1..#fcoeffs]];
   for i := 1 to #fcoeffs do
     c := fcoeffs[i];
@@ -585,32 +575,33 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
 end intrinsic;
 
 // TODO FIXME Cl^+(F)>1
-intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {return 1/f}
-  return (Parent(f) ! ( CoefficientsParent(f) ! 1) ) / f;
-end intrinsic;
+/* intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt */
+/*   {return 1/f} */
+/*   return (Parent(f) ! ( CoefficientsParent(f) ! 1) ) / f; */
+/* end intrinsic; */
 
-intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
-  {return f^e}
-  if n lt 0 then
-    f := Inverse(f);
-  end if;
-  g := Parent(f) ! (CoefficientsParent(f) ! 1);
-  if n eq 0 then
-    return g;
-  end if;
-  while n gt 1 do
-    if n mod 2 eq 0 then
-      f := f * f;
-      n := Integers() ! (n/2);
-    else
-      g := f * g;
-      f := f * f;
-      n := Integers() ! ((n - 1)/2);
-    end if;
-  end while;
-  return f * g;
-end intrinsic;
+// TODO FIXME Cl^+(F)>1
+/* intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt */
+/*   {return f^e} */
+/*   if n lt 0 then */
+/*     f := Inverse(f); */
+/*   end if; */
+/*   g := Parent(f) ! (CoefficientsParent(f) ! 1); */
+/*   if n eq 0 then */
+/*     return g; */
+/*   end if; */
+/*   while n gt 1 do */
+/*     if n mod 2 eq 0 then */
+/*       f := f * f; */
+/*       n := Integers() ! (n/2); */
+/*     else */
+/*       g := f * g; */
+/*       f := f * f; */
+/*       n := Integers() ! ((n - 1)/2); */
+/*     end if; */
+/*   end while; */
+/*   return f * g; */
+/* end intrinsic; */
 
 
 ////////// ModFrmHilDElt: Linear Algebra  //////////
