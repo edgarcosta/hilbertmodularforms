@@ -328,34 +328,46 @@ end intrinsic;
 // - Apply Hecke to a Eisensten series, and check that is a multiple
 // - Apply Hecke to a Theta series, and see if we get the whole space
 
-// TODO: narrow>1
-/* intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt] */
-/*   {returns the full Galois orbit of a modular form} */
-/*   M := Parent(f); */
-/*   k := Weight(f); */
-/*   coeff := Coefficients(f); */
-/*   K := NumberField(CoefficientsParent(f)); */
-/*   G, Pmap, Gmap := AutomorphismGroup(K); */
-/*   result := []; */
-/*   for g in G do */
-/*     Append(~result, HMF(M, Level(f), k, [Gmap(g)(elt) : elt in coeff]) ); */
-/*   end for; */
-/*   return result; */
-/* end intrinsic; */
+intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt] 
+  {returns the full Galois orbit of a modular form} 
+  M := Parent(f); 
+  k := Weight(f); 
+  K := NumberField(CoefficientsParent(f)); 
+  G, Pmap, Gmap := AutomorphismGroup(K); 
+  bbs := NarrowClassGroupReps(M);
+  result := []; 
+  for g in G do 
+    coeff := Coefficients(f); 
+    for bb in bbs do
+      for nn in Keys(Coefficients(f)[bb]) do
+        coeff[bb][nn] := Gmap(g)(coeff[bb][nn]);
+      end for;
+    end for;
+    Append(~result, HMF(M, Level(f), k, coeff)); 
+  end for; 
+  return result; 
+end intrinsic; 
 
-// TODO: narrow>1
-/* intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt] */
-/*   {returns the full Galois orbit of a modular form over Q} */
-/*   M := Parent(f); */
-/*   k := Weight(f); */
-/*   coeff := Coefficients(f); */
-/*   K := NumberField(CoefficientsParent(f)); */
-/*   result := []; */
-/*   for b in Basis(K) do */
-/*     Append(~result, HMF(M, Level(f), k, [Trace(b * elt) : elt in coeff]) ); */
-/*   end for; */
-/*   return result; */
-/* end intrinsic; */
+
+intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt] 
+  {returns the full Galois orbit of a modular form over Q} 
+  M := Parent(f); 
+  k := Weight(f); 
+  result := [];
+  bbs := NarrowClassGroupReps(M);
+  for bb in bbs do
+    coeff := Coefficients(f);
+    CoefficientsField := CoefficientsParent(f)[bb];
+    for nn in Keys(Coefficients(f)[bb]) do
+      for b in Basis(CoefficientsField) do 
+        coeff[bb][nn] := Trace(b * coeff[bb][nn]);
+      end for;
+    end for;
+    Append(~result, HMF(M, Level(f), k, coeff)); 
+  end for;
+  return result; 
+end intrinsic; 
+
 
 
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
