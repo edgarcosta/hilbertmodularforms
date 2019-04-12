@@ -22,7 +22,7 @@ intrinsic CoefficientsFromRecursion(M::ModFrmHilD, N::RngOrdIdl, n::RngOrdIdl, k
     if N subset pp then
       Np := 0;
     end if;
-    coeff_I *:= Evaluate(recursion[pair[2]], [coeff[pp], Np]);
+    coeff_I *:= Evaluate(recursion[pair[2]+1], [coeff[pp], Np]);
   end for;
   return coeff_I;
 end intrinsic;
