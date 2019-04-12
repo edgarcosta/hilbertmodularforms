@@ -3,7 +3,7 @@
   Elements.m
   Workspace.m
   Formatting.m
-  HeckeStability.m
+  hecke_stability.m
   Basis.m
 }
 
@@ -21,7 +21,6 @@ Creation
    Recognize.m
    Igusa.m
    Siegel.m
-   UniversalIgusa.m
 }
 
 CanonicalRings
