@@ -63,13 +63,11 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
      		factor := 1/coeffs[1]; 
      		coeffs := [factor * elt : elt in coeffs]; 
    		end if; */
-
-   		// Hmmm this seems like this might be a reaccuring error and should be moved ouside of this function. I presume Q rationals ne Q Numberfield
-   		/*
-   		if IsIsomorphic(K, RationalsAsNumberField()) then 
-    		coeffs := [ Rationals() ! elt : elt in coeffs ]; 
-   		end if; 
-   		*/
+   		if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
+        for nn in IdealsByNarrowClassGroup(M)[tt] do
+    		  coeffs[tt][nn] := Rationals()!coeffs[tt][nn]; 
+        end for;
+      end if;
    	end for;
    	return HMF(M, N, k, coeffs); 
  end intrinsic; 

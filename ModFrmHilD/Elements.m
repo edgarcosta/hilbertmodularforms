@@ -347,11 +347,11 @@ intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   k := Weight(f); 
   result := [];
   bbs := NarrowClassGroupReps(M);
-  for bb in bbs do
+  CoefficientsField := CoefficientField(f);
+  for b in Basis(CoefficientsField) do
     coeff := Coefficients(f);
-    CoefficientsField := CoefficientField(f);
-    for nn in Keys(Coefficients(f)[bb]) do
-      for b in Basis(CoefficientsField) do 
+    for bb in bbs do
+      for nn in Keys(Coefficients(f)[bb]) do 
         coeff[bb][nn] := Trace(b * coeff[bb][nn]);
       end for;
     end for;
@@ -429,19 +429,14 @@ end intrinsic;
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   {compares Parent, Weight, and Coefficients.}
   M := Parent(f);
-  if Parent(f) ne Parent(g) then
-    return false;
-  end if;
-  if Weight(f) ne Weight(g) then
-    return false;
-  end if;
+  if Parent(f) ne Parent(g) then return false; end if;
+  if Weight(f) ne Weight(g) then return false; end if;
+  if Keys(Coefficients(f)) ne Keys(Coefficients(g)) then return false; end if; 
   bbs := NarrowClassGroupReps(M);
   for bb in bbs do
-    assert Keys(Coefficients(f)) eq Keys(Coefficients(g));
-    for nn in Coefficients(f) do
-      if Coefficients(f)[bb][nn] ne Coefficients(g)[bb][nn] then
-        return false;
-      end if;
+    if Keys(Coefficients(f)[bb]) ne Keys(Coefficients(g)[bb]) then return false; end if;
+    for nn in Keys(Coefficients(f)[bb]) do
+      if Coefficients(f)[bb][nn] ne Coefficients(g)[bb][nn] then return false; end if;
     end for;
   end for;
   return true;
@@ -607,34 +602,69 @@ end intrinsic;
 ////////// ModFrmHilDElt: Linear Algebra  //////////
 
 //TODO add optional flag to limit the number of coefficients
+/*
 intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt]) -> AlgMatElt
   {returns a matrix with the coefficients of each modular form in each row}
   return Matrix( [ Coefficients(elt) : elt in list] );
 end intrinsic;
-
+*/
 
 
 intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
   {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
   M := Matrix( [ elt : elt in list] );
   B := Basis(Kernel(M));
-  if #B ne 0 then
-    Mat := Matrix(LLL(Basis(Kernel(M))));
-    return [Eltseq(i) : i in Rows(Mat)];
-  else
-    return [];
-  end if;
+  if #B ne 0 then return [Eltseq(i) : i in Rows(Matrix(LLL(B)))]; else return []; end if;
 end intrinsic;
 
 //TODO add optional flag to limit the number of coefficients
 //TODO make outputs to be of the same type
-
-intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
+//TODO take working precision
+intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
   {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
-  return LinearDependence([ Coefficients(elt) : elt in list] );
+  M := Parent(List[1]);
+  bbs := NarrowClassGroupReps(M);
+  CoeffLists := [[] : i in [1..#List]];
+  for bb in bbs do
+    for nn in IdealsByNarrowClassGroup(M)[bb] do
+      for i in [1..#List] do
+        Append(~CoeffLists[i], Coefficients(List[i])[bb][nn]);
+      end for;
+    end for;
+  end for; 
+  return LinearDependence(CoeffLists);
 end intrinsic;
 
-//EchelonBasis
+
+////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
+
+//Todo: Verify Correctness. Reference?
+intrinsic Inclusion(f::ModFrmHilDElt, N2::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
+  {Takes a form f of level N1 and produces list of all inclusions of f into the space of level N2} 
+  M := Parent(f);
+  N1 := Level(f);
+  k := Weight(f);
+  assert N1 subset N2; // To contain is to divide
+  bbs := NarrowClassGroupReps(M);
+  mp := NarrowClassGroupMap(M);
+  IncludedForms := [];
+  for ee in Divisors(N2/N1) do 
+    // 1 new form for each divisor
+    coeff := Coefficients(f);
+    for bb in bbs do
+      bbee := mp((bb*ee)@@mp); // Representative of narrow class bbee := bb*ee
+      for nn in Keys(coeff[bb]) do
+        if nn*ee in Keys(coeff[bbee]) then
+          coeff[bbee][nn*ee] := coeff[bb][nn];
+        else 
+          coeff[bbee][nn] := 0;
+        end if;
+      end for;
+    end for;
+    Append(~IncludedForms, HMF(M, N2, k, coeff));
+  end for;
+  return IncludedForms;
+end intrinsic;
 
 
 ////////// ModFrmHilDElt: swap map //////////

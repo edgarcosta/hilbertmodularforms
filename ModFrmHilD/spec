@@ -3,7 +3,8 @@
   Elements.m
   Workspace.m
   Formatting.m
-  hecke_stability.m
+  HeckeStability.m
+  Basis.m
 }
 
 Multiplication
@@ -14,7 +15,6 @@ Multiplication
 
 Creation
 {  
-   Basis.m
    Newforms.m
    EisensteinSeries.m
    ThetaSeries.m
