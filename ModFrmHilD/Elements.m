@@ -167,8 +167,8 @@ intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::Assoc)
   f`Parent := M;
   f`Weight := k;
   f`Level := N;
-  f`Coefficients := coeffs;
-  f`CoefficientField := Parent(coeffs_as_sequence[1]);
+f`Coefficients := coeffs;
+f`CoefficientField := FieldOfFractions(Parent(coeffs_as_sequence[1]));
   return f;
 end intrinsic;
 
