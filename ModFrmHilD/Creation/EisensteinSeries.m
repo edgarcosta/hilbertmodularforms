@@ -1,5 +1,5 @@
-// TODO: narrow>1
 // TODO needs testing
+// TODO fix normalization at the end
 // Eisenstein Series have only been implemented for integral parallel weight 
 intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt 
   	{Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).} 
@@ -28,7 +28,7 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
     	if k[1] ge 2 then 
     		if aa eq 1*ZF then 
        			prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-       			coeffs[tt][0*ZF] := 2^(-n)*(eta^(-1))(bb)*LValue_Recognized(M, N, prim, k); 
+       			coeffs[tt][0*ZF] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k); 
      		else 
        			coeffs[tt][0*ZF] := 0; 
      		end if; 
@@ -58,18 +58,19 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
      		  coeffs[tt][nn] := sum; 
         end if;
    		end for; 
-   		//Ah Normalized coefficients here. Hmm I'm not sure if we can do this anymore?
-   		/* if not (coeffs[1] in [0,1]) then 
-     		factor := 1/coeffs[1]; 
-     		coeffs := [factor * elt : elt in coeffs]; 
-   		end if; */
+      // Makes coefficients rational
    		if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
         for nn in IdealsByNarrowClassGroup(M)[tt] do
     		  coeffs[tt][nn] := Rationals()!coeffs[tt][nn]; 
         end for;
       end if;
    	end for;
-   	return HMF(M, N, k, coeffs); 
+    E := HMF(M, N, k, coeffs);
+    // Normalized coefficients here. 
+    if not (coeffs[bbs[1]][0*ZF] in [0,1]) then 
+      E := (1/coeffs[bbs[1]][0*ZF]) * E;
+    end if; 
+   	return E;
  end intrinsic; 
 
 // TODO finish this and use in EisensteinSeries intrinsic

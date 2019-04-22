@@ -233,6 +233,7 @@ intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilD, N::RngOrdIdl, LowestWei
 	return Gens,Relations;
 end intrinsic;
 
+/*
 intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilD, N::RngOrdIdl, LowestWeight::RngIntElt, MaxWeight::RngIntElt) -> Any
 	{Finds all Generators and Relations}
 	
@@ -289,7 +290,7 @@ intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilD, N::RngOrdIdl, 
 	return Gens,Relations;
 end intrinsic;
 
-
+*/
 
 // Important! In order to run this version you must have already computed the generators for the ring using either ConstructGeneratorsAndRelations or ConstructGeneratorsAndRelationsV1. 
 // This version DOES NOT look for any new generators, it only checks for relations amoung the generators you have found.

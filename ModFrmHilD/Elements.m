@@ -569,35 +569,74 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(M, N, k, coeffs);
 end intrinsic;
 
+
+//Dictionary would great here! Make linear algebra much easier
+intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
+  {return f/g}
+  N := Level(f) meet Level(g);
+  M := Parent(f);
+  assert Parent(f) eq Parent(g);
+  if not assigned M`MultiplicationTables then
+    assert HMFEquipWithMultiplication(M);
+  end if;
+  MTable := MultiplicationTables(M);
+  coeffs := AssociativeArray();
+  bbs := NarrowClassGroupReps(M);
+  for bb in bbs do
+    coeffs[bb] := AssociativeArray();
+    // Linear Algebra Ax = B 
+    A := [];
+    B := [];
+    Ideals := IdealsByNarrowClassGroup(M)[bb];
+    for nn in Ideals do
+      Append(~B,Coefficients(f)[bb][nn]);
+      A_row_nn := [0/1 : i in [1..#Ideals]];
+      for pair in MTable[bb][nn] do
+        A_row_nn[Index(Ideals,pair[2])] +:= Coefficients(g)[bb][pair[1]];
+      end for;
+      Append(~A,A_row_nn);
+    end for;
+    S := Solution(Transpose(Matrix(A)), Vector(B));
+    for nn in Ideals do
+      coeffs[bb][nn] := S[Index(Ideals,nn)];
+    end for;
+  end for;
+  kf := Weight(f);
+  kg := Weight(g);
+  k := [ kf[i] - kg[i] : i in [1..#kf] ];
+  return HMF(M, N, k, coeffs);
+end intrinsic;
+
+/*
 // TODO FIXME Cl^+(F)>1
-/* intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt */
-/*   {return 1/f} */
-/*   return (Parent(f) ! ( CoefficientsParent(f) ! 1) ) / f; */
-/* end intrinsic; */
+ intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt 
+   {return 1/f} 
+   return (Parent(f) ! ( CoefficientsParent(f) ! 1) ) / f; 
+ end intrinsic; 
 
 // TODO FIXME Cl^+(F)>1
-/* intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt */
-/*   {return f^e} */
-/*   if n lt 0 then */
-/*     f := Inverse(f); */
-/*   end if; */
-/*   g := Parent(f) ! (CoefficientsParent(f) ! 1); */
-/*   if n eq 0 then */
-/*     return g; */
-/*   end if; */
-/*   while n gt 1 do */
-/*     if n mod 2 eq 0 then */
-/*       f := f * f; */
-/*       n := Integers() ! (n/2); */
-/*     else */
-/*       g := f * g; */
-/*       f := f * f; */
-/*       n := Integers() ! ((n - 1)/2); */
-/*     end if; */
-/*   end while; */
-/*   return f * g; */
-/* end intrinsic; */
-
+ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt 
+   {return f^e} 
+   if n lt 0 then 
+     f := Inverse(f); 
+   end if; 
+   g := Parent(f) ! (CoefficientsParent(f) ! 1); 
+   if n eq 0 then 
+     return g; 
+   end if; 
+   while n gt 1 do 
+     if n mod 2 eq 0 then 
+       f := f * f; 
+       n := Integers() ! (n/2); 
+     else 
+       g := f * g; 
+       f := f * f; 
+       n := Integers() ! ((n - 1)/2); 
+     end if; 
+   end while; 
+   return f * g; 
+ end intrinsic; 
+*/
 
 ////////// ModFrmHilDElt: Linear Algebra  //////////
 

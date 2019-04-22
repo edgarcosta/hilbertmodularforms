@@ -13,7 +13,7 @@ intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> S
   {returns a basis for cuspspace of M of weight k}  
   Cuspbasis := []; 
   for dd in Divisors(N) do 
-    NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(M, dd, k)]; 
+    NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(M, dd, k)]; // We are taking the Q orbits 
     OldSpace_dd := &cat[Inclusion(elt,N) : elt in NewSpace_dd ]; 
     Cuspbasis cat:= OldSpace_dd; 
   end for; 
@@ -21,39 +21,34 @@ intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> S
 end intrinsic; 
 
 
-
+// Not implemented for k = 1 currently
 //TODO - Test for correctness. Clean up code? 
 intrinsic EisensteinBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for the complement to the cuspspace of M of weight k}
   ZF := Integers(M);
   n := Degree(ZF);
   EB := [];
-  for aa in Divisors(N) do 
-    // HeckeCharactergroups takes places index by number i.e. [1,2,3] means take all 3 places for real field.
-    // This is checking the condition on pg 458
-    bb := N div aa;
-    Haa := HeckeCharacterGroup(aa,[i : i in [1..n]]);
-    Hbb := HeckeCharacterGroup(bb,[i : i in [1..n]]);
-    H := HeckeCharacterGroup(1*ZF,[i : i in [1..n]]);
-    for i in [0..#Haa-1] do 
-      eta := Haa.i;
-      H_eta := Restrict(eta, H); 
-      for j in [0..#Hbb-1] do 
-        psi := Hbb.j;
-        H_psi := Restrict(psi, H);
-        // This is checking the condition on pg 458
-        if k[1] mod 2 eq 0 mod 2 then 
-          if Set([Component(H_psi,i) eq Component(H_eta,i) : i in [1..n]]) eq {true} then
-            E := EisensteinSeries(M, N, eta, psi, k);
-            EB cat:= [E];
-          end if;
-        else
-          if Set([Component(H_psi,i) eq Component(H_eta,i) : i in [1..n]]) eq {false} then
-            E := EisensteinSeries(M, N, eta, psi, k);
-            EB cat:= [E];
-          end if;
+  Hplus := HeckeCharacterGroup(1*ZF,[1..n]);
+  HNplus := HeckeCharacterGroup(N,[1..n]);
+
+  for i in [0..#Hplus-1] do 
+    eta := Hplus.i;
+    for j in [0..#HNplus-1] do 
+      psi := HNplus.j;
+      H_psi := Restrict(psi, Hplus);
+      // This is checking the condition on pg 458
+      if k[1] mod 2 eq 0 then 
+        if H_psi*eta^(-1) eq Hplus!1 then
+          E := EisensteinSeries(M, N, eta, psi, k);
+          EB cat:= GaloisOrbitDescent(E);
         end if;
-      end for;
+      else
+        // This does not function for k = 1 currently
+        if Set([Component(H_psi,i) eq Component(eta,i) : i in [1..n]]) eq {false} then
+          E := EisensteinSeries(M, N, eta, psi, k);
+          EB cat:= GaloisOrbitDescent(E);
+        end if;
+      end if;
     end for;
   end for;
   return EB;
@@ -68,7 +63,7 @@ intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[M
   CB := CuspFormBasis(M, N, k);
   //Eisenstein Series
   EB := EisensteinBasis(M, N, k);
-  return CB cat EB;
+  return EB cat CB;
  end intrinsic; 
 
 
