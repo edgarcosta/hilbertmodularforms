@@ -244,10 +244,11 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilD, bb::RngOrdIdl, n::RngOrdI
   return ShintaniGenerator;
 end intrinsic;
 
-intrinsic ShintaniRepresentativeToIdeal(bb::RngOrdIdl, nu::RngOrdElt) -> ModFrmHilDElt
-  {Takes a representative [bb] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
+
+intrinsic ShintaniRepresentativeToIdeal(bb::RngOrdFracIdl, nu::RngOrdElt) -> ModFrmHilDElt
+  {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
   ZF := Parent(nu);
-  n := bb^(-1)*(nu*ZF);
+  n := nu*bb^(-1);
   return NicefyIdeal(n);
 end intrinsic;
 

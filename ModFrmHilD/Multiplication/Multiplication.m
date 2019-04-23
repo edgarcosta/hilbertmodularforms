@@ -22,7 +22,7 @@ intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Any
         end for;
       end for;
     end for;
-  end for; 
+  end for;
   pairs_with_redundancies_eliminated := AssociativeArray();
   pairs_shintani := AssociativeArray();
   // I've turned off asserts since they slow the code down by a lot. Can put back on since we are still testing

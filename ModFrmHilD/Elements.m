@@ -113,6 +113,13 @@ intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   return Precision(Parent(f));
 end intrinsic;
 
+intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> Any
+  {}
+  mp := NarrowClassGroupMap(Parent(f));
+  rep := mp(nn@@mp);
+  return Coefficients(f)[rep][nn];
+end intrinsic;
+
 intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   {}
   return f`Coefficients;
@@ -183,6 +190,26 @@ intrinsic HMFZero(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmH
     coeffs[bb] := coeffs_bb;
   end for;
   return HMF(M, N, k, coeffs);
+end intrinsic;
+
+
+intrinsic HMFIdentity(M::ModFrmHilD) -> ModFrmHilDElt
+  {create zero ModHilFrmDElt of weight k.}
+  n := Degree(BaseField(M));
+  N := 1*Integers(M);
+  coeffs := AssociativeArray();
+  for bb in NarrowClassGroupReps(M) do
+    coeffs_bb := AssociativeArray();
+    for nn in IdealsByNarrowClassGroup(M)[bb] do
+      if IsZero(nn) then
+        coeffs_bb[nn] := 1;
+      else
+        coeffs_bb[nn] := 0;
+      end if;
+    end for;
+    coeffs[bb] := coeffs_bb;
+  end for;
+  return HMF(M, N, [0 : i in [1..n]], coeffs);
 end intrinsic;
 
 ////////// ModFrmHilDElt accessing and setting coefficients //////////
@@ -532,44 +559,6 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(M, N, k, new_coeff);
 end intrinsic;
 
-
-// TODO FIXME Cl^+(F)>1
-intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
-  {return f/g}
-  N := Level(f) meet Level(g);
-  M := Parent(f);
-  assert Parent(f) eq Parent(g);
-  if not assigned M`MultiplicationTable then
-    assert HMFEquipWithMultiplication(M);
-  end if;
-  prec := Precision(M);
-  fcoeffs := Coefficients(f);
-  gcoeffs := Coefficients(g);
-  // TODO make it work if Valuation(g) <= Valuation(f)
-  require gcoeffs[1] ne 0: "Denominator must have nonzero constant term";
-  ib0 := 1/gcoeffs[1];
-  ZC := Integers(CoefficientField(f));
-  MTable := MultiplicationTable(M);
-  assert ZC eq Integers(CoefficientField(g));
-  coeffs := [ZC!0 :  i in [1..#fcoeffs]];
-  for i := 1 to #fcoeffs do
-    c := fcoeffs[i];
-    for pair in MTable[i] do
-      if pair[1] ne 1 then
-        c -:= gcoeffs[ pair[1] ] * coeffs[ pair[2] ];
-      else
-        assert pair[2] eq i;
-      end if;
-    end for;
-    coeffs[i] := c * ib0;
-  end for;
-  kf := Weight(f);
-  kg := Weight(g);
-  k := [ kf[i] - kg[i] : i in [1..#kf] ];
-  return HMF(M, N, k, coeffs);
-end intrinsic;
-
-
 //Dictionary would great here! Make linear algebra much easier
 intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f/g}
@@ -590,7 +579,8 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
     Ideals := IdealsByNarrowClassGroup(M)[bb];
     for nn in Ideals do
       Append(~B,Coefficients(f)[bb][nn]);
-      A_row_nn := [0/1 : i in [1..#Ideals]];
+      F := CoefficientField(g);
+      A_row_nn := [F!0 : i in [1..#Ideals]];
       for pair in MTable[bb][nn] do
         A_row_nn[Index(Ideals,pair[2])] +:= Coefficients(g)[bb][pair[1]];
       end for;
@@ -607,23 +597,25 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(M, N, k, coeffs);
 end intrinsic;
 
-/*
-// TODO FIXME Cl^+(F)>1
+
  intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt 
    {return 1/f} 
-   return (Parent(f) ! ( CoefficientsParent(f) ! 1) ) / f; 
+   return HMFIdentity(Parent(f))/f; 
  end intrinsic; 
+ 
 
-// TODO FIXME Cl^+(F)>1
  intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt 
-   {return f^e} 
+   {return f^n} 
    if n lt 0 then 
      f := Inverse(f); 
-   end if; 
-   g := Parent(f) ! (CoefficientsParent(f) ! 1); 
+   end if;
+   g := HMFIdentity(Parent(f)); 
    if n eq 0 then 
      return g; 
    end if; 
+   if n eq 1 then
+    return f;
+    end if;
    while n gt 1 do 
      if n mod 2 eq 0 then 
        f := f * f; 
@@ -636,7 +628,7 @@ end intrinsic;
    end while; 
    return f * g; 
  end intrinsic; 
-*/
+
 
 ////////// ModFrmHilDElt: Linear Algebra  //////////
 
