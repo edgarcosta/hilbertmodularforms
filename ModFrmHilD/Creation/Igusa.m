@@ -60,7 +60,7 @@ intrinsic Coeff(classrep::RngOrdIdl, elt::RngOrdElt, siegelWeight::RngIntElt) ->
 {Given a fractional ideal classrep representing a class in the narrow class group,
     an element in that classrep, and a siegel weight, computes the coefficient
     of the pullback of the siegel eisenstein form of that weight at that elt}
-verbose := true;
+verbose := false;
 
 coeff := 0;
 
@@ -136,7 +136,7 @@ end while;
 return coeff;
 end intrinsic;
 
-intrinsic SiegelEisensteinPullback(M::ModFrmHilD, Weight::RngIntElt) -> any
+intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::RngIntElt) -> any
 {Does Something}
 
 F := BaseField(M);
@@ -159,23 +159,18 @@ end for;
 coeffs[reps[i]]:=repcoeffs;
 
 end for;
-A := HMF(M,reps[1],WeightVector,coeffs);
+A := HMF(HMFSpace(M,WeightVector),coeffs);
 return A;
 end intrinsic;
 
-intrinsic UniversalIgusa(M::ModFrmHilD) -> any
+intrinsic UniversalIgusa(M::ModFrmHilDGRng) -> any
 {Computes the IgusaClebsch invariants for QQ(sqrt(i)), using specified precision}
-
-
-r2 := 1;
-r4 := 1;
-r6 := 1;
-r10 := 1;
 
 SiegEis4 := SiegelEisensteinPullback(M,4);
 SiegEis6 := SiegelEisensteinPullback(M,6);
 SiegEis10 := SiegelEisensteinPullback(M,10);
 SiegEis12 := SiegelEisensteinPullback(M,12);
+
 
 Chi10 := -43867/(2^12*3^5*5^2*7^1*53^1)*(SiegEis4*SiegEis6-SiegEis10);
 Chi12Const := 131*593/(2^13*3^7*5^3*7^2*337^1);

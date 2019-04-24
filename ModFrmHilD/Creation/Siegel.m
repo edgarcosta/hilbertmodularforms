@@ -48,6 +48,7 @@ end if;
 end for;
 
 coeff := coeff*-2*k/BernoulliNumber(k);
+
 return coeff;
 
 end intrinsic;

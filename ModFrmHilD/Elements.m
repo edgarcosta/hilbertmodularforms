@@ -448,12 +448,12 @@ end intrinsic;
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   {compares Parent, Weight, and Coefficients.}
   M := Parent(f);
-  if Parent(f) ne Parent(g) then return false; end if;
+if Parent(f) ne Parent(g) then return false; end if;
   if Weight(f) ne Weight(g) then return false; end if;
-  if Keys(Coefficients(f)) ne Keys(Coefficients(g)) then return false; end if; 
+if Keys(Coefficients(f)) ne Keys(Coefficients(g)) then return false; end if; 
   bbs := NarrowClassGroupReps(M);
   for bb in bbs do
-    if Keys(Coefficients(f)[bb]) ne Keys(Coefficients(g)[bb]) then return false; end if;
+	   if Keys(Coefficients(f)[bb]) ne Keys(Coefficients(g)[bb]) then return false; end if;
     for nn in Keys(Coefficients(f)[bb]) do
       if Coefficients(f)[bb][nn] ne Coefficients(g)[bb][nn] then return false; end if;
     end for;
@@ -470,11 +470,12 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   coeffs := Coefficients(f);
   bbs := NarrowClassGroupReps(M);
   for bb in bbs do 
-    ZK := Integers(CoefficientField(f));
-    print ZK;
-    assert c in ZK;
+    F := CoefficientField(f);
+
+assert c in Integers(F);
+
     for nn in Keys(Coefficients(f)[bb]) do
-      coeffs[bb][nn] := ZK!(c * Coefficients(f)[bb][nn]);
+      coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
     end for;
   end for;
   return HMF(M, N, k, coeffs);
@@ -539,9 +540,10 @@ assert Parent(Parent(f)) eq Parent(Parent(g));
   new_coeff := AssociativeArray();
   for bb in bbs do
     new_coeff[bb] := AssociativeArray();
-    ZF := Integers(CoefficientField(f));
+ZF := Integers(CoefficientField(f));
     for nn in Keys(Coefficients(f)[bb]) do
-      c := ZF!0;
+	   c := 0;
+	     c := ZF!0;
       for pair in MTable[bb][nn] do
         c +:= Coefficients(f)[bb][ pair[1] ] * Coefficients(g)[bb][ pair[2] ];
       end for;
