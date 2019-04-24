@@ -9,7 +9,7 @@
 
 //TODO should we sieve? 
 //BB - I removed the newform dimension. Do we use anywhere?      /* if dd eq N then newforms_dimension := #CuspSpace_dd; end if;  */
-intrinsic CuspFormBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
+intrinsic CuspFormBasis(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}  
   Cuspbasis := []; 
   for dd in Divisors(N) do 
@@ -23,7 +23,7 @@ end intrinsic;
 
 // Not implemented for k = 1 currently
 //TODO - Test for correctness. Clean up code? 
-intrinsic EisensteinBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
+intrinsic EisensteinBasis(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for the complement to the cuspspace of M of weight k}
   ZF := Integers(M);
   n := Degree(ZF);
@@ -57,7 +57,7 @@ end intrinsic;
 
 
 //BB - I removed the newform dimension.       CB, newforms_dimension := CuspFormBasis(M, N, k);
-intrinsic Basis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt 
+intrinsic Basis(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt], RngIntElt 
   { returns a Basis for the space } 
   // Cuspforms
   CB := CuspFormBasis(M, N, k);
