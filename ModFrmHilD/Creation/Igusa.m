@@ -5,6 +5,8 @@ PositiveRepresentative := [i : i in Representatives(M) | i*ZF eq bb];
 return PositiveRepresentative[1];
 end intrinsic;
 
+
+
 intrinsic ComputeMiddleM1(r::SeqEnum[FldRatElt]) -> FldRatElt
 {We are constricted by 4m_1m_2 >= m^2. This function computes the 
     value of m_1 that maximizes 4m_1m_2-m^2}
@@ -58,6 +60,8 @@ intrinsic Coeff(classrep::RngOrdIdl, elt::RngOrdElt, siegelWeight::RngIntElt) ->
 {Given a fractional ideal classrep representing a class in the narrow class group,
     an element in that classrep, and a siegel weight, computes the coefficient
     of the pullback of the siegel eisenstein form of that weight at that elt}
+verbose := true;
+
 coeff := 0;
 
 multlaw := MultLaw(classrep);
@@ -90,7 +94,10 @@ if (Constraint(m1, r) ge 0) then
 			      T := SiegelMatrix(m1, r);
 sat, newT := SatisfiesRules(T);
 if sat then 
-print newT;
+newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
+if verbose then 
+print newT, elt, newcoeff;
+end if;
 coeff := coeff + SiegelCoeff(siegelWeight, newT[1], newT[2], newT[3]);
 end if;
 end if;
@@ -104,7 +111,10 @@ if (Constraint(m1,r) ge 0) then
 			     T:=SiegelMatrix(m1,r);
 sat, newT := SatisfiesRules(T);
 if sat then 
-print newT;
+newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
+if verbose then
+print newT, elt, newcoeff;
+end if;
 coeff := coeff + SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
 end if;
 end if;
@@ -113,14 +123,17 @@ if (Constraint(m1+width, r) ge 0) then
 				    T:= SiegelMatrix(m1+width,r);
 sat, newT := SatisfiesRules(T);
 if sat then
-print newT; 
+newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
+if verbose then
+print newT, elt, newcoeff;
+end if;
 coeff := coeff + SiegelCoeff(siegelWeight, newT[1],newT[2],newT[3]);
 end if;
 end if;
 width := width + 2;
 end while;
 
-return Round(coeff);
+return coeff;
 end intrinsic;
 
 intrinsic SiegelEisensteinPullback(M::ModFrmHilD, Weight::RngIntElt) -> any
@@ -141,7 +154,7 @@ for i := 1 to max do
 	 numcoeffs := #ShintaniReps(M)[reps[i]];
 	 elts := ShintaniReps(M)[reps[i]];
 for j := 1 to numcoeffs do
-	   repcoeffs[elts[j]]:=Coeff(reps[i],elts[j],Weight);
+	   repcoeffs[ShintaniRepresentativeToIdeal(reps[i],elts[j])]:=Coeff(reps[i],elts[j],Weight);
 end for;
 coeffs[reps[i]]:=repcoeffs;
 
@@ -150,3 +163,38 @@ A := HMF(M,reps[1],WeightVector,coeffs);
 return A;
 end intrinsic;
 
+intrinsic UniversalIgusa(M::ModFrmHilD) -> any
+{Computes the IgusaClebsch invariants for QQ(sqrt(i)), using specified precision}
+
+
+r2 := 1;
+r4 := 1;
+r6 := 1;
+r10 := 1;
+
+SiegEis4 := SiegelEisensteinPullback(M,4);
+SiegEis6 := SiegelEisensteinPullback(M,6);
+SiegEis10 := SiegelEisensteinPullback(M,10);
+SiegEis12 := SiegelEisensteinPullback(M,12);
+
+Chi10 := -43867/(2^12*3^5*5^2*7^1*53^1)*(SiegEis4*SiegEis6-SiegEis10);
+Chi12Const := 131*593/(2^13*3^7*5^3*7^2*337^1);
+Chi12Form := (3^2*7^2*SiegEis4*SiegEis4*SiegEis4+2^1*5^3*SiegEis6*SiegEis6-691*SiegEis12);
+Chi12 := Chi12Const*Chi12Form;
+
+return SiegEis4,SiegEis6,SiegEis10,SiegEis12,Chi10,Chi12;
+
+end intrinsic;
+
+intrinsic CanonicalRepresentation(f::ModFrmHilDElt) -> any
+{gets this in terms of basis elements}
+M := Parent(f);
+N := NarrowClassGroupReps(M)[1];
+g,r := ConstructGeneratorsAndRelations(M,N,2,f`Weight[1]);
+bas := CanonicalBasis(g,r,f`Weight[1]);
+rel := LinearDependence(Append(bas,f));
+rel := rel[1];
+
+return bas,[-1*rel[i]/rel[#rel]:i in [1..#rel-1]],rel;
+
+end intrinsic;
