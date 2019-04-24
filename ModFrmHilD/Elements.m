@@ -7,33 +7,26 @@ ModFrmHilDElt
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent, // ModFrmHilD
-  Weight, // SeqEnum[RngIntElt]
-  Level, // RngOrdIdl
   Coefficients, // Coefficients[bb] = coeffs_bb where coeffs_bb[nu] = a_(bb,nu) = a_(nu)*bb^-1
   CoefficientField; // CoefficientField = where the coefficients live (does this depend on bb?)
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
-// TODO: narrow>1
-intrinsic PercentM(f::ModFrmHilDElt) -> MonStgElt
-  {returns a string to produce f in a magma session.}
-  return Sprintf("HMF(%m, %m, %m)", Parent(f), Weight(f), Coefficients(f));
-end intrinsic;
-
 //By Norm 
 intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
   {}
   if level in ["Default", "Minimal", "Maximal"] then
-    M := Parent(f);
+    Mk := Parent(f);
+    M := Parent(Mk);
     bbs := NarrowClassGroupReps(M);
-    k := Weight(f);
-    prec := Precision(f);
+    k := Weight(Mk);
+    prec := Precision(M);
     coeffs := Coefficients(f);
-    N := Level(f);
+    N := Level(Mk);
     printf "Hilbert modular form expansion with precision %o.\n", prec;
     printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
     printf "Weight: %o\n", k;
-    printf "Parent: %o\n", M;
+    printf "Parent: %o\n", Mk;
     for bb in bbs do
       coeffs_bb := coeffs[bb];
       printf "Coefficients for ideal class bb = %o\n", bb;
@@ -44,7 +37,7 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
       printf "\n\n";
     end for;
   elif level eq "Magma" then
-    printf "%o", PercentM(f);
+    error "not implemented yet!";
   else
     error "not a valid printing level.";
   end if;
@@ -95,27 +88,27 @@ end intrinsic;
 
 intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
   {returns weight of f.}
-  return f`Weight;
+  return Weight(Parent(f));
 end intrinsic;
 
 intrinsic BaseField(f::ModFrmHilDElt) -> FldNum
   {returns base field of parent of f.}
-  return BaseField(Parent(f));
+  return BaseField(Parent(Parent(f)));
 end intrinsic;
 
 intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   {returns level of parent of f.}
-  return f`Level;
+  return Level(Parent(f));
 end intrinsic;
 
 intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   {returns precision of parent of f.}
-  return Precision(Parent(f));
+  return Precision(Parent(Parent(f)));
 end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> Any
   {}
-  mp := NarrowClassGroupMap(Parent(f));
+  mp := NarrowClassGroupMap(Parent(Parent(f)));
   rep := mp(nn@@mp);
   return Coefficients(f)[rep][nn];
 end intrinsic;
@@ -149,13 +142,15 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
 end intrinsic;
 
-intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::Assoc) -> ModFrmHilDElt
+intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc) -> ModFrmHilDElt
   {WARNING: user is responsible for coefficients besides some basic structural assertions. Note: coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb)^-1}
+  M := Parent(Mk);
+  N := Level(Mk);
+  k := Weight(Mk);
   // check coeffs[bb] defined for each ideal class bb
   if #Keys(coeffs) ne #NarrowClassGroupReps(M) then
     error "Associative array of coefficients should be indexed by ideal classes";
   end if;
-  
   bbs := NarrowClassGroupReps(M);
   coeffs_as_sequence := []; // to assert all coefficients have the same parent
   for bb in bbs do
@@ -168,19 +163,17 @@ intrinsic HMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], coeffs::Assoc)
     key := Random(Keys(coeffs[bb]));
     Append(~coeffs_as_sequence, coeffs[bb][key]); // if value of coeffs[bb][key] differs then error here trying to append
   end for;
-  
   // make the HMF
   f := ModFrmHilDEltInitialize();
-  f`Parent := M;
-  f`Weight := k;
-  f`Level := N;
-f`Coefficients := coeffs;
-f`CoefficientField := FieldOfFractions(Parent(coeffs_as_sequence[1]));
+  f`Parent := Mk;
+  f`Coefficients := coeffs;
+  f`CoefficientField := FieldOfFractions(Parent(coeffs_as_sequence[1]));
   return f;
 end intrinsic;
 
-intrinsic HMFZero(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt
+intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   {create zero ModHilFrmDElt of weight k.}
+  M := Parent(Mk);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs_bb := AssociativeArray();
@@ -189,14 +182,13 @@ intrinsic HMFZero(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmH
     end for;
     coeffs[bb] := coeffs_bb;
   end for;
-  return HMF(M, N, k, coeffs);
+  return HMF(Mk, coeffs);
 end intrinsic;
 
-
-intrinsic HMFIdentity(M::ModFrmHilD) -> ModFrmHilDElt
-  {create zero ModHilFrmDElt of weight k.}
+intrinsic HMFIdentity(M::ModFrmHilDGRng) -> ModFrmHilDElt
+  {create one ModHilFrmDElt of weight zero.}
   n := Degree(BaseField(M));
-  N := 1*Integers(M);
+  Mk := HMFSpace(M, [0 : i in [1..n]]);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs_bb := AssociativeArray();
@@ -209,7 +201,7 @@ intrinsic HMFIdentity(M::ModFrmHilD) -> ModFrmHilDElt
     end for;
     coeffs[bb] := coeffs_bb;
   end for;
-  return HMF(M, N, [0 : i in [1..n]], coeffs);
+  return HMF(Mk, coeffs);
 end intrinsic;
 
 ////////// ModFrmHilDElt accessing and setting coefficients //////////
@@ -268,7 +260,7 @@ end intrinsic;
 
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
 
-
+// ChangeRing?
 // Coerces HMF coefficients a_n in a ring R
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_I := R!a_I}
