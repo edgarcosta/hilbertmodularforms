@@ -1,7 +1,7 @@
 // TODO needs testing
 // TODO fix normalization at the end
 // Eisenstein Series have only been implemented for integral parallel weight 
-intrinsic EisensteinSeries(M::ModFrmHilDGrRng, Sp::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> ModFrmHilDElt 
+intrinsic EisensteinSeries(M::ModFrmHilDGRng, Sp::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> ModFrmHilDElt 
   	{Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).} 
 k := Weight(Sp);
 N := Level(Sp);
@@ -78,7 +78,7 @@ E := HMF(Sp, coeffs);
 // TODO finish this and use in EisensteinSeries intrinsic
 
 //Toolbox function to use in the Eisenstein series function--gives us an L value
- intrinsic LValue_Recognized(M::ModFrmHilD, N::RngOrdIdl, prim::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> FldNumElt 
+ intrinsic LValue_Recognized(M::ModFrmHilDGRng, N::RngOrdIdl, prim::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> FldNumElt 
    {This is a toolbox function to compute L values in the right space} 
    // Lf := LSeries(prim : Precision := 50); 
    // TODO clean up precision 

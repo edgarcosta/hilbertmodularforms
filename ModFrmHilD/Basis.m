@@ -27,6 +27,7 @@ intrinsic EisensteinBasis(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]
   {returns a basis for the complement to the cuspspace of M of weight k}
   ZF := Integers(M);
   n := Degree(ZF);
+Sp := HMFSpace(M,k);
   EB := [];
   Hplus := HeckeCharacterGroup(1*ZF,[1..n]);
   HNplus := HeckeCharacterGroup(N,[1..n]);
@@ -39,13 +40,13 @@ intrinsic EisensteinBasis(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]
       // This is checking the condition on pg 458
       if k[1] mod 2 eq 0 then 
         if H_psi*eta^(-1) eq Hplus!1 then
-          E := EisensteinSeries(M, N, eta, psi, k);
+          E := EisensteinSeries(M, Sp, eta, psi);
           EB cat:= GaloisOrbitDescent(E);
         end if;
       else
         // This does not function for k = 1 currently
         if Set([Component(H_psi,i) eq Component(eta,i) : i in [1..n]]) eq {false} then
-          E := EisensteinSeries(M, N, eta, psi, k);
+          E := EisensteinSeries(M, Sp, eta, psi);
           EB cat:= GaloisOrbitDescent(E);
         end if;
       end if;

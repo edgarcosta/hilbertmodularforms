@@ -341,8 +341,11 @@ end intrinsic;
 
 intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt] 
   {returns the full Galois orbit of a modular form} 
-  M := Parent(f); 
-  k := Weight(f); 
+fSpace := Parent(f);
+M := Parent(fSpace);
+k := Weight(fSpace);
+M := Parent(Parent(f)); 
+
   K := CoefficientField(f);
   G, Pmap, Gmap := AutomorphismGroup(K); 
   bbs := NarrowClassGroupReps(M);
@@ -354,7 +357,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
         coeff[bb][nn] := Gmap(g)(coeff[bb][nn]);
       end for;
     end for;
-    Append(~result, HMF(M, Level(f), k, coeff)); 
+Append(~result, HMF(fSpace,coeff));
   end for; 
   return result; 
 end intrinsic; 
@@ -362,8 +365,10 @@ end intrinsic;
 
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt] 
   {returns the full Galois orbit of a modular form over Q} 
-  M := Parent(f); 
-  k := Weight(f); 
+fSpace := Parent(f);
+M := Parent(fSpace);
+k := Weight(fSpace);
+
   result := [];
   bbs := NarrowClassGroupReps(M);
   CoefficientsField := CoefficientField(f);
@@ -374,7 +379,7 @@ intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
         coeff[bb][nn] := Trace(b * coeff[bb][nn]);
       end for;
     end for;
-    Append(~result, HMF(M, Level(f), k, coeff)); 
+Append(~result, HMF(fSpace,coeff));
   end for;
   return result; 
 end intrinsic; 

@@ -59,7 +59,7 @@ intrinsic NewformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], newfo
 end intrinsic;
 
 
-intrinsic NewformsToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
+intrinsic NewformsToHMF(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
   {returns Hilbert newforms} 
   F := BaseField(M); 
   prec := Precision(M); 
