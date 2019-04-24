@@ -40,7 +40,8 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-  return IsIdentical(M1, M2);
+return Parent(M1) eq Parent(M2) and Weight(M1) eq Weight(M2) and 
+Level(M1) eq Level(M2) and Character(M1) eq Character(M2);
 end intrinsic;
 
 ////////// ModFrmHilD access to attributes //////////
