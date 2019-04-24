@@ -530,10 +530,10 @@ end intrinsic;
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f*g}
   N := Level(f) meet Level(g);
-  M := Parent(f);
+M := Parent(Parent(f));
   k := [ Weight(g)[i] + Weight(f)[i] : i in [1..#Weight(g)] ];
 
-  assert Parent(f) eq Parent(g);
+assert Parent(Parent(f)) eq Parent(Parent(g));
   MTable := MultiplicationTables(M);
   bbs := NarrowClassGroupReps(M);
   new_coeff := AssociativeArray();
