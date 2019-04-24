@@ -1,8 +1,10 @@
 // TODO needs testing
 // TODO fix normalization at the end
 // Eisenstein Series have only been implemented for integral parallel weight 
-intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt 
+intrinsic EisensteinSeries(M::ModFrmHilDGrRng, Sp::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> ModFrmHilDElt 
   	{Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).} 
+k := Weight(Sp);
+N := Level(Sp);
   	Cl := NarrowClassGroup(M); 
    	mp := NarrowClassGroupMap(M); 
    	assert #SequenceToSet(k) eq 1; // Checking if parallel weight 
@@ -65,7 +67,7 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
         end for;
       end if;
    	end for;
-    E := HMF(M, N, k, coeffs);
+E := HMF(Sp, coeffs);
     // Normalized coefficients here. 
     if not (coeffs[bbs[1]][0*ZF] in [0,1]) then 
       E := (1/coeffs[bbs[1]][0*ZF]) * E;
