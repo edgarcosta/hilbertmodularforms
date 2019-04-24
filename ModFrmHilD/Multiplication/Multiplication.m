@@ -1,7 +1,8 @@
 
 // TODO: optimize 
-intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilD) -> Any
+intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng) -> Any
   {returns list (assoc array) of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
+
   assert bb in NarrowClassGroupReps(M); 
   TraceBound := Precision(M);
   positive_reps := PositiveRepsByTrace(M); // indexed by ideal class and then trace
