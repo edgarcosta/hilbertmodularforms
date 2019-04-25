@@ -10,6 +10,7 @@ declare attributes ModFrmHilD:
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
   Character; // GrpHeckeElt
+  Integers; // RngOrd
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
@@ -66,6 +67,11 @@ intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   return Mk`Character;
 end intrinsic;
 
+intrinsic Integers(Mk::ModFrmHilD) -> GrpHeckeElt
+  {}
+  return Mk`Character;
+end intrinsic;
+
 ////////// ModFrmHilD creation and multiplication functions //////////
 
 intrinsic ModFrmHilDInitialize() -> ModFrmHilD
@@ -82,6 +88,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt], N::RngOrdIdl, chi::
   Mk`Weight := k;
   Mk`Level := N;
   Mk`Character := chi;
+  Mk`Integers := M`Integers;
   return Mk;
 end intrinsic;
 
@@ -90,11 +97,21 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
-  F := BaseField(M);
-  ZF := Integers(F);
+  ZF := Integers(M);
   N := ideal<ZF|1>;
   X := HeckeCharacterGroup(N);
-  chi := Random(X);
+  chi := X!1;
+  return HMFSpace(M, k, N, chi);
+end intrinsic;
+
+// overloaded for trivial character
+intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt], N::RngOrdIdl) -> ModFrmHilD
+  {}
+  Mk := ModFrmHilDInitialize();
+  Mk`Weight := k;
+  ZF := Integers(M);
+  X := HeckeCharacterGroup(N);
+  chi := X!1;
   return HMFSpace(M, k, N, chi);
 end intrinsic;
 
