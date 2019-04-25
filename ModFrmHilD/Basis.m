@@ -15,7 +15,7 @@ N := Level(Sp);
 k := Weight(Sp);
   Cuspbasis := []; 
   for dd in Divisors(N) do 
-    NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(M, dd, k)]; // We are taking the Q orbits 
+	 NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(M, HMFSpace(M,k, dd))]; // We are taking the Q orbits 
     OldSpace_dd := &cat[Inclusion(elt,N) : elt in NewSpace_dd ]; 
     Cuspbasis cat:= OldSpace_dd; 
   end for; 
@@ -68,7 +68,8 @@ intrinsic Basis(M::ModFrmHilDGRng, Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt], Rn
   CB := CuspFormBasis(M, Sp);
   //Eisenstein Series
   EB := EisensteinBasis(M, Sp);
-  return EB cat CB;
+
+return EB,CB;
  end intrinsic; 
 
 

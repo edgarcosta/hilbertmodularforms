@@ -679,9 +679,10 @@ end intrinsic;
 //Todo: Verify Correctness. Reference?
 intrinsic Inclusion(f::ModFrmHilDElt, N2::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f of level N1 and produces list of all inclusions of f into the space of level N2} 
-  M := Parent(f);
-  N1 := Level(f);
-  k := Weight(f);
+fSpace := Parent(f);
+  M := Parent(fSpace);
+  N1 := Level(fSpace);
+  k := Weight(fSpace);
   assert N1 subset N2; // To contain is to divide
   bbs := NarrowClassGroupReps(M);
   mp := NarrowClassGroupMap(M);
@@ -699,7 +700,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, N2::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
         end if;
       end for;
     end for;
-    Append(~IncludedForms, HMF(M, N2, k, coeff));
+Append(~IncludedForms, HMF(HMFSpace(M,k,N2), coeff));
   end for;
   return IncludedForms;
 end intrinsic;

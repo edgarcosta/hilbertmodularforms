@@ -2,7 +2,7 @@
 
 ////////// Creation of CuspForms from ModFrmHilDElt //////////
 
-intrinsic CoefficientsFromRecursion(M::ModFrmHilD, N::RngOrdIdl, n::RngOrdIdl, k::SeqEnum[RngIntElt], coeff::Assoc) -> RngIntElt
+intrinsic CoefficientsFromRecursion(M::ModFrmHilDGRng, N::RngOrdIdl, n::RngOrdIdl, k::SeqEnum[RngIntElt], coeff::Assoc) -> RngIntElt
   {construct the coefficient for a_n from an associative array coeff with all a_p for p|n}
   ZF := Integers(M);
   k0 := Max(k); 
@@ -28,8 +28,10 @@ intrinsic CoefficientsFromRecursion(M::ModFrmHilD, N::RngOrdIdl, n::RngOrdIdl, k
 end intrinsic;
 
 
-intrinsic NewformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], newform::ModFrmHilElt) -> ModFrmHilDElt
+intrinsic NewformToHMF(M::ModFrmHilDGRng,Sp::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
+N := Level(Sp);
+k := Weight(Sp);
   ZF := Integers(M);
   coeffs := AssociativeArray(); // Coefficient array indexed by ideals
 
@@ -55,12 +57,14 @@ intrinsic NewformToHMF(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], newfo
       CoeffsArray[bb][nn] := coeffs[nn];
     end for;
   end for;
-  return HMF(M, N, k, CoeffsArray);
+return HMF(Sp, CoeffsArray);
 end intrinsic;
 
 
-intrinsic NewformsToHMF(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
+intrinsic NewformsToHMF(M::ModFrmHilDGRng, Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns Hilbert newforms} 
+N:=Level(Sp);
+k:=Weight(Sp);
   F := BaseField(M); 
   prec := Precision(M); 
   MF := HilbertCuspForms(F, N, k); 
@@ -69,7 +73,7 @@ intrinsic NewformsToHMF(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) 
   newforms := [* Eigenform(U) : U in newspaces *]; 
   HMFnewforms := [**]; 
   for newform in newforms do
-    NewHMF := NewformToHMF(M, N, k, newform);
+    NewHMF := NewformToHMF(M, Sp, newform);
     Append(~HMFnewforms, NewHMF); 
   end for; 
   return HMFnewforms;

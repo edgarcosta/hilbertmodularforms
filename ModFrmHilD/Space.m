@@ -9,7 +9,7 @@ declare attributes ModFrmHilD:
   Parent, // ModFrmHilDGRng
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
-  Character; // GrpHeckeElt
+    Character, // GrpHeckeElt
   Integers; // RngOrd
 
 ////////// ModFrmHilD fundamental intrinsics //////////
