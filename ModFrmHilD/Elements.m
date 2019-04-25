@@ -290,7 +290,11 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       test1 := Weight(Mk) eq Weight(Mkf);
       test2 := Level(Mk) eq Level(Mkf);
       test3 := Character(Mk) eq Character(Mkf);
-      return test1 and test2 and test3; // all tests must be true to coerce
+      if test1 and test2 and test3 then // all tests must be true to coerce
+        return true, HMF(Mk, Coefficients(f));
+      else
+        return false;
+      end if;
     end if;
   end if;
 end intrinsic;
