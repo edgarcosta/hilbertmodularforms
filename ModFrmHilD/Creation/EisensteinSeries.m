@@ -1,10 +1,11 @@
 // TODO needs testing
 // TODO fix normalization at the end
 // Eisenstein Series have only been implemented for integral parallel weight 
-intrinsic EisensteinSeries(M::ModFrmHilDGRng, Sp::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> ModFrmHilDElt 
+intrinsic EisensteinSeries(Sp::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> ModFrmHilDElt 
   	{Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).} 
-k := Weight(Sp);
-N := Level(Sp);
+    M := Parent(Sp);
+    k := Weight(Sp);
+    N := Level(Sp);
   	Cl := NarrowClassGroup(M); 
    	mp := NarrowClassGroupMap(M); 
    	assert #SequenceToSet(k) eq 1; // Checking if parallel weight 
@@ -38,14 +39,14 @@ N := Level(Sp);
    		elif k[1] eq 1 then 
      	  if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
        		prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M,Sp, prim); 
+  coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M,Sp, prim); 
      	  elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
        		prim := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
-coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, Sp, prim); 
+  coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, Sp, prim); 
      	  elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
        		prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
        		prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
-coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Sp, prim1) + (psi^(-1))(tt)*LValue_Recognized(M, Sp, prim2)); 
+  coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Sp, prim1) + (psi^(-1))(tt)*LValue_Recognized(M, Sp, prim2)); 
      	  elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
        		coeffs[1] := 0; 
      	  end if;
@@ -67,7 +68,7 @@ coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Sp, prim1) + (psi^(-1))
         end for;
       end if;
    	end for;
-E := HMF(Sp, coeffs);
+    E := HMF(Sp, coeffs);
     // Normalized coefficients here. 
     if not (coeffs[bbs[1]][0*ZF] in [0,1]) then 
       E := (1/coeffs[bbs[1]][0*ZF]) * E;
@@ -80,8 +81,8 @@ E := HMF(Sp, coeffs);
 //Toolbox function to use in the Eisenstein series function--gives us an L value
 intrinsic LValue_Recognized(M::ModFrmHilDGRng, Sp::ModFrmHilD, prim::GrpHeckeElt) -> FldNumElt 
    {This is a toolbox function to compute L values in the right space} 
-N:=Level(Sp);
-k:=Weight(Sp);
+    N:=Level(Sp);
+    k:=Weight(Sp);
 
    // Lf := LSeries(prim : Precision := 50); 
    // TODO clean up precision 

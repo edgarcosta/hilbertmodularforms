@@ -9,7 +9,7 @@ declare attributes ModFrmHilD:
   Parent, // ModFrmHilDGRng
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
-    Character, // GrpHeckeElt
+  Character, // GrpHeckeElt
   Integers; // RngOrd
 
 ////////// ModFrmHilD fundamental intrinsics //////////
@@ -69,7 +69,7 @@ end intrinsic;
 
 intrinsic Integers(Mk::ModFrmHilD) -> GrpHeckeElt
   {}
-  return Mk`Character;
+  return Mk`Integers;
 end intrinsic;
 
 ////////// ModFrmHilD creation and multiplication functions //////////

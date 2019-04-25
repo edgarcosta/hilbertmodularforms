@@ -661,12 +661,13 @@ end intrinsic;
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
 //Todo: Verify Correctness. Reference?
-intrinsic Inclusion(f::ModFrmHilDElt, N2::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
+intrinsic Inclusion(f::ModFrmHilDElt, Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f of level N1 and produces list of all inclusions of f into the space of level N2} 
-fSpace := Parent(f);
+  fSpace := Parent(f);
   M := Parent(fSpace);
   N1 := Level(fSpace);
   k := Weight(fSpace);
+  N2 := Level(Sp);
   assert N1 subset N2; // To contain is to divide
   bbs := NarrowClassGroupReps(M);
   mp := NarrowClassGroupMap(M);
@@ -684,7 +685,7 @@ fSpace := Parent(f);
         end if;
       end for;
     end for;
-Append(~IncludedForms, HMF(HMFSpace(M,k,N2), coeff));
+  Append(~IncludedForms, HMF(Sp, coeff));
   end for;
   return IncludedForms;
 end intrinsic;
