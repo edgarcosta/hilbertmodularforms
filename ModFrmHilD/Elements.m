@@ -276,50 +276,30 @@ intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(Parent(f), Level(f), Weight(f), new_coeffs);
 end intrinsic;
 
-//FIXME NarrowClassNumber >1 - Ben
-intrinsic IsCoercible(M::ModFrmHilD, f::.) -> BoolElt, .
+intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   {}
-  if ISA(Type(f), RngElt) then
-    P := Parent(f);
-    N := 1*Integers(M); // FIXME only level 1 for now
-    coeffs := AssociativeArray();
-    for bb in NarrowClassGroupReps(M) do
-      coeffs_bb := AssociativeArray();
-      for nu in IdealsByNarrowClassGroup(M)[bb] do
-        if IsZero(nu) then
-          coeffs_bb[nu] := f;
-        else
-          coeffs_bb[nu] := 0;
-        end if;
-      end for;
-      coeffs[bb] := coeffs_bb;
-    end for;
-    h := #NarrowClassGroupReps(M);
-    k := [0 : c in [1..h]];
-    return true, HMF(M, N, k, coeffs);
-  end if;
   if Type(f) ne ModFrmHilDElt then
     return false;
-  end if;
-  if Parent(f) eq M then
-    return true, f;
-  elif (BaseField(M) eq BaseField(f)) and (Precision(M) eq Precision(f)) then
-    return true, HMF(M, Level(f), Weight(f) , Coefficients(f));
-  else
-    return false;
+  else // f is an HMF so has a chance to be coercible
+    M := Parent(Mk); // graded ring associated to Mk
+    Mkf := Parent(f); // space of HMFs associated to f
+    Mf := Parent(Mkf); // graded ring associated to f
+    if M ne Mf then
+      return false;
+    else // at least the graded rings match up
+      test1 := Weight(Mk) eq Weight(Mkf);
+      test2 := Level(Mk) eq Level(Mkf);
+      test3 := Character(Mk) eq Character(Mkf);
+      return test1 and test2 and test3; // all tests must be true to coerce
+    end if;
   end if;
 end intrinsic;
 
-/*
-intrinsic '!'(M::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
+intrinsic '!'(Mk::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f with parent M}
-  nn := Level(M);
-  nnf := Level(f);
-  assert nn subset nnf; // nnf divides nn
   coeffs := Coefficients(f);
-  return HMF(M, Weight(f) , coeffs);
+  return HMF(Mk, coeffs);
 end intrinsic;
-*/
 
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
   {}
