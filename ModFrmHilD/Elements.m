@@ -373,61 +373,52 @@ end intrinsic;
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
 
 
-// TODO: narrow>1
-/* intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : Basis:=[]) -> ModFrmHilDElt */
-/*   {returns T(n)(f) for the trivial character} */
-/*   return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1 : Basis:=Basis); */
-/* end intrinsic; */
 
 
-// TODO: narrow>1
-/* intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt : Basis:= []) -> ModFrmHilDElt */
-/*   {returns T(n)(f) with loss of precision. If a basis for the space is provided, returns T(n)(f) without loss of precision} */
-/*   M := Parent(f); */
-/*   fcoeffs := Coefficients(f); */
-/*   ideals := Ideals(f); */
-/*   dict := Dictionary(f); */
-/*   ZC := Parent(fcoeffs[1]); */
-/*   k0 := Max(Weight(f)); */
-/*   prec:=Precision(M); */
-/*   //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn) */
-/*   idealssmallprec:=[ideals[1]]; */
-/*   for x:=2 to #ideals do */
-/*     if Norm(ideals[x]) le prec/Norm(nn) then */
-/*       idealssmallprec:= idealssmallprec cat [ideals[x]]; */
-/*     end if; */
-/*   end for; */
-/*   coeffssmallprec := [ZC!0 : i in [1..#idealssmallprec]]; */
-/*   for i:=1 to #idealssmallprec do */
-/*     c := 0; */
-/*     // loop over divisors */
-/*     // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms */
-/*     for aa in Divisors(ideals[i] + nn) do */
-/*       c +:= chi(aa) * Norm(aa)^(k0 - 1) * fcoeffs[ dict[ aa^(-2) * (ideals[i] * nn)]]; */
-/*       end for; */
-/*     coeffssmallprec[i] := c; */
-/*     end for; */
-/*   if #Basis ne 0 then //if provided a basis, we reconstruct the form to the same precision */
-/*     smallprecbasis:=[]; */
-/*     for g in Basis do */
-/*       Append(~smallprecbasis, [Coefficients(g)[i] : i in [1..#idealssmallprec]]); */
-/*     end for; */
-/*     LinComb:=LinearDependence([coeffssmallprec] cat smallprecbasis); */
-/*     if ISA(Type(LinComb), RngIntElt) or #Rows(LinComb) ne 1 then */
-/*       return "Error: either precision is too small, or the sequence provided is not a basis"; */
-/*     end if; */
-/*     g:=0*f; */
-/*     for i:=2 to #Basis+1 do */
-/*       g:=g-LinComb[1][i]*Basis[i-1]; */
-/*     end for; */
-/*     return g; */
-/*   end if; */
-/*   if #Basis eq 0 then */
-/*     M1:=HMFSpace(BaseField(M), Floor(prec/Norm(nn))); */
-/*     print "Warning: the Hecke operator calculation decreases precision to ", */
-/*     Floor(prec/Norm(nn)); */
-/*     return HMF(M1, Level(f), Weight(f), coeffssmallprec); */
-/*   end if; */
+ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt 
+   {returns T(n)(f) for the trivial character} 
+   return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1); 
+ end intrinsic; 
+
+
+ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> Assoc
+   {returns associative array with coefficients for T(nn)(f) with loss of precision.} 
+   Mk := Parent(f); 
+   M :=Parent(Mk);
+   ZF:=Integers(BaseField(M));
+   fcoeffs := Coefficients(f); 
+   ideals := IdealsByNarrowClassGroup(M); 
+   k0 := Max(Weight(f)); 
+   //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn) 
+   coeffsTnnf := AssociativeArray();
+   //for x:=2 to #ideals do 
+    // if Norm(ideals[x]) le prec/Norm(nn) then 
+    //   idealssmallprec:= idealssmallprec cat [ideals[x]]; 
+    // end if; 
+   //end for; 
+   for bb in  NarrowClassGroupReps(M) do
+    coeffsTnnf[bb] := AssociativeArray();
+    for I in IdealsByNarrowClassGroup(M)[bb] do
+      c :=0;
+        allDivisors:=true; //keeps track if all the coefficients in the sum for an ideal are defined
+        // loop over divisors 
+        // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms 
+        for aa in Divisors(I + nn) do 
+          if aa^(-2) * (I* nn) notin AllIdeals(M) then
+           allDivisors:=false ; break; //stop if coefficient for divisor is not defined 
+             else 
+              if I eq 0*ZF then c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[bb][I]; //takes care if the coefficients for the zero ideal are different
+                else c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF !! (aa^(-2) * (I* nn))); 
+                  end if;
+       end if;
+          end for;
+        if allDivisors eq true then coeffsTnnf[bb][I] := c;
+         else break; //stop if not all coefficients for the divisors in the sum for an ideal are defined
+         end if;
+        end for;
+    end for;    
+    return coeffsTnnf; 
+ end intrinsic; 
 /* end intrinsic; */
 
 ////////// ModFrmHilDElt: Arithmetic //////////
