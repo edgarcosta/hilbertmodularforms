@@ -501,7 +501,7 @@ M := fGrRing;
       new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
     end for;
   end for;
-return HMF(HMFSpace(M,k,Level(fSpace),Character(fSpace)),new_coeffs);
+return HMF(HMFSpace(M,Level(fSpace),k,Character(fSpace)),new_coeffs);
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -537,7 +537,7 @@ ZF := Integers(CoefficientField(f));
       new_coeff[bb][nn] := c;
     end for;
   end for;
-return HMF(HMFSpace(fGrRing,k,newLevel,newCharacter),new_coeff);
+return HMF(HMFSpace(fGrRing,newLevel,k,newCharacter),new_coeff);
 
 end intrinsic;
 
@@ -591,7 +591,8 @@ end intrinsic;
    if n lt 0 then 
      f := Inverse(f); 
    end if;
-   g := HMFIdentity(Parent(f)); 
+   M := Parent(Parent(f));
+   g := HMFIdentity(M); 
    if n eq 0 then 
      return g; 
    end if; 
@@ -635,7 +636,7 @@ end intrinsic;
 //TODO take working precision
 intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
   {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
-  M := Parent(List[1]);
+  M := Parent(Parent(List[1]));
   bbs := NarrowClassGroupReps(M);
   CoeffLists := [[] : i in [1..#List]];
   for bb in bbs do

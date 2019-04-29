@@ -81,7 +81,7 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
 end intrinsic;
 
 // TODO: some checks here? or leave it up to the user?
-intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt], N::RngOrdIdl, chi::GrpHeckeElt) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Parent := M;
@@ -101,18 +101,18 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   N := ideal<ZF|1>;
   X := HeckeCharacterGroup(N);
   chi := X!1;
-  return HMFSpace(M, k, N, chi);
+  return HMFSpace(M, N, k, chi);
 end intrinsic;
 
 // overloaded for trivial character
-intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt], N::RngOrdIdl) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
   ZF := Integers(M);
   X := HeckeCharacterGroup(N);
   chi := X!1;
-  return HMFSpace(M, k, N, chi);
+  return HMFSpace(M, N, k, chi);
 end intrinsic;
 
 intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
