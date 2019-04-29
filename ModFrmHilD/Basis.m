@@ -7,13 +7,12 @@
 // Currently calls the Newforms and Eisenstein series from Creations folder
 
 
-//TODO should we sieve?
-//BB - I removed the newform dimension. Do we use anywhere?      /* if dd eq N then newforms_dimension := #CuspSpace_dd; end if;  */
 intrinsic CuspFormBasis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
   N := Level(Sp);
   k := Weight(Sp);
   Cuspbasis := [];
+  // should we sieve instead? There isn't a significant difference for N small
   for dd in Divisors(N) do
 	 NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(Sp)]; // We are taking the Q orbits
     OldSpace_dd := &cat[Inclusion(elt,Sp) : elt in NewSpace_dd ];
@@ -23,12 +22,14 @@ intrinsic CuspFormBasis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
 end intrinsic;
 
 
-// Not implemented for k = 1 currently
-//TODO - Test for correctness. Clean up code?
+//TODO
+// - Test for correctness
+// - Clean up code?
 intrinsic EisensteinBasis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  {returns a basis for the complement to the cuspspace of M of weight k}
+  { returns a basis for the complement to the cuspspace of M of weight k }
   N := Level(Sp);
   k := Weight(Sp);
+  assert k gt 1; // Not implemented for k = 1 currently
   ZF := Integers(Sp);
   n := Degree(ZF);
   EB := [];
@@ -60,14 +61,12 @@ end intrinsic;
 
 
 
-//BB - I removed the newform dimension.       CB, newforms_dimension := CuspFormBasis(M, N, k);
 intrinsic Basis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt], RngIntElt
   { returns a Basis for the space }
   // Cuspforms
   CB := CuspFormBasis(Sp);
   //Eisenstein Series
   EB := EisensteinBasis(Sp);
-
   return EB cat CB;
 end intrinsic;
 
