@@ -68,8 +68,8 @@ intrinsic Basis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt], RngIntElt
   //Eisenstein Series
   EB := EisensteinBasis(Sp);
 
-return EB cat CB;
- end intrinsic;
+  return EB cat CB;
+end intrinsic;
 
 
 /* intrinsic GaloisInvariantBasis(M::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt] */
