@@ -6,7 +6,7 @@ ZF<w> := Integers(F);
 N := ideal<ZF | {1}>;
 k := [2, 2];
 K := Rationals();
-prec := 100;
+prec := 50;
 M := GradedRingOfHMFs(F, prec);
 
 time g, r := ConstructGeneratorsAndRelations(M, N, 8);
