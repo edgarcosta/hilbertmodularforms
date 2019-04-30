@@ -25,17 +25,22 @@ end intrinsic;
 //TODO
 // - Test for correctness
 // - Clean up code?
-intrinsic EisensteinBasis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
-  N := Level(Sp);
-  k := Weight(Sp);
-  assert k[1] gt 1; // Not implemented for k = 1 currently
-  ZF := Integers(Sp);
+  NN := Level(Mk);
+  k := Weight(Mk);
+  assert #SequenceToSet(k) eq 1 and k[1] ge 2; // Only implemented for parallel weight k >= 2
+  F := BaseField(Mk);
+  ZF := Integers(F);
   n := Degree(ZF);
-  EB := [];
-  Hplus := HeckeCharacterGroup(1*ZF,[1..n]);
-  HNplus := HeckeCharacterGroup(N,[1..n]);
 
+  EB := [];  // Eisenstein basis, to be filled in
+
+  NNfact := Factorization(NN);
+  NN1s := [pp[i]^j : i in [1..NNfact]];  // list NN1^2 | NN
+
+  // loop over
+  H := HeckeCharacterGroup(NN/NN1^2,[1..n]);
   for i in [0..#Hplus-1] do
     eta := Hplus.i;
     for j in [0..#HNplus-1] do
