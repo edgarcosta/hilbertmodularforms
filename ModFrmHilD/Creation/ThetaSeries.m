@@ -90,15 +90,22 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
 
   L := LatticeWithGram(QuadraticZ(K, GM));
 
-  reps := IdealsByNarrowClassGroup(M);
+  reps := NarrowClassGroupReps(M);
   K := BaseField(M);
   ZK := IntegerRing(K);
   coeffs := AssociativeArray();
   //we are assuming class number = 1
-  for bb in Keys(reps) do
+  for bb in reps do
     coeffs[bb] := AssociativeArray();
-    for nu in Keys(reps[bb]) do
-      coeffs[bb][nu] := ThetaCoefficient(M, ZK!nu, L, GM);
+    for nu in IdealsByNarrowClassGroup(M)[bb] do
+      if IsZero(nu) then
+        coeffs[bb][nu] := 0;
+      elif nu eq ideal<ZK|1> then
+        coeffs[bb][nu] := 1;
+      else
+        rep := IdealToShintaniRepresentative(M, bb, nu);
+        coeffs[bb][nu] := ThetaCoefficient(M, rep, L, GM);
+      end if;
     end for;
   end for;
   w := Integers()! (NumberOfRows(GM)/2);
