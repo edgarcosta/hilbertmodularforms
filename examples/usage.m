@@ -11,7 +11,7 @@ ZF<w> := Integers(F);
 N := ideal<ZF | {9, 3, 3}>;
 k := [2, 2];
 K := Rationals();
-prec := 100;
+prec := 50;
 M := GradedRingOfHMFs(F, prec);
 M2 := HMFSpace(M, N, k);
 // built in magma
@@ -31,7 +31,7 @@ F := QuadraticField(5);
 ZF<w> := Integers(F);
 N := ideal<ZF | {11}>;
 k := [2, 2];
-prec := 100;
+prec := 50;
 M := GradedRingOfHMFs(F, prec);
 orbit_representatives := NewformsToHMF(M, N, k);
 print "Do we have two Galois orbits?", #orbit_representatives eq 2;

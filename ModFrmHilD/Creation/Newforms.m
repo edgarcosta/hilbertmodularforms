@@ -27,7 +27,6 @@ intrinsic CoefficientsFromRecursion(M::ModFrmHilDGRng, N::RngOrdIdl, n::RngOrdId
   return coeff_I;
 end intrinsic;
 
-
 intrinsic NewformToHMF(Sp::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
   M := Parent(Sp);
@@ -35,6 +34,16 @@ intrinsic NewformToHMF(Sp::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
   k := Weight(Sp);
   ZF := Integers(Sp);
   coeffs := AssociativeArray(); // Coefficient array indexed by ideals
+
+  // TODO
+  // an easier and simpler approach to do this is:
+  // 1- a_0 and a_1
+  // 2- then primes and prime powers
+  // 3- then extend multiplicatively by looping like
+  // for k in range(1, (len(an) - 1)//pp + 1)
+  // if gcd(k, pp) == 1:
+  //    an[pp*k] = an[pp]*an[k]
+  // However, HeckeEigenvalue is the **real** bottleneck!
 
   // Step 1: a_0 and a_1
   coeffs[0*ZF] := 0; coeffs[1*ZF] := 1;
