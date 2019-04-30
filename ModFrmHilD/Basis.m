@@ -29,7 +29,7 @@ intrinsic EisensteinBasis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
   N := Level(Sp);
   k := Weight(Sp);
-  assert k gt 1; // Not implemented for k = 1 currently
+  assert k[1] gt 1; // Not implemented for k = 1 currently
   ZF := Integers(Sp);
   n := Degree(ZF);
   EB := [];
