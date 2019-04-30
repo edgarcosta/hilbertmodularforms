@@ -1,3 +1,4 @@
+// takes about 1min
 SetDebugOnError(true);
 load "config.m";
 
