@@ -25,7 +25,7 @@ declare attributes ModFrmHilDGRng:
   AllPrimes, // List of all ideals for all bb ordered by norm
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
   // Book keeping
-  // Caching the computation of EigenForms
+  // Caching the computation of EigenForms, see Workspace
   // a double indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
   HeckeEigenvalues,
   // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
@@ -185,6 +185,16 @@ intrinsic HeckeEigenvalues(M::ModFrmHilDGRng) -> Assoc
   return M`HeckeEigenvalues;
 end intrinsic;
 
+intrinsic Spaces(M::ModFrmHilDGRng) -> Assoc
+  {return the Spaces attribute}
+  return M`Spaces;
+end intrinsic;
+
+intrinsic AddToSpaces(M::ModFrmHilDGRng, Mk::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt)
+  { adds Mk to the AssociativeArray M`Spaces}
+  M`Spaces[<N, k, chi>] := Mk;
+end intrinsic;
+
 ////////// ModFrmHilDGRng creation and multiplication functions //////////
 
 intrinsic ModFrmHilDGRngInitialize() -> ModFrmHilD
@@ -259,6 +269,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   norms := [CorrectNorm(I) : I in all_ideals];
   ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
+
+  M`Spaces := AssociativeArray();
   return M;
 end intrinsic;
 

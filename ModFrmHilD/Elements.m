@@ -537,14 +537,20 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   new_coeff := AssociativeArray();
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
+  Ff := CoefficientField(f);
+  Fg := CoefficientField(g);
+  if Ff eq Fg then
+    F := Ff;
+  else
+    F := Compositum(Ff, Fg);
+  end if;
   for bb in bbs do
     new_coeff[bb] := AssociativeArray();
-    ZF := Integers(coeffs_f);
     for nn in Keys(coeffs_f[bb]) do
       c := 0;
-      c := ZF!0;
+      c := F!0;
       for pair in MTable[bb][nn] do
-        c +:= coeffs_f[bb][ pair[1] ] * coeffs_g[bb][ pair[2] ];
+        c +:= F!coeffs_f[bb][ pair[1] ] * F!coeffs_g[bb][ pair[2] ];
       end for;
       new_coeff[bb][nn] := c;
     end for;
