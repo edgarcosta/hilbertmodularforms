@@ -224,7 +224,7 @@ intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWe
 	M2 := HMFSpace(M, N, LowestWeightVec);
 	Gens[LowestWeight] := Basis(M2);
 
-	print "Level:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
+	print "Weight:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
 
 	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
 

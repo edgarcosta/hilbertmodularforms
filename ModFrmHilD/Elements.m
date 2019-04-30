@@ -499,7 +499,7 @@ M := fGrRing;
       new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
     end for;
   end for;
-return HMF(HMFSpace(M, k, Level(fSpace), Character(fSpace)), new_coeffs);
+return HMF(HMFSpace(M, Level(fSpace), k, Character(fSpace)), new_coeffs);
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
