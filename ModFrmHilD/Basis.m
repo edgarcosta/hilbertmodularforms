@@ -7,15 +7,15 @@
 // Currently calls the Newforms and Eisenstein series from Creations folder
 
 
-intrinsic CuspFormBasis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
-  N := Level(Sp);
-  k := Weight(Sp);
+  N := Level(Mk);
+  k := Weight(Mk);
   Cuspbasis := [];
   // should we sieve instead? There isn't a significant difference for N small
   for dd in Divisors(N) do
-	 NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(Sp)]; // We are taking the Q orbits
-    OldSpace_dd := &cat[Inclusion(elt,Sp) : elt in NewSpace_dd ];
+	 NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(Mk)]; // We are taking the Q orbits
+    OldSpace_dd := &cat[Inclusion(elt,Mk) : elt in NewSpace_dd ];
     Cuspbasis cat:= OldSpace_dd;
   end for;
   return Cuspbasis;
@@ -25,12 +25,12 @@ end intrinsic;
 //TODO
 // - Test for correctness
 // - Clean up code?
-intrinsic EisensteinBasis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
-  N := Level(Sp);
-  k := Weight(Sp);
+  N := Level(Mk);
+  k := Weight(Mk);
   assert k[1] gt 1; // Not implemented for k = 1 currently
-  ZF := Integers(Sp);
+  ZF := Integers(Mk);
   n := Degree(ZF);
   EB := [];
   Hplus := HeckeCharacterGroup(1*ZF,[1..n]);
@@ -44,13 +44,13 @@ intrinsic EisensteinBasis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
       // This is checking the condition on pg 458
       if k[1] mod 2 eq 0 then
         if H_psi*eta^(-1) eq Hplus!1 then
-          E := EisensteinSeries(Sp, eta, psi);
+          E := EisensteinSeries(Mk, eta, psi);
           EB cat:= GaloisOrbitDescent(E);
         end if;
       else
         // This does not function for k = 1 currently
         if Set([Component(H_psi,i) eq Component(eta,i) : i in [1..n]]) eq {false} then
-          E := EisensteinSeries(Sp, eta, psi);
+          E := EisensteinSeries(Mk, eta, psi);
           EB cat:= GaloisOrbitDescent(E);
         end if;
       end if;
@@ -61,12 +61,12 @@ end intrinsic;
 
 
 
-intrinsic Basis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic Basis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   // Cuspforms
-  CB := CuspFormBasis(Sp);
+  CB := CuspFormBasis(Mk);
   //Eisenstein Series
-  EB := EisensteinBasis(Sp);
+  EB := EisensteinBasis(Mk);
   return EB cat CB;
 end intrinsic;
 
