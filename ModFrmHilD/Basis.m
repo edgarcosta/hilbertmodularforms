@@ -12,11 +12,15 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   N := Level(Mk);
   k := Weight(Mk);
   Cuspbasis := [];
-  // should we sieve instead? There isn't a significant difference for N small
+  // This only works for trivial character, as we rely on the magma functionality
+  assert Character(Mk) eq HeckeCharacterGroup(N)!1;
   for dd in Divisors(N) do
-	 NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(Mk)]; // We are taking the Q orbits
-    OldSpace_dd := &cat[Inclusion(elt,Mk) : elt in NewSpace_dd ];
+    Mkdd := HMFSpace(Parent(Mk), dd, k);
+    // We are taking the Q orbits
+	  NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(Mkdd)];
+    OldSpace_dd := &cat[Inclusion(elt, Mk) : elt in NewSpace_dd ];
     Cuspbasis cat:= OldSpace_dd;
+    print "dd = ", dd, "\n", "Ns, Os, Cs = ", #NewSpace_dd, #OldSpace_dd, #Cuspbasis, "\n\n";
   end for;
   return Cuspbasis;
 end intrinsic;

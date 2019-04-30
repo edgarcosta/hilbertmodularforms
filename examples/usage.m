@@ -64,19 +64,20 @@ assert squarediff1 eq  squarediff2;
 squaresum := f3*f3;
 assert squaresum eq f1*f1 + 2*f1*f2 + f2*f2;
 
+// Tests multiplication and shows how to use LinearDependence
 F := QuadraticField(5);
 ZF<w> := Integers(F);
 N := Factorization(ideal<ZF| {31}>)[1][1];
-k := [2, 2];
-prec := 30;
+prec := 10;
 M := GradedRingOfHMFs(F, prec);
-B2 := CuspFormBasis(M, N, [2,2]);
-f := B2[1];
-B4 := CuspFormBasis(M, N, [4,4]);
-f2 := f*f;
-L := [f2] cat B4;
+M2 := HMFSpace(M, N, [2, 2]);
+B2 := CuspFormBasis(M2);
+assert #B2 eq 1;
+M4 := HMFSpace(M, N, [4, 4]);
+B4 := CuspFormBasis(M4);
+L := [B2[1]*B2[1]] cat B4;
 linear_relation := Matrix(LinearDependence(L));
-assert linear_relation eq Matrix([[383928, 0, 110028,  -7271,  -1117]]);
+assert linear_relation eq Matrix(Rationals(), [[383928, 0, 110028,  -7271,  -1117]])/383928;
 
 
 //ThetaSeries
