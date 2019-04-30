@@ -7,6 +7,7 @@ ModFrmHilDElt
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent, // ModFrmHilD
+  Precision, // RngIntElt
   Coefficients, // Coefficients[bb] = coeffs_bb where coeffs_bb[nu] = a_(bb,nu) = a_(nu)*bb^-1
   CoefficientField; // CoefficientField = where the coefficients live (does this depend on bb?)
 
@@ -86,6 +87,11 @@ intrinsic Parent(f::ModFrmHilDElt) -> ModFrmHilD
   return f`Parent;
 end intrinsic;
 
+intrinsic Precision(f::ModFrmHilD) -> RngIntElt
+  {}
+  return f`Precision;
+end intrinsic;
+
 intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
   {returns weight of f.}
   return Weight(Parent(f));
@@ -142,7 +148,7 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
 end intrinsic;
 
-intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc) -> ModFrmHilDElt
+intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc : prec := 0) -> ModFrmHilDElt
   {WARNING: user is responsible for coefficients besides some basic structural assertions. Note: coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb)^-1}
   M := Parent(Mk);
   N := Level(Mk);
@@ -168,6 +174,13 @@ intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc) -> ModFrmHilDElt
   f`Parent := Mk;
   f`Coefficients := coeffs;
   f`CoefficientField := FieldOfFractions(Parent(coeffs_as_sequence[1]));
+  // working precision
+  if prec eq 0 then
+    f`Precision := Precision(M);
+  else
+    assert prec gt 0;
+    f`Precision := prec;
+  end if;
   return f;
 end intrinsic;
 
@@ -450,57 +463,30 @@ intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   return true;
 end intrinsic;
 
-
-intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
-  {scale f by integer c.}
-
-  Space := Parent(f);
-  GrRing := Parent(Space);
+intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
+  {scale f by scalar c.}
+  prec := Precision(f);
+  Mk := Parent(f);
+  M := Parent(Mk);
   coeffs := Coefficients(f);
-  bbs := NarrowClassGroupReps(GrRing);
+  bbs := NarrowClassGroupReps(M);
+  F := CoefficientField(f);
+  assert c in F;
   for bb in bbs do
-    F := CoefficientField(f);
-
-    assert c in F;
-    //assert c in Integers(F);
-
     for nn in Keys(Coefficients(f)[bb]) do
       coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
     end for;
   end for;
-return HMF(Space,coeffs);
+  return HMF(Mk, coeffs : prec := prec);
 end intrinsic;
-
-
-intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
-  {scale f by some scalar c.}
-  Space := Parent(f);
-  GrRing := Parent(Space);
-  coeffs := Coefficients(f);
-  bbs := NarrowClassGroupReps(GrRing);
-  F := CoefficientField(f);
-  coeffs := Coefficients(f);
-  assert c in F;
-  for bb in bbs do
-    for nn in Keys(coeffs[bb]) do
-      coeffs[bb][nn] := F!(c * coeffs[bb][nn]);
-    end for;
-  end for;
-return HMF(Space,coeffs);
-end intrinsic;
-
 
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f+g.}
   // Currently returns the lowest precision of the forms
-  // assert Parent(f) eq Parent(g);
-  fSpace := Parent(f); gSpace := Parent(g);
-  fGrRing := Parent(fSpace); gGrRing := Parent(gSpace);
-
-  assert fSpace eq gSpace;
-
-
-  M := fGrRing;
+  assert Parent(f) eq Parent(g);
+  Mk := Parent(f);
+  M := Parent(Mk);
+  assert Parent(Parent(g)) eq M;
   k := Weight(f);
   new_coeffs := AssociativeArray();
   bbs := NarrowClassGroupReps(M);
@@ -511,7 +497,10 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
       new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
     end for;
   end for;
-  return HMF(HMFSpace(M, Level(fSpace), k, Character(fSpace)), new_coeffs);
+  // update precision to be the minimum of the two precisions?
+  prec_f := Precision(f);
+  prec_g := Precision(g);
+  return HMF(Mk, new_coeffs : prec := Minimum(prec_f, prec_g));
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -555,7 +544,9 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
       new_coeff[bb][nn] := c;
     end for;
   end for;
-  return HMF(HMFSpace(fGrRing, newLevel, k, newCharacter), new_coeff);
+  prec_f := Precision(f);
+  prec_g := Precision(g);
+  return HMF(HMFSpace(fGrRing, newLevel, k, newCharacter), new_coeff : prec := Minimum(prec_f, prec_g));
 end intrinsic;
 
 //Dictionary would great here! Make linear algebra much easier
@@ -593,15 +584,16 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   kf := Weight(f);
   kg := Weight(g);
   k := [ kf[i] - kg[i] : i in [1..#kf] ];
-  return HMF(M, N, k, coeffs);
+  // prec
+  prec_f := Precision(f);
+  prec_g := Precision(g);
+  return HMF(M, N, k, coeffs : prec := Minimum(prec_f, prec_g));
 end intrinsic;
 
-
- intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
-   {return 1/f}
-   return HMFIdentity(Parent(f))/f;
- end intrinsic;
-
+intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
+ {return 1/f}
+ return HMFIdentity(Parent(f))/f;
+end intrinsic;
 
  intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
    {return f^n}
