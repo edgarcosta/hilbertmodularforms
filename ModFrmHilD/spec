@@ -1,4 +1,5 @@
 {
+  GradedRing.m
   Space.m
   Elements.m
   Workspace.m
@@ -8,13 +9,13 @@
 }
 
 Multiplication
-{  
+{
    Multiplication.m
    Shintani.m
 }
 
 Creation
-{  
+{
    Newforms.m
    EisensteinSeries.m
    ThetaSeries.m
@@ -23,7 +24,7 @@ Creation
    Siegel.m
 }
 
-CanonicalRings
+CanonicalRing
 {
   CanonicalRing.m
   HilbertSeries.m

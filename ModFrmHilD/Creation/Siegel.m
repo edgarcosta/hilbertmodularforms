@@ -22,7 +22,7 @@ for i := 1 to f do
 end if;
 
 end for;
-out := out * Evaluate(LSeries(KroneckerCharacter(D0)),2-s);
+out := out * Evaluate(LSeries(KroneckerCharacter(D0):Precision := 200),2-s);
 
 return out;
 end intrinsic;
@@ -32,7 +32,9 @@ end intrinsic;
 intrinsic alpha(D::RngIntElt,k::RngIntElt) -> any
 {This is the alpha function from the above paper. It is just a normalized version of Cohen.}
 if D eq 0 then return 1; end if;
-return Cohen(k-1,D)/Evaluate(RiemannZeta(),3-2*k);
+out :=  Cohen(k-1,D)/Evaluate(RiemannZeta(:Precision:=200),3-2*k);
+out := Roots(PowerRelation(Re(out),1),Rationals())[1][1];
+return out;
 end intrinsic;
 
 
@@ -48,6 +50,7 @@ end if;
 end for;
 
 coeff := coeff*-2*k/BernoulliNumber(k);
+
 return coeff;
 
 end intrinsic;

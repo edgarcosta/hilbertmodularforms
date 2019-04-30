@@ -48,7 +48,7 @@ end intrinsic;
 // Generating function for the dimension of the space of HMFs according to weight k
 // Input: M = HMFspace
 // Output: G = Hilbert Series (i.e. generating function for dimensions)
-intrinsic DimensionGeneratingFunction(M::ModFrmHilD) -> RngSerPowElt
+intrinsic DimensionGeneratingFunction(M::ModFrmHilDGRng) -> RngSerPowElt
 {Returns the dimension of the space of Hilbert Modular Forms of weight k}	
 	K := BaseField(M);
 	Disc := Discriminant(K);
@@ -95,9 +95,10 @@ end intrinsic;
 // Input: M = HMFspace
 // Input: k weight
 // Output: dim(M(k))
-intrinsic Dimension(M::ModFrmHilD,k::RngIntElt) -> RngIntElt
+intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
 {Returns the dimension of the space of Hilbert Modular Forms of weight k}	 
-	assert k mod 2 eq 0;
+	M := Parent(Mk); k := Weight(Mk)[2];
+	assert k mod 2 eq 0; assert Level(Mk) eq 1*Integers(M); // Trivial level and even weight.
 	DimGen := DimensionGeneratingFunction(M);
 	dim := Round(Coefficient(DimGen, k));
 	return dim;

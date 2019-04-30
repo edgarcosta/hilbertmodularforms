@@ -1,8 +1,11 @@
-// TODO: narrow>1
 // TODO needs testing
+// TODO fix normalization at the end
 // Eisenstein Series have only been implemented for integral parallel weight 
-intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> ModFrmHilDElt 
+intrinsic EisensteinSeries(Sp::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> ModFrmHilDElt 
   	{Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).} 
+    M := Parent(Sp);
+    k := Weight(Sp);
+    N := Level(Sp);
   	Cl := NarrowClassGroup(M); 
    	mp := NarrowClassGroupMap(M); 
    	assert #SequenceToSet(k) eq 1; // Checking if parallel weight 
@@ -28,7 +31,7 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
     	if k[1] ge 2 then 
     		if aa eq 1*ZF then 
        			prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-       			coeffs[tt][0*ZF] := 2^(-n)*(eta^(-1))(bb)*LValue_Recognized(M, N, prim, k); 
+       			coeffs[tt][0*ZF] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, Sp, prim); 
      		else 
        			coeffs[tt][0*ZF] := 0; 
      		end if; 
@@ -36,14 +39,14 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
    		elif k[1] eq 1 then 
      	  if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
        		prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-       		coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, N, prim, k); 
+  coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M,Sp, prim); 
      	  elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
        		prim := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
-       		coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, N, prim, k); 
+  coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, Sp, prim); 
      	  elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
        		prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
        		prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
-       		coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, N, prim1, k) + (psi^(-1))(tt)*LValue_Recognized(M, N, prim2, k)); 
+  coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Sp, prim1) + (psi^(-1))(tt)*LValue_Recognized(M, Sp, prim2)); 
      	  elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
        		coeffs[1] := 0; 
      	  end if;
@@ -58,25 +61,29 @@ intrinsic EisensteinSeries(M::ModFrmHilD, N::RngOrdIdl, eta::GrpHeckeElt, psi::G
      		  coeffs[tt][nn] := sum; 
         end if;
    		end for; 
-   		//Ah Normalized coefficients here. Hmm I'm not sure if we can do this anymore?
-   		/* if not (coeffs[1] in [0,1]) then 
-     		factor := 1/coeffs[1]; 
-     		coeffs := [factor * elt : elt in coeffs]; 
-   		end if; */
+      // Makes coefficients rational
    		if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
         for nn in IdealsByNarrowClassGroup(M)[tt] do
     		  coeffs[tt][nn] := Rationals()!coeffs[tt][nn]; 
         end for;
       end if;
    	end for;
-   	return HMF(M, N, k, coeffs); 
+    E := HMF(Sp, coeffs);
+    // Normalized coefficients here. 
+    if not (coeffs[bbs[1]][0*ZF] in [0,1]) then 
+      E := (1/coeffs[bbs[1]][0*ZF]) * E;
+    end if; 
+   	return E;
  end intrinsic; 
 
 // TODO finish this and use in EisensteinSeries intrinsic
 
 //Toolbox function to use in the Eisenstein series function--gives us an L value
- intrinsic LValue_Recognized(M::ModFrmHilD, N::RngOrdIdl, prim::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> FldNumElt 
+intrinsic LValue_Recognized(M::ModFrmHilDGRng, Sp::ModFrmHilD, prim::GrpHeckeElt) -> FldNumElt 
    {This is a toolbox function to compute L values in the right space} 
+    N:=Level(Sp);
+    k:=Weight(Sp);
+
    // Lf := LSeries(prim : Precision := 50); 
    // TODO clean up precision 
    // Maybe a separate function to compute L-values? 
