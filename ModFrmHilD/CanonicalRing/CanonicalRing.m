@@ -1,13 +1,6 @@
 /////////////////////////////////////////////////////
-
 //////////// Canonical Embeddings Code  /////////////
-
 /////////////////////////////////////////////////////
-
-
-
-
-
 
 
 /////////////////  Helper Functions  //////////////////
@@ -225,13 +218,13 @@ generators. Once you think you have found all generators plug the outputs of thi
 // Input: LowestWeight = first weight with HMFS
 // Input: MaxWeight = highest weight to check for relations in
 // Output: Associative array of generators in each weight, Associative array of Relations in each weight and Quotient Ring
-intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilD, N::RngOrdIdl, LowestWeight::RngIntElt, MaxWeight::RngIntElt) -> Any
+intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, LowestWeight::RngIntElt, MaxWeight::RngIntElt) -> Any
 	{Finds all Generators and Relations}
 
 	Gens := AssociativeArray();
 	Relations := AssociativeArray();
 
-	Gens[LowestWeight] := [i : i in Basis(M,N,[LowestWeight,LowestWeight])];
+	Gens[LowestWeight] := [elt : elt in Basis(HMFSpace(M, [LowestWeight, LowestWeight], N)];
 
 
 	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
@@ -419,7 +412,6 @@ intrinsic QuadSpace(D::RngIntElt, prec::RngIntElt)-> Any
     OK := Integers(K);
     M := HMFSpace(K, prec);
     return M,1*OK;
-
 end intrinsic;
 
 
