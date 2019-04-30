@@ -264,16 +264,17 @@ end intrinsic;
 // Coerces HMF coefficients a_n in a ring R
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_I := R!a_I}
-  M := Parent(f);
+  M := Parent(Parent(f));
   bbs := NarrowClassGroupReps(M);
   coeffs := Coefficients(f);
-  new_coeffs := AssociativeArray();
+  new_coeffs := AssociativeArray(Universe(coeffs));
   for bb in bbs do
+    new_coeffs[bb] := AssociativeArray(Universe(coeffs[bb]));
     for nn in Keys(coeffs[bb]) do
       new_coeffs[bb][nn] := R!coeffs[bb][nn];
     end for;
   end for;
-  return HMF(Parent(f), Level(f), Weight(f), new_coeffs);
+  return HMF(Parent(f), new_coeffs);
 end intrinsic;
 
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .

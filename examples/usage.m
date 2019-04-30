@@ -51,8 +51,9 @@ f1 := orbits[k][1];
 f2 := orbits[k][2];
 f3 := f1 + f2;
 f3;
-print "And we may coerce its coefficients";
-f3ZZ := Integers() ! f3;
+print "And we may coerce its coefficients into a Field"
+f3QQ := Integers() ! f3;
+print "CoefficientField(f3ZZ) = ", CoefficientField(f3ZZ);
 f3ZZ;
 
 HMFEquipWithMultiplication(M);
