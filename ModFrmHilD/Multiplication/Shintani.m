@@ -1,4 +1,3 @@
-
 ///// Shintani Algorithms + Enumerations of Totally positive elements in ideals /////////
 // Todo Massive clean up
 
