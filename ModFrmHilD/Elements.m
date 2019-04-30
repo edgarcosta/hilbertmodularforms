@@ -198,7 +198,7 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   return HMF(Mk, coeffs);
 end intrinsic;
 
-intrinsic HMFIdentity(M::ModFrmHilD) -> ModFrmHilDElt
+intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
   {create one ModHilFrmDElt of weight zero.}
   M := Parent(Mk);
   coeffs := AssociativeArray();

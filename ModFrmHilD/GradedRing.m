@@ -289,7 +289,7 @@ intrinsic ModFrmHilDGRngCopy(M::ModFrmHilDGRng) -> ModFrmHilDGRng
   return M1;
 end intrinsic;
 
-intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng) -> ModFrmHilDGRng
+intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
   bbs := NarrowClassGroupReps(M);
   mult_tables := AssociativeArray();
@@ -297,5 +297,4 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng) -> ModFrmHilDGRng
     mult_tables[bb] := GetIndexPairs(bb, M);
   end for;
   M`MultiplicationTables := mult_tables;
-  return M;
 end intrinsic;
