@@ -267,7 +267,7 @@ intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWe
 			Gens[k] := NewGens;
 		end if;
 
-		print "Level:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+		print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
 
 	end for;
 
@@ -385,8 +385,9 @@ intrinsic Relations(Gens::Assoc, Relations::Assoc, MaxWeight::RngIntElt) -> Any
 			Relations[k] := RelationsinR;
 		end if;
 
+		require #MonomialsGens - #RelationsinR eq Dimension(Mk): "Precision is too low or generator in weight", k;
 
-		print "Level:", k,  "    Dimension:", #MonomialsGens - #RelationsinR, Dimension(M,k), "      Relations", #RelationsinR;;
+		print "Weight:", k,  "   Number of Relations", #RelationsinR,  "    Dimension:", Dimension(Mk);
 
 	end for;
 
