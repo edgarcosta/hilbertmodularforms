@@ -88,16 +88,15 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
     if <k, chi> in Keys(spaces[N]) then
       return spaces[N][<k, chi>];
     end if;
-  else
-    Mk := ModFrmHilDInitialize();
-    Mk`Parent := M;
-    Mk`Weight := k;
-    Mk`Level := N;
-    Mk`Character := chi;
-    Mk`Integers := M`Integers;
-    AddToSpaces(M, Mk, N, k, chi);
-    return Mk;
   end if;
+  Mk := ModFrmHilDInitialize();
+  Mk`Parent := M;
+  Mk`Weight := k;
+  Mk`Level := N;
+  Mk`Character := chi;
+  Mk`Integers := M`Integers;
+  AddToSpaces(M, Mk, N, k, chi);
+  return Mk;
 end intrinsic;
 
 // overloaded for trivial level and character
