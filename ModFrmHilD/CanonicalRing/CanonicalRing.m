@@ -222,7 +222,7 @@ intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWe
 	n := Degree(BaseField(M));
 	LowestWeight := 2;
 	LowestWeightVec := [2 : i in [1..n]];
-	M2 := HMFSpace(M,N,LowestWeightVec);
+	M2 := HMFSpace(M, N, LowestWeightVec);
 	Gens[LowestWeight] := Basis(M2);
 
 	print "Level:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
@@ -230,7 +230,7 @@ intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWe
 	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
 
 		k := 2*i;
-		Mk := HMFSpace(M,N,[k : i in [1..n]]);
+		Mk := HMFSpace(M, N, [k : i in [1..n]]);
 
 		R := ConstructRing(Gens);
 		MonomialsinR := MonomialsOfWeightedDegree(R,k);
@@ -357,7 +357,7 @@ intrinsic Relations(Gens::Assoc, Relations::Assoc, MaxWeight::RngIntElt) -> Any
 	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
 
 		k := 2*i;
-		Mk := HMFSpace(M,N,[k : i in [1..n]]);
+		Mk := HMFSpace(M, N, [k : i in [1..n]]);
 
 		R := ConstructRing(Gens);
 		MonomialsinR := MonomialsOfWeightedDegree(R,k);
@@ -415,7 +415,7 @@ intrinsic QuadSpace(D::RngIntElt, prec::RngIntElt)-> Any
 
     K := QuadraticField(D);
     OK := Integers(K);
-    M := HMFSpace(K, prec);
+    M := GradedRingOfHMFs(K, prec);
     return M,1*OK;
 end intrinsic;
 

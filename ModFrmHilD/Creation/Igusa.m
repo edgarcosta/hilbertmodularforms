@@ -8,7 +8,7 @@ end intrinsic;
 
 
 intrinsic ComputeMiddleM1(r::SeqEnum[FldRatElt]) -> FldRatElt
-{We are constricted by 4m_1m_2 >= m^2. This function computes the 
+{We are constricted by 4m_1m_2 >= m^2. This function computes the
     value of m_1 that maximizes 4m_1m_2-m^2}
 return Round((4*r[1]+2*r[3]*r[4])/(2*r[4]*r[4]-8*r[2]));
 end intrinsic;
@@ -76,26 +76,26 @@ r := [0/1,0/1,0/1,0/1];
 
 
 // These are the coefficients that allow us to compute m_2, m
-// given a value for m_1. Depends on what in the 'multiplication 
-// law' is zero. 
+// given a value for m_1. Depends on what in the 'multiplication
+// law' is zero.
 r[1] := (b[2]*t[1]-b[1]*t[2])/(c[1]*b[2]-c[2]*b[1]);
 r[2] := (a[2]*b[1]-a[1]*b[2])/(c[1]*b[2]-c[2]*b[1]);
 if (b[1] ne 0) then
 		 r[3] := (t[1]-c[1]*r[1])/b[1];
 r[4] := (a[1]-c[1]*r[2])/b[1];
- else 
+ else
    r[3] := (t[2]-c[2]*r[1])/b[2];
 r[4] := (a[2]+c[2]*r[2])/b[2];
 end if;
 
 // Add the intial value if it is positive and satisfies constraints
 m1 := ComputeMiddleM1(r);
-if (Constraint(m1, r) ge 0) then 
+if (Constraint(m1, r) ge 0) then
 			      T := SiegelMatrix(m1, r);
 sat, newT := SatisfiesRules(T);
-if sat then 
+if sat then
 newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
-if verbose then 
+if verbose then
 print newT, elt, newcoeff;
 end if;
 coeff := coeff + SiegelCoeff(siegelWeight, newT[1], newT[2], newT[3]);
@@ -104,13 +104,13 @@ end if;
 
 // Work out from the central value until you are no longer positive
 width := 2;
-while(Constraint(m1,r) ge 0) do 
+while(Constraint(m1,r) ge 0) do
 			     m1 := m1 - 1;
 
 if (Constraint(m1,r) ge 0) then
 			     T:=SiegelMatrix(m1,r);
 sat, newT := SatisfiesRules(T);
-if sat then 
+if sat then
 newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
 if verbose then
 print newT, elt, newcoeff;
@@ -136,31 +136,31 @@ end while;
 return coeff;
 end intrinsic;
 
+// FIXME documentation string
 intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::RngIntElt) -> any
 {Does Something}
+  F := BaseField(M);
+  prec := Precision(M);
+  Cl, mp := NarrowClassGroup(F);
+  reps := [mp(g):g in Cl];
+  WeightVector := [ Weight : i in [1..Degree(F)]];
 
-F := BaseField(M);
-prec := Precision(M);
-Cl, mp := NarrowClassGroup(F);
-reps := [mp(g):g in Cl];
-WeightVector := [ Weight : i in [1..Degree(F)]];
+  max := #reps;
+  // Once we can do higher class number get rid of this max = 1;
+  max := 1;
+  coeffs := AssociativeArray();
+  for i := 1 to max do
+     repcoeffs := AssociativeArray();
+     numcoeffs := #ShintaniReps(M)[reps[i]];
+     elts := ShintaniReps(M)[reps[i]];
+  for j := 1 to numcoeffs do
+       repcoeffs[ShintaniRepresentativeToIdeal(reps[i],elts[j])]:=Coeff(reps[i],elts[j],Weight);
+  end for;
+  coeffs[reps[i]]:=repcoeffs;
 
-max := #reps;
-// Once we can do higher class number get rid of this max = 1;
-max := 1;
-coeffs := AssociativeArray();
-for i := 1 to max do
-	 repcoeffs := AssociativeArray();
-	 numcoeffs := #ShintaniReps(M)[reps[i]];
-	 elts := ShintaniReps(M)[reps[i]];
-for j := 1 to numcoeffs do
-	   repcoeffs[ShintaniRepresentativeToIdeal(reps[i],elts[j])]:=Coeff(reps[i],elts[j],Weight);
-end for;
-coeffs[reps[i]]:=repcoeffs;
-
-end for;
-A := HMF(HMFSpace(M,WeightVector),coeffs);
-return A;
+  end for;
+  A := HMF(HMFSpace(M, WeightVector), coeffs);
+  return A;
 end intrinsic;
 
 intrinsic UniversalIgusa(M::ModFrmHilDGRng) -> any

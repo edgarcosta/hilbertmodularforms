@@ -7,7 +7,8 @@ N := ideal<ZF | {1}>;
 k := [2, 2];
 K := Rationals();
 prec := 100;
-M := HMFSpace(F, k, N);
+G := GradedRingOfHMFs(F, prec);
+M := HMFSpace(G, k, N);
 
 time g, r := ConstructGeneratorsAndRelations(M, N, 2, 8);
 time g1, r1 := Relations(M, g, r, 20);
