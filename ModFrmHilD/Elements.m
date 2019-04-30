@@ -478,11 +478,12 @@ intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   GrRing := Parent(Space);
   coeffs := Coefficients(f);
   bbs := NarrowClassGroupReps(GrRing);
+  F := CoefficientField(f);
+  coeffs := Coefficients(f);
+  assert c in F;
   for bb in bbs do
-    F := CoefficientField(f);
-    assert c in F;
-    for nn in Keys(Coefficients(f)[bb]) do
-      coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
+    for nn in Keys(coeffs[bb]) do
+      coeffs[bb][nn] := F!(c * coeffs[bb][nn]);
     end for;
   end for;
 return HMF(Space,coeffs);
@@ -534,14 +535,16 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   MTable := MultiplicationTables(fGrRing);
   bbs := NarrowClassGroupReps(fGrRing);
   new_coeff := AssociativeArray();
+  coeffs_f := Coefficients(f);
+  coeffs_g := Coefficients(g);
   for bb in bbs do
     new_coeff[bb] := AssociativeArray();
-    ZF := Integers(CoefficientField(f));
-    for nn in Keys(Coefficients(f)[bb]) do
+    ZF := Integers(coeffs_f);
+    for nn in Keys(coeffs_f[bb]) do
       c := 0;
       c := ZF!0;
       for pair in MTable[bb][nn] do
-        c +:= Coefficients(f)[bb][ pair[1] ] * Coefficients(g)[bb][ pair[2] ];
+        c +:= coeffs_f[bb][ pair[1] ] * coeffs_g[bb][ pair[2] ];
       end for;
       new_coeff[bb][nn] := c;
     end for;
