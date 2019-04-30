@@ -51,10 +51,9 @@ f1 := orbits[k][1];
 f2 := orbits[k][2];
 f3 := f1 + f2;
 f3;
-print "And we may coerce its coefficients into a Field"
+print "And we may coerce its coefficients into a Field";
 f3QQ := Integers() ! f3;
-print "CoefficientField(f3ZZ) = ", CoefficientField(f3ZZ);
-f3ZZ;
+print "CoefficientField(f3QQ) = ", CoefficientField(f3QQ);
 
 HMFEquipWithMultiplication(M);
 f12 := f1*f2;
@@ -65,16 +64,11 @@ assert squarediff1 eq  squarediff2;
 squaresum := f3*f3;
 assert squaresum eq f1*f1 + 2*f1*f2 + f2*f2;
 
-imwillingtowait8min := false;
-if imwillingtowait8min then
-  prec := 1000;
-else
-  prec := 100;
-end if;
 F := QuadraticField(5);
 ZF<w> := Integers(F);
 N := Factorization(ideal<ZF| {31}>)[1][1];
 k := [2, 2];
+prec := 30;
 M := GradedRingOfHMFs(F, prec);
 B2 := CuspFormBasis(M, N, [2,2]);
 f := B2[1];

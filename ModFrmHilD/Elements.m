@@ -425,17 +425,27 @@ end intrinsic;
 //TODO make zero HMF universal so it can be added/multiplied to any HMF
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
-  {compares Parent, Weight, and Coefficients.}
+{compares Parent, Weight, and Coefficients.}
   M := Parent(f);
-if Parent(f) ne Parent(g) then return false; end if;
-  if Weight(f) ne Weight(g) then return false; end if;
-if Keys(Coefficients(f)) ne Keys(Coefficients(g)) then return false; end if;
-  bbs := NarrowClassGroupReps(M);
+  if Parent(f) ne Parent(g) then
+    return false;
+  end if;
+  if Weight(f) ne Weight(g) then
+    return false;
+  end if;
+  if Keys(Coefficients(f)) ne Keys(Coefficients(g)) then
+    return false;
+  end if;
+  bbs := NarrowClassGroupReps(Parent(M));
   for bb in bbs do
-	   if Keys(Coefficients(f)[bb]) ne Keys(Coefficients(g)[bb]) then return false; end if;
-    for nn in Keys(Coefficients(f)[bb]) do
-      if Coefficients(f)[bb][nn] ne Coefficients(g)[bb][nn] then return false; end if;
-    end for;
+     if Keys(Coefficients(f)[bb]) ne Keys(Coefficients(g)[bb]) then
+       return false;
+     end if;
+     for nn in Keys(Coefficients(f)[bb]) do
+       if Coefficients(f)[bb][nn] ne Coefficients(g)[bb][nn] then
+         return false;
+       end if;
+     end for;
   end for;
   return true;
 end intrinsic;
@@ -444,8 +454,8 @@ end intrinsic;
 intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by integer c.}
 
-Space := Parent(f);
-GrRing := Parent(Space);
+  Space := Parent(f);
+  GrRing := Parent(Space);
   coeffs := Coefficients(f);
   bbs := NarrowClassGroupReps(GrRing);
   for bb in bbs do
