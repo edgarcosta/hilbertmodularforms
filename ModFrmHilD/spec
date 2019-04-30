@@ -1,31 +1,31 @@
 {
+  GradedRing.m
   Space.m
   Elements.m
   Workspace.m
   Formatting.m
+  hecke_stability.m
+  Basis.m
 }
 
 Multiplication
-{  
+{
    Multiplication.m
    Shintani.m
 }
 
 Creation
-{  
-   Basis.m
+{
    Newforms.m
    EisensteinSeries.m
    ThetaSeries.m
    Recognize.m
    Igusa.m
    Siegel.m
-   UniversalIgusa.m
 }
 
-CanonicalRings
+CanonicalRing
 {
   CanonicalRing.m
   HilbertSeries.m
-  hecke_stability.m
 }

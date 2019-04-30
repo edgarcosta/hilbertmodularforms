@@ -1,4 +1,3 @@
-
 ///// Shintani Algorithms + Enumerations of Totally positive elements in ideals /////////
 // Todo Massive clean up
 
@@ -152,7 +151,7 @@ end intrinsic;
 
 // Shintani Reduction Algorithm 1 (Currently in use)
 // The Shintani Domain above is stored in an array and this looks up the ideal 
-intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilD) -> SeqEnum
+intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilDGRng) -> SeqEnum
   {Speed up for Reduce Shintani}
   ZF := Integers(M); 
   I := nu*ZF;
@@ -237,17 +236,18 @@ end intrinsic;
 // Conversion : Shintani elements < = > Ideals 
 // Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F) 
 
-intrinsic IdealToShintaniRepresentative(M::ModFrmHilD, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
+intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   _,gen := IsPrincipal(n*bb);
-  ShintaniGenerator := ReduceShintani(gen,bb);
+  ShintaniGenerator := ReduceShintani(gen, bb, M);
   return ShintaniGenerator;
 end intrinsic;
 
-intrinsic ShintaniRepresentativeToIdeal(bb::RngOrdIdl, nu::RngOrdElt) -> ModFrmHilDElt
-  {Takes a representative [bb] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
+
+intrinsic ShintaniRepresentativeToIdeal(bb::RngOrdFracIdl, nu::RngOrdElt) -> ModFrmHilDElt
+  {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
   ZF := Parent(nu);
-  n := bb^(-1)*(nu*ZF);
+  n := nu*bb^(-1);
   return NicefyIdeal(n);
 end intrinsic;
 
