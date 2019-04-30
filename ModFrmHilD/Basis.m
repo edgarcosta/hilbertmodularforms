@@ -61,7 +61,7 @@ end intrinsic;
 
 
 
-intrinsic Basis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt], RngIntElt
+intrinsic Basis(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   // Cuspforms
   CB := CuspFormBasis(Sp);
