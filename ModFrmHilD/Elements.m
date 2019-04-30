@@ -544,6 +544,7 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
       new_coeff[bb][nn] := c;
     end for;
   end for;
+  // use relative precision to gain something here instead of minimum?
   prec_f := Precision(f);
   prec_g := Precision(g);
   return HMF(HMFSpace(fGrRing, newLevel, k, newCharacter), new_coeff : prec := Minimum(prec_f, prec_g));
