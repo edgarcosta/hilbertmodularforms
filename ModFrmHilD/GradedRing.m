@@ -192,7 +192,10 @@ end intrinsic;
 
 intrinsic AddToSpaces(M::ModFrmHilDGRng, Mk::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt)
   { adds Mk to the AssociativeArray M`Spaces}
-  M`Spaces[<N, k, chi>] := Mk;
+  if not N in M`Spaces then
+    M`Spaces[N] := AssociativeArray();
+  end if;
+  M`Spaces[N][<k, chi>] := Mk;
 end intrinsic;
 
 ////////// ModFrmHilDGRng creation and multiplication functions //////////

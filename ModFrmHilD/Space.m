@@ -41,7 +41,7 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-return Parent(M1) eq Parent(M2) and Weight(M1) eq Weight(M2) and 
+return Parent(M1) eq Parent(M2) and Weight(M1) eq Weight(M2) and
 Level(M1) eq Level(M2) and Character(M1) eq Character(M2);
 end intrinsic;
 
@@ -84,8 +84,10 @@ end intrinsic;
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt) -> ModFrmHilD
   {}
   spaces := Spaces(M);
-  if <N, k, chi> in Keys(spaces) then
-    return spaces[<N, k, chi>];
+  if N in Keys(spaces) then
+    if <k, chi> in Keys(spaces[N]) then
+      return spaces[N][<k, chi>];
+    end if;
   else
     Mk := ModFrmHilDInitialize();
     Mk`Parent := M;
