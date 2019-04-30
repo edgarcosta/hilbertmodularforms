@@ -26,8 +26,11 @@ declare attributes ModFrmHilDGRng:
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
   // Book keeping
   // Caching the computation of EigenForms
-  HeckeEigenvalues;
-  // a dobule indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
+  // a double indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
+  HeckeEigenvalues,
+  // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
+  Spaces
+  ;
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
 
@@ -235,7 +238,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // Ideals
   M`IdealsByNarrowClassGroup := AssociativeArray();
-  M`IdealElementPairs := AssociativeArray(); 
+  M`IdealElementPairs := AssociativeArray();
   for bb in M`NarrowClassGroupReps do
     IdealElementPairsList := [];
     for nu in ShintaniReps(M)[bb] do
@@ -250,7 +253,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // M`Ideals
   all_ideals := &cat[IdealsByNarrowClassGroup(M)[bb] : bb in NarrowClassGroupReps(M)];
-  // M`Primes 
+  // M`Primes
   M`AllPrimes := PrimesUpTo(Integers()!Max([CorrectNorm(nn) : nn in all_ideals]), BaseField(M));
   // sort M`Ideals by Norm
   norms := [CorrectNorm(I) : I in all_ideals];

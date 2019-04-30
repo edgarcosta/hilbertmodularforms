@@ -461,8 +461,8 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   for bb in bbs do
     F := CoefficientField(f);
 
-assert c in F;
-//assert c in Integers(F);
+    assert c in F;
+    //assert c in Integers(F);
 
     for nn in Keys(Coefficients(f)[bb]) do
       coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
@@ -474,8 +474,8 @@ end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by some scalar c.}
-Space := Parent(f);
-GrRing := Parent(Space);
+  Space := Parent(f);
+  GrRing := Parent(Space);
   coeffs := Coefficients(f);
   bbs := NarrowClassGroupReps(GrRing);
   for bb in bbs do
@@ -493,13 +493,13 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f+g.}
   // Currently returns the lowest precision of the forms
   // assert Parent(f) eq Parent(g);
-fSpace := Parent(f); gSpace := Parent(g);
-fGrRing := Parent(fSpace); gGrRing := Parent(gSpace);
+  fSpace := Parent(f); gSpace := Parent(g);
+  fGrRing := Parent(fSpace); gGrRing := Parent(gSpace);
 
-assert fSpace eq gSpace;
+  assert fSpace eq gSpace;
 
 
-M := fGrRing;
+  M := fGrRing;
   k := Weight(f);
   new_coeffs := AssociativeArray();
   bbs := NarrowClassGroupReps(M);
@@ -510,7 +510,7 @@ M := fGrRing;
       new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
     end for;
   end for;
-return HMF(HMFSpace(M, Level(fSpace), k, Character(fSpace)), new_coeffs);
+  return HMF(HMFSpace(M, Level(fSpace), k, Character(fSpace)), new_coeffs);
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -521,11 +521,14 @@ end intrinsic;
 // TODO only works when k has even weight
 // TODO for varied precision
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
-  {return f*g}
-  fSpace := Parent(f); gSpace := Parent(g);
-  fGrRing := Parent(fSpace); gGrRing := Parent(gSpace);
+  {return f*g with the same level}
+  fSpace := Parent(f);
+  gSpace := Parent(g);
+  fGrRing := Parent(fSpace);
+  gGrRing := Parent(gSpace);
   assert fGrRing eq gGrRing;
-  newLevel := Level(fSpace) meet Level(gSpace);
+  assert Level(fSpace) eq Level(gSpace); // we only support multiplication with the same level
+  newLevel := Level(fSpace);
   newCharacter := Character(fSpace)*Character(gSpace);
   k := [ Weight(gSpace)[i] + Weight(fSpace)[i] : i in [1..#Weight(gSpace)] ];
   MTable := MultiplicationTables(fGrRing);
