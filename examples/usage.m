@@ -5,27 +5,23 @@ examples using ModFrmHilD, ModFrmHilDElt
 SetDebugOnError(true);
 load "config.m";
 
-F := QuadraticField(13);
+// http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
+F := QuadraticField(8);
 ZF<w> := Integers(F);
-N := ideal<ZF | {1}>;
+N := ideal<ZF | {9, 3, 3}>;
 k := [2, 2];
 K := Rationals();
 prec := 100;
-M := HMFSpace(F,  prec);
-
-// http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
+M := GradedRingOfHMFs(F, prec);
+M2 := HMFSpace(M, N, k);
+// built in magma
 MF := HilbertCuspForms(F, N);
 S := NewSubspace(MF);
 newspaces := NewformDecomposition(S);
 newforms := [Eigenform(U) : U in newspaces];
-eigenvalues := AssociativeArray();
-primes := PrimesUpTo(prec, F);
-print primes;
-for pp in primes do
-    eigenvalues[pp] := HeckeEigenvalue(newforms[1],pp);
-end for;
-
-ef := EigenformToHMF(M, N, k, eigenvalues);
+// convert ModFrmHilElt -> ModFrmHilDElt
+print newforms[1];
+ef := NewformToHMF(M2, newforms[1]);
 print ef;
 // Compare with http://www.lmfdb.org/L/EllipticCurve/2.2.8.1/9.1/a/
 // a_n = \sum a_nn where Norm(nn) = n
@@ -36,7 +32,7 @@ ZF<w> := Integers(F);
 N := ideal<ZF | {11}>;
 k := [2, 2];
 prec := 100;
-M := HMFSpace(F,  prec);
+M := GradedRingOfHMFs(F, prec);
 orbit_representatives := NewformsToHMF(M, N, k);
 print "Do we have two Galois orbits?", #orbit_representatives eq 2;
 print "One of dimension 1 and another of dimension 2";
@@ -76,7 +72,7 @@ F := QuadraticField(5);
 ZF<w> := Integers(F);
 N := Factorization(ideal<ZF| {31}>)[1][1];
 k := [2, 2];
-M := HMFSpace(F, prec);
+M := GradedRingOfHMFs(F, prec);
 B2 := CuspFormBasis(M, N, [2,2]);
 f := B2[1];
 B4 := CuspFormBasis(M, N, [4,4]);
@@ -91,12 +87,12 @@ F := QuadraticField(5);
 ZF<w> := Integers(F);
 GM := Matrix(ZF, [[1,1],[1,2]]);
 prec := 10;
-M := HMFSpace(F, prec);
+M := GradedRingOfHMFs(F, prec);
 theta := ThetaSeries(M, GM);
 assert Coefficients(theta) eq [1,4,4,8,8];
 
 GM := Matrix(F, [[1,-1/2],[-1/2,1]]);
 prec := 10;
-M := HMFSpace(F, prec);
+M := GradedRingOfHMFs(F, prec);
 theta := ThetaSeries(M, GM);
 assert Coefficients(theta) eq [1,6,12,0,6];

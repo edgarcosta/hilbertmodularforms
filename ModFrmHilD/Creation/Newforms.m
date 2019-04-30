@@ -5,7 +5,7 @@
 intrinsic CoefficientsFromRecursion(M::ModFrmHilDGRng, N::RngOrdIdl, n::RngOrdIdl, k::SeqEnum[RngIntElt], coeff::Assoc) -> RngIntElt
   {construct the coefficient for a_n from an associative array coeff with all a_p for p|n}
   ZF := Integers(M);
-  k0 := Max(k); 
+  k0 := Max(k);
   Fact := Factorization(n);
   // Power series ring for recusion
   ZFX<X, Y> := PolynomialRing(ZF, 2);
@@ -15,7 +15,7 @@ intrinsic CoefficientsFromRecursion(M::ModFrmHilDGRng, N::RngOrdIdl, n::RngOrdId
   // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
   coeff_I := 1;
-  for pair in Fact do 
+  for pair in Fact do
     pp := pair[1];
     Np := Norm(pp)^(k0-1);
     // if pp is bad
@@ -38,14 +38,14 @@ intrinsic NewformToHMF(Sp::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
 
   // Step 1: a_0 and a_1
   coeffs[0*ZF] := 0; coeffs[1*ZF] := 1;
-  // Step 2: a_p for primes 
-  for pp in AllPrimes(M) 
-    do coeffs[pp] := HeckeEigenvalue(newform, pp);
+  // Step 2: a_p for primes
+  for pp in AllPrimes(M) do
+    coeffs[pp] := HeckeEigenvalue(newform, pp);
   end for;
   // Step 3: a_n for composite ideals
-  for I in AllIdeals(M) do 
-    if I notin Keys(coeffs) then 
-      coeffs[I] := CoefficientsFromRecursion(M,N,I,k,coeffs);
+  for I in AllIdeals(M) do
+    if I notin Keys(coeffs) then
+      coeffs[I] := CoefficientsFromRecursion(M, N, I, k, coeffs);
     end if;
   end for;
 
