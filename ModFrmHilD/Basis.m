@@ -38,7 +38,8 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   n := Degree(ZF);
 
   EB := [];  // Eisenstein basis, to be filled in
-
+  print "BROKEN!!!";
+/* BROKEN
   NNfact := Factorization(NN);
   NN1s := [pp[i]^j : i in [1..NNfact]];  // list NN1^2 | NN
 
@@ -64,6 +65,7 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
       end if;
     end for;
   end for;
+  */
   return EB;
 end intrinsic;
 
