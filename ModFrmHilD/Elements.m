@@ -532,7 +532,7 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
       new_coeff[bb][nn] := c;
     end for;
   end for;
-  return HMF(HMFSpace(fGrRing, k, newLevel, newCharacter), new_coeff);
+  return HMF(HMFSpace(fGrRing, newLevel, k, newCharacter), new_coeff);
 end intrinsic;
 
 //Dictionary would great here! Make linear algebra much easier
