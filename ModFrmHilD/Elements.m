@@ -187,8 +187,8 @@ end intrinsic;
 
 intrinsic HMFIdentity(M::ModFrmHilDGRng) -> ModFrmHilDElt
   {create one ModHilFrmDElt of weight zero.}
-  n := Degree(BaseField(M));
-  Mk := HMFSpace(M, [0 : i in [1..n]]);
+  k := [0 : i in [1..Degree(BaseField(M))]]
+  Mk := HMFSpace(M, k);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs_bb := AssociativeArray();
@@ -423,6 +423,7 @@ end intrinsic;
 /*     return g; */
 /*   end if; */
 /*   if #Basis eq 0 then */
+/*     // wrong syntax */
 /*     M1:=HMFSpace(BaseField(M), Floor(prec/Norm(nn))); */
 /*     print "Warning: the Hecke operator calculation decreases precision to ", */
 /*     Floor(prec/Norm(nn)); */
@@ -510,7 +511,7 @@ M := fGrRing;
       new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
     end for;
   end for;
-return HMF(HMFSpace(M,k,Level(fSpace),Character(fSpace)),new_coeffs);
+return HMF(HMFSpace(M, k, Level(fSpace), Character(fSpace)), new_coeffs);
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -546,7 +547,7 @@ ZF := Integers(CoefficientField(f));
       new_coeff[bb][nn] := c;
     end for;
   end for;
-return HMF(HMFSpace(fGrRing,k,newLevel,newCharacter),new_coeff);
+return HMF(HMFSpace(fGrRing, k, newLevel, newCharacter),new_coeff);
 
 end intrinsic;
 
