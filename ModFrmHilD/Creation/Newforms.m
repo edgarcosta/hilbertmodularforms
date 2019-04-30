@@ -71,23 +71,23 @@ return HMF(Sp, CoeffsArray);
 end intrinsic;
 
 
-intrinsic NewformsToHMF(Sp::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  {returns Hilbert newforms} 
-  N := Level(Sp);
-  k := Weight(Sp);
-  M := Parent(Sp);
-  F := BaseField(M); 
-  MF := HilbertCuspForms(F, N, k); 
-  S := NewSubspace(MF); 
-  newspaces  := NewformDecomposition(S); 
-  newforms := [* Eigenform(U) : U in newspaces *]; 
-  HMFnewforms := [**]; 
+intrinsic NewformsToHMF(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {returns Hilbert newforms}
+  N := Level(Mk);
+  k := Weight(Mk);
+  M := Parent(Mk);
+  F := BaseField(M);
+  MF := HilbertCuspForms(F, N, k);
+  S := NewSubspace(MF);
+  newspaces  := NewformDecomposition(S);
+  newforms := [* Eigenform(U) : U in newspaces *];
+  HMFnewforms := [* *];
   for newform in newforms do
-    NewHMF := NewformToHMF(Sp, newform);
-    Append(~HMFnewforms, NewHMF); 
-  end for; 
+    NewHMF := NewformToHMF(Mk, newform);
+    Append(~HMFnewforms, NewHMF);
+  end for;
   return HMFnewforms;
-end intrinsic; 
+end intrinsic;
 
 /*
 intrinsic NewformsToHMF2(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]

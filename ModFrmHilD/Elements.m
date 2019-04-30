@@ -461,8 +461,8 @@ intrinsic '*'(c::RngIntElt, f::ModFrmHilDElt) -> ModFrmHilDElt
   for bb in bbs do
     F := CoefficientField(f);
 
-assert c in F;
-//assert c in Integers(F);
+    assert c in F;
+    //assert c in Integers(F);
 
     for nn in Keys(Coefficients(f)[bb]) do
       coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
@@ -474,15 +474,16 @@ end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by some scalar c.}
-Space := Parent(f);
-GrRing := Parent(Space);
+  Space := Parent(f);
+  GrRing := Parent(Space);
   coeffs := Coefficients(f);
   bbs := NarrowClassGroupReps(GrRing);
+  F := CoefficientField(f);
+  coeffs := Coefficients(f);
+  assert c in F;
   for bb in bbs do
-    F := CoefficientField(f);
-    assert c in F;
-    for nn in Keys(Coefficients(f)[bb]) do
-      coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
+    for nn in Keys(coeffs[bb]) do
+      coeffs[bb][nn] := F!(c * coeffs[bb][nn]);
     end for;
   end for;
 return HMF(Space,coeffs);
@@ -493,13 +494,13 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f+g.}
   // Currently returns the lowest precision of the forms
   // assert Parent(f) eq Parent(g);
-fSpace := Parent(f); gSpace := Parent(g);
-fGrRing := Parent(fSpace); gGrRing := Parent(gSpace);
+  fSpace := Parent(f); gSpace := Parent(g);
+  fGrRing := Parent(fSpace); gGrRing := Parent(gSpace);
 
-assert fSpace eq gSpace;
+  assert fSpace eq gSpace;
 
 
-M := fGrRing;
+  M := fGrRing;
   k := Weight(f);
   new_coeffs := AssociativeArray();
   bbs := NarrowClassGroupReps(M);
@@ -510,7 +511,7 @@ M := fGrRing;
       new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
     end for;
   end for;
-return HMF(HMFSpace(M, Level(fSpace), k, Character(fSpace)), new_coeffs);
+  return HMF(HMFSpace(M, Level(fSpace), k, Character(fSpace)), new_coeffs);
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -521,24 +522,35 @@ end intrinsic;
 // TODO only works when k has even weight
 // TODO for varied precision
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
-  {return f*g}
-  fSpace := Parent(f); gSpace := Parent(g);
-  fGrRing := Parent(fSpace); gGrRing := Parent(gSpace);
+  {return f*g with the same level}
+  fSpace := Parent(f);
+  gSpace := Parent(g);
+  fGrRing := Parent(fSpace);
+  gGrRing := Parent(gSpace);
   assert fGrRing eq gGrRing;
-  newLevel := Level(fSpace) meet Level(gSpace);
+  assert Level(fSpace) eq Level(gSpace); // we only support multiplication with the same level
+  newLevel := Level(fSpace);
   newCharacter := Character(fSpace)*Character(gSpace);
   k := [ Weight(gSpace)[i] + Weight(fSpace)[i] : i in [1..#Weight(gSpace)] ];
   MTable := MultiplicationTables(fGrRing);
   bbs := NarrowClassGroupReps(fGrRing);
   new_coeff := AssociativeArray();
+  coeffs_f := Coefficients(f);
+  coeffs_g := Coefficients(g);
+  Ff := CoefficientField(f);
+  Fg := CoefficientField(g);
+  if Ff eq Fg then
+    F := Ff;
+  else
+    F := Compositum(Ff, Fg);
+  end if;
   for bb in bbs do
     new_coeff[bb] := AssociativeArray();
-    ZF := Integers(CoefficientField(f));
-    for nn in Keys(Coefficients(f)[bb]) do
+    for nn in Keys(coeffs_f[bb]) do
       c := 0;
-      c := ZF!0;
+      c := F!0;
       for pair in MTable[bb][nn] do
-        c +:= Coefficients(f)[bb][ pair[1] ] * Coefficients(g)[bb][ pair[2] ];
+        c +:= F!coeffs_f[bb][ pair[1] ] * F!coeffs_g[bb][ pair[2] ];
       end for;
       new_coeff[bb][nn] := c;
     end for;
