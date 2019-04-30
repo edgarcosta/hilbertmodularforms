@@ -20,7 +20,6 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
 	  NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(Mkdd)];
     OldSpace_dd := &cat[Inclusion(elt, Mk) : elt in NewSpace_dd ];
     Cuspbasis cat:= OldSpace_dd;
-    print "dd = ", dd, "\n", "Ns, Os, Cs = ", #NewSpace_dd, #OldSpace_dd, #Cuspbasis, "\n\n";
   end for;
   return Cuspbasis;
 end intrinsic;
