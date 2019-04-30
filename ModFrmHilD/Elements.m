@@ -198,10 +198,9 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   return HMF(Mk, coeffs);
 end intrinsic;
 
-intrinsic HMFIdentity(M::ModFrmHilDGRng) -> ModFrmHilDElt
+intrinsic HMFIdentity(M::ModFrmHilD) -> ModFrmHilDElt
   {create one ModHilFrmDElt of weight zero.}
-  k := [0 : i in [1..Degree(BaseField(M))]];
-  Mk := HMFSpace(M, k);
+  M := Parent(Mk);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs_bb := AssociativeArray();
@@ -600,8 +599,7 @@ end intrinsic;
    if n lt 0 then
      f := Inverse(f);
    end if;
-   M := Parent(Parent(f));
-   g := HMFIdentity(M);
+   g := HMFIdentity(Parent(f));
    if n eq 0 then
      return g;
    end if;
