@@ -25,9 +25,12 @@ declare attributes ModFrmHilDGRng:
   AllPrimes, // List of all ideals for all bb ordered by norm
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
   // Book keeping
-  // Caching the computation of EigenForms
-  HeckeEigenvalues;
-  // a dobule indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
+  // Caching the computation of EigenForms, see Workspace
+  // a double indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
+  HeckeEigenvalues,
+  // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
+  Spaces
+  ;
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
 
@@ -182,6 +185,16 @@ intrinsic HeckeEigenvalues(M::ModFrmHilDGRng) -> Assoc
   return M`HeckeEigenvalues;
 end intrinsic;
 
+intrinsic Spaces(M::ModFrmHilDGRng) -> Assoc
+  {return the Spaces attribute}
+  return M`Spaces;
+end intrinsic;
+
+intrinsic AddToSpaces(M::ModFrmHilDGRng, Mk::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt)
+  { adds Mk to the AssociativeArray M`Spaces}
+  M`Spaces[<N, k, chi>] := Mk;
+end intrinsic;
+
 ////////// ModFrmHilDGRng creation and multiplication functions //////////
 
 intrinsic ModFrmHilDGRngInitialize() -> ModFrmHilD
@@ -235,7 +248,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // Ideals
   M`IdealsByNarrowClassGroup := AssociativeArray();
-  M`IdealElementPairs := AssociativeArray(); 
+  M`IdealElementPairs := AssociativeArray();
   for bb in M`NarrowClassGroupReps do
     IdealElementPairsList := [];
     for nu in ShintaniReps(M)[bb] do
@@ -250,12 +263,14 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // M`Ideals
   all_ideals := &cat[IdealsByNarrowClassGroup(M)[bb] : bb in NarrowClassGroupReps(M)];
-  // M`Primes 
+  // M`Primes
   M`AllPrimes := PrimesUpTo(Integers()!Max([CorrectNorm(nn) : nn in all_ideals]), BaseField(M));
   // sort M`Ideals by Norm
   norms := [CorrectNorm(I) : I in all_ideals];
   ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
+
+  M`Spaces := AssociativeArray();
   return M;
 end intrinsic;
 

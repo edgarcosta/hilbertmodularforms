@@ -83,13 +83,19 @@ end intrinsic;
 // TODO: some checks here? or leave it up to the user?
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt) -> ModFrmHilD
   {}
-  Mk := ModFrmHilDInitialize();
-  Mk`Parent := M;
-  Mk`Weight := k;
-  Mk`Level := N;
-  Mk`Character := chi;
-  Mk`Integers := M`Integers;
-  return Mk;
+  spaces := Spaces(M);
+  if <N, k, chi> in Keys(spaces) then
+    return spaces[<N, k, chi>];
+  else
+    Mk := ModFrmHilDInitialize();
+    Mk`Parent := M;
+    Mk`Weight := k;
+    Mk`Level := N;
+    Mk`Character := chi;
+    Mk`Integers := M`Integers;
+    AddToSpaces(M, Mk, N, k, chi);
+    return Mk;
+  end if;
 end intrinsic;
 
 // overloaded for trivial level and character
