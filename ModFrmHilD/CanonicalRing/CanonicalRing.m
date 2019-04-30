@@ -137,18 +137,18 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
 
 	for bb in bbs do
 		for nn in IdealsByNarrowClassGroup(M)[bb] do
-		  	index[[bb,nn]]:=indexnum;
+		  	index[[bb,nn]] := indexnum;
 			indexnum := indexnum + 1;
 			for i in [1..#BasisWeightK] do
 				Append(~SpaceCoeffLists[i], Coefficients(BasisWeightK[i])[bb][nn]);
 			end for;
 			for i in [1..#EvaluatedMonomials] do
-				Append(~MonomialCoeffLists[i],Coefficients(EvaluatedMonomials[i])[bb][nn]);
+				Append(~MonomialCoeffLists[i], Coefficients(EvaluatedMonomials[i])[bb][nn]);
 			end for;
 		end for;
 	end for;
 
-	Mat := Matrix( [ elt : elt in SpaceCoeffLists] );
+	Mat := Matrix([elt : elt in SpaceCoeffLists]);
 	V := VectorSpaceWithBasis(Mat);
 	W := sub<V | [MonomialCoeffLists[i]:i in [1..#EvaluatedMonomials]]>;
 	ExtendMultBasis := ExtendBasis(W,V);
@@ -164,9 +164,8 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
 	 		end for;
 			newCoeffs[bb]:= idealCoeffs;
 		end for;
-
-		newHMF := HMF(Mk,newCoeffs);
-	  	Append(~NewGens,newHMF);
+		newHMF := HMF(Mk, newCoeffs);
+	  Append(~NewGens, newHMF);
 	end for;
 	return NewGens;
 end intrinsic;

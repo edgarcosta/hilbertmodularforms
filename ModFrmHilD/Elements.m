@@ -187,7 +187,7 @@ end intrinsic;
 
 intrinsic HMFIdentity(M::ModFrmHilDGRng) -> ModFrmHilDElt
   {create one ModHilFrmDElt of weight zero.}
-  k := [0 : i in [1..Degree(BaseField(M))]]
+  k := [0 : i in [1..Degree(BaseField(M))]];
   Mk := HMFSpace(M, k);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
