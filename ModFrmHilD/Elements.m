@@ -31,9 +31,15 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     for bb in bbs do
       coeffs_bb := coeffs[bb];
       printf "Coefficients for ideal class bb = %o\n", bb;
-      printf "\n\t(Ideal)  |--->   a_nn = a_(nu)*bb^-1";
+      printf "\n\t(Norm, nn)  |--->   a_nn = a_(nu)*bb^-1";
       for nn in IdealsByNarrowClassGroup(M)[bb] do
-        printf "\n\t(%o)  |--->   %o", IdealOneLine(nn), coeffs_bb[nn];
+        if nn eq 0*N then
+          norm := 0;
+        else
+           norm := Norm(nn);
+        end if;
+        printf "\n\t(%o, %o)  |--->   %o", norm,  IdealOneLine(nn), coeffs_bb[nn];
+        //printf "\n\t(%o)  |--->   %o", IdealOneLine(nn), coeffs_bb[nn];
       end for;
       printf "\n\n";
     end for;
@@ -196,6 +202,19 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
     coeffs[bb] := coeffs_bb;
   end for;
   return HMF(Mk, coeffs);
+end intrinsic;
+
+intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
+  {check if form is identically zero}
+  coeffs := Coefficients(f);
+  for bb in Keys(coeffs) do
+    for nu in Keys(coeffs[bb]) do
+      if coeffs[bb][nu] ne 0 then
+        return false;
+      end if;
+    end for;
+  end for;
+  return true;
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
