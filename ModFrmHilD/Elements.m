@@ -479,6 +479,11 @@ intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   return HMF(Mk, coeffs : prec := prec);
 end intrinsic;
 
+intrinsic '*'(f::ModFrmHilDElt, c::Any) -> ModFrmHilDElt
+  {scale f by scalar c.}
+  return c*f;
+end intrinsic;
+
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f+g.}
   // Currently returns the lowest precision of the forms
