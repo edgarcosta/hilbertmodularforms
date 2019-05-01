@@ -99,8 +99,6 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
     coeffs[bb] := AssociativeArray();
     for nu in IdealsByNarrowClassGroup(M)[bb] do
       if IsZero(nu) then
-        coeffs[bb][nu] := 0;
-      elif nu eq ideal<ZK|1> then
         coeffs[bb][nu] := 1;
       else
         rep := IdealToShintaniRepresentative(M, bb, nu);
