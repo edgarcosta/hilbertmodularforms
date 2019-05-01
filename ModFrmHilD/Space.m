@@ -9,8 +9,7 @@ declare attributes ModFrmHilD:
   Parent, // ModFrmHilDGRng
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
-  Character, // GrpHeckeElt
-  Integers; // RngOrd
+  Character; // GrpHeckeElt
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
@@ -67,9 +66,16 @@ intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   return Mk`Character;
 end intrinsic;
 
-intrinsic Integers(Mk::ModFrmHilD) -> GrpHeckeElt
+/* attributes of the parent */
+
+intrinsic BaseField(Mk::ModFrmHilD) -> Any
   {}
-  return Mk`Integers;
+  return BaseField(Parent(Mk));
+end intrinsic;
+
+intrinsic Integers(Mk::ModFrmHilD) -> Any
+  {}
+  return Integers(Parent(Mk));
 end intrinsic;
 
 ////////// ModFrmHilD creation and multiplication functions //////////
@@ -94,7 +100,6 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Weight := k;
   Mk`Level := N;
   Mk`Character := chi;
-  Mk`Integers := M`Integers;
   AddToSpaces(M, Mk, N, k, chi);
   return Mk;
 end intrinsic;
