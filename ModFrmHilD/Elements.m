@@ -416,39 +416,64 @@ end intrinsic;
    {returns associative array with coefficients for T(nn)(f) with loss of precision.}
    Mk := Parent(f);
    M :=Parent(Mk);
-   ZF:=Integers(BaseField(M));
+   F:=BaseField(M);
+   ZF:=Integers(F);
    fcoeffs := Coefficients(f);
    ideals := IdealsByNarrowClassGroup(M);
    k0 := Max(Weight(f));
    //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn)
    coeffsTnnf := AssociativeArray();
-   //for x:=2 to #ideals do
-    // if Norm(ideals[x]) le prec/Norm(nn) then
-    //   idealssmallprec:= idealssmallprec cat [ideals[x]];
-    // end if;
-   //end for;
-   for bb in  NarrowClassGroupReps(M) do
+   newPrec:=0;
+   for bb in NarrowClassGroupReps(M) do
     coeffsTnnf[bb] := AssociativeArray();
-    for I in IdealsByNarrowClassGroup(M)[bb] do
-      c :=0;
+    end for;
+   for T:=0 to Precision(M) do
+    traceDefined:=0; //keeps track if coefficients for all ideals of a given trace are defined 
+    totalIdealsByTrace:=0;
+    for bb in  NarrowClassGroupReps(M) do
+      IdealsTraceT:=ShintaniRepsByTrace(M)[bb][T]; //get list of Shintani reps with trace T
+      totalIdealsByTrace+:= #IdealsTraceT;
+      for x in IdealsTraceT do
+        I:=x*bb^(-1);
+        c :=0;
         allDivisors:=true; //keeps track if all the coefficients in the sum for an ideal are defined
         // loop over divisors
         // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms
-        for aa in Divisors(I + nn) do
+        for aa in Divisors(ZF!!(I + nn)) do
           if aa^(-2) * (I* nn) notin AllIdeals(M) then
            allDivisors:=false ; break; //stop if coefficient for divisor is not defined
              else
               if I eq 0*ZF then c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[bb][I]; //takes care if the coefficients for the zero ideal are different
                 else c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF !! (aa^(-2) * (I* nn)));
-                  end if;
-       end if;
+                end if;
+             end if;
           end for;
-        if allDivisors eq true then coeffsTnnf[bb][I] := c;
+        if allDivisors eq true then 
+          traceDefined +:= 1;
+          coeffsTnnf[bb][I] := c;
          else break; //stop if not all coefficients for the divisors in the sum for an ideal are defined
          end if;
         end for;
+      end for;
+    if traceDefined eq totalIdealsByTrace then 
+      newPrec:=T;
+      else 
+        newPrec:=Max(0, newPrec);
+        for bb in NarrowClassGroupReps(M) do
+           IdealsTraceT:=ShintaniRepsByTrace(M)[bb][T];
+           for x in IdealsTraceT do
+            I:=x*ZF;
+            if I in Keys(coeffsTnnf[bb]) then
+              Remove(~coeffsTnnf[bb], I);
+              end if;
+            end for;
+           end for;
+           break;
+      end if;
     end for;
-    return coeffsTnnf;
+  //return coeffsTnnf, newPrec;
+  MNew:=GradedRingOfHMFs(F, newPrec);
+  return HMF(HMFSpace(MNew, Level(f), Weight(f)), coeffsTnnf);      
  end intrinsic;
 
 ////////// ModFrmHilDElt: Arithmetic //////////
