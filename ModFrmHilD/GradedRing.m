@@ -198,6 +198,7 @@ intrinsic AddToSpaces(M::ModFrmHilDGRng, Mk::ModFrmHilD, N::RngOrdIdl, k::SeqEnu
   M`Spaces[N][<k, chi>] := Mk;
 end intrinsic;
 
+
 ////////// ModFrmHilDGRng creation and multiplication functions //////////
 
 intrinsic ModFrmHilDGRngInitialize() -> ModFrmHilD

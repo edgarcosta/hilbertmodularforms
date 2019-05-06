@@ -26,49 +26,66 @@ end intrinsic;
 
 
 //TODO
-// - Test for correctness
-// - Clean up code?
+// Only implemented for parallel weight 
 intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
+  M := Parent(Mk);
   NN := Level(Mk);
   k := Weight(Mk);
-  assert #SequenceToSet(k) eq 1 and k[1] ge 2; // Only implemented for parallel weight k >= 2
+  require #SequenceToSet(k) eq 1: "Only implemented for parallel weight";
+  require k[1] mod 2 eq 0: "Only implemented for even weight";  // Eisenstein series will work for parallel weight 1. 
   F := BaseField(Mk);
   ZF := Integers(F);
   n := Degree(ZF);
-
+  HCG := HeckeCharacterGroup(1*Integers(F),[1..n]);
+  DDs := [DD : DD in Divisors(NN) | DD^2 in Divisors(NN)];  // list NN1^2 | NN
   EB := [];  // Eisenstein basis, to be filled in
-  print "BROKEN!!!";
-/* BROKEN
-  NNfact := Factorization(NN);
-  NN1s := [pp[i]^j : i in [1..NNfact]];  // list NN1^2 | NN
-
   // loop over
-  H := HeckeCharacterGroup(NN/NN1^2,[1..n]);
-  for i in [0..#Hplus-1] do
-    eta := Hplus.i;
-    for j in [0..#HNplus-1] do
-      psi := HNplus.j;
-      H_psi := Restrict(psi, Hplus);
-      // This is checking the condition on pg 458
-      if k[1] mod 2 eq 0 then
-        if H_psi*eta^(-1) eq Hplus!1 then
-          E := EisensteinSeries(Mk, eta, psi);
-          EB cat:= GaloisOrbitDescent(E);
-        end if;
-      else
-        // This does not function for k = 1 currently
-        if Set([Component(H_psi,i) eq Component(eta,i) : i in [1..n]]) eq {false} then
-          E := EisensteinSeries(Mk, eta, psi);
-          EB cat:= GaloisOrbitDescent(E);
-        end if;
-      end if;
+  for DD in DDs do 
+    Mk_DD := HMFSpace(M, DD, k);
+    HCGDD := HeckeCharacterGroup(DD,[1..n]);
+    HCGDD_Elts := Elements(HCGDD);
+    for eta in HCGDD_Elts do
+      psi := (Restrict(eta, HCG))^(-1);
+      E := EisensteinSeries(Mk_DD, eta, psi);
+      EG := GaloisOrbitDescent(E); // Q orbits
+      for elt in EG do
+        EB cat:= Inclusion(elt,Mk); // Inclusion Mk_NN1 -> Mk
+      end for;
     end for;
   end for;
-  */
   return EB;
 end intrinsic;
 
+
+intrinsic AllEisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  { returns a basis for the complement to the cuspspace of M of weight k }
+  M := Parent(Mk);
+  NN := Level(Mk);
+  k := Weight(Mk);
+  require #SequenceToSet(k) eq 1: "Only implemented for parallel weight";
+  require k[1] mod 2 eq 0: "Only implemented for even weight";  // Eisenstein series will work for parallel weight 1. 
+  F := BaseField(Mk);
+  ZF := Integers(F);
+  n := Degree(ZF);
+  EB := [];  // Eisenstein basis, to be filled in
+  Characters := HeckeCharacterGroup(1*Integers(F),[1..n]);
+  // loop over
+  // In Cohen Stroemberg they divide into two cases based on k = 2 or 4. 
+  // For k = 2, then I don't think Theorem 7.5.21 works. Take N = 1, then we get 1 form from G(X1,X1bar) from the non trivial character and nothing else. But there are generally 2 forms
+  for NN1 in Divisors(NN) do 
+    Mk_NN1 := HMFSpace(M, NN1, k);
+    Characters_NN1 := Elements(HeckeCharacterGroup(NN1,[1..n]));
+    //PrimitiveCharacters_NN1 := [elt : elt in Elements(HeckeCharacterGroup(NN1,[1..n])) | IsPrimitive(elt)];
+    for eta in Characters_NN1 do
+      psi := (Restrict(eta, Characters))^(-1);
+      E := EisensteinSeries(Mk_NN1, eta, psi);
+      EG := GaloisOrbitDescent(E); // Q orbits
+      EB cat:= [Inclusion(elt,Mk) : elt in EG]; // Inclusion Mk_NN1 -> Mk
+    end for;
+  end for;
+  return EB;
+end intrinsic;
 
 
 intrinsic Basis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
