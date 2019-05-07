@@ -218,7 +218,7 @@ intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWe
 
 	Gens := AssociativeArray();
 	Relations := AssociativeArray();
-MonomialGens := AssociativeArray();
+Monomials := AssociativeArray();
 	n := Degree(BaseField(M));
 
 LowestWeight := 2;
@@ -267,7 +267,7 @@ Gens[LowestWeight] := LowestWeightBasis;
 
 		if #RelationsinR ne 0 then
 			Relations[k] := RelationsinR;
-MonomialGens[k]:=MonomialsGens;
+Monomials[k]:=MonomialsGens;
 		end if;
 
 		Basisweightk := Basis(Mk);
@@ -283,7 +283,7 @@ MonomialGens[k]:=MonomialsGens;
 	end for;
 end if;
 
-return Gens,Relations,MonomialGens;
+return Gens,Relations,Monomials;
 end intrinsic;
 
 /*
@@ -354,11 +354,11 @@ end intrinsic;
 // Input: MaxWeight = highest weight to check for relations in
 // Output: Associative array of generators in each weight, associative array of relations in each weight and quotient ring
 
-intrinsic Relations(Gens::Assoc, Relations::Assoc, MaxWeight::RngIntElt,MonomialGens::Assoc) -> Any
+intrinsic Relations(Gens::Assoc, Relations::Assoc, Monomials::Assoc, MaxWeight::RngIntElt) -> Any
 	{Finds all Generators and Relations}
 // Need to find graded ring which contains all these, so I need a key
 keys := Keys(Gens);
-if IsNull(keys) then return Gens, Relations, MonomialGens; end if;
+if IsNull(keys) then return Gens, Relations, Monomials; end if;
 Mi := Parent(Gens[SetToSequence(keys)[1]][1]);
 N := Level(Mi);
 M := Parent(Mi);
@@ -401,7 +401,7 @@ n := Degree(BaseField(M));
 
 		if #RelationsinR ne 0 then
 			Relations[k] := RelationsinR;
-MonomialGens[k]:=MonomialsGens;
+Monomials[k]:=MonomialsGens;
 		end if;
 
 //		require #MonomialsGens - #RelationsinR eq Dimension(Mk): "Precision is too low or generator in weight", k;
@@ -417,7 +417,7 @@ MonomialGens[k]:=MonomialsGens;
 		print i, #Relations[i];
 	end for;
 
-return Gens,Relations,MonomialGens;
+return Gens,Relations,Monomials;
 end intrinsic;
 
 
@@ -505,12 +505,10 @@ return EvaluatedMonomials;
 end intrinsic;
 
 
-intrinsic WeightTwoGeneratorsAndRelations(F::FldNum, N::RngOrdIdl: prec:=20, maxRelationWeight:= 12) -> any
-{Returns weight two relations}
-GrRing := GradedRingOfHMFs(F,prec);
-Sp := HMFSpace(GrRing,N,[2:i in [1..Degree(F)]]);
-G,R,M := ConstructGeneratorsAndRelations(GrRing,N,2);
-gens, rels, mons := Relations(G,R,maxRelationWeight,M);
-return gens,rels,mons;
+intrinsic GensRels(F::FldNum, N::RngOrdIdl: Precision:=20, MaxRelationWeight:=20, MaxGeneratorWeight:=2) -> any
+{returns relations up to weight MaxRelationWeight in generators up to MaxGeneratorWeight}
+GrRing := GradedRingOfHMFs(F,Precision);
+g,r,m := ConstructGeneratorsAndRelations(GrRing,N,MaxGeneratorWeight);
+gens, rels, mons := Relations(g,r,m,MaxRelationWeight);
+return gens, rels, mons;
 end intrinsic;
-
