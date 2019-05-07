@@ -188,7 +188,7 @@ F := BaseField(f);
 M := GradedRing(f);
 N := Level(f);
 
-g,r,m := GensRels(F,N:MaxGeneratorWeight:=Weight(f)[1])
+g,r,m := GensRels(F,N:MaxGeneratorWeight:=Weight(f)[1]);
   bas := CanonicalBasis(g,r,Weight(f)[1]);
 rel := LinearDependence(Append(bas,f));
 rel := rel[1];
