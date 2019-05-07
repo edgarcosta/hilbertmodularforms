@@ -278,7 +278,7 @@ Monomials[k]:=MonomialsGens;
 			Gens[k] := NewGens;
 		end if;
 
-		print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+//		print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
 
 	end for;
 end if;
@@ -412,11 +412,11 @@ Monomials[k]:=MonomialsGens;
 
 
 
-	print "Relations";
+/*	print "Relations";
 	for i in Keys(Relations) do
 		print i, #Relations[i];
 	end for;
-
+*/
 return Gens,Relations,Monomials;
 end intrinsic;
 
@@ -480,13 +480,14 @@ intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
 end intrinsic;
 
 
-intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc,n::RngIntElt) -> any
+intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc,Weight::SeqEnum[RngIntElt]) -> any
 {return a basis for the space of modular forms in weight n, in terms of
 			  monomials of the "canonical" generators}
 
+
 R := ConstructRing(Gens);
-MonomialsinR := MonomialsOfWeightedDegree(R,n);
-MonomialsGens := MonomialGenerators(R,Relations,n);
+MonomialsinR := MonomialsOfWeightedDegree(R,Weight[1]);
+MonomialsGens := MonomialGenerators(R,Relations,Weight[1]);
 EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens);
 
 relations := LinearDependence(EvaluatedMonomials);
@@ -506,7 +507,7 @@ end intrinsic;
 
 
 intrinsic GensRels(F::FldNum, N::RngOrdIdl: Precision:=20, MaxRelationWeight:=20, MaxGeneratorWeight:=2) -> any
-{returns relations up to weight MaxRelationWeight in generators up to MaxGeneratorWeight}
+{returns relations up to weight MaxRelationWeight in generators up to MaxGeneratorWeight; only for parallel weight}
 GrRing := GradedRingOfHMFs(F,Precision);
 g,r,m := ConstructGeneratorsAndRelations(GrRing,N,MaxGeneratorWeight);
 gens, rels, mons := Relations(g,r,m,MaxRelationWeight);

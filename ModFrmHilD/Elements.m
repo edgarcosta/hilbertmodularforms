@@ -9,7 +9,8 @@ declare attributes ModFrmHilDElt:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
   Coefficients, // Coefficients[bb] = coeffs_bb where coeffs_bb[nu] = a_(bb,nu) = a_(nu)*bb^-1
-  CoefficientField; // CoefficientField = where the coefficients live (does this depend on bb?)
+    CoefficientField, // CoefficientField = where the coefficients live (does this depend on bb?)
+    GradedRing; // ModFrmHilDGRng = the parent of the ModFrmHilD this form lives in
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
@@ -101,6 +102,11 @@ end intrinsic;
 intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
   {returns weight of f.}
   return Weight(Parent(f));
+end intrinsic;
+
+intrinsic GradedRing(f::ModFrmHilDElt) -> ModFrmHilDGRng
+{returns parent of parent of f}
+return Parent(Parent(f));
 end intrinsic;
 
 intrinsic BaseField(f::ModFrmHilDElt) -> FldNum
