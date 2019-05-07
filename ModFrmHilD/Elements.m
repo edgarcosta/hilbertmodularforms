@@ -679,6 +679,7 @@ end intrinsic;
 
 intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
   {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
+if IsNull(list) then return list; end if;
   M := Matrix( [ elt : elt in list] );
   B := Basis(Kernel(M));
   if #B ne 0 then return [Eltseq(i) : i in Rows(Matrix(LLL(B)))]; else return []; end if;
