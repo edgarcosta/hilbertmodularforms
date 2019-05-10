@@ -97,6 +97,14 @@ intrinsic NarrowClassGroupReps(M::ModFrmHilDGRng) -> Any
   return M`NarrowClassGroupReps;
 end intrinsic;
 
+intrinsic NarrowClassRepresentative(M::ModFrmHilDGRng, I::RngOrdIdl) -> Any
+  {Returns the stored NarrowClassGroup representative for I}
+  bbs := NarrowClassGroupReps(M);
+  mp := NarrowClassGroupMap(M);
+  Rep := [bb : bb in bbs | (bb)@@mp eq (I)@@mp]; // Representative for class [ I ]
+  return Rep[1];
+end intrinsic;
+
 intrinsic Precision(M::ModFrmHilDGRng) -> RngIntElt
   {The Precision of the space M of Hilbert modular forms.}
   return M`Precision;

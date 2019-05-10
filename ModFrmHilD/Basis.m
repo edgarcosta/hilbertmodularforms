@@ -6,7 +6,6 @@
 
 // Currently calls the Newforms and Eisenstein series from Creations folder
 
-
 intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
   N := Level(Mk);
@@ -25,8 +24,6 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
 end intrinsic;
 
 
-//TODO
-// Only implemented for parallel weight 
 intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
   M := Parent(Mk);
@@ -37,55 +34,26 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   F := BaseField(Mk);
   ZF := Integers(F);
   n := Degree(ZF);
-  HCG := HeckeCharacterGroup(1*Integers(F),[1..n]);
-  DDs := [DD : DD in Divisors(NN) | DD^2 in Divisors(NN)];  // list NN1^2 | NN
+  aas := [aa : aa in Divisors(NN) | aa^2 in Divisors(NN)]; 
   EB := [];  // Eisenstein basis, to be filled in
-  // loop over
-  for DD in DDs do 
-    Mk_DD := HMFSpace(M, DD, k);
-    HCGDD := HeckeCharacterGroup(DD,[1..n]);
-    HCGDD_Elts := Elements(HCGDD);
-    for eta in HCGDD_Elts do
-      psi := (Restrict(eta, HCG))^(-1);
-      E := EisensteinSeries(Mk_DD, eta, psi);
+  for aa in aas do // loop over
+    N0 := aa^2;
+    Mk_N0 := HMFSpace(M, N0, k);
+    HCGaa := HeckeCharacterGroup(aa,[1..n]);
+    PrimitiveCharacters := [elt : elt in Elements(HCGaa) | IsPrimitive(elt)];
+    if aa eq 1*ZF then // Hack to add trivial character back in (It is imprimitive!)
+      Append(~PrimitiveCharacters, HCGaa!1);
+    end if;
+    for eta in PrimitiveCharacters do
+      psi := eta^(-1);
+      E := EisensteinSeries(Mk_N0, eta, psi);
       EG := GaloisOrbitDescent(E); // Q orbits
-      for elt in EG do
-        EB cat:= Inclusion(elt,Mk); // Inclusion Mk_NN1 -> Mk
-      end for;
+      EB cat:= &cat[Inclusion(elt,Mk) : elt in EG];
     end for;
   end for;
   return EB;
-end intrinsic;
+end intrinsic; 
 
-
-intrinsic AllEisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  { returns a basis for the complement to the cuspspace of M of weight k }
-  M := Parent(Mk);
-  NN := Level(Mk);
-  k := Weight(Mk);
-  require #SequenceToSet(k) eq 1: "Only implemented for parallel weight";
-  require k[1] mod 2 eq 0: "Only implemented for even weight";  // Eisenstein series will work for parallel weight 1. 
-  F := BaseField(Mk);
-  ZF := Integers(F);
-  n := Degree(ZF);
-  EB := [];  // Eisenstein basis, to be filled in
-  Characters := HeckeCharacterGroup(1*Integers(F),[1..n]);
-  // loop over
-  // In Cohen Stroemberg they divide into two cases based on k = 2 or 4. 
-  // For k = 2, then I don't think Theorem 7.5.21 works. Take N = 1, then we get 1 form from G(X1,X1bar) from the non trivial character and nothing else. But there are generally 2 forms
-  for NN1 in Divisors(NN) do 
-    Mk_NN1 := HMFSpace(M, NN1, k);
-    Characters_NN1 := Elements(HeckeCharacterGroup(NN1,[1..n]));
-    //PrimitiveCharacters_NN1 := [elt : elt in Elements(HeckeCharacterGroup(NN1,[1..n])) | IsPrimitive(elt)];
-    for eta in Characters_NN1 do
-      psi := (Restrict(eta, Characters))^(-1);
-      E := EisensteinSeries(Mk_NN1, eta, psi);
-      EG := GaloisOrbitDescent(E); // Q orbits
-      EB cat:= [Inclusion(elt,Mk) : elt in EG]; // Inclusion Mk_NN1 -> Mk
-    end for;
-  end for;
-  return EB;
-end intrinsic;
 
 
 intrinsic Basis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]

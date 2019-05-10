@@ -16,7 +16,7 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
    	n := Degree(BaseField(M));   	 
    	aa := Modulus(eta); // aa := Conductor(eta); 
    	bb := Modulus(psi); // bb := Conductor(psi);
-   	assert N eq aa*bb;
+    assert aa eq bb; // this should be aa^2 = N;
    	Haa := HeckeCharacterGroup(aa); 
    	Hbb := HeckeCharacterGroup(bb); 
 

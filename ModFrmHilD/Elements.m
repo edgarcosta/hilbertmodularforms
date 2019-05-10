@@ -201,26 +201,18 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   M := Parent(Mk);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
-    coeffs_bb := AssociativeArray();
+    coeffs[bb] := AssociativeArray();
     for nu in IdealsByNarrowClassGroup(M)[bb] do
-      coeffs_bb[nu] := 0;
+      coeffs[bb][nu] := 0;
     end for;
-    coeffs[bb] := coeffs_bb;
   end for;
   return HMF(Mk, coeffs);
 end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
   {check if form is identically zero}
-  coeffs := Coefficients(f);
-  for bb in Keys(coeffs) do
-    for nu in Keys(coeffs[bb]) do
-      if coeffs[bb][nu] ne 0 then
-        return false;
-      end if;
-    end for;
-  end for;
-  return true;
+  Mk := Parent(f);
+  return f eq HMFZero(Mk);
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
@@ -231,7 +223,11 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
     for nn in IdealsByNarrowClassGroup(M)[bb] do
-      if IsZero(nn) then coeffs[bb][nn] := 1; else coeffs[bb][nn] := 0; end if;
+      if IsZero(nn) then 
+        coeffs[bb][nn] := 1; 
+      else 
+        coeffs[bb][nn] := 0; 
+      end if;
     end for;
   end for;
   return HMF(M0, coeffs);
@@ -712,9 +708,10 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
-//Todo: Verify Correctness. Reference?
-intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  {Takes a form f of level N1 and produces list of all inclusions of f into the space of level N2}
+
+//Todo: True for all ideals or just principal ideals?
+intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
+  {Takes a form f(z) and produces f(dd*z) in the space Mk}
   coeff_f := Coefficients(f);
   Mk_f := Parent(f);
   M := Parent(Mk_f);
@@ -722,29 +719,50 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   N2 := Level(Mk);
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
   require N2 subset N1: "Level of f does not divide level of Mk"; 
+  require N2 subset dd: "Ideal does not divide level of Mk"; 
   bbs := NarrowClassGroupReps(M);
-  mp := NarrowClassGroupMap(M);
-  IncludedForms := [];
-  PrincipalDivisors := [dd : dd in Divisors(N2/N1) | IsNarrowlyPrincipal(dd)];
-  for dd in PrincipalDivisors do // 1 new form for each divisor principal totally positive divisor or divisor?
-    _, gen := IsNarrowlyPrincipal(dd);
-    coeff := AssociativeArray(); 
-    for bb in bbs do
-      coeff[bb] := AssociativeArray();
-      Idealsbb := IdealsByNarrowClassGroup(M)[bb];
-      for nn in Idealsbb do
-        coeff[bb][nn] := 0; // Set all coefficients to 0
-      end for; 
-      for nn in Idealsbb do
-        if nn*gen in Idealsbb then
-          coeff[bb][nn*gen] := coeff_f[bb][nn]; // Change non-zero coefficients  
-        end if;
-      end for;
+  coeff := AssociativeArray(); 
+  for bb in bbs do
+    Rep := NarrowClassRepresentative(M,dd*bb);
+    Idealsbb := IdealsByNarrowClassGroup(M)[bb];
+    IdealsRep := IdealsByNarrowClassGroup(M)[Rep];
+    coeff[Rep] := AssociativeArray();
+    for nn in IdealsRep do
+      if (nn/dd) in Idealsbb then
+        coeff[Rep][nn] := coeff_f[bb][(nn/dd)];
+      else 
+        coeff[Rep][nn] := 0; 
+      end if;
     end for;
-    Append(~IncludedForms, HMF(Mk, coeff));
+  end for;
+  return HMF(Mk, coeff);
+end intrinsic;
+
+
+
+intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {Takes a form f(z) and produces list of all inclusions of f(dd*z) into Mk}
+  N1 := Level(Parent(f));
+  N2 := Level(Mk);
+
+  IncludedForms := [];
+  for dd in Divisors(N2/N1) do 
+    Append(~IncludedForms, Inclusion(f,Mk,dd));
   end for;
   return IncludedForms;
 end intrinsic;
+
+
+/*
+    end for; 
+    for nn in Idealsbb do
+      if nn*dd in IdealsRep then
+        coeff[Rep][nn*dd] := coeff_f[bb][nn]; // Change non-zero coefficients  
+      end if;
+    end for;
+  end for;
+*/
+
 
 
 /*

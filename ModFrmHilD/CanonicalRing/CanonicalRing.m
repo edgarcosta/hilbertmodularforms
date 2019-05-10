@@ -150,7 +150,7 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
 
 	Mat := Matrix([elt : elt in SpaceCoeffLists]);
 	V := VectorSpaceWithBasis(Mat);
-	W := sub<V | [MonomialCoeffLists[i]:i in [1..#EvaluatedMonomials]]>;
+	W := sub<V | [MonomialCoeffLists[i] : i in [1..#EvaluatedMonomials]]>;
 	ExtendMultBasis := ExtendBasis(W,V);
 
 	NewGeneratorsVec := [ExtendMultBasis[i]:i in [Dimension(W)+1..Dimension(V)]];
@@ -234,7 +234,7 @@ if not IsNull(LowestWeightBasis) then
 Gens[LowestWeight] := LowestWeightBasis;
 
 
-//	print "Weight:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
+	print "Weight:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
 
 	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
 
@@ -256,10 +256,11 @@ Gens[LowestWeight] := LowestWeightBasis;
 			relR := [];
 			for j in MonomialsinR do
 				I := Index(MonomialsGens,j);
+				Q := Rationals();
 				if I ne 0 then
-					Append(~relR,rel[I]);
+					Append(~relR,Q!rel[I]);
 				else
-					Append(~relR,0);
+					Append(~relR,Q!0);
 				end if;
 			end for;
 			Append(~RelationsinR,relR);
@@ -278,7 +279,7 @@ Monomials[k]:=MonomialsGens;
 			Gens[k] := NewGens;
 		end if;
 
-//		print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+		print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
 
 	end for;
 end if;
