@@ -163,29 +163,22 @@ end intrinsic;
 intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc : prec := 0) -> ModFrmHilDElt
   {WARNING: user is responsible for coefficients besides some basic structural assertions. Note: coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb)^-1}
   M := Parent(Mk);
-  N := Level(Mk);
-  k := Weight(Mk);
-  // check coeffs[bb] defined for each ideal class bb
-  if #Keys(coeffs) ne #NarrowClassGroupReps(M) then
-    error "Associative array of coefficients should be indexed by ideal classes";
-  end if;
   bbs := NarrowClassGroupReps(M);
-  coeffs_as_sequence := []; // to assert all coefficients have the same parent
+  CoefficientSequence := [**]; // to assert all coefficients have the same parent
+  require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-    // check coeffs[bb] has keys equal IdealsByNarrowClassGroup(M)[bb]
-    assert Set(IdealsByNarrowClassGroup(M)[bb]) eq Keys(coeffs[bb]);
-    // check coeffs[bb][n] has a value for every n in IdealsByNarrowClassGroup(M)[bb]
+    require Keys(coeffs[bb]) eq SequenceToSet(IdealsByNarrowClassGroup(M)[bb]): "Coefficients should be indexed by Ideals";
     for nn in IdealsByNarrowClassGroup(M)[bb] do
-      assert IsDefined(coeffs[bb], nn);
+      require IsDefined(coeffs[bb], nn): "Coefficients should be defined for each ideal";
+      Append(~CoefficientSequence, coeffs[bb][nn]); // if value of coeffs[bb][key] differs then error here trying to append
     end for;
-    key := Random(Keys(coeffs[bb]));
-    Append(~coeffs_as_sequence, coeffs[bb][key]); // if value of coeffs[bb][key] differs then error here trying to append
   end for;
+  CoefficientSequence := [i : i in CoefficientSequence]; // 
   // make the HMF
   f := ModFrmHilDEltInitialize();
   f`Parent := Mk;
   f`Coefficients := coeffs;
-  f`CoefficientField := FieldOfFractions(Parent(coeffs_as_sequence[1]));
+  f`CoefficientField := FieldOfFractions(Parent(CoefficientSequence[1]));
   // working precision
   if prec eq 0 then
     f`Precision := Precision(M);
