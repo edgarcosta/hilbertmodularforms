@@ -1,18 +1,22 @@
-// takes about 1min
 SetDebugOnError(true);
 load "config.m";
 
-F := QuadraticField(13);
-ZF<w> := Integers(F);
-N := ideal<ZF | {1}>;
-k := [2, 2];
-K := Rationals();
+_<x>:=PolynomialRing(Rationals());
 prec := 30;
-M := GradedRingOfHMFs(F, prec);
+i := 13;
+F:=NumberField(x^2-i);
 
-time g, r := ConstructGeneratorsAndRelations(M, N, 8);
-time g1, r1 := Relations(g, r, 20);
+Cl, mp:=NarrowClassGroup(F);
+reps:=[mp(g):g in Cl];
+ZF := reps[1];
 
-X := MakeScheme(g1, r1);
+MaxGenWeight := 10;
+MaxRelWeight := 20;
 
+p := 2;
+TestLevel := p*ZF;
+
+time g,r,m:=GeneratorsAndRelations(F,TestLevel: Precision := prec, MaxRelationWeight:=MaxRelWeight, MaxGeneratorWeight:=MaxGenWeight);
+
+X:=MakeScheme(g,r);
 print X;

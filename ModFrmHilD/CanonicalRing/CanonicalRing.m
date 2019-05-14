@@ -372,7 +372,7 @@ n := Degree(BaseField(M));
 	LowestWeight := Max([i : i in Keys(Gens)] cat [i : i in Keys(Relations)]);
 
 	P<x> := PowerSeriesRing(Rationals(),100);
-	G := DimensionGeneratingFunction(M);
+//	G := DimensionGeneratingFunction(M);
 
 	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
 
@@ -510,7 +510,7 @@ return EvaluatedMonomials;
 end intrinsic;
 
 
-intrinsic GensRels(F::FldNum, N::RngOrdIdl: Precision:=20, MaxRelationWeight:=20, MaxGeneratorWeight:=2) -> any
+intrinsic GeneratorsAndRelations(F::FldNum, N::RngOrdIdl: Precision:=20, MaxRelationWeight:=20, MaxGeneratorWeight:=2) -> any
 {returns relations up to weight MaxRelationWeight in generators up to MaxGeneratorWeight; only for parallel weight}
 GrRing := GradedRingOfHMFs(F,Precision);
 g,r,m := ConstructGeneratorsAndRelations(GrRing,N,MaxGeneratorWeight);
