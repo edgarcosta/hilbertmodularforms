@@ -9,8 +9,7 @@ declare attributes ModFrmHilDElt:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
   Coefficients, // Coefficients[bb] = coeffs_bb where coeffs_bb[nu] = a_(bb,nu) = a_(nu)*bb^-1
-    CoefficientField, // CoefficientField = where the coefficients live (does this depend on bb?)
-    GradedRing; // ModFrmHilDGRng = the parent of the ModFrmHilD this form lives in
+  CoefficientField; // CoefficientField = where the coefficients live (does this depend on bb?)
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
@@ -105,13 +104,19 @@ intrinsic Weight(f::ModFrmHilDElt) -> SeqEnum[RngIntElt]
 end intrinsic;
 
 intrinsic GradedRing(f::ModFrmHilDElt) -> ModFrmHilDGRng
-{returns parent of parent of f}
-return Parent(Parent(f));
+  {returns parent of parent of f}
+  Mk := Parent(f);
+  return Parent(Mk);
+end intrinsic;
+
+intrinsic Field(f::ModFrmHilDElt) -> FldNum
+  {returns base field of parent of f.}
+  return GradedRing(f)`Field;
 end intrinsic;
 
 intrinsic BaseField(f::ModFrmHilDElt) -> FldNum
   {returns base field of parent of f.}
-  return BaseField(Parent(Parent(f)));
+  return GradedRing(f)`Field;
 end intrinsic;
 
 intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
@@ -121,12 +126,14 @@ end intrinsic;
 
 intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   {returns precision of parent of f.}
-  return Precision(Parent(Parent(f)));
+  M := GradedRing(f);
+  return Precision(M);
 end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> Any
   {}
-  mp := NarrowClassGroupMap(Parent(Parent(f)));
+  M := GradedRing(f);
+  mp := NarrowClassGroupMap(M);
   rep := mp(nn@@mp);
   return Coefficients(f)[rep][nn];
 end intrinsic;
@@ -286,7 +293,7 @@ end intrinsic;
 // Coerces HMF coefficients a_n in a ring R
 intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_I := R!a_I}
-  M := Parent(Parent(f));
+  M := GradedRing(f);
   bbs := NarrowClassGroupReps(M);
   coeffs := Coefficients(f);
   new_coeffs := AssociativeArray(Universe(coeffs));
@@ -351,7 +358,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
 fSpace := Parent(f);
 M := Parent(fSpace);
 k := Weight(fSpace);
-M := Parent(Parent(f));
+M := GradedRing(f);
 
   K := CoefficientField(f);
   G, Pmap, Gmap := AutomorphismGroup(K);
@@ -525,7 +532,7 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   assert Parent(f) eq Parent(g);
   Mk := Parent(f);
   M := Parent(Mk);
-  assert Parent(Parent(g)) eq M;
+  assert GradedRing(g) eq M;
   k := Weight(f);
   new_coeffs := AssociativeArray();
   bbs := NarrowClassGroupReps(M);
@@ -685,7 +692,7 @@ end intrinsic;
 //TODO take working precision
 intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
   {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
-  M := Parent(Parent(List[1]));
+  M := GradedRing(List[1]);
   bbs := NarrowClassGroupReps(M);
   CoeffLists := [[] : i in [1..#List]];
   for bb in bbs do
