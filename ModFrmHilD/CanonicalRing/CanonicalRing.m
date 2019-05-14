@@ -213,7 +213,7 @@ generators. Once you think you have found all generators plug the outputs of thi
 // Input: LowestWeight = first weight with HMFS
 // Input: MaxWeight = highest weight to check for relations in
 // Output: Associative array of generators in each weight, Associative array of Relations in each weight and Quotient Ring
-intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWeight::RngIntElt) -> Any
+intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWeight::RngIntElt:verbose:=true) -> Any
 	{Finds all Generators and Relations}
 
 	Gens := AssociativeArray();
@@ -233,8 +233,9 @@ LowestWeightBasis := Basis(LowestMk);
 if not IsNull(LowestWeightBasis) then 
 Gens[LowestWeight] := LowestWeightBasis;
 
-
+if verbose then 
 	print "Weight:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
+end if;
 
 	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
 
@@ -279,7 +280,9 @@ Monomials[k]:=MonomialsGens;
 			Gens[k] := NewGens;
 		end if;
 
-		print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+if verbose then 
+print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+end if;
 
 	end for;
 end if;
