@@ -174,7 +174,7 @@ intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc : prec := 0) -> ModFrmHilDElt
   CoefficientSequence := [**]; // to assert all coefficients have the same parent
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-    require Keys(coeffs[bb]) eq SequenceToSet(IdealsByNarrowClassGroup(M)[bb]): "Coefficients should be indexed by Ideals";
+    require SequenceToSet(IdealsByNarrowClassGroup(M)[bb]) subset Keys(coeffs[bb]): "Coefficients should be indexed by Ideals";
     for nn in IdealsByNarrowClassGroup(M)[bb] do
       require IsDefined(coeffs[bb], nn): "Coefficients should be defined for each ideal";
       Append(~CoefficientSequence, coeffs[bb][nn]); // if value of coeffs[bb][key] differs then error here trying to append
