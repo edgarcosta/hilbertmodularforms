@@ -114,10 +114,11 @@ intrinsic Field(f::ModFrmHilDElt) -> FldNum
   return GradedRing(f)`Field;
 end intrinsic;
 
-intrinsic BaseField(f::ModFrmHilDElt) -> FldNum
-  {returns base field of parent of f.}
-  return GradedRing(f)`Field;
-end intrinsic;
+// this causes a segmentation fault if attached twice v24-3
+/* intrinsic BaseField(f::ModFrmHilDElt) -> FldNum */
+/*   {returns base field of parent of f.} */
+/*   return GradedRing(f)`Field; */
+/* end intrinsic; */
 
 intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   {returns level of parent of f.}
