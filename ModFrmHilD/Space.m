@@ -9,7 +9,9 @@ declare attributes ModFrmHilD:
   Parent, // ModFrmHilDGRng
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
+    Dimension, // RngIntElt
   Character; // GrpHeckeElt
+
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
@@ -64,6 +66,14 @@ end intrinsic;
 intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   {}
   return Mk`Character;
+end intrinsic;
+
+intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
+{}
+if not assigned Mk`Dimension then 
+ComputeDimension(Mk);
+end if;
+return Mk`Dimension;
 end intrinsic;
 
 /* attributes of the parent */
@@ -136,4 +146,15 @@ intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
     end if;
   end for;
   return M1k;
+end intrinsic;
+
+
+intrinsic ComputeDimension(Mk::ModFrmHilD)
+{compute the dimension of Mk and store it in Mk}
+// we rely on HilbertCuspForms, which only works for trivial character
+assert Character(Mk) eq HeckeCharacterGroup(Level(Mk))!1;
+EB:=EisensteinBasis(Mk);
+cusps := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
+dim := #EB + Dimension(cusps);
+Mk`Dimension := dim;
 end intrinsic;
