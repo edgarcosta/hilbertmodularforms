@@ -95,6 +95,9 @@ end intrinsic;
 // Input: M = HMFspace
 // Input: k weight
 // Output: dim(M(k))
+
+// Old function. Mk now carries its own dimension around; go ahead and ask for it. 
+/*
 intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
 {Returns the dimension of the space of Hilbert Modular Forms of weight k}	 
 	M := Parent(Mk); k := Weight(Mk)[2];
@@ -103,3 +106,4 @@ intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
 	dim := Round(Coefficient(DimGen, k));
 	return dim;
 end intrinsic;
+*/

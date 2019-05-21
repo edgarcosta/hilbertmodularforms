@@ -68,7 +68,7 @@ intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   return Mk`Character;
 end intrinsic;
 
-intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
+intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
 {}
 if not assigned Mk`Dimension then 
 ComputeDimension(Mk);

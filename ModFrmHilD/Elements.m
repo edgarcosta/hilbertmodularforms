@@ -149,6 +149,17 @@ intrinsic CoefficientField(f::ModFrmHilDElt) -> Any
   return f`CoefficientField;
 end intrinsic;
 
+intrinsic NumberOfCoefficients(f::ModFrmHilDElt) -> Any
+{}
+    keys := SetToSequence(Keys(Coefficients(f)));
+    if IsNull(keys) then return 0;
+    end if;
+    coeffsperkey := #Keys(Coefficients(f)[keys[1]]);
+    return #keys*coeffsperkey;
+
+end intrinsic;
+
+
 ////////// ModFrmHilDElt creation functions //////////
 
 intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt

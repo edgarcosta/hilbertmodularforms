@@ -13,10 +13,10 @@
 // Input: Gens = An assoctive array indexed by weight of generators
 // Output: R = Weighted polynomial ring
 intrinsic ConstructRing(Gens::Assoc)-> Any
-	{Returns the full weighted polynomial ring}
-
-	GenWeights := [];
-	for i in Keys(Gens) do
+{Returns the full weighted polynomial ring}
+    
+    GenWeights := [];
+    for i in Keys(Gens) do
 		for j in [1..#Gens[i]] do
 			Append(~GenWeights,i);
 		end for;
@@ -245,6 +245,11 @@ end if;
 		R := ConstructRing(Gens);
 		MonomialsinR := MonomialsOfWeightedDegree(R,k);
 		MonomialsGens := MonomialGenerators(R,Relations,k);
+
+// Before we evaluate monomials, make sure precision is high enough
+CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
+assert CoeffCount ge Dim(Mk);
+
 		EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
 
 		// I first compute the relations in R/I.
@@ -271,6 +276,7 @@ end if;
 			Relations[k] := RelationsinR;
 Monomials[k]:=MonomialsGens;
 		end if;
+//		require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
 
 		Basisweightk := Basis(Mk);
 
@@ -403,10 +409,19 @@ n := Degree(BaseField(M));
 		R := ConstructRing(Gens);
 		MonomialsinR := MonomialsOfWeightedDegree(R,k);
 		MonomialsGens := MonomialGenerators(R,Relations,k);
+
+// Before we evaluate monomials, make sure precision is high enough
+CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
+require CoeffCount ge Dim(Mk): "Precision is too low";
+
 		EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
+
 
 		// I first compute the relations in R/I.
 		RelationsinQuotient := LinearDependence(EvaluatedMonomials);
+		
+
+
 		// This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k).
 		// Mainly for storage.
 		RelationsinR := [];
@@ -428,10 +443,7 @@ n := Degree(BaseField(M));
 Monomials[k]:=MonomialsGens;
 		end if;
 
-//		require #MonomialsGens - #RelationsinR eq Dimension(Mk): "Precision is too low or generator in weight", k;
-
-//		print "Weight:", k,  "   Number of Relations", #RelationsinR,  "    Dimension:", Dimension(Mk);
-
+//		require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
 	end for;
 
 
@@ -447,12 +459,7 @@ end intrinsic;
 
 
 
-
-
-
 ///////////////////////// Aux Functions /////////////////
-
-
 intrinsic QuadSpace(D::RngIntElt, prec::RngIntElt)-> Any
 	{Easy way to produces a quadratic space with Discriminant D and precision prec}
 
@@ -462,14 +469,9 @@ intrinsic QuadSpace(D::RngIntElt, prec::RngIntElt)-> Any
     return M,1*OK;
 end intrinsic;
 
-
-
-
 intrinsic MakeScheme(Gens::Assoc, Relations::Assoc)-> Any
 	{Returns the Scheme}
-
     R := ConstructRing(Gens);
-
     PolynomialList := [];
 	for i in Keys(Relations) do
 		PolynomialList cat:= RelationstoPolynomials(R,Relations[i],i);
@@ -479,9 +481,6 @@ intrinsic MakeScheme(Gens::Assoc, Relations::Assoc)-> Any
 	S := Scheme(P, PolynomialList);
 	return S;
 end intrinsic;
-
-
-
 
 intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
 	{Returns Hilbert series with precision n}
@@ -503,16 +502,15 @@ intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
 	return H;
 end intrinsic;
 
-
-intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc,Weight::SeqEnum[RngIntElt]) -> any
+intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc,f::ModFrmHilDElt) -> any
 {return a basis for the space of modular forms in weight n, in terms of
 			  monomials of the "canonical" generators}
 
-
+Weight := Weight(f);
 R := ConstructRing(Gens);
 MonomialsinR := MonomialsOfWeightedDegree(R,Weight[1]);
 MonomialsGens := MonomialGenerators(R,Relations,Weight[1]);
-EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens);
+EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens,Parent(f));
 
 relations := LinearDependence(EvaluatedMonomials);
 while relations ne [] do
@@ -522,13 +520,10 @@ while r[i] eq 0 do
 i := i + 1;
 end while;
 Remove(~EvaluatedMonomials,i);
-		  end while;
+end while;
 
-
-
-return EvaluatedMonomials;
+return EvaluatedMonomials,MonomialsGens;
 end intrinsic;
-
 
 intrinsic GeneratorsAndRelations(F::FldNum, N::RngOrdIdl: Precision:=20, MaxRelationWeight:=20, MaxGeneratorWeight:=2) -> any
 {returns relations up to weight MaxRelationWeight in generators up to MaxGeneratorWeight; only for parallel weight}

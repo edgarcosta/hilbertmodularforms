@@ -189,10 +189,10 @@ M := GradedRing(f);
 N := Level(f);
 
 g,r,m := GeneratorsAndRelations(F,N:MaxGeneratorWeight:=Weight(f)[1],Precision:=Precision(f));
-bas := CanonicalBasis(g,r,f);
+bas,m := CanonicalBasis(g,r,f);
 f := HMF(Universe(bas),Coefficients(f));
 rel := LinearDependence(Append(bas,f));
 rel := rel[1];
 
-return bas, [-1*rel[i]/rel[#rel]:i in [1..#rel-1]],rel;
+return bas, [-1*rel[i]/rel[#rel]:i in [1..#rel-1]],m;
 end intrinsic;
