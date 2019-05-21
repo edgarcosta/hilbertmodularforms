@@ -290,24 +290,41 @@ end if;
 return Gens,Relations,Monomials;
 end intrinsic;
 
-/*
-intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilD, N::RngOrdIdl, LowestWeight::RngIntElt, MaxWeight::RngIntElt) -> Any
+
+//Generators and relations in the subring of symmetric HMFs (invariant under the Galois action induced on the ideals)
+intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWeight::RngIntElt:verbose:=true) -> Any
 	{Finds all Generators and Relations}
 
 	Gens := AssociativeArray();
 	Relations := AssociativeArray();
+Monomials := AssociativeArray();
+	n := Degree(BaseField(M));
 
-	Gens[LowestWeight] := [i : i in GaloisInvariantBasis(M,N,[LowestWeight,LowestWeight])];
+LowestWeight := 2;
+LowestMk := HMFSpace(M,N,[2:i in [1..n]]);
+LowestWeightBasis := GaloisInvariantBasis(LowestMk);
+while IsNull(LowestWeightBasis) and LowestWeight lt MaxWeight do 
+	    LowestWeight := LowestWeight + 2;
+	    LowestMk := HMFSpace(M,N,[LowestWeight:i in [1..n]]);
+LowestWeightBasis := Basis(LowestMk);
+	      end while;
 
+if not IsNull(LowestWeightBasis) then 
+Gens[LowestWeight] := LowestWeightBasis;
+
+if verbose then 
+	print "Weight:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
+end if;
 
 	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
 
 		k := 2*i;
+		Mk := HMFSpace(M, N, [k : i in [1..n]]);
 
 		R := ConstructRing(Gens);
 		MonomialsinR := MonomialsOfWeightedDegree(R,k);
 		MonomialsGens := MonomialGenerators(R,Relations,k);
-		EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens);
+		EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
 
 		// I first compute the relations in R/I.
 		RelationsinQuotient := LinearDependence(EvaluatedMonomials);
@@ -319,10 +336,11 @@ intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilD, N::RngOrdIdl, 
 			relR := [];
 			for j in MonomialsinR do
 				I := Index(MonomialsGens,j);
+				Q := Rationals();
 				if I ne 0 then
-					Append(~relR,rel[I]);
+					Append(~relR,Q!rel[I]);
 				else
-					Append(~relR,0);
+					Append(~relR,Q!0);
 				end if;
 			end for;
 			Append(~RelationsinR,relR);
@@ -330,24 +348,26 @@ intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilD, N::RngOrdIdl, 
 
 		if #RelationsinR ne 0 then
 			Relations[k] := RelationsinR;
+Monomials[k]:=MonomialsGens;
 		end if;
 
-		Basisweightk := GaloisInvariantBasis(M,N,[k,k]);
+		Basisweightk := GaloisInvariantBasis(Mk);
 
 		NewGens := [];
 		if #MonomialsGens - #RelationsinR ne #Basisweightk then
-			NewGens := FindNewGenerators(M, N, k, EvaluatedMonomials, Basisweightk);
+			NewGens := FindNewGenerators(Mk, EvaluatedMonomials, Basisweightk);
 			Gens[k] := NewGens;
 		end if;
 
-		print "Level:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+if verbose then 
+print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+end if;
 
 	end for;
+end if;
 
-	return Gens,Relations;
+return Gens,Relations,Monomials;
 end intrinsic;
-
-*/
 
 // Important! In order to run this version you must have already computed the generators for the ring using either ConstructGeneratorsAndRelations or ConstructGeneratorsAndRelationsV1.
 // This version DOES NOT look for any new generators, it only checks for relations amoung the generators you have found.
