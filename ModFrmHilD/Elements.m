@@ -410,14 +410,12 @@ end intrinsic;
  end intrinsic;
 
 
- intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> Assoc
+ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> ModFrmHilDElt
    {returns associative array with coefficients for T(nn)(f) with loss of precision.}
    Mk := Parent(f);
    M :=Parent(Mk);
    F:=BaseField(M);
    ZF:=Integers(F);
-   fcoeffs := Coefficients(f);
-   ideals := IdealsByNarrowClassGroup(M);
    k0 := Max(Weight(f));
    //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn)
    coeffsTnnf := AssociativeArray();
@@ -802,16 +800,25 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: swap map //////////
 
-/* intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt */
-/*   {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)} */
-/*   M:=Parent(f); */
-/*   g:=M!(1*f); */
-/*   F:=BaseField(M); */
-/*   ZF<w>:=Integers(F); */
-/*   ideals:=Ideals(f); */
-/*   for i in ideals do */
-/*     x:=GetCoefficient(f, Conjugate(i)); */
-/*     SetCoefficient(g, i, x); */
-/*   end for; */
-/*   return g; */
-/* end intrinsic; */
+intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt 
+   {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)} 
+   Mk := Parent(f);
+   M :=Parent(Mk);
+   F:=BaseField(M);
+   ZF:=Integers(F);
+   bbs := NarrowClassGroupReps(M);
+   coeff := AssociativeArray(); 
+   for bb in bbs do
+    coeff[bb]:=AssociativeArray();
+    Ideals := IdealsByNarrowClassGroup(M)[bb];
+    for I in Ideals do
+      if I eq 0*ZF then
+        x:=Coefficients(f)[bb][I];
+        else x:=Coefficient(f, Conjugate(I));
+        end if;
+      coeff[bb][I]:=x;
+      end for;
+     end for;
+   g:=HMF(Mk, coeff); 
+   return g; 
+ end intrinsic; 
