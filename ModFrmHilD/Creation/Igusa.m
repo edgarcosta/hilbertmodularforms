@@ -183,13 +183,16 @@ end intrinsic;
 
 intrinsic CanonicalRepresentation(f::ModFrmHilDElt) -> any
 {gets this in terms of basis elements}
-M := Parent(f);
-N := NarrowClassGroupReps(M)[1];
-g,r := ConstructGeneratorsAndRelations(M,N,2,f`Weight[1]);
-bas := CanonicalBasis(g,r,f`Weight[1]);
+Mk := Parent(f);
+F := Field(f);
+M := GradedRing(f);
+N := Level(f);
+
+g,r,m := GeneratorsAndRelations(F,N:MaxGeneratorWeight:=Weight(f)[1],Precision:=Precision(f));
+bas := CanonicalBasis(g,r,f);
+f := HMF(Universe(bas),Coefficients(f));
 rel := LinearDependence(Append(bas,f));
 rel := rel[1];
 
-return bas,[-1*rel[i]/rel[#rel]:i in [1..#rel-1]],rel;
-
+return bas, [-1*rel[i]/rel[#rel]:i in [1..#rel-1]],rel;
 end intrinsic;

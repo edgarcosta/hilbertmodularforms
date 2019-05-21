@@ -97,6 +97,14 @@ intrinsic NarrowClassGroupReps(M::ModFrmHilDGRng) -> Any
   return M`NarrowClassGroupReps;
 end intrinsic;
 
+intrinsic NarrowClassRepresentative(M::ModFrmHilDGRng, I::RngOrdIdl) -> Any
+  {Returns the stored NarrowClassGroup representative for I}
+  bbs := NarrowClassGroupReps(M);
+  mp := NarrowClassGroupMap(M);
+  Rep := [bb : bb in bbs | (bb)@@mp eq (I)@@mp]; // Representative for class [ I ]
+  return Rep[1];
+end intrinsic;
+
 intrinsic Precision(M::ModFrmHilDGRng) -> RngIntElt
   {The Precision of the space M of Hilbert modular forms.}
   return M`Precision;
@@ -192,8 +200,12 @@ end intrinsic;
 
 intrinsic AddToSpaces(M::ModFrmHilDGRng, Mk::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt)
   { adds Mk to the AssociativeArray M`Spaces}
-  M`Spaces[<N, k, chi>] := Mk;
+  if not N in Keys(M`Spaces) then
+    M`Spaces[N] := AssociativeArray();
+  end if;
+  M`Spaces[N][<k, chi>] := Mk;
 end intrinsic;
+
 
 ////////// ModFrmHilDGRng creation and multiplication functions //////////
 
@@ -286,7 +298,7 @@ intrinsic ModFrmHilDGRngCopy(M::ModFrmHilDGRng) -> ModFrmHilDGRng
   return M1;
 end intrinsic;
 
-intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng) -> ModFrmHilDGRng
+intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
   bbs := NarrowClassGroupReps(M);
   mult_tables := AssociativeArray();
@@ -294,5 +306,4 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng) -> ModFrmHilDGRng
     mult_tables[bb] := GetIndexPairs(bb, M);
   end for;
   M`MultiplicationTables := mult_tables;
-  return M;
 end intrinsic;

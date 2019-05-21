@@ -9,8 +9,9 @@ declare attributes ModFrmHilD:
   Parent, // ModFrmHilDGRng
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
-  Character, // GrpHeckeElt
-  Integers; // RngOrd
+    Dimension, // RngIntElt
+  Character; // GrpHeckeElt
+
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
@@ -41,7 +42,7 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-return Parent(M1) eq Parent(M2) and Weight(M1) eq Weight(M2) and 
+return Parent(M1) eq Parent(M2) and Weight(M1) eq Weight(M2) and
 Level(M1) eq Level(M2) and Character(M1) eq Character(M2);
 end intrinsic;
 
@@ -67,9 +68,24 @@ intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   return Mk`Character;
 end intrinsic;
 
-intrinsic Integers(Mk::ModFrmHilD) -> GrpHeckeElt
+intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
+{}
+if not assigned Mk`Dimension then 
+ComputeDimension(Mk);
+end if;
+return Mk`Dimension;
+end intrinsic;
+
+/* attributes of the parent */
+
+intrinsic BaseField(Mk::ModFrmHilD) -> Any
   {}
-  return Mk`Integers;
+  return BaseField(Parent(Mk));
+end intrinsic;
+
+intrinsic Integers(Mk::ModFrmHilD) -> Any
+  {}
+  return Integers(Parent(Mk));
 end intrinsic;
 
 ////////// ModFrmHilD creation and multiplication functions //////////
@@ -84,18 +100,18 @@ end intrinsic;
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt) -> ModFrmHilD
   {}
   spaces := Spaces(M);
-  if <N, k, chi> in Keys(spaces) then
-    return spaces[<N, k, chi>];
-  else
-    Mk := ModFrmHilDInitialize();
-    Mk`Parent := M;
-    Mk`Weight := k;
-    Mk`Level := N;
-    Mk`Character := chi;
-    Mk`Integers := M`Integers;
-    AddToSpaces(M, Mk, N, k, chi);
-    return Mk;
+  if N in Keys(spaces) then
+    if <k, chi> in Keys(spaces[N]) then
+      return spaces[N][<k, chi>];
+    end if;
   end if;
+  Mk := ModFrmHilDInitialize();
+  Mk`Parent := M;
+  Mk`Weight := k;
+  Mk`Level := N;
+  Mk`Character := chi;
+  AddToSpaces(M, Mk, N, k, chi);
+  return Mk;
 end intrinsic;
 
 // overloaded for trivial level and character
@@ -130,4 +146,15 @@ intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
     end if;
   end for;
   return M1k;
+end intrinsic;
+
+
+intrinsic ComputeDimension(Mk::ModFrmHilD)
+{compute the dimension of Mk and store it in Mk}
+// we rely on HilbertCuspForms, which only works for trivial character
+assert Character(Mk) eq HeckeCharacterGroup(Level(Mk))!1;
+EB:=EisensteinBasis(Mk);
+cusps := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
+dim := #EB + Dimension(cusps);
+Mk`Dimension := dim;
 end intrinsic;
