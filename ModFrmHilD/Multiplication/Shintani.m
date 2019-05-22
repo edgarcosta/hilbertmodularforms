@@ -1,7 +1,7 @@
 ///// Shintani Algorithms + Enumerations of Totally positive elements in ideals /////////
 // Todo Massive clean up
 
-// Helper Functions 
+// Helper Functions
 intrinsic EmbedNumberField(nu::RngOrdElt, places::SeqEnum) -> SeqEnum
   { Input: nu an element of ZF where F is totally real
     Output: A tuple of the real embeddings of nu in RR}
@@ -139,7 +139,6 @@ intrinsic ShintaniDomainOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngO
     return T;
   end if;
 end intrinsic;
-  
 
 
 ///////////////////////////////////////////////////
@@ -150,17 +149,17 @@ end intrinsic;
 
 
 // Shintani Reduction Algorithm 1 (Currently in use)
-// The Shintani Domain above is stored in an array and this looks up the ideal 
+// The Shintani Domain above is stored in an array and this looks up the ideal
 intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilDGRng) -> SeqEnum
   {Speed up for Reduce Shintani}
-  ZF := Integers(M); 
+  ZF := Integers(M);
   I := nu*ZF;
   ShintaniRep := ReduceIdealToShintaniRep(M)[bb][I];
   return ShintaniRep;
 end intrinsic;
 
 
-// Shintani Reduction Algorithm 2 
+// Shintani Reduction Algorithm 2
 intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   {}
   if nu eq 0 then
@@ -233,9 +232,8 @@ intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
 end intrinsic;
 
 
-// Conversion : Shintani elements < = > Ideals 
-// Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F) 
-
+// Conversion : Shintani elements < = > Ideals
+// Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F)
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   _,gen := IsPrincipal(n*bb);
@@ -244,11 +242,21 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, n::Rng
 end intrinsic;
 
 
-intrinsic ShintaniRepresentativeToIdeal(bb::RngOrdFracIdl, nu::RngOrdElt) -> ModFrmHilDElt
+intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
-  ZF := Parent(nu);
-  n := nu*bb^(-1);
-  return NicefyIdeal(n);
+  if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
+    M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bb^(-1));
+  end if;
+  return M`ShintaniRepsIdeal[bb][nu];
+end intrinsic;
+
+intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::SetEnum[RngOrdElt])
+ {populates ShintaniRepsIdeal[bb][nu] for nu in nus}
+  bbinv := bb^(-1);
+  for nu in nus diff Keys(M`ShintaniRepsIdeal[bb]) do
+    // See ShintaniRepresentativeToIdeal
+    M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbinv);
+  end for;
 end intrinsic;
 
 

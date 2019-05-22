@@ -17,6 +17,7 @@ declare attributes ModFrmHilDGRng:
   PositiveReps, // PositiveReps[bb] = [nu with trace at most Precision(M)]
   PositiveRepsByTrace, // PositiveReps[bb][t] = [nu with trace t]
   ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
+  ShintaniRepsIdeal, // ShintaniReps[bb] = [ShintaniRepresentativeToIdeal(nu) in Shintani with trace at most Precision(M)]
   ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
   ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][I] = [nu in Shintani]
   IdealElementPairs, // IdealElementPairs[bb][Nm] = list of pairs (nn, nu) for nu in Shintani of Norm Nm
@@ -241,6 +242,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`PositiveReps := AssociativeArray();
   M`PositiveRepsByTrace := AssociativeArray();
   M`ShintaniReps := AssociativeArray();
+  M`ShintaniRepsIdeal := AssociativeArray();
   M`ShintaniRepsByTrace := AssociativeArray();
   M`ReduceIdealToShintaniRep := AssociativeArray();
   // Elements and Shintani domains
@@ -254,6 +256,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
     end for;
     M`PositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
     M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
+    M`ShintaniRepsIdeal[bb] := AssociativeArray();
     for nu in M`ShintaniReps[bb] do
       M`ReduceIdealToShintaniRep[bb][ideal<Integers(F)|nu>] := nu;
     end for;
@@ -264,7 +267,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   for bb in M`NarrowClassGroupReps do
     IdealElementPairsList := [];
     for nu in ShintaniReps(M)[bb] do
-      nn := ShintaniRepresentativeToIdeal(bb, nu);
+      nn := ShintaniRepresentativeToIdeal(M, bb, nu);
       IdealElementPairsList cat:= [[* nn, nu *]]; //ideals are first
     end for;
     //Sort IdealElementPairs by norm of ideal
@@ -301,9 +304,9 @@ end intrinsic;
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
   bbs := NarrowClassGroupReps(M);
-  mult_tables := AssociativeArray();
+  M`MultiplicationTables := AssociativeArray();
   for bb in bbs do
-    mult_tables[bb] := GetIndexPairs(bb, M);
+     // Populates M`MultiplicationTables[bb]
+     GetIndexPairs(bb, M);
   end for;
-  M`MultiplicationTables := mult_tables;
 end intrinsic;
