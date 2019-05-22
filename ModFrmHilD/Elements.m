@@ -22,9 +22,10 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     bbs := NarrowClassGroupReps(M);
     k := Weight(Mk);
     prec := Precision(M);
+    working_prec := Precision(f);
     coeffs := Coefficients(f);
     N := Level(Mk);
-    printf "Hilbert modular form expansion with precision %o.\n", prec;
+    printf "Hilbert modular form expansion with precision %o.\n", working_prec;
     printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
     printf "Weight: %o\n", k;
     printf "Parent: %o\n", Mk;
