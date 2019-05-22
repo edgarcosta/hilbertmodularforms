@@ -4,13 +4,13 @@
 
 intrinsic CoefficientsFromRecursion(M::ModFrmHilDGRng, N::RngOrdIdl, n::RngOrdIdl, k::SeqEnum[RngIntElt], coeff::Assoc) -> RngIntElt
   {construct the coefficient for a_n from an associative array coeff with all a_p for p|n}
-  ZF := Integers(M);
+  Q := Rationals();
   k0 := Max(k);
   Fact := Factorization(n);
   // Power series ring for recusion
-  ZFX<X, Y> := PolynomialRing(ZF, 2);
+  QX<X, Y> := PolynomialRing(Q, 2);
   prec := Max([pair[2]: pair in Fact]) +1;
-  R<T> := PowerSeriesRing(ZFX : Precision := prec);
+  R<T> := PowerSeriesRing(QX : Precision := prec);
   recursion := Coefficients(1/(1 - X*T + Y*T^2));
   // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
@@ -27,12 +27,12 @@ intrinsic CoefficientsFromRecursion(M::ModFrmHilDGRng, N::RngOrdIdl, n::RngOrdId
   return coeff_I;
 end intrinsic;
 
-intrinsic NewformToHMF(Sp::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
+intrinsic NewformToHMF(Mk::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
-  M := Parent(Sp);
-  N := Level(Sp);
-  k := Weight(Sp);
-  ZF := Integers(Sp);
+  M := Parent(Mk);
+  N := Level(Mk);
+  k := Weight(Mk);
+  ZF := Integers(Mk);
   coeffs := AssociativeArray(); // Coefficient array indexed by ideals
 
   // TODO
@@ -67,7 +67,7 @@ intrinsic NewformToHMF(Sp::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
       CoeffsArray[bb][nn] := coeffs[nn];
     end for;
   end for;
-return HMF(Sp, CoeffsArray);
+return HMF(Mk, CoeffsArray);
 end intrinsic;
 
 

@@ -22,6 +22,7 @@ Creation
    Recognize.m
    Igusa.m
    Siegel.m
+   EllipticCurve.m
 }
 
 CanonicalRing
