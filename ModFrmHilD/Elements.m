@@ -757,16 +757,34 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
 end intrinsic;
 
 
-/*
-    end for; 
-    for nn in Idealsbb do
-      if nn*dd in IdealsRep then
-        coeff[Rep][nn*dd] := coeff_f[bb][nn]; // Change non-zero coefficients  
-      end if;
-    end for;
-  end for;
-*/
 
+// every element of the form alpha*lambda should have trace divisible by trace(lambda)? maybe do ...
+// T := Trace(lambda);
+// maxTrace := Integers()!(prec/T); // Maxtrace is the largest value of a_n
+
+intrinsic RestrictToDivisor(f::ModFrmHilDElt, Lambda::Any) -> ModFrmElt
+  {Retricts a function to a divisor }
+  Mk := Parent(f);
+  M := Parent(Mk);
+  prec := Precision(M);
+  L := [];
+  for i in [0..prec] do 
+    a_i := 0; 
+    PositiveEltsOfTrace_i := PositiveRepsByTrace(M)[1*Integers(M)][i];  // Positive reps are stored by ideal class, I'm assuming narrrow class number 1 for now
+    // loop over positive elts with of trace j < i and see if Trace(j*lambda) = i 
+    for j in [0..i] do 
+      PositiveEltsOfTrace_j := PositiveRepsByTrace(M)[1*Integers(M)][j]; 
+      for nu in PositiveEltsOfTrace_j do
+        if nu*Lambda in PositiveEltsOfTrace_i then 
+          nn := ShintaniRepresentativeToIdeal(M,1*Integers(M),nu);
+          a_i +:= Coefficients(f)[1*Integers(M)][nn];
+        end if;
+      end for;
+    end for;
+    Append(~L,a_i);
+  end for;
+  return L;
+end intrinsic;
 
 
 /*
