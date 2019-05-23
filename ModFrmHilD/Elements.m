@@ -22,9 +22,10 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     bbs := NarrowClassGroupReps(M);
     k := Weight(Mk);
     prec := Precision(M);
+    working_prec := Precision(f);
     coeffs := Coefficients(f);
     N := Level(Mk);
-    printf "Hilbert modular form expansion with precision %o.\n", prec;
+    printf "Hilbert modular form expansion with precision %o.\n", working_prec;
     printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
     printf "Weight: %o\n", k;
     printf "Parent: %o\n", Mk;
@@ -93,7 +94,7 @@ intrinsic Parent(f::ModFrmHilDElt) -> ModFrmHilD
   return f`Parent;
 end intrinsic;
 
-intrinsic Precision(f::ModFrmHilD) -> RngIntElt
+intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   {}
   return f`Precision;
 end intrinsic;
@@ -114,21 +115,9 @@ intrinsic Field(f::ModFrmHilDElt) -> FldNum
   return GradedRing(f)`Field;
 end intrinsic;
 
-// this causes a segmentation fault if attached twice v24-3
-/* intrinsic BaseField(f::ModFrmHilDElt) -> FldNum */
-/*   {returns base field of parent of f.} */
-/*   return GradedRing(f)`Field; */
-/* end intrinsic; */
-
 intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   {returns level of parent of f.}
   return Level(Parent(f));
-end intrinsic;
-
-intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
-  {returns precision of parent of f.}
-  M := GradedRing(f);
-  return Precision(M);
 end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> Any
