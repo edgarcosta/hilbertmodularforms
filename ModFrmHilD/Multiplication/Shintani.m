@@ -67,6 +67,36 @@ intrinsic PositiveElementsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[Rn
 end intrinsic;
 
 
+intrinsic BoundedRepresentatives(bb::RngOrdFracIdl, XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
+  {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0< c_2 < Ybound}    
+  require forall{i : i in [XUBound,YUBound,XLBound,YLBound] | Type(i) eq RngIntElt or Type(i) eq FldReElt }: "Bounds must be integers or real numbers";
+  Basis := TraceBasis(bb);
+  F := NumberField(Parent(Basis[1]));
+  ZF := Integers(F);
+  places := InfinitePlaces(F);
+  // Why isn't trace basis already oriented?
+  // Since Tr(Basis[2]) = 0 this will guarentees signs of the form -,+
+  if Evaluate(Basis[2],places[1]) lt 0 then
+    Basis := [Basis[1], -Basis[2]];
+  end if;
+  // Precomputationss 
+  a_1 := Evaluate(Basis[1],places[1]); b_1 := Evaluate(Basis[2],places[1]);
+  a_2 := Evaluate(Basis[1],places[2]); b_2 := Evaluate(Basis[2],places[2]);
+  // List of all Elements
+  T := [];
+  TraceLBound := Ceiling(XLBound+YLBound);
+  TraceUBound := Floor(XUBound+YUBound);
+  for x in [TraceLBound .. TraceUBound] do 
+    Lower := Ceiling(Max((XLBound-x*a_1)/b_1,(YUBound-x*a_2)/b_2));
+    Upper := Floor(Min((XUBound-x*a_1)/b_1,(YLBound-x*a_2)/b_2));
+    for y in [Lower .. Upper] do
+      Append(~T, x*Basis[1]+y*Basis[2]);
+    end for;
+  end for;
+  return T;
+end intrinsic;
+
+
 ///////////////////////////////////////////////////
 //                                               //
 //          Shintani Domain algorithms           //
