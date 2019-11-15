@@ -25,6 +25,7 @@ declare attributes ModFrmHilDGRng:
   AllIdeals, // List of all ideals for all bb ordered by norm
   AllPrimes, // List of all ideals for all bb ordered by norm
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
+  HMFPrecomputation, // Precomputed quantities for the Trace formula
   // Book keeping
   // Caching the computation of EigenForms, see Workspace
   // a double indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
@@ -189,6 +190,14 @@ intrinsic MultiplicationTables(M::ModFrmHilDGRng) -> SeqEnum
   return M`MultiplicationTables;
 end intrinsic;
 
+intrinsic HMFPrecomputation(M::ModFrmHilDGRng) -> Assoc
+  {}
+  if not assigned M`HMFPrecomputation then
+    HMFTracePrecomputation(M);
+  end if;
+  return M`HMFPrecomputation;
+end intrinsic;
+
 intrinsic HeckeEigenvalues(M::ModFrmHilDGRng) -> Assoc
   {}
   return M`HeckeEigenvalues;
@@ -309,4 +318,45 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
      // Populates M`MultiplicationTables[bb]
      GetIndexPairs(bb, M);
   end for;
+end intrinsic;
+
+
+intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
+  {Fills in the CM-extensions}
+  F := BaseField(M);
+  ZF := Integers(F);
+  _<x> := PolynomialRing(F);
+
+  // Storage
+  AllDiscriminants := []; // Minimal set of discriminants 
+  A := AssociativeArray(); // Storage for precomputations
+  
+  // First pass. A[a] := List of [*b,D*];
+  for a in ShintaniReps(M)[1*ZF] do
+    Points := CMExtensions(M,a);
+    A[a] := [[* b, b^2-4*a *] : b in Points];
+    AllDiscriminants cat:= [b^2-4*a : b in Points];
+  end for;
+
+  // Second Pass T[D] := [h,w,chi,cc];
+  CMDisc := Set(AllDiscriminants);
+  T := AssociativeArray();
+  SetClassGroupBounds("GRH"); // I'm OK without a proof!
+  for D in CMDisc do
+    K := ext<F | x^2 - D >;
+    ZK := Integers(K);
+    DD := Discriminant(ZK); 
+    cc := Sqrt((D*ZF)/DD);
+    chi_K := QuadraticCharacter(F!D); 
+    L := AbsoluteField(K); // Class groups computations only for absolute extensions?
+    h := ClassNumber(L);
+    w := #TorsionUnitGroup(L);
+    T[D] := [*h,w,chi_K,cc*];
+  end for;
+
+  //Third pass A[a] := List of [*b,D,h,w,chi,cc*];
+  for a in ShintaniReps(M)[1*ZF] do
+    A[a] := [ L cat T[L[2]] : L in A[a]];
+  end for;
+  M`HMFPrecomputation := A;
 end intrinsic;
