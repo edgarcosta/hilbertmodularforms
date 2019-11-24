@@ -67,13 +67,13 @@ intrinsic PositiveElementsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[Rn
 end intrinsic;
 
 
-intrinsic BoundedRepresentatives(bb::RngOrdFracIdl, XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
+intrinsic BoundedRepresentatives(M::ModFrmHilDGRng, bb::RngOrdFracIdl, XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
   {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0< c_2 < Ybound}    
   require forall{i : i in [XUBound,YUBound,XLBound,YLBound] | Type(i) eq RngIntElt or Type(i) eq FldReElt }: "Bounds must be integers or real numbers";
   Basis := TraceBasis(bb);
-  F := NumberField(Parent(Basis[1]));
-  ZF := Integers(F);
-  places := InfinitePlaces(F);
+  F := BaseField(M);
+  ZF := Integers(M);
+  places := places(M);
   // Why isn't trace basis already oriented?
   // Since Tr(Basis[2]) = 0 this will guarentees signs of the form -,+
   if Evaluate(Basis[2],places[1]) lt 0 then
@@ -261,16 +261,53 @@ intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
   end if;
 end intrinsic;
 
+/////////////////////// Totally positive associate /////////////////
+
+intrinsic TotallyPostiveAssociate(M::ModFrmHilDGRng, gen::RngOrdElt) -> RngOrdElt
+  {Finds a totally positive associate to the given element}
+  U := UnitGroup(M);
+  mU := UnitGroupMap(M);
+  F := BaseField(M);
+  ZF := Integers(M);
+  UnitGenerators := [F!(mU(u)) : u in Generators(U)];
+  UnitSignatures := [Signature(u) : u in UnitGenerators];
+  
+  // function 1 => 0 and -1 => 1;
+  h := function(x); 
+    if x eq 1 then return 0; else return 1; end if;
+  end function;
+
+  GenSignature := [ h(i) : i in Signature(F!gen)];
+  // if not totally positive
+  if exists{i : i in GenSignature | i eq 1} then 
+    UnitSignatures := [[h(i) : i in j] : j in UnitSignatures];
+    F2 := GF(2);
+    Mat := Matrix(F2,UnitSignatures);
+    V := Vector(F2,GenSignature);
+    X := Solution(Mat,V);
+    UNIT := &*[UnitGenerators[i] : i in [1..#Generators(U)] | X[i] ne 0 ];
+    gen := ZF!(gen*UNIT);
+  end if;
+  return gen;
+end intrinsic;
+
+
+/////////////////////// Conversion Functions /////////////////////
+
 
 // Conversion : Shintani elements < = > Ideals
 // Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F)
-intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
+intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::RngOrdIdl) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
-  _,gen := IsPrincipal(n*bb);
-  ShintaniGenerator := ReduceShintani(gen, bb, M);
+  F := BaseField(M);
+  mp := NarrowClassGroupMap(M);
+  require IsIdentity((nn*bb)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
+  _,gen := IsPrincipal(nn*bb);
+  // This is hardcoded for quadratic Fields.
+  gen := TotallyPostiveAssociate(M,gen);
+  ShintaniGenerator := ReduceShintaniMinimizeTrace(gen);
   return ShintaniGenerator;
 end intrinsic;
-
 
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}

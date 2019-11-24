@@ -23,6 +23,7 @@ Creation
    Igusa.m
    Siegel.m
    EllipticCurve.m
+   TraceForm.m
 }
 
 CanonicalRing

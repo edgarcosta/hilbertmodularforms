@@ -98,7 +98,7 @@ intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
   {Computes all elements b satifying b^2 << 4a}
   F := BaseField(M);
   ZF := Integers(M);
-  places := InfinitePlaces(F);
+  places := places(M);
   /*
   Every element b^2 << 4a satifies |b| < 2sqrt(a). 
   This is a square centered at the origin. We will enumerate half of it.
@@ -107,7 +107,7 @@ intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
   YLB := 0;
   XUB := 2*Sqrt(Evaluate(a,places[1]));
   YUB := 2*Sqrt(Evaluate(a,places[2]));
-  T := BoundedRepresentatives(1*ZF,XLB,YLB,XUB,YUB);
+  T := BoundedRepresentatives(M,1*ZF,XLB,YLB,XUB,YUB);
   T := [ i : i in T | i^2-4*a ne 0]; // Zero is "technically" not totally positive for this computation
   T cat:= [-i : i in T | i ne 0];
   return T;
@@ -126,9 +126,9 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : Precomputations := false) -> Seq
   F := BaseField(Mk);
   ZF := Integers(Mk);
   n := Degree(F);
-  places := RealPlaces(F);
+  places := places(M);
   Disc := Discriminant(Integers(F));
-  DedekindZetatwo := Evaluate(DedekindZeta(F),2); // No precision set 
+  DedekindZetatwo := DedekindZetatwo(M); // No precision set 
   R := RealField(); // No precision set
   // Return 0 when mm = 0
   if mm eq 0*ZF then
@@ -164,8 +164,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : Precomputations := false) -> Seq
     end if;
   end function;
   // Preliminaries
-  _,a := IsPrincipal(mm);
-  a := ReduceShintaniMinimizeTrace(a);
+  a := IdealToShintaniRepresentative(M,1*ZF,mm);
   _<x> := PolynomialRing(F);
   SetClassGroupBounds("GRH"); // I'm OK without a proof!
   Indexforsum := CMExtensions(M,a); // Index for summation
@@ -207,10 +206,11 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : Precomputations := false) -> Seq
     C2 *:= D0;
     //Second sum
     E0 := 0;
+    //for aa in Divisors(cc11/NN) do
     for aa in Divisors(cc11/NN) do
       E1 := d(a,b,cc11/aa)*Norm(aa);
       E1 *:= &*[ Evaluate(a,places[i])^(Integers()!(k[i])/2) : i in [1..n]]; // This last part needs to be fixed for signs of Hecke characters
-      E1 *:= &*([1] cat [1-chi_K(pp[1])*Norm(pp[1])^(-1) : pp in Factorization(aa)]);
+      E1 *:= &*([1] cat [1+Norm(pp[1])^(-1)-chi_K(pp[1])*Norm(pp[1])^(-1) : pp in Divisors(aa) | IsPrime(pp)]);    
       E0 +:= E1;
     end for;
     C2 *:= E0;
@@ -235,11 +235,23 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : Precomputations := false) -> Seq
 end intrinsic;
 
 
+
 ///////////// ModFrmHilD: Trace Formula w/ precomputations ////////////////
 
 
+// Overloaded for Ideal and Shintani Rep
 intrinsic TracePrecomputation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   { returns the trace of the m^th Hecke operate on S_k(NN)}  
+  M := Parent(Mk);
+  ZF := Integers(Mk);
+  a := IdealToShintaniRepresentative(M,1*ZF,mm);
+  return TracePrecomputation(Mk,a);
+end intrinsic
+
+
+
+intrinsic TracePrecomputation(Mk::ModFrmHilD, a::RngOrdElt) -> SeqEnum[ModFrmHilDElt]
+  { Let (a) = mm be totally positive generator. This returns the trace of the m^th Hecke operate on S_k(NN)}  
   // Attributes
   M := Parent(Mk);
   NN := Level(Mk);
@@ -248,12 +260,13 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHi
   F := BaseField(Mk);
   ZF := Integers(Mk);
   n := Degree(F);
-  places := RealPlaces(F);
+  mm := a*ZF;
+  places := places(M);
   Disc := Discriminant(Integers(F));
-  DedekindZetatwo := Evaluate(DedekindZeta(F),2); // No precision set 
+  DedekindZetatwo := DedekindZetatwo(M); // No precision set 
   R := RealField(); // No precision set
-  // Return 0 when mm = 0
-  if mm eq 0*ZF then
+  // Return 0 when a = 0
+  if a eq 0 then
     return 0;  
   else
   // Requirements 
@@ -266,9 +279,9 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHi
   C0 *:= &*([1] cat [1+Norm(p[1])^(-1) : p in Factorization(NN)]);
   // Second term BB(NN,mm) 
   // Subfuction c(a,b)
-  c := function(a,b,l)
+  c := function(ai,bi,l)
     _<x> := PowerSeriesRing(R);
-    P := 1/(1 + a*x + b*x^2);
+    P := 1/(1 + ai*x + bi*x^2);
     return Coefficient(P,l);
   end function;
   // Subfuction d(a,b)
@@ -276,7 +289,6 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHi
     Q,mQ := quo< ZF | aa >;
     T1 := [ (t^2 + mQ(b)*t + mQ(a)) : t in Q ];
     T := [t@@mQ : t in Q | (t^2 + mQ(b)*t + mQ(a)) eq mQ(0) ];
-    //print b,a;
     if #T eq 0 then
       return 0; // List is empty;
     else
@@ -288,8 +300,6 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHi
     end if;
   end function;
   // Preliminaries
-  _,a := IsPrincipal(mm);
-  a := ReduceShintaniMinimizeTrace(a);
   Indexforsum := HMFPrecomputation(M)[a]; // Index for summation
   // Actual summation
   C1 := 0;
@@ -300,7 +310,12 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHi
     w := StoredData[4];
     chi_K := StoredData[5];
     cc := StoredData[6];
-    cc00 := cc/Gcd(NN,cc);
+    cc00 := 1*ZF;
+    for pp in Factorization(cc) do
+      if Valuation(NN,pp[1]) eq 0 then 
+        cc00 *:= pp[1]^pp[2];
+      end if;
+    end for;
     cc11 := 1*ZF;
     for pp in Factorization(NN) do
       vp := Valuation(cc,pp[1]);
@@ -319,13 +334,13 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHi
     C2 *:= D0;
     //Second sum
     E0 := 0;
-    for aa in Divisors(cc11/NN) do
-      E1 := d(a,b,cc11/aa)*Norm(aa);
-      E1 *:= &*[ Evaluate(a,places[i])^(Integers()!(k[i])/2) : i in [1..n]]; // This last part needs to be fixed for signs of Hecke characters
-      E1 *:= &*([1] cat [1-chi_K(pp)*Norm(pp)^(-1) : pp in Divisors(aa) | IsPrime(pp)]);
-      E0 +:= E1;
-    end for;
-    C2 *:= E0;
+      for aa in Divisors(cc11/Gcd(NN,cc11)) do
+        E1 := d(a,b,cc11/aa)*Norm(aa);
+        E1 *:= &*[ Evaluate(a,places[i])^(Integers()!(k[i])/2) : i in [1..n]]; // This last part needs to be fixed for signs of Hecke characters
+        E1 *:= &*([1] cat [1+Norm(pp)^(-1)-chi_K(pp)*Norm(pp)^(-1) : pp in Divisors(aa) | IsPrime(pp)]);
+        E0 +:= E1;
+      end for;
+      C2 *:= E0;
     // Now adding C2 to the total sum
     C1 +:= C2;
   end for;
@@ -341,26 +356,8 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHi
   FinalTrace := C0*sqrtchi(mm) + (-1)^n*C1;
   // The equation is off by a little bit. We need to add this correction factor.
   CorrectionFactor := Norm(a)^(Integers()!(k[1]/2-1));
-  //print FinalTrace*CorrectionFactor;
   return Round(FinalTrace*CorrectionFactor);
   end if;
-end intrinsic;
-
-
-intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
-  {Creates the trace form in the space Mk}
-  M := Parent(Mk);
-  Q := Rationals();
-  bbs := NarrowClassGroupReps(M);
-  coeffs := AssociativeArray(bbs);
-  for bb in bbs do
-    coeffs[bb] := AssociativeArray();
-    for I in IdealsByNarrowClassGroup(M)[bb] do
-      coeffs[bb][I] := Q!TracePrecomputation(Mk,I);
-    end for;
-  end for;
-  elt := HMF(Mk, coeffs);
-  return elt;
 end intrinsic;
 
 

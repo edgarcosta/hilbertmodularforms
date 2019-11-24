@@ -12,6 +12,10 @@ declare attributes ModFrmHilDGRng:
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
   NarrowClassGroupReps, // SeqEnum[RngOrdElt/RngFracElt]
+  UnitGroup, // GrpAb
+  UnitGroupMap, // Map : GrpAb -> Units of ZF
+  DedekindZetatwo, // FldReElt : Value of zeta_F(2)
+  places, // SeqEnum : Real places for the field F
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
   PositiveReps, // PositiveReps[bb] = [nu with trace at most Precision(M)]
@@ -105,6 +109,34 @@ intrinsic NarrowClassRepresentative(M::ModFrmHilDGRng, I::RngOrdIdl) -> Any
   mp := NarrowClassGroupMap(M);
   Rep := [bb : bb in bbs | (bb)@@mp eq (I)@@mp]; // Representative for class [ I ]
   return Rep[1];
+end intrinsic;
+
+intrinsic UnitGroup(M::ModFrmHilDGRng) -> Any
+  {}
+  return M`UnitGroup;
+end intrinsic;
+
+intrinsic UnitGroupMap(M::ModFrmHilDGRng) -> Any
+  {}
+  return M`UnitGroupMap;
+end intrinsic;
+
+intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
+  {}
+  if not assigned M`DedekindZetatwo then
+    F := BaseField(M);
+    M`DedekindZetatwo := Evaluate(DedekindZeta(F),2);
+  end if;
+  return M`DedekindZetatwo;
+end intrinsic;
+
+intrinsic places(M::ModFrmHilDGRng) -> Any
+  {}
+  if not assigned M`DedekindZetatwo then
+    F := BaseField(M);
+    M`places := RealPlaces(F);
+  end if;
+  return M`places;
 end intrinsic;
 
 intrinsic Precision(M::ModFrmHilDGRng) -> RngIntElt
@@ -235,10 +267,13 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`Integers := Integers(F);
   // narrow class group
   Cl, mp := NarrowClassGroup(F);
+  U, mU := UnitGroup(F);
   M`NarrowClassGroup := Cl;
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
   M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
+  M`UnitGroup := U;
+  M`UnitGroupMap := mU;
   // maybe we should make good choices for narrow class group reps
   // i.e. generators of small trace?
   // TODO: see above 2 lines
