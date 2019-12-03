@@ -19,8 +19,6 @@ intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
 end intrinsic;
 
 
-/*
-
 
 intrinsic CoprimeTraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Creates the trace form in the space Mk}
@@ -44,4 +42,21 @@ intrinsic CoprimeTraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   return elt;
 end intrinsic;
 
-*/
+
+
+intrinsic CoprimeLinearDependence(List::SeqEnum[ModFrmHilDElt],mm::RngOrdIdl) -> SeqEnum[RngIntElt]
+  {finds a small non-trivial integral linear combination between components of v away from nn. If none can be found return 0.}
+  M := GradedRing(List[1]);
+  bbs := NarrowClassGroupReps(M);
+  CoeffLists := [[] : i in [1..#List]];
+  for bb in bbs do
+    for nn in IdealsByNarrowClassGroup(M)[bb] do
+      if Norm(Gcd(mm,nn)) eq 1 then
+        for i in [1..#List] do
+          Append(~CoeffLists[i], Coefficients(List[i])[bb][nn]);
+        end for;
+      end if;
+    end for;
+  end for;
+  return LinearDependence(CoeffLists);
+end intrinsic;

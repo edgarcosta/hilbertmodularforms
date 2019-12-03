@@ -94,6 +94,9 @@ I'm having type issues with switching from quadratic fields to higher degree.
 Apparently the Type RngOrdElt is not a subset of FldOrdElt. For quadratic fields 
 elements of ZF are of Type RngOrdElt but for cubic fields they are of type FldOrdElt.
 */
+
+
+// Computes all CM-Quadratic fields needed for computation
 intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
   {Computes all elements b satifying b^2 << 4a}
   F := BaseField(M);
@@ -114,9 +117,31 @@ intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
 end intrinsic;
 
 
+// Todo: Careful rewrite. This is slightly hacky and unoptimized
+// Overloaded. The other quadratic character computes the ray class group!
+// This is a lot faster but needs a fundamental discriminant. 
+intrinsic QuadraticCharacter(D::RngOrdElt,pp::RngOrdIdl) -> RngIntElt
+  {Returns the value of the quadratic character chi_D(pp). D must be a fundamental discriminant!}
+  // Odd primes : Legendre Symbol (D/pp)
+  if Norm(pp) mod 2 ne 0 then  
+    return LegendreSymbol(D,pp);
+  // Even primes : Use Hilbert Symbol
+  else 
+    ZF := Parent(D);
+    F := FieldOfFractions(ZF);
+    if D*ZF subset pp then // To contain = To divide
+      return 0;
+    else
+      pi := SafeUniformizer(pp);
+      return HilbertSymbol(F!D,pi,pp);
+    end if;
+  end if;
+end intrinsic;
+
+
 ///////////// ModFrmHilD: Trace Formula ////////////////
 
-intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : Precomputations := false) -> SeqEnum[ModFrmHilDElt]
+intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   { returns the trace of the m^th Hecke operate on S_k(NN)}  
   // Attributes
   M := Parent(Mk);
@@ -191,7 +216,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : Precomputations := false) -> Seq
     cc11 := 1*ZF;
     for pp in Factorization(NN) do
       vp := Valuation(cc,pp[1]);
-      cc11 *:= pp[1]^(Min(2*vp+1,pp[2]+vp));
+      cc11 *:= pp[1]^(Max(2*vp+1,pp[2]+vp));
     end for;
     // Second term C2
     C2 := h/w * Norm((NN*cc)/(cc00*cc11));
@@ -210,7 +235,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : Precomputations := false) -> Seq
     for aa in Divisors(cc11/NN) do
       E1 := d(a,b,cc11/aa)*Norm(aa);
       E1 *:= &*[ Evaluate(a,places[i])^(Integers()!(k[i])/2) : i in [1..n]]; // This last part needs to be fixed for signs of Hecke characters
-      E1 *:= &*([1] cat [1+Norm(pp[1])^(-1)-chi_K(pp[1])*Norm(pp[1])^(-1) : pp in Divisors(aa) | IsPrime(pp)]);    
+      E1 *:= &*([1] cat [1-chi_K(pp[1])*Norm(pp[1])^(-1) : pp in Factorization(aa)]);   
       E0 +:= E1;
     end for;
     C2 *:= E0;
@@ -308,7 +333,7 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, a::RngOrdElt) -> SeqEnum[ModFrmHil
     D := StoredData[2];
     h := StoredData[3];
     w := StoredData[4];
-    chi_K := StoredData[5];
+    FundD := StoredData[5];
     cc := StoredData[6];
     cc00 := 1*ZF;
     for pp in Factorization(cc) do
@@ -319,7 +344,7 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, a::RngOrdElt) -> SeqEnum[ModFrmHil
     cc11 := 1*ZF;
     for pp in Factorization(NN) do
       vp := Valuation(cc,pp[1]);
-      cc11 *:= pp[1]^(Min(2*vp+1,pp[2]+vp));
+      cc11 *:= pp[1]^(Max(2*vp+1,pp[2]+vp));
     end for;
     // Second term C2
     C2 := h/w * Norm((NN*cc)/(cc00*cc11));
@@ -328,7 +353,7 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, a::RngOrdElt) -> SeqEnum[ModFrmHil
     D0 := 0;
     for aa in Divisors(cc00) do
       D1 := Norm(aa);
-      D1 *:= &*([1] cat [1-chi_K(pp)*Norm(pp)^(-1) : pp in Divisors(aa) | IsPrime(pp)]);
+      D1 *:= &*([1] cat [1-QuadraticCharacter(FundD,pp[1])*Norm(pp[1])^(-1) : pp in Factorization(aa)]);
       D0 +:= D1;
     end for;
     C2 *:= D0;
@@ -337,7 +362,7 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, a::RngOrdElt) -> SeqEnum[ModFrmHil
       for aa in Divisors(cc11/Gcd(NN,cc11)) do
         E1 := d(a,b,cc11/aa)*Norm(aa);
         E1 *:= &*[ Evaluate(a,places[i])^(Integers()!(k[i])/2) : i in [1..n]]; // This last part needs to be fixed for signs of Hecke characters
-        E1 *:= &*([1] cat [1+Norm(pp)^(-1)-chi_K(pp)*Norm(pp)^(-1) : pp in Divisors(aa) | IsPrime(pp)]);
+        E1 *:= &*([1] cat [1-QuadraticCharacter(FundD,pp[1])*Norm(pp[1])^(-1) : pp in Factorization(aa)]);
         E0 +:= E1;
       end for;
       C2 *:= E0;
