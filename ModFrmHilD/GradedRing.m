@@ -381,8 +381,9 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
     K := ext<F | x^2 - D >;
     ZK := Integers(K);
     DD := Discriminant(ZK); 
-    _,FundD := IsPrincipal(DD);
     cc := Sqrt((D*ZF)/DD);
+    _,FundD := IsPrincipal(DD); // generator for fundamental discriminant !!! Might be incorrect up to units !!!!
+    FundD := -TotallyPostiveAssociate(M,FundD); // Ensure fundamental discriminant is totally negative
     L := AbsoluteField(K); // Class groups computations only for absolute extensions?
     h := ClassNumber(L);
     w := #TorsionUnitGroup(L);

@@ -117,18 +117,17 @@ intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
 end intrinsic;
 
 
-// Todo: Careful rewrite. This is slightly hacky and unoptimized
 // Overloaded. The other quadratic character computes the ray class group!
 // This is a lot faster but needs a fundamental discriminant. 
 intrinsic QuadraticCharacter(D::RngOrdElt,pp::RngOrdIdl) -> RngIntElt
   {Returns the value of the quadratic character chi_D(pp). D must be a fundamental discriminant!}
+  ZF := Parent(D);
+  F := FieldOfFractions(ZF);
   // Odd primes : Legendre Symbol (D/pp)
-  if Norm(pp) mod 2 ne 0 then  
+  if Valuation(ideal<ZF|2>,pp) eq 0 then  
     return LegendreSymbol(D,pp);
   // Even primes : Use Hilbert Symbol
   else 
-    ZF := Parent(D);
-    F := FieldOfFractions(ZF);
     if D*ZF subset pp then // To contain = To divide
       return 0;
     else
