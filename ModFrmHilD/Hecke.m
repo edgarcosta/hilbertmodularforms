@@ -330,10 +330,10 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, a::RngOrdElt) -> SeqEnum[ModFrmHil
   for StoredData in Indexforsum do 
     b := StoredData[1];
     D := StoredData[2];
-    h := StoredData[3];
-    w := StoredData[4];
-    FundD := StoredData[5];
-    cc := StoredData[6];
+    FundD := StoredData[3];
+    cc := StoredData[4];
+    h := StoredData[5];
+    w := StoredData[6];
     cc00 := 1*ZF;
     for pp in Factorization(cc) do
       if Valuation(NN,pp[1]) eq 0 then 
@@ -383,6 +383,18 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, a::RngOrdElt) -> SeqEnum[ModFrmHil
   return Round(FinalTrace*CorrectionFactor);
   end if;
 end intrinsic;
+
+////////////////// Future Trace Work ////////////////////
+
+//Correction Factor: exists ki = 2
+/*
+ConstantFactor := 0;
+if exists{ki : ki in k | ki eq 2} then 
+  if IsTrivial(chi) then 
+    ConstantFactor := &+[Norm(aa) : aa in Divisors(mm) | Norm(GCD(mm/aa,NN)) eq 1]; 
+  end if;
+end if;
+*/
 
 
 ///////////////////////////////////////////////////

@@ -365,7 +365,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   // Storage
   AllDiscriminants := []; // Minimal set of discriminants 
   A := AssociativeArray(); // Storage for precomputations
-  
+
   // First pass. A[a] := List of [*b,D*];
   for a in ShintaniReps(M)[1*ZF] do
     Points := CMExtensions(M,a);
@@ -373,24 +373,38 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
     AllDiscriminants cat:= [b^2-4*a : b in Points];
   end for;
 
-  // Second Pass T[D] := [h,w,chi,cc];
+  // Second pass. Computing fundamental discriminant and conductor. b^2-4a -> D,f^2
+  // Is there a function to take b^2-4a -> Df^2 with D fundamental discriminant?
   CMDisc := Set(AllDiscriminants);
-  T := AssociativeArray();
-  SetClassGroupBounds("GRH"); // I'm OK without a proof!
+  CMFields := AssociativeArray();
+  T := AssociativeArray(); // Keys are CMDisc
   for D in CMDisc do
     K := ext<F | x^2 - D >;
     ZK := Integers(K);
-    DD := Discriminant(ZK); 
+    DD := Discriminant(ZK);
     cc := Sqrt((D*ZF)/DD);
     _,FundD := IsPrincipal(DD); // generator for fundamental discriminant !!! Might be incorrect up to units !!!!
-    FundD := -TotallyPostiveAssociate(M,FundD); // Ensure fundamental discriminant is totally negative
+    FundD := -ReduceShintaniMinimizeTrace(TotallyPostiveAssociate(M,FundD)); // Ensure unique totally negative fundamental discriminant.
+    T[D] := [*FundD,cc*];
+    CMFields[FundD] := K;
+  end for;
+
+  // Third pass. Thinning to only fundamental discriminants T[D] := [FundD,cc,h,w];
+  SetClassGroupBounds("GRH"); // I'm OK without a proof!
+  FundamentalDiscriminants := Keys(CMFields);
+  for FundD in FundamentalDiscriminants do
+    K := CMFields[FundD];
     L := AbsoluteField(K); // Class groups computations only for absolute extensions?
     h := ClassNumber(L);
     w := #TorsionUnitGroup(L);
-    T[D] := [*h,w,FundD,cc*];
+    for D in CMDisc do
+      if FundD eq T[D][1] then 
+        T[D] cat:= [*h,w*];
+      end if;
+    end for;
   end for;
 
-  //Third pass A[a] := List of [*b,D,h,w,chi,cc*];
+  //Fourth pass A[a] := List of [*b,D,FundD,cc,h,w*];
   for a in ShintaniReps(M)[1*ZF] do
     A[a] := [ L cat T[L[2]] : L in A[a]];
   end for;
