@@ -107,9 +107,9 @@ end intrinsic;
 // Returns the slopes of the upper and lower walls for the Shintani Domain
 intrinsic ShintaniWalls(ZF::RngOrd) -> Any
   {returns lower and upper walls of the Shintani domain}
-  F := NumberField(ZF);
-  assert Degree(F) eq 2;
-  _, F := IsQuadratic(F);
+  require Degree(ZF) eq 2: "only implemented for quadratic fields";
+  D := Discriminant(ZF);
+  F := QuadraticField(D);
   places := InfinitePlaces(F);
   eps := FundamentalUnit(F);
   if Norm(eps) eq -1 then

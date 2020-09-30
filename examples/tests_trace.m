@@ -174,7 +174,7 @@ assert TR eq B6[2];
 M8 := HMFSpace(M,1*ZF,[8,8]);
 TR := TraceForm(M8);
 B8 := Basis(M8);
-assert TR eq B8[3];
+assert #LinearDependence([TR] cat B8) ne 0;
 
 
 /*
