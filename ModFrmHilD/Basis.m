@@ -81,3 +81,44 @@ intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
    end for; 
    return InvariantBasis; 
  end intrinsic; 
+
+
+
+ intrinsic ComponentBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {returns a Basis for Mk of forms that are only supported on one component}
+  // Preliminaries
+  M := Parent(Mk);
+  B := Basis(Mk);
+  bbs := NarrowClassGroupReps(M);
+  NewBasis :=[];
+  // Loop over ideal classes
+  for i in [1..#bbs] do
+    IC := Remove(bbs,i);
+    L := LinearDependence(B : IdealClasses := IC);
+    for relation in L do
+      f := &+[relation[i]*B[i] : i in [1..#B]];
+      NewBasis cat:= [f];
+    end for;
+  end for;
+  return NewBasis;
+end intrinsic;
+
+
+
+intrinsic SpecifiedComponentBasis(Mk::ModFrmHilD, bb::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
+  {returns a basis of forms that are only supported on a specified component bb}
+  // Preliminaries
+  M := Parent(Mk);
+  B := Basis(Mk);
+  bbs := NarrowClassGroupReps(M);
+  NewBasis :=[];
+  // Set i to be the component the you want to see
+  i := Index(bbs,bb);
+  IC := Remove(bbs,i);
+  L := LinearDependence(B : IdealClasses := IC);
+  for relation in L do
+    f := &+[relation[i]*B[i] : i in [1..#B]];
+    NewBasis cat:= [f];
+  end for;
+  return NewBasis;
+end intrinsic;

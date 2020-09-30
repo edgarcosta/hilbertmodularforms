@@ -617,19 +617,26 @@ end intrinsic;
 //TODO add optional flag to limit the number of coefficients
 //TODO make outputs to be of the same type
 //TODO take working precision
-intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
-  {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
+intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
+  {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
   M := GradedRing(List[1]);
-  bbs := NarrowClassGroupReps(M);
-  CoeffLists := [[] : i in [1..#List]];
-  for bb in bbs do
-    for nn in IdealsByNarrowClassGroup(M)[bb] do
-      for i in [1..#List] do
-        Append(~CoeffLists[i], Coefficients(List[i])[bb][nn]);
-      end for;
+  // The ideal classes from which we are taking the coefficients.
+  if IdealClasses cmpeq false then
+    bbs := NarrowClassGroupReps(M); // Default is all ideals classes
+  else 
+    bbs := IdealClasses; // Optionally we may specify a single ideal class
+  end if;
+  // List of coefficients for the forms 
+  L := [];
+  // Loop over forms 
+  for i in List do
+    CoefficientsOfForm := [];
+    for bb in bbs do
+      CoefficientsOfForm cat:= [Coefficients(i)[bb][nn] : nn in IdealsByNarrowClassGroup(M)[bb]];
     end for;
+    Append(~L,CoefficientsOfForm);
   end for;
-  return LinearDependence(CoeffLists);
+  return LinearDependence(L);
 end intrinsic;
 
 
