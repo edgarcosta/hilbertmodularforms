@@ -1,6 +1,47 @@
 
+//////////////////// Main function: Trace Form /////////////////////////
+
+intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
+  {Creates the trace form in the space Mk}
+  M := Parent(Mk);
+  Q := Rationals();
+  bbs := NarrowClassGroupReps(M);
+  coeffs := AssociativeArray(bbs);
+  for bb in bbs do
+    coeffs[bb] := AssociativeArray();
+    for I in IdealsByNarrowClassGroup(M)[bb] do
+      coeffs[bb][I] := Q!Trace(Mk,I);
+    end for;
+  end for;
+  elt := HMF(Mk, coeffs);
+  return elt;
+end intrinsic;
+
+//////////////////// Main function: Speed Trace Form /////////////////////////
+
+intrinsic STraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
+  {Creates the trace form in the space Mk}
+  M := Parent(Mk);
+  Q := Rationals();
+  bbs := NarrowClassGroupReps(M);
+  coeffs := AssociativeArray(bbs);
+  for bb in bbs do
+    coeffs[bb] := AssociativeArray();
+    for I in IdealsByNarrowClassGroup(M)[bb] do
+      coeffs[bb][I] := Q!STrace(Mk,I);
+    end for;
+  end for;
+  elt := HMF(Mk, coeffs);
+  return elt;
+end intrinsic;
 
 
+
+
+
+//////////////////// Main function: Trace Form (Old) /////////////////////////
+
+/*
 intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Creates the trace form in the space Mk}
   M := Parent(Mk);
@@ -17,6 +58,7 @@ intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   elt := HMF(Mk, coeffs);
   return elt;
 end intrinsic;
+
 
 
 
@@ -60,3 +102,4 @@ intrinsic CoprimeLinearDependence(List::SeqEnum[ModFrmHilDElt],mm::RngOrdIdl) ->
   end for;
   return LinearDependence(CoeffLists);
 end intrinsic;
+*/

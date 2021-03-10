@@ -14,7 +14,7 @@ declare attributes ModFrmHilDGRng:
   NarrowClassGroupReps, // SeqEnum[RngOrdElt/RngFracElt]
   UnitGroup, // GrpAb
   UnitGroupMap, // Map : GrpAb -> Units of ZF
-  DedekindZetatwo, // FldReElt : Value of zeta_F(2)
+  DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
   places, // SeqEnum : Real places for the field F
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
@@ -29,7 +29,8 @@ declare attributes ModFrmHilDGRng:
   AllIdeals, // List of all ideals for all bb ordered by norm
   AllPrimes, // List of all ideals for all bb ordered by norm
   MultiplicationTables, // MultiplicationTables[bb] = mult_table where mult_table[nu] = pairs mult to nu
-  HMFPrecomputation, // Precomputed quantities for the Trace formula
+  PrecomputationforTrace, // Precomputed quantities for the Trace formula
+  // HMFPrecomputation, // Precomputed quantities for the Trace formula (Old)
   // Book keeping
   // Caching the computation of EigenForms, see Workspace
   // a double indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
@@ -124,15 +125,15 @@ end intrinsic;
 intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
   {}
   if not assigned M`DedekindZetatwo then
-    F := BaseField(M);
-    M`DedekindZetatwo := Evaluate(DedekindZeta(F),2);
+    F := BaseField(M); 
+    M`DedekindZetatwo := Evaluate(LSeries(F : Precision := 100),2); // Fixed Precision 100. 
   end if;
   return M`DedekindZetatwo;
 end intrinsic;
 
 intrinsic places(M::ModFrmHilDGRng) -> Any
   {}
-  if not assigned M`DedekindZetatwo then
+  if not assigned M`places then
     F := BaseField(M);
     M`places := RealPlaces(F);
   end if;
@@ -222,6 +223,7 @@ intrinsic MultiplicationTables(M::ModFrmHilDGRng) -> SeqEnum
   return M`MultiplicationTables;
 end intrinsic;
 
+/* Old Code for Trace
 intrinsic HMFPrecomputation(M::ModFrmHilDGRng) -> Assoc
   {}
   if not assigned M`HMFPrecomputation then
@@ -229,6 +231,16 @@ intrinsic HMFPrecomputation(M::ModFrmHilDGRng) -> Assoc
   end if;
   return M`HMFPrecomputation;
 end intrinsic;
+*/
+
+intrinsic TracePrecomputation(M::ModFrmHilDGRng) -> Assoc
+  {}
+  if not assigned M`PrecomputationforTrace then
+    HMFTracePrecomputation(M);
+  end if;
+  return M`PrecomputationforTrace;
+end intrinsic;
+
 
 intrinsic HeckeEigenvalues(M::ModFrmHilDGRng) -> Assoc
   {}
@@ -345,6 +357,12 @@ intrinsic ModFrmHilDGRngCopy(M::ModFrmHilDGRng) -> ModFrmHilDGRng
   return M1;
 end intrinsic;
 
+///////////////////////////////////////////////////
+//                                               //
+//        Precomputations: Multiplication        //
+//                                               //
+///////////////////////////////////////////////////
+
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
   bbs := NarrowClassGroupReps(M);
@@ -356,6 +374,98 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
 end intrinsic;
 
 
+///////////////////////////////////////////////////
+//                                               //
+//         Precomputations: Speed Trace          //
+//                                               //
+///////////////////////////////////////////////////
+
+/////////////// ModFrmHilD: Trace Precomputation ////////////////
+
+intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
+  {Fills in the CM-extensions}
+  F := BaseField(M); // Base Field
+  ZF := Integers(F); // Ring of Integers
+  _<x> := PolynomialRing(F); // Polynomial ring over F
+  UF := UnitGroup(M); // Unit Group of F
+  mUF := UnitGroupMap(M); // Unit Group of F map
+  
+  // Storage
+  AllDiscriminants := []; // Minimal set of discriminants 
+  ReducedDiscriminants := []; // Reduced Discriminants
+  A := AssociativeArray(); // Storage for precomputations
+  
+
+  // First pass. A[a] := List of [b,a,D];
+  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do
+    A[mm] := [];
+    Points := SIndexOfSummation(M,mm);
+    for i in Points do
+      b := i[1]; // Trace
+      a := i[2]; // Norm
+      D := b^2-4*a; // Discriminant
+      A[mm] cat:= [[* b, a, D*]];
+      AllDiscriminants cat:= [D];
+    end for;
+  end for;
+
+
+  // Second pass. Compute reduced discriminants, ZK ring of intgers, and conductor ff. 
+  CMDisc := Set(AllDiscriminants);
+  S := AssociativeArray();
+  for D in CMDisc do
+    K := ext<F | x^2 - D >; // Field K/F
+    ZK := Integers(K); // Ring of Integers 
+    DD := Discriminant(ZK); // Discriminant 
+    ff := Sqrt((D*ZF)/DD); // Conductor
+    D0 := D; // Unique indentifying discriminant
+    t := 0; // Counter
+    for d in ReducedDiscriminants do 
+      if IsSquare(D/d[1]) then 
+        t := 1;
+        D0 := d[1];
+        break;
+      end if;
+    end for;
+    if t eq 0 then  // Add to AllDiscriminants if it is new
+      ReducedDiscriminants cat:= [[*D,K*]]; 
+    end if;
+    S[D] := [*D0, ZK, ff*]; // TODO: storing ring of integers doubles time why?
+  end for;
+
+
+  // Third Pass. Append [D0, ZK, ff] to [b,a,D].
+  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do
+    A[mm] := [ i cat S[i[3]] : i in A[mm]];
+  end for;
+
+
+  // Fourth pass. Compute class number and unit index [h,w].
+  T := AssociativeArray();
+  SetClassGroupBounds("GRH"); // No Proof!
+  for pair in ReducedDiscriminants do
+    D0 := pair[1]; // Indentifying Discriminant
+    K := pair[2]; // Field 
+    Kabs := AbsoluteField(K); // Class groups computations only for absolute extensions?
+    ZKabs := Integers(Kabs); // Ring of integers
+    hplus := NarrowClassNumber(M); // Narrow class number
+    h,w := ClassGroupandUnitIndex(M, K, D0, ZF, hplus); // Class group of K and Hasse Unit index
+    T[D0] := [*h,w*];
+  end for;
+
+
+  // Fifth Pass. Append [h,w] to [b, a, D, D0, ZK, ff].
+  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do
+    A[mm] := [ i cat T[i[4]] : i in A[mm]];
+  end for;
+  M`PrecomputationforTrace := A;
+end intrinsic;
+
+
+
+////////// Trace Precompuation code //////////
+
+/* Old Trace precomputation code
 intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   {Fills in the CM-extensions}
   F := BaseField(M);
@@ -410,3 +520,6 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   end for;
   M`HMFPrecomputation := A;
 end intrinsic;
+*/
+
+
