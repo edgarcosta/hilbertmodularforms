@@ -643,12 +643,14 @@ end intrinsic;
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
 
-//Todo: True for all ideals or just principal ideals?
+
+
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f(z) and produces f(dd*z) in the space Mk}
   coeff_f := Coefficients(f);
   Mk_f := Parent(f);
-  M := Parent(Mk_f);
+  M_f:=Parent(Mk_f);
+  M:=Parent(Mk);
   N1 := Level(Mk_f);
   N2 := Level(Mk);
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
@@ -658,7 +660,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[
   coeff := AssociativeArray(); 
   for bb in bbs do
     Rep := NarrowClassRepresentative(M,dd*bb);
-    Idealsbb := IdealsByNarrowClassGroup(M)[bb];
+    Idealsbb := IdealsByNarrowClassGroup(M_f)[bb];
     IdealsRep := IdealsByNarrowClassGroup(M)[Rep];
     coeff[Rep] := AssociativeArray();
     for nn in IdealsRep do
@@ -685,6 +687,33 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   end for;
   return IncludedForms;
 end intrinsic;
+
+
+
+intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
+  {Gives absolute initial trace precision bound to be able to include f(dd*z) into Mk}
+  M:=Parent(Mk);
+  F:=BaseField(Mk);
+  ZF:=Integers(F);
+  N1 := Level(Mk_f);
+  N2 := Level(Mk);
+  absTraceBound:=Precision(Parent(Mk));
+  for dd in Divisors(N2/N1) do 
+    for nn in AllIdeals(M) do
+      if not nn/dd in AllIdeals(M) then
+        if Norm(nn/dd) in Integers() then
+          nu:=IdealToShintaniRepresentative(M, nn/dd);
+          tnu:=Trace(nu);
+          if tnu gt absTraceBound then
+            absTraceBound:=tnu;
+          end if;
+        end if;
+      end if;
+    end for;
+  end for;
+  return absTraceBound;
+end intrinsic;
+
 
 
 /*
