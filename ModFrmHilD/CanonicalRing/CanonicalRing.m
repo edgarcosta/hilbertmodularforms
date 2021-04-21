@@ -253,7 +253,7 @@ end if;
 
 // Before we evaluate monomials, make sure precision is high enough
 CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-assert CoeffCount ge Dim(Mk);
+//assert CoeffCount ge Dim(Mk);
 
 		EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
 
@@ -344,7 +344,7 @@ intrinsic ConstructGeneratorsAndRelationsOnComponent(M::ModFrmHilDGRng, N::RngOr
 
 			// Before we evaluate monomials, make sure precision is high enough
 			CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-			assert CoeffCount ge Dim(Mk);
+			//assert CoeffCount ge Dim(Mk);
 
 			EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
 
@@ -513,7 +513,7 @@ n := Degree(BaseField(M));
 
 // Before we evaluate monomials, make sure precision is high enough
 CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-require CoeffCount ge Dim(Mk): "Precision is too low";
+//require CoeffCount ge Dim(Mk): "Precision is too low";
 
 		EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
 
