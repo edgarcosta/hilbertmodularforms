@@ -195,27 +195,27 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   if nu eq 0 then
     return Parent(nu)!0;
   end if;
-  assert IsTotallyPositive(nu);
+
+ // Preliminaries
   ZF := Parent(nu);
   F := NumberField(ZF);
+  // Asserts
+  require IsTotallyPositive(nu): "nu must be totally positive";
+  require Degree(F) eq 2: "Shintani domains only implemented for quadratic fields";
+  // Fundamental unit
+  U,mU := UnitGroup(ZF);
+  eps := mU(U.2); // Assuming quadratic field then this should be the fundamental unit.
   places := InfinitePlaces(F);
-  eps := FundamentalUnit(ZF);
-  // determine signs of eps and make eps totally positive
-  eps_RR := EmbedNumberField(eps, places);
-  assert #eps_RR eq 2; // only for quadratic fields right now
-  pos_count := 0;
-  for i := 1 to #places do
-    if eps_RR[i] gt 0 then
-      pos_count +:= 1;
-    end if;
-  end for;
-  if pos_count eq 0 then
+  // Replace with generator for totally positive units
+  sign_eps := Set(Signature(F!eps)); // Signs of fundamental unit: {1,-1}, {-1}, or {1}.
+  if sign_eps eq {-1} then // Case 1: Sign(eps) = [-1,-1] so we replace with -eps.
     eps := -eps;
-  elif pos_count eq 1 then
+  elif sign_eps eq {1,-1} then // Case 2: Sign(eps) = [-1,1] so we replace with eps^2.
     eps := eps^2;
-  else
+  else // Case 3: Sign(eps) = [1,1] so we leave it eps.
     eps := eps;
   end if;
+
   eps_RR := EmbedNumberField(eps, places);
   slope_eps := Slope(eps);
   slope_nu := Slope(nu);
@@ -240,6 +240,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
     return nus[2];
   end if;
 end intrinsic;
+
 
 
 // Test if an element is Shintani reduced 
