@@ -168,6 +168,20 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
 end intrinsic;
 
+intrinsic CompleteCoeffsZeros(M:: ModFrmHilDGRng, coeffs:: Assoc) -> Assoc
+ {given an associative array with coefficients on one component, set all other coefficients to be zero}
+  reps:= NarrowClassGroupReps(M);
+  for bb in reps do
+    if not bb in Keys(coeffs) then
+      coeffs[bb] := AssociativeArray();
+      for nn in IdealsByNarrowClassGroup(M)[bb] do
+        coeffs[bb][nn] := 0;
+      end for;
+    end if;
+  end for;
+  return coeffs;
+end intrinsic;
+
 intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc : prec := 0) -> ModFrmHilDElt
   {WARNING: user is responsible for coefficients besides some basic structural assertions. Note: coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb)^-1}
   M := Parent(Mk);
@@ -640,8 +654,36 @@ intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
 end intrinsic;
 
 
-////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
+intrinsic LinearDependenceZero(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
+  {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
+  M := GradedRing(List[1]);
+  // The ideal classes from which we are taking the coefficients.
+  if IdealClasses cmpeq false then
+    bbs := NarrowClassGroupReps(M); // Default is all ideals classes
+  else 
+    bbs := IdealClasses; // Optionally we may specify a single ideal class
+  end if;
+  // List of coefficients for the forms 
+  L := [];
+  // Loop over forms 
+  for i in List do
+    CoefficientsOfForm := [];
+    for bb in bbs do
+      newcof:=[];
+      for nn in IdealsByNarrowClassGroup(M)[bb] do
+        if nn ne 0*Integers(BaseField(M)) then
+         Append(~newcof, Rationals()!Coefficients(i)[bb][nn]);
+        end if;
+      end for;
+      CoefficientsOfForm cat:= newcof; 
+    end for;
+    print(CoefficientsOfForm);
+    Append(~L,CoefficientsOfForm);
+  end for;
+  return LinearDependence(L);
+end intrinsic;
 
+////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
 
 
