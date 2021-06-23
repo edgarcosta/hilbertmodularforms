@@ -20,7 +20,7 @@ B12:=Basis(HMFSpace(GR, [12,12]));
 
 
 
-a,b,c,d,e,f:=UniversalIgusaV2(GR);
+a,b,c,d,e,f:=UniversalIgusa(GR);
 LinearDependence([a] cat B4 : IdealClasses:=[reps[1]]);
 LinearDependence([b] cat B6: IdealClasses:=[reps[1]]);
 LinearDependence([c] cat B10 : IdealClasses:=[reps[1]]);
@@ -45,7 +45,7 @@ B12:=Basis(HMFSpace(GR, [12,12]));
 
 
 
-a,b,c,d,e,f:=UniversalIgusaV2(GR);
+a,b,c,d,e,f:=UniversalIgusa(GR);
 LinearDependence([a] cat B4 : IdealClasses:=[reps[1]]);
 LinearDependence([b] cat B6: IdealClasses:=[reps[1]]);
 LinearDependence([c] cat B10 : IdealClasses:=[reps[1]]);
