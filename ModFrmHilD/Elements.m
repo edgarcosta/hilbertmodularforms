@@ -22,9 +22,10 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     bbs := NarrowClassGroupReps(M);
     k := Weight(Mk);
     prec := Precision(M);
+    working_prec := Precision(f);
     coeffs := Coefficients(f);
     N := Level(Mk);
-    printf "Hilbert modular form expansion with precision %o.\n", prec;
+    printf "Hilbert modular form expansion with precision %o.\n", working_prec;
     printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
     printf "Weight: %o\n", k;
     printf "Parent: %o\n", Mk;
@@ -93,7 +94,7 @@ intrinsic Parent(f::ModFrmHilDElt) -> ModFrmHilD
   return f`Parent;
 end intrinsic;
 
-intrinsic Precision(f::ModFrmHilD) -> RngIntElt
+intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   {}
   return f`Precision;
 end intrinsic;
@@ -114,21 +115,9 @@ intrinsic Field(f::ModFrmHilDElt) -> FldNum
   return GradedRing(f)`Field;
 end intrinsic;
 
-// this causes a segmentation fault if attached twice v24-3
-/* intrinsic BaseField(f::ModFrmHilDElt) -> FldNum */
-/*   {returns base field of parent of f.} */
-/*   return GradedRing(f)`Field; */
-/* end intrinsic; */
-
 intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   {returns level of parent of f.}
   return Level(Parent(f));
-end intrinsic;
-
-intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
-  {returns precision of parent of f.}
-  M := GradedRing(f);
-  return Precision(M);
 end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> Any
@@ -149,6 +138,17 @@ intrinsic CoefficientField(f::ModFrmHilDElt) -> Any
   return f`CoefficientField;
 end intrinsic;
 
+intrinsic NumberOfCoefficients(f::ModFrmHilDElt) -> Any
+{}
+    keys := SetToSequence(Keys(Coefficients(f)));
+    if IsNull(keys) then return 0;
+    end if;
+    coeffsperkey := #Keys(Coefficients(f)[keys[1]]);
+    return #keys*coeffsperkey;
+
+end intrinsic;
+
+
 ////////// ModFrmHilDElt creation functions //////////
 
 intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
@@ -166,6 +166,20 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
     end if;
   end for;
   return g;
+end intrinsic;
+
+intrinsic CompleteCoeffsZeros(M:: ModFrmHilDGRng, coeffs:: Assoc) -> Assoc
+ {given an associative array with coefficients on one component, set all other coefficients to be zero}
+  reps:= NarrowClassGroupReps(M);
+  for bb in reps do
+    if not bb in Keys(coeffs) then
+      coeffs[bb] := AssociativeArray();
+      for nn in IdealsByNarrowClassGroup(M)[bb] do
+        coeffs[bb][nn] := 0;
+      end for;
+    end if;
+  end for;
+  return coeffs;
 end intrinsic;
 
 intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc : prec := 0) -> ModFrmHilDElt
@@ -401,78 +415,6 @@ end intrinsic;
 
 
 
-///////////// ModFrmHilDElt: Hecke Operators ////////////////
-
-
-
- intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
-   {returns T(n)(f) for the trivial character}
-   return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1);
- end intrinsic;
-
-
- intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> ModFrmHilDElt
-   {returns associative array with coefficients for T(nn)(f) with loss of precision.}
-   Mk := Parent(f);
-   M :=Parent(Mk);
-   F:=BaseField(M);
-   ZF:=Integers(F);
-   k0 := Max(Weight(f));
-   //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn)
-   coeffsTnnf := AssociativeArray();
-   newPrec:=0;
-   for bb in NarrowClassGroupReps(M) do
-    coeffsTnnf[bb] := AssociativeArray();
-    end for;
-   for T:=0 to Precision(M) do
-    traceDefined:=0; //keeps track if coefficients for all ideals of a given trace are defined 
-    totalIdealsByTrace:=0;
-    for bb in  NarrowClassGroupReps(M) do
-      IdealsTraceT:=ShintaniRepsByTrace(M)[bb][T]; //get list of Shintani reps with trace T
-      totalIdealsByTrace+:= #IdealsTraceT;
-      for x in IdealsTraceT do
-        I:=x*bb^(-1);
-        c :=0;
-        allDivisors:=true; //keeps track if all the coefficients in the sum for an ideal are defined
-        // loop over divisors
-        // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms
-        for aa in Divisors(ZF!!(I + nn)) do
-          if aa^(-2) * (I* nn) notin AllIdeals(M) then
-           allDivisors:=false ; break; //stop if coefficient for divisor is not defined
-             else
-              if I eq 0*ZF then c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[bb][I]; //takes care if the coefficients for the zero ideal are different
-                else c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF !! (aa^(-2) * (I* nn)));
-                end if;
-             end if;
-          end for;
-        if allDivisors eq true then 
-          traceDefined +:= 1;
-          coeffsTnnf[bb][I] := c;
-         else break; //stop if not all coefficients for the divisors in the sum for an ideal are defined
-         end if;
-        end for;
-      end for;
-    if traceDefined eq totalIdealsByTrace then 
-      newPrec:=T;
-      else 
-        newPrec:=Max(0, newPrec);
-        for bb in NarrowClassGroupReps(M) do
-           IdealsTraceT:=ShintaniRepsByTrace(M)[bb][T];
-           for x in IdealsTraceT do
-            I:=x*ZF;
-            if I in Keys(coeffsTnnf[bb]) then
-              Remove(~coeffsTnnf[bb], I);
-              end if;
-            end for;
-           end for;
-           break;
-      end if;
-    end for;
-  //return coeffsTnnf, newPrec;
-  MNew:=GradedRingOfHMFs(F, newPrec);
-  return HMF(HMFSpace(MNew, Level(f), Weight(f)), coeffsTnnf);      
- end intrinsic;
-
 ////////// ModFrmHilDElt: Arithmetic //////////
 
 //TODO make zero HMF universal so it can be added/multiplied to any HMF
@@ -689,31 +631,68 @@ end intrinsic;
 //TODO add optional flag to limit the number of coefficients
 //TODO make outputs to be of the same type
 //TODO take working precision
-intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
-  {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
+intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
+  {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
   M := GradedRing(List[1]);
-  bbs := NarrowClassGroupReps(M);
-  CoeffLists := [[] : i in [1..#List]];
-  for bb in bbs do
-    for nn in IdealsByNarrowClassGroup(M)[bb] do
-      for i in [1..#List] do
-        Append(~CoeffLists[i], Coefficients(List[i])[bb][nn]);
-      end for;
+  // The ideal classes from which we are taking the coefficients.
+  if IdealClasses cmpeq false then
+    bbs := NarrowClassGroupReps(M); // Default is all ideals classes
+  else 
+    bbs := IdealClasses; // Optionally we may specify a single ideal class
+  end if;
+  // List of coefficients for the forms 
+  L := [];
+  // Loop over forms 
+  for i in List do
+    CoefficientsOfForm := [];
+    for bb in bbs do
+      CoefficientsOfForm cat:= [Coefficients(i)[bb][nn] : nn in IdealsByNarrowClassGroup(M)[bb]];
     end for;
+    Append(~L,CoefficientsOfForm);
   end for;
-  return LinearDependence(CoeffLists);
+  return LinearDependence(L);
 end intrinsic;
 
+
+intrinsic LinearDependenceZero(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
+  {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
+  M := GradedRing(List[1]);
+  // The ideal classes from which we are taking the coefficients.
+  if IdealClasses cmpeq false then
+    bbs := NarrowClassGroupReps(M); // Default is all ideals classes
+  else 
+    bbs := IdealClasses; // Optionally we may specify a single ideal class
+  end if;
+  // List of coefficients for the forms 
+  L := [];
+  // Loop over forms 
+  for i in List do
+    CoefficientsOfForm := [];
+    for bb in bbs do
+      newcof:=[];
+      for nn in IdealsByNarrowClassGroup(M)[bb] do
+        if nn ne 0*Integers(BaseField(M)) then
+         Append(~newcof, Rationals()!Coefficients(i)[bb][nn]);
+        end if;
+      end for;
+      CoefficientsOfForm cat:= newcof; 
+    end for;
+    print(CoefficientsOfForm);
+    Append(~L,CoefficientsOfForm);
+  end for;
+  return LinearDependence(L);
+end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
 
-//Todo: True for all ideals or just principal ideals?
+
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f(z) and produces f(dd*z) in the space Mk}
   coeff_f := Coefficients(f);
   Mk_f := Parent(f);
-  M := Parent(Mk_f);
+  M_f:=Parent(Mk_f);
+  M:=Parent(Mk);
   N1 := Level(Mk_f);
   N2 := Level(Mk);
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
@@ -723,7 +702,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[
   coeff := AssociativeArray(); 
   for bb in bbs do
     Rep := NarrowClassRepresentative(M,dd*bb);
-    Idealsbb := IdealsByNarrowClassGroup(M)[bb];
+    Idealsbb := IdealsByNarrowClassGroup(M_f)[bb];
     IdealsRep := IdealsByNarrowClassGroup(M)[Rep];
     coeff[Rep] := AssociativeArray();
     for nn in IdealsRep do
@@ -750,6 +729,33 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   end for;
   return IncludedForms;
 end intrinsic;
+
+
+
+intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
+  {Gives absolute initial trace precision bound to be able to include f(dd*z) into Mk}
+  M:=Parent(Mk);
+  F:=BaseField(Mk);
+  ZF:=Integers(F);
+  N1 := Level(Mk_f);
+  N2 := Level(Mk);
+  absTraceBound:=Precision(Parent(Mk));
+  for dd in Divisors(N2/N1) do 
+    for nn in AllIdeals(M) do
+      if not nn/dd in AllIdeals(M) then
+        if Norm(nn/dd) in Integers() then
+          nu:=IdealToShintaniRepresentative(M, nn/dd);
+          tnu:=Trace(nu);
+          if tnu gt absTraceBound then
+            absTraceBound:=tnu;
+          end if;
+        end if;
+      end if;
+    end for;
+  end for;
+  return absTraceBound;
+end intrinsic;
+
 
 
 /*

@@ -41,8 +41,8 @@ intrinsic NicefyIdeal(I::RngOrdFracIdl) -> RngOrdIdl
   ZF := Integers(Parent(gens[1]));
   nice_gens := [ZF!g : g in gens];
   I := ideal<ZF|nice_gens>;
-  if IsPrincipal(I) then 
-    _,gen := IsPrincipal(I);
+  if IsPrincipal(I) then
+    _, gen := IsPrincipal(I);
     I := gen*ZF;
   end if;
   return I;

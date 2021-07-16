@@ -23,18 +23,14 @@ intrinsic EllipticCurveToHMF(M::ModFrmHilDGRng, E::CrvEll) -> ModFrmHilElt
 	N := Conductor(E);
 	ZF := Integers(M);
 	k := [2 : i in [1..Degree(F)]];
-	Mk := HMFSpace(M,N,k);	
-		
+	Mk := HMFSpace(M,N,k);
 	coeffs := AssociativeArray();
 	// Step 1: a_0 and a_1
 	coeffs[0*ZF] := 0; coeffs[1*ZF] := 1;
 	// Step 2: a_p for primes
-	E := ChangeRing(E,ZF);
+  L := LSeries(E);
 	for p in AllPrimes(M) do
-		Fp, mFp := ResidueClassField(p);
-		E_Fp := BaseExtend(E,mFp);
-		a_p := (1 + #Fp) - #Points(E_Fp);
-		coeffs[p] := Integers()!a_p;
+		coeffs[p] := -Integers()!Coefficient(EulerFactor(L, p),1);
 	end for;
 	// Step 3: a_n for composite ideals
 	for I in AllIdeals(M) do

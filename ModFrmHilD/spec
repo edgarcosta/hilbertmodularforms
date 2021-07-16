@@ -4,8 +4,9 @@
   Elements.m
   Workspace.m
   Formatting.m
-  hecke_stability.m
+  Hecke.m
   Basis.m
+  Trace.m
 }
 
 Multiplication
@@ -22,6 +23,8 @@ Creation
    Recognize.m
    Igusa.m
    Siegel.m
+   EllipticCurve.m
+   TraceForm.m
 }
 
 CanonicalRing

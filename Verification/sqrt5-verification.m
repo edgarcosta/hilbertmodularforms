@@ -4,12 +4,12 @@
 
 /////////////////////////////////////////////////////////////////////////
 load "config.m";
-QQ := Rationals();
-M := QuadSpace(5,100);
-G,R,Q := ConstructGeneratorsAndRelations(M,2,20);
-G1,R1,Q1 := ConstructGeneratorsAndRelationsV2(M,G,R,40);
+F := QuadraticField(5);
+M := GradedRingOfHMFs(F,20);
+G,R,M0 := ConstructGeneratorsAndRelations(M,1*Integers(M),20);
+G1,R1,M1 := Relations(G,R,M0,40);
 S := MakeScheme(G1,R1);
-P_wtd<X2, X6, X10, X20> := Ambient(S);
+P_wtd<X2, X6, X20, X10> := Ambient(S);
 eqns_S := DefiningEquations(S);
 
 //// G1 is now an Associtive array with HMF-generators in weights [2,6,10,20]
@@ -24,18 +24,24 @@ eqns_S := DefiningEquations(S);
 
 ///////////////////////////////////////////////////////////////////////
 
+
+//Spaces 
+M2 := HMFSpace(M,[2,2]);
+M6 := HMFSpace(M,[6,6]);
+M10 := HMFSpace(M,[10,10]);
+M20 := HMFSpace(M,[20,20]);
+
 // Basis
-B1 := Basis(M,[2,2]);
-B3 := Basis(M,[6,6]);
-B5 := Basis(M,[10,10]);
-B15 := Basis(M,[15,15]);
-B20 := Basis(M,[20,20]);
+B2 := Basis(M2);
+B6 := Basis(M6);
+B10 := Basis(M10);
+B20 := Basis(M20);
 
 
 // Generators in weights 2,6,10,20
-sig1 := B1[1];
-sig3 := -2^7*B3[2];
-sig5 := 2^12*(-17/145620*B5[2] + 1/1456200*B5[3]);
+sig1 := B2[1];
+sig3 := -2^7*B6[2];
+sig5 := 2^12*(-17/145620*B10[2] + 1/1456200*B10[3]);
 delta := -115240146944/415277590078125*B20[3] - 512/3737498310703125*B20[4];
 
 
