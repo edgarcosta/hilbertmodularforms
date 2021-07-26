@@ -653,36 +653,6 @@ intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   return LinearDependence(L);
 end intrinsic;
 
-
-intrinsic LinearDependenceZero(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
-  {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
-  M := GradedRing(List[1]);
-  // The ideal classes from which we are taking the coefficients.
-  if IdealClasses cmpeq false then
-    bbs := NarrowClassGroupReps(M); // Default is all ideals classes
-  else 
-    bbs := IdealClasses; // Optionally we may specify a single ideal class
-  end if;
-  // List of coefficients for the forms 
-  L := [];
-  // Loop over forms 
-  for i in List do
-    CoefficientsOfForm := [];
-    for bb in bbs do
-      newcof:=[];
-      for nn in IdealsByNarrowClassGroup(M)[bb] do
-        if nn ne 0*Integers(BaseField(M)) then
-         Append(~newcof, Rationals()!Coefficients(i)[bb][nn]);
-        end if;
-      end for;
-      CoefficientsOfForm cat:= newcof; 
-    end for;
-    print(CoefficientsOfForm);
-    Append(~L,CoefficientsOfForm);
-  end for;
-  return LinearDependence(L);
-end intrinsic;
-
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
 
@@ -742,13 +712,11 @@ intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
   absTraceBound:=Precision(Parent(Mk));
   for dd in Divisors(N2/N1) do 
     for nn in AllIdeals(M) do
-      if not nn/dd in AllIdeals(M) then
-        if Norm(nn/dd) in Integers() then
-          nu:=IdealToShintaniRepresentative(M, nn/dd);
-          tnu:=Trace(nu);
-          if tnu gt absTraceBound then
-            absTraceBound:=tnu;
-          end if;
+      if (not nn/dd in AllIdeals(M)) and IsIntegral(nn/dd) then
+        nu:=IdealToShintaniRepresentative(M, nn/dd);
+        tnu:=Trace(nu);
+        if tnu gt absTraceBound then
+          absTraceBound:=tnu;
         end if;
       end if;
     end for;

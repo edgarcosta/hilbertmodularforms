@@ -6,7 +6,7 @@
 
 // Currently calls the Newforms and Eisenstein series from Creations folder
 
-intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=true) -> SeqEnum[ModFrmHilDElt]
+intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
   N := Level(Mk);
   k := Weight(Mk);
@@ -35,7 +35,7 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=true) -> SeqEnum[ModFrmHilDElt]
 end intrinsic;
 
 
-intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=true) -> SeqEnum[ModFrmHilDElt]
+intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
   M := Parent(Mk);
   NN := Level(Mk);
@@ -76,7 +76,7 @@ end intrinsic;
 
 
 
-intrinsic Basis(Mk::ModFrmHilD: verbose:=true) -> SeqEnum[ModFrmHilDElt]
+intrinsic Basis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
 
   if verbose then 
