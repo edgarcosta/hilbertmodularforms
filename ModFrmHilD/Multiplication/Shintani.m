@@ -321,29 +321,23 @@ intrinsic Signature(a::RngOrdElt) -> SeqEnum
   return Signature(FieldOfFractions(R)!a);
 end intrinsic;
 
-
-intrinsic TotallyPositiveUnitGenerators(R::Rng) -> SeqEnum
+intrinsic TotallyPositiveUnits(R::Rng) -> SeqEnum
   {}
-  TotallyPositiveUnits := function(Z_F, UF, mUF);
-    // Stupid function, the isomorphism {1,-1} -> {0,1}.
-    hiota := function(u);
-      if u eq -1 then
-        return 1;
-      else
-        return 0;
-      end if;
-    end function;
-
-    F := NumberField(Z_F);
-    UZd := AbelianGroup([2 : i in [1..Degree(F)]]);
-    phi := hom<UF -> UZd |
-                 [[hiota(Sign(Evaluate(mUF(UF.i), v))) : v in RealPlaces(F)] :
-                  i in [1..#Generators(UF)]]>;
-    UFmodsq, fsq := quo<UF | [2*u : u in Generators(UF)]>;
-    return fsq(Kernel(phi)), fsq;
-  end function;
   U, mp := UnitGroup(R);
-  return TotallyPositiveUnits(R, U, mp);
+  // Stupid function, the isomorphism {1,-1} -> {0,1}.
+  hiota := function(u);
+    if u eq -1 then
+      return 1;
+    else
+      return 0;
+    end if;
+  end function;
+
+  F := NumberField(R);
+  UZd := AbelianGroup([2 : i in [1..Degree(F)]]);
+  phi := hom<U -> UZd | [[hiota(Sign(Evaluate(mp(U.i), v))) : v in RealPlaces(F)] : i in [1..#Generators(U)]]>;
+  K := Kernel(phi);
+  return K, [F!mp(el) : el in Generators(K)];
 end intrinsic;
 
 /////////////////////// Conversion Functions /////////////////////
