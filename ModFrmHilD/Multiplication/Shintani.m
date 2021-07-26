@@ -315,6 +315,36 @@ intrinsic TotallyPostiveAssociate(M::ModFrmHilDGRng, gen::RngOrdElt) -> RngOrdEl
   return gen;
 end intrinsic;
 
+intrinsic Signature(a::RngOrdElt) -> SeqEnum
+  {}
+  R := Parent(a);
+  return Signature(FieldOfFractions(R)!a);
+end intrinsic;
+
+
+intrinsic TotallyPositiveUnitGenerators(R::Rng) -> SeqEnum
+  {}
+  TotallyPositiveUnits := function(Z_F, UF, mUF);
+    // Stupid function, the isomorphism {1,-1} -> {0,1}.
+    hiota := function(u);
+      if u eq -1 then
+        return 1;
+      else
+        return 0;
+      end if;
+    end function;
+
+    F := NumberField(Z_F);
+    UZd := AbelianGroup([2 : i in [1..Degree(F)]]);
+    phi := hom<UF -> UZd |
+                 [[hiota(Sign(Evaluate(mUF(UF.i), v))) : v in RealPlaces(F)] :
+                  i in [1..#Generators(UF)]]>;
+    UFmodsq, fsq := quo<UF | [2*u : u in Generators(UF)]>;
+    return fsq(Kernel(phi)), fsq;
+  end function;
+  U, mp := UnitGroup(R);
+  return TotallyPositiveUnits(R, U, mp);
+end intrinsic;
 
 /////////////////////// Conversion Functions /////////////////////
 
@@ -355,7 +385,10 @@ end intrinsic;
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
-    M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bb^(-1));
+    R := M`Integers;
+    dd := Different(R);
+    bbp := bb*(dd^-1);
+    M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbp^(-1));
   end if;
   return M`ShintaniRepsIdeal[bb][nu];
 end intrinsic;
