@@ -337,7 +337,7 @@ intrinsic TotallyPositiveUnits(R::Rng) -> SeqEnum
   UZd := AbelianGroup([2 : i in [1..Degree(F)]]);
   phi := hom<U -> UZd | [[hiota(Sign(Evaluate(mp(U.i), v))) : v in RealPlaces(F)] : i in [1..#Generators(U)]]>;
   K := Kernel(phi);
-  return K, [F!mp(el) : el in Generators(K)];
+  return K, [F!mp(el) : el in Generators(K)], mp;
 end intrinsic;
 
 /////////////////////// Conversion Functions /////////////////////
