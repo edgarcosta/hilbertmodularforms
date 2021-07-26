@@ -67,6 +67,36 @@ intrinsic PositiveElementsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[Rn
 end intrinsic;
 
 
+intrinsic BoundedRepresentatives(M::ModFrmHilDGRng, bb::RngOrdFracIdl, XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
+  {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0< c_2 < Ybound}    
+  require forall{i : i in [XUBound,YUBound,XLBound,YLBound] | Type(i) eq RngIntElt or Type(i) eq FldReElt }: "Bounds must be integers or real numbers";
+  Basis := TraceBasis(bb);
+  F := BaseField(M);
+  ZF := Integers(M);
+  places := places(M);
+  // Why isn't trace basis already oriented?
+  // Since Tr(Basis[2]) = 0 this will guarentees signs of the form -,+
+  if Evaluate(Basis[2],places[1]) lt 0 then
+    Basis := [Basis[1], -Basis[2]];
+  end if;
+  // Precomputationss 
+  a_1 := Evaluate(Basis[1],places[1]); b_1 := Evaluate(Basis[2],places[1]);
+  a_2 := Evaluate(Basis[1],places[2]); b_2 := Evaluate(Basis[2],places[2]);
+  // List of all Elements
+  T := [];
+  TraceLBound := Ceiling(XLBound+YLBound);
+  TraceUBound := Floor(XUBound+YUBound);
+  for x in [TraceLBound .. TraceUBound] do 
+    Lower := Ceiling(Max((XLBound-x*a_1)/b_1,(YUBound-x*a_2)/b_2));
+    Upper := Floor(Min((XUBound-x*a_1)/b_1,(YLBound-x*a_2)/b_2));
+    for y in [Lower .. Upper] do
+      Append(~T, x*Basis[1]+y*Basis[2]);
+    end for;
+  end for;
+  return T;
+end intrinsic;
+
+
 ///////////////////////////////////////////////////
 //                                               //
 //          Shintani Domain algorithms           //
@@ -77,9 +107,9 @@ end intrinsic;
 // Returns the slopes of the upper and lower walls for the Shintani Domain
 intrinsic ShintaniWalls(ZF::RngOrd) -> Any
   {returns lower and upper walls of the Shintani domain}
-  F := NumberField(ZF);
-  assert Degree(F) eq 2;
-  _, F := IsQuadratic(F);
+  require Degree(ZF) eq 2: "only implemented for quadratic fields";
+  D := Discriminant(ZF);
+  F := QuadraticField(D);
   places := InfinitePlaces(F);
   eps := FundamentalUnit(F);
   if Norm(eps) eq -1 then
@@ -165,27 +195,51 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   if nu eq 0 then
     return Parent(nu)!0;
   end if;
-  assert IsTotallyPositive(nu);
+  // assert IsTotallyPositive(nu);
+
+ // Preliminaries
   ZF := Parent(nu);
   F := NumberField(ZF);
+  // Asserts
+  require IsTotallyPositive(nu): "nu must be totally positive";
+  require Degree(F) eq 2: "Shintani domains only implemented for quadratic fields";
+  // Fundamental unit
+  U,mU := UnitGroup(ZF);
+  eps := mU(U.2); // Assuming quadratic field then this should be the fundamental unit.
   places := InfinitePlaces(F);
-  eps := FundamentalUnit(ZF);
-  // determine signs of eps and make eps totally positive
-  eps_RR := EmbedNumberField(eps, places);
-  assert #eps_RR eq 2; // only for quadratic fields right now
-  pos_count := 0;
-  for i := 1 to #places do
-    if eps_RR[i] gt 0 then
-      pos_count +:= 1;
-    end if;
-  end for;
-  if pos_count eq 0 then
+  // Replace with generator for totally positive units
+  sign_eps := Set(Signature(F!eps)); // Signs of fundamental unit: {1,-1}, {-1}, or {1}.
+  if sign_eps eq {-1} then // Case 1: Sign(eps) = [-1,-1] so we replace with -eps.
     eps := -eps;
-  elif pos_count eq 1 then
+  elif sign_eps eq {1,-1} then // Case 2: Sign(eps) = [-1,1] so we replace with eps^2.
     eps := eps^2;
-  else
+  else // Case 3: Sign(eps) = [1,1] so we leave it eps.
     eps := eps;
   end if;
+
+  // ZF := Parent(nu);
+  // D:=Discriminant(ZF);
+  // F:=QuadraticField(D);
+  // ZF:=Integers(F);
+  // //F := NumberField(ZF);
+  // places := InfinitePlaces(F);
+  // eps := FundamentalUnit(ZF);
+  // // determine signs of eps and make eps totally positive
+  // eps_RR := EmbedNumberField(eps, places);
+  // assert #eps_RR eq 2; // only for quadratic fields right now
+  // pos_count := 0;
+  // for i := 1 to #places do
+  //   if eps_RR[i] gt 0 then
+  //     pos_count +:= 1;
+  //   end if;
+  // end for;
+  // if pos_count eq 0 then
+  //   eps := -eps;
+  // elif pos_count eq 1 then
+  //   eps := eps^2;
+  // else
+  //   eps := eps;
+  // end if;
   eps_RR := EmbedNumberField(eps, places);
   slope_eps := Slope(eps);
   slope_nu := Slope(nu);
@@ -231,15 +285,71 @@ intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
   end if;
 end intrinsic;
 
+/////////////////////// Totally positive associate /////////////////
+
+intrinsic TotallyPostiveAssociate(M::ModFrmHilDGRng, gen::RngOrdElt) -> RngOrdElt
+  {Finds a totally positive associate to the given element}
+  U := UnitGroup(M);
+  mU := UnitGroupMap(M);
+  F := BaseField(M);
+  ZF := Integers(M);
+  UnitGenerators := [F!(mU(u)) : u in Generators(U)];
+  UnitSignatures := [Signature(u) : u in UnitGenerators];
+  
+  // function 1 => 0 and -1 => 1;
+  h := function(x); 
+    if x eq 1 then return 0; else return 1; end if;
+  end function;
+
+  GenSignature := [ h(i) : i in Signature(F!gen)];
+  // if not totally positive
+  if exists{i : i in GenSignature | i eq 1} then 
+    UnitSignatures := [[h(i) : i in j] : j in UnitSignatures];
+    F2 := GF(2);
+    Mat := Matrix(F2,UnitSignatures);
+    V := Vector(F2,GenSignature);
+    X := Solution(Mat,V);
+    UNIT := &*[UnitGenerators[i] : i in [1..#Generators(U)] | X[i] ne 0 ];
+    gen := ZF!(gen*UNIT);
+  end if;
+  return gen;
+end intrinsic;
+
+
+/////////////////////// Conversion Functions /////////////////////
+
 
 // Conversion : Shintani elements < = > Ideals
 // Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F)
-intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, n::RngOrdIdl) -> ModFrmHilDElt
+intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::RngOrdIdl) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
-  _,gen := IsPrincipal(n*bb);
-  ShintaniGenerator := ReduceShintani(gen, bb, M);
+  F := BaseField(M);
+  mp := NarrowClassGroupMap(M);
+  require IsIdentity((nn*bb)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
+  _,gen := IsPrincipal(nn*bb);
+  // This is hardcoded for quadratic Fields.
+  gen := TotallyPostiveAssociate(M,gen);
+  ShintaniGenerator := ReduceShintaniMinimizeTrace(gen);
   return ShintaniGenerator;
 end intrinsic;
+
+
+// Conversion : Shintani elements < = > Ideals
+// Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F)
+intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> RngOrdElt
+  {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
+  F := BaseField(M);
+  mp := NarrowClassGroupMap(M);
+  bbs := NarrowClassGroupReps(M);
+  bb := [bb : bb in bbs | IsIdentity((nn*bb)@@mp)][1]; // "The ideals nn and bb must be inverses in CL+(F)";
+  _,gen := IsPrincipal(nn*bb);
+  // This is hardcoded for quadratic Fields.
+  gen := TotallyPostiveAssociate(M,gen);
+  ShintaniGenerator := ReduceShintaniMinimizeTrace(gen);
+  return ShintaniGenerator;
+end intrinsic;
+
+
 
 
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl

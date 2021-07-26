@@ -1,169 +1,86 @@
-intrinsic TotallyPositiveRepresentative(M::ModFrmHilD, bb::RngOrdIdl) -> Any
-{Returns a totally positive representative of bb}
-ZF := Integers(M);
-PositiveRepresentative := [i : i in Representatives(M) | i*ZF eq bb];
-return PositiveRepresentative[1];
-end intrinsic;
-
-
-
-intrinsic ComputeMiddleM1(r::SeqEnum[FldRatElt]) -> FldRatElt
-{We are constricted by 4m_1m_2 >= m^2. This function computes the
-    value of m_1 that maximizes 4m_1m_2-m^2}
-return Round((4*r[1]+2*r[3]*r[4])/(2*r[4]*r[4]-8*r[2]));
-end intrinsic;
-
-intrinsic SatisfiesRules(T::SeqEnum[FldRatElt]) -> boolean
+intrinsic SatisfiesRules(T::SeqEnum) -> BoolElt
 {Having computed some candidate quadratic form, this function ensures it is
-    actually integral, with first and last entry >=0}
-if IsIntegral(T[1]) and IsIntegral(T[2]) and IsIntegral(T[3]) and (T[1] ge 0) and (T[3] ge 0) then
-return true, [Integers()!T[1],Integers()!T[2],Integers()!T[3]];
+    actually integral, with first and last entry >=0, and positive semi-definite}
+    if IsIntegral(T[1]) and IsIntegral(T[2]) and IsIntegral(T[3]) and (T[1] ge 0) and (T[3] ge 0) and (4*T[1]*T[3] ge T[2]^2) then
+       return true, [Integers()!T[1],Integers()!T[2],Integers()!T[3]];
+    end if;
+    return false, T;
+end intrinsic;
+
+
+intrinsic SiegelMatrices(a::RngIntElt, b::RngIntElt, D::RngIntElt) -> Any
+{Given nu=a e_1+ b e_2 with e_1=1, e_2=(D+sqrt(D))/2, compute possible elligible  values (m_1, m, m_2) such that m_1+m e_2+ m_2 e_2^2=a+b e_2}
+values:=[];
+if [a,b] eq [0,0] then
+  return [[0,0,0]];
 end if;
-return false, T;
+if (b^2*D^2+4*a*b*D+4*a^2-b^2*D) ge 0 then 
+  leftpt:=Ceiling(((b*D+2*a)-Sqrt(b^2*D^2+4*a*b*D+4*a^2-b^2*D))/D);
+  rightpt:=Floor(((b*D+2*a)+Sqrt(b^2*D^2+4*a*b*D+4*a^2-b^2*D))/D);
+  for m_2 in [Max([0, leftpt])..rightpt] do
+    booll, T:=SatisfiesRules([a-m_2*(D-D^2)/4, b-m_2*D, m_2]);
+    if booll then
+      Append(~values, T);
+    end if;
+  end for;
+end if;
+return values;
 end intrinsic;
 
-intrinsic MultLaw(classrep::RngOrdIdl) -> any
-{Computes coefficients of e_1^2, e_1e_2, and e_2^2 in terms of e_1 and e_2}
-basechange := MatrixAlgebra(Rationals(),2)!Transpose(BasisMatrix(classrep));
-e1 := Basis(classrep)[1];
-e2 := Basis(classrep)[2];
-
-e11 := Transpose(Matrix(Rationals(),[Eltseq(e1*e1)]));
-e12 := Transpose(Matrix(Rationals(),[Eltseq(e1*e2)]));
-e22 := Transpose(Matrix(Rationals(),[Eltseq(e2*e2)]));
-
-a := Transpose(basechange^(-1)*e11);
-b := Transpose(basechange^(-1)*e12);
-c := Transpose(basechange^(-1)*e22);
-
-return [a,b,c];
-end intrinsic;
-
-intrinsic Constraint(m1::RngIntElt, r::SeqEnum[FldRatElt]) -> any
-{This computes the value of 4*m_1m_2-m^2}
-out := (4*r[2] - r[4]*r[4])*m1*m1 + (4*r[1]+2*r[3]*r[4])*m1 - r[3]*r[3];
-return out;
-end intrinsic;
-
-intrinsic SiegelMatrix(m1::RngIntElt, r::SeqEnum[FldRatElt]) -> any
-{Given m_1 and r information, computes m, and m_2}
-out := [0/1,0/1,0/1];
-out[1] := m1;
-out[2] := r[3] - r[4]*m1;
-out[3] := r[1] + r[2]*m1;
-
-return out;
+intrinsic ConvertBasis(nu::RngOrdElt) -> Any
+    {given a Shintani rep gives [a,b] such that a e_1+ b e_2=nu for  e_1=1, e_2=(D+sqrt(D))/2}
+    ZF:=Parent(nu);
+    D:=Discriminant(ZF);
+    assert (D mod 4 eq 0) or (D mod 4 eq 1); 
+    if D mod 4 eq 0 then
+      Ord:=Order([ZF.1, (D*ZF.1+2*ZF.2)/2]: IsBasis:=true);
+    else 
+      Ord:=Order([ZF.1, ZF.2+(D-1)/2]: IsBasis:=true);
+    end if;
+    return Ord!nu;
 end intrinsic;
 
 
-intrinsic Coeff(classrep::RngOrdIdl, elt::RngOrdElt, siegelWeight::RngIntElt) -> any
+intrinsic Coeff( elt::RngOrdElt, siegelWeight::RngIntElt) -> Any
 {Given a fractional ideal classrep representing a class in the narrow class group,
     an element in that classrep, and a siegel weight, computes the coefficient
     of the pullback of the siegel eisenstein form of that weight at that elt}
-verbose := false;
-
-coeff := 0;
-
-multlaw := MultLaw(classrep);
-a := Eltseq(multlaw[1]); b := Eltseq(multlaw[2]); c := Eltseq(multlaw[3]);
-
-e1 := Basis(classrep)[1];
-e2 := Basis(classrep)[2];
-basechange := Matrix(Rationals(),[[e1[1],e2[1]],[e1[2],e2[2]]]);
-t := Transpose(Matrix(Rationals(),[Eltseq(elt)]));
-t := Eltseq(Transpose(basechange^(-1)*t));
-r := [0/1,0/1,0/1,0/1];
 
 
-// These are the coefficients that allow us to compute m_2, m
-// given a value for m_1. Depends on what in the 'multiplication
-// law' is zero.
-r[1] := (b[2]*t[1]-b[1]*t[2])/(c[1]*b[2]-c[2]*b[1]);
-r[2] := (a[2]*b[1]-a[1]*b[2])/(c[1]*b[2]-c[2]*b[1]);
-if (b[1] ne 0) then
-		 r[3] := (t[1]-c[1]*r[1])/b[1];
-r[4] := (a[1]-c[1]*r[2])/b[1];
- else
-   r[3] := (t[2]-c[2]*r[1])/b[2];
-r[4] := (a[2]+c[2]*r[2])/b[2];
-end if;
+coeff:=0;
 
-// Add the intial value if it is positive and satisfies constraints
-m1 := ComputeMiddleM1(r);
-if (Constraint(m1, r) ge 0) then
-			      T := SiegelMatrix(m1, r);
-sat, newT := SatisfiesRules(T);
-if sat then
-newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
-if verbose then
-print newT, elt, newcoeff;
-end if;
-coeff := coeff + SiegelCoeff(siegelWeight, newT[1], newT[2], newT[3]);
-end if;
-end if;
+newelt:=ConvertBasis(elt);
+a:=Integers()!(newelt[1]); b:=Integers()!(newelt[2]);
 
-// Work out from the central value until you are no longer positive
-width := 2;
-while(Constraint(m1,r) ge 0) do
-			     m1 := m1 - 1;
+candidates:=SiegelMatrices(a, b, Discriminant(Parent(elt)));
 
-if (Constraint(m1,r) ge 0) then
-			     T:=SiegelMatrix(m1,r);
-sat, newT := SatisfiesRules(T);
-if sat then
-newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
-if verbose then
-print newT, elt, newcoeff;
-end if;
-coeff := coeff + SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
-end if;
-end if;
-
-if (Constraint(m1+width, r) ge 0) then
-				    T:= SiegelMatrix(m1+width,r);
-sat, newT := SatisfiesRules(T);
-if sat then
-newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
-if verbose then
-print newT, elt, newcoeff;
-end if;
-coeff := coeff + SiegelCoeff(siegelWeight, newT[1],newT[2],newT[3]);
-end if;
-end if;
-width := width + 2;
-end while;
+for item in candidates do
+  coeff+:=SiegelCoeff(siegelWeight,item[1],item[2],item[3]);
+end for;
 
 return coeff;
 end intrinsic;
 
+
+
 // FIXME documentation string
-intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::RngIntElt) -> any
+intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::RngIntElt) -> Any
 {Does Something}
   F := BaseField(M);
-  prec := Precision(M);
-  Cl, mp := NarrowClassGroup(F);
-  reps := [mp(g):g in Cl];
-  WeightVector := [ Weight : i in [1..Degree(F)]];
-
-  max := #reps;
-  // Once we can do higher class number get rid of this max = 1;
-  max := 1;
   coeffs := AssociativeArray();
-  for i := 1 to max do
-     repcoeffs := AssociativeArray();
-     numcoeffs := #ShintaniReps(M)[reps[i]];
-     elts := ShintaniReps(M)[reps[i]];
-  for j := 1 to numcoeffs do
-       repcoeffs[ShintaniRepresentativeToIdeal(reps[i],elts[j])]:=Coeff(reps[i],elts[j],Weight);
+  bb:=1*Integers(F);
+  repcoeffs := AssociativeArray();
+  elts := ShintaniReps(M)[bb];
+  for j := 1 to #elts do
+    repcoeffs[ShintaniRepresentativeToIdeal(M, bb,elts[j])]:=Coeff(elts[j],Weight);
   end for;
-  coeffs[reps[i]]:=repcoeffs;
-
-  end for;
-  A := HMF(HMFSpace(M, WeightVector), coeffs);
+  coeffs[bb]:=repcoeffs;
+  A := HMF(HMFSpace(M, [ Weight : i in [1..Degree(F)]]), CompleteCoeffsZeros(M, coeffs));
   return A;
 end intrinsic;
 
-intrinsic UniversalIgusa(M::ModFrmHilDGRng) -> any
+
+intrinsic UniversalIgusa(M::ModFrmHilDGRng) -> Any
 {Computes the IgusaClebsch invariants for QQ(sqrt(i)), using specified precision}
 
 SiegEis4 := SiegelEisensteinPullback(M,4);
@@ -181,7 +98,8 @@ return SiegEis4,SiegEis6,SiegEis10,SiegEis12,Chi10,Chi12;
 
 end intrinsic;
 
-intrinsic CanonicalRepresentation(f::ModFrmHilDElt) -> any
+
+intrinsic CanonicalRepresentation(f::ModFrmHilDElt) -> Any
 {gets this in terms of basis elements}
 Mk := Parent(f);
 F := Field(f);

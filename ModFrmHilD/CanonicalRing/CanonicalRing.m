@@ -196,6 +196,11 @@ There are two versions of this algorithm currently.
 
 - ConstructGeneratorsAndRelations is slow and check for generators and relations in each level (opens Basis(M) function).
 
+	There are three different versions of this function depending on the basis
+	a)  ConstructGeneratorsAndRelations               —    Uses standard basis for M(Gamma)..
+	b)  ConstructGeneratorsAndRelationsOnComponent    —    Uses a basis for single component of M(Gamma). In other words the forms are look like (f,0) and (g,0).
+	c)  ConstructGeneratorsAndRelationsSymmetric      —    Uses basis for the symmetric subspace of M(Gamma).
+
 - Relations takes as input the associtive arrays found in ConstructGeneratorsAndRelations
   It then checks for further relations (NOT GENERATORS!) in higher weights. It doesn't open up the Basis(M) so it runs extremely quickly.
 
@@ -248,7 +253,7 @@ end if;
 
 // Before we evaluate monomials, make sure precision is high enough
 CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-assert CoeffCount ge Dim(Mk);
+//assert CoeffCount ge Dim(Mk);
 
 		EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
 
@@ -295,6 +300,102 @@ end if;
 
 return Gens,Relations,Monomials;
 end intrinsic;
+
+
+
+
+
+// Iteratively looks for generators and relations up to a bound.
+// Input: M = HMFspace
+// Input: LowestWeight = first weight with HMFS
+// Input: MaxWeight = highest weight to check for relations in
+// Output: Associative array of generators in each weight, Associative array of Relations in each weight and Quotient Ring
+intrinsic ConstructGeneratorsAndRelationsOnComponent(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWeight::RngIntElt, bb::RngOrdIdl : verbose:=true ) -> Any
+	{Finds all Generators and Relations}
+
+	Gens := AssociativeArray();
+	Relations := AssociativeArray();
+    Monomials := AssociativeArray();
+	n := Degree(BaseField(M));
+
+    LowestWeight := 2;
+    LowestMk := HMFSpace(M,N,[2:i in [1..n]]);
+    LowestWeightBasis := SpecifiedComponentBasis(LowestMk,bb);
+    while IsNull(LowestWeightBasis) and LowestWeight lt MaxWeight do 
+	    LowestWeight := LowestWeight + 2;
+	    LowestMk := HMFSpace(M,N,[LowestWeight:i in [1..n]]);
+        LowestWeightBasis := SpecifiedComponentBasis(LowestMk,bb);
+	end while;
+
+	if not IsNull(LowestWeightBasis) then 
+		Gens[LowestWeight] := LowestWeightBasis;
+		
+		if verbose then 
+			print "Weight:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
+		end if;
+
+		for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
+			k := 2*i;
+			Mk := HMFSpace(M, N, [k : i in [1..n]]);
+
+			R := ConstructRing(Gens);
+			MonomialsinR := MonomialsOfWeightedDegree(R,k);
+			MonomialsGens := MonomialGenerators(R,Relations,k);
+
+			// Before we evaluate monomials, make sure precision is high enough
+			CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
+			//assert CoeffCount ge Dim(Mk);
+
+			EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
+
+			// I first compute the relations in R/I.
+			RelationsinQuotient := LinearDependence(EvaluatedMonomials);
+
+			// This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k).
+			// Mainly for storage.
+			RelationsinR := [];
+			for rel in RelationsinQuotient do
+				relR := [];
+				for j in MonomialsinR do
+					I := Index(MonomialsGens,j);
+					Q := Rationals();
+					if I ne 0 then
+						Append(~relR,Q!rel[I]);
+					else
+						Append(~relR,Q!0);
+					end if;
+				end for;
+				Append(~RelationsinR,relR);
+			end for;
+
+			if #RelationsinR ne 0 then
+				Relations[k] := RelationsinR;
+				Monomials[k]:=MonomialsGens;
+			end if;
+			//	require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
+
+			Basisweightk := SpecifiedComponentBasis(Mk,bb);
+
+			NewGens := [];
+			if #MonomialsGens - #RelationsinR ne #Basisweightk then
+				NewGens := FindNewGenerators(Mk, EvaluatedMonomials, Basisweightk);
+				Gens[k] := NewGens;
+			end if;
+
+			if verbose then 
+				print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
+			end if;
+		end for;
+	end if;
+	return Gens,Relations,Monomials;
+end intrinsic;
+
+
+
+
+
+
+
 
 
 //Generators and relations in the subring of symmetric HMFs (invariant under the Galois action induced on the ideals)
@@ -412,7 +513,7 @@ n := Degree(BaseField(M));
 
 // Before we evaluate monomials, make sure precision is high enough
 CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-require CoeffCount ge Dim(Mk): "Precision is too low";
+//require CoeffCount ge Dim(Mk): "Precision is too low";
 
 		EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
 

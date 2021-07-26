@@ -149,6 +149,36 @@ intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
 end intrinsic;
 
 
+intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
+  {Returns the number of cusps for Gamma_0(N)}
+  M := Parent(Mk);
+  N := Level(Mk);
+  ZF := Integers(M);
+  U := UnitGroup(M);
+  mU := UnitGroupMap(M);
+  h := NarrowClassNumber(M);
+  require h eq 1: "Not verified for Cl^+(F) > 1";
+  // Helper function
+  phi_u := function(aa)
+    Q, mQ := quo<ZF | aa>;
+    U1,mU1 := UnitGroup(Q);
+    S := sub<U1 | [(mQ(mU(e)))@@mU1 : e in Generators(U)]>;
+    return Integers()!(#U1/#S);
+  end function;
+  return h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
+end intrinsic;
+
+
+
+intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
+  {Returns the number of cusps for Gamma_0(N)}
+  M := Parent(Mk);
+  ZF := Integers(M);
+  return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
+end intrinsic;
+
+
+// We eventually want to replace this with the Dimension intrinsic (above). However we need to wait for Trace to work. 
 intrinsic ComputeDimension(Mk::ModFrmHilD)
 {compute the dimension of Mk and store it in Mk}
 // we rely on HilbertCuspForms, which only works for trivial character

@@ -222,6 +222,22 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
 end intrinsic;
 
 
+//FIXME: change this to EmbeddComponent?
+// ModFrmHilDEltComp -> ModFrmHilDElt
+intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
+ {given an associative array with coefficients on one component, set all other coefficients to be zero}
+  reps:= NarrowClassGroupReps(M);
+  for bb in reps do
+    if not bb in Keys(coeffs) then
+      coeffs[bb] := AssociativeArray();
+      for nn in IdealsByNarrowClassGroup(M)[bb] do
+        coeffs[bb][nn] := 0;
+      end for;
+    end if;
+  end for;
+  return coeffs;
+end intrinsic;
+
 intrinsic HMF(Mk::ModFrmHilD, bb::RngOrdIdl, coeffs::Assoc : prec := 0) -> ModFrmHilDEltComp
   {WARNING: user is responsible for coefficients besides some basic structural assertions. Note: coeffs[nu] = a_(bb, nu) = a_(nu)*(bb')^-1}
   M := Parent(Mk);
@@ -317,6 +333,9 @@ intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
       new_coeffs[bb][nn] := R!coeffs[bb][nn];
     end for;
   end for;
+  if assigned f`Precison then
+    return HMF(Parent(f), new_coeffs: prec:=f`Precision);
+  end if;
   return HMF(Parent(f), new_coeffs);
 end intrinsic;
 
@@ -335,7 +354,11 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       test2 := Level(Mk) eq Level(Mkf);
       test3 := Character(Mk) eq Character(Mkf);
       if test1 and test2 and test3 then // all tests must be true to coerce
-        return true, HMF(Mk, Coefficients(f));
+        if assigned f`Precision then
+          return true, HMF(Mk, Coefficients(f): prec:=f`Precision);
+        else
+          return  true, HMF(Mk, Coefficients(f));
+        end if;
       else
         return false;
       end if;
@@ -413,83 +436,6 @@ Append(~result, HMF(fSpace,coeff));
 end intrinsic;
 
 
-
-///////////// ModFrmHilDElt: Hecke Operators ////////////////
-
-
-
- intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
-   {returns T(n)(f) for the trivial character}
-   return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1);
- end intrinsic;
-
-
- intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> ModFrmHilDElt
-   {returns associative array with coefficients for T(nn)(f) with loss of precision.}
-   Mk := Parent(f);
-   M :=Parent(Mk);
-   F:=BaseField(M);
-   ZF:=Integers(F);
-   k0 := Max(Weight(f));
-   //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn)
-   coeffsTnnf := AssociativeArray();
-   newPrec:=0;
-   for bb in NarrowClassGroupReps(M) do 
-    coeffsTnnf[bb] := AssociativeArray();
-    end for;
-   precisionReached:=false; // keeps track if we have reached the precision for T(nn)(f)
-    //Now we loop through each trace
-   for T:=0 to Precision(M) do
-    traceDefined:=0; //keeps track if coefficients for all ideals of a given trace are defined 
-    totalIdealsByTrace:=0;
-    for bb in  NarrowClassGroupReps(M) do
-      IdealsTraceT:=ShintaniRepsByTrace(M)[bb][T]; //get list of Shintani reps with trace T
-      totalIdealsByTrace+:= #IdealsTraceT;
-      for x in IdealsTraceT do
-        I:=x*bb^(-1);
-        c :=0;
-        allDivisors:=true; //keeps track if all the coefficients in the sum for an ideal are defined
-        // loop over divisors
-        // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms
-        for aa in Divisors(ZF!!(I + nn)) do
-          if aa^(-2) * (I* nn) notin AllIdeals(M) then
-           allDivisors:=false ; break; //stop looping through divisors if coefficient for at least one divisor is not defined ( if trace (aa^(-2) * (I* nn)) is greater than precision)
-             else
-              if I eq 0*ZF then c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[bb][I]; //takes care if the coefficients for the zero ideal are different
-                else c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF !! (aa^(-2) * (I* nn)));
-                end if;
-             end if;
-          end for;
-        if allDivisors eq true then  //if T(nn)(f)[I] is defined, give a value
-          traceDefined +:= 1;
-          coeffsTnnf[bb][I] := c;
-         else 
-         coeffsTnnf[bb][I] := 0;
-         //break; //stop looping thorough ideals of given trace T if T(nn)(f)[I] is not defined for some ideal I with trace T
-         end if;
-        end for;
-      end for;
-    if (traceDefined eq totalIdealsByTrace) and (precisionReached eq false) then 
-      newPrec:=T;
-      else 
-        newPrec:=Max(0, newPrec);
-        precisionReached:= true;
-        for bb in NarrowClassGroupReps(M) do
-           IdealsTraceT:=ShintaniRepsByTrace(M)[bb][T];
-           for x in IdealsTraceT do
-            I:=x*bb^(-1);
-            if I in Keys(coeffsTnnf[bb]) then
-              coeffsTnnf[bb][I]:=0;
-              end if;
-            end for;
-           end for;
-      end if;
-    end for;
-  //return coeffsTnnf, newPrec;
-    g:=HMF(Mk, coeffsTnnf);
-    g`Precision:=newPrec;
-  return g;      
- end intrinsic;
 
 ////////// ModFrmHilDElt: Arithmetic //////////
 
@@ -707,31 +653,39 @@ end intrinsic;
 //TODO add optional flag to limit the number of coefficients
 //TODO make outputs to be of the same type
 //TODO take working precision
-intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] ) -> SeqEnum[RngIntElt]
-  {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
+intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
+  {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
   M := GradedRing(List[1]);
-  bbs := NarrowClassGroupReps(M);
-  CoeffLists := [[] : i in [1..#List]];
-  for bb in bbs do
-    for nn in IdealsByNarrowClassGroup(M)[bb] do
-      for i in [1..#List] do
-        Append(~CoeffLists[i], Coefficients(List[i])[bb][nn]);
-      end for;
+  // The ideal classes from which we are taking the coefficients.
+  if IdealClasses cmpeq false then
+    bbs := NarrowClassGroupReps(M); // Default is all ideals classes
+  else 
+    bbs := IdealClasses; // Optionally we may specify a single ideal class
+  end if;
+  // List of coefficients for the forms 
+  L := [];
+  maxprec:=Min([f`Precision: f in List]);
+  // Loop over forms 
+  for i in List do
+    CoefficientsOfForm := [];
+    for bb in bbs do
+      CoefficientsOfForm cat:= [Coefficients(i)[bb][nn] : nn in IdealsByNarrowClassGroup(M)[bb] | Trace(IdealToShintaniRepresentative(M, nn)) lt maxprec];
     end for;
+    Append(~L,CoefficientsOfForm);
   end for;
-  return LinearDependence(CoeffLists);
+  return LinearDependence(L);
 end intrinsic;
-
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
 
-//Todo: True for all ideals or just principal ideals?
+
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f(z) and produces f(dd*z) in the space Mk}
   coeff_f := Coefficients(f);
   Mk_f := Parent(f);
-  M := Parent(Mk_f);
+  M_f:=Parent(Mk_f);
+  M:=Parent(Mk);
   N1 := Level(Mk_f);
   N2 := Level(Mk);
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
@@ -741,7 +695,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[
   coeff := AssociativeArray(); 
   for bb in bbs do
     Rep := NarrowClassRepresentative(M,dd*bb);
-    Idealsbb := IdealsByNarrowClassGroup(M)[bb];
+    Idealsbb := IdealsByNarrowClassGroup(M_f)[bb];
     IdealsRep := IdealsByNarrowClassGroup(M)[Rep];
     coeff[Rep] := AssociativeArray();
     for nn in IdealsRep do
@@ -768,6 +722,31 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   end for;
   return IncludedForms;
 end intrinsic;
+
+
+
+intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
+  {Gives absolute initial trace precision bound to be able to include f(dd*z) into Mk}
+  M:=Parent(Mk);
+  F:=BaseField(Mk);
+  ZF:=Integers(F);
+  N1 := Level(Mk_f);
+  N2 := Level(Mk);
+  absTraceBound:=Precision(Parent(Mk));
+  for dd in Divisors(N2/N1) do 
+    for nn in AllIdeals(M) do
+      if (not nn/dd in AllIdeals(M)) and IsIntegral(nn/dd) then
+        nu:=IdealToShintaniRepresentative(M, nn/dd);
+        tnu:=Trace(nu);
+        if tnu gt absTraceBound then
+          absTraceBound:=tnu;
+        end if;
+      end if;
+    end for;
+  end for;
+  return absTraceBound;
+end intrinsic;
+
 
 
 /*
