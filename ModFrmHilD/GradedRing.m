@@ -11,7 +11,7 @@ declare attributes ModFrmHilDGRng:
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
-  NarrowClassGroupReps, // SeqEnum[RngOrdElt/RngFracElt]
+  NarrowClassGroupReps, // SeqEnum[RngIdl] : FIXME: not ideals?
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
   PositiveReps, // PositiveReps[bb] = [nu with trace at most Precision(M)]
