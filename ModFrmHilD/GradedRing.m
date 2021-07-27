@@ -326,7 +326,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
     M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
     for t := 0 to prec do
       M`PositiveRepsByTrace[bb][t] := PositiveElementsOfTrace(bb, t);
-      M`ShintaniRepsByTrace[bb][t] := ShintaniDomainOfTrace(bb, t);
+      M`ShintaniRepsByTrace[bb][t] := ShintaniRepsOfTrace(bb, t);
     end for;
     M`PositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
     M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
