@@ -379,6 +379,9 @@ end intrinsic;
 // Converts nus to nns
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
+  if IsDefined(M`ShintaniRepsIdeal[bb], nu) then
+    return M`ShintaniRepsIdeal[bb][nu];
+  end if;
   R := M`Integers;
   dd := Different(R);
   bbp := bb*(dd^-1);
