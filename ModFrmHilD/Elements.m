@@ -142,6 +142,11 @@ intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   return Level(Parent(f));
 end intrinsic;
 
+intrinsic MPairs(f::ModFrmHilDElt) -> RngOrdIdl
+  {returns the MPairs of parent of f.}
+  return MPairs(GradedRing(f));
+end intrinsic;
+
 intrinsic Coefficient(f::ModFrmHilDElt, bb::RngOrdIdl, nu::RngElt) -> Any
   {}
   return Coefficients(Components(f)[rep])[nu];
@@ -249,7 +254,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
                   :
-                  unitchar := 0,
+                  unitchar := [],
                   prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component bb, the fourier coefficients
@@ -684,6 +689,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   new_coeff := AssociativeArray();
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
+  // Compute the new BaseRing
   Ff := BaseRing(f);
   Fg := BaseRing(g);
   if Ff eq Fg then
@@ -691,26 +697,33 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
   end if;
+  table := MPairs(f)[Component(f)];
   for nu in Keys(coeffs_f) do
     c := 0;
     c := F!0;
-    for pair in MTable[bb][nn] do
-      c +:= F!coeffs_f[bb][ pair[1] ] * F!coeffs_g[bb][ pair[2] ];
+    for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
+      xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
+      smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
+      smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
+      c +:= F!char_f(epsilon1) * F!coeffs_f[smu1] *  F!char_f(epsilon2) * F!coeffs_g[smu2];
     end for;
-    new_coeff[bb][nn] := c;
+    new_coeff[bb][nu] := c;
   end for;
   // use relative precision to gain something here instead of minimum?
   prec_f := Precision(f);
   prec_g := Precision(g);
-unitchar := [[
+  prec:=Minimum(prec_f, prec_g);
+  A := Domain(char_f);
+  unitchar := [char_f(A.i)*char_g(A.i) : i in [1..Generators(A)];
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)] ],
                     Character(f)*Character(g));
-  return HMFComp(Space, Component(f), new_coeff : prec := Minimum(prec_f, prec_g));
+  return HMFComp(Space, Component(f), new_coeff : unitchar:=unitchar, prec:=prec);
 end intrinsic;
 
-//Dictionary would great here! Make linear algebra much easier
+//FIXME: I'm HERE
+//TODO: Dictionary would great here! Make linear algebra much easier
 intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f/g}
   N := Level(f);
