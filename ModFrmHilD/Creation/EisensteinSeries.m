@@ -20,6 +20,7 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
    	Haa := HeckeCharacterGroup(aa); 
    	Hbb := HeckeCharacterGroup(bb); 
 
+    nus := ShintaniReps(M);
    	coeffs := AssociativeArray();
    	bbs := NarrowClassGroupReps(M);
    	ZF := Integers(M);
@@ -30,22 +31,22 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
     	if k[1] ge 2 then 
     		if aa eq 1*ZF then 
        			prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-       			coeffs[tt][0*ZF] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, Mk, prim); 
+       			coeffs[tt][ZF!0] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, Mk, prim); 
      		else 
-       			coeffs[tt][0*ZF] := 0; 
+       			coeffs[tt][ZF!0] := 0; 
      		end if; 
      	// k = 1
    		elif k[1] eq 1 then 
      	  if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
        		prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-          coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M,Mk, prim); 
+            coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M,Mk, prim); 
      	  elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
        		prim := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
-          coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, Mk, prim); 
+            coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, Mk, prim); 
      	  elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
        		prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
        		prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
-          coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Mk, prim1) + (psi^(-1))(tt)*LValue_Recognized(M, Mk, prim2)); 
+            coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Mk, prim1) + (psi^(-1))(tt)*LValue_Recognized(M, Mk, prim2)); 
      	  elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
        		coeffs[1] := 0; 
      	  end if;

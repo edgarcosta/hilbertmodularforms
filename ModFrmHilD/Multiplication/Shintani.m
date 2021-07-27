@@ -348,34 +348,33 @@ end intrinsic;
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::RngOrdIdl) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   F := BaseField(M);
+  ZF := Integers(M);
+  dd := Different(ZF);
+  bbp := bb*(dd)^-1;
   mp := NarrowClassGroupMap(M);
-  require IsIdentity((nn*bb)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
-  _,gen := IsPrincipal(nn*bb);
+  require IsIdentity((nn*bbp)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
+  bool, gen := IsPrincipal(nn*bbp);
   // This is hardcoded for quadratic Fields.
   gen := TotallyPositiveAssociate(M,gen);
   ShintaniGenerator := ReduceShintaniMinimizeTrace(gen);
   return ShintaniGenerator;
 end intrinsic;
 
-
 // Conversion : Shintani elements < = > Ideals
-// Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F)
+// Converts nu <-> n, without needing bb as input 
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> RngOrdElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   F := BaseField(M);
   mp := NarrowClassGroupMap(M);
-  bbs := NarrowClassGroupReps(M);
-  bb := [bb : bb in bbs | IsIdentity((nn*bb)@@mp)][1]; // "The ideals nn and bb must be inverses in CL+(F)";
-  _,gen := IsPrincipal(nn*bb);
+  bbp := mp(-(nn @@ mp)); // bb' is inverse of nn in narrow class group
+  bool, gen := IsPrincipal(nn*bb);
+  assert bool;
   // This is hardcoded for quadratic Fields.
   gen := TotallyPositiveAssociate(M,gen);
-  ShintaniGenerator := ReduceShintaniMinimizeTrace(gen);
-  return ShintaniGenerator;
+  return ReduceShintaniMinimizeTrace(gen);
 end intrinsic;
 
-
-
-
+// Converts nus to nns
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
@@ -395,7 +394,6 @@ intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::S
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbinv);
   end for;
 end intrinsic;
-
 
 
 
