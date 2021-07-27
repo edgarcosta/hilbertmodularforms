@@ -36,7 +36,9 @@ declare attributes ModFrmHilDGRng:
   // a double indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
   HeckeEigenvalues,
   // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
-  Spaces
+  Spaces,
+  TotallyPositiveUnitGroup, // the group of totally positive units of the base as an abstract group
+  TotallyPositiveUnitGroupMap // map from abstract totally positive unit group into R^\times_{>0}
   ;
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
@@ -276,7 +278,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M := ModFrmHilDGRngInitialize();
   // field
   M`Field := F;
-  M`Integers := Integers(F);
+  R := Integers(F);
+  M`Integers := R;
   // narrow class group
   Cl, mp := NarrowClassGroup(F);
   U, mU := UnitGroup(F);
@@ -286,6 +289,9 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
   M`UnitGroup := U;
   M`UnitGroupMap := mU;
+  Up, mUp := TotallyPositiveUnits(R);
+  M`TotallyPositiveUnitGroup := Up;
+  M`TotallyPositiveUnitGroupMap := mUp;
   // maybe we should make good choices for narrow class group reps
   // i.e. generators of small trace?
   // TODO: see above 2 lines
