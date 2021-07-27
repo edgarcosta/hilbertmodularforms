@@ -179,9 +179,10 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
         intmat := ChangeRing(denom * Matrix(B), Integers());
         ExtendMultBasis := Basis(W) cat Rows(ChangeRing(HermiteForm(intmat), Rationals())/denom);
     elif (Alg eq "Orthogonal") then
-        basis_V := Matrix(Basis(V));
-        coeffs_W := Solution(basis_V, Matrix(Basis(W)));
+        coeffs_W := Solution(Matrix(Basis(V)), Matrix(Basis(W)));
+        coeffs_W := ChangeRing(Matrix([Denominator(v)*v : v in Rows(coeffs_W)]), Integers());
         W_perp := Matrix(Basis(Kernel(Transpose(coeffs_W))));
+        basis_V := ChangeRing(Matrix([Denominator(v)*v : v in Basis(V)]), Integers());
         ExtendMultBasis := Basis(W) cat Rows(W_perp * basis_V);
     end if;
 
