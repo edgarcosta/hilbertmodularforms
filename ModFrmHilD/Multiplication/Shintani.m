@@ -1,36 +1,32 @@
 ///// Shintani Algorithms + Enumerations of Totally positive elements in ideals /////////
-// Todo Massive clean up
-
-// Helper Functions
-intrinsic EmbedNumberField(nu::RngOrdElt, places::SeqEnum) -> SeqEnum
-  { Input: nu an element of ZF where F is totally real
-    Output: A tuple of the real embeddings of nu in RR}
-  return [Evaluate(nu, pl) : pl in places];
-end intrinsic;
-
 
 intrinsic Slope(alpha::RngOrdElt) -> FldReElt
   { Input:  alpha, an element of ZF for F a totally real quadratic number field
-    Output: The "slope" defined by alpha: sigma_2(alpha)/sigma_1(alpha) where sigma_i is the ith embedding of F}
+    Output: The "slope" defined by alpha: sigma_2(alpha)/sigma_1(alpha) where 
+    sigma_i is the ith embedding of F}
   OK := Parent(alpha);
   K := NumberField(OK);
   places := InfinitePlaces(K);
   return Evaluate(alpha, places[2]) / Evaluate(alpha, places[1]);
 end intrinsic;
 
-
 // Rearranges the basis for an ideal so that the second basis vector has trace 0
 intrinsic TraceBasis(bb::RngOrdFracIdl) -> SeqEnum
   {Given a fractional ideal bb, returns a basis (a,b) in Smith normal form where Trace(a) = n and Trace(b) = 0}
-  basis := Basis(bb);
-  ZF := Parent(basis[2]);
-  Tr := Matrix([[Trace(basis[i]) : i in [1..#basis]]]);
+  // Preliminaries
+  B := Basis(bb);
+  ZF := Parent(B[2]);
+  // Sort Basis elemements according to the size of their trace
+  BTr := [Trace(b) : b in B];
+  ParallelSort(~BTr,~B);
+  // Change of basis
+  Tr := Matrix([[Trace(B[i]) : i in [1..#B]]]);
   _,_,Q := SmithForm(Tr);
+  require Determinant(Q) eq 1: "Not a change of basis";
   ChangeofBasisMatrix := ChangeRing(Q,ZF);
-  NewBasis := Eltseq(Vector(basis)*ChangeofBasisMatrix);
+  NewBasis := Eltseq(Vector(B)*ChangeofBasisMatrix);
   return NewBasis;
 end intrinsic;
-
 
 
 
@@ -40,59 +36,70 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
+/*
 // Totally Positive Elements in an Ideal 
-/* Idea: I've hopefully obtained basis {a,b} for the ideal bb where Tr(a) = n and Tr(b) = 0. Elements in ideal will look like xa+yb where x,y \in Z and have embedding xa_1+ yb_1 and xa_2+ yb_2.  All totally positive elements of given trace t will satisfy 
-1).    t = Tr(xa+yb)    <=>   t = xn    
-2).    xa+yb >> 0.     <=>   y > -x*a_1/b_1   and  y > -x*a_2/b_2  
-Eq 1) determines the value for x while Eq 2) allows us to loop over values of y */
-
+   From a basis {a,b} for the ideal bb where 
+     Tr(a) = n and Tr(b) = 0. 
+   Elements in ideal will look like xa + yb where x,y in ZZ 
+   and have embedding xa_1 + yb_1 and xa_2 + yb_2.  
+   All totally positive elements of given trace t will satisfy 
+   1)    t = Tr(xa+yb)    <=>   t = xn    
+   2)    xa+yb totally positive       <=>   y > -x*a_1/b_1   and  y > -x*a_2/b_2  
+   Eq 1) determines the value for x,
+     and Eq 2) allows us to loop over values of y 
+*/
 intrinsic PositiveElementsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
-  {Given bb a fractional ideal, t a trace bound, returns the totally positive elements of bb with trace t.}
-  Basis := TraceBasis(bb);
-  places := InfinitePlaces(NumberField(Parent(Basis[1])));
-  SmallestTrace := Trace(Basis[1]);
+  {Given bb a fractional ideal and t a nonnegative integer, 
+   returns the totally positive elements of bb with trace t.}
+  basis := TraceBasis(bb);
+  places := InfinitePlaces(NumberField(Parent(basis[1])));
+  smallestTrace := Trace(basis[1]);
   T := [];
-  if t mod SmallestTrace eq 0 then
-    x := t div SmallestTrace;
-    a_1 := Evaluate(Basis[1],places[1]); b_1 := Evaluate(Basis[2],places[1]);
-    a_2 := Evaluate(Basis[1],places[2]); b_2 := Evaluate(Basis[2],places[2]);
-    Lower := Ceiling(Min(-x*a_1/b_1,-x*a_2/b_2));
-    Upper := Floor(Max(-x*a_1/b_1,-x*a_2/b_2));
-    for y in [Lower .. Upper] do
-      /* Append(~T, [x*Basis[1]+y*Basis[2]]); */
-      Append(~T, x*Basis[1]+y*Basis[2]);
+  if t mod smallestTrace eq 0 then
+    x := t div smallestTrace;
+    a_1 := Evaluate(basis[1],places[1]); 
+    b_1 := Evaluate(basis[2],places[1]);
+    a_2 := Evaluate(basis[1],places[2]); 
+    b_2 := Evaluate(basis[2],places[2]);
+    lower_bnd := Ceiling(Min(-x*a_1/b_1,-x*a_2/b_2));
+    upper_bnd := Floor(Max(-x*a_1/b_1,-x*a_2/b_2));
+    for y in [lower_bnd .. upper_bnd] do
+      Append(~T, x*basis[1]+y*basis[2]);
     end for;
   end if;
   return T;
 end intrinsic;
 
+intrinsic ElementsInABox(M::ModFrmHilDGRng, bb::RngOrdFracIdl, 
+                         XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
+  {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0 < c_2 < Ybound}    
 
-intrinsic BoundedRepresentatives(M::ModFrmHilDGRng, bb::RngOrdFracIdl, XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
-  {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0< c_2 < Ybound}    
-  require forall{i : i in [XUBound,YUBound,XLBound,YLBound] | Type(i) eq RngIntElt or Type(i) eq FldReElt }: "Bounds must be integers or real numbers";
-  Basis := TraceBasis(bb);
+  for bnd in [XUBound, YUBound, XLBound, YLBound] do
+    require IsCoercible(Type(bnd),FldReElt) : "Bounds must be coercible to real numbers";
+  end for;
+  basis := TraceBasis(bb);
   F := BaseField(M);
   ZF := Integers(M);
-  places := places(M);
-  // Why isn't trace basis already oriented?
-  // Since Tr(Basis[2]) = 0 this will guarentees signs of the form -,+
-  if Evaluate(Basis[2],places[1]) lt 0 then
-    Basis := [Basis[1], -Basis[2]];
-  end if;
+  places := Places(M);
+
   // Precomputationss 
-  a_1 := Evaluate(Basis[1],places[1]); b_1 := Evaluate(Basis[2],places[1]);
-  a_2 := Evaluate(Basis[1],places[2]); b_2 := Evaluate(Basis[2],places[2]);
+  a_1 := Evaluate(basis[1],places[1]); 
+  b_1 := Evaluate(basis[2],places[1]);
+  a_2 := Evaluate(basis[1],places[2]); 
+  b_2 := Evaluate(basis[2],places[2]);
+
   // List of all Elements
   T := [];
-  TraceLBound := Ceiling(XLBound+YLBound);
-  TraceUBound := Floor(XUBound+YUBound);
-  for x in [TraceLBound .. TraceUBound] do 
-    Lower := Ceiling(Max((XLBound-x*a_1)/b_1,(YUBound-x*a_2)/b_2));
-    Upper := Floor(Min((XUBound-x*a_1)/b_1,(YLBound-x*a_2)/b_2));
-    for y in [Lower .. Upper] do
-      Append(~T, x*Basis[1]+y*Basis[2]);
+  trLBound := Ceiling(XLBound+YLBound);
+  trUBound := Floor(XUBound+YUBound);
+  for x in [trLBound..trUBound] do 
+    lBound := Ceiling(Max((XLBound-x*a_1)/b_1,(YUBound-x*a_2)/b_2));
+    uBound := Floor(Min((XUBound-x*a_1)/b_1,(YLBound-x*a_2)/b_2));
+    for y in [lBound..uBound] do
+      Append(~T, x*basis[1]+y*basis[2]);
     end for;
   end for;
+
   return T;
 end intrinsic;
 
@@ -199,7 +206,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   end if;
   // assert IsTotallyPositive(nu);
 
- // Preliminaries
+  // Preliminaries
   ZF := Parent(nu);
   F := NumberField(ZF);
   // Asserts
@@ -242,7 +249,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   // else
   //   eps := eps;
   // end if;
-  eps_RR := EmbedNumberField(eps, places);
+  eps_RR := [Evaluate(eps,pl) : pl in Places];
   slope_eps := Slope(eps);
   slope_nu := Slope(nu);
   // TODO: do we know calculus?
@@ -398,78 +405,6 @@ intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::S
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbinv);
   end for;
 end intrinsic;
-
-
-
-/// Assorted Shintani Shenanigans ////////
-
-/* 
-intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, bb::RngOrdFracIdl, shintani_reps::Assoc) -> Any
-  {}
-  reps := [];
-  for t in Keys(shintani_reps[bb]) do
-    reps cat:= shintani_reps[bb][t];
-  end for;
-  return ReduceShintaniComputeIdeal(nu, reps);
-end intrinsic;
-
-intrinsic ReduceShintaniComputeIdeal(nu::RngOrdElt, shintani_reps::SeqEnum[RngOrdElt]) -> Any
-  {}
-  if nu eq 0 then
-    return Parent(nu)!0;
-  end if;
-  assert IsTotallyPositive(nu);
-  ZF := Parent(nu);
-  nu_ideal := ideal<ZF|nu>;
-  shintani_ideals := [ideal<ZF|a> : a in shintani_reps];
-  matches := [];
-  for i := 1 to #Keys(shintani_reps) do
-    I := ideal<ZF|shintani_reps[i]>;
-    if nu_ideal eq I then
-      Append(~matches, [* I, i *]);
-    end if;
-  end for;
-  assert #matches eq 1;
-  return shintani_reps[matches[1][2]];
-end intrinsic;
-*/
-
-/* intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, shintani_reps::Assoc) -> Any */
-  /* {} */
-  /* nu_reduced_by_ideal := ReduceShintaniComputeIdeal(nu, bb, shintani_reps); */
-  /* nu_reduced_by_trace := ReduceShintaniMinimizeTrace(nu); */
-  /* return nu_reduced_by_ideal; */
-  // sanity check using trace when ready
-  /* if nu_reduced_by_ideal eq nu_reduced_by_trace then */
-  /*   return nu_reduced_by_ideal; */
-  /* else */
-  /*   error_message := Sprintf("Shintani walls?\n"); */
-  /*   error_message *:= Sprintf("nu using ideals = %o\n", nu_reduced_by_ideal); */
-  /*   error_message *:= Sprintf("Trace(nu using ideals) = %o\n", Trace(nu_reduced_by_ideal)); */
-  /*   error_message *:= Sprintf("nu using trace = %o\n", nu_reduced_by_trace); */
-  /*   error_message *:= Sprintf("Trace(nu using trace) = %o\n", Trace(nu_reduced_by_trace)); */
-  /*   error error_message; */
-  /* end if; */
-/* end intrinsic; */
-
-/*
-intrinsic ReduceShintani(pair::SeqEnum, bb::RngOrdFracIdl, shintani_reps::Assoc) -> SeqEnum
-  {}
-  assert #pair eq 2;
-  return [ReduceShintani(nu, bb, shintani_reps) : nu in pair];
-end intrinsic;
-
-intrinsic IdealToShintaniRepresentative(M::ModFrmHilD, nn::RngOrdIdl) -> Any
-  {}
-  Cl := NarrowClassGroup(M);
-  mp := NarrowClassGroupMap(M);
-  mp_inv := Inverse(mp);
-  bb := mp(-mp_inv(nn));
-  bl, nu := IsPrincipal(nn*bb); // will this always give a totally positive generator? probably not
-  assert bl;
-  assert IsTotallyPositive(nu);
-  return ReduceShintani(nu, bb, ShintaniReps(M)), bb;
-end intrinsic; */
 
 
 
