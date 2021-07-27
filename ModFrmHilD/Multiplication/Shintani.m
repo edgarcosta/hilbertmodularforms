@@ -195,7 +195,7 @@ end intrinsic;
 intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   {}
   if nu eq 0 then
-    return Parent(nu)!0;
+    return Parent(nu)!0, 1;
   end if;
   // assert IsTotallyPositive(nu);
 
@@ -258,12 +258,14 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   slope_nu_floor := Slope(nu_floor);
   slopes := [slope_nu_floor, slope_nu_ceiling];
   nus := [nu_floor, nu_ceiling];
+  epses := [eps^ratio_floor, eps^ratio_ceiling];
   ParallelSort(~slopes, ~nus);
+  ParallelSort(~slopes, ~epses);
   if IsShintaniReduced(nus[1]) then
-    return nus[1];
+    return nus[1], epses[1];
   else
     assert IsShintaniReduced(nus[2]);
-    return nus[2];
+    return nus[2], epses[2];
   end if;
 end intrinsic;
 
