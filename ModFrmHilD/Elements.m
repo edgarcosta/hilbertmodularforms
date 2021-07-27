@@ -314,9 +314,9 @@ intrinsic HMF(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   f`Parent := Mk;
   f`Components := AssociativeArray();
   for bb in bbs do
-      assert Component(components[bb]) eq bb;
-      f`Components[bb] := ModFrmHilDEltCompCopy(components[bb]);
-    end if;
+    require Component(components[bb]) eq bb: "Components mismatch";
+    require Type(components[bb]) eq ModFrmHilDEltComp: "The values of components need to be ModFrmHilDEltComp";
+    f`Components[bb] := ModFrmHilDEltCompCopy(components[bb]);
   end for;
   return f;
 end intrinsic;
@@ -587,48 +587,54 @@ end intrinsic;
 ////////// ModFrmHilDElt: Arithmetic //////////
 
 //TODO make zero HMF universal so it can be added/multiplied to any HMF
+//ask JV
 
-intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
-{compares Parent, Weight, and Coefficients.}
-  M := Parent(f);
-  if Parent(f) ne Parent(g) then
-    return false;
-  end if;
-  if Weight(f) ne Weight(g) then
+intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
+{compares Parent, Weight, Component, Precision, UnitChar, and Coefficients.}
+  if not &and[a(f) eq a(g): a in [Parent, Component, UnitChar, Precision]] then
     return false;
   end if;
   if Keys(Coefficients(f)) ne Keys(Coefficients(g)) then
     return false;
   end if;
-  bbs := NarrowClassGroupReps(Parent(M));
-  for bb in bbs do
-     if Keys(Coefficients(f)[bb]) ne Keys(Coefficients(g)[bb]) then
-       return false;
-     end if;
-     for nn in Keys(Coefficients(f)[bb]) do
-       if Coefficients(f)[bb][nn] ne Coefficients(g)[bb][nn] then
-         return false;
-       end if;
-     end for;
+  for nu in Keys(Coefficients(f)) do
+   if Coefficients(f)[nu] ne Coefficients(g)[nu] then
+     return false;
+   end if;
   end for;
   return true;
 end intrinsic;
 
+intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
+{compares Parent and Components.}
+  return &and[a(f) eq a(g): a in [Parent, Components]]
+end intrinsic;
+
+intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+  {scale f by a scalar c.}
+  require c in IsCoercible(c, BaseRing(f)): "the scalar must be coercible into the base ring";
+  F := BaseRing(f);
+  new_coeffs := AssociativeArray();
+  coeffs := Coefficients(f);
+  for nu in Keys(coeffs) do
+    coeffs[nu] := F!(c * coeffs[nu]);
+  end for;
+  return HMFComp(Parent(f), Component(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
+end intrinsic;
+
+intrinsic '*'(f::ModFrmHilDEltComp, c::Any) -> ModFrmHilDEltComp
+  {scale f by scalar c.}
+  return c*f;
+end intrinsic;
+
 intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   {scale f by scalar c.}
-  prec := Precision(f);
-  Mk := Parent(f);
-  M := Parent(Mk);
-  coeffs := Coefficients(f);
-  bbs := NarrowClassGroupReps(M);
-  F := CoefficientField(f);
-  assert c in F;
-  for bb in bbs do
-    for nn in Keys(Coefficients(f)[bb]) do
-      coeffs[bb][nn] := F!(c * Coefficients(f)[bb][nn]);
-    end for;
+  new_comp := AssociativeArray();
+  comp := Components(f);
+  for bb in Keys(comp) do
+    new_comp[bb] := c * comp[bb];
   end for;
-  return HMF(Mk, coeffs : prec := prec);
+  return HMF(Parent(f), new_comp);
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, c::Any) -> ModFrmHilDElt
