@@ -8,7 +8,7 @@ declare type ModFrmHilDEltComp;
 declare attributes ModFrmHilDEltComp:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
-  Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where vu in Shintani cone
+  Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where nu in Shintani cone
   BaseRing, // Rng: where the coefficients live (does this depend on bb?)
   UnitChar, // Hom: TotallyPositiveUnitGroup(Parent(Parent)) -> BaseRing
   Component; // RngOrdIdl, representative of the narrow class element
@@ -114,6 +114,11 @@ intrinsic GradedRing(f::ModFrmHilDElt) -> ModFrmHilDGRng
   {returns parent of parent of f}
   Mk := Parent(f);
   return Parent(Mk);
+end intrinsic;
+
+intrinsic UnitChar(f::ModFrmHilDEltComp) -> Map
+  {return the unit character of f}
+  return f`UnitChar;
 end intrinsic;
 
 
@@ -285,10 +290,14 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   R := Parent(CoefficientSequence[1]);
   f`BaseRing := R;
   A := TotallyPositiveUnitGroup(M);
-  if IsZero(unitchar) then // IsZero([]) is true
-    unitchar := [1 : i in Generators(TotallyPositiveUnitGroup(M))];
+  if Type(unitchar) eq Map then
+    f`UnitChar := unitchar;
+  else
+    if IsZero(unitchar) then // IsZero([]) is true
+      unitchar := [1 : i in Generators(TotallyPositiveUnitGroup(M))];
+    end if;
+    f`UnitChar := hom<TotallyPositiveUnitGroup(M) -> R | unitchar>;
   end if;
-  f`UnitChar := hom<TotallyPositiveUnitGroup(M) -> R | unitchar>;
   return f;
 end intrinsic;
 
@@ -322,7 +331,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   {
     Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
     a double associative array coeffs
-    and the uniti characters are also given via an associative array indexex on the
+    and the unit characters are also given via an associative array indexed on the
     narrow class group representatives.
     Explicitly, coeffs is an double associative array
     coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb')^-1
@@ -423,7 +432,7 @@ intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   for nn in Keys(coeffs) do
     new_coeffs[nn] := R!coeffs[nn];
   end for;
-  return HMF(Parent(f), new_coeffs: prec := f`Precision);
+  return HMFComp(Parent(f), new_coeffs: unitchar:= UnitChar(f), prec := Precision(f));
 end intrinsic;
 
 
@@ -458,13 +467,12 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       if test1 and test2 and test3 then // all tests must be true to coerce
         if Type(f) eq ModFrmHilDEltComp then
           A := TotallyPositiveUnitGroup(M);
-          uc := [f`unitchar(A.i) : i in [1..Generators(A)]];
-          return true, HMFComp(Mk, Coefficients(f): unitchar:=uc, prec:=f`Precision);
+          return true, HMFComp(Mk, Coefficients(f): unitchar:=UnitChar(f), prec:=Precision(f));
         end if;
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
           fbb := Components(f)[bb];
-          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=fbb`unitchar, prec:=f`Precision);
+          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=Unitchar(fbb), prec:=Unitchar(fbb));
         end for;
         return true, HMF(Mk, components);
       else
@@ -500,48 +508,76 @@ end intrinsic;
 // - Apply Hecke on a Galois Orbit, and see that it doesn't move
 // - Apply Hecke to a Eisensten series, and check that is a multiple
 // - Apply Hecke to a Theta series, and see if we get the whole space
+intrinsic MapCoefficients(m::Map, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+  {return the ModFrmHilDEltComp where the map acts on the coefficients}
+  coeffs := Coefficients(f);
+  new_coeffs := AssociativeArray();
+  for nu in Keys(coeffs) do
+    new_coeffs[nu] := m(coeffs[nu]);
+  end for;
+  return HMFComp(Parent(f), Component(f), new_coeffs : unitchar:=UnitChar(f), prec:=Precision(f));
+end intrinsic;
+
+intrinsic MapCoefficients(m::Map, f::ModFrmHilDElt) -> ModFrmHilDElt
+  {return the ModFrmHilDElt where the map acts on the coefficients}
+  components := Components(f);
+  for bb in Keys(components) do
+    component[bb] := MapCoefficients(m, components[bb]);
+  end for;
+  return HMF(Parent(f), components);
+end intrinsic;
 
 intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form}
-fSpace := Parent(f);
-M := Parent(fSpace);
-k := Weight(fSpace);
-M := GradedRing(f);
-
-  K := CoefficientField(f);
+  k := Weight(f);
+  M := GradedRing(f);
+  R := BaseRing(f);
+  if IsField(R) then
+    K := R;
+  else
+    K := NumberField(R);
+    f := K!f; // HERE
+  end if;
   G, Pmap, Gmap := AutomorphismGroup(K);
-  bbs := NarrowClassGroupReps(M);
   result := [];
   for g in G do
-    coeff := Coefficients(f);
-    for bb in bbs do
-      for nn in Keys(Coefficients(f)[bb]) do
-        coeff[bb][nn] := Gmap(g)(coeff[bb][nn]);
-      end for;
-    end for;
-Append(~result, HMF(fSpace,coeff));
+    if K eq R
+      Append(~result, MapCoefficients(Gmap(g), f));
+    else
+      Append(~result, ChangeBaseRing(R, MapCoefficients(Gmap(g), f)));
+    end if;
   end for;
   return result;
 end intrinsic;
 
 
+intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+  {return Trace(f)}
+  new_coeffs := AssociativeArray():
+  coeffs := Coefficients(f);
+  for nu in Keys(Coefficients(f)) do
+    new_coeffs[nu] := Trace(coeffs[nu]);
+  end for;
+  return HMFComp(Parent(f), Component(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
+end intrinsic;
+
+intrinsic Trace(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {return Trace(f)}
+  C := Components(f);
+  nC := AssociativeArray();
+  for bb in Keys(C) do
+    nC[bb] := Trace(C[bb]);
+  end for;
+  return HMF(Parent(f), nC);
+end intrinsic;
+
+
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
-fSpace := Parent(f);
-M := Parent(fSpace);
-k := Weight(fSpace);
-
   result := [];
   bbs := NarrowClassGroupReps(M);
-  CoefficientsField := CoefficientField(f);
   for b in Basis(CoefficientsField) do
-    coeff := Coefficients(f);
-    for bb in bbs do
-      for nn in Keys(Coefficients(f)[bb]) do
-        coeff[bb][nn] := Trace(b * coeff[bb][nn]);
-      end for;
-    end for;
-Append(~result, HMF(fSpace,coeff));
+    Append(~result, Trace(b * f));
   end for;
   return result;
 end intrinsic;
