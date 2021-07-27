@@ -318,6 +318,9 @@ intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
       new_coeffs[bb][nn] := R!coeffs[bb][nn];
     end for;
   end for;
+  if assigned f`Precison then
+    return HMF(Parent(f), new_coeffs: prec:=f`Precision);
+  end if;
   return HMF(Parent(f), new_coeffs);
 end intrinsic;
 
@@ -336,7 +339,11 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       test2 := Level(Mk) eq Level(Mkf);
       test3 := Character(Mk) eq Character(Mkf);
       if test1 and test2 and test3 then // all tests must be true to coerce
-        return true, HMF(Mk, Coefficients(f));
+        if assigned f`Precision then
+          return true, HMF(Mk, Coefficients(f): prec:=f`Precision);
+        else
+          return  true, HMF(Mk, Coefficients(f));
+        end if;
       else
         return false;
       end if;
@@ -644,11 +651,12 @@ intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   end if;
   // List of coefficients for the forms 
   L := [];
+  maxprec:=Min([f`Precision: f in List]);
   // Loop over forms 
   for i in List do
     CoefficientsOfForm := [];
     for bb in bbs do
-      CoefficientsOfForm cat:= [Coefficients(i)[bb][nn] : nn in IdealsByNarrowClassGroup(M)[bb]];
+      CoefficientsOfForm cat:= [Coefficients(i)[bb][nn] : nn in IdealsByNarrowClassGroup(M)[bb] | Trace(IdealToShintaniRepresentative(M, nn)) lt maxprec];
     end for;
     Append(~L,CoefficientsOfForm);
   end for;
