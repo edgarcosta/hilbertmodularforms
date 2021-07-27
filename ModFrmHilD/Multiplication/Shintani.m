@@ -16,11 +16,12 @@ intrinsic TraceBasis(bb::RngOrdFracIdl) -> SeqEnum
    Trace(a) = n and Trace(b) = 0}
   basis := Basis(bb);
   ZF := Parent(basis[2]);
-  Tr := Matrix([[Trace(basis[i]) : i in [1..#basis]]]);
-  _,_,Q := SmithForm(Tr);
-  ChangeofBasisMatrix := ChangeRing(Q,ZF);
-  NewBasis := Eltseq(Vector(basis)*ChangeofBasisMatrix);
-  return NewBasis;
+  trMat := Matrix([[Trace(basis[i]) : i in [1..#basis]]]);
+  _, _, Q := SmithForm(trMat);
+  basis := Eltseq(Vector(basis)*ChangeRing(Q,ZF));
+
+  // we should consider caching this!
+  return basis;
 end intrinsic;
 
 
@@ -40,19 +41,18 @@ end intrinsic;
    All totally positive elements of given trace t will satisfy 
    1)    t = Tr(xa+yb)    <=>   t = xn    
    2)    xa+yb totally positive       <=>   y > -x*a_1/b_1   and  y > -x*a_2/b_2  
-   Eq 1) determines the value for x while 
-     Eq 2) allows us to loop over values of y 
+   Eq 1) determines the value for x,
+     and Eq 2) allows us to loop over values of y 
 */
-
 intrinsic PositiveElementsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
   {Given bb a fractional ideal and t a nonnegative integer, 
    returns the totally positive elements of bb with trace t.}
   basis := TraceBasis(bb);
   places := InfinitePlaces(NumberField(Parent(basis[1])));
-  SmallestTrace := Trace(basis[1]);
+  smallestTrace := Trace(basis[1]);
   T := [];
-  if t mod SmallestTrace eq 0 then
-    x := t div SmallestTrace;
+  if t mod smallestTrace eq 0 then
+    x := t div smallestTrace;
     a_1 := Evaluate(basis[1],places[1]); 
     b_1 := Evaluate(basis[2],places[1]);
     a_2 := Evaluate(basis[1],places[2]); 
@@ -68,31 +68,34 @@ end intrinsic;
 
 intrinsic ElementsInABox(M::ModFrmHilDGRng, bb::RngOrdFracIdl, 
                          XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
-  {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0< c_2 < Ybound}    
-  require forall{i : i in [XUBound,YUBound,XLBound,YLBound] | Type(i) eq RngIntElt or Type(i) eq FldReElt }: "Bounds must be integers or real numbers";
-  Basis := TraceBasis(bb);
+  {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0 < c_2 < Ybound}    
+
+  for bnd in [XUBound, YUBound, XLBound, YLBound] do
+    require IsCoercible(Type(bnd),FldReElt) : "Bounds must be coercible to real numbers";
+  end for;
+  basis := TraceBasis(bb);
   F := BaseField(M);
   ZF := Integers(M);
-  places := places(M);
-  // Why isn't trace basis already oriented?
-  // Since Tr(Basis[2]) = 0 this will guarentees signs of the form -,+
-  if Evaluate(Basis[2],places[1]) lt 0 then
-    Basis := [Basis[1], -Basis[2]];
-  end if;
+  places := Places(M);
+
   // Precomputationss 
-  a_1 := Evaluate(Basis[1],places[1]); b_1 := Evaluate(Basis[2],places[1]);
-  a_2 := Evaluate(Basis[1],places[2]); b_2 := Evaluate(Basis[2],places[2]);
+  a_1 := Evaluate(basis[1],places[1]); 
+  b_1 := Evaluate(basis[2],places[1]);
+  a_2 := Evaluate(basis[1],places[2]); 
+  b_2 := Evaluate(basis[2],places[2]);
+
   // List of all Elements
   T := [];
-  TraceLBound := Ceiling(XLBound+YLBound);
-  TraceUBound := Floor(XUBound+YUBound);
-  for x in [TraceLBound .. TraceUBound] do 
-    Lower := Ceiling(Max((XLBound-x*a_1)/b_1,(YUBound-x*a_2)/b_2));
-    Upper := Floor(Min((XUBound-x*a_1)/b_1,(YLBound-x*a_2)/b_2));
-    for y in [Lower .. Upper] do
-      Append(~T, x*Basis[1]+y*Basis[2]);
+  trLBound := Ceiling(XLBound+YLBound);
+  trUBound := Floor(XUBound+YUBound);
+  for x in [trLBound..trUBound] do 
+    lBound := Ceiling(Max((XLBound-x*a_1)/b_1,(YUBound-x*a_2)/b_2));
+    uBound := Floor(Min((XUBound-x*a_1)/b_1,(YLBound-x*a_2)/b_2));
+    for y in [lBound..uBound] do
+      Append(~T, x*basis[1]+y*basis[2]);
     end for;
   end for;
+
   return T;
 end intrinsic;
 
