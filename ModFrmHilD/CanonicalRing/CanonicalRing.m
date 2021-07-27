@@ -709,6 +709,5 @@ function polyComplexity(g,r)
     X := MakeScheme(g,r);
     polys := DefiningPolynomials(X);
     vecs := [* Vector(Coefficients(p)) : p in polys *];
-    // TODO : Replace by height (max (num, denom))
     return &+[(v,v) : v in vecs];
 end function;
