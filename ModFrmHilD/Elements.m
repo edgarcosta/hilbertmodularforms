@@ -325,7 +325,7 @@ end intrinsic;
 intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc,
               :
-              unitchar := 0,
+              unitchar := [],
               prec := 0
               ) -> ModFrmHilDElt
   {
@@ -345,7 +345,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   f`Parent := Mk;
   f`Components := AssociativeArray();
   if Type(unitchar) ne Assoc then
-    require unitchar = 0: "unitchar must be an associative array indexed over by representatives of Narrow class group";
+    require unitchar eq []: "unitchar must be an associative array indexed over by representatives of Narrow class group";
     unitchar := AssociativeArray();
     for bb in bbs do
       unitchar[bb] := [1 : i in Generators(TotallyPositiveUnitGroup(M))];
@@ -353,7 +353,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   end if;
   require Keys(unitchar) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-    f`Components[bb] := HMF(M, bb, coeffs[bb]: unitchar :=  unitchar[bb], prec := prec);
+    f`Components[bb] := HMF(M, bb, coeffs[bb]: unitchar:=unitchar[bb], prec:=prec);
   end for;
   return f;
 end intrinsic;
@@ -669,8 +669,6 @@ intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f-g.}
   return f + (-1)*g;
 end intrinsic;
-
-//FIXME: Edgar I'm HERE
 
 // TODO only works when k has even weight
 // TODO for varied precision
