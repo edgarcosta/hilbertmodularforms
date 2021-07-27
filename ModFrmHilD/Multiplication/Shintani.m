@@ -287,7 +287,7 @@ end intrinsic;
 
 /////////////////////// Totally positive associate /////////////////
 
-intrinsic TotallyPostiveAssociate(M::ModFrmHilDGRng, gen::RngOrdElt) -> RngOrdElt
+intrinsic TotallyPositiveAssociate(M::ModFrmHilDGRng, gen::RngOrdElt) -> RngOrdElt
   {Finds a totally positive associate to the given element}
   U := UnitGroup(M);
   mU := UnitGroupMap(M);
@@ -315,6 +315,30 @@ intrinsic TotallyPostiveAssociate(M::ModFrmHilDGRng, gen::RngOrdElt) -> RngOrdEl
   return gen;
 end intrinsic;
 
+intrinsic Signature(a::RngOrdElt) -> SeqEnum
+  {}
+  R := Parent(a);
+  return Signature(FieldOfFractions(R)!a);
+end intrinsic;
+
+intrinsic TotallyPositiveUnits(R::Rng) -> SeqEnum
+  {}
+  U, mp := UnitGroup(R);
+  // Stupid function, the isomorphism mu_2 -> ZZ/2*ZZ
+  hiota := function(u);
+    if u eq -1 then
+      return 1;
+    else
+      return 0;
+    end if;
+  end function;
+
+  F := NumberField(R);
+  UZd := AbelianGroup([2 : i in [1..Degree(F)]]);
+  phi := hom<U -> UZd | [[hiota(Sign(Evaluate(mp(U.i), v))) : v in RealPlaces(F)] : i in [1..#Generators(U)]]>;
+  K := Kernel(phi);
+  return K, mp;
+end intrinsic;
 
 /////////////////////// Conversion Functions /////////////////////
 
@@ -328,7 +352,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   require IsIdentity((nn*bb)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
   _,gen := IsPrincipal(nn*bb);
   // This is hardcoded for quadratic Fields.
-  gen := TotallyPostiveAssociate(M,gen);
+  gen := TotallyPositiveAssociate(M,gen);
   ShintaniGenerator := ReduceShintaniMinimizeTrace(gen);
   return ShintaniGenerator;
 end intrinsic;
@@ -344,7 +368,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> Rng
   bb := [bb : bb in bbs | IsIdentity((nn*bb)@@mp)][1]; // "The ideals nn and bb must be inverses in CL+(F)";
   _,gen := IsPrincipal(nn*bb);
   // This is hardcoded for quadratic Fields.
-  gen := TotallyPostiveAssociate(M,gen);
+  gen := TotallyPositiveAssociate(M,gen);
   ShintaniGenerator := ReduceShintaniMinimizeTrace(gen);
   return ShintaniGenerator;
 end intrinsic;
@@ -355,7 +379,10 @@ end intrinsic;
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
-    M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bb^(-1));
+    R := M`Integers;
+    dd := Different(R);
+    bbp := bb*(dd^-1);
+    M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbp^(-1));
   end if;
   return M`ShintaniRepsIdeal[bb][nu];
 end intrinsic;
