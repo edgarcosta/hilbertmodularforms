@@ -670,6 +670,8 @@ intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return f + (-1)*g;
 end intrinsic;
 
+//FIXME: Edgar I'm HERE
+
 // TODO only works when k has even weight
 // TODO for varied precision
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
