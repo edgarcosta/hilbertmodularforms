@@ -353,7 +353,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   bbp := bb*(dd)^-1;
   mp := NarrowClassGroupMap(M);
   require IsIdentity((nn*bbp)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
-  _,gen := IsPrincipal(nn*bbp);
+  bool, gen := IsPrincipal(nn*bbp);
   // This is hardcoded for quadratic Fields.
   gen := TotallyPositiveAssociate(M,gen);
   ShintaniGenerator := ReduceShintaniMinimizeTrace(gen);
@@ -361,7 +361,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
 end intrinsic;
 
 // Conversion : Shintani elements < = > Ideals
-// Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F)
+// Converts nu <-> n, without needing bb as input 
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> RngOrdElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   F := BaseField(M);
@@ -374,6 +374,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> Rng
   return ReduceShintaniMinimizeTrace(gen);
 end intrinsic;
 
+// Converts nus to nns
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
