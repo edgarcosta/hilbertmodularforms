@@ -12,16 +12,20 @@ end intrinsic;
 
 // Rearranges the basis for an ideal so that the second basis vector has trace 0
 intrinsic TraceBasis(bb::RngOrdFracIdl) -> SeqEnum
-  {Given a fractional ideal bb, returns a basis (a,b) in Smith normal form where 
-   Trace(a) = n and Trace(b) = 0}
-  basis := Basis(bb);
-  ZF := Parent(basis[2]);
-  trMat := Matrix([[Trace(basis[i]) : i in [1..#basis]]]);
-  _, _, Q := SmithForm(trMat);
-  basis := Eltseq(Vector(basis)*ChangeRing(Q,ZF));
-
-  // we should consider caching this!
-  return basis;
+  {Given a fractional ideal bb, returns a basis (a,b) in Smith normal form where Trace(a) = n and Trace(b) = 0}
+  // Preliminaries
+  B := Basis(bb);
+  ZF := Parent(B[2]);
+  // Sort Basis elemements according to the size of their trace
+  BTr := [Trace(b) : b in B];
+  ParallelSort(~BTr,~B);
+  // Change of basis
+  Tr := Matrix([[Trace(B[i]) : i in [1..#B]]]);
+  _,_,Q := SmithForm(Tr);
+  require Determinant(Q) eq 1: "Not a change of basis";
+  ChangeofBasisMatrix := ChangeRing(Q,ZF);
+  NewBasis := Eltseq(Vector(B)*ChangeofBasisMatrix);
+  return NewBasis;
 end intrinsic;
 
 
