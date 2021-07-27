@@ -238,15 +238,22 @@ intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
   return coeffs;
 end intrinsic;
 
-intrinsic HMF(Mk::ModFrmHilD, bb::RngOrdIdl, coeffs::Assoc : prec := 0) -> ModFrmHilDEltComp
-  {WARNING: user is responsible for coefficients besides some basic structural assertions. Note: coeffs[nu] = a_(bb, nu) = a_(nu)*(bb')^-1}
+intrinsic HMFComp(Mk::ModFrmHilD, bb::RngOrdIdl, coeffs::Assoc : prec := 0) -> ModFrmHilDEltComp
+//FIXME: add UnitChar
+  {
+    Return the ModFrmHilDEltComp with parent Mk, component bb, the fourier coefficients
+    in in the Shintani cone.
+    Explicitly, coeffs is an associative array where
+    coeffs[nu] = a_(bb, nu) = a_(nu)*(bb')^-1
+    for all nu in the Shintani cone,
+  }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
   CoefficientSequence := [**]; // to assert all coefficients have the same parent
   require bb in SequenceToSet(bbs): "bb should be one of the representatives of the Narrow class group";
   require SequenceToSet(ShintaniReps(M)[bb]) subset Keys(coeffs): "Coefficients should be indexed by Shintani Reps";
   for nu in ShintaniReps(M)[bb] do
-    require IsDefined(coeffs, nu): "Coefficients should be defined for each representative";
+    require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
     Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
   end for;
   CoefficientSequence := [i : i in CoefficientSequence];
@@ -255,7 +262,7 @@ intrinsic HMF(Mk::ModFrmHilD, bb::RngOrdIdl, coeffs::Assoc : prec := 0) -> ModFr
   f`Parent := Mk;
   f`Coefficients := coeffs;
   f`BaseRing := Parent(CoefficientSequence[1]);
-  // working precision
+  // working precision FIXME: move this above
   if prec eq 0 then
     f`Precision := Precision(M);
   else
@@ -266,8 +273,11 @@ intrinsic HMF(Mk::ModFrmHilD, bb::RngOrdIdl, coeffs::Assoc : prec := 0) -> ModFr
 end intrinsic;
 
 
-intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc : prec := 0) -> ModFrmHilDElt
-  {WARNING: user is responsible for coefficients besides some basic structural assertions. Note: coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb)^-1}
+intrinsic HMF(Mk::ModFrmHilD, C::Assoc) -> ModFrmHilDElt
+  {
+    Return the ModFrmHilDElt with parent Mk and Components C.
+  }
+//FIXME: HERE
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
@@ -276,9 +286,57 @@ intrinsic HMF(Mk::ModFrmHilD, coeffs::Assoc : prec := 0) -> ModFrmHilDElt
   f`Parent := Mk;
   f`Components := AssociativeArray();
   for bb in bbs do
-    f`Components[bb] := HMF(M, coeffs[bb] : prec := prec);
+      assert Component(C[bb]) eq bb;
+      f`Components[bb] := ModFrmHilDEltCompCopy(C[bb]);
+    end if;
   end for;
   return f;
+end intrinsic;
+
+
+intrinsic HMF(Mk::ModFrmHilD, coeffscomp::Assoc : prec := 0) -> ModFrmHilDElt
+  { Input:
+    - Mk is the desired parent
+    - coeffs is a associative array where we have either:
+       - coeffs[nu] = a_(bb, nu) = a_(nu)*(bb')^-1 for all
+      where bb is a representatives of the Narrow class group.
+    nu in the Shintani cone
+  }
+  {WARNING: user is responsible for coefficients besides some basic strcoeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb)^-1 or
+           coeffscomp[bb] = g_bb, g_bb in ModFrmHilDEltComp and Component(g) == bb}
+  M := Parent(Mk);
+  bbs := NarrowClassGroupReps(M);
+  require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
+  // make the HMF
+  f := ModFrmHilDEltInitialize();
+  f`Parent := Mk;
+  f`Components := AssociativeArray();
+  for bb in bbs do
+    if Type(coeffs[bb]) eq ModFrmHilDEltComp then
+      f`Components[bb] := ModFrmHilDEltCompCopy(coeffs[bb]);
+      assert Component(f`Components[bb]) eq bb;
+    else
+      f`Components[bb] := HMF(M, bb, coeffs[bb] : prec := prec);
+    end if;
+  end for;
+  return f;
+end intrinsic;
+
+intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
+  {f = fbb}
+  f := HMFZero(Parent(fbb));
+  f`Components[Component(fbb)] := ModFrmHilDEltCompCopy(fbb);
+  return f;
+end intrinsic;
+
+intrinsic HMFZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
+  {create zero ModFrmHilDEltComp of weight k.}
+  M := Parent(Mk);
+  coeffs := AssociativeArray();
+  for nu in ShintaniReps(M)[bb] do
+    coeffs[bb][nu] := 0;
+  end for;
+  return HMF(Mk, bb, coeffs);
 end intrinsic;
 
 intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
@@ -286,7 +344,7 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   M := Parent(Mk);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
-    coeffs[bb] := AssociativeArray();
+    coeffs[bb] := HMFZero(); //HERE FIXME
     for nu in ShintaniReps(M)[bb] do
       coeffs[bb][nu] := 0;
     end for;
@@ -319,24 +377,35 @@ end intrinsic;
 
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
 
-// ChangeRing?
 // Coerces HMF coefficients a_n in a ring R
-intrinsic '!'(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
-  {returns f such that a_I := R!a_I}
-  M := GradedRing(f);
-  bbs := NarrowClassGroupReps(M);
+intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+  {returns f such that a_nu := R!a_nu}
+  bb := Component(f);
   coeffs := Coefficients(f);
   new_coeffs := AssociativeArray(Universe(coeffs));
-  for bb in bbs do
-    new_coeffs[bb] := AssociativeArray(Universe(coeffs[bb]));
-    for nn in Keys(coeffs[bb]) do
-      new_coeffs[bb][nn] := R!coeffs[bb][nn];
-    end for;
+  for nn in Keys(coeffs) do
+    new_coeffs[nn] := R!coeffs[nn];
   end for;
   if assigned f`Precison then
     return HMF(Parent(f), new_coeffs: prec:=f`Precision);
   end if;
+  print("FIXME: Why isn't precision defined? How did I get here?")
   return HMF(Parent(f), new_coeffs);
+end intrinsic;
+
+
+intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
+  {returns f such that a_nu := R!a_ny}
+  M := GradedRing(f);
+  bbs := NarrowClassGroupReps(M);
+  // first make a copy
+  f := ModFrmHilDEltCopy(f);
+  // then change ring
+  components := Components(f);
+  for bb in components do
+    components[bb] := ChangeBaseRing(components[bb]);
+  end for;
+  return f;
 end intrinsic;
 
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
@@ -368,8 +437,7 @@ end intrinsic;
 
 intrinsic '!'(Mk::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f with parent M}
-  coeffs := Coefficients(f);
-  return HMF(Mk, coeffs);
+  return HMF(Mk, Components(f));
 end intrinsic;
 
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
@@ -381,6 +449,8 @@ intrinsic IsCoercible(x::ModFrmHilDElt, y::.) -> BoolElt, .
   {}
   return false;
 end intrinsic;
+//TODO:
+// make a function ModFrmHilDEltComp -> ModFrmHilDElt
 
 //////////  ModFrmHilDElt: Galois action on Coefficients //////////
 
