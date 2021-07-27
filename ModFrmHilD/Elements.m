@@ -423,16 +423,12 @@ intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   for nn in Keys(coeffs) do
     new_coeffs[nn] := R!coeffs[nn];
   end for;
-  if assigned f`Precison then
-    return HMF(Parent(f), new_coeffs: prec:=f`Precision);
-  end if;
-  print("FIXME: Why isn't precision defined? How did I get here?")
-  return HMF(Parent(f), new_coeffs);
+  return HMF(Parent(f), new_coeffs: prec := f`Precision);
 end intrinsic;
 
 
 intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
-  {returns f such that a_nu := R!a_ny}
+  {returns f such that a_nu := R!a_nu}
   M := GradedRing(f);
   bbs := NarrowClassGroupReps(M);
   // first make a copy
@@ -460,11 +456,17 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       test2 := Level(Mk) eq Level(Mkf);
       test3 := Character(Mk) eq Character(Mkf);
       if test1 and test2 and test3 then // all tests must be true to coerce
-        if assigned f`Precision then
-          return true, HMF(Mk, Coefficients(f): prec:=f`Precision);
-        else
-          return  true, HMF(Mk, Coefficients(f));
+        if Type(f) eq ModFrmHilDEltComp then
+          A := TotallyPositiveUnitGroup(M);
+          uc := [f`unitchar(A.i) : i in [1..Generators(A)]];
+          return true, HMFComp(Mk, Coefficients(f): unitchar:=uc, prec:=f`Precision);
         end if;
+        components := AssociativeArray();
+        for bb in Keys(Components(f)) do
+          fbb := Components(f)[bb];
+          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=fbb`unitchar, prec:=f`Precision);
+        end for;
+        return true, HMF(Mk, components);
       else
         return false;
       end if;
@@ -472,10 +474,12 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   end if;
 end intrinsic;
 
+/* Why do we need this?
 intrinsic '!'(Mk::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f with parent M}
   return HMF(Mk, Components(f));
 end intrinsic;
+*/
 
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
   {}
