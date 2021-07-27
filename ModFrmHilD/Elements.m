@@ -632,7 +632,7 @@ intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
 if IsNull(list) then return list; end if;
   M := Matrix( [ elt : elt in list] );
   // in case M is defined over the rationals
-  M := ChangeRing(M, Integers());
+  M := ChangeRing(Denominator(M)*M, Integers());
   B := Basis(Kernel(M));
   if #B ne 0 then return [Eltseq(i) : i in Rows(Matrix(LLL(B)))]; else return []; end if;
 end intrinsic;
