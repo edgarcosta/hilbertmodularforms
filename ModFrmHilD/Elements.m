@@ -242,9 +242,10 @@ end intrinsic;
 
 intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
-                  coeffs::Assoc,
-                  unitchar::SeqEnum[RngElt],
-                  : prec := 0) -> ModFrmHilDEltComp
+                  coeffs::Assoc
+                  :
+                  unitchar := 0,
+                  prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component bb, the fourier coefficients
     in the Shintani cone, and unit character.
@@ -284,6 +285,9 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   R := Parent(CoefficientSequence[1]);
   f`BaseRing := R;
   A := TotallyPositiveUnitGroup(M);
+  if IsZero(unitchar) then // IsZero([]) is true
+    unitchar := [1 : i in Generators(TotallyPositiveUnitGroup(M))];
+  end if;
   f`UnitChar := hom<TotallyPositiveUnitGroup(M) -> R | unitchar>;
   return f;
 end intrinsic;
@@ -311,8 +315,10 @@ end intrinsic;
 
 intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc,
-              unitchar::Assoc,
-              : prec := 0) -> ModFrmHilDElt
+              :
+              unitchar := 0,
+              prec := 0
+              ) -> ModFrmHilDElt
   {
     Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
     a double associative array coeffs
@@ -329,13 +335,16 @@ intrinsic HMF(Mk::ModFrmHilD,
   f := ModFrmHilDEltInitialize();
   f`Parent := Mk;
   f`Components := AssociativeArray();
+  if Type(unitchar) ne Assoc then
+    require unitchar = 0: "unitchar must be an associative array indexed over by representatives of Narrow class group";
+    unitchar := AssociativeArray();
+    for bb in bbs do
+      unitchar[bb] := [1 : i in Generators(TotallyPositiveUnitGroup(M))];
+    end for;
+  end if;
+  require Keys(unitchar) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-    if Type(coeffs[bb]) eq ModFrmHilDEltComp then
-      f`Components[bb] := ModFrmHilDEltCompCopy(coeffs[bb]);
-      assert Component(f`Components[bb]) eq bb;
-    else
-      f`Components[bb] := HMF(M, bb, coeffs[bb], unitchar[bb] : prec := prec);
-    end if;
+    f`Components[bb] := HMF(M, bb, coeffs[bb]: unitchar :=  unitchar[bb], prec := prec);
   end for;
   return f;
 end intrinsic;
@@ -354,8 +363,7 @@ intrinsic HMFZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   for nu in ShintaniReps(M)[bb] do
     coeffs[bb][nu] := 0;
   end for;
-  uc := [1: i in Generators(TotallyPositiveUnitGroup(M))];
-  return HMF(Mk, bb, coeffs, uc);
+  return HMF(Mk, bb, coeffs);
 end intrinsic;
 
 intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
@@ -368,7 +376,6 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   return HMF(Mk, coeffs);
 end intrinsic;
 
-//FIXME
 intrinsic IsZero(f::ModFrmHilDEltComp) -> BoolElt
   {check if form is identically zero}
   return IsZero([c : c in Coefficients(f)]);
@@ -379,7 +386,7 @@ intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
   return &and[IsZero(Components(f)[bb]) : bb in Keys(Components(f))];
 end intrinsic;
 
-intrinsic HMFIdentity(Mk::ModFrmHilD, bb::Rn) -> ModFrmHilDEltComp
+intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngIdl) -> ModFrmHilDEltComp
   {create one ModHilFrmDElt of weight zero.}
   M := Parent(Mk); chi := Character(Mk); N := Level(Mk); k := [0 : i in Weight(Mk)];
   M0 := HMFSpace(M, N, k, chi);
@@ -391,9 +398,18 @@ intrinsic HMFIdentity(Mk::ModFrmHilD, bb::Rn) -> ModFrmHilDEltComp
       coeffs[nu] := 0;
     end if;
   end for;
-  return HMF(M0, coeffs);
+  return HMFComp(Mk, bb, coeffs);
 end intrinsic;
 
+intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
+  {create one ModHilFrmDElt of weight zero.}
+  M := Parent(Mk);
+  C := AssociativeArray();
+  for bb in NarrowClassGroupReps(M) do
+    C[bb] := HMFIdentity(Mk, bb);
+  end for;
+  return HMF(Mk, C);
+end intrinsic;
 
 
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
@@ -431,7 +447,7 @@ end intrinsic;
 
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   {}
-  if Type(f) ne ModFrmHilDElt then
+  if Type(f) in [ModFrmHilDElt, ModFrmHilDEltComp] then
     return false;
   else // f is an HMF so has a chance to be coercible
     M := Parent(Mk); // graded ring associated to Mk
