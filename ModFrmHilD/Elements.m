@@ -674,44 +674,42 @@ end intrinsic;
 
 // TODO only works when k has even weight
 // TODO for varied precision
-intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
+intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return f*g with the same level}
-  fSpace := Parent(f);
-  gSpace := Parent(g);
-  fGrRing := Parent(fSpace);
-  gGrRing := Parent(gSpace);
-  assert fGrRing eq gGrRing;
-  assert Level(fSpace) eq Level(gSpace); // we only support multiplication with the same level
-  newLevel := Level(fSpace);
-  newCharacter := Character(fSpace)*Character(gSpace);
-  k := [ Weight(gSpace)[i] + Weight(fSpace)[i] : i in [1..#Weight(gSpace)] ];
-  MTable := MultiplicationTables(fGrRing);
-  bbs := NarrowClassGroupReps(fGrRing);
+  require GradedRing(f) eq GradedRing(g): "we only support multiplication inside the same graded ring";
+  require Level(f) eq Level(g): "we only support multiplication with the same level";
+  require Component(f) eq Component(g): "we only support multiplication with the same component";
+
+  char_f := UnitChar(f);
+  char_g := UnitChar(g);
+
   new_coeff := AssociativeArray();
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
-  Ff := CoefficientField(f);
-  Fg := CoefficientField(g);
+  Ff := BaseRing(f);
+  Fg := BaseRing(g);
   if Ff eq Fg then
     F := Ff;
   else
-    F := Compositum(Ff, Fg);
+    F := Compositum(NumberField(Ff), NumberField(Fg));
   end if;
-  for bb in bbs do
-    new_coeff[bb] := AssociativeArray();
-    for nn in Keys(coeffs_f[bb]) do
-      c := 0;
-      c := F!0;
-      for pair in MTable[bb][nn] do
-        c +:= F!coeffs_f[bb][ pair[1] ] * F!coeffs_g[bb][ pair[2] ];
-      end for;
-      new_coeff[bb][nn] := c;
+  for nu in Keys(coeffs_f) do
+    c := 0;
+    c := F!0;
+    for pair in MTable[bb][nn] do
+      c +:= F!coeffs_f[bb][ pair[1] ] * F!coeffs_g[bb][ pair[2] ];
     end for;
+    new_coeff[bb][nn] := c;
   end for;
   // use relative precision to gain something here instead of minimum?
   prec_f := Precision(f);
   prec_g := Precision(g);
-  return HMF(HMFSpace(fGrRing, newLevel, k, newCharacter), new_coeff : prec := Minimum(prec_f, prec_g));
+unitchar := [[
+  Space := HMFSpace(GradedRing(f),
+                    Level(f),
+                    [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)] ],
+                    Character(f)*Character(g));
+  return HMFComp(Space, Component(f), new_coeff : prec := Minimum(prec_f, prec_g));
 end intrinsic;
 
 //Dictionary would great here! Make linear algebra much easier

@@ -9,8 +9,8 @@ declare attributes ModFrmHilD:
   Parent, // ModFrmHilDGRng
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
-    Dimension, // RngIntElt
-  Character; // GrpHeckeElt
+  Dimension, // RngIntElt
+  Character; // GrpHeckeElt, JV: why aren't we using Dirichlet?
 
 
 ////////// ModFrmHilD fundamental intrinsics //////////
