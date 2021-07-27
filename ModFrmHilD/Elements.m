@@ -870,7 +870,8 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
-
+//TODO: anything below this line is not yet fixed
+//EDGAR: I'm HERE
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f(z) and produces f(dd*z) in the space Mk}
