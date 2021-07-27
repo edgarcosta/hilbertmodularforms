@@ -219,7 +219,7 @@ intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilDGRng) ->
 end intrinsic;
 
 
-// Shintani Reduction Algorithm 2
+// Shintani Reduction Algorithm 2 
 intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   {}
   if nu eq 0 then
@@ -395,7 +395,8 @@ end intrinsic;
 // Conversion : Shintani elements < = > Ideals
 // Converts nu <-> n, without needing bb as input 
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> RngOrdElt
-  {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
+  {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with 
+   [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   F := BaseField(M);
   mp := NarrowClassGroupMap(M);
   bbp := mp(-(nn @@ mp)); // bb' is inverse of nn in narrow class group
@@ -408,14 +409,15 @@ end intrinsic;
 
 // Converts nus to nns
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
-  {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
+  {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the 
+   integral ideal n = bb^(-1)*(nu) in ZF}
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
     R := M`Integers;
     dd := Different(R);
     bbp := bb*(dd^-1);
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbp^(-1));
   end if;
-    return M`ShintaniRepsIdeal[bb][nu];
+  return M`ShintaniRepsIdeal[bb][nu];
 end intrinsic;
 
 intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::SetEnum[RngOrdElt])
@@ -426,7 +428,3 @@ intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::S
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbinv);
   end for;
 end intrinsic;
-
-
-
-
