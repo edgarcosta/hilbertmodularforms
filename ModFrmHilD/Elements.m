@@ -826,8 +826,11 @@ end intrinsic;
 
 
 intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
-  {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
-if IsNull(list) then return list; end if;
+  {
+    finds a small non-trivial integral linear combination between components of v.
+    If none can be found return 0.
+  }
+  if IsNull(list) then return list; end if;
   M := Matrix( [ elt : elt in list] );
   // in case M is defined over the rationals
   M := ChangeRing(Denominator(M)*M, Integers());
@@ -844,19 +847,23 @@ intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   // The ideal classes from which we are taking the coefficients.
   if IdealClasses cmpeq false then
     bbs := NarrowClassGroupReps(M); // Default is all ideals classes
-  else 
+  else
     bbs := IdealClasses; // Optionally we may specify a single ideal class
   end if;
-  // List of coefficients for the forms 
+  // List of coefficients for the forms
   L := [];
   maxprec:=Min([f`Precision: f in List]);
   // Loop over forms 
   for i in List do
     CoefficientsOfForm := [];
     for bb in bbs do
-      CoefficientsOfForm cat:= [Coefficients(i)[bb][nn] : nn in IdealsByNarrowClassGroup(M)[bb] | Trace(IdealToShintaniRepresentative(M, nn)) lt maxprec];
+      for t in Keys(ShintaniRepsByTrace(M)[bb]):
+        if t lt maxprex then
+          CoefficientsOfForm cat:= [Coefficients(Components(i)[bb])[nn] : nu in ShintaniRepsByTrace(M)[bb][t]];
+        end if;
+      end for;
     end for;
-    Append(~L,CoefficientsOfForm);
+    Append(~L, CoefficientsOfForm);
   end for;
   return LinearDependence(L);
 end intrinsic;
