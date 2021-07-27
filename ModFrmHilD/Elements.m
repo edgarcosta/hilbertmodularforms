@@ -10,13 +10,14 @@ declare attributes ModFrmHilDEltComp:
   Precision, // RngIntElt
   Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where vu in Shintani cone
   BaseRing, // Rng: where the coefficients live (does this depend on bb?)
-  UnitChar, // Assoc
+  UnitChar, // Hom: TotallyPositiveUnitGroup(Parent(Parent)) -> BaseRing
   Component; // RngOrdIdl, representative of the narrow class element
 
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent,
   Components; // Assoc: bb --> f_bb
+
 
 
 ////////// ModFrmHilDEltComp fundamental intrinsics //////////
@@ -156,7 +157,7 @@ intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
   {}
   print("Elements.m Coefficients: DEPRECATED, go for the Component");
   coeffs := AssociativeArray();
-  for bb in Components(f) do
+  for bb in Keys(Components(f)) do
     coeffs[bb] := Coefficients(f);
   end for;
   return coeffs;
@@ -226,6 +227,7 @@ end intrinsic;
 // ModFrmHilDEltComp -> ModFrmHilDElt
 intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
  {given an associative array with coefficients on one component, set all other coefficients to be zero}
+ print("DEPRECATED: first create the f an ModFrmHilDEltComp and then HMF(f) to get a ModFrmHilDElt");
   reps:= NarrowClassGroupReps(M);
   for bb in reps do
     if not bb in Keys(coeffs) then
@@ -238,11 +240,14 @@ intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
   return coeffs;
 end intrinsic;
 
-intrinsic HMFComp(Mk::ModFrmHilD, bb::RngOrdIdl, coeffs::Assoc : prec := 0) -> ModFrmHilDEltComp
-//FIXME: add UnitChar
+intrinsic HMFComp(Mk::ModFrmHilD,
+                  bb::RngOrdIdl,
+                  coeffs::Assoc,
+                  unitchar::SeqEnum[RngElt],
+                  : prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component bb, the fourier coefficients
-    in in the Shintani cone.
+    in the Shintani cone, and unit character.
     Explicitly, coeffs is an associative array where
     coeffs[nu] = a_(bb, nu) = a_(nu)*(bb')^-1
     for all nu in the Shintani cone,
@@ -250,34 +255,44 @@ intrinsic HMFComp(Mk::ModFrmHilD, bb::RngOrdIdl, coeffs::Assoc : prec := 0) -> M
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
   CoefficientSequence := [**]; // to assert all coefficients have the same parent
-  require bb in SequenceToSet(bbs): "bb should be one of the representatives of the Narrow class group";
-  require SequenceToSet(ShintaniReps(M)[bb]) subset Keys(coeffs): "Coefficients should be indexed by Shintani Reps";
-  for nu in ShintaniReps(M)[bb] do
-    require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
-    Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
-  end for;
-  CoefficientSequence := [i : i in CoefficientSequence];
-  // make the HMF
-  f := ModFrmHilDEltInitialize();
-  f`Parent := Mk;
-  f`Coefficients := coeffs;
-  f`BaseRing := Parent(CoefficientSequence[1]);
-  // working precision FIXME: move this above
+  require bb in bbs: "bb should be one of the representatives of the Narrow class group";
   if prec eq 0 then
     f`Precision := Precision(M);
   else
     assert prec gt 0;
     f`Precision := prec;
   end if;
+  newcoeffs := AssociativeArray();
+  for t in Keys(ShintaniRepsByTrace(M)[bb]) do
+    if t lt f`Precision then
+      for nu in ShintaniRepsByTrace(M)[bb][t] do
+        require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
+        Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
+        newcoeffs[nu] := coeffs[nu];
+      end for;
+    else
+      for nu in ShintaniRepsByTrace(M)[bb][t] do
+        newcoeffs[nu] := 0;
+      end if;
+    end if;
+  end for;
+  CoefficientSequence := [i : i in CoefficientSequence];
+  // make the HMF
+  f := ModFrmHilDEltInitialize();
+  f`Parent := Mk;
+  f`Coefficients := newcoeffs;
+  R := Parent(CoefficientSequence[1]);
+  f`BaseRing := R;
+  A := TotallyPositiveUnitGroup(M);
+  f`UnitChar := hom<TotallyPositiveUnitGroup(M) -> R | unitchar>;
   return f;
 end intrinsic;
 
 
-intrinsic HMF(Mk::ModFrmHilD, C::Assoc) -> ModFrmHilDElt
+intrinsic HMF(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   {
-    Return the ModFrmHilDElt with parent Mk and Components C.
+    Return the ModFrmHilDElt with parent Mk and Components components.
   }
-//FIXME: HERE
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
@@ -286,24 +301,27 @@ intrinsic HMF(Mk::ModFrmHilD, C::Assoc) -> ModFrmHilDElt
   f`Parent := Mk;
   f`Components := AssociativeArray();
   for bb in bbs do
-      assert Component(C[bb]) eq bb;
-      f`Components[bb] := ModFrmHilDEltCompCopy(C[bb]);
+      assert Component(components[bb]) eq bb;
+      f`Components[bb] := ModFrmHilDEltCompCopy(components[bb]);
     end if;
   end for;
   return f;
 end intrinsic;
 
 
-intrinsic HMF(Mk::ModFrmHilD, coeffscomp::Assoc : prec := 0) -> ModFrmHilDElt
-  { Input:
-    - Mk is the desired parent
-    - coeffs is a associative array where we have either:
-       - coeffs[nu] = a_(bb, nu) = a_(nu)*(bb')^-1 for all
-      where bb is a representatives of the Narrow class group.
-    nu in the Shintani cone
+intrinsic HMF(Mk::ModFrmHilD,
+              coeffs::Assoc,
+              unitchar::Assoc,
+              : prec := 0) -> ModFrmHilDElt
+  {
+    Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
+    a double associative array coeffs
+    and the uniti characters are also given via an associative array indexex on the
+    narrow class group representatives.
+    Explicitly, coeffs is an double associative array
+    coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb')^-1
+    for all nu in the Shintani cone.
   }
-  {WARNING: user is responsible for coefficients besides some basic strcoeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb)^-1 or
-           coeffscomp[bb] = g_bb, g_bb in ModFrmHilDEltComp and Component(g) == bb}
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
@@ -316,7 +334,7 @@ intrinsic HMF(Mk::ModFrmHilD, coeffscomp::Assoc : prec := 0) -> ModFrmHilDElt
       f`Components[bb] := ModFrmHilDEltCompCopy(coeffs[bb]);
       assert Component(f`Components[bb]) eq bb;
     else
-      f`Components[bb] := HMF(M, bb, coeffs[bb] : prec := prec);
+      f`Components[bb] := HMF(M, bb, coeffs[bb], unitchar[bb] : prec := prec);
     end if;
   end for;
   return f;
@@ -336,7 +354,8 @@ intrinsic HMFZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   for nu in ShintaniReps(M)[bb] do
     coeffs[bb][nu] := 0;
   end for;
-  return HMF(Mk, bb, coeffs);
+  uc := [1: i in Generators(TotallyPositiveUnitGroup(M))];
+  return HMF(Mk, bb, coeffs, uc);
 end intrinsic;
 
 intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
@@ -344,18 +363,20 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   M := Parent(Mk);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
-    coeffs[bb] := HMFZero(); //HERE FIXME
-    for nu in ShintaniReps(M)[bb] do
-      coeffs[bb][nu] := 0;
-    end for;
+    coeffs[bb] := HMFZero(Mk, bb);
   end for;
   return HMF(Mk, coeffs);
 end intrinsic;
 
+//FIXME
+intrinsic IsZero(f::ModFrmHilDEltComp) -> BoolElt
+  {check if form is identically zero}
+  return IsZero([c : c in Coefficients(f)]);
+end intrinsic;
+
 intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
   {check if form is identically zero}
-  Mk := Parent(f);
-  return f eq HMFZero(Mk);
+  return &and[IsZero(Components(f)[bb]) : bb in Keys(Components(f))];
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD, bb::Rn) -> ModFrmHilDEltComp
