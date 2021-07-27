@@ -124,6 +124,16 @@ intrinsic UnitGroupMap(M::ModFrmHilDGRng) -> Any
   return M`UnitGroupMap;
 end intrinsic;
 
+intrinsic TotallyPositiveUnitGroup(M::ModFrmHilDGRng) -> Any
+  {}
+  return M`TotallyPositiveUnitGroup;
+end intrinsic;
+
+intrinsic TotallyPositiveUnitGroupMap(M::ModFrmHilDGRng) -> Any
+  {}
+  return M`TotallyPositiveUnitGroupMap;
+end intrinsic;
+
 intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
   {}
   if not assigned M`DedekindZetatwo then
