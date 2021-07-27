@@ -182,10 +182,12 @@ end intrinsic;
 // The Shintani Domain above is stored in an array and this looks up the ideal
 intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilDGRng) -> SeqEnum
   {Speed up for Reduce Shintani}
-  ZF := Integers(M);
-  I := nu*ZF;
-  ShintaniRep := ReduceIdealToShintaniRep(M)[bb][I];
-  return ShintaniRep;
+  assert Parent(nu) eq Integers(M);
+  shintani_reps := ShintaniReps(M);
+  if nu in Keys(shintani_reps[bb]) then
+    return shintani_reps[bb][nu];
+  end if;
+  return ReduceShintaniMinimizeTrace(nu);
 end intrinsic;
 
 
@@ -377,13 +379,10 @@ end intrinsic;
 // Converts nus to nns
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the integral ideal n = bb^(-1)*(nu) in ZF}
-  if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
-    R := M`Integers;
-    dd := Different(R);
-    bbp := bb*(dd^-1);
-    M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbp^(-1));
-  end if;
-  return M`ShintaniRepsIdeal[bb][nu];
+  R := M`Integers;
+  dd := Different(R);
+  bbp := bb*(dd^-1);
+  return NicefyIdeal(nu*bbp^(-1));
 end intrinsic;
 
 intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::SetEnum[RngOrdElt])
