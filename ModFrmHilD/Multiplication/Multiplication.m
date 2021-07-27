@@ -1,4 +1,3 @@
-
 intrinsic GetIndexPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
   {assigns M`MultiplicationTables[bb]  list (assoc array) of [nu, [[mu,mup],...] ] such 
    that mu+mup = nu up to trace bound Precision(M).}

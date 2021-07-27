@@ -90,7 +90,7 @@ intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
   YLB := 0;
   XUB := 2*Sqrt(Evaluate(a,places[1]));
   YUB := 2*Sqrt(Evaluate(a,places[2]));
-  T := BoundedRepresentatives(M,1*ZF,XLB,YLB,XUB,YUB);
+  T := ElementsInABox(M,1*ZF,XLB,YLB,XUB,YUB);
   T := [ i : i in T | i^2-4*a ne 0]; // Zero is "technically" not totally positive for this computation
   T cat:= [-i : i in T | i ne 0];
   return T;
@@ -109,7 +109,7 @@ intrinsic HalfOfCMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
   YLB := 0;
   XUB := 2*Sqrt(Evaluate(a,places[1]));
   YUB := 2*Sqrt(Evaluate(a,places[2]));
-  T := BoundedRepresentatives(M,1*ZF,XLB,YLB,XUB,YUB);
+  T := ElementsInABox(M,1*ZF,XLB,YLB,XUB,YUB);
   T := [ i : i in T | i^2-4*a ne 0]; // Zero is "technically" not totally positive for this computation
   return T;
 end intrinsic;
