@@ -45,7 +45,7 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
     for nu in ShintaniReps(M)[bb] do
       t := Trace(nu);
       printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs_bb[nu];
-      count += 1;
+      count +:= 1;
       if count ge num_coeffs then
         printf "\n...";
         break;
@@ -159,7 +159,7 @@ end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDEltComp, nu::RngElt) -> Any
   {}
-  return Coefficients(f)[nu]
+  return Coefficients(f)[nu];
 end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
@@ -271,12 +271,6 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   bbs := NarrowClassGroupReps(M);
   CoefficientSequence := [**]; // to assert all coefficients have the same parent
   require bb in bbs: "bb should be one of the representatives of the Narrow class group";
-  if prec eq 0 then
-    f`Precision := Precision(M);
-  else
-    assert prec gt 0;
-    f`Precision := prec;
-  end if;
   newcoeffs := AssociativeArray();
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
     require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
@@ -284,8 +278,17 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     newcoeffs[nu] := coeffs[nu];
   end for;
   CoefficientSequence := [i : i in CoefficientSequence];
+
   // make the HMF
   f := ModFrmHilDEltInitialize();
+
+  if prec eq 0 then
+    f`Precision := Precision(M);
+  else
+    assert prec gt 0;
+    f`Precision := prec;
+  end if;
+
   f`Parent := Mk;
   f`Coefficients := newcoeffs;
   R := Parent(CoefficientSequence[1]);
@@ -325,7 +328,7 @@ end intrinsic;
 
 
 intrinsic HMF(Mk::ModFrmHilD,
-              coeffs::Assoc,
+              coeffs::Assoc
               :
               unitchar := [],
               prec := 0
@@ -524,7 +527,7 @@ intrinsic MapCoefficients(m::Map, f::ModFrmHilDElt) -> ModFrmHilDElt
   {return the ModFrmHilDElt where the map acts on the coefficients}
   components := Components(f);
   for bb in Keys(components) do
-    component[bb] := MapCoefficients(m, components[bb]);
+    components[bb] := MapCoefficients(m, components[bb]);
   end for;
   return HMF(Parent(f), components);
 end intrinsic;
@@ -543,7 +546,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   G, Pmap, Gmap := AutomorphismGroup(K);
   result := [];
   for g in G do
-    if K eq R
+    if K eq R then
       Append(~result, MapCoefficients(Gmap(g), f));
     else
       Append(~result, ChangeBaseRing(R, MapCoefficients(Gmap(g), f)));
@@ -555,7 +558,7 @@ end intrinsic;
 
 intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return Trace(f)}
-  new_coeffs := AssociativeArray():
+  new_coeffs := AssociativeArray();
   coeffs := Coefficients(f);
   for nu in Keys(Coefficients(f)) do
     new_coeffs[nu] := Trace(coeffs[nu]);
@@ -609,7 +612,7 @@ end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
 {compares Parent and Components.}
-  return &and[a(f) eq a(g): a in [Parent, Components]]
+  return &and[a(f) eq a(g): a in [Parent, Components]];
 end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
@@ -711,7 +714,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
     coeffs_h[nu] := c;
   end for;
   A := Domain(char_f);
-  unitchar := [char_f(A.i)*char_g(A.i) : i in [1..Generators(A)];
+  unitchar := [char_f(A.i)*char_g(A.i) : i in [1..Generators(A)]];
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)] ],
@@ -792,7 +795,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
 
 
   A := Domain(char_f);
-  unitchar := [char_f(A.i)/char_g(A.i) : i in [1..Generators(A)];
+  unitchar := [char_f(A.i)/char_g(A.i) : i in [1..Generators(A)]];
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)] ],
