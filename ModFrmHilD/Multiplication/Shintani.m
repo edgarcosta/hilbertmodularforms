@@ -133,6 +133,7 @@ function AssignFundamentalUnitTotPos(F);
     // eps1*eps2 = Nm(eps) = 1
     eps := 1/eps;
   end if; 
+  eps := Integers(F)!eps;
   F`FundamentalUnitTotPos := eps;
   return eps;
 end function;  
@@ -259,9 +260,9 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
     eps := AssignFundamentalUnitTotPos(F);
   end if;
 
-  eps_RR := [Evaluate(eps,pl) : pl in Places];
+  eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
   slope_eps := Slope(eps);
-  slope_nu := Slope(nu);
+  slope_nu := Slope(ZF!nu);
 
   RR := RealField(100);
   ratio := RR!(1/2)*Log(RR!slope_nu)/Log(RR!eps_RR[1]);
@@ -376,7 +377,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   dd := Different(ZF);
   bbp := bb*(dd)^-1;
 
-  if Norm(nn) eq 0 then
+  if IsZero(nn) then
     return 0;
   end if;
 
@@ -384,6 +385,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   require IsIdentity((nn*bbp)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
   bool, gen := IsPrincipal(nn*bbp);
   assert bool;
+  gen := ZF!gen;
 
   // This is hardcoded for quadratic Fields.
   gen := TotallyPositiveAssociate(M,gen);
