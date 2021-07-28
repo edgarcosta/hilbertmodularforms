@@ -1,17 +1,21 @@
 intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
-  {sets M`MultiplicationTables[bb]  list (assoc array) of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
-  require bb in NarrowClassGroupReps(M): "bb must be a represetative of a narrow class";
+  {Assigns M`MultiplicationTables[bb] an associative array with nu entry 
+   [[[mu,eps],[mup,eps]] : mu*eps + mup*epsp = nu]] 
+   for nu with trace up to Precision(M).}
+
+  require bb in NarrowClassGroupReps(M): "bb must be among a fixed set of narrow class representatives";
+
   // Preliminaries
   ZF := Integers(M);
   TraceBound := Precision(M);
   positive_reps := PositiveRepsByTrace(M); // indexed by ideal class and then trace
   shintani_reps := ShintaniReps(M)[bb]; // List of Shintani reps for bb
-  pairs := AssociativeArray(); // keys = shintani_reps // For each nu, this stores lists of of [nu1,nu2].
+  pairs := AssociativeArray(); // keys = shintani_reps 
   for nu in shintani_reps do 
     pairs[nu] := [];
   end for;
 
-  //////// Algorithm : nu = nu1 + nu2  /////////
+  //////// Algorithm : nu = mu + mup  /////////
   // Add pairs of elements lexicographically by trace
   nus := [];
   for i := 0 to TraceBound do // loop over trace
@@ -51,10 +55,19 @@ intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
       end if;
     end for;
   end for;
+
   /////// Populating multiplication table ////////////
-  /* We have nu1 + nu2 = nu where nu1,nu2 are totally positive (not necessarily Shintani reduced). 
-  Write nui = mui*ei where ei is a tot. pos. unit and mui is Shintani reduced and then for each nu we will store a list of the [[mu1,e1],[mu2,e2]] */
-  M`MPairs[bb] := AssociativeArray(); // keys = shintani_reps, For each nu, this stores [[mu1,e1],[mu2,e2]].
+  /* We have mu + mup = nu where mu, mup are totally positive 
+     (not necessarily Shintani reduced). 
+  
+     Write mu = s(mu)*eps and 
+           mup = s(mup)*epsp
+     where eps,epsp are totally positive units and
+     s(mu), s(mup) are Shintani reduced.
+     Store the list of pairs [[s(mu),eps],[s(mup),epsp]]. */
+
+  M`MPairs[bb] := AssociativeArray(); 
+     // keys = shintani_reps, 
   for nu in shintani_reps do
       M`MPairs[bb][nu] := [[ReduceShintaniMinimizeTrace(i) : i in pair] : pair in pairs[nu]];
   end for;

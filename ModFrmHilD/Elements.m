@@ -16,7 +16,7 @@ declare attributes ModFrmHilDEltComp:
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent,
-  Components; // Assoc: bb --> f_bb
+  Components; // Assoc: bb --> f_bb, each f_bb of type ModFrmHilDEltComp
 
 
 
@@ -32,20 +32,24 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
     coeffs := Coefficients(f);
     N := Level(Mk);
     if level ne "Minimal" then
-      printf "Hilbert modular form expansion with precision %o.\n", working_prec;
+      printf "Component of Hilbert modular form expansion with precision %o.\n", working_prec;
       printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
       printf "Weight: %o\n", k;
       printf "Parent: %o\n", Mk;
     end if;
     bb := Component(f);
-    coeffs_bb := Coefficients(f);
     printf "Coefficients for ideal class bb = %o\n", bb;
+    coeffs_bb := Coefficients(f);
     printf "\n\t(Trace, nu)  |--->   a_nu";
-    for t in Keys(ShintaniReps(M)[bb]) do
-      for nu in ShintaniReps(M)[bb][t] do
-        assert t eq Trace(nu);
-        printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs_bb[nu];
-      end for;
+    count := 0;
+    for nu in ShintaniReps(M)[bb] do
+      t := Trace(nu);
+      printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs_bb[nu];
+      count +:= 1;
+      if count ge num_coeffs then
+        printf "\n...";
+        break;
+      end if;
     end for;
     printf "\n\n";
   elif level eq "Magma" then
@@ -142,15 +146,20 @@ intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   return Level(Parent(f));
 end intrinsic;
 
+intrinsic MPairs(f::ModFrmHilDElt) -> RngOrdIdl
+  {returns the MPairs of parent of f.}
+  return MPairs(GradedRing(f));
+end intrinsic;
+
 intrinsic Coefficient(f::ModFrmHilDElt, bb::RngOrdIdl, nu::RngElt) -> Any
   {}
-  return Coefficients(Components(f)[rep])[nu];
+  return Coefficients(Components(f)[bb])[nu];
 end intrinsic;
 
 
 intrinsic Coefficient(f::ModFrmHilDEltComp, nu::RngElt) -> Any
   {}
-  return Coefficients(f)[nu]
+  return Coefficients(f)[nu];
 end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
@@ -249,7 +258,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
                   :
-                  unitchar := 0,
+                  unitchar := [],
                   prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component bb, the fourier coefficients
@@ -262,30 +271,27 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   bbs := NarrowClassGroupReps(M);
   CoefficientSequence := [**]; // to assert all coefficients have the same parent
   require bb in bbs: "bb should be one of the representatives of the Narrow class group";
+
+  // make the HMF
+  f := ModFrmHilDEltCompInitialize();
+
   if prec eq 0 then
     f`Precision := Precision(M);
   else
     assert prec gt 0;
     f`Precision := prec;
   end if;
+
+  f`Parent := Mk;
+
   newcoeffs := AssociativeArray();
-  for t in Keys(ShintaniRepsByTrace(M)[bb]) do
-    if t lt f`Precision then
-      for nu in ShintaniRepsByTrace(M)[bb][t] do
-        require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
-        Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
-        newcoeffs[nu] := coeffs[nu];
-      end for;
-    else
-      for nu in ShintaniRepsByTrace(M)[bb][t] do
-        newcoeffs[nu] := 0;
-      end if;
-    end if;
+  for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
+    require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
+    Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
+    newcoeffs[nu] := coeffs[nu];
   end for;
   CoefficientSequence := [i : i in CoefficientSequence];
-  // make the HMF
-  f := ModFrmHilDEltInitialize();
-  f`Parent := Mk;
+
   f`Coefficients := newcoeffs;
   R := Parent(CoefficientSequence[1]);
   f`BaseRing := R;
@@ -308,7 +314,7 @@ intrinsic HMF(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
-  require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
+  require Keys(components) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
   f := ModFrmHilDEltInitialize();
   f`Parent := Mk;
@@ -316,6 +322,7 @@ intrinsic HMF(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   for bb in bbs do
     require Component(components[bb]) eq bb: "Components mismatch";
     require Type(components[bb]) eq ModFrmHilDEltComp: "The values of components need to be ModFrmHilDEltComp";
+    require Mk eq Parent(M): "The parents of the components should be all the same";
     f`Components[bb] := ModFrmHilDEltCompCopy(components[bb]);
   end for;
   return f;
@@ -323,7 +330,7 @@ end intrinsic;
 
 
 intrinsic HMF(Mk::ModFrmHilD,
-              coeffs::Assoc,
+              coeffs::Assoc
               :
               unitchar := [],
               prec := 0
@@ -353,7 +360,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   end if;
   require Keys(unitchar) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-    f`Components[bb] := HMF(M, bb, coeffs[bb]: unitchar:=unitchar[bb], prec:=prec);
+    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: unitchar:=unitchar[bb], prec:=prec);
   end for;
   return f;
 end intrinsic;
@@ -369,8 +376,8 @@ intrinsic HMFZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   {create zero ModFrmHilDEltComp of weight k.}
   M := Parent(Mk);
   coeffs := AssociativeArray();
-  for nu in ShintaniReps(M)[bb] do
-    coeffs[bb][nu] := 0;
+  for nu in ShintaniRepsUpToTrace(M)[bb] do
+    coeffs[nu] := 0;
   end for;
   return HMF(Mk, bb, coeffs);
 end intrinsic;
@@ -472,7 +479,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
           fbb := Components(f)[bb];
-          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=Unitchar(fbb), prec:=Unitchar(fbb));
+          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=UnitChar(fbb), prec:=Precision(fbb));
         end for;
         return true, HMF(Mk, components);
       else
@@ -522,7 +529,7 @@ intrinsic MapCoefficients(m::Map, f::ModFrmHilDElt) -> ModFrmHilDElt
   {return the ModFrmHilDElt where the map acts on the coefficients}
   components := Components(f);
   for bb in Keys(components) do
-    component[bb] := MapCoefficients(m, components[bb]);
+    components[bb] := MapCoefficients(m, components[bb]);
   end for;
   return HMF(Parent(f), components);
 end intrinsic;
@@ -541,7 +548,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   G, Pmap, Gmap := AutomorphismGroup(K);
   result := [];
   for g in G do
-    if K eq R
+    if K eq R then
       Append(~result, MapCoefficients(Gmap(g), f));
     else
       Append(~result, ChangeBaseRing(R, MapCoefficients(Gmap(g), f)));
@@ -553,7 +560,7 @@ end intrinsic;
 
 intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return Trace(f)}
-  new_coeffs := AssociativeArray():
+  new_coeffs := AssociativeArray();
   coeffs := Coefficients(f);
   for nu in Keys(Coefficients(f)) do
     new_coeffs[nu] := Trace(coeffs[nu]);
@@ -575,8 +582,9 @@ end intrinsic;
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
   result := [];
+  M := Parent(f);
   bbs := NarrowClassGroupReps(M);
-  for b in Basis(CoefficientsField) do
+  for b in Basis(BaseRing(f)) do
     Append(~result, Trace(b * f));
   end for;
   return result;
@@ -607,7 +615,7 @@ end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
 {compares Parent and Components.}
-  return &and[a(f) eq a(g): a in [Parent, Components]]
+  return &and[a(f) eq a(g): a in [Parent, Components]];
 end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
@@ -670,8 +678,6 @@ intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   return f + (-1)*g;
 end intrinsic;
 
-// TODO only works when k has even weight
-// TODO for varied precision
 intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return f*g with the same level}
   require GradedRing(f) eq GradedRing(g): "we only support multiplication inside the same graded ring";
@@ -681,9 +687,10 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   char_f := UnitChar(f);
   char_g := UnitChar(g);
 
-  new_coeff := AssociativeArray();
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
+  coeffs_h := AssociativeArray(); // h := f*g
+  // Compute the new BaseRing
   Ff := BaseRing(f);
   Fg := BaseRing(g);
   if Ff eq Fg then
@@ -691,64 +698,134 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
   end if;
-  for nu in Keys(coeffs_f) do
-    c := 0;
-    c := F!0;
-    for pair in MTable[bb][nn] do
-      c +:= F!coeffs_f[bb][ pair[1] ] * F!coeffs_g[bb][ pair[2] ];
-    end for;
-    new_coeff[bb][nn] := c;
-  end for;
+  table := MPairs(f)[Component(f)];
+
+  // TODO: improve precision?
   // use relative precision to gain something here instead of minimum?
   prec_f := Precision(f);
   prec_g := Precision(g);
-unitchar := [[
+  prec := Minimum(prec_f, prec_g);
+
+  for nu in ShintaniRepsUpToTrace(GradedRing(f), Component(f), prec) do
+    c := F!0;
+    for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
+      xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
+      smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
+      smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
+      c +:= F!char_f(epsilon1) * F!coeffs_f[smu1] *  F!char_f(epsilon2) * F!coeffs_g[smu2];
+    end for;
+    coeffs_h[nu] := c;
+  end for;
+  A := Domain(char_f);
+  unitchar := [char_f(A.i)*char_g(A.i) : i in [1..Generators(A)]];
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)] ],
                     Character(f)*Character(g));
-  return HMFComp(Space, Component(f), new_coeff : prec := Minimum(prec_f, prec_g));
+  return HMFComp(Space, Component(f), coeffs_h : unitchar:=unitchar, prec:=prec);
 end intrinsic;
 
-//Dictionary would great here! Make linear algebra much easier
-intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
-  {return f/g}
-  N := Level(f);
-  M := Parent(f);
-  assert Parent(f) eq Parent(g);
-  if not assigned M`MultiplicationTables then
-    assert HMFEquipWithMultiplication(M);
-  end if;
-  MTable := MultiplicationTables(M);
-  coeffs := AssociativeArray();
-  bbs := NarrowClassGroupReps(M);
-  for bb in bbs do
-    coeffs[bb] := AssociativeArray();
-    // Linear Algebra Ax = B
-    A := [];
-    B := [];
-    Ideals := IdealsByNarrowClassGroup(M)[bb];
-    for nn in Ideals do
-      Append(~B,Coefficients(f)[bb][nn]);
-      F := CoefficientField(g);
-      A_row_nn := [F!0 : i in [1..#Ideals]];
-      for pair in MTable[bb][nn] do
-        A_row_nn[Index(Ideals,pair[2])] +:= Coefficients(g)[bb][pair[1]];
-      end for;
-      Append(~A,A_row_nn);
-    end for;
-    S := Solution(Transpose(Matrix(A)), Vector(B));
-    for nn in Ideals do
-      coeffs[bb][nn] := S[Index(Ideals,nn)];
-    end for;
+intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
+  {return f*g with the same level}
+  require GradedRing(f) eq GradedRing(g): "we only support multiplication inside the same graded ring";
+  require Level(f) eq Level(g): "we only support multiplication with the same level";
+  comp_f := Components(f);
+  comp_g := Components(g);
+  comp := AssociativeArray();
+  for bb in Keys(comp_f) do
+    comp[bb] := comp_f[bb] * comp_g[bb];
   end for;
-  kf := Weight(f);
-  kg := Weight(g);
-  k := [ kf[i] - kg[i] : i in [1..#kf] ];
-  // prec
+  Space := HMFSpace(GradedRing(f),
+                    Level(f),
+                    [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)]],
+                    Character(f)*Character(g));
+  return HMF(Space, comp);
+end intrinsic;
+
+
+intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+  {return f/g with the same level}
+  require GradedRing(f) eq GradedRing(g): "we only support division inside the same graded ring";
+  require Level(f) eq Level(g): "we only support division with the same level";
+  require Component(f) eq Component(g): "we only support division with the same component";
+
+  char_f := UnitChar(f);
+  char_g := UnitChar(g);
+
+  coeffs_f := Coefficients(f);
+  coeffs_g := Coefficients(g);
+  coeffs_h := AssociativeArray(); // h := f/g
+  // Compute the new BaseRing
+  Ff := BaseRing(f);
+  Fg := BaseRing(g);
+  if Ff eq Fg then
+    F := Ff;
+    if not IsField(F) and not IsInvertible(coeffs_g)[0] then
+      F := NumberField(F);
+    end if;
+  else
+    F := Compositum(NumberField(Ff), NumberField(Fg));
+  end if;
+  table := MPairs(f)[Component(f)];
+
+  // TODO: improve precision?
+  // use relative precision to gain something here instead of minimum?
   prec_f := Precision(f);
   prec_g := Precision(g);
-  return HMF(M, N, k, coeffs : prec := Minimum(prec_f, prec_g));
+  prec := Minimum(prec_f, prec_g);
+
+  for nu in ShintaniRepsUpToTrace(GradedRing(f), Component(f), prec)  do
+    sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
+    count := 0;
+    for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
+      xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
+      smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
+      smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
+      if IsZero(smu1) then // smu1 = 0 => => mu1 = 0 => s(mu2) = mu2 = nu
+        //FIXME: these asserts should be moved to the creation of MPairs
+        assert smu2 eq nu;
+        assert IsOne(epsilon1);
+        assert IsOne(epsilon2);
+        count +:= 1;
+      else
+        sum +:= F!char_f(epsilon1) * F!coeffs_g[smu1] *  F!char_f(epsilon2) * F!coeffs_h[smu2];
+      end if;
+    end for;
+    //FIXME: this asserts should be moved to the creation of MPairs
+    assert count eq 1;
+    coeffs_h[nu] := (F!coeffs_f[nu] - sum)/F!coeffs_g[0];
+  end for;
+
+
+  A := Domain(char_f);
+  unitchar := [char_f(A.i)/char_g(A.i) : i in [1..Generators(A)]];
+  Space := HMFSpace(GradedRing(f),
+                    Level(f),
+                    [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)] ],
+                    Character(f)/Character(g));
+  return HMFComp(Space, Component(f), coeffs_h : unitchar:=unitchar, prec:=prec);
+end intrinsic;
+
+intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
+  {return f/g with the same level}
+  require GradedRing(f) eq GradedRing(g): "we only support multiplication inside the same graded ring";
+  require Level(f) eq Level(g): "we only support multiplication with the same level";
+  comp_f := Components(f);
+  comp_g := Components(g);
+  comp := AssociativeArray();
+  for bb in Keys(comp_f) do
+    comp[bb] := comp_f[bb] / comp_g[bb];
+  end for;
+  Space := HMFSpace(GradedRing(f),
+                    Level(f),
+                    [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)]],
+                    Character(f)/Character(g));
+  return HMF(Space, comp);
+end intrinsic;
+
+intrinsic Inverse(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+ {return 1/f}
+ return HMFIdentity(Parent(f), Component(f))/f;
 end intrinsic;
 
 intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
@@ -756,31 +833,31 @@ intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
  return HMFIdentity(Parent(f))/f;
 end intrinsic;
 
- intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
-   {return f^n}
-   if n lt 0 then
-     f := Inverse(f);
-   end if;
-   g := HMFIdentity(Parent(f));
-   if n eq 0 then
-     return g;
-   end if;
-   if n eq 1 then
-    return f;
-    end if;
-   while n gt 1 do
-     if n mod 2 eq 0 then
-       f := f * f;
-       n := Integers() ! (n/2);
-     else
-       g := f * g;
-       f := f * f;
-       n := Integers() ! ((n - 1)/2);
-     end if;
-   end while;
-   return f * g;
- end intrinsic;
 
+intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
+  {return f^n}
+  if n lt 0 then
+    f := Inverse(f);
+  end if;
+  g := HMFIdentity(Parent(f));
+  if n eq 0 then
+    return g;
+  end if;
+  if n eq 1 then
+   return f;
+   end if;
+  while n gt 1 do
+    if n mod 2 eq 0 then
+      f := f * f;
+      n := Integers() ! (n/2);
+    else
+      g := f * g;
+      f := f * f;
+      n := Integers() ! ((n - 1)/2);
+    end if;
+  end while;
+  return f * g;
+end intrinsic;
 
 ////////// ModFrmHilDElt: Linear Algebra  //////////
 
@@ -794,9 +871,14 @@ end intrinsic;
 
 
 intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
-  {finds a small non-trivial integral linear combination between components of v. If none can be found return 0.}
-if IsNull(list) then return list; end if;
+  {
+    finds a small non-trivial integral linear combination between components of v.
+    If none can be found return 0.
+  }
+  if IsNull(list) then return list; end if;
   M := Matrix( [ elt : elt in list] );
+  // in case M is defined over the rationals
+  M := ChangeRing(Denominator(M)*M, Integers());
   B := Basis(Kernel(M));
   if #B ne 0 then return [Eltseq(i) : i in Rows(Matrix(LLL(B)))]; else return []; end if;
 end intrinsic;
@@ -810,26 +892,27 @@ intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   // The ideal classes from which we are taking the coefficients.
   if IdealClasses cmpeq false then
     bbs := NarrowClassGroupReps(M); // Default is all ideals classes
-  else 
+  else
     bbs := IdealClasses; // Optionally we may specify a single ideal class
   end if;
-  // List of coefficients for the forms 
+  // List of coefficients for the forms
   L := [];
   maxprec:=Min([f`Precision: f in List]);
-  // Loop over forms 
+  // Loop over forms
   for i in List do
     CoefficientsOfForm := [];
     for bb in bbs do
-      CoefficientsOfForm cat:= [Coefficients(i)[bb][nn] : nn in IdealsByNarrowClassGroup(M)[bb] | Trace(IdealToShintaniRepresentative(M, nn)) lt maxprec];
+      CoefficientsOfForm cat:= [Coefficients(Components(i)[bb])[nu] : nu in ShintaniRepsUpToTrace(M, bb, maxprec)];
     end for;
-    Append(~L,CoefficientsOfForm);
+    Append(~L, CoefficientsOfForm);
   end for;
   return LinearDependence(L);
 end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
-
+//TODO: anything below this line is not yet fixed
+//EDGAR: I'm HERE
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f(z) and produces f(dd*z) in the space Mk}

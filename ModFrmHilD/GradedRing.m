@@ -24,6 +24,7 @@ declare attributes ModFrmHilDGRng:
   ShintaniRepsIdeal, // ShintaniReps[bb] = [ShintaniRepresentativeToIdeal(nu) in Shintani with trace at most Precision(M)]
   ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
   ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][nn] = nu, such that nu is Shintani reduced
+  IdealElementPairs, // apparently we still need this for inclusion
   IdealsByNarrowClassGroup, // IdealElementPairs[bb] = list of all ideal nn with [nn] = [bb]
   AllIdeals, // List of all ideals for all bb ordered by norm
   AllPrimes, // List of all prime ideals for all bb ordered by norm
@@ -42,6 +43,14 @@ declare attributes ModFrmHilDGRng:
   TotallyPositiveUnitGroup, // the group of totally positive units of the base as an abstract group
   TotallyPositiveUnitGroupMap // map from abstract totally positive unit group into R^\times_{>0}
   ;
+
+// save fundamental unit
+declare attributes FldNum:
+  FundamentalUnitTotPos;
+
+declare attributes FldQuad:
+  FundamentalUnitTotPos;
+
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
 
@@ -326,7 +335,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
     M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
     for t := 0 to prec do
       M`PositiveRepsByTrace[bb][t] := PositiveElementsOfTrace(bb, t);
-      M`ShintaniRepsByTrace[bb][t] := ShintaniDomainOfTrace(bb, t);
+      M`ShintaniRepsByTrace[bb][t] := ShintaniRepsOfTrace(bb, t);
     end for;
     M`PositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
     M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
@@ -337,6 +346,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // Ideals
   M`IdealsByNarrowClassGroup := AssociativeArray();
+
   M`IdealElementPairs := AssociativeArray();
   for bb in M`NarrowClassGroupReps do
     IdealElementPairsList := [];
@@ -386,8 +396,8 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   bbs := NarrowClassGroupReps(M);
   M`MultiplicationTables := AssociativeArray();
   for bb in bbs do
-     // Populates M`MultiplicationTables[bb]
-     GetIndexPairs(bb, M);
+    // Populates M`MultiplicationTables[bb]
+    ComputeMPairs(bb, M);
   end for;
 end intrinsic;
 
