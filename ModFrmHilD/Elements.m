@@ -349,6 +349,7 @@ intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
               :
               unitchar := [],
+              CoeffsByIdeal:=false,
               prec := 0
               ) -> ModFrmHilDElt
   {
@@ -376,7 +377,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   end if;
   require Keys(unitchar) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: unitchar:=unitchar[bb], prec:=prec);
+  f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: unitchar:=unitchar[bb], CoeffsByIdeal:=CoeffsByIdeal, prec:=prec);
   end for;
   return f;
 end intrinsic;
