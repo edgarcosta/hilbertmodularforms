@@ -68,7 +68,7 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
       end for;
     end if;
   end for;
-  E := HMF(Mk, coeffs);
+  E := HMF(Mk, coeffs : CoeffsByIdeal:=true);
   // Normalized coefficients here. 
   if not (coeffs[bbs[1]][0*ZF] in [0,1]) then 
     E := (1/coeffs[bbs[1]][0*ZF]) * E;
