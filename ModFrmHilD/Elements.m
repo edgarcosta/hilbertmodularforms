@@ -494,7 +494,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
 
   print "Checking coercibility of", Mk, f;
 
-  if Type(f) in [ModFrmHilDElt, ModFrmHilDEltComp] then
+  if Type(f) notin [ModFrmHilDElt, ModFrmHilDEltComp] then
     return false, "f not of type ModFrmHilDElt or ModFrmHilDEltComp";
   else // f is an HMF so has a chance to be coercible
     M := Parent(Mk); // graded ring associated to Mk
@@ -514,7 +514,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
           fbb := Components(f)[bb];
-          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=UnitChar(fbb), prec:=Precision(fbb));
+          components[bb] := HMFComp(Mk, bb, Coefficients(fbb): unitchar:=UnitChar(fbb), prec:=Precision(fbb));
         end for;
         return true, HMFSumComponents(Mk, components);
       else
@@ -617,7 +617,7 @@ end intrinsic;
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
 
-  result := [];
+  result := [Parent(f) | ];
   for b in Basis(BaseRing(f)) do
     Append(~result, Trace(b * f));
   end for;
@@ -945,39 +945,48 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
-//TODO: anything below this line is not yet fixed
-//EDGAR: I'm HERE
+intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDEltComp]
+  {Takes a form f(z) and produces f(mm*z) in Mk (of level NN) with component ideal class [mm*bb]}
 
-intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
-  {Takes a form f(z) and produces f(dd*z) in the space Mk}
   coeff_f := Coefficients(f);
   Mk_f := Parent(f);
-  M_f:=Parent(Mk_f);
-  M:=Parent(Mk);
+  M_f := Parent(Mk_f);
+  M := Parent(Mk);
   N1 := Level(Mk_f);
   N2 := Level(Mk);
+  ZF := Integers(M);
+
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
   require N2 subset N1: "Level of f does not divide level of Mk";
-  require N2 subset dd: "Ideal does not divide level of Mk";
-  bbs := NarrowClassGroupReps(M);
+  require N2 subset mm: "Ideal does not divide level of Mk";
+
   coeff := AssociativeArray();
-  for bb in bbs do
-    Rep := NarrowClassRepresentative(M,dd*bb);
-    Idealsbb := IdealsByNarrowClassGroup(M_f)[bb];
-    IdealsRep := IdealsByNarrowClassGroup(M)[Rep];
-    coeff[Rep] := AssociativeArray();
-    for nn in IdealsRep do
-      if (nn/dd) in Idealsbb then
-        coeff[Rep][nn] := coeff_f[bb][(nn/dd)];
-      else
-        coeff[Rep][nn] := 0;
-      end if;
-    end for;
+  bb := ComponentIdeal(f);
+  mmbb := NarrowClassRepresentative(M,mm*bb);
+
+  mminv := mm^-1;
+  idlEltPairs := IdealElementPairs(M)[bb];
+  for nn in IdealsByNarrowClassGroup(M)[mmbb] do
+    if IsIntegral(nn*mminv) then
+      coeff[nn] := coeff_f[IdealToShintaniRepresentative(M, bb, ZF!!(nn*mminv))];
+    else
+      coeff[nn] := 0;
+    end if;
   end for;
-  return HMFSumComponents(Mk, coeff);
+
+  return HMFComp(Mk, coeff : CoeffsByIdeals := true, unitchar := UnitChar(f), Precision := Precision(f));
 end intrinsic;
 
+intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
+  {Takes a form f(z) and produces f(mm*z) in the space Mk}
 
+  iotamf := AssociativeArray();
+  mminv := mm^-1;
+  for bb in Keys(Components(f)) do
+    iotamf[bb*mminv] := Inclusion(Components(f)[bb], Mk, mm);
+  end for;
+  return HMFSumComponents(Mk, iotamf);
+end intrinsic;
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f(z) and produces list of all inclusions of f(dd*z) into Mk}
@@ -990,8 +999,6 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   end for;
   return IncludedForms;
 end intrinsic;
-
-
 
 intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
   {Gives absolute initial trace precision bound to be able to include f(dd*z) into Mk}
