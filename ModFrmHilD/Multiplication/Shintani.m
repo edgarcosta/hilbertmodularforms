@@ -376,7 +376,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   dd := Different(ZF);
   bbp := bb*(dd)^-1;
 
-  if Norm(nn) eq 0 then
+  if IsZero(nn) then
     return 0;
   end if;
 
