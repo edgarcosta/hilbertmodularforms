@@ -107,6 +107,12 @@ intrinsic Weight(f::ModFrmHilDEltComp) -> SeqEnum[RngIntElt]
   return Weight(Parent(f));
 end intrinsic;
 
+intrinsic GradedRing(f::ModFrmHilDEltComp) -> ModFrmHilDGRng
+  {return parent of parent of f}
+  Mk := Parent(f);
+  return Parent(Mk);
+end intrinsic;
+
 intrinsic GradedRing(f::ModFrmHilDElt) -> ModFrmHilDGRng
   {return parent of parent of f}
   Mk := Parent(f);
@@ -477,7 +483,7 @@ end intrinsic;
 
 intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_nu := R!a_nu}
-  M := GradedRing(f);
+  M := AttachSpec("spec");GradedRing(f);
   bbs := NarrowClassGroupReps(M);
   // first make a copy
   f := ModFrmHilDEltCopy(f);
