@@ -24,6 +24,7 @@ declare attributes ModFrmHilDGRng:
   ShintaniRepsIdeal, // ShintaniReps[bb] = [ShintaniRepresentativeToIdeal(nu) in Shintani with trace at most Precision(M)]
   ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
   ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][nn] = nu, such that nu is Shintani reduced
+  IdealElementPairs, // apparently we still need this for inclusion
   IdealsByNarrowClassGroup, // IdealElementPairs[bb] = list of all ideal nn with [nn] = [bb]
   AllIdeals, // List of all ideals for all bb ordered by norm
   AllPrimes, // List of all prime ideals for all bb ordered by norm
@@ -345,8 +346,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // Ideals
   M`IdealsByNarrowClassGroup := AssociativeArray();
-/*
-  // JV: We probably still want some version of this, but only for user interface
+
   M`IdealElementPairs := AssociativeArray();
   for bb in M`NarrowClassGroupReps do
     IdealElementPairsList := [];
@@ -368,7 +368,6 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   norms := [CorrectNorm(I) : I in all_ideals];
   ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
-*/
 
   M`Spaces := AssociativeArray();
   return M;

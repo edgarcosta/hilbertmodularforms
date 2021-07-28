@@ -582,8 +582,9 @@ end intrinsic;
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
   result := [];
+  M := Parent(f);
   bbs := NarrowClassGroupReps(M);
-  for b in Basis(CoefficientsField) do
+  for b in Basis(CoefficientField(f)) do
     Append(~result, Trace(b * f));
   end for;
   return result;
@@ -901,7 +902,7 @@ intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   for i in List do
     CoefficientsOfForm := [];
     for bb in bbs do
-      CoefficientsOfForm cat:= [Coefficients(Components(i)[bb])[nn] : nu in ShintaniRepsUpToTrace(M, bb, maxprex)];
+      CoefficientsOfForm cat:= [Coefficients(Components(i)[bb])[nu] : nu in ShintaniRepsUpToTrace(M, bb, maxprec)];
     end for;
     Append(~L, CoefficientsOfForm);
   end for;
