@@ -983,7 +983,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[
   iotamf := AssociativeArray();
   mminv := mm^-1;
   for bb in Keys(Components(f)) do
-    iotamf[bb*mminv] := Inclusion(Component(f, bb), Mk, mm);
+    iotamf[bb*mminv] := Inclusion(Components(f)[bb], Mk, mm);
   end for;
   return HMFSumComponents(Mk, iotamf);
 end intrinsic;
