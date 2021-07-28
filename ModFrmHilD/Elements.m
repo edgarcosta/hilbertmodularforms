@@ -146,7 +146,7 @@ intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
   return Level(Parent(f));
 end intrinsic;
 
-intrinsic Components(f::ModFrmHilDelt) -> Assoc
+intrinsic Components(f::ModFrmHilDElt) -> Assoc
   {return the components of f}
   return f`Components;
 end intrinsic;
