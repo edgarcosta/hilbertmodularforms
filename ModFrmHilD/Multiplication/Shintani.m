@@ -79,7 +79,7 @@ intrinsic ElementsInABox(M::ModFrmHilDGRng, bb::RngOrdFracIdl,
   {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0 < c_2 < Ybound}    
 
   for bnd in [XUBound, YUBound, XLBound, YLBound] do
-    require IsCoercible(Type(bnd),FldReElt) : "Bounds must be coercible to real numbers";
+    require IsCoercible(bnd,FldReElt) : "Bounds must be coercible to real numbers";
   end for;
   basis := TraceBasis(bb);
   F := BaseField(M);
