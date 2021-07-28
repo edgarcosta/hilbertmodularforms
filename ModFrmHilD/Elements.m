@@ -172,12 +172,12 @@ intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
   return f`Coefficients;
 end intrinsic;
 
-intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
+intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   {}
-  print("Elements.m Coefficients: DEPRECATED, go for the Component");
+
   coeffs := AssociativeArray();
   for bb in Keys(Components(f)) do
-    coeffs[bb] := Coefficients(f);
+    coeffs[bb] := Coefficients(Components(f)[bb]);
   end for;
   return coeffs;
 end intrinsic;
@@ -660,7 +660,7 @@ intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   for nu in Keys(coeffs) do
     coeffs[nu] := F!(c * coeffs[nu]);
   end for;
-  return HMFComp(Parent(f), Component(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDEltComp, c::Any) -> ModFrmHilDEltComp
