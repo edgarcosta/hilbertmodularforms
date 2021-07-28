@@ -115,7 +115,7 @@ intrinsic Weight(f::ModFrmHilDEltComp) -> SeqEnum[RngIntElt]
 end intrinsic;
 
 intrinsic GradedRing(f::ModFrmHilDElt) -> ModFrmHilDGRng
-  {returns parent of parent of f}
+  {return parent of parent of f}
   Mk := Parent(f);
   return Parent(Mk);
 end intrinsic;
@@ -127,23 +127,28 @@ end intrinsic;
 
 
 intrinsic Field(f::ModFrmHilDEltComp) -> FldNum
-  {returns base field of parent of f.}
+  {return base field of parent of f.}
   return GradedRing(f)`Field;
 end intrinsic;
 
 intrinsic Field(f::ModFrmHilDElt) -> FldNum
-  {returns base field of parent of f.}
+  {return base field of parent of f.}
   return GradedRing(f)`Field;
 end intrinsic;
 
 intrinsic Level(f::ModFrmHilDEltComp) -> RngOrdIdl
-  {returns level of parent of f.}
+  {return level of parent of f.}
   return Level(Parent(f));
 end intrinsic;
 
 intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
-  {returns level of parent of f.}
+  {return level of parent of f.}
   return Level(Parent(f));
+end intrinsic;
+
+intrinsic Components(f::ModFrmHilDelt) -> Assoc
+  {return the components of f}
+  return f`Components;
 end intrinsic;
 
 intrinsic MPairs(f::ModFrmHilDElt) -> RngOrdIdl
