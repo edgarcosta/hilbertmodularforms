@@ -204,7 +204,7 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
 	 		end for;
 			newCoeffs[bb]:= idealCoeffs;
 		end for;
-		newHMF := HMF(Mk, newCoeffs);
+      newHMF := HMF(Mk, newCoeffs : CoeffsByIdeal := true);
 	  Append(~NewGens, newHMF);
 	end for;
 	return NewGens;
