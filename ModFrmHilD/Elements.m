@@ -479,7 +479,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
           fbb := Components(f)[bb];
-          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=UnitChar(fbb), prec:=UnitChar(fbb));
+          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=UnitChar(fbb), prec:=Precision(fbb));
         end for;
         return true, HMF(Mk, components);
       else
