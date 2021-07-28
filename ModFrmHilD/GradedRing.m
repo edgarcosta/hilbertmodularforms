@@ -391,6 +391,15 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
+intrinsic MPairs(M::ModFrmHilDGRng) -> Assoc
+  {return MPairs of M}
+  if not assigned M`MPairs then
+  for bb in NarrowClassGroupReps(M)
+    ComputeMPairs(bb, M);
+  end for;
+  return M`Mpairs;
+end if;
+
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
   bbs := NarrowClassGroupReps(M);
