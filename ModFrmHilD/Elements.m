@@ -273,7 +273,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   coeffs::Assoc
                   :
                   unitchar:=[],
-                  CoeffsByIdeal:=false,
+                  CoeffsByIdeals := false,
                   prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component ideal bb, the fourier coefficients
