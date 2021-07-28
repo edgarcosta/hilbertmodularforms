@@ -155,6 +155,11 @@ intrinsic Components(f::ModFrmHilDElt) -> Assoc
   return f`Components;
 end intrinsic;
 
+intrinsic MPairs(f::ModFrmHilDEltComp) -> RngOrdIdl
+  {returns the MPairs of parent of f.}
+  return MPairs(GradedRing(f));
+end intrinsic;
+
 intrinsic MPairs(f::ModFrmHilDElt) -> RngOrdIdl
   {returns the MPairs of parent of f.}
   return MPairs(GradedRing(f));
