@@ -584,7 +584,7 @@ intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   result := [];
   M := Parent(f);
   bbs := NarrowClassGroupReps(M);
-  for b in Basis(CoefficientField(f)) do
+  for b in Basis(BaseRing(f)) do
     Append(~result, Trace(b * f));
   end for;
   return result;
