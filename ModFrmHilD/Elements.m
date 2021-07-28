@@ -457,7 +457,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
       coeffs[nu] := 0;
     end if;
   end for;
-  return HMFComp(Mk, bb, coeffs);
+  return HMFComp(M0, bb, coeffs);
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
@@ -467,7 +467,8 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
   for bb in NarrowClassGroupReps(M) do
     C[bb] := HMFIdentity(Mk, bb);
   end for;
-  return HMFSumComponents(Mk, C);
+  M0 := Parent(C[1*Integers(M)]);
+  return HMFSumComponents(M0, C);
 end intrinsic;
 
 
@@ -883,6 +884,7 @@ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
   {return f^n}
   if n lt 0 then
     f := Inverse(f);
+    n := -n;
   end if;
   g := HMFIdentity(Parent(f));
   if n eq 0 then
