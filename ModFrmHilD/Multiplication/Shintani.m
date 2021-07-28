@@ -243,7 +243,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   {Reduce the element nu to the Shintani domain.}
 
   if nu eq 0 then
-    return Parent(nu)!0, 1;
+    return <Parent(nu)!0, 1>;
   end if;
 
   // Preliminaries
@@ -278,10 +278,10 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   ParallelSort(~slopes, ~nus);
   ParallelSort(~slopes, ~epses);
   if IsShintaniReduced(nus[1]) then
-    return nus[1], epses[1];
+    return <nus[1], epses[1]>;
   else
     assert IsShintaniReduced(nus[2]);
-    return nus[2], epses[2];
+    return <nus[2], epses[2]>;
   end if;
 end intrinsic;
 
