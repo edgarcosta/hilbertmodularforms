@@ -5,7 +5,6 @@ intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
 
   require bb in NarrowClassGroupReps(M): "bb must be among a fixed set of narrow class representatives";
 
-  M`MPairs := AssociativeArray();
   // Preliminaries
   ZF := Integers(M);
   TraceBound := Precision(M);
