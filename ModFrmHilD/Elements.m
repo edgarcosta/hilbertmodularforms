@@ -955,6 +955,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
   M := Parent(Mk);
   N1 := Level(Mk_f);
   N2 := Level(Mk);
+  ZF := Integers(M);
 
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
   require N2 subset N1: "Level of f does not divide level of Mk";
@@ -968,7 +969,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
   idlEltPairs := IdealElementPairs(M)[bb];
   for nn in IdealsByNarrowClassGroup(M)[mmbb] do
     if IsIntegral(nn*mminv) then
-      coeff[nn] := coeff_f[IdealToShintaniRepresentative(M, bb, nn*mminv)];
+      coeff[nn] := coeff_f[IdealToShintaniRepresentative(M, bb, ZF!!(nn*mminv))];
     else
       coeff[nn] := 0;
     end if;
