@@ -238,13 +238,6 @@ intrinsic AllPrimes(M::ModFrmHilDGRng) -> SeqEnum
   return M`AllPrimes;
 end intrinsic;
 
-intrinsic MultiplicationTables(M::ModFrmHilDGRng) -> SeqEnum
-  {}
-  if not assigned M`MultiplicationTables then
-    HMFEquipWithMultiplication(M);
-  end if;
-  return M`MultiplicationTables;
-end intrinsic;
 
 /* Old Code for Trace
 intrinsic HMFPrecomputation(M::ModFrmHilDGRng) -> Assoc
@@ -404,7 +397,7 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   bbs := NarrowClassGroupReps(M);
   M`MPairs := AssociativeArray();
   for bb in bbs do
-    // Populates M`MultiplicationTables[bb]
+    // Populates M`Mpairs[bb]
     ComputeMPairs(bb, M);
   end for;
 end intrinsic;
