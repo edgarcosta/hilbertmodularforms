@@ -258,16 +258,17 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
                   :
-                  unitchar := [], CoeffsByIdeal := false,
+                  unitchar:=[],
+                  CoeffsByIdeal:=false,
                   prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component bb, the fourier coefficients
     in the Shintani cone, and unit character.
     Explicitly, coeffs is an associative array where
-    coeffs[nu] = a_(bb, nu) = a_nn 
+    coeffs[nu] = a_(bb, nu) = a_nn
         where nn = nu*(bb')^-1 and bb' = bb^(-1)*dd_F
-    for all nu in the Shintani cone, unless CoeffsByIdeal is true 
-    (to allow backwards compatibility), in which case 
+    for all nu in the Shintani cone, unless CoeffsByIdeal is true
+    (to allow backwards compatibility), in which case
     coeffs[nn] = a_nn as above (and we assign according to Shintani rep).
   }
   M := Parent(Mk);
@@ -306,7 +307,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
     newcoeffs[nu] := coeffs[nu];
   end for;
-  
+
   f`Coefficients := newcoeffs;
   R := Parent(CoefficientSequence[1]);
   f`BaseRing := R;
@@ -938,10 +939,10 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[
   N1 := Level(Mk_f);
   N2 := Level(Mk);
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
-  require N2 subset N1: "Level of f does not divide level of Mk"; 
-  require N2 subset dd: "Ideal does not divide level of Mk"; 
+  require N2 subset N1: "Level of f does not divide level of Mk";
+  require N2 subset dd: "Ideal does not divide level of Mk";
   bbs := NarrowClassGroupReps(M);
-  coeff := AssociativeArray(); 
+  coeff := AssociativeArray();
   for bb in bbs do
     Rep := NarrowClassRepresentative(M,dd*bb);
     Idealsbb := IdealsByNarrowClassGroup(M_f)[bb];
@@ -950,8 +951,8 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[
     for nn in IdealsRep do
       if (nn/dd) in Idealsbb then
         coeff[Rep][nn] := coeff_f[bb][(nn/dd)];
-      else 
-        coeff[Rep][nn] := 0; 
+      else
+        coeff[Rep][nn] := 0;
       end if;
     end for;
   end for;
@@ -966,7 +967,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   N2 := Level(Mk);
 
   IncludedForms := [];
-  for dd in Divisors(N2/N1) do 
+  for dd in Divisors(N2/N1) do
     Append(~IncludedForms, Inclusion(f,Mk,dd));
   end for;
   return IncludedForms;
@@ -982,7 +983,7 @@ intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
   N1 := Level(Mk_f);
   N2 := Level(Mk);
   absTraceBound:=Precision(Parent(Mk));
-  for dd in Divisors(N2/N1) do 
+  for dd in Divisors(N2/N1) do
     for nn in AllIdeals(M) do
       if (not nn/dd in AllIdeals(M)) and IsIntegral(nn/dd) then
         nu:=IdealToShintaniRepresentative(M, nn/dd);
@@ -999,10 +1000,10 @@ end intrinsic;
 
 
 /*
-    end for; 
+    end for;
     for nn in Idealsbb do
       if nn*dd in IdealsRep then
-        coeff[Rep][nn*dd] := coeff_f[bb][nn]; // Change non-zero coefficients  
+        coeff[Rep][nn*dd] := coeff_f[bb][nn]; // Change non-zero coefficients
       end if;
     end for;
   end for;
@@ -1020,7 +1021,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   N1 := Level(Mk_f);
   N2 := Level(Mk);
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
-  require N2 subset N1: "Level of f does not divide level of Mk"; 
+  require N2 subset N1: "Level of f does not divide level of Mk";
   bbs := NarrowClassGroupReps(M);
   mp := NarrowClassGroupMap(M);
   IncludedForms := [];
@@ -1047,14 +1048,14 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: swap map //////////
 
-intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt 
-   {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)} 
+intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
+   {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
    Mk := Parent(f);
    M :=Parent(Mk);
    F:=BaseField(M);
    ZF:=Integers(F);
    bbs := NarrowClassGroupReps(M);
-   coeff := AssociativeArray(); 
+   coeff := AssociativeArray();
    for bb in bbs do
     coeff[bb]:=AssociativeArray();
     Ideals := IdealsByNarrowClassGroup(M)[bb];
@@ -1066,6 +1067,6 @@ intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
       coeff[bb][I]:=x;
       end for;
      end for;
-   g:=HMFSumComponents(Mk, coeff); 
-   return g; 
- end intrinsic; 
+   g:=HMFSumComponents(Mk, coeff);
+   return g;
+ end intrinsic;

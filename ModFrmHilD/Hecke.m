@@ -75,7 +75,7 @@
       end if;
     end for;
   //return coeffsTnnf, newPrec;
-    g:=HMF(Mk, coeffsTnnf);
+    g:=HMF(Mk, coeffsTnnf : CoeffsByIdeal:=true);
     g`Precision:=newPrec;
   return g;      
  end intrinsic;
@@ -101,6 +101,7 @@
 //intrinsic Intersection(Spaces::SeqEnum[SeqEnum[ModFrmHilDElt]]) -> SeqEnum[ModFrmHilDElt]
 intrinsic Intersection(Spaces::List) -> List
   {Given a list of bases for spaces of forms, find a basis for the intersection of those spaces}
+  error "Not implemented";
   //Assuming all forms are living in the same spaces, returns parameters associated to them
   M := Parent(Spaces[1][1]);
   N := Level(Spaces[1][1]);
@@ -114,7 +115,9 @@ intrinsic Intersection(Spaces::List) -> List
   //The intersection of all the spaces in A1
   intersection := &meet A1;
   B := Basis(intersection);
-  return [*HMF(M,N,k,Eltseq(b)) : b in B*]; //We want to take the intersection of the spaces in A1
+  // Edgar and JV: We are confused with the following line.
+  // Shoult it be M!b? or just b?
+  return [*HMF(M,Coefficients(b)) : b in B*]; //We want to take the intersection of the spaces in A1
   //Converts W back to Hilbert modular forms
 end intrinsic;
 
