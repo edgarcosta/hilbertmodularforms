@@ -709,10 +709,10 @@ intrinsic '+'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
   coeffs_h := AssociativeArray(); // h := f+g
-  for nu in ShintaniRepsUpToTrace(M, ComponentIdeal(f), prec) do
+  for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     coeffs_h[nu] := coeffs_f[nu] + coeffs_g[nu];
   end for;
-  return HMFComp(Parent(f), ComponentIdeal(f), coeffs_h : unitchar:=unitchar, prec:=prec);
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs_h : unitchar:=UnitChar(f), prec:=prec);
 end intrinsic;
 
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
