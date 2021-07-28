@@ -653,7 +653,7 @@ end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {scale f by a scalar c.}
-  require c in IsCoercible(c, BaseRing(f)): "the scalar must be coercible into the base ring";
+  require IsCoercible(BaseRing(f), c): "the scalar must be coercible into the base ring";
   F := BaseRing(f);
   new_coeffs := AssociativeArray();
   coeffs := Coefficients(f);
