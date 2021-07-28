@@ -751,6 +751,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
+  M := Parent(Parent(f));
   mU := TotallyPositiveUnitGroupMap(M);
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     c := F!0;
@@ -763,7 +764,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
     coeffs_h[nu] := c;
   end for;
   A := Domain(char_f);
-  unitchar := [char_f(A.i)*char_g(A.i) : i in [1..Generators(A)]];
+  unitchar := [char_f(A.i)*char_g(A.i) : i in [1..#Generators(A)]];
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)] ],
