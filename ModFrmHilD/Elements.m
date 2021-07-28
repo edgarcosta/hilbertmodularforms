@@ -294,7 +294,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     idlEltPairs := IdealElementPairs(M);
         // consists of a sequence of [* nn, nu *]
     coeffsnu := AssociativeArray();
-    for pair in IdealElementPairs do
+    for pair in IdealElementPairs(M)[bb] do
       coeffsnu[pair[2]] := coeffs[pair[1]];
     end for;
 
