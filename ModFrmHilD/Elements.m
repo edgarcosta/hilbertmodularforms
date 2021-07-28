@@ -316,9 +316,9 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     f`UnitChar := unitchar;
   else
     if IsZero(unitchar) then // IsZero([]) is true
-      unitchar := [1 : i in Generators(TotallyPositiveUnitGroup(M))];
+      unitchar := [1 : i in Generators(A)];
     end if;
-    f`UnitChar := hom<TotallyPositiveUnitGroup(M) -> R | unitchar>;
+    f`UnitChar := map<A -> R | a :-> &*[unitchar[i]^a[i] : i in [1..#unitchar]]>;
   end if;
   return f;
 end intrinsic;
