@@ -390,7 +390,7 @@ intrinsic MPairs(M::ModFrmHilDGRng) -> Assoc
     HMFEquipWithMultiplication(M);
   end if;
   return M`Mpairs;
-end if;
+end intrinsic;
 
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
