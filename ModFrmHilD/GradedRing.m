@@ -389,7 +389,7 @@ intrinsic MPairs(M::ModFrmHilDGRng) -> Assoc
   if not assigned M`MPairs then
     HMFEquipWithMultiplication(M);
   end if;
-  return M`Mpairs;
+  return M`MPairs;
 end intrinsic;
 
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
