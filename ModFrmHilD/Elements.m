@@ -343,7 +343,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     if IsZero(unitchar) then // IsZero([]) is true
       unitchar := [1 : i in Generators(A)];
     end if;
-    f`UnitChar := map<A -> R | a :-> &*[unitchar[i]^a[i] : i in [1..#unitchar]]>;
+    f`UnitChar := map<A -> R | a :-> &*[unitchar[i]^Eltseq(a)[i] : i in [1..#unitchar]]>;
   end if;
   return f;
 end intrinsic;
