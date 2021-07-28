@@ -440,7 +440,7 @@ intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
   return &and[IsZero(Components(f)[bb]) : bb in Keys(Components(f))];
 end intrinsic;
 
-intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngIdl) -> ModFrmHilDEltComp
+intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   {create one ModHilFrmDElt of weight zero.}
   M := Parent(Mk); chi := Character(Mk); N := Level(Mk); k := [0 : i in Weight(Mk)];
   M0 := HMFSpace(M, N, k, chi);
