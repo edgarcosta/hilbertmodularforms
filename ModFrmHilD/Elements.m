@@ -499,14 +499,17 @@ end intrinsic;
 
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   {}
+
+  print "Checking coercibility of", Mk, f;
+
   if Type(f) in [ModFrmHilDElt, ModFrmHilDEltComp] then
-    return false;
+    return false, "f not of type ModFrmHilDElt or ModFrmHilDEltComp";
   else // f is an HMF so has a chance to be coercible
     M := Parent(Mk); // graded ring associated to Mk
     Mkf := Parent(f); // space of HMFs associated to f
     Mf := Parent(Mkf); // graded ring associated to f
     if M ne Mf then
-      return false;
+      return false, "f does not belong to the same graded ring as Mk";
     else // at least the graded rings match up
       test1 := Weight(Mk) eq Weight(Mkf);
       test2 := Level(Mk) eq Level(Mkf);
@@ -523,7 +526,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
         end for;
         return true, HMFSumComponents(Mk, components);
       else
-        return false;
+        return false, "I tried and failed to coerce";
       end if;
     end if;
   end if;
