@@ -16,7 +16,7 @@ declare attributes ModFrmHilDEltComp:
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent,
-  Components; // Assoc: bb --> f_bb
+  Components; // Assoc: bb --> f_bb, each f_bb of type ModFrmHilDEltComp
 
 
 
@@ -273,7 +273,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   require bb in bbs: "bb should be one of the representatives of the Narrow class group";
 
   // make the HMF
-  f := ModFrmHilDEltInitialize();
+  f := ModFrmHilDEltCompInitialize();
 
   if prec eq 0 then
     f`Precision := Precision(M);
@@ -360,7 +360,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   end if;
   require Keys(unitchar) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-    f`Components[bb] := HMF(M, bb, coeffs[bb]: unitchar:=unitchar[bb], prec:=prec);
+    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: unitchar:=unitchar[bb], prec:=prec);
   end for;
   return f;
 end intrinsic;
