@@ -40,8 +40,16 @@ declare attributes ModFrmHilDGRng:
   // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
   Spaces,
   TotallyPositiveUnitGroup, // the group of totally positive units of the base as an abstract group
-  TotallyPositiveUnitGroupMap // map from abstract totally positive unit group into R^\times_{>0}
+  TotallyPositiveUnitGroupMap, // map from abstract totally positive unit group into R^\times_{>0}
   ;
+
+// save fundamental unit
+declare attributes FldNum:
+  FundamentalUnit;
+
+declare attributes FldQuad:
+  FundamentalUnit;
+
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
 
