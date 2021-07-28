@@ -73,9 +73,6 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDE
   return EB;
 end intrinsic; 
 
-
-
-
 intrinsic Basis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
 
@@ -90,26 +87,24 @@ intrinsic Basis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   return EB cat CB;
 end intrinsic;
 
-
 intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt] 
-   {returns a basis for the Galois invariant subspace} 
-   B:=Basis(Mk); 
-   InvariantGenerators:=[]; 
-   for x in B do 
-     Append(~InvariantGenerators, 1/2*(x+Swap(x))); 
-   end for; 
-   InvariantBasis:=[]; 
-   for x in InvariantGenerators do 
-     if #LinearDependence(InvariantBasis cat [x]) eq 0 then 
-       Append(~InvariantBasis, x); 
-     end if; 
-   end for; 
-   return InvariantBasis; 
- end intrinsic; 
+  {returns a basis for the Galois invariant subspace} 
 
+  B := Basis(Mk); 
+  InvariantGenerators:=[]; 
+  for x in B do 
+    Append(~InvariantGenerators, 1/2*(x+Swap(x))); 
+  end for; 
+  InvariantBasis:=[]; 
+  for x in InvariantGenerators do 
+    if #LinearDependence(InvariantBasis cat [x]) eq 0 then 
+      Append(~InvariantBasis, x); 
+    end if; 
+  end for; 
+  return InvariantBasis; 
+end intrinsic; 
 
-
- intrinsic ComponentBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic ComponentBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns a Basis for Mk of forms that are only supported on one component}
   // Preliminaries
   M := Parent(Mk);
@@ -127,8 +122,6 @@ intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   end for;
   return NewBasis;
 end intrinsic;
-
-
 
 intrinsic SpecifiedComponentBasis(Mk::ModFrmHilD, bb::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   {returns a basis of forms that are only supported on a specified component bb}
