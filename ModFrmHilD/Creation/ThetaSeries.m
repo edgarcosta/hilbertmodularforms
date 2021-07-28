@@ -105,5 +105,5 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   end for;
   w := Integers()! (NumberOfRows(GM)/2);
   weight := [w : i in [1..Degree(K)]];
-  return HMF(HMFSpace(M, Level(K, GM), weight), coeffs);
+  return HMF(HMFSpace(M, Level(K, GM), weight), coeffs : CoefficientsByIdeal := true);
 end intrinsic;

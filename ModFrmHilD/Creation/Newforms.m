@@ -67,7 +67,7 @@ intrinsic NewformToHMF(Mk::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
       CoeffsArray[bb][nn] := coeffs[nn];
     end for;
   end for;
-return HMF(Mk, CoeffsArray);
+return HMF(Mk, CoeffsArray : CoeffsByIdeal := true);
 end intrinsic;
 
 
