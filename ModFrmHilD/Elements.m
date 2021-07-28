@@ -751,13 +751,14 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
+  mU := TotallyPositiveUnitGroupMap(M);
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     c := F!0;
     for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
       xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
-      c +:= F!char_f(epsilon1) * F!coeffs_f[smu1] *  F!char_f(epsilon2) * F!coeffs_g[smu2];
+      c +:= F!char_f(epsilon1@@mU) * F!coeffs_f[smu1] *  F!char_f(epsilon2@@mU) * F!coeffs_g[smu2];
     end for;
     coeffs_h[nu] := c;
   end for;
