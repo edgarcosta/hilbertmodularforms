@@ -279,7 +279,6 @@ intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
   return coeffs;
 end intrinsic;
 
-// TODO: rename unitchar -> UnitChar and prec to Precision
 intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
