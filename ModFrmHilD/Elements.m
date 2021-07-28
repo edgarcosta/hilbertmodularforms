@@ -183,9 +183,20 @@ intrinsic CoefficientField(f::ModFrmHilDElt) -> Any
   return BaseRing(f);
 end intrinsic;
 
-intrinsic BaseRing(f::ModFrmHilDElt) -> Any
+intrinsic BaseRing(f::ModFrmHilDEltComp) -> Any
   {}
   return f`BaseRing;
+end intrinsic;
+
+intrinsic BaseRing(f::ModFrmHilDElt) -> Any
+  {}
+
+  ZF := Integers(GradedRing(f));
+  R := BaseRing(Components(f)[1*ZF]);
+  for fbb in Components(f) do
+    require BaseRing(fbb) eq R : "Need all base rings of all components to be equal";
+  end for;
+  return R;
 end intrinsic;
 
 intrinsic NumberOfCoefficients(f::ModFrmHilDElt) -> Any
@@ -600,7 +611,7 @@ intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
   result := [];
   M := Parent(f);
-  bbs := NarrowClassGroupReps(M);
+  bbs := NarrowClassGroupReps(Parent(M));
   for b in Basis(BaseRing(f)) do
     Append(~result, Trace(b * f));
   end for;
