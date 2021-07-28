@@ -1,5 +1,3 @@
-
-
 intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
   {sets M`MultiplicationTables[bb]  list (assoc array) of [nu, [[nu1,nu2],...] ] such that nu1+nu2 = nu up to trace bound Precision(M).}
   require bb in NarrowClassGroupReps(M): "bb must be a represetative of a narrow class";
@@ -62,5 +60,8 @@ intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
   end for;
 end intrinsic;
 
-
-
+intrinsic ConvertIdealArrayToShintaniArray(M::ModFrmHilDGRng, bb::RngOrdFracIdl, coeffs::Assoc) -> Assoc
+  {}
+  coeffs_nu := AssociativeArray();
+  nus := ShintaniReps(M);
+end intrinsic;

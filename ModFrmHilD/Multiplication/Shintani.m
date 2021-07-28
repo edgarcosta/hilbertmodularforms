@@ -355,7 +355,7 @@ end intrinsic;
 
 
 // Conversion : Shintani elements < = > Ideals
-// Converts pairs (bb,nu) <-> (bb,n) based on the set of representatives bb for Cl^+(F)
+// Converts pairs (bb,nu) <-> (bb,nn) based on the set of representatives bb for Cl^+(F)
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::RngOrdIdl) -> ModFrmHilDElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   F := BaseField(M);
@@ -372,7 +372,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
 end intrinsic;
 
 // Conversion : Shintani elements < = > Ideals
-// Converts nu <-> n, without needing bb as input 
+// Converts nu <-> nn, without needing bb as input 
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> RngOrdElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   F := BaseField(M);
