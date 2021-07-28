@@ -975,7 +975,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
     end if;
   end for;
 
-  return HMFComp(Mk, mmbb, coeff : CoeffsByIdeals := true, unitchar := UnitChar(f), Precision := Precision(f));
+  return HMFComp(Mk, mmbb, coeff : CoeffsByIdeals := true, unitchar := UnitChar(f), prec := Precision(f));
 end intrinsic;
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
