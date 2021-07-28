@@ -785,7 +785,7 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)]],
-                    Character(f)*Character(g));
+                    Character(Parent(f))*Character(Parent(g)));
   return HMFSumComponents(Space, comp);
 end intrinsic;
 
