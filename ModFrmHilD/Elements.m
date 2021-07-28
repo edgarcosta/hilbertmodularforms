@@ -33,8 +33,6 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
     N := Level(Mk);
     if level ne "Minimal" then
       printf "Component of Hilbert modular form expansion with precision %o.\n", working_prec;
-      printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
-      printf "Weight: %o\n", k;
       printf "Parent: %o\n", Mk;
     end if;
     bb := ComponentIdeal(f);
@@ -44,7 +42,7 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
     count := 0;
     for nu in ShintaniReps(M)[bb] do
       t := Trace(nu);
-      printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs_bb[nu];
+      printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs[nu];
       count +:= 1;
       if count ge num_coeffs then
         printf "\n...";
@@ -66,14 +64,9 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     M := Parent(Mk);
     bbs := NarrowClassGroupReps(M);
     k := Weight(Mk);
-    prec := Precision(M);
-    working_prec := Precision(f);
-    coeffs := Coefficients(f);
     N := Level(Mk);
     if level ne "Minimal" then
-      printf "Hilbert modular form expansion with precision %o.\n", working_prec;
-      printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
-      printf "Weight: %o\n", k;
+      printf "Hilbert modular form expansion: ";
       printf "Parent: %o\n", Mk;
     end if;
     for bb in bbs do
