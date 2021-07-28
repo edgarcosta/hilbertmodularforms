@@ -153,7 +153,7 @@ end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, bb::RngOrdIdl, nu::RngElt) -> Any
   {}
-  return Coefficients(Components(f)[rep])[nu];
+  return Coefficients(Components(f)[bb])[nu];
 end intrinsic;
 
 
@@ -271,13 +271,6 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   bbs := NarrowClassGroupReps(M);
   CoefficientSequence := [**]; // to assert all coefficients have the same parent
   require bb in bbs: "bb should be one of the representatives of the Narrow class group";
-  newcoeffs := AssociativeArray();
-  for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
-    require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
-    Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
-    newcoeffs[nu] := coeffs[nu];
-  end for;
-  CoefficientSequence := [i : i in CoefficientSequence];
 
   // make the HMF
   f := ModFrmHilDEltInitialize();
@@ -290,6 +283,15 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   end if;
 
   f`Parent := Mk;
+
+  newcoeffs := AssociativeArray();
+  for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
+    require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
+    Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
+    newcoeffs[nu] := coeffs[nu];
+  end for;
+  CoefficientSequence := [i : i in CoefficientSequence];
+
   f`Coefficients := newcoeffs;
   R := Parent(CoefficientSequence[1]);
   f`BaseRing := R;
@@ -312,7 +314,7 @@ intrinsic HMF(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
-  require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
+  require Keys(components) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
   f := ModFrmHilDEltInitialize();
   f`Parent := Mk;
@@ -477,7 +479,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
           fbb := Components(f)[bb];
-          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=Unitchar(fbb), prec:=Unitchar(fbb));
+          components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=UnitChar(fbb), prec:=UnitChar(fbb));
         end for;
         return true, HMF(Mk, components);
       else
