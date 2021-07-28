@@ -16,7 +16,7 @@ declare attributes ModFrmHilDEltComp:
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent,
-  Components; // Assoc: bb --> f_bb
+  Components; // Assoc: bb --> f_bb, each f_bb of type ModFrmHilDEltComp
 
 
 
