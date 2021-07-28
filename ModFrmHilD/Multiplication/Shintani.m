@@ -133,6 +133,7 @@ function AssignFundamentalUnitTotPos(F);
     // eps1*eps2 = Nm(eps) = 1
     eps := 1/eps;
   end if; 
+  eps := Integers(F)!eps;
   F`FundamentalUnitTotPos := eps;
   return eps;
 end function;  
@@ -260,7 +261,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   end if;
 
   eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
-  slope_eps := Slope(ZF!eps);
+  slope_eps := Slope(eps);
   slope_nu := Slope(ZF!nu);
 
   RR := RealField(100);
