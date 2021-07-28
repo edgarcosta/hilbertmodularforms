@@ -20,7 +20,6 @@ E4 := EisensteinSeries(M4, eta, psi);
 assert E2*E2 eq E4;
 
 E8 := EisensteinSeries(M8, eta, psi);
-// E8 := (1/Coefficients(E8)[1])*E8;
 
 time cusp_forms8 := CuspFormBasis(M8);
 
@@ -29,11 +28,8 @@ g_normalized := (1/Coefficients(g)[N][N])*g;
 assert g_normalized eq cusp_forms8[1];
 
 E6 := EisensteinSeries(M6, eta, psi);
-// E6 := (1/Coefficients(E6)[1])*E6;
 time cusp_forms6 := CuspFormBasis(M6);
 
 f := E6-(E2*E4);
 f_normalized := (1/Coefficients(f)[N][N])*f;
 assert f_normalized eq cusp_forms6[1];
-
-// TODO Hirzebruch
