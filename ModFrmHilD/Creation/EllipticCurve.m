@@ -48,7 +48,7 @@ intrinsic EllipticCurveToHMF(M::ModFrmHilDGRng, E::CrvEll) -> ModFrmHilElt
       		CoeffsArray[bb][nn] := coeffs[nn];
     	end for;
   	end for;
-	return HMF(Mk, CoeffsArray : CoeffsByIdeal := true);
+	return HMF(Mk, CoeffsArray : CoeffsByIdeals := true);
 end intrinsic;
 
 

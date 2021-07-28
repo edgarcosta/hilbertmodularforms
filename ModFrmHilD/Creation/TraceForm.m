@@ -13,7 +13,7 @@ intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
       coeffs[bb][I] := Q!Trace(Mk,I);
     end for;
   end for;
-  elt := HMF(Mk, coeffs: CoeffsByIdeal:=true);
+  elt := HMF(Mk, coeffs: CoeffsByIdeals:=true);
   return elt;
 end intrinsic;
 
@@ -31,7 +31,7 @@ intrinsic STraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
       coeffs[bb][I] := Q!STrace(Mk,I);
     end for;
   end for;
-  elt := HMF(Mk, coeffs: CoeffsByIdeal:=true);
+  elt := HMF(Mk, coeffs: CoeffsByIdeals:=true);
   return elt;
 end intrinsic;
 
