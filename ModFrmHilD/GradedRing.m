@@ -154,7 +154,7 @@ intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
   return M`DedekindZetatwo;
 end intrinsic;
 
-intrinsic places(M::ModFrmHilDGRng) -> Any
+intrinsic Places(M::ModFrmHilDGRng) -> Any
   {}
   if not assigned M`places then
     F := BaseField(M);
