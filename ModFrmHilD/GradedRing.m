@@ -345,6 +345,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // Ideals
   M`IdealsByNarrowClassGroup := AssociativeArray();
+/*
+  // JV: We probably still want some version of this, but only for user interface
   M`IdealElementPairs := AssociativeArray();
   for bb in M`NarrowClassGroupReps do
     IdealElementPairsList := [];
@@ -366,6 +368,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   norms := [CorrectNorm(I) : I in all_ideals];
   ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
+*/
 
   M`Spaces := AssociativeArray();
   return M;
@@ -394,8 +397,8 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   bbs := NarrowClassGroupReps(M);
   M`MultiplicationTables := AssociativeArray();
   for bb in bbs do
-     // Populates M`MultiplicationTables[bb]
-     GetIndexPairs(bb, M);
+    // Populates M`MultiplicationTables[bb]
+    ComputeMPairs(bb, M);
   end for;
 end intrinsic;
 
