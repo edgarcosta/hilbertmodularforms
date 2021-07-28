@@ -394,9 +394,7 @@ end intrinsic;
 intrinsic MPairs(M::ModFrmHilDGRng) -> Assoc
   {return MPairs of M}
   if not assigned M`MPairs then
-    for bb in NarrowClassGroupReps(M) do
-      ComputeMPairs(bb, M);
-    end for;
+    HMFEquipWithMultiplication(M);
   end if;
   return M`Mpairs;
 end if;
