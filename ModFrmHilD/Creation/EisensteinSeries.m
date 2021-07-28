@@ -2,79 +2,79 @@
 // TODO fix normalization at the end
 // Eisenstein Series have only been implemented for integral parallel weight 
 intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> ModFrmHilDElt 
-  	{Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).} 
-    M := Parent(Mk);
-    k := Weight(Mk);
-    N := Level(Mk);
-  	Cl := NarrowClassGroup(M); 
-   	mp := NarrowClassGroupMap(M); 
-   	assert #SequenceToSet(k) eq 1; // Checking if parallel weight 
+  {Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).} 
+  M := Parent(Mk);
+  k := Weight(Mk);
+  N := Level(Mk);
+  Cl := NarrowClassGroup(M); 
+  mp := NarrowClassGroupMap(M); 
+  assert #SequenceToSet(k) eq 1; // Checking if parallel weight 
 
-   	X := Parent(eta); Y := Parent(psi);
-   	CoefficientField := X`TargetRing; // where the character values live 
-   		
-   	n := Degree(BaseField(M));   	 
-   	aa := Modulus(eta); // aa := Conductor(eta); 
-   	bb := Modulus(psi); // bb := Conductor(psi);
-    assert aa eq bb; // this should be aa^2 = N;
-   	Haa := HeckeCharacterGroup(aa); 
-   	Hbb := HeckeCharacterGroup(bb); 
+  X := Parent(eta); Y := Parent(psi);
+  CoefficientField := X`TargetRing; // where the character values live 
+      
+  n := Degree(BaseField(M));   	 
+  aa := Modulus(eta); // aa := Conductor(eta); 
+  bb := Modulus(psi); // bb := Conductor(psi);
+  assert aa eq bb; // this should be aa^2 = N;
+  Haa := HeckeCharacterGroup(aa); 
+  Hbb := HeckeCharacterGroup(bb); 
 
-    nus := ShintaniReps(M);
-   	coeffs := AssociativeArray();
-   	bbs := NarrowClassGroupReps(M);
-   	ZF := Integers(M);
-   	for tt in bbs do 
-   		coeffs[tt] := AssociativeArray();
-    	// a0 term for tt
-   		// k > 1
-    	if k[1] ge 2 then 
-    		if aa eq 1*ZF then 
-       			prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-       			coeffs[tt][ZF!0] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, Mk, prim); 
-     		else 
-       			coeffs[tt][ZF!0] := 0; 
-     		end if; 
-     	// k = 1
-   		elif k[1] eq 1 then 
-     	  if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
-       		prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-            coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M,Mk, prim); 
-     	  elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
-       		prim := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
-            coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, Mk, prim); 
-     	  elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
-       		prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
-       		prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
-            coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Mk, prim1) + (psi^(-1))(tt)*LValue_Recognized(M, Mk, prim2)); 
-     	  elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
-       		coeffs[1] := 0; 
-     	  end if;
+  nus := ShintaniReps(M);
+  coeffs := AssociativeArray();
+  bbs := NarrowClassGroupReps(M);
+  ZF := Integers(M);
+  for tt in bbs do 
+    coeffs[tt] := AssociativeArray();
+    // a0 term for tt
+    // k > 1
+    if k[1] ge 2 then 
+      if aa eq 1*ZF then 
+        prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
+        coeffs[tt][0*ZF] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, Mk, prim); 
+      else 
+        coeffs[tt][0*ZF] := 0; 
       end if; 
-   		// All other coefficients
-   		for nn in IdealsByNarrowClassGroup(M)[tt] do 
-        if nn ne 0*ZF then
-    		  sum := 0; 
-     		  for rr in Divisors(nn) do 
-       			sum +:= eta(nn/rr)*psi(rr)*Norm(rr^(k[1]-1)); 
-     		  end for; 
-     		  coeffs[tt][nn] := sum; 
-        end if;
-   		end for; 
-      // Makes coefficients rational
-   		if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
-        for nn in IdealsByNarrowClassGroup(M)[tt] do
-    		  coeffs[tt][nn] := Rationals()!coeffs[tt][nn]; 
-        end for;
+    // k = 1
+    elif k[1] eq 1 then 
+      if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
+        prim := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
+        coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M,Mk, prim); 
+      elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
+        prim := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
+        coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, Mk, prim); 
+      elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then 
+        prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1)); 
+        prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta); 
+        coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Mk, prim1) + (psi^(-1))(tt)*LValue_Recognized(M, Mk, prim2)); 
+      elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then 
+        coeffs[1] := 0; 
       end if;
-   	end for;
-    E := HMF(Mk, coeffs : CoeffsByIdeal := true);
-    // Normalized coefficients here. 
-    if not (coeffs[bbs[1]][0*ZF] in [0,1]) then 
-      E := (1/coeffs[bbs[1]][0*ZF]) * E;
     end if; 
-   	return E;
- end intrinsic; 
+    // All other coefficients
+    for nn in IdealsByNarrowClassGroup(M)[tt] do 
+      if nn ne 0*ZF then
+        sum := 0; 
+        for rr in Divisors(nn) do 
+          sum +:= eta(nn/rr)*psi(rr)*Norm(rr^(k[1]-1)); 
+        end for; 
+        coeffs[tt][nn] := sum; 
+      end if;
+    end for; 
+    // Makes coefficients rational
+    if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
+      for nn in IdealsByNarrowClassGroup(M)[tt] do
+        coeffs[tt][nn] := Rationals()!coeffs[tt][nn]; 
+      end for;
+    end if;
+  end for;
+  E := HMF(Mk, coeffs : CoeffsByIdeal:=true);
+  // Normalized coefficients here. 
+  if not (coeffs[bbs[1]][0*ZF] in [0,1]) then 
+    E := (1/coeffs[bbs[1]][0*ZF]) * E;
+  end if; 
+  return E;
+end intrinsic; 
 
 // TODO finish this and use in EisensteinSeries intrinsic
 

@@ -72,3 +72,9 @@ intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
       M`MPairs[bb][nu] := [[ReduceShintaniMinimizeTrace(i) : i in pair] : pair in pairs[nu]];
   end for;
 end intrinsic;
+
+intrinsic ConvertIdealArrayToShintaniArray(M::ModFrmHilDGRng, bb::RngOrdFracIdl, coeffs::Assoc) -> Assoc
+  {}
+  coeffs_nu := AssociativeArray();
+  nus := ShintaniReps(M);
+end intrinsic;
