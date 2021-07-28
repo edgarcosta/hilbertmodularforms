@@ -11,7 +11,7 @@ declare attributes ModFrmHilDEltComp:
   Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where nu in Shintani cone
   BaseRing, // Rng: where the coefficients live (does this depend on bb?)
   UnitChar, // Hom: TotallyPositiveUnitGroup(Parent(Parent)) -> BaseRing
-  Component; // RngOrdIdl, representative of the narrow class element
+  ComponentIdeal; // RngOrdIdl, representative of the narrow class element
 
 declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
@@ -33,18 +33,16 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
     N := Level(Mk);
     if level ne "Minimal" then
       printf "Component of Hilbert modular form expansion with precision %o.\n", working_prec;
-      printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
-      printf "Weight: %o\n", k;
       printf "Parent: %o\n", Mk;
     end if;
-    bb := Component(f);
-    printf "Coefficients for ideal class bb = %o\n", bb;
+    bb := ComponentIdeal(f);
+    printf "Coefficients for component ideal class bb = %o\n", bb;
     coeffs_bb := Coefficients(f);
     printf "\n\t(Trace, nu)  |--->   a_nu";
     count := 0;
     for nu in ShintaniReps(M)[bb] do
       t := Trace(nu);
-      printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs_bb[nu];
+      printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs[nu];
       count +:= 1;
       if count ge num_coeffs then
         printf "\n...";
@@ -66,14 +64,9 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     M := Parent(Mk);
     bbs := NarrowClassGroupReps(M);
     k := Weight(Mk);
-    prec := Precision(M);
-    working_prec := Precision(f);
-    coeffs := Coefficients(f);
     N := Level(Mk);
     if level ne "Minimal" then
-      printf "Hilbert modular form expansion with precision %o.\n", working_prec;
-      printf "Level: (Norm, Ideal) = (%o, %o)\n", Norm(N),  Generators(N);
-      printf "Weight: %o\n", k;
+      printf "Hilbert modular form expansion: ";
       printf "Parent: %o\n", Mk;
     end if;
     for bb in bbs do
@@ -115,7 +108,7 @@ intrinsic Weight(f::ModFrmHilDEltComp) -> SeqEnum[RngIntElt]
 end intrinsic;
 
 intrinsic GradedRing(f::ModFrmHilDElt) -> ModFrmHilDGRng
-  {returns parent of parent of f}
+  {return parent of parent of f}
   Mk := Parent(f);
   return Parent(Mk);
 end intrinsic;
@@ -127,23 +120,33 @@ end intrinsic;
 
 
 intrinsic Field(f::ModFrmHilDEltComp) -> FldNum
-  {returns base field of parent of f.}
+  {return base field of parent of f.}
   return GradedRing(f)`Field;
 end intrinsic;
 
 intrinsic Field(f::ModFrmHilDElt) -> FldNum
-  {returns base field of parent of f.}
+  {return base field of parent of f.}
   return GradedRing(f)`Field;
 end intrinsic;
 
 intrinsic Level(f::ModFrmHilDEltComp) -> RngOrdIdl
-  {returns level of parent of f.}
+  {return level of parent of f.}
   return Level(Parent(f));
 end intrinsic;
 
 intrinsic Level(f::ModFrmHilDElt) -> RngOrdIdl
-  {returns level of parent of f.}
+  {return level of parent of f.}
   return Level(Parent(f));
+end intrinsic;
+
+intrinsic ComponentIdeal(f::ModFrmHilDEltComp) -> RngOrdIdl
+  {return the component of f}
+  return f`ComponentIdeal;
+end intrinsic;
+
+intrinsic Components(f::ModFrmHilDElt) -> Assoc
+  {return the components of f}
+  return f`Components;
 end intrinsic;
 
 intrinsic MPairs(f::ModFrmHilDElt) -> RngOrdIdl
@@ -167,12 +170,12 @@ intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
   return f`Coefficients;
 end intrinsic;
 
-intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
+intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   {}
-  print("Elements.m Coefficients: DEPRECATED, go for the Component");
+
   coeffs := AssociativeArray();
   for bb in Keys(Components(f)) do
-    coeffs[bb] := Coefficients(f);
+    coeffs[bb] := Coefficients(Components(f)[bb]);
   end for;
   return coeffs;
 end intrinsic;
@@ -183,9 +186,20 @@ intrinsic CoefficientField(f::ModFrmHilDElt) -> Any
   return BaseRing(f);
 end intrinsic;
 
-intrinsic BaseRing(f::ModFrmHilDElt) -> Any
+intrinsic BaseRing(f::ModFrmHilDEltComp) -> Any
   {}
   return f`BaseRing;
+end intrinsic;
+
+intrinsic BaseRing(f::ModFrmHilDElt) -> Any
+  {}
+
+  ZF := Integers(GradedRing(f));
+  R := BaseRing(Components(f)[1*ZF]);
+  for fbb in Components(f) do
+    require BaseRing(fbb) eq R : "Need all base rings of all components to be equal";
+  end for;
+  return R;
 end intrinsic;
 
 intrinsic NumberOfCoefficients(f::ModFrmHilDElt) -> Any
@@ -214,8 +228,8 @@ intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
   return f;
 end intrinsic;
 
-intrinsic ModFrmHilDEltCompCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {new instance of ModFrmHilDElt.}
+intrinsic ModFrmHilDEltCompCopy(f::ModFrmHilDEltComp) -> ModFrmHilDElt
+  {new instance of ModFrmHilDEltComp.}
   g := ModFrmHilDEltCompInitialize();
   for attr in GetAttributes(Type(f)) do
     if assigned f``attr then
@@ -262,7 +276,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   CoeffsByIdeal:=false,
                   prec := 0) -> ModFrmHilDEltComp
   {
-    Return the ModFrmHilDEltComp with parent Mk, component bb, the fourier coefficients
+    Return the ModFrmHilDEltComp with parent Mk, component ideal bb, the fourier coefficients
     in the Shintani cone, and unit character.
     Explicitly, coeffs is an associative array where
     coeffs[nu] = a_(bb, nu) = a_nn
@@ -287,6 +301,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   end if;
 
   f`Parent := Mk;
+  f`ComponentIdeal := bb;
 
   if CoeffsByIdeal then
     // first convert according to
@@ -294,7 +309,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     idlEltPairs := IdealElementPairs(M);
         // consists of a sequence of [* nn, nu *]
     coeffsnu := AssociativeArray();
-    for pair in IdealElementPairs do
+    for pair in IdealElementPairs(M)[bb] do
       coeffsnu[pair[2]] := coeffs[pair[1]];
     end for;
 
@@ -316,9 +331,9 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     f`UnitChar := unitchar;
   else
     if IsZero(unitchar) then // IsZero([]) is true
-      unitchar := [1 : i in Generators(TotallyPositiveUnitGroup(M))];
+      unitchar := [1 : i in Generators(A)];
     end if;
-    f`UnitChar := hom<TotallyPositiveUnitGroup(M) -> R | unitchar>;
+    f`UnitChar := map<A -> R | a :-> &*[unitchar[i]^a[i] : i in [1..#unitchar]]>;
   end if;
   return f;
 end intrinsic;
@@ -336,10 +351,11 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   f`Parent := Mk;
   f`Components := AssociativeArray();
   for bb in bbs do
-    require Component(components[bb]) eq bb: "Components mismatch";
-    require Type(components[bb]) eq ModFrmHilDEltComp: "The values of components need to be ModFrmHilDEltComp";
-    require Mk eq Parent(M): "The parents of the components should be all the same";
-    f`Components[bb] := ModFrmHilDEltCompCopy(components[bb]);
+    f_bb := components[bb];
+    require ComponentIdeal(f_bb) eq bb: "Components mismatch";
+    require Type(f_bb) eq ModFrmHilDEltComp: "The values of components need to be ModFrmHilDEltComp";
+    require Mk eq Parent(f_bb): "The parents of the components should be all the same";
+    f`Components[bb] := ModFrmHilDEltCompCopy(f_bb);
   end for;
   return f;
 end intrinsic;
@@ -349,6 +365,7 @@ intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
               :
               unitchar := [],
+              CoeffsByIdeal:=false,
               prec := 0
               ) -> ModFrmHilDElt
   {
@@ -376,7 +393,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   end if;
   require Keys(unitchar) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: unitchar:=unitchar[bb], prec:=prec);
+  f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: unitchar:=unitchar[bb], CoeffsByIdeal:=CoeffsByIdeal, prec:=prec);
   end for;
   return f;
 end intrinsic;
@@ -384,7 +401,7 @@ end intrinsic;
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
   {f = fbb}
   f := HMFZero(Parent(fbb));
-  f`Components[Component(fbb)] := ModFrmHilDEltCompCopy(fbb);
+  f`Components[ComponentIdeal(fbb)] := ModFrmHilDEltCompCopy(fbb);
   return f;
 end intrinsic;
 
@@ -449,7 +466,7 @@ end intrinsic;
 // Coerces HMF coefficients a_n in a ring R
 intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {returns f such that a_nu := R!a_nu}
-  bb := Component(f);
+  bb := ComponentIdeal(f);
   coeffs := Coefficients(f);
   new_coeffs := AssociativeArray(Universe(coeffs));
   for nn in Keys(coeffs) do
@@ -538,7 +555,7 @@ intrinsic MapCoefficients(m::Map, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   for nu in Keys(coeffs) do
     new_coeffs[nu] := m(coeffs[nu]);
   end for;
-  return HMFComp(Parent(f), Component(f), new_coeffs : unitchar:=UnitChar(f), prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), new_coeffs : unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 intrinsic MapCoefficients(m::Map, f::ModFrmHilDElt) -> ModFrmHilDElt
@@ -581,7 +598,7 @@ intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   for nu in Keys(Coefficients(f)) do
     new_coeffs[nu] := Trace(coeffs[nu]);
   end for;
-  return HMFComp(Parent(f), Component(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 intrinsic Trace(f::ModFrmHilDElt) -> ModFrmHilDElt
@@ -597,9 +614,8 @@ end intrinsic;
 
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
+
   result := [];
-  M := Parent(f);
-  bbs := NarrowClassGroupReps(M);
   for b in Basis(BaseRing(f)) do
     Append(~result, Trace(b * f));
   end for;
@@ -636,14 +652,14 @@ end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {scale f by a scalar c.}
-  require c in IsCoercible(c, BaseRing(f)): "the scalar must be coercible into the base ring";
+  require IsCoercible(BaseRing(f), c): "the scalar must be coercible into the base ring";
   F := BaseRing(f);
   new_coeffs := AssociativeArray();
   coeffs := Coefficients(f);
   for nu in Keys(coeffs) do
     coeffs[nu] := F!(c * coeffs[nu]);
   end for;
-  return HMFComp(Parent(f), Component(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDEltComp, c::Any) -> ModFrmHilDEltComp
@@ -698,7 +714,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return f*g with the same level}
   require GradedRing(f) eq GradedRing(g): "we only support multiplication inside the same graded ring";
   require Level(f) eq Level(g): "we only support multiplication with the same level";
-  require Component(f) eq Component(g): "we only support multiplication with the same component";
+  require ComponentIdeal(f) eq ComponentIdeal(g): "we only support multiplication with the same component";
 
   char_f := UnitChar(f);
   char_g := UnitChar(g);
@@ -714,7 +730,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
   end if;
-  table := MPairs(f)[Component(f)];
+  table := MPairs(f)[ComponentIdeal(f)];
 
   // TODO: improve precision?
   // use relative precision to gain something here instead of minimum?
@@ -722,7 +738,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
-  for nu in ShintaniRepsUpToTrace(GradedRing(f), Component(f), prec) do
+  for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     c := F!0;
     for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
       xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
@@ -738,7 +754,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)] ],
                     Character(f)*Character(g));
-  return HMFComp(Space, Component(f), coeffs_h : unitchar:=unitchar, prec:=prec);
+  return HMFComp(Space, ComponentIdeal(f), coeffs_h : unitchar:=unitchar, prec:=prec);
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -763,7 +779,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return f/g with the same level}
   require GradedRing(f) eq GradedRing(g): "we only support division inside the same graded ring";
   require Level(f) eq Level(g): "we only support division with the same level";
-  require Component(f) eq Component(g): "we only support division with the same component";
+  require ComponentIdeal(f) eq ComponentIdeal(g): "we only support division with the same component";
 
   char_f := UnitChar(f);
   char_g := UnitChar(g);
@@ -782,7 +798,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
   end if;
-  table := MPairs(f)[Component(f)];
+  table := MPairs(f)[ComponentIdeal(f)];
 
   // TODO: improve precision?
   // use relative precision to gain something here instead of minimum?
@@ -790,7 +806,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
-  for nu in ShintaniRepsUpToTrace(GradedRing(f), Component(f), prec)  do
+  for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec)  do
     sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
     count := 0;
     for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
@@ -819,7 +835,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
                     Level(f),
                     [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)] ],
                     Character(f)/Character(g));
-  return HMFComp(Space, Component(f), coeffs_h : unitchar:=unitchar, prec:=prec);
+  return HMFComp(Space, ComponentIdeal(f), coeffs_h : unitchar:=unitchar, prec:=prec);
 end intrinsic;
 
 intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -841,7 +857,7 @@ end intrinsic;
 
 intrinsic Inverse(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
  {return 1/f}
- return HMFIdentity(Parent(f), Component(f))/f;
+ return HMFIdentity(Parent(f), ComponentIdeal(f))/f;
 end intrinsic;
 
 intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
