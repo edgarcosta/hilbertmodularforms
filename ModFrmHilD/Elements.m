@@ -177,12 +177,12 @@ intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
   return f`Coefficients;
 end intrinsic;
 
-intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
+intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   {}
-  print("Elements.m Coefficients: DEPRECATED, go for the Component");
+
   coeffs := AssociativeArray();
   for bb in Keys(Components(f)) do
-    coeffs[bb] := Coefficients(f);
+    coeffs[bb] := Coefficients(Components(f)[bb]);
   end for;
   return coeffs;
 end intrinsic;
