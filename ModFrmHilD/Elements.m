@@ -979,7 +979,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
   idlEltPairs := IdealElementPairs(M)[bb];
   for nn in IdealsByNarrowClassGroup(M)[mmbb] do
     if IsIntegral(nn*mminv) then
-      coeff[nn] := coeff_f[IdealToShintaniRepresentative(M, bb, ZF!!(nn*mminv))];
+      coeff[nn] := coeff_f[IdealToShintaniRepresentative(M, bb, ZF!!(nn*mminv))[1]];
     else
       coeff[nn] := 0;
     end if;
