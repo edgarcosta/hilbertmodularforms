@@ -45,10 +45,10 @@ declare attributes ModFrmHilDGRng:
 
 // save fundamental unit
 declare attributes FldNum:
-  FundamentalUnit;
+  FundamentalUnitTotPos;
 
 declare attributes FldQuad:
-  FundamentalUnit;
+  FundamentalUnitTotPos;
 
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
