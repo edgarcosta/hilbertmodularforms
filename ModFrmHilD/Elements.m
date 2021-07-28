@@ -228,8 +228,8 @@ intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
   return f;
 end intrinsic;
 
-intrinsic ModFrmHilDEltCompCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {new instance of ModFrmHilDElt.}
+intrinsic ModFrmHilDEltCompCopy(f::ModFrmHilDEltComp) -> ModFrmHilDElt
+  {new instance of ModFrmHilDEltComp.}
   g := ModFrmHilDEltCompInitialize();
   for attr in GetAttributes(Type(f)) do
     if assigned f``attr then
@@ -614,9 +614,8 @@ end intrinsic;
 
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
+
   result := [];
-  M := Parent(f);
-  bbs := NarrowClassGroupReps(Parent(M));
   for b in Basis(BaseRing(f)) do
     Append(~result, Trace(b * f));
   end for;
