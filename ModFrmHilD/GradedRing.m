@@ -389,8 +389,8 @@ intrinsic MPairs(M::ModFrmHilDGRng) -> Assoc
   if not assigned M`MPairs then
     HMFEquipWithMultiplication(M);
   end if;
-  return M`Mpairs;
-end if;
+  return M`MPairs;
+end intrinsic;
 
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
