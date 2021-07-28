@@ -274,7 +274,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   coeffs::Assoc
                   :
                   unitchar:=[],
-                  CoeffsByIdeal:=false,
+                  CoeffsByIdeals := false,
                   prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component ideal bb, the fourier coefficients
@@ -282,7 +282,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     Explicitly, coeffs is an associative array where
     coeffs[nu] = a_(bb, nu) = a_nn
         where nn = nu*(bb')^-1 and bb' = bb^(-1)*dd_F
-    for all nu in the Shintani cone, unless CoeffsByIdeal is true
+    for all nu in the Shintani cone, unless CoeffsByIdeals is true
     (to allow backwards compatibility), in which case
     coeffs[nn] = a_nn as above (and we assign according to Shintani rep).
   }
@@ -304,7 +304,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   f`Parent := Mk;
   f`ComponentIdeal := bb;
 
-  if CoeffsByIdeal then
+  if CoeffsByIdeals then
     // first convert according to
     //   nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
     coeffsnu := AssociativeArray();
@@ -974,7 +974,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
     end if;
   end for;
 
-  return HMFComp(Mk, mmbb, coeff : CoeffsByIdeals := true, unitchar := UnitChar(f), Precision := Precision(f));
+  return HMFComp(Mk, mmbb, coeff : CoeffsByIdeals := true, unitchar := UnitChar(f), prec := Precision(f));
 end intrinsic;
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
