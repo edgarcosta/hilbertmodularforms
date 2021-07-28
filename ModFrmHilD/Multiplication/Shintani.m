@@ -378,7 +378,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   bbp := bb*(dd)^-1;
 
   if IsZero(nn) then
-    return 0;
+    return <0,1>;
   end if;
 
   mp := NarrowClassGroupMap(M);
