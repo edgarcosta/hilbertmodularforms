@@ -621,9 +621,8 @@ end intrinsic;
 
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
+
   result := [];
-  M := Parent(f);
-  bbs := NarrowClassGroupReps(Parent(M));
   for b in Basis(BaseRing(f)) do
     Append(~result, Trace(b * f));
   end for;
