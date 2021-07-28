@@ -402,7 +402,7 @@ end if;
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
   bbs := NarrowClassGroupReps(M);
-  M`MultiplicationTables := AssociativeArray();
+  M`MPairs := AssociativeArray();
   for bb in bbs do
     // Populates M`MultiplicationTables[bb]
     ComputeMPairs(bb, M);

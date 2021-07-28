@@ -1,10 +1,11 @@
 intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
-  {Assigns M`MultiplicationTables[bb] an associative array with nu entry 
+  {Assigns M`Mpairs[bb] an associative array with nu entry 
    [[[mu,eps],[mup,eps]] : mu*eps + mup*epsp = nu]] 
    for nu with trace up to Precision(M).}
 
   require bb in NarrowClassGroupReps(M): "bb must be among a fixed set of narrow class representatives";
 
+  M`MPairs := AssociativeArray();
   // Preliminaries
   ZF := Integers(M);
   TraceBound := Precision(M);
