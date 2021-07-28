@@ -383,6 +383,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   mp := NarrowClassGroupMap(M);
   require IsIdentity((nn*bbp)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
   bool, gen := IsPrincipal(nn*bbp);
+  assert bool;
 
   // This is hardcoded for quadratic Fields.
   gen := TotallyPositiveAssociate(M,gen);
