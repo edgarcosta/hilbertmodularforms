@@ -79,12 +79,12 @@ intrinsic ElementsInABox(M::ModFrmHilDGRng, bb::RngOrdFracIdl,
   {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0 < c_2 < Ybound}    
 
   for bnd in [XUBound, YUBound, XLBound, YLBound] do
-    require IsCoercible(bnd,FldReElt) : "Bounds must be coercible to real numbers";
+    require ISA(Type(bnd),FldReElt) : "Bounds must be coercible to real numbers";
   end for;
   basis := TraceBasis(bb);
   F := BaseField(M);
   ZF := Integers(M);
-  places := Places(M);
+  places := InfinitePlaces(F);
 
   // Precomputationss 
   a_1 := Evaluate(basis[1],places[1]); 
