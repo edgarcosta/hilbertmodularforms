@@ -682,7 +682,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, c::Any) -> ModFrmHilDEltComp
 end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
-  {scale f by scalar c.}
+  {return c*f with scalar c}
   new_comp := AssociativeArray();
   comp := Components(f);
   for bb in Keys(comp) do
@@ -692,31 +692,40 @@ intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, c::Any) -> ModFrmHilDElt
-  {scale f by scalar c.}
+  {scale f by scalar c}
   return c*f;
 end intrinsic;
 
-intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
-  {return f+g.}
-  // Currently returns the lowest precision of the forms
-  assert Parent(f) eq Parent(g);
-  Mk := Parent(f);
-  M := Parent(Mk);
-  assert GradedRing(g) eq M;
-  k := Weight(f);
-  new_coeffs := AssociativeArray();
-  bbs := NarrowClassGroupReps(M);
-  for bb in bbs do
-    new_coeffs[bb] := AssociativeArray();
-    New_keys := Keys(Coefficients(f)[bb]) meet Keys(Coefficients(g)[bb]); // Adding drops the precision to the intersection of the precision of the forms
-    for nn in New_keys do
-      new_coeffs[bb][nn] := Coefficients(f)[bb][nn] + Coefficients(g)[bb][nn];
-    end for;
-  end for;
+intrinsic '+'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+  {return f+g with the same parent}
+  require Parent(f) eq Parent(g): "we only support addition with the same Parent";
+  require ComponentIdeal(f) eq ComponentIdeal(g): "we only support multiplication with the same component";
+  require UnitChar(f) eq UnitChar(g): "we only support addition with the same unit character";
   // update precision to be the minimum of the two precisions?
   prec_f := Precision(f);
   prec_g := Precision(g);
-  return HMFSumComponents(Mk, new_coeffs : prec := Minimum(prec_f, prec_g));
+  prec := Minimum(prec_f, prec_g);
+  coeffs_f := Coefficients(f);
+  coeffs_g := Coefficients(g);
+  coeffs_f := Coefficients(f);
+  coeffs_g := Coefficients(g);
+  coeffs_h := AssociativeArray(); // h := f+g
+  for nu in ShintaniRepsUpToTrace(M, ComponentIdeal(f), prec) do
+    coeffs_h[nu] := coeffs_f[nu] + coeffs_g[nu];
+  end for;
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs_h : unitchar:=unitchar, prec:=prec);
+end intrinsic;
+
+intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
+  {return f+g}
+  require Parent(f) eq Parent(g): "we only support addition with the same Parent";
+  comp_f := Components(f);
+  comp_g := Components(g);
+  comp := AssociativeArray();
+  for bb in Keys(comp_f) do
+    comp[bb] := comp_f[bb] + comp_g[bb];
+  end for;
+  return HMFSumComponents(Parent(f), comp);
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
