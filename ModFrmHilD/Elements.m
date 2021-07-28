@@ -358,10 +358,11 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   f`Parent := Mk;
   f`Components := AssociativeArray();
   for bb in bbs do
-    require ComponentIdeal(components[bb]) eq bb: "Components mismatch";
-    require Type(components[bb]) eq ModFrmHilDEltComp: "The values of components need to be ModFrmHilDEltComp";
-    require Mk eq Parent(M): "The parents of the components should be all the same";
-    f`Components[bb] := ModFrmHilDEltCompCopy(components[bb]);
+    f_bb := components[bb];
+    require ComponentIdeal(f_bb) eq bb: "Components mismatch";
+    require Type(f_bb) eq ModFrmHilDEltComp: "The values of components need to be ModFrmHilDEltComp";
+    require Mk eq Parent(f_bb): "The parents of the components should be all the same";
+    f`Components[bb] := ModFrmHilDEltCompCopy(f_bb);
   end for;
   return f;
 end intrinsic;
