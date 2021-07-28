@@ -268,6 +268,7 @@ intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
   return coeffs;
 end intrinsic;
 
+// TODO: rename unitchar -> UnitChar and prec to Precision
 intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
@@ -306,10 +307,8 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   if CoeffsByIdeal then
     // first convert according to
     //   nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
-    idlEltPairs := IdealElementPairs(M);
-        // consists of a sequence of [* nn, nu *]
     coeffsnu := AssociativeArray();
-    for pair in IdealElementPairs(M)[bb] do
+    for pair in IdealElementPairs(M)[bb] do // consists of a sequence of [* nn, nu *]
       coeffsnu[pair[2]] := coeffs[pair[1]];
     end for;
 
