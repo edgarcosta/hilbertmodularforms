@@ -6,7 +6,7 @@
 
 // Currently calls the Newforms and Eisenstein series from Creations folder
 
-intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
   N := Level(Mk);
   k := Weight(Mk);
@@ -15,16 +15,27 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   assert Character(Mk) eq HeckeCharacterGroup(N)!1;
   for dd in Divisors(N) do
     Mkdd := HMFSpace(Parent(Mk), dd, k);
-    // We are taking the Q orbits
-	  NewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(Mkdd)];
-    OldSpace_dd := &cat[Inclusion(elt, Mk) : elt in NewSpace_dd ];
-    Cuspbasis cat:= OldSpace_dd;
+    dim:=Dimension(HilbertCuspForms(BaseField(Mk), dd, k));
+    if dim gt 0 then
+      traceBoundIncl:=TraceBoundInclusion(Mkdd, Mk);
+
+      if verbose then 
+        print "Cusp old form basis in level of norm ", Norm(dd),  "  computed with precision", traceBoundIncl;
+      end if;
+
+      HigherPrecM:=GradedRingOfHMFs(BaseField(Mk), traceBoundIncl);
+      HigherPrecMkdd:=HMFSpace(HigherPrecM, dd, k);
+      // We are taking the Q orbits
+      HigherPrecNewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(HigherPrecMkdd)];
+      OldSpace_dd := &cat[Inclusion(elt, Mk) : elt in HigherPrecNewSpace_dd];
+      Cuspbasis cat:= OldSpace_dd;
+    end if;
   end for;
   return Cuspbasis;
 end intrinsic;
 
 
-intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
   M := Parent(Mk);
   NN := Level(Mk);
@@ -39,6 +50,12 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   for aa in aas do // loop over
     N0 := aa^2;
     Mk_N0 := HMFSpace(M, N0, k);
+    traceBoundIncl:=TraceBoundInclusion(Mk_N0, Mk);
+
+    if verbose then 
+      print "Eisenstein old basis in level  of norm ", Norm(N0),  "  computed with precision", traceBoundIncl;
+    end if;
+
     HCGaa := HeckeCharacterGroup(aa,[1..n]);
     PrimitiveCharacters := [elt : elt in Elements(HCGaa) | IsPrimitive(elt)];
     if aa eq 1*ZF then // Hack to add trivial character back in (It is imprimitive!)
@@ -46,7 +63,9 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
     end if;
     for eta in PrimitiveCharacters do
       psi := eta^(-1);
-      E := EisensteinSeries(Mk_N0, eta, psi);
+      HigherPrecM:=GradedRingOfHMFs(BaseField(Mk), traceBoundIncl);
+      HigherPrecMk_N0:=HMFSpace(HigherPrecM, N0, k);
+      E := EisensteinSeries(HigherPrecMk_N0, eta, psi);
       EG := GaloisOrbitDescent(E); // Q orbits
       EB cat:= &cat[Inclusion(elt,Mk) : elt in EG];
     end for;
@@ -56,8 +75,14 @@ end intrinsic;
 
 
 
-intrinsic Basis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+
+intrinsic Basis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
+
+  if verbose then 
+    print "Wanted precision of space of parallel weight   ", Weight(Mk)[1], "     is", Precision(Parent(Mk));
+  end if;
+
   // Cuspforms
   CB := CuspFormBasis(Mk);
   //Eisenstein Series
@@ -81,3 +106,44 @@ intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
    end for; 
    return InvariantBasis; 
  end intrinsic; 
+
+
+
+ intrinsic ComponentBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {returns a Basis for Mk of forms that are only supported on one component}
+  // Preliminaries
+  M := Parent(Mk);
+  B := Basis(Mk);
+  bbs := NarrowClassGroupReps(M);
+  NewBasis :=[];
+  // Loop over ideal classes
+  for i in [1..#bbs] do
+    IC := Remove(bbs,i);
+    L := LinearDependence(B : IdealClasses := IC);
+    for relation in L do
+      f := &+[relation[i]*B[i] : i in [1..#B]];
+      NewBasis cat:= [f];
+    end for;
+  end for;
+  return NewBasis;
+end intrinsic;
+
+
+
+intrinsic SpecifiedComponentBasis(Mk::ModFrmHilD, bb::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
+  {returns a basis of forms that are only supported on a specified component bb}
+  // Preliminaries
+  M := Parent(Mk);
+  B := Basis(Mk);
+  bbs := NarrowClassGroupReps(M);
+  NewBasis :=[];
+  // Set i to be the component the you want to see
+  i := Index(bbs,bb);
+  IC := Remove(bbs,i);
+  L := LinearDependence(B : IdealClasses := IC);
+  for relation in L do
+    f := &+[relation[i]*B[i] : i in [1..#B]];
+    NewBasis cat:= [f];
+  end for;
+  return NewBasis;
+end intrinsic;
