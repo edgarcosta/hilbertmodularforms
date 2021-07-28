@@ -258,19 +258,22 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
                   :
-                  unitchar := [],
+                  unitchar := [], CoeffsByIdeal := false,
                   prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component bb, the fourier coefficients
     in the Shintani cone, and unit character.
     Explicitly, coeffs is an associative array where
-    coeffs[nu] = a_(bb, nu) = a_(nu)*(bb')^-1
-    for all nu in the Shintani cone,
+    coeffs[nu] = a_(bb, nu) = a_nn 
+        where nn = nu*(bb')^-1 and bb' = bb^(-1)*dd_F
+    for all nu in the Shintani cone, unless CoeffsByIdeal is true 
+    (to allow backwards compatibility), in which case 
+    coeffs[nn] = a_nn as above (and we assign according to Shintani rep).
   }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
-  CoefficientSequence := [**]; // to assert all coefficients have the same parent
-  require bb in bbs: "bb should be one of the representatives of the Narrow class group";
+  CoefficientSequence := []; // to assert all coefficients have the same parent
+  require bb in bbs: "bb should be among the chosen representatives of the narrow class group";
 
   // make the HMF
   f := ModFrmHilDEltCompInitialize();
@@ -284,14 +287,26 @@ intrinsic HMFComp(Mk::ModFrmHilD,
 
   f`Parent := Mk;
 
+  if CoeffsByIdeal then
+    // first convert according to
+    //   nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
+    idlEltPairs := IdealElementPairs(M);
+        // consists of a sequence of [* nn, nu *]
+    coeffsnu := AssociativeArray();
+    for pair in IdealElementPairs do
+      coeffsnu[pair[2]] := coeffs[pair[1]];
+    end for;
+
+    coeffs := coeffsnu;  // goodbye old data!
+  end if;
+
   newcoeffs := AssociativeArray();
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
     require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
     Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
     newcoeffs[nu] := coeffs[nu];
   end for;
-  CoefficientSequence := [i : i in CoefficientSequence];
-
+  
   f`Coefficients := newcoeffs;
   R := Parent(CoefficientSequence[1]);
   f`BaseRing := R;
@@ -308,7 +323,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
 end intrinsic;
 
 
-intrinsic HMF(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
+intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   {
     Return the ModFrmHilDElt with parent Mk and Components components.
   }
@@ -389,7 +404,7 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := HMFZero(Mk, bb);
   end for;
-  return HMF(Mk, coeffs);
+  return HMFSumComponents(Mk, coeffs);
 end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDEltComp) -> BoolElt
@@ -424,7 +439,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
   for bb in NarrowClassGroupReps(M) do
     C[bb] := HMFIdentity(Mk, bb);
   end for;
-  return HMF(Mk, C);
+  return HMFSumComponents(Mk, C);
 end intrinsic;
 
 
@@ -481,7 +496,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
           fbb := Components(f)[bb];
           components[bb] := HMFComp(Mk, Coefficients(fbb): unitchar:=UnitChar(fbb), prec:=Precision(fbb));
         end for;
-        return true, HMF(Mk, components);
+        return true, HMFSumComponents(Mk, components);
       else
         return false;
       end if;
@@ -531,7 +546,7 @@ intrinsic MapCoefficients(m::Map, f::ModFrmHilDElt) -> ModFrmHilDElt
   for bb in Keys(components) do
     components[bb] := MapCoefficients(m, components[bb]);
   end for;
-  return HMF(Parent(f), components);
+  return HMFSumComponents(Parent(f), components);
 end intrinsic;
 
 intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
@@ -575,7 +590,7 @@ intrinsic Trace(f::ModFrmHilDElt) -> ModFrmHilDElt
   for bb in Keys(C) do
     nC[bb] := Trace(C[bb]);
   end for;
-  return HMF(Parent(f), nC);
+  return HMFSumComponents(Parent(f), nC);
 end intrinsic;
 
 
@@ -642,7 +657,7 @@ intrinsic '*'(c::Any, f::ModFrmHilDElt) -> ModFrmHilDElt
   for bb in Keys(comp) do
     new_comp[bb] := c * comp[bb];
   end for;
-  return HMF(Parent(f), new_comp);
+  return HMFSumComponents(Parent(f), new_comp);
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, c::Any) -> ModFrmHilDElt
@@ -670,7 +685,7 @@ intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   // update precision to be the minimum of the two precisions?
   prec_f := Precision(f);
   prec_g := Precision(g);
-  return HMF(Mk, new_coeffs : prec := Minimum(prec_f, prec_g));
+  return HMFSumComponents(Mk, new_coeffs : prec := Minimum(prec_f, prec_g));
 end intrinsic;
 
 intrinsic '-'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -739,7 +754,7 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)]],
                     Character(f)*Character(g));
-  return HMF(Space, comp);
+  return HMFSumComponents(Space, comp);
 end intrinsic;
 
 
@@ -820,7 +835,7 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
                     Level(f),
                     [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)]],
                     Character(f)/Character(g));
-  return HMF(Space, comp);
+  return HMFSumComponents(Space, comp);
 end intrinsic;
 
 intrinsic Inverse(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
@@ -940,7 +955,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, dd::RngOrdIdl) -> SeqEnum[
       end if;
     end for;
   end for;
-  return HMF(Mk, coeff);
+  return HMFSumComponents(Mk, coeff);
 end intrinsic;
 
 
@@ -1023,7 +1038,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
         end if;
       end for;
     end for;
-    Append(~IncludedForms, HMF(Mk, coeff));
+    Append(~IncludedForms, HMFSumComponents(Mk, coeff));
   end for;
   return IncludedForms;
 end intrinsic;
@@ -1051,6 +1066,6 @@ intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
       coeff[bb][I]:=x;
       end for;
      end for;
-   g:=HMF(Mk, coeff); 
+   g:=HMFSumComponents(Mk, coeff); 
    return g; 
  end intrinsic; 
