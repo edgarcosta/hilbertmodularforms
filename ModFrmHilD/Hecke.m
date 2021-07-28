@@ -75,7 +75,7 @@
       end if;
     end for;
   //return coeffsTnnf, newPrec;
-    g:=HMF(Mk, coeffsTnnf : CoeffsByIdeal:=true);
+    g:=HMF(Mk, coeffsTnnf : CoeffsByIdeals:=true);
     g`Precision:=newPrec;
   return g;      
  end intrinsic;
