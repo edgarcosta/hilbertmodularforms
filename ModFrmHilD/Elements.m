@@ -155,16 +155,6 @@ intrinsic Components(f::ModFrmHilDElt) -> Assoc
   return f`Components;
 end intrinsic;
 
-intrinsic MPairs(f::ModFrmHilDEltComp) -> RngOrdIdl
-  {returns the MPairs of parent of f.}
-  return MPairs(GradedRing(f));
-end intrinsic;
-
-intrinsic MPairs(f::ModFrmHilDElt) -> RngOrdIdl
-  {returns the MPairs of parent of f.}
-  return MPairs(GradedRing(f));
-end intrinsic;
-
 intrinsic Coefficient(f::ModFrmHilDElt, bb::RngOrdIdl, nu::RngElt) -> Any
   {}
   return Coefficients(Components(f)[bb])[nu];
@@ -752,7 +742,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
   end if;
-  table := MPairs(f)[ComponentIdeal(f)];
+  table := MPairs(GradedRing(f))[ComponentIdeal(f)];
 
   // TODO: improve precision?
   // use relative precision to gain something here instead of minimum?
@@ -768,8 +758,10 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
       xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
+      print F!char_f(epsilon1@@mU), F!char_f(epsilon2@@mU);
       c +:= F!char_f(epsilon1@@mU) * F!coeffs_f[smu1] *  F!char_f(epsilon2@@mU) * F!coeffs_g[smu2];
     end for;
+    printf "trace(%o) = %o, c = %o\n", nu, Trace(nu), c;
     coeffs_h[nu] := c;
   end for;
   A := Domain(char_f);
@@ -822,7 +814,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
   end if;
-  table := MPairs(f)[ComponentIdeal(f)];
+  table := MPairs(GradedRing(f))[ComponentIdeal(f)];
 
   // TODO: improve precision?
   // use relative precision to gain something here instead of minimum?
