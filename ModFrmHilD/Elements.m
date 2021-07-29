@@ -673,6 +673,31 @@ intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
   return &and[a(f) eq a(g): a in [Parent, Components]];
 end intrinsic;
 
+intrinsic 'eq'(f::ModFrmHilDEltComp, c::RngElt) --> BoolElt
+  {compare f against a scalar c}
+  if Coefficient(f)[0] ne c then
+    return False;
+  end if;
+  return IsZero([Coefficient(f)[nu] : nu in Keys(Coefficient(f)) | nu ne 0]);
+end intrinsic;
+
+intrinsic 'eq'(f::ModFrmHilDElt, c::RngElt) --> BoolElt
+  {compare f against a scalar c}
+  return &and[elt eq c : elt in Components(f)];
+end intrinsic;
+
+intrinsic 'eq'(c::RngElt, f::ModFrmHilDEltComp) --> BoolElt
+  {compare f against a scalar c}
+  return f eq c;
+end intrinsic;
+
+intrinsic 'eq'(c::RngElt, f::ModFrmHilDElt) --> BoolElt
+  {compare f against a scalar c}
+  return f eq c;
+end intrinsic;
+
+
+
 intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {scale f by a scalar c.}
   require IsCoercible(BaseRing(f), c): "the scalar must be coercible into the base ring";

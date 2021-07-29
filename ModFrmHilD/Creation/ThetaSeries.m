@@ -84,6 +84,7 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   assert NumberOfRows(GM) mod 2 eq 0;
   K := BaseField(M);
   ZK := Integers(K);
+  print("Warning: something is fishy with ThetaCoefficient perhaps related with the change from bb to bbp");
 
   //checking that the level of Theta divides the level of M
 
@@ -94,16 +95,15 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   require NarrowClassNumber(K) eq 1: "Theta Series only impliemented with narrow class number one";
   for bb in reps do
     coeffs[bb] := AssociativeArray();
-    for nn in IdealsByNarrowClassGroup(M)[bb] do
-      if IsZero(nn) then
-        coeffs[bb][nn] := 1;
+    for nu in ShintaniRepsUpToTrace(M, bb, Precision(M)) do
+      if IsZero(nu) then
+        coeffs[bb][nu] := 1;
       else
-        rep := IdealToShintaniRepresentative(M, bb, nn)[1];
-        coeffs[bb][nn] := ThetaCoefficient(M, rep, GM);
+        coeffs[bb][nu] := ThetaCoefficient(M, nu, GM);
       end if;
     end for;
   end for;
   w := Integers()! (NumberOfRows(GM)/2);
   weight := [w : i in [1..Degree(K)]];
-  return HMF(HMFSpace(M, Level(K, GM), weight), coeffs : CoeffsByIdeals := true);
+  return HMF(HMFSpace(M, Level(K, GM), weight), coeffs);
 end intrinsic;
