@@ -70,7 +70,12 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDE
       EB cat:= &cat[Inclusion(elt,Mk) : elt in EG];
     end for;
   end for;
-  return EB;
+  // TODO : for some reason, EB has linear dependencies
+  // right now, we simply check for them and return a lin independent subset
+  lin_deps := LinearDependence(EB);
+  pivots := [PivotColumn(Matrix(lin_deps), i) : i in [1..#lin_deps]];
+  return EB[pivots];
+  // return EB;
 end intrinsic; 
 
 
