@@ -18,7 +18,7 @@ intrinsic 'eq'(omega::GrpCharUnitTotElt, omegap::GrpCharUnitTotElt) -> BoolElt
 end intrinsic;
 
 intrinsic BaseField(omega::GrpCharUnitTotElt) -> FldAlg
-  {Return the base field for which the character is on totally 
+  {Return the base field for which the character is on totally
    positive unit group of the ring of integers.}
 
   return omega`BaseField;
@@ -36,11 +36,19 @@ intrinsic '*'(omega::GrpCharUnitTotElt, omegap::GrpCharUnitTotElt) -> BoolElt
 end intrinsic;
 
 intrinsic UnitCharacter(F::FldAlg, vals::SeqEnum[RngElt]) -> GrpCharUnitTotElt
-  {Create the unit character on the totally positive unit group 
+  {Create the unit character on the totally positive unit group
    of the ring of integers of F with values on generators specified by vals.}
 
   omega := New(GrpCharUnitTotElt);
   omega`BaseField := F;
   omega`vals := vals;
   return omega;
+end intrinsic;
+
+
+intrinsic TrivialUnitCharacter(F::FldAlg, vals::SeqEnum[RngElt]) -> GrpCharUnitTotElt
+  {Create the trivial unit character on the totally positive unit group
+   of the ring of integers of F.}
+
+ return UnitCharacter(F, [1: i in [1..#Generators(TotallyPositiveUnits(F))]]);
 end intrinsic;

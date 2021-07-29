@@ -10,8 +10,7 @@ declare attributes ModFrmHilDEltComp:
   Precision, // RngIntElt
   Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where nu in Shintani cone
   BaseRing, // Rng: where the coefficients live (does this depend on bb?)
-  UnitChar, // Map: TotallyPositiveUnits(Parent(Parent)) -> BaseRing
-  UnitCharOnGens, // [w(A.i) : i in [1..#Generators(A)], where w is UnitChar and A is its domain
+  UnitChar, // GrpCharUnitTotElt: TotallyPositiveUnits(Parent(Parent)) -> BaseRing
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
 
 declare type ModFrmHilDElt;
@@ -120,16 +119,12 @@ intrinsic GradedRing(f::ModFrmHilDElt) -> ModFrmHilDGRng
   return Parent(Mk);
 end intrinsic;
 
-intrinsic UnitChar(f::ModFrmHilDEltComp) -> Map
+intrinsic UnitChar(f::ModFrmHilDEltComp) -> GrpCharUnitTotElt
   {return the unit character of f}
   return f`UnitChar;
 end intrinsic;
 
 
-intrinsic UnitCharOnGens(f::ModFrmHilDEltComp) -> Map
-  {return the unit character of f}
-  return f`UnitCharOnGens;
-end intrinsic;
 
 
 intrinsic Field(f::ModFrmHilDEltComp) -> FldNum
@@ -333,17 +328,16 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   R := Parent(CoefficientSequence[1]);
   f`BaseRing := R;
   A := TotallyPositiveUnits(M);
-  if Type(unitchar) eq Map then
-    require Domain(unitchar) eq A: "the provided domain must be the TotallyPositiveUnits of the Graded Ring";
+  if Type(unitchar) eq GrpCharUnitTotElt then
+    require BaseField(unitchar) eq BaseField(M): "the provided domain must be the TotallyPositiveUnits of the Graded Ring";
     f`UnitChar := unitchar;
   else
-    if IsZero(unitchar) then // IsZero([]) is true
-      unitchar := [1 : i in Generators(A)];
+    if IsZero(unitchar) then
+      f`UnitChar := TrivialUnitCharacter(BaseField(M));
+    else
+      f`UnitChar := UnitCharacter(BaseField(M), unitchar);
     end if;
-    f`UnitChar := map<A -> R | a :-> &*[unitchar[i]^Eltseq(a)[i] : i in [1..#unitchar]]>;
   end if;
-  A := Domain(f`UnitChar);
-  f`UnitCharOnGens := [f`UnitChar(A.i) : i in [1..#Generators(A)]];
   return f;
 end intrinsic;
 
@@ -482,7 +476,7 @@ intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   for nn in Keys(coeffs) do
     new_coeffs[nn] := R!coeffs[nn];
   end for;
-  return HMFComp(Parent(f), new_coeffs: unitchar:= UnitChar(f), prec := Precision(f));
+  return HMFComp(Parent(f), new_coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 
@@ -737,6 +731,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
 
   char_f := UnitChar(f);
   char_g := UnitChar(g);
+  char_h := char_f*char_g;
 
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
@@ -758,14 +753,13 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec := Minimum(prec_f, prec_g);
 
   M := Parent(Parent(f));
-  _, mU := TotallyPositiveUnits(M);
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     c := F!0;
     for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
       xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
-      c +:= F!char_f(epsilon1@@mU) * F!coeffs_f[smu1] *  F!char_f(epsilon2@@mU) * F!coeffs_g[smu2];
+      c +:= F!Evaluate(char_f, epsilon1) * F!coeffs_f[smu1] *  F!Evaluate(char_g, epsilon2) * F!coeffs_g[smu2];
     end for;
     coeffs_h[nu] := c;
   end for;
@@ -775,7 +769,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)] ],
                     Character(Parent(f))*Character(Parent(g)));
-  return HMFComp(Space, ComponentIdeal(f), coeffs_h : unitchar:=unitchar, prec:=prec);
+  return HMFComp(Space, ComponentIdeal(f), coeffs_h : unitchar:=char_h, prec:=prec);
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -804,6 +798,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
 
   char_f := UnitChar(f);
   char_g := UnitChar(g);
+  char_h := char_f/char_g;
 
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
@@ -827,7 +822,6 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
-  _, mU := TotallyPositiveUnits(GradedRing(f));
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec)  do
     sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
     count := 0;
@@ -842,7 +836,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
         assert IsOne(epsilon2);
         count +:= 1;
       else
-        sum +:= F!char_f(epsilon1@@mU) * F!coeffs_g[smu1] *  F!char_f(epsilon2@@mU) * F!coeffs_h[smu2];
+        sum +:= F!Evaluate(char_f, epsilon1) * F!coeffs_g[smu1] *  F!Evaluate(char_h, epsilon2) * F!coeffs_h[smu2];
       end if;
     end for;
     //FIXME: this asserts should be moved to the creation of MPairs
@@ -857,7 +851,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
                     Level(f),
                     [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)] ],
                     Character(Parent(f))/Character(Parent(g)));
-  return HMFComp(Space, ComponentIdeal(f), coeffs_h : unitchar:=unitchar, prec:=prec);
+  return HMFComp(Space, ComponentIdeal(f), coeffs_h : unitchar:=char_h, prec:=prec);
 end intrinsic;
 
 intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -995,7 +989,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
     end if;
   end for;
 
-  return HMFComp(Mk, mmbb, coeff : CoeffsByIdeals := true, unitchar := UnitChar(f), prec := Precision(f));
+  return HMFComp(Mk, mmbb, coeff : CoeffsByIdeals := true, unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
