@@ -426,7 +426,7 @@ end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDEltComp) -> BoolElt
   {check if form is identically zero}
-  return IsZero([c : c in Coefficients(f)]);
+  return IsZero([Coefficients(f)[nu] : nu in Keys(Coefficients(f))]);
 end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt

@@ -79,6 +79,36 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::RngIntElt) -> Any
   return A;
 end intrinsic;
 
+intrinsic SiegelEisensteinPullback1(M::ModFrmHilDGRng, Weight::SeqEnum[RngIntElt]) -> Any
+{Returns the pullback of the Siegel Eisenstein series of a given weight}
+  F := BaseField(M);
+  ZF:=Integers(F);
+  Clplus, mp:=NarrowClassGroup(F);
+  h:=ClassNumber(F);
+  bb:=mp(Different(ZF)@@mp);
+  G:=M`TotallyPositiveUnitGroup;
+  unitmp:=M`TotallyPositiveUnitGroupMap;
+  if #Clplus gt h then
+    minusunitchar:=map<G -> Integers()| g :-> (-1)^(Eltseq(g))>;
+  else
+    minusunitchar:=[];
+  end if;
+  eta:=unitmp(G.1);
+  elts := ShintaniReps(M)[bb];
+  fpluscoeffs:=AssociativeArray();
+  fminuscoeffs:=AssociativeArray();
+  for j := 1 to #elts do
+    anuplus:=Coeff(elts[j],Weight[1]);
+    anuminus:=Coeff(elts[j]*eta^(-1),Weight[1]);
+    fpluscoeffs[elts[j]]:=1/2*(anuplus+anuminus);
+    fminuscoeffs[elts[j]]:=1/2*(anuplus-anuminus);
+  end for;
+  fplus:=HMFComp(HMFSpace(M, Weight), bb, fpluscoeffs: unitchar:=[]);
+  fminus:=HMFComp(HMFSpace(M, Weight), bb, fminuscoeffs: unitchar:=minusunitchar);
+  return fplus, fminus;
+end intrinsic;
+
+
 
 intrinsic UniversalIgusa(M::ModFrmHilDGRng) -> Any
 {Computes the IgusaClebsch invariants for QQ(sqrt(i)), using specified precision}
