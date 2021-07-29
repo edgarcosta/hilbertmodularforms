@@ -91,6 +91,7 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   reps := NarrowClassGroupReps(M);
   K := BaseField(M);
   ZK := IntegerRing(K);
+  discriminant := Discriminant(ZK);
   coeffs := AssociativeArray();
   require NarrowClassNumber(K) eq 1: "Theta Series only impliemented with narrow class number one";
   for bb in reps do
@@ -99,7 +100,7 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
       if IsZero(nu) then
         coeffs[bb][nu] := 1;
       else
-        coeffs[bb][nu] := ThetaCoefficient(M, nu, GM);
+        coeffs[bb][nu] := ThetaCoefficient(M, nu*discriminant, GM);
       end if;
     end for;
   end for;
