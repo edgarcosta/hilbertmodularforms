@@ -175,11 +175,8 @@ intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
   M := Parent(Mk);
   ZF := Integers(M);
   k := Weight(Mk);
-  if SequenceToSet(k) eq Set([2]) then
-    return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
-  else
-    return Trace(Mk,1*ZF);
-  end if;
+  require not SequenceToSet(k) eq Set([2]) : "Trace is broken for 2, talk to Ben.";
+  return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
 end intrinsic;
 
 
