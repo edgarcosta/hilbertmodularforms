@@ -169,18 +169,21 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
 
   basis := TraceBasis(aa);
   F := NumberField(Parent(basis[1]));
+  require Degree(F) eq 2: "this is hardcoded for quadratic fields";
   ZF := Integers(F);
   places := InfinitePlaces(F);
 
   if t eq 0 then
     return [ZF!0];
   else
+    // Orienting basis
+    if Evaluate(basis[2],places[2]) lt 0 then
+      basis := [basis[1], -basis[2]];
+    end if;
     smallestTrace := Integers()!Trace(basis[1]);
-    print "smallest trace = ", smallestTrace;
     T := [];
     if t mod smallestTrace eq 0 then
       x := t div smallestTrace;
-      print "x = ", x;
       C1,C2 := ShintaniWalls(ZF);
       a1 := Evaluate(basis[1],places[1]);
       b1 := Evaluate(basis[2],places[1]);
@@ -189,7 +192,6 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
 
       lowerbnd := (C2*x*a2-x*a1)/(b1-C2*b2);
       upperbnd := (C1*x*a2-x*a1)/(b1-C1*b2);
-      print "lu = ", <lowerbnd, upperbnd>;
       // Magma has some extreme problems with .999999999 /= 1.
       // That is why this is defined in a terrible manner.
       // It removes points that lie on the upper wall.
@@ -410,7 +412,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> Rng
 end intrinsic;
 
 // Converts nus to nns
-intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
+intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdIdl, nu::RngElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the
    integral ideal n = bb^(-1)*(nu) in ZF,
    and caches this into M`ShintaniRepsIdeal
