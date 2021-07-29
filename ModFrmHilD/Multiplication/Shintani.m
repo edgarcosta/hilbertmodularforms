@@ -67,14 +67,14 @@ intrinsic PositiveElementsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[Rn
   return T;
 end intrinsic;
 
-intrinsic ElementsInABox(M::ModFrmHilDGRng, bb::RngOrdFracIdl,
+intrinsic ElementsInABox(M::ModFrmHilDGRng, aa::RngOrdFracIdl,
                          XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
-  {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0 < c_2 < Ybound}
+  {Enumerates all elements c in aa with 0 < c_1 < Xbound and  0 < c_2 < Ybound}
 
   for bnd in [XUBound, YUBound, XLBound, YLBound] do
     require ISA(Type(bnd),FldReElt) : "Bounds must be coercible to real numbers";
   end for;
-  basis := TraceBasis(bb);
+  basis := TraceBasis(aa);
   F := BaseField(M);
   ZF := Integers(M);
   places := InfinitePlaces(F);
