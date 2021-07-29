@@ -2,7 +2,7 @@
 
 intrinsic Slope(alpha::RngOrdElt) -> FldReElt
   { Input:  alpha, an element of ZF for F a totally real quadratic number field
-    Output: The "slope" defined by alpha: sigma_2(alpha)/sigma_1(alpha) where 
+    Output: The "slope" defined by alpha: sigma_2(alpha)/sigma_1(alpha) where
     sigma_i is the ith embedding of F}
   OK := Parent(alpha);
   K := NumberField(OK);
@@ -11,26 +11,19 @@ intrinsic Slope(alpha::RngOrdElt) -> FldReElt
 end intrinsic;
 
 // Rearranges the basis for an ideal so that the second basis vector has trace 0
-intrinsic TraceBasis(bb::RngOrdFracIdl) -> SeqEnum
-  {Given a fractional ideal bb, returns a basis (a,b) in Smith normal form 
+intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
+  {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
    where Trace(a) = n > 0 and Trace(b) = 0}
 
   // Preliminaries
-  B := Basis(bb);
+  B := Basis(aa);
   ZF := Parent(B[2]);
 
-  // Sort Basis elemements according to the size of their trace
-  BTr := [Trace(b) : b in B];
-  ParallelSort(~BTr,~B);
-
   // Change of basis
-  trMat := Matrix([[Trace(B[i]) : i in [1..#B]]]);
+  trMat := Matrix([[Integers()!Trace(B[i]) : i in [1..#B]]]);
   _, _, Q := SmithForm(trMat);
   assert Determinant(Q) eq 1;
   B := Eltseq(Vector(B)*ChangeRing(Q,ZF));
-  if Trace(B[2]) lt 0 then
-    B[2] *:= -1;
-  end if;
   return B;
 end intrinsic;
 
@@ -41,29 +34,29 @@ end intrinsic;
 ///////////////////////////////////////////////////
 
 /*
-// Totally Positive Elements in an Ideal 
-   From a basis {a,b} for the ideal bb where 
-     Tr(a) = n and Tr(b) = 0. 
-   Elements in ideal will look like xa + yb where x,y in ZZ 
-   and have embedding xa_1 + yb_1 and xa_2 + yb_2.  
-   All totally positive elements of given trace t will satisfy 
-   1)    t = Tr(xa+yb)    <=>   t = xn    
-   2)    xa+yb totally positive       <=>   y > -x*a_1/b_1   and  y > -x*a_2/b_2  
+// Totally Positive Elements in an Ideal
+   From a basis {a,b} for the ideal bb where
+     Tr(a) = n and Tr(b) = 0.
+   Elements in ideal will look like xa + yb where x,y in ZZ
+   and have embedding xa_1 + yb_1 and xa_2 + yb_2.
+   All totally positive elements of given trace t will satisfy
+   1)    t = Tr(xa+yb)    <=>   t = xn
+   2)    xa+yb totally positive       <=>   y > -x*a_1/b_1   and  y > -x*a_2/b_2
    Eq 1) determines the value for x,
-     and Eq 2) allows us to loop over values of y 
+     and Eq 2) allows us to loop over values of y
 */
-intrinsic PositiveElementsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
-  {Given bb a fractional ideal and t a nonnegative integer, 
-   returns the totally positive elements of bb with trace t.}
-  basis := TraceBasis(bb);
+intrinsic PositiveElementsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
+  {Given aa a fractional ideal and t a nonnegative integer,
+   returns the totally positive elements of aa with trace t.}
+  basis := TraceBasis(aa);
   places := InfinitePlaces(NumberField(Parent(basis[1])));
   smallestTrace := Trace(basis[1]);
   T := [];
   if t mod smallestTrace eq 0 then
     x := t div smallestTrace;
-    a_1 := Evaluate(basis[1],places[1]); 
+    a_1 := Evaluate(basis[1],places[1]);
     b_1 := Evaluate(basis[2],places[1]);
-    a_2 := Evaluate(basis[1],places[2]); 
+    a_2 := Evaluate(basis[1],places[2]);
     b_2 := Evaluate(basis[2],places[2]);
     lower_bnd := Ceiling(Min(-x*a_1/b_1,-x*a_2/b_2));
     upper_bnd := Floor(Max(-x*a_1/b_1,-x*a_2/b_2));
@@ -74,29 +67,29 @@ intrinsic PositiveElementsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[Rn
   return T;
 end intrinsic;
 
-intrinsic ElementsInABox(M::ModFrmHilDGRng, bb::RngOrdFracIdl, 
+intrinsic ElementsInABox(M::ModFrmHilDGRng, aa::RngOrdFracIdl,
                          XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
-  {Enumerates all elements c in bb with 0 < c_1 < Xbound and  0 < c_2 < Ybound}    
+  {Enumerates all elements c in aa with 0 < c_1 < Xbound and  0 < c_2 < Ybound}
 
   for bnd in [XUBound, YUBound, XLBound, YLBound] do
     require ISA(Type(bnd),FldReElt) : "Bounds must be coercible to real numbers";
   end for;
-  basis := TraceBasis(bb);
+  basis := TraceBasis(aa);
   F := BaseField(M);
   ZF := Integers(M);
   places := InfinitePlaces(F);
 
-  // Precomputationss 
-  a_1 := Evaluate(basis[1],places[1]); 
+  // Precomputationss
+  a_1 := Evaluate(basis[1],places[1]);
   b_1 := Evaluate(basis[2],places[1]);
-  a_2 := Evaluate(basis[1],places[2]); 
+  a_2 := Evaluate(basis[1],places[2]);
   b_2 := Evaluate(basis[2],places[2]);
 
   // List of all Elements
   T := [];
   trLBound := Ceiling(XLBound+YLBound);
   trUBound := Floor(XUBound+YUBound);
-  for x in [trLBound..trUBound] do 
+  for x in [trLBound..trUBound] do
     lBound := Ceiling(Max((XLBound-x*a_1)/b_1,(YUBound-x*a_2)/b_2));
     uBound := Floor(Min((XUBound-x*a_1)/b_1,(YLBound-x*a_2)/b_2));
     for y in [lBound..uBound] do
@@ -118,12 +111,12 @@ function AssignFundamentalUnitTotPos(F);
   eps := FundamentalUnit(F);
   places := InfinitePlaces(F);
   if Norm(eps) eq -1 then
-    // In this case CK = CK^+ so the totally positive units are squares 
+    // In this case CK = CK^+ so the totally positive units are squares
     // i.e. the subgroup generated by eps^2
     eps := eps^2;
   else // Nm(eps) = 1
     if not IsTotallyPositive(eps) then
-      // In this case CK not equal to CK^+ so there are no units of mixed signs. 
+      // In this case CK not equal to CK^+ so there are no units of mixed signs.
       // If the fundamental unit is not totally positive we multiply by -1.
       eps := -1*eps;
     end if;
@@ -132,11 +125,11 @@ function AssignFundamentalUnitTotPos(F);
   if eps1 gt 1 then
     // eps1*eps2 = Nm(eps) = 1
     eps := 1/eps;
-  end if; 
+  end if;
   eps := Integers(F)!eps;
   F`FundamentalUnitTotPos := eps;
   return eps;
-end function;  
+end function;
 
 // Helper Functions
 // Returns the slopes of the upper and lower walls for the Shintani Domain
@@ -159,54 +152,59 @@ end intrinsic;
 
 
 // Elements of the Shintani domain with trace t
-/* Idea: We compute a basis a,b for the ideal bb where Tr(a) = n > 0 and Tr(b) = 0. 
-   Elements in ideal will look like xa+yb where x,y in ZZ and have embedding 
-      xa_1 + yb_1 and xa_2 + yb_2. 
+/* Idea: We compute a basis a,b for the ideal aa where Tr(a) = n > 0 and Tr(b) = 0.
+   Elements in ideal will look like xa+yb where x,y in ZZ and have embedding
+      xa_1 + yb_1 and xa_2 + yb_2.
    All totally positive elements of given trace t will satisfy
    1) t = Tr(xa+yb)    <=>   t = xn
-   2) C_1 < (xa_1+yb_1)/(xa_2+yb_2) < C_2    <=>   
+   2) C_1 < (xa_1+yb_1)/(xa_2+yb_2) < C_2    <=>
       (C_1*x*a_2-x*a_1)/(b_1-C_1*b_2) < y < (C_2*x*a_2-x*a_1)/(b_1-C_2*b_2)
-   where C1 and C2 are the slope bounds on the Shintani domain. 
-   Eq 1) determines the value for x while 
-   Eq 2) allows us to loop over values of y. 
+   where C1 and C2 are the slope bounds on the Shintani domain.
+   Eq 1) determines the value for x while
+   Eq 2) allows us to loop over values of y.
 */
-intrinsic ShintaniRepsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
-  {Given bb a fractional ideal, t a trace, returns the totally positive elements 
-   of bb in the balanced Shintani cone with trace t.}  
+intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
+  {Given aa a fractional ideal, t a trace, returns the totally positive elements
+   of aa in the balanced Shintani cone with trace t.}
 
-  basis := TraceBasis(bb);
+  basis := TraceBasis(aa);
   F := NumberField(Parent(basis[1]));
+  require Degree(F) eq 2: "this is hardcoded for quadratic fields";
   ZF := Integers(F);
   places := InfinitePlaces(F);
 
   if t eq 0 then
     return [ZF!0];
-  else  
-    smallestTrace := Trace(basis[1]);
+  else
+    // Orienting basis
+    if Evaluate(basis[2],places[2]) lt 0 then
+      basis := [basis[1], -basis[2]];
+    end if;
+    smallestTrace := Integers()!Trace(basis[1]);
     T := [];
     if t mod smallestTrace eq 0 then
       x := t div smallestTrace;
       C1,C2 := ShintaniWalls(ZF);
-      a1 := Evaluate(basis[1],places[1]); 
+      a1 := Evaluate(basis[1],places[1]);
       b1 := Evaluate(basis[2],places[1]);
-      a2 := Evaluate(basis[1],places[2]); 
+      a2 := Evaluate(basis[1],places[2]);
       b2 := Evaluate(basis[2],places[2]);
 
-      lowerbnd := (C2*x*a2-x*a1)/(b1-C2*b2); 
-      upperbnd := (C1*x*a2-x*a1)/(b1-C1*b2); 
-      // Magma has some extreme problems with .999999999 /= 1. 
-      // That is why this is defined in a terrible manner. 
+      lowerbnd := (C2*x*a2-x*a1)/(b1-C2*b2);
+      upperbnd := (C1*x*a2-x*a1)/(b1-C1*b2);
+      // Magma has some extreme problems with .999999999 /= 1.
+      // That is why this is defined in a terrible manner.
       // It removes points that lie on the upper wall.
       prec := Precision(lowerbnd);
-      if Abs(Round(lowerbnd) - lowerbnd) lt 10^(-prec/2) then 
-        lowerbnd := Round(lowerbnd); 
-      else 
-        lowerbnd := Ceiling(lowerbnd); 
+      if Abs(Round(lowerbnd) - lowerbnd) lt 10^(-prec/2) then
+        lowerbnd := Round(lowerbnd);
+      else
+        lowerbnd := Ceiling(lowerbnd);
       end if;
-      if Abs(Round(upperbnd) - upperbnd) lt 10^(-prec/2) then 
-        upperbnd := Round(upperbnd)-1; 
-      else 
-        upperbnd := Floor(upperbnd); 
+      if Abs(Round(upperbnd) - upperbnd) lt 10^(-prec/2) then
+        upperbnd := Round(upperbnd)-1;
+      else
+        upperbnd := Floor(upperbnd);
       end if;
       for y in [lowerbnd .. upperbnd] do
         Append(~T, x*basis[1]+y*basis[2]);
@@ -223,20 +221,22 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-
+/*
+ * Not USED anywhere
 // Shintani reduction algorithm
 // Use this function: it first does a lookup to see if already in the
 // Shintani cone, else it seeks to minimize the trace
-intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilDGRng) -> SeqEnum
-  {Reduce the element nu in component labelled bb.}
+intrinsic ReduceShintani(nu::RngOrdElt, aa::RngOrdFracIdl, M::ModFrmHilDGRng) -> SeqEnum
+  {Reduce the element nu in component labelled aa.}
   assert Parent(nu) eq Integers(M);
   shintani_reps := ShintaniReps(M);
-  if nu in Keys(shintani_reps[bb]) then
-    return shintani_reps[bb][nu];
+  if nu in Keys(shintani_reps[aa]) then
+    return shintani_reps[aa][nu];
   else
     return ReduceShintaniMinimizeTrace(nu);
   end if;
 end intrinsic;
+*/
 
 // Shintani reduction algorithm (workhorse)
 intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
@@ -285,7 +285,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
   end if;
 end intrinsic;
 
-// Test if an element is Shintani reduced 
+// Test if an element is Shintani reduced
 intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
   {Tests if the totally nonnegative element nu is Shintani reduced.}
 
@@ -317,15 +317,15 @@ intrinsic TotallyPositiveAssociate(M::ModFrmHilDGRng, gen::RngOrdElt) -> RngOrdE
   ZF := Integers(M);
   UnitGenerators := [F!(mU(u)) : u in Generators(U)];
   UnitSignatures := [Signature(u) : u in UnitGenerators];
-  
+
   // function 1 => 0 and -1 => 1;
-  h := function(x); 
+  h := function(x);
     if x eq 1 then return 0; else return 1; end if;
   end function;
 
   GenSignature := [ h(i) : i in Signature(F!gen)];
   // if not totally positive
-  if exists{i : i in GenSignature | i eq 1} then 
+  if exists{i : i in GenSignature | i eq 1} then
     UnitSignatures := [[h(i) : i in j] : j in UnitSignatures];
     F2 := GF(2);
     Mat := Matrix(F2,UnitSignatures);
@@ -368,14 +368,15 @@ end intrinsic;
 // Conversion : Shintani elements < = > Ideals
 // Converts pairs (bb,nu) <-> (bb,nn) based on the set of representatives bb for Cl^+(F)
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::RngOrdIdl) -> ModFrmHilDElt
-  {Takes a representative [bb] in Cl^+(F) and an integral ideal nn in ZF 
-   with [nn] = [bbp^(-1)] where bbp = dd_F*bb^-1 and returns Shintani 
+  {Takes a representative [bb] in Cl^+(F) and an integral ideal nn in ZF
+   with [nn] = [bbp^(-1)] where bbp = dd_F*bb^-1 and returns Shintani
    representative (nu) = nn*bbp = nn*bb*dd_F^(-1), dealing with nn = (0).}
 
   F := BaseField(M);
   ZF := Integers(M);
   dd := Different(ZF);
-  bbp := bb*(dd)^-1;
+  // bbp := bb*(dd)^-1;
+  bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
 
   if IsZero(nn) then
     return <0,1>;
@@ -388,15 +389,16 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   gen := ZF!gen;
 
   // This is hardcoded for quadratic Fields.
+  require Degree(F) eq 2: "This function is hardcoded for quadratic fields.";
   gen := TotallyPositiveAssociate(M,gen);
   shingen := ReduceShintaniMinimizeTrace(gen);
   return shingen;
 end intrinsic;
 
 // Conversion : Shintani elements < = > Ideals
-// Converts nu <-> nn, without needing bb as input 
+// Converts nu <-> nn, without needing bb as input
 intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> RngOrdElt
-  {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with 
+  {Takes a representative [bb] in Cl^+(F) and an integral ideal n in ZF with
    [n] = [bb^(-1)] and returns Shintani representative (nu) = n*bb}
   F := BaseField(M);
   mp := NarrowClassGroupMap(M);
@@ -404,23 +406,26 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> Rng
   bool, gen := IsPrincipal(nn*bbp);
   assert bool;
   // This is hardcoded for quadratic Fields.
+  require Degree(BaseField(M)) eq 2: "This function is hardcoded for quadratic fields.";
   gen := TotallyPositiveAssociate(M,gen);
   return ReduceShintaniMinimizeTrace(gen);
 end intrinsic;
 
 // Converts nus to nns
-intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
-  {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the 
-   integral ideal n = bb^(-1)*(nu) in ZF}
+intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdIdl, nu::RngElt) -> RngOrdIdl
+  {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the
+   integral ideal n = bb^(-1)*(nu) in ZF,
+   and caches this into M`ShintaniRepsIdeal
+  }
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
-    R := M`Integers;
-    dd := Different(R);
-    bbp := bb*(dd^-1);
+    bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbp^(-1));
   end if;
   return M`ShintaniRepsIdeal[bb][nu];
 end intrinsic;
 
+
+/* UNUSED
 intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::SetEnum[RngOrdElt])
  {populates ShintaniRepsIdeal[bb][nu] for nu in nus}
   bbinv := bb^(-1);
@@ -429,3 +434,4 @@ intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::S
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbinv);
   end for;
 end intrinsic;
+*/

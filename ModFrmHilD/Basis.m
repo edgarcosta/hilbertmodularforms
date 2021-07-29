@@ -19,8 +19,8 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt
     if dim gt 0 then
       traceBoundIncl:=TraceBoundInclusion(Mkdd, Mk);
 
-      if verbose then 
-        print "Cusp old form basis in level of norm ", Norm(dd),  "  computed with precision", traceBoundIncl;
+      if verbose then
+        printf "Cusp old form basis in level of norm %o computed with precision %o (default prec = %o)\n", Norm(dd),  traceBoundIncl, Precision(Parent(Mk));
       end if;
 
       HigherPrecM:=GradedRingOfHMFs(BaseField(Mk), traceBoundIncl);
@@ -41,18 +41,18 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDE
   NN := Level(Mk);
   k := Weight(Mk);
   require #SequenceToSet(k) eq 1: "Only implemented for parallel weight";
-  require k[1] mod 2 eq 0: "Only implemented for even weight";  // Eisenstein series will work for parallel weight 1. 
+  require k[1] mod 2 eq 0: "Only implemented for even weight";  // Eisenstein series will work for parallel weight 1.
   F := BaseField(Mk);
   ZF := Integers(F);
   n := Degree(ZF);
-  aas := [aa : aa in Divisors(NN) | aa^2 in Divisors(NN)]; 
+  aas := [aa : aa in Divisors(NN) | aa^2 in Divisors(NN)];
   EB := [];  // Eisenstein basis, to be filled in
   for aa in aas do // loop over
     N0 := aa^2;
     Mk_N0 := HMFSpace(M, N0, k);
     traceBoundIncl:=TraceBoundInclusion(Mk_N0, Mk);
 
-    if verbose then 
+    if verbose then
       print "Eisenstein old basis in level  of norm ", Norm(N0),  "  computed with precision", traceBoundIncl;
     end if;
 
@@ -71,12 +71,12 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDE
     end for;
   end for;
   return EB;
-end intrinsic; 
+end intrinsic;
 
 intrinsic Basis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
 
-  if verbose then 
+  if verbose then
     print "Wanted precision of space of parallel weight   ", Weight(Mk)[1], "     is", Precision(Parent(Mk));
   end if;
 
@@ -87,22 +87,22 @@ intrinsic Basis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
   return EB cat CB;
 end intrinsic;
 
-intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt] 
-  {returns a basis for the Galois invariant subspace} 
+intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {returns a basis for the Galois invariant subspace}
 
-  B := Basis(Mk); 
-  InvariantGenerators:=[]; 
-  for x in B do 
-    Append(~InvariantGenerators, 1/2*(x+Swap(x))); 
-  end for; 
-  InvariantBasis:=[]; 
-  for x in InvariantGenerators do 
-    if #LinearDependence(InvariantBasis cat [x]) eq 0 then 
-      Append(~InvariantBasis, x); 
-    end if; 
-  end for; 
-  return InvariantBasis; 
-end intrinsic; 
+  B := Basis(Mk);
+  InvariantGenerators:=[];
+  for x in B do
+    Append(~InvariantGenerators, 1/2*(x+Swap(x)));
+  end for;
+  InvariantBasis:=[];
+  for x in InvariantGenerators do
+    if #LinearDependence(InvariantBasis cat [x]) eq 0 then
+      Append(~InvariantBasis, x);
+    end if;
+  end for;
+  return InvariantBasis;
+end intrinsic;
 
 intrinsic ComponentBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns a Basis for Mk of forms that are only supported on one component}
