@@ -162,10 +162,25 @@ intrinsic Coefficient(f::ModFrmHilDElt, bb::RngOrdIdl, nu::RngElt) -> Any
   return Coefficients(Components(f)[bb])[nu];
 end intrinsic;
 
-
 intrinsic Coefficient(f::ModFrmHilDEltComp, nu::RngElt) -> Any
   {}
   return Coefficients(f)[nu];
+end intrinsic;
+
+intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
+  {}
+
+  Mk := Parent(f);
+  M := Parent(Mk);
+  F := BaseField(M);
+  ZF := Integers(F);
+  ddF := Different(ZF);
+  mCl := NarrowClassGroupMap(M);
+  // nn = nu*bbp^-1 = nu*ddF*bb^-1
+  bb := mCl(nn*ddF^-1)@@mCl;
+  _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
+  nu := ReduceShintaniMinimizeTrace(nu);
+  return Coefficients(f)[bb][nu];
 end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
