@@ -8,6 +8,7 @@ intrinsic Evaluate(omega::GrpCharUnitTotElt, x::RngElt) -> RngElt
 
   F := BaseField(omega);
   U, mU := TotallyPositiveUnits(F);
+  vals := omega`vals;
   return &*[vals[i]^a[i] : i in [1..#vals]] where a := Eltseq(x@@mU);
 end intrinsic;
 
@@ -66,7 +67,7 @@ intrinsic UnitCharacter(F::FldAlg, vals::SeqEnum[RngElt]) -> GrpCharUnitTotElt
 end intrinsic;
 
 
-intrinsic TrivialUnitCharacter(F::FldAlg, vals::SeqEnum[RngElt]) -> GrpCharUnitTotElt
+intrinsic TrivialUnitCharacter(F::FldAlg) -> GrpCharUnitTotElt
   {Create the trivial unit character on the totally positive unit group
    of the ring of integers of F.}
 

@@ -7,6 +7,7 @@ ModFrmHilDGRng
 declare type ModFrmHilDGRng [ModFrmHilD]; // ModFrmHilDGRng contains a ModFrmHilD contains ModFrmHilDElt
 declare attributes ModFrmHilDGRng:
   Field, // FldNum : totally real field
+  //FIXME: Move this and everything else that depends on Field only into FldExt
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
@@ -137,7 +138,7 @@ intrinsic UnitGroupMap(M::ModFrmHilDGRng) -> Any
 end intrinsic;
 
 intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrbAb, Map
-  {return the group of totally positive units of the base as an abstract group and the map from abstract totally positive unit group into F^\times_{>0}}
+  {return the group of totally positive units of the base as an abstract group and the map from abstract totally positive unit group into F^\times_>0}
   return TotallyPositiveUnits(BaseField(M));
 end intrinsic;
 
@@ -286,7 +287,6 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // field
   M`Field := F;
   R := Integers(F);
-  M`Integers := R;
   diffinv := Different(R)^-1;
   // narrow class group
   Cl, mp := NarrowClassGroup(F);
