@@ -169,13 +169,18 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
 
   basis := TraceBasis(aa);
   F := NumberField(Parent(basis[1]));
+  require Degree(F) eq 2: "this is hardcoded for quadratic fields";
   ZF := Integers(F);
   places := InfinitePlaces(F);
 
   if t eq 0 then
     return [ZF!0];
   else
-    smallestTrace := Trace(basis[1]);
+    // Orienting basis
+    if Evaluate(basis[2],places[2]) lt 0 then
+      basis := [basis[1], -basis[2]];
+    end if;
+    smallestTrace := Integers()!Trace(basis[1]);
     T := [];
     if t mod smallestTrace eq 0 then
       x := t div smallestTrace;
@@ -407,18 +412,20 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> Rng
 end intrinsic;
 
 // Converts nus to nns
-intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
+intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdIdl, nu::RngElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the
-   integral ideal n = bb^(-1)*(nu) in ZF}
+   integral ideal n = bb^(-1)*(nu) in ZF,
+   and caches this into M`ShintaniRepsIdeal
+  }
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
-    R := M`Integers;
-    dd := Different(R);
-    bbp := bb*(dd^-1); // should be cached
+    bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbp^(-1));
   end if;
   return M`ShintaniRepsIdeal[bb][nu];
 end intrinsic;
 
+
+/* UNUSED
 intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::SetEnum[RngOrdElt])
  {populates ShintaniRepsIdeal[bb][nu] for nu in nus}
   bbinv := bb^(-1);
@@ -427,3 +434,4 @@ intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::S
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbinv);
   end for;
 end intrinsic;
+*/

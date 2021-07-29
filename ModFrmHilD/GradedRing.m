@@ -20,8 +20,8 @@ declare attributes ModFrmHilDGRng:
   places, // SeqEnum : Real places for the field F
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
-  PositiveReps, // PositiveReps[bb] = [nu with trace at most Precision(M)]
-  PositiveRepsByTrace, // PositiveReps[bb][t] = [nu with trace t]
+  //PositiveReps, // PositiveReps[bb] = [nu with trace at most Precision(M)]
+  //PositiveRepsByTrace, // PositiveReps[bb][t] = [nu with trace t]
   ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
   ShintaniRepsIdeal, // ShintaniReps[bb] = [ShintaniRepresentativeToIdeal(nu) in Shintani with trace at most Precision(M)]
   ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
@@ -185,25 +185,25 @@ intrinsic ZeroIdeal(M::ModFrmHilDGRng) -> Any
   return M`ZeroIdeal;
 end intrinsic;
 
-intrinsic PositiveReps(M::ModFrmHilDGRng) -> Any
-  {}
-  return M`PositiveReps;
-end intrinsic;
-
-intrinsic PositiveRepsByTrace(M::ModFrmHilDGRng) -> Any
-  {}
-  return M`PositiveRepsByTrace;
-end intrinsic;
-
-intrinsic PositiveRepsUpToTrace(M::ModFrmHilDGRng, bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum
-  {}
-  reps := [];
-  assert t le Precision(M);
-  for i := 0 to t do
-    reps cat:= PositiveRepsByTrace(M)[bb][i];
-  end for;
-  return reps;
-end intrinsic;
+//intrinsic PositiveReps(M::ModFrmHilDGRng) -> Any
+//  {}
+//  return M`PositiveReps;
+//end intrinsic;
+//
+//intrinsic PositiveRepsByTrace(M::ModFrmHilDGRng) -> Any
+//  {}
+//  return M`PositiveRepsByTrace;
+//end intrinsic;
+//
+//intrinsic PositiveRepsUpToTrace(M::ModFrmHilDGRng, bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum
+//  {}
+//  reps := [];
+//  assert t le Precision(M);
+//  for i := 0 to t do
+//    reps cat:= PositiveRepsByTrace(M)[bb][i];
+//  end for;
+//  return reps;
+//end intrinsic;
 
 intrinsic ShintaniReps(M::ModFrmHilDGRng) -> Any
   {}
@@ -219,10 +219,7 @@ intrinsic ShintaniRepsUpToTrace(M::ModFrmHilDGRng, bb::RngOrdFracIdl, t::RngIntE
   {}
   shintani_reps := [];
   assert t le Precision(M);
-  for i := 0 to t do
-    shintani_reps cat:= ShintaniRepsByTrace(M)[bb][i];
-  end for;
-  return shintani_reps;
+  return &cat[ShintaniRepsByTrace(M)[bb][i] : i in [0..t]];
 end intrinsic;
 
 intrinsic ReduceIdealToShintaniRep(M::ModFrmHilDGRng) -> Any
@@ -330,8 +327,9 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`ZeroIdeal := ideal<Integers(F)|0>;
   // positive element reps and Shintani reps for each class group rep
   // up to trace bound prec
-  M`PositiveReps := AssociativeArray();
-  M`PositiveRepsByTrace := AssociativeArray();
+  // FIXME: delete PositiveReps commented lines
+  //M`PositiveReps := AssociativeArray();
+  //M`PositiveRepsByTrace := AssociativeArray();
   M`ShintaniReps := AssociativeArray();
   M`ShintaniRepsIdeal := AssociativeArray();
   M`ShintaniRepsByTrace := AssociativeArray();
@@ -341,15 +339,15 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
     bbp := bb*diffinv;
     Append(~M`IdealDualNarrowClassGroupReps, bbp);
     M`NarrowClassGroupRepsToIdealDual[bb] := bbp;
-    M`PositiveRepsByTrace[bb] := AssociativeArray();
+    //M`PositiveRepsByTrace[bb] := AssociativeArray();
     M`ShintaniRepsByTrace[bb] := AssociativeArray();
     M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
     for t := 0 to prec do
-      M`PositiveRepsByTrace[bb][t] := PositiveElementsOfTrace(bb, t);
-      M`ShintaniRepsByTrace[bb][t] := ShintaniRepsOfTrace(bb, t);
+      //M`PositiveRepsByTrace[bb][t] := PositiveElementsOfTrace(bb, t);
+      M`ShintaniRepsByTrace[bb][t] := ShintaniRepsOfTrace(bbp, t);
     end for;
-    M`PositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
-    M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
+    //M`PositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
+    M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec); // = &cat[M`ShintaniRepsByTrace[bb][i] : i in [0..prec]]
     M`ShintaniRepsIdeal[bb] := AssociativeArray();
     for nu in M`ShintaniReps[bb] do
       M`ReduceIdealToShintaniRep[bb][ideal<Integers(F)|nu>] := nu;
