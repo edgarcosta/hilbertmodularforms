@@ -20,7 +20,7 @@ intrinsic QuadraticZ(F::FldNum, M::AlgMatElt) -> AlgMatElt
 end intrinsic;
 
 
-intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::RngOrdElt,  GM::AlgMatElt) -> FldNumElt
+intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::FldOrdElt,  GM::AlgMatElt) -> FldNumElt
   { inputs: M a graded ring, 
     v a totally positive element in a totally real field,
     GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
@@ -98,7 +98,7 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
       if IsZero(nn) then
         coeffs[bb][nn] := 1;
       else
-        rep := IdealToShintaniRepresentative(M, bb, nn);
+        rep := IdealToShintaniRepresentative(M, bb, nn)[1];
         coeffs[bb][nn] := ThetaCoefficient(M, rep, GM);
       end if;
     end for;

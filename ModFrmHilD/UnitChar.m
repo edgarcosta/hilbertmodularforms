@@ -15,7 +15,7 @@ end intrinsic;
 intrinsic 'eq'(omega::GrpCharUnitTotElt, omegap::GrpCharUnitTotElt) -> BoolElt
   {Equality test.}
 
-  return omega`omega`vals cmpeq omegap`vals;
+  return omega`vals cmpeq omegap`vals;
 end intrinsic;
 
 intrinsic BaseField(omega::GrpCharUnitTotElt) -> FldAlg
