@@ -773,13 +773,18 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec := Minimum(prec_f, prec_g);
 
   M := Parent(Parent(f));
+  evaluate_bool := not IsOne(char_f) or not IsOne(char_g);
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     c := F!0;
     for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
       xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
-      c +:= F!Evaluate(char_f, epsilon1) * F!coeffs_f[smu1] *  F!Evaluate(char_g, epsilon2) * F!coeffs_g[smu2];
+      if evaluate_bool then
+        c +:= F!Evaluate(char_f, epsilon1) * F!coeffs_f[smu1] *  F!Evaluate(char_g, epsilon2) * F!coeffs_g[smu2];
+      else
+        c +:= F!coeffs_f[smu1] * F!coeffs_g[smu2];
+      end if;
     end for;
     coeffs_h[nu] := c;
   end for;
@@ -840,6 +845,8 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
+  evaluate_bool := not IsOne(char_f) or not IsOne(char_h);
+
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec)  do
     sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
     count := 0;
@@ -854,7 +861,11 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
         assert IsOne(epsilon2);
         count +:= 1;
       else
-        sum +:= F!Evaluate(char_f, epsilon1) * F!coeffs_g[smu1] *  F!Evaluate(char_h, epsilon2) * F!coeffs_h[smu2];
+        if evaluate_bool then
+          sum +:= F!Evaluate(char_f, epsilon1) * F!coeffs_g[smu1] *  F!Evaluate(char_h, epsilon2) * F!coeffs_h[smu2];
+        else
+          sum +:= F!coeffs_g[smu1] * F!coeffs_h[smu2];
+        end if;
       end if;
     end for;
     //FIXME: this asserts should be moved to the creation of MPairs
