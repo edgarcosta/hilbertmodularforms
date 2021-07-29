@@ -763,8 +763,6 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
     end for;
     coeffs_h[nu] := c;
   end for;
-  A := Domain(char_f);
-  unitchar := [char_f(A.i)*char_g(A.i) : i in [1..#Generators(A)]];
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] + Weight(g)[i] : i in [1..#Weight(f)] ],
@@ -845,8 +843,6 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   end for;
 
 
-  A := Domain(char_f);
-  unitchar := [char_f(A.i)/char_g(A.i) : i in [1..#Generators(A)]];
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)] ],
