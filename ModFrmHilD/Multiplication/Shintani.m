@@ -175,10 +175,12 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
   if t eq 0 then
     return [ZF!0];
   else
-    smallestTrace := Trace(basis[1]);
+    smallestTrace := Integers()!Trace(basis[1]);
+    print "smallest trace = ", smallestTrace;
     T := [];
     if t mod smallestTrace eq 0 then
       x := t div smallestTrace;
+      print "x = ", x;
       C1,C2 := ShintaniWalls(ZF);
       a1 := Evaluate(basis[1],places[1]);
       b1 := Evaluate(basis[2],places[1]);
@@ -187,6 +189,7 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
 
       lowerbnd := (C2*x*a2-x*a1)/(b1-C2*b2);
       upperbnd := (C1*x*a2-x*a1)/(b1-C1*b2);
+      print "lu = ", <lowerbnd, upperbnd>;
       // Magma has some extreme problems with .999999999 /= 1.
       // That is why this is defined in a terrible manner.
       // It removes points that lie on the upper wall.
@@ -409,16 +412,18 @@ end intrinsic;
 // Converts nus to nns
 intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::RngOrdElt) -> RngOrdIdl
   {Takes a representative [bb^(-1)] in Cl^+(F) and a nu in bb_+ and returns the
-   integral ideal n = bb^(-1)*(nu) in ZF}
+   integral ideal n = bb^(-1)*(nu) in ZF,
+   and caches this into M`ShintaniRepsIdeal
+  }
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
-    R := M`Integers;
-    dd := Different(R);
-    bbp := bb*(dd^-1); // should be cached
+    bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbp^(-1));
   end if;
   return M`ShintaniRepsIdeal[bb][nu];
 end intrinsic;
 
+
+/* UNUSED
 intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::SetEnum[RngOrdElt])
  {populates ShintaniRepsIdeal[bb][nu] for nu in nus}
   bbinv := bb^(-1);
@@ -427,3 +432,4 @@ intrinsic PopulateShintaniRepsIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nus::S
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbinv);
   end for;
 end intrinsic;
+*/
