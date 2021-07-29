@@ -91,7 +91,7 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   K := BaseField(M);
   ZK := IntegerRing(K);
   coeffs := AssociativeArray();
-  assert NarrowClassNumber(K) eq 1; //we are assuming narrow class number = 1
+  require NarrowClassNumber(K) eq 1: "Theta Series only impliemented with narrow class number one";
   for bb in reps do
     coeffs[bb] := AssociativeArray();
     for nn in IdealsByNarrowClassGroup(M)[bb] do
