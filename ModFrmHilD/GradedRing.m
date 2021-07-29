@@ -7,7 +7,6 @@ ModFrmHilDGRng
 declare type ModFrmHilDGRng [ModFrmHilD]; // ModFrmHilDGRng contains a ModFrmHilD contains ModFrmHilDElt
 declare attributes ModFrmHilDGRng:
   Field, // FldNum : totally real field
-  Integers, // RngOrd : ZF
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
@@ -20,8 +19,6 @@ declare attributes ModFrmHilDGRng:
   places, // SeqEnum : Real places for the field F
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
-  //PositiveReps, // PositiveReps[bb] = [nu with trace at most Precision(M)]
-  //PositiveRepsByTrace, // PositiveReps[bb][t] = [nu with trace t]
   ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
   ShintaniRepsIdeal, // ShintaniReps[bb] = [ShintaniRepresentativeToIdeal(nu) in Shintani with trace at most Precision(M)]
   ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
@@ -46,12 +43,6 @@ declare attributes ModFrmHilDGRng:
   TotallyPositiveUnitGroupMap // map from abstract totally positive unit group into R^\times_{>0}
   ;
 
-// save fundamental unit
-declare attributes FldNum:
-  FundamentalUnitTotPos;
-
-declare attributes FldQuad:
-  FundamentalUnitTotPos;
 
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
@@ -96,7 +87,7 @@ end intrinsic;
 
 intrinsic Integers(M::ModFrmHilDGRng) -> RngOrd
   {}
-  return M`Integers;
+  return Integers(M`Field);
 end intrinsic;
 
 intrinsic NarrowClassGroup(M::ModFrmHilDGRng) -> GrpAb

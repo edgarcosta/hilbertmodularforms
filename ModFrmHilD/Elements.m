@@ -10,7 +10,8 @@ declare attributes ModFrmHilDEltComp:
   Precision, // RngIntElt
   Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where nu in Shintani cone
   BaseRing, // Rng: where the coefficients live (does this depend on bb?)
-  UnitChar, // Hom: TotallyPositiveUnitGroup(Parent(Parent)) -> BaseRing
+  UnitChar, // Map: TotallyPositiveUnitGroup(Parent(Parent)) -> BaseRing
+  UnitCharOnGens, // [w(A.i) : i in [1..#Generators(A)], where w is UnitChar and A is its domain
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
 
 declare type ModFrmHilDElt;
@@ -122,6 +123,12 @@ end intrinsic;
 intrinsic UnitChar(f::ModFrmHilDEltComp) -> Map
   {return the unit character of f}
   return f`UnitChar;
+end intrinsic;
+
+
+intrinsic UnitCharOnGens(f::ModFrmHilDEltComp) -> Map
+  {return the unit character of f}
+  return f`UnitCharOnGens;
 end intrinsic;
 
 
@@ -327,6 +334,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   f`BaseRing := R;
   A := TotallyPositiveUnitGroup(M);
   if Type(unitchar) eq Map then
+    require Domain(unitchar) eq A: "the provided domain must be the TotallyPositiveUnitGroup of the Graded Ring";
     f`UnitChar := unitchar;
   else
     if IsZero(unitchar) then // IsZero([]) is true
@@ -334,6 +342,8 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     end if;
     f`UnitChar := map<A -> R | a :-> &*[unitchar[i]^Eltseq(a)[i] : i in [1..#unitchar]]>;
   end if;
+  A := Domain(f`UnitChar);
+  f`UnitCharOnGens := [f`UnitChar(A.i) : i in [1..#Generators(A)]];
   return f;
 end intrinsic;
 
@@ -631,7 +641,7 @@ end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
 {compares Parent, Weight, Component, Precision, UnitChar, and Coefficients.}
-  if not &and[a(f) eq a(g): a in [Parent, Component, UnitChar, Precision]] then
+  if not &and[a(f) eq a(g): a in [Parent, ComponentIdeal, UnitCharOnGens, Precision]] then
     return false;
   end if;
   if Keys(Coefficients(f)) ne Keys(Coefficients(g)) then
@@ -817,6 +827,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
+  mU := TotallyPositiveUnitGroupMap(GradedRing(f));
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec)  do
     sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
     count := 0;
@@ -831,7 +842,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
         assert IsOne(epsilon2);
         count +:= 1;
       else
-        sum +:= F!char_f(epsilon1) * F!coeffs_g[smu1] *  F!char_f(epsilon2) * F!coeffs_h[smu2];
+        sum +:= F!char_f(epsilon1@@mU) * F!coeffs_g[smu1] *  F!char_f(epsilon2@@mU) * F!coeffs_h[smu2];
       end if;
     end for;
     //FIXME: this asserts should be moved to the creation of MPairs
@@ -841,11 +852,11 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
 
 
   A := Domain(char_f);
-  unitchar := [char_f(A.i)/char_g(A.i) : i in [1..Generators(A)]];
+  unitchar := [char_f(A.i)/char_g(A.i) : i in [1..#Generators(A)]];
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)] ],
-                    Character(f)/Character(g));
+                    Character(Parent(f))/Character(Parent(g)));
   return HMFComp(Space, ComponentIdeal(f), coeffs_h : unitchar:=unitchar, prec:=prec);
 end intrinsic;
 
@@ -862,7 +873,7 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   Space := HMFSpace(GradedRing(f),
                     Level(f),
                     [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)]],
-                    Character(f)/Character(g));
+                    Character(Parent(f))/Character(Parent(g)));
   return HMFSumComponents(Space, comp);
 end intrinsic;
 
