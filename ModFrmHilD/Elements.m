@@ -342,6 +342,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     end if;
     f`UnitChar := map<A -> R | a :-> &*[unitchar[i]^Eltseq(a)[i] : i in [1..#unitchar]]>;
   end if;
+  A := Domain(f`UnitChar);
   f`UnitCharOnGens := [f`UnitChar(A.i) : i in [1..#Generators(A)]];
   return f;
 end intrinsic;
