@@ -175,8 +175,15 @@ intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
   M := Parent(Mk);
   ZF := Integers(M);
   k := Weight(Mk);
-  require not SequenceToSet(k) eq Set([2]) : "Trace is broken for 2, talk to Ben.";
-  return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
+  if SequenceToSet(k) eq Set([2]) then
+    print "Not using trace formula, might be slow (parallel weight 2). Talk to Ben";
+    EB := EisensteinBasis(Mk);
+    cuspDim := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
+    dim := #EB + Dimension(cuspDim);
+    return dim;
+  else  
+    return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
+  end if;
 end intrinsic;
 
 
