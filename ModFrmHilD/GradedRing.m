@@ -376,8 +376,9 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
   // M`Primes
-  // FIXME: this seems too many primes
   M`AllPrimes := PrimesUpTo(Integers()!Max(norms), BaseField(M));
+  //FIXME?!?
+  //assert SequenceToSet(M`AllPrimes) subset SequenceToSet(M`AllIdeals);
 
   M`Spaces := AssociativeArray();
   return M;
@@ -411,9 +412,8 @@ end intrinsic;
 
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
-  bbs := NarrowClassGroupReps(M);
   M`MPairs := AssociativeArray();
-  for bb in bbs do
+  for bb in NarrowClassGroupReps(M) do
     // Populates M`Mpairs[bb]
     ComputeMPairs(bb, M);
   end for;
