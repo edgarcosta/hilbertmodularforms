@@ -4,7 +4,7 @@ load "config.m";
 
 // Create the graded ring
 
-F:=QuadraticField(13);
+F:=QuadraticField(5);
 prec:=15;
 M:=GradedRingOfHMFs(F, prec);
 M;
@@ -66,35 +66,25 @@ print X;
 
 // An example with non trivial unit group character
 
-
-function HMFwithNontrivialUnitGroupChar(M,  k)
-// returns an HMF over F=Q(Sqrt(-12)) with unit group character 1 if epsilon is a square and -1 otherwise
-	F:=BaseField(M);
-	assert Discriminant(F) eq 12;
-	prec:=M`Precision;
-	ZF:=Integers(F);
-	eta:=ZF!(ZF.2+2);
-	coeffs := AssociativeArray();
-	repcoeffs := AssociativeArray();
-	bb:=1*ZF;
-    numcoeffs := #ShintaniReps(M)[bb];
-    elts := ShintaniReps(M)[bb];
-    for j := 1 to numcoeffs do
-       repcoeffs[ShintaniRepresentativeToIdeal(M, bb,elts[j])]:=Coeff(elts[j],k[1])-Coeff(elts[j]*eta^(-1),k[1]); //Coeff(reps[i],elts[j]*eta^(-1),Weight(f)[1]);
-    end for;
-    coeffs[bb]:=repcoeffs; 
- 	A := HMF(HMFSpace(M, k), CompleteCoeffsZeros(M, coeffs));
- 	return A;
-end function;
+F:=QuadraticField(5);
+ZF:=Integers(F);
+prec:=15;
+M:=GradedRingOfHMFs(F, prec);
 
 
+fplus, fminus:=SiegelEisensteinPullback1(M, [4,4]);
 
+assert IsZero(fminus);
+assert Coefficients(fplus)[ZF.2+2] eq 30240;
+
+
+// Narrow class number >1
 F:=QuadraticField(12);
 prec:=20;
 M:=GradedRingOfHMFs(F, prec);
 B8:=Basis(HMFSpace(M, [8,8]));
 
 
-f:=HMFwithNontrivialUnitGroupChar(M,  [4,4]);
-
-assert LinearDependence([f^2] cat B8)[5] eq [ 1, 0, 0, -32, 0, 60032/649, 0, -856/1947, 0 ];
+gplus, gminus:=SiegelEisensteinPullback1(M, [4,4]);
+// Add an assert that has the following info
+//  assert LinearDependence([gminus^2] cat B8)[5] eq [ 1, 0, 0, -32, 0, 60032/649, 0, -856/1947, 0 ];
