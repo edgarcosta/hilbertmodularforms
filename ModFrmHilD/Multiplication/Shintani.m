@@ -152,7 +152,7 @@ end intrinsic;
 
 
 // Elements of the Shintani domain with trace t
-/* Idea: We compute a basis a,b for the ideal bb where Tr(a) = n > 0 and Tr(b) = 0.
+/* Idea: We compute a basis a,b for the ideal aa where Tr(a) = n > 0 and Tr(b) = 0.
    Elements in ideal will look like xa+yb where x,y in ZZ and have embedding
       xa_1 + yb_1 and xa_2 + yb_2.
    All totally positive elements of given trace t will satisfy
@@ -163,11 +163,11 @@ end intrinsic;
    Eq 1) determines the value for x while
    Eq 2) allows us to loop over values of y.
 */
-intrinsic ShintaniRepsOfTrace(bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
-  {Given bb a fractional ideal, t a trace, returns the totally positive elements
-   of bb in the balanced Shintani cone with trace t.}
+intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
+  {Given aa a fractional ideal, t a trace, returns the totally positive elements
+   of aa in the balanced Shintani cone with trace t.}
 
-  basis := TraceBasis(bb);
+  basis := TraceBasis(aa);
   F := NumberField(Parent(basis[1]));
   ZF := Integers(F);
   places := InfinitePlaces(F);
@@ -216,20 +216,22 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-
+/*
+ * Not USED anywhere
 // Shintani reduction algorithm
 // Use this function: it first does a lookup to see if already in the
 // Shintani cone, else it seeks to minimize the trace
-intrinsic ReduceShintani(nu::RngOrdElt, bb::RngOrdFracIdl, M::ModFrmHilDGRng) -> SeqEnum
-  {Reduce the element nu in component labelled bb.}
+intrinsic ReduceShintani(nu::RngOrdElt, aa::RngOrdFracIdl, M::ModFrmHilDGRng) -> SeqEnum
+  {Reduce the element nu in component labelled aa.}
   assert Parent(nu) eq Integers(M);
   shintani_reps := ShintaniReps(M);
-  if nu in Keys(shintani_reps[bb]) then
-    return shintani_reps[bb][nu];
+  if nu in Keys(shintani_reps[aa]) then
+    return shintani_reps[aa][nu];
   else
     return ReduceShintaniMinimizeTrace(nu);
   end if;
 end intrinsic;
+*/
 
 // Shintani reduction algorithm (workhorse)
 intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
@@ -368,7 +370,8 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   F := BaseField(M);
   ZF := Integers(M);
   dd := Different(ZF);
-  bbp := bb*(dd)^-1;
+  // bbp := bb*(dd)^-1;
+  bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
 
   if IsZero(nn) then
     return <0,1>;
@@ -381,6 +384,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   gen := ZF!gen;
 
   // This is hardcoded for quadratic Fields.
+  require Degree(F) eq 2: "This function is hardcoded for quadratic fields.";
   gen := TotallyPositiveAssociate(M,gen);
   shingen := ReduceShintaniMinimizeTrace(gen);
   return shingen;
@@ -397,6 +401,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> Rng
   bool, gen := IsPrincipal(nn*bbp);
   assert bool;
   // This is hardcoded for quadratic Fields.
+  require Degree(BaseField(M)) eq 2: "This function is hardcoded for quadratic fields.";
   gen := TotallyPositiveAssociate(M,gen);
   return ReduceShintaniMinimizeTrace(gen);
 end intrinsic;
