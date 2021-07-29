@@ -312,34 +312,6 @@ end intrinsic;
 
 /////////////////////// Totally positive associate /////////////////
 
-intrinsic TotallyPositiveAssociate(M::ModFrmHilDGRng, gen::RngOrdElt) -> RngOrdElt
-  {Finds a totally positive associate to the given element}
-  U := UnitGroup(M);
-  mU := UnitGroupMap(M);
-  F := BaseField(M);
-  ZF := Integers(M);
-  UnitGenerators := [F!(mU(u)) : u in Generators(U)];
-  UnitSignatures := [Signature(u) : u in UnitGenerators];
-
-  // function 1 => 0 and -1 => 1;
-  h := function(x);
-    if x eq 1 then return 0; else return 1; end if;
-  end function;
-
-  GenSignature := [ h(i) : i in Signature(F!gen)];
-  // if not totally positive
-  if exists{i : i in GenSignature | i eq 1} then
-    UnitSignatures := [[h(i) : i in j] : j in UnitSignatures];
-    F2 := GF(2);
-    Mat := Matrix(F2,UnitSignatures);
-    V := Vector(F2,GenSignature);
-    X := Solution(Mat,V);
-    UNIT := &*[UnitGenerators[i] : i in [1..#Generators(U)] | X[i] ne 0 ];
-    gen := ZF!(gen*UNIT);
-  end if;
-  return gen;
-end intrinsic;
-
 intrinsic Signature(a::RngOrdElt) -> SeqEnum
   {}
   R := Parent(a);
@@ -387,11 +359,10 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
 
   mp := NarrowClassGroupMap(M);
   require IsIdentity((nn*bbp)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
-  bool, gen := IsPrincipal(nn*bbp);
+  bool, gen := IsNarrowlyPrincipal(nn*bbp);
   assert bool;
   // This is hardcoded for quadratic Fields.
   require Degree(F) eq 2: "This function is hardcoded for quadratic fields.";
-  gen := TotallyPositiveAssociate(M,gen);
   shingen := ReduceShintaniMinimizeTrace(gen);
   return shingen;
 end intrinsic;
@@ -404,11 +375,10 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> Rng
   F := BaseField(M);
   mp := NarrowClassGroupMap(M);
   bbp := mp(-(nn @@ mp)); // bb' is inverse of nn in narrow class group
-  bool, gen := IsPrincipal(nn*bbp);
+  bool, gen := IsNarrowlyPrincipal(nn*bbp);
   assert bool;
   // This is hardcoded for quadratic Fields.
   require Degree(BaseField(M)) eq 2: "This function is hardcoded for quadratic fields.";
-  gen := TotallyPositiveAssociate(M,gen);
   return ReduceShintaniMinimizeTrace(gen);
 end intrinsic;
 
