@@ -4,6 +4,7 @@
   Elements.m
   Workspace.m
   Formatting.m
+  FldExt.m
   Hecke.m
   Basis.m
   Trace.m
