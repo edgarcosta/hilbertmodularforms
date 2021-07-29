@@ -676,7 +676,7 @@ end intrinsic;
 intrinsic 'eq'(f::ModFrmHilDEltComp, c::RngElt) -> BoolElt
   {compare f against a scalar c}
   if Coefficient(f)[0] ne c then
-    return False;
+    return false;
   end if;
   return IsZero([Coefficient(f)[nu] : nu in Keys(Coefficient(f)) | nu ne 0]);
 end intrinsic;
