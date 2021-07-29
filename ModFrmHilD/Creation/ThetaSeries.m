@@ -21,7 +21,7 @@ end intrinsic;
 
 
 intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::FldOrdElt,  GM::AlgMatElt) -> FldNumElt
-  { inputs: M a graded ring, 
+  { inputs: M a graded ring,
     v a totally positive element in a totally real field,
     GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
     L the ZZ-lattice of the map Tr(Q(v)) where Q is the quadratic form with Gram matrix GM;
@@ -63,8 +63,8 @@ intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::FldOrdElt,  GM::AlgMatElt) -> F
   r_v := 0;
 	for i:=1 to num_sols do
     //number of preimages of v inside initial lattice; also the Fourier coefficient for element v
-    if DotProduct(pgm[i],PreimTr[i])  eq v then //check which vectors in the preimage of Tr(v) are also in the preimage of 
-      r_v +:= 2; 
+    if DotProduct(pgm[i],PreimTr[i])  eq v then //check which vectors in the preimage of Tr(v) are also in the preimage of
+      r_v +:= 2;
     end if;
 	end for;
 	return r_v;
