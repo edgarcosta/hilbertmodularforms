@@ -34,6 +34,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
       bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
       nusT := ShintaniRepsByTrace(M)[bb][T]; //get list of Shintani reps with trace T
       totalIdeals +:= #nusT;
+
       for nu in nusT do
         I := nu*bbp^(-1);  // already call nn the ideal for the Hecke operator
         c := 0;
@@ -43,14 +44,14 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
         // Formula 2.23 in Shimura - The Special Values 
         //             of the zeta functions associated with Hilbert Modular Forms
         for aa in Divisors(ZF!!(I + nn)) do
-          if aa^(-2) * (I*nn) notin AllIdeals(M) then
+          if ZF!!(aa^(-2) * (I*nn)) notin AllIdeals(M) then
             allDivisors := false; 
             break; 
                  // stop looping through divisors if coefficient for at least one divisor 
                  // is not defined (if trace (aa^(-2) * (I*nn)) is greater than precision)
           else
             if I eq 0*ZF then 
-              c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[mp((bbp*nn/aa^2)@@mp)][ZF!0]; 
+              c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[mp((I*nn/aa^2)@@mp)][ZF!0]; 
                            //takes care if the coefficients for the zero ideal are different
             else 
               c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF!!(aa^(-2) * (I*nn)));
@@ -83,8 +84,8 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
     end if;
   end for;
 
+  // JV : Need to assign precision, I think this should handle the above better
   g := HMF(Mk, coeffsTnnf : CoeffsByIdeals := true);
-  g`Precision := newPrec;
   return g;      
 end intrinsic;
 

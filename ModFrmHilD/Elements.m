@@ -170,6 +170,8 @@ end intrinsic;
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
   {}
 
+  require not IsZero(nn) : "The zero coefficient exists on each component";    
+
   Mk := Parent(f);
   M := Parent(Mk);
   F := BaseField(M);
@@ -177,7 +179,7 @@ intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
   ddF := Different(ZF);
   mCl := NarrowClassGroupMap(M);
   // nn = nu*bbp^-1 = nu*ddF*bb^-1
-  bb := mCl((nn*ddF^-1)@@mCl);
+  bb := mCl((nn^-1*ddF)@@mCl);
   assert bb in NarrowClassGroupReps(M);
   _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
   nu := ReduceShintaniMinimizeTrace(nu)[1];
