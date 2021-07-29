@@ -415,7 +415,7 @@ intrinsic ShintaniRepresentativeToIdeal(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu
   if not IsDefined(M`ShintaniRepsIdeal[bb], nu) then
     R := M`Integers;
     dd := Different(R);
-    bbp := bb*(dd^-1);
+    bbp := bb*(dd^-1); // should be cached
     M`ShintaniRepsIdeal[bb][nu] := NicefyIdeal(nu*bbp^(-1));
   end if;
   return M`ShintaniRepsIdeal[bb][nu];
