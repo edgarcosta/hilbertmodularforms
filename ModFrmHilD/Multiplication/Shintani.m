@@ -11,26 +11,19 @@ intrinsic Slope(alpha::RngOrdElt) -> FldReElt
 end intrinsic;
 
 // Rearranges the basis for an ideal so that the second basis vector has trace 0
-intrinsic TraceBasis(bb::RngOrdFracIdl) -> SeqEnum
-  {Given a fractional ideal bb, returns a basis (a,b) in Smith normal form 
+intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
+  {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form 
    where Trace(a) = n > 0 and Trace(b) = 0}
 
   // Preliminaries
-  B := Basis(bb);
+  B := Basis(aa);
   ZF := Parent(B[2]);
 
-  // Sort Basis elemements according to the size of their trace
-  BTr := [Trace(b) : b in B];
-  ParallelSort(~BTr,~B);
-
   // Change of basis
-  trMat := Matrix([[Trace(B[i]) : i in [1..#B]]]);
+  trMat := Matrix([[Integers()!Trace(B[i]) : i in [1..#B]]]);
   _, _, Q := SmithForm(trMat);
   assert Determinant(Q) eq 1;
   B := Eltseq(Vector(B)*ChangeRing(Q,ZF));
-  if Trace(B[2]) lt 0 then
-    B[2] *:= -1;
-  end if;
   return B;
 end intrinsic;
 
