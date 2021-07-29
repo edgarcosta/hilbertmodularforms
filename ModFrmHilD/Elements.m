@@ -635,7 +635,7 @@ end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
 {compares Parent, Weight, Component, Precision, UnitChar, and Coefficients.}
-  if not &and[a(f) eq a(g): a in [Parent, ComponentIdeal, UnitCharOnGens, Precision]] then
+  if not &and[a(f) eq a(g): a in [Parent, ComponentIdeal, UnitChar, Precision]] then
     return false;
   end if;
   if Keys(Coefficients(f)) ne Keys(Coefficients(g)) then
