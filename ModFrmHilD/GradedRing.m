@@ -11,7 +11,9 @@ declare attributes ModFrmHilDGRng:
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
-  NarrowClassGroupReps, // SeqEnum[RngIdl]
+  NarrowClassGroupReps, // SeqEnum[RngOrdIdl] := [bb]
+  IdealDualNarrowClassGroupReps, // SeqEnum[RngFracIdl] := [bbp], where bbp := bb*Difference(Integers)^-1]
+  NarrowClassGroupRepsToIdealDual, // Assoc, bb -> bbp
   UnitGroup, // GrpAb
   UnitGroupMap, // Map : GrpAb -> Units of ZF
   DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
@@ -112,9 +114,19 @@ intrinsic NarrowClassGroupMap(M::ModFrmHilDGRng) -> Map
   return M`NarrowClassGroupMap;
 end intrinsic;
 
-intrinsic NarrowClassGroupReps(M::ModFrmHilDGRng) -> Any
+intrinsic NarrowClassGroupReps(M::ModFrmHilDGRng) -> SeqEnum[RngOrdIdl]
   {}
   return M`NarrowClassGroupReps;
+end intrinsic;
+
+intrinsic IdealDualNarrowClassGroupReps(M::ModFrmHilDGRng) -> SeqEnum[RngFracIdl]
+  {}
+  return M`IdealDualNarrowClassGroupReps;
+end intrinsic;
+
+intrinsic NarrowClassGroupRepsToIdealDual(M::ModFrmHilDGRng) -> Assoc
+  {}
+  return M`NarrowClassGroupRepsToIdealDual;
 end intrinsic;
 
 intrinsic NarrowClassRepresentative(M::ModFrmHilDGRng, I::RngOrdIdl) -> Any
@@ -294,6 +306,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`Field := F;
   R := Integers(F);
   M`Integers := R;
+  diffinv := Different(R)^-1;
   // narrow class group
   Cl, mp := NarrowClassGroup(F);
   U, mU := UnitGroup(F);
@@ -301,6 +314,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
   M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
+  M`IdealDualNarrowClassGroupReps := [];
+  M`NarrowClassGroupRepsToIdealDual := AssociativeArray();
   M`UnitGroup := U;
   M`UnitGroupMap := mU;
   Up, mUp := TotallyPositiveUnits(R);
@@ -323,6 +338,9 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`ReduceIdealToShintaniRep := AssociativeArray();
   // Elements and Shintani domains
   for bb in M`NarrowClassGroupReps do
+    bbp := bb*diffinv;
+    Append(~M`IdealDualNarrowClassGroupReps, bbp);
+    M`NarrowClassGroupRepsToIdealDual[bb] := bbp;
     M`PositiveRepsByTrace[bb] := AssociativeArray();
     M`ShintaniRepsByTrace[bb] := AssociativeArray();
     M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
@@ -355,12 +373,13 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // M`Ideals
   all_ideals := &cat[IdealsByNarrowClassGroup(M)[bb] : bb in NarrowClassGroupReps(M)];
-  // M`Primes
-  M`AllPrimes := PrimesUpTo(Integers()!Max([CorrectNorm(nn) : nn in all_ideals]), BaseField(M));
   // sort M`Ideals by Norm
   norms := [CorrectNorm(I) : I in all_ideals];
   ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
+  // M`Primes
+  // FIXME: this seems too many primes
+  M`AllPrimes := PrimesUpTo(Integers()!Max(norms), BaseField(M));
 
   M`Spaces := AssociativeArray();
   return M;
