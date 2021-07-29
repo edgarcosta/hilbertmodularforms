@@ -1,6 +1,6 @@
 ///// Shintani Algorithms + Enumerations of Totally positive elements in ideals /////////
 
-intrinsic Slope(alpha::RngOrdElt) -> FldReElt
+intrinsic Slope(alpha::RngElt) -> FldReElt
   { Input:  alpha, an element of ZF for F a totally real quadratic number field
     Output: The "slope" defined by alpha: sigma_2(alpha)/sigma_1(alpha) where
     sigma_i is the ith embedding of F}
@@ -18,12 +18,18 @@ intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
   // Preliminaries
   B := Basis(aa);
   ZF := Parent(B[2]);
+  places := InfinitePlaces(NumberField(ZF));
 
   // Change of basis
-  trMat := Matrix([[Integers()!Trace(B[i]) : i in [1..#B]]]);
-  _, _, Q := SmithForm(trMat);
-  assert Determinant(Q) eq 1;
-  B := Eltseq(Vector(B)*ChangeRing(Q,ZF));
+  trMat := Matrix([[Integers()!Trace(B[i])] : i in [1..#B]]);
+  _, Q := HermiteForm(trMat);
+  B := Eltseq(Vector(B)*Transpose(ChangeRing(Q,ZF)));
+  assert Trace(B[1]) gt 0;
+  assert Trace(B[2]) eq 0;
+  // Orienting B
+  if Evaluate(B[2], places[2]) lt 0 then
+    B := [B[1], -B[2]];
+  end if;
   return B;
 end intrinsic;
 
@@ -50,7 +56,7 @@ intrinsic PositiveElementsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[Rn
    returns the totally positive elements of aa with trace t.}
   basis := TraceBasis(aa);
   places := InfinitePlaces(NumberField(Parent(basis[1])));
-  smallestTrace := Trace(basis[1]);
+  smallestTrace := Integers()!Trace(basis[1]);
   T := [];
   if t mod smallestTrace eq 0 then
     x := t div smallestTrace;
@@ -80,10 +86,10 @@ intrinsic ElementsInABox(M::ModFrmHilDGRng, aa::RngOrdFracIdl,
   places := InfinitePlaces(F);
 
   // Precomputationss
-  a_1 := Evaluate(basis[1],places[1]);
-  b_1 := Evaluate(basis[2],places[1]);
-  a_2 := Evaluate(basis[1],places[2]);
-  b_2 := Evaluate(basis[2],places[2]);
+  a_1 := Evaluate(basis[1], places[1]);
+  b_1 := Evaluate(basis[2], places[1]);
+  a_2 := Evaluate(basis[1], places[2]);
+  b_2 := Evaluate(basis[2], places[2]);
 
   // List of all Elements
   T := [];
@@ -176,10 +182,7 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
   if t eq 0 then
     return [ZF!0];
   else
-    // Orienting basis
-    if Evaluate(basis[2],places[2]) lt 0 then
-      basis := [basis[1], -basis[2]];
-    end if;
+
     smallestTrace := Integers()!Trace(basis[1]);
     T := [];
     if t mod smallestTrace eq 0 then
@@ -239,7 +242,7 @@ end intrinsic;
 */
 
 // Shintani reduction algorithm (workhorse)
-intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
+intrinsic ReduceShintaniMinimizeTrace(nu::FldOrdElt) -> Any
   {Reduce the element nu to the Shintani domain.}
 
   if nu eq 0 then
@@ -262,7 +265,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
 
   eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
   slope_eps := Slope(eps);
-  slope_nu := Slope(ZF!nu);
+  slope_nu := Slope(nu);
 
   RR := RealField(100);
   ratio := RR!(1/2)*Log(RR!slope_nu)/Log(RR!eps_RR[1]);
@@ -286,7 +289,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngOrdElt) -> Any
 end intrinsic;
 
 // Test if an element is Shintani reduced
-intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
+intrinsic IsShintaniReduced(nu::RngElt) -> BoolElt
   {Tests if the totally nonnegative element nu is Shintani reduced.}
 
   // zero is Shintani Reduced
@@ -295,7 +298,7 @@ intrinsic IsShintaniReduced(nu::RngOrdElt) -> BoolElt
   end if;
 
   // wall1 < wall2
-  wall1, wall2 := ShintaniWalls(Parent(nu));
+  wall1, wall2 := ShintaniWalls(Integers(Parent(nu)));
   slope := Slope(nu);
   prec := Precision(Parent(slope));
 
@@ -386,8 +389,6 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::Rn
   require IsIdentity((nn*bbp)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
   bool, gen := IsPrincipal(nn*bbp);
   assert bool;
-  gen := ZF!gen;
-
   // This is hardcoded for quadratic Fields.
   require Degree(F) eq 2: "This function is hardcoded for quadratic fields.";
   gen := TotallyPositiveAssociate(M,gen);

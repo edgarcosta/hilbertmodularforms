@@ -492,9 +492,6 @@ end intrinsic;
 
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   {}
-
-  print "Checking coercibility of", Mk, f;
-
   if Type(f) notin [ModFrmHilDElt, ModFrmHilDEltComp] then
     return false, "f not of type ModFrmHilDElt or ModFrmHilDEltComp";
   else // f is an HMF so has a chance to be coercible
@@ -758,10 +755,8 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
       xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
-      print F!char_f(epsilon1@@mU), F!char_f(epsilon2@@mU);
       c +:= F!char_f(epsilon1@@mU) * F!coeffs_f[smu1] *  F!char_f(epsilon2@@mU) * F!coeffs_g[smu2];
     end for;
-    printf "trace(%o) = %o, c = %o\n", nu, Trace(nu), c;
     coeffs_h[nu] := c;
   end for;
   A := Domain(char_f);

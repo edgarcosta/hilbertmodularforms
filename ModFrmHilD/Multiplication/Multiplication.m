@@ -8,7 +8,7 @@ intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
   // Preliminaries
   ZF := Integers(M);
   TraceBound := Precision(M);
-  positive_elts ::= [PositiveElementsOfTrace(NarrowClassGroupRepsToIdealDual[bb], t) : t in [0..Precision(M)]];
+  positive_elts := [PositiveElementsOfTrace(NarrowClassGroupRepsToIdealDual(M)[bb], t) : t in [0..Precision(M)]];
   shintani_reps := ShintaniReps(M)[bb]; // List of Shintani reps for bb
   pairs := AssociativeArray(); // keys = shintani_reps
   for nu in shintani_reps do
