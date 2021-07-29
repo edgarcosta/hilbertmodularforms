@@ -1,23 +1,18 @@
 //Theta series
 
 intrinsic QuadraticZ(F::FldNum, M::AlgMatElt) -> AlgMatElt
-	{Input: F a otally real field, M the Gram Matrix for quadratic form
-	Output: the Gram matrix for the trace form over Z
-  }
+	{Input: F a totally real field, M the Gram Matrix for quadratic form
+	Output: the Gram matrix for the trace form over ZZ}
 
-	ZF<w>:=Integers(F);
+	ZF:=Integers(F);
 	B:=Basis(ZF);
 	n:=#B;
 	d:=Nrows(M);
 	Blocks:=[];
 	for j:= 1 to d do
 		for i:=1 to d do
-			Tr_ij:=ZeroMatrix(RationalField(),n, n );
-			for p:= 1 to n do
-				for q:=1 to n do
-					Tr_ij[p][q]:=Trace(M[i][j]*B[p]*B[q]);
-				end for;
-			end for;
+      Tr_ij:=[[Trace(M[i][j]*B[p]*B[q]): q in [1..n]]: p in [1..n]];
+			Tr_ij:=Matrix(Tr_ij);
 			Append(~Blocks, Tr_ij);
 		end for;
 	end for;
@@ -25,27 +20,31 @@ intrinsic QuadraticZ(F::FldNum, M::AlgMatElt) -> AlgMatElt
 end intrinsic;
 
 
-intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::RngOrdElt, L::Lat, GM::AlgMatElt) -> FldNumElt
-  {given v a totally positive element in a totally real field and M the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis, outputs the coefficient in the theta series for v}
+intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::RngOrdElt,  GM::AlgMatElt) -> FldNumElt
+  { inputs: M a graded ring, 
+    v a totally positive element in a totally real field,
+    GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
+    L the ZZ-lattice of the map Tr(Q(v)) where Q is the quadratic form with Gram matrix GM;
+   output: the coefficient in the theta series for v}
   K := BaseField(M);
   //force matrix over field
   GM := Matrix(K, GM);
+  assert Nrows(GM) mod 2 eq 0; //half weight not implemented yet
+  L:=LatticeWithGram(QuadraticZ(K, GM));
 	BasisK := Basis(K);
-	ZK<w> := Integers(K);
+	ZK := Integers(K);
 	B := Basis(ZK);
 	n := #B;
 	t := Trace(v);
-  assert Dimension(L) mod n eq 0;
 	d := Integers() ! (Dimension(L)/n);
 
-  //Preimages of Trace(v) in expanded  Z-lattice
+  //Preimages of Trace(v) as vectors over ZZ
 	S := ShortVectors(L, t, t);
 	num_sols := #S;
   if num_sols eq 0 then
     return 0;
   end if;
-  //Coefficients of linear combinations in basis elements of  of  preimages of Trace(v) by quadratic trace form
-	PreimTr:= ZeroMatrix(K, num_sols, d);
+	PreimTr:= ZeroMatrix(K, num_sols, d);   //convert from vectors over ZZ to vectors over ZK
 	for k:=1 to num_sols do
 		for i:=0 to (d-1) do
 			elt:=0;
@@ -64,8 +63,8 @@ intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::RngOrdElt, L::Lat, GM::AlgMatEl
   r_v := 0;
 	for i:=1 to num_sols do
     //number of preimages of v inside initial lattice; also the Fourier coefficient for element v
-    if DotProduct(pgm[i],PreimTr[i])  eq v then
-      r_v +:= 2;
+    if DotProduct(pgm[i],PreimTr[i])  eq v then //check which vectors in the preimage of Tr(v) are also in the preimage of 
+      r_v +:= 2; 
     end if;
 	end for;
 	return r_v;
@@ -81,28 +80,26 @@ intrinsic Level(K::FldNum, GM::AlgMatElt) -> RngOrdElt
 end intrinsic;
 
 intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
-  {generates the Theta series associated to the gram matrix of the quadratic form in the space GM}
+  {generates the Theta series associated to the Gram matrix of the quadratic form in the space GM}
   assert NumberOfRows(GM) mod 2 eq 0;
   K := BaseField(M);
   ZK := Integers(K);
 
   //checking that the level of Theta divides the level of M
 
-  L := LatticeWithGram(QuadraticZ(K, GM));
-
   reps := NarrowClassGroupReps(M);
   K := BaseField(M);
   ZK := IntegerRing(K);
   coeffs := AssociativeArray();
-  //we are assuming class number = 1
+  assert NarowClassNumber(K) eq 1; //we are assuming narrow class number = 1
   for bb in reps do
     coeffs[bb] := AssociativeArray();
-    for nu in IdealsByNarrowClassGroup(M)[bb] do
+    for nn in IdealsByNarrowClassGroup(M)[bb] do
       if IsZero(nu) then
-        coeffs[bb][nu] := 1;
+        coeffs[bb][nn] := 1;
       else
-        rep := IdealToShintaniRepresentative(M, bb, nu);
-        coeffs[bb][nu] := ThetaCoefficient(M, rep, L, GM);
+        rep := IdealToShintaniRepresentative(M, bb, nn);
+        coeffs[bb][nn] := ThetaCoefficient(M, rep, GM);
       end if;
     end for;
   end for;

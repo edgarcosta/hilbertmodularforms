@@ -20,7 +20,7 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt
       traceBoundIncl:=TraceBoundInclusion(Mkdd, Mk);
 
       if verbose then 
-        print "Cusp old form basis in level of norm ", Norm(dd),  "  computed with precision", traceBoundIncl;
+        printf "Cusp old form basis in level of norm %o computed with precision %o (default prec = %o)\n", Norm(dd),  traceBoundIncl, Precision(Parent(Mk));
       end if;
 
       HigherPrecM:=GradedRingOfHMFs(BaseField(Mk), traceBoundIncl);
