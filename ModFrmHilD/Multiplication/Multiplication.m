@@ -8,7 +8,7 @@ intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
   // Preliminaries
   ZF := Integers(M);
   TraceBound := Precision(M);
-  positive_reps := [PositiveElementsOfTrace(NarrowClassGroupRepsToIdealDual[bb], t) : t in [0..Precision(M)]];
+  positive_elts ::= [PositiveElementsOfTrace(NarrowClassGroupRepsToIdealDual[bb], t) : t in [0..Precision(M)]];
   shintani_reps := ShintaniReps(M)[bb]; // List of Shintani reps for bb
   pairs := AssociativeArray(); // keys = shintani_reps
   for nu in shintani_reps do
@@ -18,12 +18,12 @@ intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
   //////// Algorithm : nu = mu + mup  /////////
   // Add pairs of elements lexicographically by trace
   for trace := 0 to TraceBound do // loop over trace
-    for k := 1 to #positive_reps[trace+1] do
-      mu := positive_reps[trace+1][k];
+    for k := 1 to #positive_elts[trace+1] do
+      mu := positive_elts[trace+1][k];
       // first different traces
       for j in [0 .. Min(trace - 1, TraceBound - trace)] do
         // this min guarantees Tr(mu+mup) < trace bound
-        for mup in positive_reps[j+1] do
+        for mup in positive_elts[j+1] do
           nu := mu + mup;
           if IsDefined(pairs, nu) then
             // add both [mu,mup] and [mup,mu]
@@ -33,7 +33,7 @@ intrinsic ComputeMPairs(bb::RngOrdFracIdl, M::ModFrmHilDGRng)
       end for;
       // tr(mu) = tr(mup), and mu != mup
       for l in [1 .. k - 1] do
-        mup := positive_reps[trace+1][l];
+        mup := positive_elts[trace+1][l];
         nu := mu + mup;
         if IsDefined(pairs, nu) then
           // add both [mu,mup] and [mup,mu]
