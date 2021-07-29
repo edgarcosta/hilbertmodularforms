@@ -310,32 +310,7 @@ intrinsic IsShintaniReduced(nu::RngElt) -> BoolElt
   end if;
 end intrinsic;
 
-/////////////////////// Totally positive associate /////////////////
 
-intrinsic Signature(a::RngOrdElt) -> SeqEnum
-  {}
-  R := Parent(a);
-  return Signature(FieldOfFractions(R)!a);
-end intrinsic;
-
-intrinsic TotallyPositiveUnits(R::Rng) -> SeqEnum
-  {}
-  U, mp := UnitGroup(R);
-  // Stupid function, the isomorphism mu_2 -> ZZ/2*ZZ
-  hiota := function(u);
-    if u eq -1 then
-      return 1;
-    else
-      return 0;
-    end if;
-  end function;
-
-  F := NumberField(R);
-  UZd := AbelianGroup([2 : i in [1..Degree(F)]]);
-  phi := hom<U -> UZd | [[hiota(Sign(Evaluate(mp(U.i), v))) : v in RealPlaces(F)] : i in [1..#Generators(U)]]>;
-  K := Kernel(phi);
-  return K, mp;
-end intrinsic;
 
 /////////////////////// Conversion Functions /////////////////////
 

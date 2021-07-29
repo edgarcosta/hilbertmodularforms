@@ -10,7 +10,7 @@ declare attributes ModFrmHilDEltComp:
   Precision, // RngIntElt
   Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where nu in Shintani cone
   BaseRing, // Rng: where the coefficients live (does this depend on bb?)
-  UnitChar, // Map: TotallyPositiveUnitGroup(Parent(Parent)) -> BaseRing
+  UnitChar, // Map: TotallyPositiveUnits(Parent(Parent)) -> BaseRing
   UnitCharOnGens, // [w(A.i) : i in [1..#Generators(A)], where w is UnitChar and A is its domain
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
 
@@ -332,9 +332,9 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   f`Coefficients := newcoeffs;
   R := Parent(CoefficientSequence[1]);
   f`BaseRing := R;
-  A := TotallyPositiveUnitGroup(M);
+  A := TotallyPositiveUnits(M);
   if Type(unitchar) eq Map then
-    require Domain(unitchar) eq A: "the provided domain must be the TotallyPositiveUnitGroup of the Graded Ring";
+    require Domain(unitchar) eq A: "the provided domain must be the TotallyPositiveUnits of the Graded Ring";
     f`UnitChar := unitchar;
   else
     if IsZero(unitchar) then // IsZero([]) is true
@@ -397,7 +397,7 @@ intrinsic HMF(Mk::ModFrmHilD,
     require unitchar eq []: "unitchar must be an associative array indexed over by representatives of Narrow class group";
     unitchar := AssociativeArray();
     for bb in bbs do
-      unitchar[bb] := [1 : i in Generators(TotallyPositiveUnitGroup(M))];
+      unitchar[bb] := [1 : i in Generators(TotallyPositiveUnits(M))];
     end for;
   end if;
   require Keys(unitchar) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
@@ -516,7 +516,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       test3 := Character(Mk) eq Character(Mkf);
       if test1 and test2 and test3 then // all tests must be true to coerce
         if Type(f) eq ModFrmHilDEltComp then
-          A := TotallyPositiveUnitGroup(M);
+          A := TotallyPositiveUnits(M);
           return true, HMFComp(Mk, Coefficients(f): unitchar:=UnitChar(f), prec:=Precision(f));
         end if;
         components := AssociativeArray();
@@ -758,7 +758,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec := Minimum(prec_f, prec_g);
 
   M := Parent(Parent(f));
-  mU := TotallyPositiveUnitGroupMap(M);
+  _, mU := TotallyPositiveUnits(M);
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     c := F!0;
     for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
@@ -827,7 +827,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
-  mU := TotallyPositiveUnitGroupMap(GradedRing(f));
+  _, mU := TotallyPositiveUnits(GradedRing(f));
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec)  do
     sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
     count := 0;
