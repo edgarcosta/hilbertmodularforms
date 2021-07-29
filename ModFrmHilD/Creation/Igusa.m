@@ -86,8 +86,7 @@ intrinsic SiegelEisensteinPullback1(M::ModFrmHilDGRng, Weight::SeqEnum[RngIntElt
   Clplus, mp:=NarrowClassGroup(F);
   h:=ClassNumber(F);
   bb:=mp(Different(ZF)@@mp);
-  G:=M`TotallyPositiveUnitGroup;
-  unitmp:=M`TotallyPositiveUnitGroupMap;
+  G, unitmp := TotallyPositiveUnits(M);
   if #Clplus gt h then
     minusunitchar:=map<G -> Integers()| g :-> (-1)^(Eltseq(g))>;
   else
