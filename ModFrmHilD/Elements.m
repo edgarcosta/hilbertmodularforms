@@ -946,7 +946,7 @@ intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   end if;
   // List of coefficients for the forms
   L := [];
-  maxprec:=Min([f`Precision: f in List]);
+  maxprec:=Min([Precision(Components(f)[bb]): f in List, bb in bbs]);
   // Loop over forms
   for i in List do
     CoefficientsOfForm := [];
@@ -996,9 +996,12 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[
   {Takes a form f(z) and produces f(mm*z) in the space Mk}
 
   iotamf := AssociativeArray();
+
   mminv := mm^-1;
+  M := Parent(Mk);
   for bb in Keys(Components(f)) do
-    iotamf[bb*mminv] := Inclusion(Components(f)[bb], Mk, mm);
+    mmbb := NarrowClassRepresentative(M,mm*bb);
+    iotamf[mmbb] := Inclusion(Components(f)[bb], Mk, mm);
   end for;
   return HMFSumComponents(Mk, iotamf);
 end intrinsic;
