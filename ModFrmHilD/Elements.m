@@ -181,11 +181,8 @@ intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
   assert bb in NarrowClassGroupReps(M);
   _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
   nu := ReduceShintaniMinimizeTrace(nu)[1];
-  if nu in ShintaniReps(M)[bb] then
-    return true, Coefficients(f)[bb][nu];
-  else
-    return false;
-  end if;
+  require nu in ShintaniReps(M)[b]] : "Beyond known precision, sorry!";
+  return Coefficients(f)[bb][nu];
 end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
