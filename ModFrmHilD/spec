@@ -6,6 +6,7 @@
   Formatting.m
   FldExt.m
   Hecke.m
+  HJ-CFrac.m
   Basis.m
   Trace.m
   Verbose.m
