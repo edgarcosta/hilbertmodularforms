@@ -24,7 +24,8 @@ function HJContinuedFraction(w0 : PeriodBound := 100, Epsilon := 0)
     if Abs(diff_i) lt eps then
       zero_bool := true;
     else
-      w_new := 1/diff_i; // this might exacerbate round-off errors; see https://sites.millersville.edu/bikenaga/number-theory/periodic-continued-fractions/periodic-continued-fractions.html
+      w_new := 1/diff_i; // this might exacerbate round-off errors
+      //see https://sites.millersville.edu/bikenaga/number-theory/periodic-continued-fractions/periodic-continued-fractions.html
       //printf "w_new = %o\n", w_new;
       // check if remainder w_new already appeared in ws, which means that expansion is periodic
       j := 1;
@@ -75,6 +76,33 @@ function PeriodicHJContinuedFractionToReal(head, tail : prec := 30, rep := 30)
    bs := bs cat tail;
   end for;
   return HJContinuedFractionToReal(bs : prec := prec);
+end function;
+
+function VerifyExactHJContinuedFraction(a : Precision := 30, PeriodBound := 100)
+  F<r> := Parent(a);
+  assert (Degree(F) eq 2) and (IsTotallyReal(F));
+  vs := InfinitePlaces(F);
+  evs := [Evaluate(a, v : Precision := Precision) : v in vs];
+  eq_bool := true;
+  for ev in evs do
+    head, tail, per_bool := HJContinuedFraction(ev : PeriodBound := PeriodBound);
+    assert per_bool;
+    y := a;
+    for el in head do
+      y := -1/(y-el);
+    end for;
+    printf "LHS y = %o\n", y;
+    //y2 := a;
+    y2 := y;
+    cs := Reverse(tail);
+    for i := 1 to #cs do
+      y2 := cs[i] - 1/y2;
+    end for;
+    printf "RHS y = %o\n", y2;
+    eq_bool and:= (y eq y2);
+    assert y eq y2;
+  end for;
+  return eq_bool;
 end function;
 
 /*
