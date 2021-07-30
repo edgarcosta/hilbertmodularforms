@@ -184,6 +184,7 @@ intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
   _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
   nu := ReduceShintaniMinimizeTrace(nu)[1];
   require nu in ShintaniReps(M)[bb] : "Beyond known precision, sorry!";
+
   return Coefficients(f)[bb][nu];
 end intrinsic;
 
@@ -309,7 +310,6 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
-  CoefficientSequence := []; // to assert all coefficients have the same parent
   require bb in bbs: "bb should be among the chosen representatives of the narrow class group";
 
   // make the HMF
@@ -336,16 +336,33 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     coeffs := coeffsnu;  // goodbye old data!
   end if;
 
+  CoefficientSequence := []; // to assert all coefficients have the same parent
+  RecastKeys := [];//some coeffs might be of type RngIntElt and might need recasting later on
   newcoeffs := AssociativeArray();
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
-    require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
-    Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
-    newcoeffs[nu] := coeffs[nu];
+  b, c := IsDefined(coeffs, nu);
+    require b : "Coefficients should be defined for each representative in the Shintani cone";
+    if Type(c) eq RngIntElt then
+      Append(~RecastKeys, nu);
+    else
+      Append(~CoefficientSequence, c); // if value of coeffs[nu] differs then error here trying to append
+    end if;
+
+    newcoeffs[nu] := c;
   end for;
 
   f`Coefficients := newcoeffs;
-  R := Parent(CoefficientSequence[1]);
+  if #CoefficientSequence gt 0 then
+    R := Parent(CoefficientSequence[1]);
+  else
+    R := Integers();
+  end if;
   f`BaseRing := R;
+  if R cmpne Integers() then
+    for nu in RecastKeys do
+      newcoeffs[nu] := R!newcoeffs[nu];
+    end for;
+  end if;
   A := TotallyPositiveUnits(M);
   if Type(unitchar) eq GrpCharUnitTotElt then
     require BaseField(unitchar) eq BaseField(M): "the provided domain must be the TotallyPositiveUnits of the Graded Ring";

@@ -51,7 +51,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
                  // is not defined (if trace (aa^(-2) * (I*nn)) is greater than precision)
           else
             if I eq 0*ZF then 
-              c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[mp((I*nn/aa^2)@@mp)][ZF!0]; 
+              c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[mp((bb*nn/aa^2)@@mp)][ZF!0]; 
                            //takes care if the coefficients for the zero ideal are different
             else 
               c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF!!(aa^(-2) * (I*nn)));
