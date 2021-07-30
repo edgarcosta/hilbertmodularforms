@@ -8,7 +8,8 @@ declare type ModFrmHilDEltComp;
 declare attributes ModFrmHilDEltComp:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
-  Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where nu in Shintani cone
+  Coefficients, // Assoc:  coeffs_bb[nu] = a_(bb,nu) = a_(nu bb'^-1), 
+                // where nu in Shintani cone with Tr(nu) <= Precision
   CoefficientRing, // Rng: where the coefficients live (does this depend on bb?)
   UnitChar, // GrpCharUnitTotElt: TotallyPositiveUnits(Parent(Parent)) -> CoefficientRing
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
@@ -192,7 +193,7 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   return true, Coefficients(f)[bb][nu];
 end intrinsic;
 
-intrinsic Coefficient(f::ModFrmHilDElt) -> RngElt
+intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
   {}
   b, c := IsCoefficientDefined(f, nn);
   require b: "Beyond known precision, sorry!";
@@ -214,12 +215,6 @@ intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   return coeffs;
 end intrinsic;
 
-intrinsic CoefficientField(f::ModFrmHilDElt) -> Any
-  {}
-  print("Elements.m CoefficientField: DEPRECATED, use CoefficientRing");
-  return CoefficientRing(f);
-end intrinsic;
-
 intrinsic CoefficientRing(f::ModFrmHilDEltComp) -> Any
   {}
   return f`CoefficientRing;
@@ -238,12 +233,12 @@ end intrinsic;
 
 intrinsic NumberOfCoefficients(f::ModFrmHilDElt) -> Any
 {}
-//TODO: What is the point of this?
-    keys := SetToSequence(Keys(Coefficients(f)));
-    if IsNull(keys) then return 0;
-    end if;
-    coeffsperkey := #Keys(Coefficients(f)[keys[1]]);
-    return #keys*coeffsperkey;
+  keys := SetToSequence(Keys(Coefficients(f)));
+  if IsNull(keys) then 
+    return 0;
+  end if;
+  coeffsperkey := #Keys(Coefficients(f)[keys[1]]);
+  return #keys*coeffsperkey;
 end intrinsic;
 
 
@@ -341,18 +336,20 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     //   nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
     coeffsnu := AssociativeArray();
     for pair in IdealElementPairs(M)[bb] do // consists of a sequence of [* nn, nu *]
-      coeffsnu[pair[2]] := coeffs[pair[1]];
+      if IsDefined(coeffs, pair[1]) then
+        coeffsnu[pair[2]] := coeffs[pair[1]];
+      end if;
     end for;
 
     coeffs := coeffsnu;  // goodbye old data!
   end if;
 
   CoefficientSequence := []; // to assert all coefficients have the same parent
-  RecastKeys := [];//some coeffs might be of type RngIntElt and might need recasting later on
+  RecastKeys := []; //some coeffs might be of type RngIntElt and might need recasting later on
   newcoeffs := AssociativeArray();
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
-  b, c := IsDefined(coeffs, nu);
-    require b : "Coefficients should be defined for each representative in the Shintani cone";
+    b, c := IsDefined(coeffs, nu);
+    require b : "Coefficients should be defined for each representative in the Shintani cone up to precision";
     if Type(c) eq RngIntElt then
       Append(~RecastKeys, nu);
     else
@@ -388,7 +385,6 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   return f;
 end intrinsic;
 
-
 intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   {
     Return the ModFrmHilDElt with parent Mk and Components components.
@@ -409,7 +405,6 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   end for;
   return f;
 end intrinsic;
-
 
 intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
@@ -490,12 +485,12 @@ end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDEltComp) -> BoolElt
   {check if form is identically zero}
-  return IsZero(Values(Coefficients(f)));
+  return IsZero([c : c in Coefficients(f)]);
 end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
   {check if form is identically zero}
-  return IsZero(Values(Components(f)));
+  return IsZero([f_bb : f_bb in Components(f)]);
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
@@ -556,7 +551,9 @@ end intrinsic;
 
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   {}
-  if Type(f) notin [ModFrmHilDElt, ModFrmHilDEltComp] then
+  if Type(f) eq RngIntElt and IsZero(f) then
+    return true, HMFZero(Mk);
+  elif Type(f) notin [ModFrmHilDElt, ModFrmHilDEltComp] then
     return false, "f not of type ModFrmHilDElt or ModFrmHilDEltComp";
   else // f is an HMF so has a chance to be coercible
     M := Parent(Mk); // graded ring associated to Mk
@@ -586,13 +583,6 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   end if;
 end intrinsic;
 
-/* Why do we need this?
-intrinsic '!'(Mk::ModFrmHilD, f::ModFrmHilDElt) -> ModFrmHilDElt
-  {returns f with parent M}
-  return HMF(Mk, Components(f));
-end intrinsic;
-*/
-
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
   {}
   return false;
@@ -602,16 +592,9 @@ intrinsic IsCoercible(x::ModFrmHilDElt, y::.) -> BoolElt, .
   {}
   return false;
 end intrinsic;
-//TODO:
-// make a function ModFrmHilDEltComp -> ModFrmHilDElt
 
 //////////  ModFrmHilDElt: Galois action on Coefficients //////////
 
-//TODO:
-//Tests:
-// - Apply Hecke on a Galois Orbit, and see that it doesn't move
-// - Apply Hecke to a Eisensten series, and check that is a multiple
-// - Apply Hecke to a Theta series, and see if we get the whole space
 intrinsic MapCoefficients(m::Map, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return the ModFrmHilDEltComp where the map acts on the coefficients}
   coeffs := Coefficients(f);
@@ -657,6 +640,7 @@ end intrinsic;
 
 intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return Trace(f)}
+
   new_coeffs := AssociativeArray();
   coeffs := Coefficients(f);
   for nu in Keys(Coefficients(f)) do
@@ -689,9 +673,6 @@ end intrinsic;
 
 
 ////////// ModFrmHilDElt: Arithmetic //////////
-
-//TODO make zero HMF universal so it can be added/multiplied to any HMF
-//ask JV
 
 intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
 {compares Parent, Weight, Component, Precision, UnitChar, and Coefficients.}
@@ -973,14 +954,13 @@ intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
  return HMFIdentity(Parent(f))/f;
 end intrinsic;
 
-
-intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
+intrinsic '^'(f::ModFrmHilDEltComp, n::RngIntElt) -> ModFrmHilDEltComp
   {return f^n}
   if n lt 0 then
     f := Inverse(f);
     n := -n;
   end if;
-  g := HMFIdentity(Parent(f));
+  g := HMFIdentity(Parent(f), ComponentIdeal(f));
   if n eq 0 then
     return g;
   end if;
@@ -998,6 +978,15 @@ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
     end if;
   end while;
   return f * g;
+end intrinsic;
+
+intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
+  {return f^n}
+  comp := AssociativeArray();
+  for bb->fbb in Components(f) do
+    comp[bb] := fbb^n;
+  end for;
+  return HMFSumComponents(Parent(Values(comp)[1]), comp);
 end intrinsic;
 
 ////////// ModFrmHilDElt: Linear Algebra  //////////
@@ -1112,9 +1101,9 @@ end intrinsic;
 
 intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
   {Gives absolute initial trace precision bound to be able to include f(dd*z) into Mk}
-  M:=Parent(Mk);
-  F:=BaseField(Mk);
-  ZF:=Integers(F);
+  M := Parent(Mk);
+  F := BaseField(Mk);
+  ZF := Integers(F);
   N1 := Level(Mk_f);
   N2 := Level(Mk);
   absTraceBound:=Precision(Parent(Mk));
@@ -1131,55 +1120,6 @@ intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
   end for;
   return absTraceBound;
 end intrinsic;
-
-
-
-/*
-    end for;
-    for nn in Idealsbb do
-      if nn*dd in IdealsRep then
-        coeff[Rep][nn*dd] := coeff_f[bb][nn]; // Change non-zero coefficients
-      end if;
-    end for;
-  end for;
-*/
-
-
-
-/*
-//Todo: Verify Correctness. Reference?
-intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  {Takes a form f of level N1 and produces list of all inclusions of f into the space of level N2}
-  coeff_f := Coefficients(f);
-  Mk_f := Parent(f);
-  M := Parent(Mk_f);
-  N1 := Level(Mk_f);
-  N2 := Level(Mk);
-  require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
-  require N2 subset N1: "Level of f does not divide level of Mk";
-  bbs := NarrowClassGroupReps(M);
-  mp := NarrowClassGroupMap(M);
-  IncludedForms := [];
-  for dd in Divisors(N2/N1) do
-    if IsTrivial(dd@@mp) then // 1 new form for each divisor dd
-      coeff := AssociativeArray(); // 1 new form for each divisor dd
-      for bb in bbs do
-        coeff[bb] := AssociativeArray();
-        // Rep := [rep : rep in bbs | (rep)@@mp eq (bb*dd)@@mp][1]; // Representative for class [ bb*dd ]
-        for nn in IdealsByNarrowClassGroup(M)[bb] do
-        if nn*dd in Keys(coeff_f[Rep]) then
-          coeff[Rep][nn*dd] := coeff_f[bb][nn];
-        else
-          coeff[Rep][nn*dd] := 0;
-        end if;
-      end for;
-    end for;
-    Append(~IncludedForms, HMFSumComponents(Mk, coeff));
-  end for;
-  return IncludedForms;
-end intrinsic;
-
-*/
 
 ////////// ModFrmHilDElt: swap map //////////
 
