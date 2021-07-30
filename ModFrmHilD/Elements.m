@@ -338,13 +338,21 @@ intrinsic HMFComp(Mk::ModFrmHilD,
 
   newcoeffs := AssociativeArray();
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
-    require IsDefined(coeffs, nu): "Coefficients should be defined for each representative in the Shintani cone";
-    Append(~CoefficientSequence, coeffs[nu]); // if value of coeffs[nu] differs then error here trying to append
-    newcoeffs[nu] := coeffs[nu];
+  b, c := IsDefined(coeffs, nu);
+    require b : "Coefficients should be defined for each representative in the Shintani cone";
+    if Type(c) ne RngIntElt then
+      Append(~CoefficientSequence, c); // if value of coeffs[nu] differs then error here trying to append
+    end if;
+
+    newcoeffs[nu] := c;
   end for;
 
   f`Coefficients := newcoeffs;
-  R := Parent(CoefficientSequence[1]);
+  if #CoefficientSequence gt 0 then
+    R := Parent(CoefficientSequence[1]);
+  else
+    R := Integers();
+  end if;
   f`BaseRing := R;
   A := TotallyPositiveUnits(M);
   if Type(unitchar) eq GrpCharUnitTotElt then
