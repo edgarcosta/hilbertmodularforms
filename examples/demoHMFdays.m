@@ -5,7 +5,7 @@ load "config.m";
 // Create the graded ring
 
 F:=QuadraticField(5);
-prec:=15;
+prec:=5;
 M:=GradedRingOfHMFs(F, prec);
 M;
 
@@ -23,7 +23,7 @@ f:=B4[1];
 
 //Reading an HMF
 f;
-Coefficients(f)[1*ZF][2*ZF];
+//Coefficients(f)[1*ZF][2*ZF];
 
 // Eisenstein series
 X := HeckeCharacterGroup(N);
@@ -53,7 +53,7 @@ HeckeOperator(h, 2*ZF);
 
 
 // Graded ring
-prec:=20;
+prec:=4;
 ZF := 1*ZF;
 MaxGenWeight := 8;
 MaxRelWeight := 16;
@@ -80,11 +80,11 @@ assert Coefficients(fplus)[ZF.2+2] eq 30240;
 
 // Narrow class number >1
 F:=QuadraticField(12);
-prec:=20;
+prec:=4;
 M:=GradedRingOfHMFs(F, prec);
 B8:=Basis(HMFSpace(M, [8,8]));
 
 
-gplus, gminus:=SiegelEisensteinPullback1(M, [4,4]);
+gplus, gminus:=SiegelEisensteinPullback(M, [4,4]);
 // Add an assert that has the following info
-//  assert LinearDependence([gminus^2] cat B8)[5] eq [ 1, 0, 0, -32, 0, 60032/649, 0, -856/1947, 0 ];
+//assert LinearDependence([gminus^2] cat B8)[5] eq [ 1, 0, 0, -32, 0, 60032/649, 0, -856/1947, 0 ];
