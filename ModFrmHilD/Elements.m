@@ -1175,7 +1175,7 @@ intrinsic Swap(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   //M := HMFSpace(M, NNbar, Weight(f), chibar);
   bb := Component(f);
   bbbar := ideal<ZF | [sigma(x) : x in Generators(bb)]>;
-  require bbar in NarrowClassGroupReps(M): "bbar is not the NarrowClassGroupReps";
+  require bbbar in NarrowClassGroupReps(M): "bbar is not the NarrowClassGroupReps";
   coeff := AssociativeArray();
   for nu->c in coeff do
     nubar := sigma(nu);
