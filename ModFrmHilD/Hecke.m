@@ -6,78 +6,88 @@
 
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
 
- intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
-   {returns T(n)(f) for the trivial character}
-   return HeckeOperator(f, nn, HeckeCharacterGroup(Level(f))! 1);
- end intrinsic;
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
+  {Returns T(nn)(f) for the character chi modulo the level of f}
 
+  Mk := Parent(f);
+  M := Parent(Mk);
+  F := BaseField(M);
+  Cl, mp := NarrowClassGroup(F);
+  ZF := Integers(F);
+  k0 := Max(Weight(f));
+  chi := Character(Mk);
 
- intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl, chi::GrpHeckeElt) -> ModFrmHilDElt
-   {returns associative array with coefficients for T(nn)(f) with loss of precision.}
-   Mk := Parent(f);
-   M :=Parent(Mk);
-   F:=BaseField(M);
-   ZF:=Integers(F);
-   k0 := Max(Weight(f));
-   //We work in smaller precision and obtain a function the space of precision Prec/Norm(nn)
-   coeffsTnnf := AssociativeArray();
-   newPrec:=0;
-   for bb in NarrowClassGroupReps(M) do 
+  coeffsTnnf := AssociativeArray();
+
+  //We will obtain a function with smaller precision; need to keep track of precision via newPrec
+  newPrec := 0;
+  for bb in NarrowClassGroupReps(M) do 
     coeffsTnnf[bb] := AssociativeArray();
-    end for;
-   precisionReached:=false; // keeps track if we have reached the precision for T(nn)(f)
-    //Now we loop through each trace
-   for T:=0 to Precision(M) do
-    traceDefined:=0; //keeps track if coefficients for all ideals of a given trace are defined 
-    totalIdealsByTrace:=0;
-    for bb in  NarrowClassGroupReps(M) do
-      IdealsTraceT:=ShintaniRepsByTrace(M)[bb][T]; //get list of Shintani reps with trace T
-      totalIdealsByTrace+:= #IdealsTraceT;
-      for x in IdealsTraceT do
-        I:=x*bb^(-1);
-        c :=0;
-        allDivisors:=true; //keeps track if all the coefficients in the sum for an ideal are defined
+  end for;
+  precisionReached := false; // keeps track if we have reached the precision for T(nn)(f)
+
+  // Now we loop through each trace
+  for T := 0 to Precision(M) do
+    traceDefined := 0; //keeps track if coefficients for all ideals of a given trace are defined 
+    totalIdeals := 0;
+    for bb in NarrowClassGroupReps(M) do
+      bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
+      nusT := ShintaniRepsByTrace(M)[bb][T]; //get list of Shintani reps with trace T
+      totalIdeals +:= #nusT;
+
+      for nu in nusT do
+        I := nu*bbp^(-1);  // already call nn the ideal for the Hecke operator
+        c := 0;
+        allDivisors := true; 
+                  //keeps track if all the coefficients in the sum for an ideal are defined
         // loop over divisors
-        // Formula 2.23 in Shimura - The Special Values of the zeta functions associated with Hilbert Modular Forms
+        // Formula 2.23 in Shimura - The Special Values 
+        //             of the zeta functions associated with Hilbert Modular Forms
         for aa in Divisors(ZF!!(I + nn)) do
-          if aa^(-2) * (I* nn) notin AllIdeals(M) then
-           allDivisors:=false ; break; //stop looping through divisors if coefficient for at least one divisor is not defined ( if trace (aa^(-2) * (I* nn)) is greater than precision)
-             else
-              if I eq 0*ZF then c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[bb][I]; //takes care if the coefficients for the zero ideal are different
-                else c+:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF !! (aa^(-2) * (I* nn)));
-                end if;
-             end if;
-          end for;
-        if allDivisors eq true then  //if T(nn)(f)[I] is defined, give a value
+          if ZF!!(aa^(-2) * (I*nn)) notin AllIdeals(M) then
+            allDivisors := false; 
+            break; 
+                 // stop looping through divisors if coefficient for at least one divisor 
+                 // is not defined (if trace (aa^(-2) * (I*nn)) is greater than precision)
+          else
+            if I eq 0*ZF then 
+              c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[mp((I*nn/aa^2)@@mp)][ZF!0]; 
+                           //takes care if the coefficients for the zero ideal are different
+            else 
+              c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF!!(aa^(-2) * (I*nn)));
+            end if;
+          end if;
+        end for;
+        if allDivisors then // if T(nn)(f)[I] is defined, give a value
           traceDefined +:= 1;
           coeffsTnnf[bb][I] := c;
-         else 
-         coeffsTnnf[bb][I] := 0;
-         //break; //stop looping thorough ideals of given trace T if T(nn)(f)[I] is not defined for some ideal I with trace T
-         end if;
+        else 
+          coeffsTnnf[bb][I] := 0;  // otherwise set the coefficient to zero
+        end if;
+      end for;
+    end for;
+
+    if (traceDefined eq totalIdeals) and (not precisionReached) then 
+      newPrec := T;
+    else 
+      newPrec := Max(0, newPrec);
+      precisionReached := true;
+      for bb in NarrowClassGroupReps(M) do
+        nusT := ShintaniRepsByTrace(M)[bb][T];
+        for nu in nusT do
+          I := nu*bbp^(-1);
+          if I in Keys(coeffsTnnf[bb]) then
+            coeffsTnnf[bb][I] := 0;
+          end if;
         end for;
       end for;
-    if (traceDefined eq totalIdealsByTrace) and (precisionReached eq false) then 
-      newPrec:=T;
-      else 
-        newPrec:=Max(0, newPrec);
-        precisionReached:= true;
-        for bb in NarrowClassGroupReps(M) do
-           IdealsTraceT:=ShintaniRepsByTrace(M)[bb][T];
-           for x in IdealsTraceT do
-            I:=x*bb^(-1);
-            if I in Keys(coeffsTnnf[bb]) then
-              coeffsTnnf[bb][I]:=0;
-              end if;
-            end for;
-           end for;
-      end if;
-    end for;
-  //return coeffsTnnf, newPrec;
-    g:=HMF(Mk, coeffsTnnf);
-    g`Precision:=newPrec;
+    end if;
+  end for;
+
+  // JV : Need to assign precision, I think this should handle the above better
+  g := HMF(Mk, coeffsTnnf : CoeffsByIdeals := true);
   return g;      
- end intrinsic;
+end intrinsic;
 
 
 ///////////////////////////////////////////////////
@@ -100,6 +110,7 @@
 //intrinsic Intersection(Spaces::SeqEnum[SeqEnum[ModFrmHilDElt]]) -> SeqEnum[ModFrmHilDElt]
 intrinsic Intersection(Spaces::List) -> List
   {Given a list of bases for spaces of forms, find a basis for the intersection of those spaces}
+  error "Not implemented";
   //Assuming all forms are living in the same spaces, returns parameters associated to them
   M := Parent(Spaces[1][1]);
   N := Level(Spaces[1][1]);
@@ -113,7 +124,9 @@ intrinsic Intersection(Spaces::List) -> List
   //The intersection of all the spaces in A1
   intersection := &meet A1;
   B := Basis(intersection);
-  return [*HMF(M,N,k,Eltseq(b)) : b in B*]; //We want to take the intersection of the spaces in A1
+  // Edgar and JV: We are confused with the following line.
+  // Shoult it be M!b? or just b?
+  return [*HMF(M,Coefficients(b)) : b in B*]; //We want to take the intersection of the spaces in A1
   //Converts W back to Hilbert modular forms
 end intrinsic;
 

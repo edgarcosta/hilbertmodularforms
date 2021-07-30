@@ -70,7 +70,7 @@ end intrinsic;
 
 intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
 {}
-if not assigned Mk`Dimension then 
+if not assigned Mk`Dimension then
 ComputeDimension(Mk);
 end if;
 return Mk`Dimension;
@@ -174,17 +174,26 @@ intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
   {Returns the number of cusps for Gamma_0(N)}
   M := Parent(Mk);
   ZF := Integers(M);
-  return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
+  k := Weight(Mk);
+  if SequenceToSet(k) eq Set([2]) then
+    print "Not using trace formula, might be slow (parallel weight 2). Talk to Ben";
+    EB := EisensteinBasis(Mk);
+    cuspDim := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
+    dim := #EB + Dimension(cuspDim);
+    return dim;
+  else  
+    return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
+  end if;
 end intrinsic;
 
 
-// We eventually want to replace this with the Dimension intrinsic (above). However we need to wait for Trace to work. 
+// We eventually want to replace this with the Dimension intrinsic (above). However we need to wait for Trace to work.
 intrinsic ComputeDimension(Mk::ModFrmHilD)
-{compute the dimension of Mk and store it in Mk}
-// we rely on HilbertCuspForms, which only works for trivial character
-assert Character(Mk) eq HeckeCharacterGroup(Level(Mk))!1;
-EB:=EisensteinBasis(Mk);
-cusps := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
-dim := #EB + Dimension(cusps);
-Mk`Dimension := dim;
+  {compute the dimension of Mk and store it in Mk}
+  // we rely on HilbertCuspForms, which only works for trivial character
+  assert Character(Mk) eq HeckeCharacterGroup(Level(Mk))!1;
+  EB := EisensteinBasis(Mk);
+  cuspDim := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
+  dim := #EB + Dimension(cuspDim);
+  Mk`Dimension := dim;
 end intrinsic;

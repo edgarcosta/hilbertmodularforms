@@ -4,7 +4,7 @@ load "config.m";
 
 // Create the graded ring
 
-F:=QuadraticField(13);
+F:=QuadraticField(5);
 prec:=15;
 M:=GradedRingOfHMFs(F, prec);
 M;
@@ -64,4 +64,27 @@ time g,r,m:=GeneratorsAndRelations(F, ZF: Precision := prec, MaxRelationWeight:=
 X:=MakeScheme(g,r);
 print X;
 
+// An example with non trivial unit group character
 
+F:=QuadraticField(5);
+ZF:=Integers(F);
+prec:=15;
+M:=GradedRingOfHMFs(F, prec);
+
+
+fplus, fminus:=SiegelEisensteinPullback1(M, [4,4]);
+
+assert IsZero(fminus);
+assert Coefficients(fplus)[ZF.2+2] eq 30240;
+
+
+// Narrow class number >1
+F:=QuadraticField(12);
+prec:=20;
+M:=GradedRingOfHMFs(F, prec);
+B8:=Basis(HMFSpace(M, [8,8]));
+
+
+gplus, gminus:=SiegelEisensteinPullback1(M, [4,4]);
+// Add an assert that has the following info
+//  assert LinearDependence([gminus^2] cat B8)[5] eq [ 1, 0, 0, -32, 0, 60032/649, 0, -856/1947, 0 ];

@@ -7,19 +7,19 @@ ModFrmHilDGRng
 declare type ModFrmHilDGRng [ModFrmHilD]; // ModFrmHilDGRng contains a ModFrmHilD contains ModFrmHilDElt
 declare attributes ModFrmHilDGRng:
   Field, // FldNum : totally real field
-  Integers, // RngOrd : ZF
+  //FIXME: Move this and everything else that depends on Field only into FldExt
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
-  NarrowClassGroupReps, // SeqEnum[RngIdl]
+  NarrowClassGroupReps, // SeqEnum[RngOrdIdl] := [bb]
+  IdealDualNarrowClassGroupReps, // SeqEnum[RngFracIdl] := [bbp], where bbp := bb*Difference(Integers)^-1]
+  NarrowClassGroupRepsToIdealDual, // Assoc, bb -> bbp
   UnitGroup, // GrpAb
   UnitGroupMap, // Map : GrpAb -> Units of ZF
   DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
   places, // SeqEnum : Real places for the field F
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
-  PositiveReps, // PositiveReps[bb] = [nu with trace at most Precision(M)]
-  PositiveRepsByTrace, // PositiveReps[bb][t] = [nu with trace t]
   ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
   ShintaniRepsIdeal, // ShintaniReps[bb] = [ShintaniRepresentativeToIdeal(nu) in Shintani with trace at most Precision(M)]
   ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
@@ -39,17 +39,9 @@ declare attributes ModFrmHilDGRng:
   // a double indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
   HeckeEigenvalues,
   // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
-  Spaces,
-  TotallyPositiveUnitGroup, // the group of totally positive units of the base as an abstract group
-  TotallyPositiveUnitGroupMap // map from abstract totally positive unit group into R^\times_{>0}
+  Spaces
   ;
 
-// save fundamental unit
-declare attributes FldNum:
-  FundamentalUnitTotPos;
-
-declare attributes FldQuad:
-  FundamentalUnitTotPos;
 
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
@@ -94,7 +86,7 @@ end intrinsic;
 
 intrinsic Integers(M::ModFrmHilDGRng) -> RngOrd
   {}
-  return M`Integers;
+  return Integers(M`Field);
 end intrinsic;
 
 intrinsic NarrowClassGroup(M::ModFrmHilDGRng) -> GrpAb
@@ -112,9 +104,19 @@ intrinsic NarrowClassGroupMap(M::ModFrmHilDGRng) -> Map
   return M`NarrowClassGroupMap;
 end intrinsic;
 
-intrinsic NarrowClassGroupReps(M::ModFrmHilDGRng) -> Any
+intrinsic NarrowClassGroupReps(M::ModFrmHilDGRng) -> SeqEnum[RngOrdIdl]
   {}
   return M`NarrowClassGroupReps;
+end intrinsic;
+
+intrinsic IdealDualNarrowClassGroupReps(M::ModFrmHilDGRng) -> SeqEnum[RngFracIdl]
+  {}
+  return M`IdealDualNarrowClassGroupReps;
+end intrinsic;
+
+intrinsic NarrowClassGroupRepsToIdealDual(M::ModFrmHilDGRng) -> Assoc
+  {}
+  return M`NarrowClassGroupRepsToIdealDual;
 end intrinsic;
 
 intrinsic NarrowClassRepresentative(M::ModFrmHilDGRng, I::RngOrdIdl) -> Any
@@ -135,14 +137,9 @@ intrinsic UnitGroupMap(M::ModFrmHilDGRng) -> Any
   return M`UnitGroupMap;
 end intrinsic;
 
-intrinsic TotallyPositiveUnitGroup(M::ModFrmHilDGRng) -> Any
-  {}
-  return M`TotallyPositiveUnitGroup;
-end intrinsic;
-
-intrinsic TotallyPositiveUnitGroupMap(M::ModFrmHilDGRng) -> Any
-  {}
-  return M`TotallyPositiveUnitGroupMap;
+intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrbAb, Map
+  {return the group of totally positive units of the base as an abstract group and the map from abstract totally positive unit group into F^\times_>0}
+  return TotallyPositiveUnits(BaseField(M));
 end intrinsic;
 
 intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
@@ -154,7 +151,7 @@ intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
   return M`DedekindZetatwo;
 end intrinsic;
 
-intrinsic places(M::ModFrmHilDGRng) -> Any
+intrinsic Places(M::ModFrmHilDGRng) -> Any
   {}
   if not assigned M`places then
     F := BaseField(M);
@@ -173,25 +170,25 @@ intrinsic ZeroIdeal(M::ModFrmHilDGRng) -> Any
   return M`ZeroIdeal;
 end intrinsic;
 
-intrinsic PositiveReps(M::ModFrmHilDGRng) -> Any
-  {}
-  return M`PositiveReps;
-end intrinsic;
-
-intrinsic PositiveRepsByTrace(M::ModFrmHilDGRng) -> Any
-  {}
-  return M`PositiveRepsByTrace;
-end intrinsic;
-
-intrinsic PositiveRepsUpToTrace(M::ModFrmHilDGRng, bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum
-  {}
-  reps := [];
-  assert t le Precision(M);
-  for i := 0 to t do
-    reps cat:= PositiveRepsByTrace(M)[bb][i];
-  end for;
-  return reps;
-end intrinsic;
+//intrinsic PositiveReps(M::ModFrmHilDGRng) -> Any
+//  {}
+//  return M`PositiveReps;
+//end intrinsic;
+//
+//intrinsic PositiveRepsByTrace(M::ModFrmHilDGRng) -> Any
+//  {}
+//  return M`PositiveRepsByTrace;
+//end intrinsic;
+//
+//intrinsic PositiveRepsUpToTrace(M::ModFrmHilDGRng, bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum
+//  {}
+//  reps := [];
+//  assert t le Precision(M);
+//  for i := 0 to t do
+//    reps cat:= PositiveRepsByTrace(M)[bb][i];
+//  end for;
+//  return reps;
+//end intrinsic;
 
 intrinsic ShintaniReps(M::ModFrmHilDGRng) -> Any
   {}
@@ -207,10 +204,7 @@ intrinsic ShintaniRepsUpToTrace(M::ModFrmHilDGRng, bb::RngOrdFracIdl, t::RngIntE
   {}
   shintani_reps := [];
   assert t le Precision(M);
-  for i := 0 to t do
-    shintani_reps cat:= ShintaniRepsByTrace(M)[bb][i];
-  end for;
-  return shintani_reps;
+  return &cat[ShintaniRepsByTrace(M)[bb][i] : i in [0..t]];
 end intrinsic;
 
 intrinsic ReduceIdealToShintaniRep(M::ModFrmHilDGRng) -> Any
@@ -238,13 +232,6 @@ intrinsic AllPrimes(M::ModFrmHilDGRng) -> SeqEnum
   return M`AllPrimes;
 end intrinsic;
 
-intrinsic MultiplicationTables(M::ModFrmHilDGRng) -> SeqEnum
-  {}
-  if not assigned M`MultiplicationTables then
-    HMFEquipWithMultiplication(M);
-  end if;
-  return M`MultiplicationTables;
-end intrinsic;
 
 /* Old Code for Trace
 intrinsic HMFPrecomputation(M::ModFrmHilDGRng) -> Assoc
@@ -300,7 +287,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // field
   M`Field := F;
   R := Integers(F);
-  M`Integers := R;
+  diffinv := Different(R)^-1;
   // narrow class group
   Cl, mp := NarrowClassGroup(F);
   U, mU := UnitGroup(F);
@@ -308,11 +295,11 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
   M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
+  M`IdealDualNarrowClassGroupReps := [];
+  M`NarrowClassGroupRepsToIdealDual := AssociativeArray();
   M`UnitGroup := U;
   M`UnitGroupMap := mU;
-  Up, mUp := TotallyPositiveUnits(R);
-  M`TotallyPositiveUnitGroup := Up;
-  M`TotallyPositiveUnitGroupMap := mUp;
+  _, _ := TotallyPositiveUnits(F); // it caches it
   // maybe we should make good choices for narrow class group reps
   // i.e. generators of small trace?
   // TODO: see above 2 lines
@@ -322,23 +309,27 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`ZeroIdeal := ideal<Integers(F)|0>;
   // positive element reps and Shintani reps for each class group rep
   // up to trace bound prec
-  M`PositiveReps := AssociativeArray();
-  M`PositiveRepsByTrace := AssociativeArray();
+  // FIXME: delete PositiveReps commented lines
+  //M`PositiveReps := AssociativeArray();
+  //M`PositiveRepsByTrace := AssociativeArray();
   M`ShintaniReps := AssociativeArray();
   M`ShintaniRepsIdeal := AssociativeArray();
   M`ShintaniRepsByTrace := AssociativeArray();
   M`ReduceIdealToShintaniRep := AssociativeArray();
   // Elements and Shintani domains
   for bb in M`NarrowClassGroupReps do
-    M`PositiveRepsByTrace[bb] := AssociativeArray();
+    bbp := bb*diffinv;
+    Append(~M`IdealDualNarrowClassGroupReps, bbp);
+    M`NarrowClassGroupRepsToIdealDual[bb] := bbp;
+    //M`PositiveRepsByTrace[bb] := AssociativeArray();
     M`ShintaniRepsByTrace[bb] := AssociativeArray();
     M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
     for t := 0 to prec do
-      M`PositiveRepsByTrace[bb][t] := PositiveElementsOfTrace(bb, t);
-      M`ShintaniRepsByTrace[bb][t] := ShintaniRepsOfTrace(bb, t);
+      //M`PositiveRepsByTrace[bb][t] := PositiveElementsOfTrace(bb, t);
+      M`ShintaniRepsByTrace[bb][t] := ShintaniRepsOfTrace(bbp, t);
     end for;
-    M`PositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
-    M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
+    //M`PositiveReps[bb] := PositiveRepsUpToTrace(M, bb, prec);
+    M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec); // = &cat[M`ShintaniRepsByTrace[bb][i] : i in [0..prec]]
     M`ShintaniRepsIdeal[bb] := AssociativeArray();
     for nu in M`ShintaniReps[bb] do
       M`ReduceIdealToShintaniRep[bb][ideal<Integers(F)|nu>] := nu;
@@ -362,12 +353,14 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   end for;
   // M`Ideals
   all_ideals := &cat[IdealsByNarrowClassGroup(M)[bb] : bb in NarrowClassGroupReps(M)];
-  // M`Primes
-  M`AllPrimes := PrimesUpTo(Integers()!Max([CorrectNorm(nn) : nn in all_ideals]), BaseField(M));
   // sort M`Ideals by Norm
   norms := [CorrectNorm(I) : I in all_ideals];
   ParallelSort(~norms, ~all_ideals);
   M`AllIdeals := all_ideals;
+  // M`Primes
+  M`AllPrimes := PrimesUpTo(Integers()!Max(norms), BaseField(M));
+  //FIXME?!?
+  //assert SequenceToSet(M`AllPrimes) subset SequenceToSet(M`AllIdeals);
 
   M`Spaces := AssociativeArray();
   return M;
@@ -391,12 +384,19 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
+intrinsic MPairs(M::ModFrmHilDGRng) -> Assoc
+  {return MPairs of M}
+  if not assigned M`MPairs then
+    HMFEquipWithMultiplication(M);
+  end if;
+  return M`MPairs;
+end intrinsic;
+
 intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   {Assign representatives and a dictionary for it to M.}
-  bbs := NarrowClassGroupReps(M);
-  M`MultiplicationTables := AssociativeArray();
-  for bb in bbs do
-    // Populates M`MultiplicationTables[bb]
+  M`MPairs := AssociativeArray();
+  for bb in NarrowClassGroupReps(M) do
+    // Populates M`Mpairs[bb]
     ComputeMPairs(bb, M);
   end for;
 end intrinsic;
