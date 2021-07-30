@@ -20,17 +20,17 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
   prec := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffsTnnf[bb] := AssociativeArray();
-    prec[bb] := Precision(f);
+    prec[bb] := 0;
   end for;
 
   for bb in NarrowClassGroupReps(M) do
     bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     bbpinv := bbp^(-1);
 
-    for nu in ShintaniRepsUpToTrace(MM, bb, Precision(f)) do //they come sorted
-      I := nu*bbp^(-1);  // already call nn the ideal for the Hecke operator
+    for nu in ShintaniRepsUpToTrace(M, bb, Precision(M)) do //they come sorted
+      I := nu*bbpinv;  // already call nn the ideal for the Hecke operator
       c := 0;
-      t := Trace(nu);
+      t := Integers()!Trace(nu);
 
 
       // loop over divisors
@@ -53,100 +53,14 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
           end if;
         end if;
       end for;
-      if prec[bb] lt Precision(f) then // the loop on aa didn't finish
+      if prec[bb] ne 0 then // the loop on aa didn't finish
         break; // breaks loop on nu
       else
-        coeffsTnnf[bb][I] := c;
+        coeffsTnnf[bb][nu] := c;
       end if;
     end for;
   end for;
-  g := HMF(Mk, coeffsTnnf : CoeffsByIdeals := true, prec:=prec);
-  return g;
-end intrinsic;
-
-
-
-
-intrinsic HeckeOperatorOLD(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
-{Returns T(nn)(f) for the character chi modulo the level of f}
-
-Mk := Parent(f);
-M := Parent(Mk);
-F := BaseField(M);
-Cl, mp := NarrowClassGroup(F);
-ZF := Integers(F);
-k0 := Max(Weight(f));
-chi := Character(Mk);
-
-coeffsTnnf := AssociativeArray();
-
-//We will obtain a function with smaller precision; need to keep track of precision via newPrec
-newPrec := 0;
-  for bb in NarrowClassGroupReps(M) do
-    coeffsTnnf[bb] := AssociativeArray();
-  end for;
-  precisionReached := false; // keeps track if we have reached the precision for T(nn)(f)
-
-  // Now we loop through each trace
-  for T := 0 to Precision(M) do
-    traceDefined := 0; //keeps track if coefficients for all ideals of a given trace are defined
-    totalIdeals := 0;
-    for bb in NarrowClassGroupReps(M) do
-      bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
-      nusT := ShintaniRepsByTrace(M)[bb][T]; //get list of Shintani reps with trace T
-      totalIdeals +:= #nusT;
-
-      for nu in nusT do
-        I := nu*bbp^(-1);  // already call nn the ideal for the Hecke operator
-        c := 0;
-        allDivisors := true;
-                  //keeps track if all the coefficients in the sum for an ideal are defined
-        // loop over divisors
-        // Formula 2.23 in Shimura - The Special Values
-        //             of the zeta functions associated with Hilbert Modular Forms
-        for aa in Divisors(ZF!!(I + nn)) do
-          if ZF!!(aa^(-2) * (I*nn)) notin AllIdeals(M) then
-            allDivisors := false;
-            break;
-                 // stop looping through divisors if coefficient for at least one divisor
-                 // is not defined (if trace (aa^(-2) * (I*nn)) is greater than precision)
-          else
-            if I eq 0*ZF then
-              c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[mp((bb*nn/aa^2)@@mp)][ZF!0];
-                           //takes care if the coefficients for the zero ideal are different
-            else
-              c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficient(f, ZF!!(aa^(-2) * (I*nn)));
-            end if;
-          end if;
-        end for;
-        if allDivisors then // if T(nn)(f)[I] is defined, give a value
-          traceDefined +:= 1;
-          coeffsTnnf[bb][I] := c;
-        else
-          coeffsTnnf[bb][I] := 0;  // otherwise set the coefficient to zero
-        end if;
-      end for;
-    end for;
-
-    if (traceDefined eq totalIdeals) and (not precisionReached) then
-      newPrec := T;
-    else
-      newPrec := Max(0, newPrec);
-      precisionReached := true;
-      for bb in NarrowClassGroupReps(M) do
-        nusT := ShintaniRepsByTrace(M)[bb][T];
-        for nu in nusT do
-          I := nu*bbp^(-1);
-          if I in Keys(coeffsTnnf[bb]) then
-            coeffsTnnf[bb][I] := 0;
-          end if;
-        end for;
-      end for;
-    end if;
-  end for;
-
-  // JV : Need to assign precision, I think this should handle the above better
-  g := HMF(Mk, coeffsTnnf : CoeffsByIdeals := true);
+  g := HMF(Mk, coeffsTnnf : CoeffsByIdeals:=false, prec:=prec);
   return g;
 end intrinsic;
 

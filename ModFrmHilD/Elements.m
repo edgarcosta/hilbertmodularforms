@@ -192,7 +192,7 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   return true, Coefficients(f)[bb][nu];
 end intrinsic;
 
-intrinsic Coefficient(f::ModFrmHilDElt) -> RngElt
+intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
   {}
   b, c := IsCoefficientDefined(f, nn);
   require b: "Beyond known precision, sorry!";
@@ -490,12 +490,12 @@ end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDEltComp) -> BoolElt
   {check if form is identically zero}
-  return IsZero(Values(Coefficients(f)));
+  return IsZero([c : c in Coefficients(f)]);
 end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
   {check if form is identically zero}
-  return IsZero(Values(Components(f)));
+  return IsZero([f_bb : f_bb in Components(f)]);
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp

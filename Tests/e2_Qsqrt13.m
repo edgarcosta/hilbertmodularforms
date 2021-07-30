@@ -27,6 +27,11 @@ assert [Coefficients(E2pow2)[1*ZF][elt] : elt in ShintaniRepsUpToTrace(M, 1*ZF, 
 assert E2pow2/E2 eq E2;
 
 
+h:=1/Coefficient(E2, 1*ZF)*E2;
+hecke_h := HeckeOperator(h, 2*ZF);
+assert IsZero(hecke_h - Coefficient(h, 2*ZF)*h);
+
+
 M4 := HMFSpace(M, [4,4]);
 B4:=Basis(M4);
 assert #B4 eq 2;
