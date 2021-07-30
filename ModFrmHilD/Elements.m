@@ -170,7 +170,7 @@ end intrinsic;
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
   {}
 
-  require not IsZero(nn) : "The zero coefficient exists on each component";    
+  require not IsZero(nn) : "The zero coefficient exists on each component";
 
   Mk := Parent(f);
   M := Parent(Mk);
@@ -1159,25 +1159,39 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: swap map //////////
 
+
+intrinsic Swap(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+  M := GradedRing(f);
+  F := BaseField(M);
+  ZF := Integers(F);
+  require Degree(F) eq 2: "only defined for quadratic fields";
+  sigma := hom<F -> F| Trace(F.1) - F.1>;
+  NN := Level(f);
+  NNbar := ideal<ZF | [sigma(x) : x in Generators(NN)]>;
+  require NN eq NNbar: "only implemented for Galois stable level";
+  require Character(Parent(M)) eq 1: "only implemented for trivial character";
+  //chibar := ??
+  //M := HMFSpace(M, NNbar, Weight(f), chibar);
+  bb := Component(f);
+  bbbar := ideal<ZF | [sigma(x) : x in Generators(bb)]>;
+  require bbar in NarrowClassGroupReps(M): "bbar is not the NarrowClassGroupReps";
+  coeff := AssociativeArray();
+  for nu->c in coeff do
+    nubar := sigma(nu);
+    snubar, epsilon := Explode(ReduceShintani(M, bb, nubar));
+    coeff[snubar] := Evaluate(UnitChar(f), epsilon)*c;
+  end for;
+  ucbar := UnitChar(F, [sigma(v) : v in Values(UnitChar(f))]);
+  HMFComp(Parent(M), bbbar, coeff: unitchar:=ucbar, prec:=Precision(f));
+end intrinsic;
+
 intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
-   {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
-   Mk := Parent(f);
-   M :=Parent(Mk);
-   F:=BaseField(M);
-   ZF:=Integers(F);
-   bbs := NarrowClassGroupReps(M);
-   coeff := AssociativeArray();
-   for bb in bbs do
-    coeff[bb]:=AssociativeArray();
-    Ideals := IdealsByNarrowClassGroup(M)[bb];
-    for I in Ideals do
-      if I eq 0*ZF then
-        x:=Coefficients(f)[bb][I];
-        else x:=Coefficient(f, Conjugate(I));
-        end if;
-      coeff[bb][I]:=x;
-      end for;
-     end for;
-   g:=HMFSumComponents(Mk, coeff);
-   return g;
+  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+  comp := AssociativeArray();
+  for fbb in Components(f) do
+    sfbb := Swap(fbb);
+    comp[Component(fbb)] := sfbb;
+  end for;
+  return HMFSumComponents(Parent(sfbb), comp);
  end intrinsic;
