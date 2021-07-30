@@ -145,8 +145,8 @@ end intrinsic;
 intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
   {}
   if not assigned M`DedekindZetatwo then
-    F := BaseField(M); 
-    M`DedekindZetatwo := Evaluate(LSeries(F : Precision := 100),2); // Fixed Precision 100. 
+    F := BaseField(M);
+    M`DedekindZetatwo := Evaluate(LSeries(F : Precision := 100),2); // Fixed Precision 100.
   end if;
   return M`DedekindZetatwo;
 end intrinsic;
@@ -417,12 +417,12 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   _<x> := PolynomialRing(F); // Polynomial ring over F
   UF := UnitGroup(M); // Unit Group of F
   mUF := UnitGroupMap(M); // Unit Group of F map
-  
+
   // Storage
-  AllDiscriminants := []; // Minimal set of discriminants 
+  AllDiscriminants := []; // Minimal set of discriminants
   ReducedDiscriminants := []; // Reduced Discriminants
   A := AssociativeArray(); // Storage for precomputations
-  
+
 
   // First pass. A[a] := List of [b,a,D];
   for mm in IdealsByNarrowClassGroup(M)[1*ZF] do
@@ -438,25 +438,25 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   end for;
 
 
-  // Second pass. Compute reduced discriminants, ZK ring of intgers, and conductor ff. 
+  // Second pass. Compute reduced discriminants, ZK ring of intgers, and conductor ff.
   CMDisc := Set(AllDiscriminants);
   S := AssociativeArray();
   for D in CMDisc do
     K := ext<F | x^2 - D >; // Field K/F
-    ZK := Integers(K); // Ring of Integers 
-    DD := Discriminant(ZK); // Discriminant 
+    ZK := Integers(K); // Ring of Integers
+    DD := Discriminant(ZK); // Discriminant
     ff := Sqrt((D*ZF)/DD); // Conductor
     D0 := D; // Unique indentifying discriminant
     t := 0; // Counter
-    for d in ReducedDiscriminants do 
-      if IsSquare(D/d[1]) then 
+    for d in ReducedDiscriminants do
+      if IsSquare(D/d[1]) then
         t := 1;
         D0 := d[1];
         break;
       end if;
     end for;
     if t eq 0 then  // Add to AllDiscriminants if it is new
-      ReducedDiscriminants cat:= [[*D,K*]]; 
+      ReducedDiscriminants cat:= [[*D,K*]];
     end if;
     S[D] := [*D0, ZK, ff*]; // TODO: storing ring of integers doubles time why?
   end for;
@@ -473,7 +473,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   SetClassGroupBounds("GRH"); // No Proof!
   for pair in ReducedDiscriminants do
     D0 := pair[1]; // Indentifying Discriminant
-    K := pair[2]; // Field 
+    K := pair[2]; // Field
     Kabs := AbsoluteField(K); // Class groups computations only for absolute extensions?
     ZKabs := Integers(Kabs); // Ring of integers
     hplus := NarrowClassNumber(M); // Narrow class number
@@ -501,7 +501,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   _<x> := PolynomialRing(F);
 
   // Storage
-  AllDiscriminants := []; // Minimal set of discriminants 
+  AllDiscriminants := []; // Minimal set of discriminants
   A := AssociativeArray(); // Storage for precomputations
 
   // First pass. A[a] := List of [*b,D*];
@@ -536,7 +536,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
     h := ClassNumber(L);
     w := #TorsionUnitGroup(L);
     for D in CMDisc do
-      if FundD eq T[D][1] then 
+      if FundD eq T[D][1] then
         T[D] cat:= [*h,w*];
       end if;
     end for;

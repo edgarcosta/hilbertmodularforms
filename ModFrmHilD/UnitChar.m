@@ -5,6 +5,12 @@ declare attributes GrpCharUnitTotElt:
   cachedvalues,
   vals;
 
+intrinsic ValuesOnGens(omega::GrpCharUnitTotElt) -> SeqEnum[RngElt]
+  {return values on gens}
+  return omega`vals;
+end intrinsic;
+
+
 intrinsic Evaluate(omega::GrpCharUnitTotElt, x::RngElt) -> RngElt
   {Evaluate the unit character omega on x, a number field element.}
 
