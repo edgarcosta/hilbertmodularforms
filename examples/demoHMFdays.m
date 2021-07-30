@@ -53,7 +53,7 @@ HeckeOperator(h, 2*ZF);
 
 
 // Graded ring
-prec:=20;
+prec:=4;
 ZF := 1*ZF;
 MaxGenWeight := 8;
 MaxRelWeight := 16;
