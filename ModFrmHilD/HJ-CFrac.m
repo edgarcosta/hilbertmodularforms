@@ -1,13 +1,8 @@
-
-// Maybe make PeriodBound depend on precision of input to avoid false non-repeating
-// Currently only works for elements of precision field...best solution is probably to make intrinsic and overload...
-// Gives wrong output when w_new is just slightly larger than an integer...try RealField(100)!(7/3) for example
-function HJContinuedFraction(w0 : PeriodBound := 100, Epsilon := 0)
-  // Input: Real number w0
-  // Output: Two lists, the first containing the preperiodic portion and the second containing the repeating portion of the HJ continued fraction
-  //         a boolean, true if the continued fraction repeats or terminates
+// May give wrong output when w_new is just slightly larger than an integer; e.g., try RealField(100)!(7/3)
+intrinsic HJContinuedFraction(w0 : PeriodBound := 100, Epsilon := -1)
+  {Given a real number w0, return two lists, the first containing the preperiodic portion and the second containing the repeating portion of the HJ continued fraction, and a boolean, true if the continued fraction repeats or terminates}
   prec := Precision(Parent(w0));
-  if Epsilon eq 0 then
+  if Epsilon eq -1 then
     Epsilon := 10^(-prec/2);
   end if;
   eps := Epsilon;
@@ -57,9 +52,10 @@ function HJContinuedFraction(w0 : PeriodBound := 100, Epsilon := 0)
     print "non-periodic continued fraction";
     return bs, [], false;
   end if;
-end function;
+end intrinsic;
 
-function HJContinuedFractionToReal(bs : prec := 30)
+intrinsic HJContinuedFractionToReal(bs : prec := 30)
+  {Given a list of integers, return the corresponding HJ continued fraction.}
   K := RealField(prec);
   cs := Reverse(bs);
   x := K!cs[1];
@@ -69,18 +65,20 @@ function HJContinuedFractionToReal(bs : prec := 30)
   return x;
 end function;
 
-function PeriodicHJContinuedFractionToReal(head, tail : prec := 30, rep := 30)
+intrinsic PeriodicHJContinuedFractionToReal(head, tail : prec := 30, rep := 30)
+  {Given two lists of integers, the first containing the non-periodic part, and the second containing the periodic part, return the corresponding HJ continued fraction.}
   RR := RealField(prec);
   bs := head;
   for i := 1 to rep do
    bs := bs cat tail;
   end for;
   return HJContinuedFractionToReal(bs : prec := prec);
-end function;
+end intrinsic;
 
-function VerifyExactHJContinuedFraction(a : Precision := 30, PeriodBound := 100)
+intrinsic VerifyExactHJContinuedFraction(a : Precision := 30, PeriodBound := 100)
+  {Given an element of a totally real number field of degree at most 2, verify that the periodic HJ continued fractions compute by HJContinuedFraction are correct.}
   F<r> := Parent(a);
-  assert (Degree(F) eq 2) and (IsTotallyReal(F));
+  assert (Degree(F) le 2) and (IsTotallyReal(F));
   vs := InfinitePlaces(F);
   evs := [Evaluate(a, v : Precision := Precision) : v in vs];
   eq_bool := true;
@@ -103,72 +101,5 @@ function VerifyExactHJContinuedFraction(a : Precision := 30, PeriodBound := 100)
     assert y eq y2;
   end for;
   return eq_bool;
-end function;
-
-/*
-    if diff_i ne 0 then
-      w_new := 1/diff_i;
-      j := 1;
-      while j le #ws do
-        if Abs(w_new - ws[j]) lt eps then
-          rep_bool := true;
-          rep_ind := j;
-        end if;
-        j := j+1;
-      end while;
-      if w_new in ws then // probably need to make this a "numerically" in with a precision parameter...
-        
-      else
-        Append(~ws, w_new);
-        b_new := Ceiling(w_new);
-        Append(~bs, b_new);
-      end if;
-    else
-      zero_bool := true;
-    end if;
-    i := i + 1;
-  end while;
-  if zero_bool then
-    return bs, [], true;
-  elif rep_bool then
-    head := bs[1..(rep_ind - 1)];
-    tail := bs[rep_ind..#bs];
-    return head, tail, true;
-  else
-    return bs, [], false;
-  end if;
-end function;
-*/
-
-/*
-// computing H-J continued fraction
-//w0 := (3+Sqrt(5))/2;
-w0 := 7/3;
-//w0 := Sqrt(5);
-ws := [w0];
-b0 := Ceiling(w0);
-bs := [b0];
-for i := 1 to 20 do
-  printf "i = %o\n", i;
-  diff_i := bs[i] - ws[i];
-  printf "diff_i := %o\n", diff_i;
-  if diff_i ne 0 then
-    w_new := 1/diff_i;
-    Append(~ws, w_new);
-    b_new := Ceiling(w_new);
-    Append(~bs, b_new);
-  else
-    break;
-  end if;
-end for;
-
-// converting H-J continued fraction back to decimal
-K := Parent(w0);
-cs := Reverse(bs);
-xs := [K!cs[1]];
-for i := 2 to #cs do
-  x_new := cs[i] - 1/xs[i-1];
-  Append(~xs, x_new);
-end for;
-*/
+end intrinsic;
 
