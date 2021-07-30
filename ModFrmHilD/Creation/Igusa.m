@@ -91,7 +91,7 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::SeqEnum[RngIntElt]
   Clplus, mp:=NarrowClassGroup(F);
   h:=ClassNumber(F);
   bb:=mp(Different(ZF)@@mp);
-  _, factors:=IsPrincipal(Different(ZF)/bb);
+  _, factors:=IsNarrowlyPrincipal(Different(ZF)/bb);
   if not IsTotallyPositive(factors) then
     factors:=-factors;
   end if;

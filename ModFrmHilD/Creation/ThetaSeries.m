@@ -96,14 +96,14 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   epsrootd:=FundamentalUnit(ZK)/K.1;
   require NarrowClassNumber(K) eq 1: "Theta Series only implemented with narrow class number one";
   for bb in reps do
-    isnarrprinc, gen:=IsNarrowlyPrincipal(bb/(1*ZK));
+    isnarrprinc, gen:=IsNarrowlyPrincipal(bb/(Different(ZK)));
     require isnarrprinc: "Theta Series only implemented with narrow class number one";
     coeffs[bb] := AssociativeArray();
     for nu in ShintaniRepsUpToTrace(M, bb, Precision(M)) do
       if IsZero(nu) then
         coeffs[bb][nu] := 1;
       else
-        coeffs[bb][nu] := ThetaCoefficient(M, nu*gen, GM);
+        coeffs[bb][nu] := ThetaCoefficient(M, nu/gen, GM);
       end if;
     end for;
   end for;
