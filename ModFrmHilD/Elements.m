@@ -9,8 +9,8 @@ declare attributes ModFrmHilDEltComp:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
   Coefficients, // Assoc:  coeffs_bb[nu] := a_(bb,nu) = a_(nu bb'^-1), where nu in Shintani cone
-  BaseRing, // Rng: where the coefficients live (does this depend on bb?)
-  UnitChar, // GrpCharUnitTotElt: TotallyPositiveUnits(Parent(Parent)) -> BaseRing
+  CoefficientRing, // Rng: where the coefficients live (does this depend on bb?)
+  UnitChar, // GrpCharUnitTotElt: TotallyPositiveUnits(Parent(Parent)) -> CoefficientRing
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
 
 declare type ModFrmHilDElt;
@@ -205,22 +205,22 @@ end intrinsic;
 
 intrinsic CoefficientField(f::ModFrmHilDElt) -> Any
   {}
-  print("Elements.m CoefficientField: DEPRECATED, use BaseRing");
-  return BaseRing(f);
+  print("Elements.m CoefficientField: DEPRECATED, use CoefficientRing");
+  return CoefficientRing(f);
 end intrinsic;
 
-intrinsic BaseRing(f::ModFrmHilDEltComp) -> Any
+intrinsic CoefficientRing(f::ModFrmHilDEltComp) -> Any
   {}
-  return f`BaseRing;
+  return f`CoefficientRing;
 end intrinsic;
 
-intrinsic BaseRing(f::ModFrmHilDElt) -> Any
+intrinsic CoefficientRing(f::ModFrmHilDElt) -> Any
   {}
 
   ZF := Integers(GradedRing(f));
-  R := BaseRing(Components(f)[1*ZF]);
+  R := CoefficientRing(Components(f)[1*ZF]);
   for fbb in Components(f) do
-    require BaseRing(fbb) eq R : "Need all base rings of all components to be equal";
+    require CoefficientRing(fbb) eq R : "Need all base rings of all components to be equal";
   end for;
   return R;
 end intrinsic;
@@ -357,7 +357,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   else
     R := Integers();
   end if;
-  f`BaseRing := R;
+  f`CoefficientRing := R;
   if R cmpne Integers() then
     for nu in RecastKeys do
       newcoeffs[nu] := R!newcoeffs[nu];
@@ -504,7 +504,7 @@ end intrinsic;
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
 
 // Coerces HMF coefficients a_n in a ring R
-intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+intrinsic ChangeCoefficientRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {returns f such that a_nu := R!a_nu}
   bb := ComponentIdeal(f);
   coeffs := Coefficients(f);
@@ -516,7 +516,7 @@ intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
 end intrinsic;
 
 
-intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
+intrinsic ChangeCoefficientRing(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   {returns f such that a_nu := R!a_nu}
   M := AttachSpec("spec");GradedRing(f);
   bbs := NarrowClassGroupReps(M);
@@ -525,7 +525,7 @@ intrinsic ChangeBaseRing(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   // then change ring
   components := Components(f);
   for bb in components do
-    components[bb] := ChangeBaseRing(components[bb]);
+    components[bb] := ChangeCoefficientRing(components[bb]);
   end for;
   return f;
 end intrinsic;
@@ -611,7 +611,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form}
   k := Weight(f);
   M := GradedRing(f);
-  R := BaseRing(f);
+  R := CoefficientRing(f);
   if IsField(R) then
     K := R;
   else
@@ -624,7 +624,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
     if K eq R then
       Append(~result, MapCoefficients(Gmap(g), f));
     else
-      Append(~result, ChangeBaseRing(R, MapCoefficients(Gmap(g), f)));
+      Append(~result, ChangeCoefficientRing(R, MapCoefficients(Gmap(g), f)));
     end if;
   end for;
   return result;
@@ -656,7 +656,7 @@ intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   {returns the full Galois orbit of a modular form over Q}
 
   result := [Parent(f) | ];
-  for b in Basis(BaseRing(f)) do
+  for b in Basis(CoefficientRing(f)) do
     Append(~result, Trace(b * f));
   end for;
   return result;
@@ -717,8 +717,8 @@ end intrinsic;
 
 intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {scale f by a scalar c.}
-  require IsCoercible(BaseRing(f), c): "the scalar must be coercible into the base ring";
-  F := BaseRing(f);
+  require IsCoercible(CoefficientRing(f), c): "the scalar must be coercible into the base ring";
+  F := CoefficientRing(f);
   new_coeffs := AssociativeArray();
   coeffs := Coefficients(f);
   for nu in Keys(coeffs) do
@@ -797,9 +797,9 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
   coeffs_h := AssociativeArray(); // h := f*g
-  // Compute the new BaseRing
-  Ff := BaseRing(f);
-  Fg := BaseRing(g);
+  // Compute the new CoefficientRing
+  Ff := CoefficientRing(f);
+  Fg := CoefficientRing(g);
   if Ff eq Fg then
     F := Ff;
   else
@@ -867,9 +867,9 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
   coeffs_h := AssociativeArray(); // h := f/g
-  // Compute the new BaseRing
-  Ff := BaseRing(f);
-  Fg := BaseRing(g);
+  // Compute the new CoefficientRing
+  Ff := CoefficientRing(f);
+  Fg := CoefficientRing(g);
   if Ff eq Fg then
     F := Ff;
     if not IsField(F) and not IsInvertible(coeffs_g)[0] then
