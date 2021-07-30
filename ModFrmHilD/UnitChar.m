@@ -18,12 +18,12 @@ intrinsic Evaluate(omega::GrpCharUnitTotElt, x::RngElt) -> RngElt
   if IsOne(omega) then
     return F!1;
   else
-    if not IsDefined(omega`cachedvalues, x) then
+    if not IsDefined(omega`cachedvalues, F!x) then
       U, mU := TotallyPositiveUnits(F);
       vals := omega`vals;
-      omega`cachedvalues[x] := &*[vals[i]^a[i] : i in [1..#vals]] where a := Eltseq(x@@mU);
+      omega`cachedvalues[F!x] := &*[vals[i]^a[i] : i in [1..#vals]] where a := Eltseq(x@@mU);
     end if;
-    return omega`cachedvalues[x];
+    return omega`cachedvalues[F!x];
   end if;
 end intrinsic;
 
@@ -85,3 +85,18 @@ intrinsic TrivialUnitCharacter(F::FldAlg) -> GrpCharUnitTotElt
 
  return UnitCharacter(F, [1: i in [1..#Generators(TotallyPositiveUnits(F))]]);
 end intrinsic;
+
+intrinsic Print(omega::GrpCharUnitTotElt, level::MonStgElt)
+  {}
+
+  F := BaseField(omega);
+  if level in ["Default", "Minimal", "Maximal"] then
+    printf "Character of the totally positive unit group of %o", F;
+    printf " defined by values %o on generators", ValuesOnGens(omega);
+  elif level eq "Magma" then
+    error "not implemented yet!";
+  else
+    error "not a valid printing level.";
+  end if;
+end intrinsic;
+
