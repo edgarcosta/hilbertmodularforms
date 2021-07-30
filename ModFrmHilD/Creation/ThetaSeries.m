@@ -20,8 +20,8 @@ intrinsic QuadraticZ(F::FldNum, M::AlgMatElt) -> AlgMatElt
 end intrinsic;
 
 
-intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::RngOrdElt,  GM::AlgMatElt) -> FldNumElt
-  { inputs: M a graded ring, 
+intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::FldQuadElt,  GM::AlgMatElt) -> FldNumElt
+  { inputs: M a graded ring,
     v a totally positive element in a totally real field,
     GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
     L the ZZ-lattice of the map Tr(Q(v)) where Q is the quadratic form with Gram matrix GM;
@@ -63,8 +63,8 @@ intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::RngOrdElt,  GM::AlgMatElt) -> F
   r_v := 0;
 	for i:=1 to num_sols do
     //number of preimages of v inside initial lattice; also the Fourier coefficient for element v
-    if DotProduct(pgm[i],PreimTr[i])  eq v then //check which vectors in the preimage of Tr(v) are also in the preimage of 
-      r_v +:= 2; 
+    if DotProduct(pgm[i],PreimTr[i])  eq v then //check which vectors in the preimage of Tr(v) are also in the preimage of
+      r_v +:= 2;
     end if;
 	end for;
 	return r_v;
@@ -84,22 +84,24 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   assert NumberOfRows(GM) mod 2 eq 0;
   K := BaseField(M);
   ZK := Integers(K);
+  print("Warning: something is fishy with ThetaCoefficient perhaps related with the change from bb to bbp");
 
   //checking that the level of Theta divides the level of M
 
   reps := NarrowClassGroupReps(M);
   K := BaseField(M);
   ZK := IntegerRing(K);
+  discriminant := Discriminant(ZK);
   coeffs := AssociativeArray();
-  assert NarowClassNumber(K) eq 1; //we are assuming narrow class number = 1
+  epsrootd:=FundamentalUnit(ZK)/K.1;
+  require NarrowClassNumber(K) eq 1: "Theta Series only impliemented with narrow class number one";
   for bb in reps do
     coeffs[bb] := AssociativeArray();
-    for nn in IdealsByNarrowClassGroup(M)[bb] do
+    for nu in ShintaniRepsUpToTrace(M, bb, Precision(M)) do
       if IsZero(nu) then
-        coeffs[bb][nn] := 1;
+        coeffs[bb][nu] := 1;
       else
-        rep := IdealToShintaniRepresentative(M, bb, nn);
-        coeffs[bb][nn] := ThetaCoefficient(M, rep, GM);
+        coeffs[bb][nu] := ThetaCoefficient(M, nu/epsrootd, GM);
       end if;
     end for;
   end for;

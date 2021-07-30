@@ -63,21 +63,60 @@ end intrinsic;
 
 
 
-// FIXME documentation string
-intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::RngIntElt) -> Any
-{Does Something}
+// // FIXME documentation string
+// intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::RngIntElt) -> Any
+// {Does Something}
+//   F := BaseField(M);
+//   ZF:=Integers(F);
+//   coeffs := AssociativeArray();
+//   Clplus, mp:=NarrowClassGroup(F);
+//   //h:=ClassNumber(F);
+//   bb:=mp(Different(ZF)@@mp);
+//   repcoeffs := AssociativeArray();
+//   elts := ShintaniReps(M)[bb];
+//   print(elts);
+//   for j := 1 to #elts do
+//     print(Norm(elts[j]));
+//     repcoeffs[ShintaniRepresentativeToIdeal(M, bb, ZF!elts[j])]:=Coeff(ZF!elts[j],Weight);
+//   end for;
+//   coeffs[bb]:=repcoeffs;
+//   A := HMF(HMFSpace(M, [ Weight : i in [1..Degree(F)]]), CompleteCoeffsZeros(M, coeffs));
+//   return A;
+// end intrinsic;
+
+intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::SeqEnum[RngIntElt]) -> Any
+{Returns the pullback of the Siegel Eisenstein series of a given weight}
   F := BaseField(M);
-  coeffs := AssociativeArray();
-  bb:=1*Integers(F);
-  repcoeffs := AssociativeArray();
+  ZF:=Integers(F);
+  Clplus, mp:=NarrowClassGroup(F);
+  h:=ClassNumber(F);
+  bb:=mp(Different(ZF)@@mp);
+  _, factors:=IsPrincipal(Different(ZF)/bb);
+  if not IsTotallyPositive(factors) then
+    factors:=-factors;
+  end if;
+  G, unitmp := TotallyPositiveUnits(M);
+  if #Clplus gt h then
+    minusunitchar:=UnitCharacter(F, [-1]);
+  else
+    minusunitchar:=UnitCharacter(F, [1]);
+  end if;
+  eta:=unitmp(G.1);
   elts := ShintaniReps(M)[bb];
+  fpluscoeffs:=AssociativeArray();
+  fminuscoeffs:=AssociativeArray();
   for j := 1 to #elts do
-    repcoeffs[ShintaniRepresentativeToIdeal(M, bb,elts[j])]:=Coeff(elts[j],Weight);
+    elt:=ZF!(elts[j]*factors);
+    anuplus:=Coeff(elt,Weight[1]);
+    anuminus:=Coeff(elt*eta^(-1),Weight[1]);
+    fpluscoeffs[elts[j]]:=1/2*(anuplus+anuminus);
+    fminuscoeffs[elts[j]]:=1/2*(anuplus-anuminus);
   end for;
-  coeffs[bb]:=repcoeffs;
-  A := HMF(HMFSpace(M, [ Weight : i in [1..Degree(F)]]), CompleteCoeffsZeros(M, coeffs));
-  return A;
+  fplus:=HMFComp(HMFSpace(M, Weight), bb, fpluscoeffs: unitchar:=[]);
+  fminus:=HMFComp(HMFSpace(M, Weight), bb, fminuscoeffs: unitchar:=minusunitchar);
+  return fplus, fminus;
 end intrinsic;
+
 
 
 intrinsic UniversalIgusa(M::ModFrmHilDGRng) -> Any

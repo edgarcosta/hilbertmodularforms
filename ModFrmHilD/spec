@@ -4,10 +4,14 @@
   Elements.m
   Workspace.m
   Formatting.m
+  FldExt.m
   Hecke.m
+  HJ-CFrac.m
   Basis.m
   Trace.m
   Verbose.m
+  UnitChar.m
+  Utils.m
 }
 
 Multiplication
