@@ -1,5 +1,5 @@
 // May give wrong output when w_new is just slightly larger than an integer; e.g., try RealField(100)!(7/3)
-intrinsic HJContinuedFraction(w0 : PeriodBound := 100, Epsilon := -1)
+intrinsic HJContinuedFraction(w0 : PeriodBound := 100, Epsilon := -1) -> Any
   {Given a real number w0, return two lists, the first containing the preperiodic portion and the second containing the repeating portion of the HJ continued fraction, and a boolean, true if the continued fraction repeats or terminates}
   prec := Precision(Parent(w0));
   if Epsilon eq -1 then
@@ -54,7 +54,7 @@ intrinsic HJContinuedFraction(w0 : PeriodBound := 100, Epsilon := -1)
   end if;
 end intrinsic;
 
-intrinsic HJContinuedFractionToReal(bs : prec := 30)
+intrinsic HJContinuedFractionToReal(bs : prec := 30) -> FldReElt
   {Given a list of integers, return the corresponding HJ continued fraction.}
   K := RealField(prec);
   cs := Reverse(bs);
@@ -63,9 +63,9 @@ intrinsic HJContinuedFractionToReal(bs : prec := 30)
     x := cs[i] - 1/x;
   end for;
   return x;
-end function;
+end intrinsic;
 
-intrinsic PeriodicHJContinuedFractionToReal(head, tail : prec := 30, rep := 30)
+intrinsic PeriodicHJContinuedFractionToReal(head, tail : prec := 30, rep := 30) -> FldReElt
   {Given two lists of integers, the first containing the non-periodic part, and the second containing the periodic part, return the corresponding HJ continued fraction.}
   RR := RealField(prec);
   bs := head;
@@ -75,7 +75,7 @@ intrinsic PeriodicHJContinuedFractionToReal(head, tail : prec := 30, rep := 30)
   return HJContinuedFractionToReal(bs : prec := prec);
 end intrinsic;
 
-intrinsic VerifyExactHJContinuedFraction(a : Precision := 30, PeriodBound := 100)
+intrinsic VerifyExactHJContinuedFraction(a : Precision := 30, PeriodBound := 100) -> BoolElt
   {Given an element of a totally real number field of degree at most 2, verify that the periodic HJ continued fractions compute by HJContinuedFraction are correct.}
   F<r> := Parent(a);
   assert (Degree(F) le 2) and (IsTotallyReal(F));
