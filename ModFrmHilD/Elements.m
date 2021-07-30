@@ -954,14 +954,13 @@ intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
  return HMFIdentity(Parent(f))/f;
 end intrinsic;
 
-
-intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
+intrinsic '^'(f::ModFrmHilDEltComp, n::RngIntElt) -> ModFrmHilDEltComp
   {return f^n}
   if n lt 0 then
     f := Inverse(f);
     n := -n;
   end if;
-  g := HMFIdentity(Parent(f));
+  g := HMFIdentity(Parent(f), ComponentIdeal(f));
   if n eq 0 then
     return g;
   end if;
@@ -979,6 +978,15 @@ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
     end if;
   end while;
   return f * g;
+end intrinsic;
+
+intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
+  {return f^n}
+  comp := AssociativeArray();
+  for bb->fbb in Components(f) do
+    comp[bb] := fbb^n;
+  end for;
+  return HMFSumComponents(Parent(Values(comp)[1]), comp);
 end intrinsic;
 
 ////////// ModFrmHilDElt: Linear Algebra  //////////
