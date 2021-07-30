@@ -2,12 +2,15 @@
 // Maybe make PeriodBound depend on precision of input to avoid false non-repeating
 // Currently only works for elements of precision field...best solution is probably to make intrinsic and overload...
 // Gives wrong output when w_new is just slightly larger than an integer...try RealField(100)!(7/3) for example
-function HJContinuedFraction(w0 : PeriodBound := 100)
+function HJContinuedFraction(w0 : PeriodBound := 100, Epsilon := 0)
   // Input: Real number w0
   // Output: Two lists, the first containing the preperiodic portion and the second containing the repeating portion of the HJ continued fraction
   //         a boolean, true if the continued fraction repeats or terminates
   prec := Precision(Parent(w0));
-  eps := 10^(-prec/2);
+  if Epsilon eq 0 then
+    Epsilon := 10^(-prec/2);
+  end if;
+  eps := Epsilon;
   ws := [w0];
   b0 := Ceiling(w0);
   bs := [b0];
@@ -15,14 +18,14 @@ function HJContinuedFraction(w0 : PeriodBound := 100)
   rep_bool := false;
   i := 1;
   while (i le PeriodBound) and (not zero_bool) and (not rep_bool) do
-    printf "i = %o\n", i;
+    //printf "i = %o\n", i;
     diff_i := bs[i] - ws[i];
-    printf "diff_i = %o\n", diff_i;
+    //printf "diff_i = %o\n", diff_i;
     if Abs(diff_i) lt eps then
       zero_bool := true;
     else
-      w_new := 1/diff_i;
-      printf "w_new = %o\n", w_new;
+      w_new := 1/diff_i; // this might exacerbate round-off errors; see https://sites.millersville.edu/bikenaga/number-theory/periodic-continued-fractions/periodic-continued-fractions.html
+      //printf "w_new = %o\n", w_new;
       // check if remainder w_new already appeared in ws, which means that expansion is periodic
       j := 1;
       while j le #ws do
@@ -45,10 +48,12 @@ function HJContinuedFraction(w0 : PeriodBound := 100)
   if zero_bool then
     return bs, [], true;
   elif rep_bool then
+    print "periodic continued fraction";
     head := bs[1..(rep_ind - 1)];
     tail := bs[rep_ind..#bs];
     return head, tail, true;
   else
+    print "non-periodic continued fraction";
     return bs, [], false;
   end if;
 end function;
@@ -61,6 +66,15 @@ function HJContinuedFractionToReal(bs : prec := 30)
     x := cs[i] - 1/x;
   end for;
   return x;
+end function;
+
+function PeriodicHJContinuedFractionToReal(head, tail : prec := 30, rep := 30)
+  RR := RealField(prec);
+  bs := head;
+  for i := 1 to rep do
+   bs := bs cat tail;
+  end for;
+  return HJContinuedFractionToReal(bs : prec := prec);
 end function;
 
 /*
@@ -129,3 +143,4 @@ for i := 2 to #cs do
   Append(~xs, x_new);
 end for;
 */
+
