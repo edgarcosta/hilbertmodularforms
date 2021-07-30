@@ -20,7 +20,7 @@ intrinsic QuadraticZ(F::FldNum, M::AlgMatElt) -> AlgMatElt
 end intrinsic;
 
 
-intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::FldOrdElt,  GM::AlgMatElt) -> FldNumElt
+intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::FldQuadElt,  GM::AlgMatElt) -> FldNumElt
   { inputs: M a graded ring,
     v a totally positive element in a totally real field,
     GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
@@ -93,6 +93,7 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   ZK := IntegerRing(K);
   discriminant := Discriminant(ZK);
   coeffs := AssociativeArray();
+  epsrootd:=FundamentalUnit(ZK)/K.1;
   require NarrowClassNumber(K) eq 1: "Theta Series only impliemented with narrow class number one";
   for bb in reps do
     coeffs[bb] := AssociativeArray();
@@ -100,7 +101,7 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
       if IsZero(nu) then
         coeffs[bb][nu] := 1;
       else
-        coeffs[bb][nu] := ThetaCoefficient(M, nu*discriminant, GM);
+        coeffs[bb][nu] := ThetaCoefficient(M, nu/epsrootd, GM);
       end if;
     end for;
   end for;
