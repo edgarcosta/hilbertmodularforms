@@ -219,7 +219,7 @@ intrinsic CoefficientRing(f::ModFrmHilDElt) -> Any
 
   ZF := Integers(GradedRing(f));
   R := CoefficientRing(Components(f)[1*ZF]);
-  for fbb in Components(f) do
+  for bb -> fbb in Components(f) do 
     require CoefficientRing(fbb) eq R : "Need all base rings of all components to be equal";
   end for;
   return R;
