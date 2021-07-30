@@ -167,13 +167,16 @@ intrinsic Coefficient(f::ModFrmHilDEltComp, nu::RngElt) -> Any
   return Coefficients(f)[nu];
 end intrinsic;
 
-intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
+
+intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
   {}
 
   require not IsZero(nn) : "The zero coefficient exists on each component";
 
-  Mk := Parent(f);
-  M := Parent(Mk);
+  M := GradedRing(f);
+  if not nn in AllIdeals(M) then
+    return false, _;
+  end if;
   F := BaseField(M);
   ZF := Integers(F);
   ddF := Different(ZF);
@@ -183,9 +186,17 @@ intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
   assert bb in NarrowClassGroupReps(M);
   _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
   nu := ReduceShintaniMinimizeTrace(nu)[1];
-  require nu in ShintaniReps(M)[bb] : "Beyond known precision, sorry!";
+  if not nu in ShintaniReps(M)[bb] then
+    return false, _;
+  end if;
+  return true, Coefficients(f)[bb][nu];
+end intrinsic;
 
-  return Coefficients(f)[bb][nu];
+intrinsic Coefficient(f::ModFrmHilDElt) -> RngElt
+  {}
+  b, c := IsCoefficientDefined(f, nn);
+  require b: "Beyond known precision, sorry!";
+  return c;
 end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
@@ -318,7 +329,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   if prec eq 0 then
     f`Precision := Precision(M);
   else
-    assert prec gt 0;
+    require prec gt 0: "prec must be a positive integer";
     f`Precision := prec;
   end if;
 
@@ -431,8 +442,21 @@ intrinsic HMF(Mk::ModFrmHilD,
     end for;
   end if;
   require Keys(unitchar) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
+  if prec cmpeq 0 then
+    prec := Precision(M);
+  end if;
+  if Type(prec) eq RngIntElt then
+    orig_prec := prec;
+    prec := AssociativeArray();
+    for bb in bbs do
+      prec[bb] := orig_prec;
+    end for;
+  else
+    require Type(prec) eq Assoc: "prec must be either an integer or a AssociativeArray";
+  end if;
+  require Keys(prec) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
   for bb in bbs do
-  f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: unitchar:=unitchar[bb], CoeffsByIdeals:=CoeffsByIdeals, prec:=prec);
+    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: unitchar:=unitchar[bb], CoeffsByIdeals:=CoeffsByIdeals, prec:=prec[bb]);
   end for;
   return f;
 end intrinsic;
