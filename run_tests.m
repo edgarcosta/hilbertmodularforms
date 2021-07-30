@@ -1,5 +1,5 @@
 tests := [
-  "e2_Qsqrt13.m"
+  "E2_Qsqrt13.m"
   ];
 AttachSpec("ModFrmHilD/spec");
 failed := [];
@@ -8,7 +8,6 @@ for filename in tests do
   try
     printf "%o: ", filename;
     assert eval Read(fullPath);
-    printf "Success!\n";
   catch e
     Append(~failed, filename);
     printf "Fail!\n";
