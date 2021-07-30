@@ -85,3 +85,18 @@ intrinsic TrivialUnitCharacter(F::FldAlg) -> GrpCharUnitTotElt
 
  return UnitCharacter(F, [1: i in [1..#Generators(TotallyPositiveUnits(F))]]);
 end intrinsic;
+
+intrinsic Print(omega::GrpCharUnitTotElt, level::MonStgElt)
+  {}
+
+  F := BaseField(omega);
+  if level in ["Default", "Minimal", "Maximal"] then
+    printf "Character of the totally positive unit group of %o", F;
+    printf " defined by values %o on generators", ValuesOnGens(omega);
+  elif level eq "Magma" then
+    error "not implemented yet!";
+  else
+    error "not a valid printing level.";
+  end if;
+end intrinsic;
+
