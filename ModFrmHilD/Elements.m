@@ -187,18 +187,13 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   assert bb in NarrowClassGroupReps(M);
   _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
   nu := ReduceShintaniMinimizeTrace(nu)[1];
-<<<<<<< HEAD
-  require nu in ShintaniReps(M)[bb] : 
-      "Ideal nn is given by Fourier coefficient beyond known precision";
-=======
   if not nu in ShintaniReps(M)[bb] then
     return false, _;
   end if;
   return true, Coefficients(f)[bb][nu];
 end intrinsic;
->>>>>>> 5d5e52bee6778c10c3ca390e9cc4e5012a19f9f7
 
-intrinsic Coefficient(f::ModFrmHilDElt) -> RngElt
+intrinsic Coefficient(f::ModFrmHilDElt, nn:RngOrdIdl) -> RngElt
   {}
   b, c := IsCoefficientDefined(f, nn);
   require b: "Beyond known precision, sorry!";
