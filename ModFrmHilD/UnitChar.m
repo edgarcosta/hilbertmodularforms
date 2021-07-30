@@ -18,12 +18,12 @@ intrinsic Evaluate(omega::GrpCharUnitTotElt, x::RngElt) -> RngElt
   if IsOne(omega) then
     return F!1;
   else
-    if not IsDefined(omega`cachedvalues, x) then
+    if not IsDefined(omega`cachedvalues, F!x) then
       U, mU := TotallyPositiveUnits(F);
       vals := omega`vals;
-      omega`cachedvalues[x] := &*[vals[i]^a[i] : i in [1..#vals]] where a := Eltseq(x@@mU);
+      omega`cachedvalues[F!x] := &*[vals[i]^a[i] : i in [1..#vals]] where a := Eltseq(x@@mU);
     end if;
-    return omega`cachedvalues[x];
+    return omega`cachedvalues[F!x];
   end if;
 end intrinsic;
 
