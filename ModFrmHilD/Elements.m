@@ -184,6 +184,7 @@ intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
   _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
   nu := ReduceShintaniMinimizeTrace(nu)[1];
   require nu in ShintaniReps(M)[bb] : "Beyond known precision, sorry!";
+
   return Coefficients(f)[bb][nu];
 end intrinsic;
 
