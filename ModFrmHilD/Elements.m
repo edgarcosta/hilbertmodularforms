@@ -522,6 +522,8 @@ end intrinsic;
 
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
 
+//FIXME: this does nto agree with MAGMA standards
+// also we need to define ChangeRing
 // Coerces HMF coefficients a_n in a ring R
 intrinsic ChangeCoefficientRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {returns f such that a_nu := R!a_nu}
@@ -998,6 +1000,17 @@ intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt]) -> AlgMatElt
   return Matrix( [ Coefficients(elt) : elt in list] );
 end intrinsic;
 */
+
+
+intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
+  {return a sequence of ModFrmHilDElt where the coefficient ring is the compositum of field of all the number fields of the coeffient rings}
+  require #list ge 1: "first argument must have at least one element";
+  K := NumberField(CoefficientRing(f));
+  for f in list do
+    K := Compositum(K, CoefficientRing(f));
+  end for;
+  return [ChangeCoefficientRing(f, K) : f in list];
+end intrinsic;
 
 
 intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
