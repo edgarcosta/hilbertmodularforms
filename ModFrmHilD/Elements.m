@@ -525,7 +525,7 @@ end intrinsic;
 //FIXME: this does nto agree with MAGMA standards
 // also we need to define ChangeRing
 // Coerces HMF coefficients a_n in a ring R
-intrinsic ChangeCoefficientRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
+intrinsic ChangeCoefficientRing(f::ModFrmHilDEltComp, R::Rng) -> ModFrmHilDEltComp
   {returns f such that a_nu := R!a_nu}
   bb := ComponentIdeal(f);
   coeffs := Coefficients(f);
@@ -537,7 +537,7 @@ intrinsic ChangeCoefficientRing(R::Rng, f::ModFrmHilDEltComp) -> ModFrmHilDEltCo
 end intrinsic;
 
 
-intrinsic ChangeCoefficientRing(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
+intrinsic ChangeCoefficientRing(f::ModFrmHilDElt, R::Rng) -> ModFrmHilDElt
   {returns f such that a_nu := R!a_nu}
   M := AttachSpec("spec");GradedRing(f);
   bbs := NarrowClassGroupReps(M);
@@ -546,7 +546,7 @@ intrinsic ChangeCoefficientRing(R::Rng, f::ModFrmHilDElt) -> ModFrmHilDElt
   // then change ring
   components := Components(f);
   for bb in components do
-    components[bb] := ChangeCoefficientRing(components[bb]);
+    components[bb] := ChangeCoefficientRing(components[bb], R);
   end for;
   return f;
 end intrinsic;
@@ -633,7 +633,7 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
     if K eq R then
       Append(~result, MapCoefficients(Gmap(g), f));
     else
-      Append(~result, ChangeCoefficientRing(R, MapCoefficients(Gmap(g), f)));
+      Append(~result, ChangeCoefficientRing(MapCoefficients(Gmap(g), f), R));
     end if;
   end for;
   return result;
@@ -1005,7 +1005,7 @@ end intrinsic;
 intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {return a sequence of ModFrmHilDElt where the coefficient ring is the compositum of field of all the fraction fields of the coeffient rings}
   require #list ge 1: "first argument must have at least one element";
-  K := NumberField(CoefficientRing(f));
+  K := NumberField(CoefficientRing(list[1]));
   for f in list do
     K := Compositum(K, CoefficientRing(f));
   end for;
