@@ -1022,7 +1022,7 @@ intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   if #list gt 1 then
     base_ring  := CoefficientRing(list[1]);
     for f in list do
-        require base_ring eq BaseRing(f) : "the forms must have the same base ring:", Sprintf("%o", base_ring), " != ", Sprintf("%o", BaseRing(f));
+        require base_ring eq CoefficientRing(f) : "the forms must have the same base ring:", Sprintf("%o", base_ring), " != ", Sprintf("%o", BaseRing(f));
     end for;
   end if;
   M := GradedRing(list[1]);
