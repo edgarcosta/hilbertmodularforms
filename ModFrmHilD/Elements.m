@@ -1029,6 +1029,9 @@ end intrinsic;
 //TODO add optional flag to limit the number of coefficients
 //TODO make outputs to be of the same type
 //TODO take working precision
+//FIXME:
+// - fix optional argument
+// - incorporate ChangeToCompositumOfCoefficientFields
 intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
   {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
   // checking that all the forms have the same coefficient ring
