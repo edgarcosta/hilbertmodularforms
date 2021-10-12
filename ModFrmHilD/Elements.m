@@ -1018,7 +1018,14 @@ end intrinsic;
 //TODO take working precision
 intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
   {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
-  require {BaseRing(f) : f in list}  eq 1 : "the forms must have the same base ring";
+  base_ring := true;
+  for f in list do
+    if base_ring cmpeq true then
+      base_ring := BaseRing(f);
+    else
+      require base_ring eq BaseRing(f) : "the forms must have the same base ring:", Sprintf("%o", base_ring), " != ", Sprintf("%o", BaseRing(f));
+    end if;
+  end for;
   M := GradedRing(list[1]);
   // The ideal classes from which we are taking the coefficients.
   if IdealClasses cmpeq false then
