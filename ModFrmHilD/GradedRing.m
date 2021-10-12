@@ -17,7 +17,7 @@ declare attributes ModFrmHilDGRng:
   UnitGroup, // GrpAb
   UnitGroupMap, // Map : GrpAb -> Units of ZF
   DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
-  places, // SeqEnum : Real places for the field F
+  Places, // SeqEnum : Real places for the field F
   Precision, // RngIntElt : trace bound for all expansions with this parent
   ZeroIdeal, // ideal<ZF|0>
   ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
@@ -153,11 +153,11 @@ end intrinsic;
 
 intrinsic Places(M::ModFrmHilDGRng) -> Any
   {}
-  if not assigned M`places then
+  if not assigned M`Places then
     F := BaseField(M);
-    M`places := RealPlaces(F);
+    M`Places := RealPlaces(F);
   end if;
-  return M`places;
+  return M`Places;
 end intrinsic;
 
 intrinsic Precision(M::ModFrmHilDGRng) -> RngIntElt

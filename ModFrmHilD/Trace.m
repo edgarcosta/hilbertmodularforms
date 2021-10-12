@@ -33,7 +33,6 @@ intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
     F := BaseField(Mk);
     ZF := Integers(Mk);
     n := Degree(F);
-    places := places(M);
     Disc := Discriminant(ZF);
     h := ClassNumber(F); // This needs to be stored
     DedekindZetatwo := DedekindZetatwo(M); // Fixed Precision (Look in GradedRing.m)
@@ -83,7 +82,7 @@ intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
   {Computes all elements b satifying b^2 << 4a}
   F := BaseField(M);
   ZF := Integers(M);
-  places := places(M);
+  places := Places(M);
   // Every element b^2 << 4a satifies |b| < 2sqrt(a).
   // This is a square centered at the origin. We will enumerate half of it.
   XLB := -2*Sqrt(Evaluate(a,places[1])); // XLB = X lower bound
@@ -102,7 +101,7 @@ intrinsic HalfOfCMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
   {Computes all elements b satifying b^2 << 4a, but only yields one of +/-b}
   F := BaseField(M);
   ZF := Integers(M);
-  places := InfinitePlaces(F);
+  places := Places(M);
   // Every element b^2 << 4a satifies |b| < 2sqrt(a).
   // This is a square centered at the origin. We will enumerate half of it.
   XLB := -2*Sqrt(Evaluate(a,places[1])); // XLB = X lower bound
@@ -231,7 +230,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   F := BaseField(Mk);
   ZF := Integers(Mk);
   n := Degree(F);
-  places := places(M);
+  places := Places(M);
   P<x> := PolynomialRing(ZF);
 
   // Units and class group
@@ -368,7 +367,7 @@ intrinsic STrace(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   F := BaseField(Mk);
   ZF := Integers(Mk);
   n := Degree(F);
-  places := places(M);
+  places := Places(M);
   P<x> := PolynomialRing(ZF);
 
   // Index
@@ -754,7 +753,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   F := BaseField(Mk);
   ZF := Integers(Mk);
   n := Degree(F);
-  places := places(M);
+  places := Places(M);
   Disc := Discriminant(Integers(F));
   DedekindZetatwo := DedekindZetatwo(M); // No precision set
   R := RealField(); // No precision set
@@ -890,7 +889,7 @@ intrinsic TracePrecomputation(Mk::ModFrmHilD, a::RngOrdElt) -> SeqEnum[ModFrmHil
   ZF := Integers(Mk);
   n := Degree(F);
   mm := a*ZF;
-  places := places(M);
+  places := Places(M);
   Disc := Discriminant(Integers(F));
   DedekindZetatwo := DedekindZetatwo(M); // No precision set
   R := RealField(); // No precision set
