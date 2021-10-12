@@ -1003,7 +1003,7 @@ end intrinsic;
 
 
 intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
-  {return a sequence of ModFrmHilDElt where the coefficient ring is the compositum of field of all the number fields of the coeffient rings}
+  {return a sequence of ModFrmHilDElt where the coefficient ring is the compositum of field of all the fraction fields of the coeffient rings}
   require #list ge 1: "first argument must have at least one element";
   K := NumberField(CoefficientRing(f));
   for f in list do
