@@ -1016,9 +1016,10 @@ end intrinsic;
 //TODO add optional flag to limit the number of coefficients
 //TODO make outputs to be of the same type
 //TODO take working precision
-intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
+intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
   {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
-  M := GradedRing(List[1]);
+  require {BaseRing(f) : f in list}  eq 1 : "the forms must have the same base ring";
+  M := GradedRing(list[1]);
   // The ideal classes from which we are taking the coefficients.
   if IdealClasses cmpeq false then
     bbs := NarrowClassGroupReps(M); // Default is all ideals classes
@@ -1027,9 +1028,9 @@ intrinsic LinearDependence(List::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   end if;
   // List of coefficients for the forms
   L := [];
-  maxprec:=Min([Precision(Components(f)[bb]): f in List, bb in bbs]);
+  maxprec:=Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
   // Loop over forms
-  for i in List do
+  for i in list do
     CoefficientsOfForm := [];
     for bb in bbs do
       CoefficientsOfForm cat:= [Coefficients(Components(i)[bb])[nu] : nu in ShintaniRepsUpToTrace(M, bb, maxprec)];
