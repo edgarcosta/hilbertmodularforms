@@ -530,25 +530,25 @@ intrinsic ChangeCoefficientRing(f::ModFrmHilDEltComp, R::Rng) -> ModFrmHilDEltCo
   bb := ComponentIdeal(f);
   coeffs := Coefficients(f);
   new_coeffs := AssociativeArray(Universe(coeffs));
-  for nn in Keys(coeffs) do
-    new_coeffs[nn] := R!coeffs[nn];
+  for nu->anu in coeffs do
+    new_coeffs[nu] := R!anu;
   end for;
-  return HMFComp(Parent(f), new_coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
+  return HMFComp(Parent(f), bb, new_coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 
 intrinsic ChangeCoefficientRing(f::ModFrmHilDElt, R::Rng) -> ModFrmHilDElt
   {returns f such that a_nu := R!a_nu}
-  M := AttachSpec("spec");GradedRing(f);
+  M := GradedRing(f);
   bbs := NarrowClassGroupReps(M);
   // first make a copy
   f := ModFrmHilDEltCopy(f);
   // then change ring
   components := Components(f);
-  for bb in components do
-    components[bb] := ChangeCoefficientRing(components[bb], R);
+  for bb->fbb in components do
+    components[bb] := ChangeCoefficientRing(fbb, R);
   end for;
-  return f;
+  return HMFSumComponents(Parent(f), components);
 end intrinsic;
 
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
@@ -601,8 +601,8 @@ intrinsic MapCoefficients(m::Map, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return the ModFrmHilDEltComp where the map acts on the coefficients}
   coeffs := Coefficients(f);
   new_coeffs := AssociativeArray();
-  for nu in Keys(coeffs) do
-    new_coeffs[nu] := m(coeffs[nu]);
+  for nu -> anu in coeffs do
+    new_coeffs[nu] := m(anu);
   end for;
   return HMFComp(Parent(f), ComponentIdeal(f), new_coeffs : unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
@@ -610,8 +610,8 @@ end intrinsic;
 intrinsic MapCoefficients(m::Map, f::ModFrmHilDElt) -> ModFrmHilDElt
   {return the ModFrmHilDElt where the map acts on the coefficients}
   components := Components(f);
-  for bb in Keys(components) do
-    components[bb] := MapCoefficients(m, components[bb]);
+  for bb->fbb in components do
+    components[bb] := MapCoefficients(m, fbb);
   end for;
   return HMFSumComponents(Parent(f), components);
 end intrinsic;
@@ -1007,9 +1007,15 @@ intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) ->
   require #list ge 1: "first argument must have at least one element";
   K := NumberField(CoefficientRing(list[1]));
   for f in list do
-    K := Compositum(K, CoefficientRing(f));
+    K := Compositum(K, NumberField(CoefficientRing(f)));
+    print "nf = ", NumberField(CoefficientRing(f));
   end for;
-  return [ChangeCoefficientRing(f, K) : f in list];
+  print "Comp = ", K;
+  list :=  [ChangeCoefficientRing(f, K) : f in list];
+  for f in list do
+    assert CoefficientRing(f) eq K;
+  end for;
+  return list;
 end intrinsic;
 
 
@@ -1029,18 +1035,11 @@ end intrinsic;
 //TODO add optional flag to limit the number of coefficients
 //TODO make outputs to be of the same type
 //TODO take working precision
-//FIXME:
-// - fix optional argument
-// - incorporate ChangeToCompositumOfCoefficientFields
 intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
-  {Finds any linear relations between the forms (returns 0 if none are found).  The optional parameter NarrowIdealClass can be specified to look at a single narrow ideal class }
-  // checking that all the forms have the same coefficient ring
-  if #list gt 1 then
-    base_ring  := CoefficientRing(list[1]);
-    for f in list do
-        require base_ring eq CoefficientRing(f) : "the forms must have the same base ring:", Sprintf("%o", base_ring), " != ", Sprintf("%o", BaseRing(f));
-    end for;
-  end if;
+  {Finds any linear relations between the forms (returns 0 if none are found).
+    The optional parameter IdealClasses can be specified to look at a subset of narrow class reps }
+  // assuring that all the forms have the same coefficient ring
+  list := ChangeToCompositumOfCoefficientFields(list);
   M := GradedRing(list[1]);
   // The ideal classes from which we are taking the coefficients.
   if IdealClasses cmpeq false then
@@ -1052,11 +1051,8 @@ intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   L := [];
   maxprec:=Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
   // Loop over forms
-  for i in list do
-    CoefficientsOfForm := [];
-    for bb in bbs do
-      CoefficientsOfForm cat:= [Coefficients(Components(i)[bb])[nu] : nu in ShintaniRepsUpToTrace(M, bb, maxprec)];
-    end for;
+  for f in list do
+    CoefficientsOfForm := &cat[ &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in ShintaniRepsUpToTrace(M, bb, maxprec)] : bb in bbs];
     Append(~L, CoefficientsOfForm);
   end for;
   return LinearDependence(L);
