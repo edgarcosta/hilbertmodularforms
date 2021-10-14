@@ -134,23 +134,22 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
 	MonomialCoeffLists := [[]:i in [1..#EvaluatedMonomials]];
 	index := AssociativeArray();
 	indexnum := 1;
-    wt := [];
-    
+	wt := [];
 	for bb in bbs do
 		for nn in IdealsByNarrowClassGroup(M)[bb] do
-		  	index[[bb,nn]] := indexnum;
-			indexnum := indexnum + 1;
+		  index[<bb,nn>] := indexnum;
+			indexnum +:= 1;
 			for i in [1..#BasisWeightK] do
 				Append(~SpaceCoeffLists[i], Coefficients(BasisWeightK[i])[bb][nn]);
 			end for;
 			for i in [1..#EvaluatedMonomials] do
 				Append(~MonomialCoeffLists[i], Coefficients(EvaluatedMonomials[i])[bb][nn]);
 			end for;
-            if IsZero(nn) then
-                Append(~wt, 1);
-            else
-                Append(~wt, Norm(nn));
-            end if;
+			if IsZero(nn) then
+					Append(~wt, 1);
+			else
+					Append(~wt, Norm(nn));
+			end if;
 		end for;
 	end for;
 
@@ -200,7 +199,7 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
 		for bb in bbs do
        		idealCoeffs := AssociativeArray();
 			for nn in IdealsByNarrowClassGroup(M)[bb] do
-       			idealCoeffs[nn]:=elt[index[[bb,nn]]];
+       			idealCoeffs[nn]:=elt[index[<bb,nn>]];
 	 		end for;
 			newCoeffs[bb]:= idealCoeffs;
 		end for;

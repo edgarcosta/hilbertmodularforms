@@ -643,12 +643,11 @@ end intrinsic;
 intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return Trace(f)}
 
-  new_coeffs := AssociativeArray();
-  coeffs := Coefficients(f);
-  for nu in Keys(Coefficients(f)) do
-    new_coeffs[nu] := Trace(coeffs[nu]);
+  new_coeffs := AssociativeArray(Universe(Coefficients(f)));
+  for nu->anu in Coefficients(f) do
+    new_coeffs[nu] := Trace(anu);
   end for;
-  return HMFComp(Parent(f), ComponentIdeal(f), coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), new_coeffs: unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 intrinsic Trace(f::ModFrmHilDElt) -> ModFrmHilDElt
@@ -1005,16 +1004,28 @@ end intrinsic;
 intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {return a sequence of ModFrmHilDElt where the coefficient ring is the compositum of field of all the fraction fields of the coeffient rings}
   require #list ge 1: "first argument must have at least one element";
+  differ := false;
+  R := CoefficientRing(list[1]);
+  for f in list[2..#list] do
+    if R ne CoefficientRing(f) then
+      differ := true;
+      break;
+    end if;
+  end for;
+  if not differ then
+    return list;
+  end for;
   K := NumberField(CoefficientRing(list[1]));
+  differ := false;
   for f in list do
-    K := Compositum(K, NumberField(CoefficientRing(f)));
-    print "nf = ", NumberField(CoefficientRing(f));
+    if K ne NumberField(CoefficientRing(f)) then
+      K := Compositum(K, NumberField(CoefficientRing(f)));
+      differ := true;
+    end if;
   end for;
-  print "Comp = ", K;
-  list :=  [ChangeCoefficientRing(f, K) : f in list];
-  for f in list do
-    assert CoefficientRing(f) eq K;
-  end for;
+  if differ then
+    list :=  [ChangeCoefficientRing(f, K) : f in list];
+  end if;
   return list;
 end intrinsic;
 
@@ -1045,7 +1056,7 @@ intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   if IdealClasses cmpeq false then
     bbs := NarrowClassGroupReps(M); // Default is all ideals classes
   else
-    bbs := IdealClasses; // Optionally we may specify a single ideal class
+    bbs := IdealClasses; // Optionally we may specify a subset of ideal classes
   end if;
   // List of coefficients for the forms
   L := [];
