@@ -190,12 +190,12 @@ end intrinsic;
 //  return reps;
 //end intrinsic;
 
-intrinsic ShintaniReps(M::ModFrmHilDGRng) -> Any
+intrinsic ShintaniReps(M::ModFrmHilDGRng) -> Assoc
   {}
   return M`ShintaniReps;
 end intrinsic;
 
-intrinsic ShintaniRepsByTrace(M::ModFrmHilDGRng) -> Any
+intrinsic ShintaniRepsByTrace(M::ModFrmHilDGRng) -> Assoc
   {}
   return M`ShintaniRepsByTrace;
 end intrinsic;

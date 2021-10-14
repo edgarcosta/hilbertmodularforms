@@ -207,7 +207,6 @@ end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   {}
-
   coeffs := AssociativeArray();
   for bb in Keys(Components(f)) do
     coeffs[bb] := Coefficients(Components(f)[bb]);
