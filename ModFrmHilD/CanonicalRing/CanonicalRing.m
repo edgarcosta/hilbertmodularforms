@@ -278,7 +278,7 @@ intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWe
       CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
       //assert CoeffCount ge Dim(Mk);
 
-      EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
+      EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
 
       // I first compute the relations in R/I.
       RelationsinQuotient := LinearDependence(EvaluatedMonomials);
@@ -341,17 +341,16 @@ intrinsic ConstructGeneratorsAndRelationsOnComponent(M::ModFrmHilDGRng, N::RngOr
 
   LowestWeight := 2;
   LowestMk := HMFSpace(M,N,[2:i in [1..n]]);
-  LowestWeightBasis := SpecifiedComponentBasis(LowestMk,bb);
+  LowestWeightBasis := SpecifiedComponentBasis(LowestMk, bb);
   while IsNull(LowestWeightBasis) and LowestWeight lt MaxWeight do
     LowestWeight := LowestWeight + 2;
     LowestMk := HMFSpace(M,N,[LowestWeight:i in [1..n]]);
-    LowestWeightBasis := SpecifiedComponentBasis(LowestMk,bb);
+    LowestWeightBasis := SpecifiedComponentBasis(LowestMk, bb);
   end while;
 
   if not IsNull(LowestWeightBasis) then
     Gens[LowestWeight] := LowestWeightBasis;
 
-    // CONFUSED: before we printed Weight = 2
     vprintf HilbertModularForms : "Weight: %o     Generarators: %o Relations: %o\n", LowestWeight, #Gens[LowestWeight],  0;
 
     for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
@@ -360,13 +359,13 @@ intrinsic ConstructGeneratorsAndRelationsOnComponent(M::ModFrmHilDGRng, N::RngOr
 
       R := ConstructRing(Gens);
       MonomialsinR := MonomialsOfWeightedDegree(R,k);
-      MonomialsGens := MonomialGenerators(R,Relations,k);
+      MonomialsGens := MonomialGenerators(R, Relations, k);
 
       // Before we evaluate monomials, make sure precision is high enough
       CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
       //assert CoeffCount ge Dim(Mk);
 
-      EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
+      EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
 
       // I first compute the relations in R/I.
       RelationsinQuotient := LinearDependence(EvaluatedMonomials);
@@ -394,7 +393,7 @@ intrinsic ConstructGeneratorsAndRelationsOnComponent(M::ModFrmHilDGRng, N::RngOr
       end if;
       // require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
 
-      Basisweightk := SpecifiedComponentBasis(Mk,bb);
+      Basisweightk := SpecifiedComponentBasis(Mk, bb);
 
       NewGens := [];
       if #MonomialsGens - #RelationsinR ne #Basisweightk then
@@ -437,7 +436,6 @@ intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilDGRng, N::RngOrdI
   if not IsNull(LowestWeightBasis) then
     Gens[LowestWeight] := LowestWeightBasis;
 
-    // CONFUSED: before we printed Weight = 2
     vprintf HilbertModularForms : "Weight: %o     Generarators: %o Relations: %o\n", LowestWeight, #Gens[LowestWeight], 0;
 
     for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
