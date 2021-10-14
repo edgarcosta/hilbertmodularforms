@@ -138,44 +138,44 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
     end for;
   end for;
 
-  Mat := Matrix([elt : elt in SpaceCoeffLists]);
+  Mat := Matrix(SpaceCoeffLists);
   V := VectorSpaceWithBasis(Mat);
-  W := sub<V | [MonomialCoeffLists[i] : i in [1..#EvaluatedMonomials]]>;
-    if (Alg eq "Standard") then
-      ExtendMultBasis := ExtendBasis(W,V);
-    elif (Alg eq "LLL") then
-      ExtendMultBasis := ExtendBasis(W,V);
-      B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
-      if #B ne 0 then
-          ExtendMultBasis := Basis(W) cat Rows(Matrix(LLL(B)));
-      else
-          ExtendMultBasis := Basis(W);
-      end if;
-      assert #ExtendMultBasis eq Dimension(V);
-    elif (Alg eq "WeightedLLL") then
-      ExtendMultBasis := ExtendBasis(W,V);
-      B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
-      if #B ne 0 then
-          // wt := [Floor(Degree(B[1])/Sqrt(n)) : n in [1..Degree(B[1])]];
-          wt := [Floor(wt[#wt]/w) : w in wt];
-          ExtendMultBasis := Basis(W) cat Rows(LLL(Matrix(B) : Weight := wt));
-      else
-          ExtendMultBasis := Basis(W);
-      end if;
-      assert #ExtendMultBasis eq Dimension(V);
-    elif (Alg eq "HNF") then
-      ExtendMultBasis := ExtendBasis(W,V);
-      B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
-      denom := Denominator(Matrix(B));
-      intmat := ChangeRing(denom * Matrix(B), Integers());
-      ExtendMultBasis := Basis(W) cat Rows(ChangeRing(HermiteForm(intmat), Rationals())/denom);
-    elif (Alg eq "Orthogonal") then
-      coeffs_W := Solution(Matrix(Basis(V)), Matrix(Basis(W)));
-      coeffs_W := ChangeRing(Matrix([Denominator(v)*v : v in Rows(coeffs_W)]), Integers());
-      W_perp := Matrix(Basis(Kernel(Transpose(coeffs_W))));
-      basis_V := ChangeRing(Matrix([Denominator(v)*v : v in Basis(V)]), Integers());
-      ExtendMultBasis := Basis(W) cat Rows(W_perp * basis_V);
+  W := sub<V | MonomialCoeffLists>;
+  if (Alg eq "Standard") then
+    ExtendMultBasis := ExtendBasis(W,V);
+  elif (Alg eq "LLL") then
+    ExtendMultBasis := ExtendBasis(W,V);
+    B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
+    if #B ne 0 then
+        ExtendMultBasis := Basis(W) cat Rows(Matrix(LLL(B)));
+    else
+        ExtendMultBasis := Basis(W);
     end if;
+    assert #ExtendMultBasis eq Dimension(V);
+  elif (Alg eq "WeightedLLL") then
+    ExtendMultBasis := ExtendBasis(W,V);
+    B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
+    if #B ne 0 then
+        // wt := [Floor(Degree(B[1])/Sqrt(n)) : n in [1..Degree(B[1])]];
+        wt := [Floor(wt[#wt]/w) : w in wt];
+        ExtendMultBasis := Basis(W) cat Rows(LLL(Matrix(B) : Weight := wt));
+    else
+        ExtendMultBasis := Basis(W);
+    end if;
+    assert #ExtendMultBasis eq Dimension(V);
+  elif (Alg eq "HNF") then
+    ExtendMultBasis := ExtendBasis(W,V);
+    B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
+    denom := Denominator(Matrix(B));
+    intmat := ChangeRing(denom * Matrix(B), Integers());
+    ExtendMultBasis := Basis(W) cat Rows(ChangeRing(HermiteForm(intmat), Rationals())/denom);
+  elif (Alg eq "Orthogonal") then
+    coeffs_W := Solution(Matrix(Basis(V)), Matrix(Basis(W)));
+    coeffs_W := ChangeRing(Matrix([Denominator(v)*v : v in Rows(coeffs_W)]), Integers());
+    W_perp := Matrix(Basis(Kernel(Transpose(coeffs_W))));
+    basis_V := ChangeRing(Matrix([Denominator(v)*v : v in Basis(V)]), Integers());
+    ExtendMultBasis := Basis(W) cat Rows(W_perp * basis_V);
+  end if;
 
   NewGeneratorsVec := [ExtendMultBasis[i]:i in [Dimension(W)+1..Dimension(V)]];
   NewGens := [];
