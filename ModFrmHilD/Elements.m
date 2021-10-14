@@ -1014,7 +1014,7 @@ intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) ->
   end for;
   if not differ then
     return list;
-  end for;
+  end if;
   K := NumberField(CoefficientRing(list[1]));
   differ := false;
   for f in list do
