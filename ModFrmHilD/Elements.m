@@ -1029,7 +1029,7 @@ intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) ->
 end intrinsic;
 
 
-intrinsic LinearDependence(list::SeqEnum[SeqEnum] ) -> SeqEnum[RngIntElt]
+intrinsic LinearDependence(list::SeqEnum[SeqEnum] : IdealClasses := false) -> SeqEnum[RngIntElt]
   {
     finds a small non-trivial integral linear combination between components of v.
     If none can be found return 0.
@@ -1049,6 +1049,7 @@ intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
   {Finds any linear relations between the forms (returns 0 if none are found).
     The optional parameter IdealClasses can be specified to look at a subset of narrow class reps }
   // assuring that all the forms have the same coefficient ring
+  if IsNull(list) then return list; end if;
   list := ChangeToCompositumOfCoefficientFields(list);
   M := GradedRing(list[1]);
   // The ideal classes from which we are taking the coefficients.

@@ -9,6 +9,9 @@ declare attributes ModFrmHilD:
   Parent, // ModFrmHilDGRng
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
+  Basis, // = EisensteinBasis cat CuspFormBasis SeqEnum[ModFrmHilDElt]
+  EisensteinBasis, // SeqEnum[ModFrmHilDElt]
+  CuspFormBasis, // SeqEnum[ModFrmHilDElt]
   Dimension, // RngIntElt
   Character; // GrpHeckeElt, JV: why aren't we using Dirichlet?
 
@@ -181,7 +184,7 @@ intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
     cuspDim := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
     dim := #EB + Dimension(cuspDim);
     return dim;
-  else  
+  else
     return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
   end if;
 end intrinsic;
