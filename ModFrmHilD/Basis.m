@@ -6,7 +6,7 @@
 
 // Currently calls the Newforms and Eisenstein series from Creations folder
 
-intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
+intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
   if not assigned Mk`CuspFormBasis then
     N := Level(Mk);
@@ -20,9 +20,7 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt
       if dim gt 0 then
         traceBoundIncl:=TraceBoundInclusion(Mkdd, Mk);
 
-        if verbose then
-          printf "Cusp old form basis in level of norm %o computed with precision %o (default prec = %o)\n", Norm(dd),  traceBoundIncl, Precision(Parent(Mk));
-        end if;
+        vprintf HilbertModularForms: "Cusp old form basis in level of norm %o computed with precision %o (default prec = %o)\n", Norm(dd),  traceBoundIncl, Precision(Parent(Mk));
 
         HigherPrecM:=GradedRingOfHMFs(BaseField(Mk), traceBoundIncl);
         HigherPrecMkdd:=HMFSpace(HigherPrecM, dd, k);
@@ -38,7 +36,7 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt
 end intrinsic;
 
 
-intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
+intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
   if not assigned Mk`EisensteinBasis then
     M := Parent(Mk);
@@ -56,9 +54,7 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDE
       Mk_N0 := HMFSpace(M, N0, k);
       traceBoundIncl:=TraceBoundInclusion(Mk_N0, Mk);
 
-      if verbose then
-        print "Eisenstein old basis in level  of norm ", Norm(N0),  "  computed with precision", traceBoundIncl;
-      end if;
+      vprintf HilbertModularForms: "Eisenstein old basis in level of norm %o computed with precision %o\n", Norm(N0), traceBoundIncl;
 
       HCGaa := HeckeCharacterGroup(aa,[1..n]);
       PrimitiveCharacters := [elt : elt in Elements(HCGaa) | IsPrimitive(elt)];
@@ -79,12 +75,10 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDE
   return Mk`EisensteinBasis;
 end intrinsic;
 
-intrinsic Basis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
+intrinsic Basis(Mk::ModFrmHilD: IdealClassesSupport := false) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   if not assigned Mk`Basis then
-    if verbose then
-      print "Wanted precision of space of parallel weight   ", Weight(Mk)[1], "     is", Precision(Parent(Mk));
-    end if;
+    vprintf HilbertModularForms: "Computing basis for space of parallel weight %o with precision %o\n", Weight(Mk)[1], Precision(Parent(Mk));
     // Cuspforms
     CB := CuspFormBasis(Mk);
     //Eisenstein Series
@@ -92,8 +86,24 @@ intrinsic Basis(Mk::ModFrmHilD: verbose:=false) -> SeqEnum[ModFrmHilDElt]
     Mk`Basis := EB cat CB;
   end if;
 
-
-  return Mk`Basis;
+  if IdealClassesSupport cmpeq false then
+    IdealClassesSupport := SequenceToSet(NarrowClassGroupReps(Parent(Mk))); // Default is all ideals classes
+  else
+    IdealClassesSupport := SequenceToSet(IdealClassesSupport); // Optionally we may specify a subset of ideal classes
+  end if;
+  IdealClassesSupportComplement := IdealClassesSupport diff SequenceToSet(NarrowClassGroupReps(Parent(Mk)));
+  if #IdealClassesSupportComplement eq 0 then // in this case LinearDependence will return the identity matrix
+    return Mk`Basis;
+  end if;
+  B := Mk`Basis;
+  relations := LinearDependence(B : IdealClasses := IdealClassesSupportComplement);
+  res := [];
+  for elt in relations do
+    // f is only supported over IdealClassesSupport
+    f := &+[elt[i]*B[i] : i in [1..#B]];
+    Append(~res, f);
+  end for;
+  return res;
 end intrinsic;
 
 intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
@@ -115,37 +125,11 @@ end intrinsic;
 
 intrinsic ComponentBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns a Basis for Mk of forms that are only supported on one component}
-  // Preliminaries
-  M := Parent(Mk);
-  B := Basis(Mk);
-  bbs := NarrowClassGroupReps(M);
-  NewBasis :=[];
-  // Loop over ideal classes
-  for i in [1..#bbs] do
-    IC := Remove(bbs,i);
-    L := LinearDependence(B : IdealClasses := IC);
-    for relation in L do
-      f := &+[relation[i]*B[i] : i in [1..#B]];
-      NewBasis cat:= [f];
-    end for;
-  end for;
-  return NewBasis;
+  bbs := NarrowClassGroupReps(Parent(Mk));
+  return &cat[Basis(Mk: IdealClassesSupport := [bb]) : bb in bbs];
 end intrinsic;
 
 intrinsic SpecifiedComponentBasis(Mk::ModFrmHilD, bb::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
   {returns a basis of forms that are only supported on a specified component bb}
-  // Preliminaries
-  M := Parent(Mk);
-  B := Basis(Mk);
-  bbs := NarrowClassGroupReps(M);
-  NewBasis :=[];
-  // Set i to be the component the you want to see
-  i := Index(bbs,bb);
-  IC := Remove(bbs,i);
-  L := LinearDependence(B : IdealClasses := IC);
-  for relation in L do
-    f := &+[relation[i]*B[i] : i in [1..#B]];
-    NewBasis cat:= [f];
-  end for;
-  return NewBasis;
+  return Basis(Mk: IdealClassesSupport := [bb]);
 end intrinsic;

@@ -1029,7 +1029,7 @@ intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) ->
 end intrinsic;
 
 
-intrinsic LinearDependence(list::SeqEnum[SeqEnum] : IdealClasses := false) -> SeqEnum[RngIntElt]
+intrinsic ShortLinearDependence(list::SeqEnum[SeqEnum]) -> SeqEnum[RngIntElt]
   {
     finds a small non-trivial integral linear combination between components of v.
     If none can be found return 0.
@@ -1047,16 +1047,21 @@ end intrinsic;
 //TODO take working precision
 intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
   {Finds any linear relations between the forms (returns 0 if none are found).
-    The optional parameter IdealClasses can be specified to look at a subset of narrow class reps }
-  // assuring that all the forms have the same coefficient ring
+    The optional parameter IdealClasses can be specified to look at the relations over a subset of narrow class reps }
   if IsNull(list) then return list; end if;
+  // assuring that all the forms have the same coefficient ring
   list := ChangeToCompositumOfCoefficientFields(list);
   M := GradedRing(list[1]);
   // The ideal classes from which we are taking the coefficients.
   if IdealClasses cmpeq false then
     bbs := NarrowClassGroupReps(M); // Default is all ideals classes
   else
+    // ie, we will be looking at relations that makes the forms vanish on these components
     bbs := IdealClasses; // Optionally we may specify a subset of ideal classes
+  end if;
+  if #bbs eq 0 then
+    // the empty sum is zero
+    return IdentityMatrix(Integers(), #list);
   end if;
   // List of coefficients for the forms
   L := [];
@@ -1066,7 +1071,7 @@ intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false 
     CoefficientsOfForm := &cat[ &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in ShintaniRepsUpToTrace(M, bb, maxprec)] : bb in bbs];
     Append(~L, CoefficientsOfForm);
   end for;
-  return LinearDependence(L);
+  return ShortLinearDependence(L);
 end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
