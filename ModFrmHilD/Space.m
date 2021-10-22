@@ -73,10 +73,10 @@ end intrinsic;
 
 intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
 {}
-if not assigned Mk`Dimension then
-ComputeDimension(Mk);
-end if;
-return Mk`Dimension;
+  if not assigned Mk`Dimension then
+    ComputeDimension(Mk);
+  end if;
+  return Mk`Dimension;
 end intrinsic;
 
 /* attributes of the parent */
