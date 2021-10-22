@@ -1,5 +1,6 @@
 tests := [
-  "e2_Qsqrt13.m"
+  "e2_Qsqrt13.m",
+  "Theta_Qsqrt13.m"
   ];
 AttachSpec("ModFrmHilD/spec");
 failed := [];
