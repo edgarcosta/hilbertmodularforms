@@ -5,16 +5,14 @@ intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Creates the trace form in the space Mk}
   M := Parent(Mk);
   Q := Rationals();
-  bbs := NarrowClassGroupReps(M);
   coeffs := AssociativeArray(bbs);
-  for bb in bbs do
+  for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
-    for I in IdealsByNarrowClassGroup(M)[bb] do
-      coeffs[bb][I] := Q!Trace(Mk,I);
+    for nu->nn in ShintaniRepsIdeal(M)[bb] do
+      coeffs[bb][nu] := Q!Trace(Mk, nn);
     end for;
   end for;
-  elt := HMF(Mk, coeffs: CoeffsByIdeals:=true);
-  return elt;
+  return HMF(Mk, coeffs);
 end intrinsic;
 
 //////////////////// Main function: Speed Trace Form /////////////////////////
@@ -23,16 +21,14 @@ intrinsic STraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Creates the trace form in the space Mk}
   M := Parent(Mk);
   Q := Rationals();
-  bbs := NarrowClassGroupReps(M);
   coeffs := AssociativeArray(bbs);
-  for bb in bbs do
+  for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
-    for I in IdealsByNarrowClassGroup(M)[bb] do
-      coeffs[bb][I] := Q!STrace(Mk,I);
+    for nu->nn in ShintaniRepsIdeal(M)[bb] do
+      coeffs[bb][nu] := Q!STrace(Mk, nn);
     end for;
   end for;
-  elt := HMF(Mk, coeffs: CoeffsByIdeals:=true);
-  return elt;
+  return HMF(Mk, coeffs);
 end intrinsic;
 
 
