@@ -12,6 +12,7 @@ declare attributes ModFrmHilD:
   Basis, // = EisensteinBasis cat CuspFormBasis SeqEnum[ModFrmHilDElt]
   EisensteinBasis, // SeqEnum[ModFrmHilDElt]
   CuspFormBasis, // SeqEnum[ModFrmHilDElt]
+  EllipticBasis, // SeqEnum[ModFrmHilDElt]
   Dimension, // RngIntElt
   Character; // GrpHeckeElt, JV: why aren't we using Dirichlet?
 
