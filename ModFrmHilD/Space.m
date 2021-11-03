@@ -124,7 +124,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   Mk`Weight := k;
   ZF := Integers(M);
   N := ideal<ZF|1>;
-  X := HeckeCharacterGroup(N);
+  X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
   return HMFSpace(M, N, k, chi);
 end intrinsic;
@@ -135,7 +135,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> Mo
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
   ZF := Integers(M);
-  X := HeckeCharacterGroup(N);
+  X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
   return HMFSpace(M, N, k, chi);
 end intrinsic;
