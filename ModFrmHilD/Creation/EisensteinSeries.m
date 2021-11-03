@@ -7,68 +7,64 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
   M := Parent(Mk);
   k := Weight(Mk);
   N := Level(Mk);
-  vprintf HilbertModularForms: "eta * psi = %o\n", eta*psi;
-  vprintf HilbertModularForms: "Character(Mk) = %o\n", Character(Mk);
-  vprintf HilbertModularForms: "eta*psi eq Character(Mk) = %o\n", eta*psi eq Character(Mk);
-  vprintf HilbertModularForms: "Parent(eta*psi) = %o Parent(Character(Mk)) = %o\n", Parent(eta*psi), Parent(Character(Mk));
+  aa := Modulus(eta); // aa := Conductor(eta);
+  bb := Modulus(psi); // bb := Conductor(psi);
   require eta*psi eq Character(Mk): "we must have psi*eta = Character(Mk)";
-  vprintf HilbertModularForms: "EisensteinSeries(k=%o, N=%o, eta=%o, psi=%o)\n", k, N, eta, psi;
-  Cl := NarrowClassGroup(M);
-  mp := NarrowClassGroupMap(M);
+  require aa*bb eq N: "We must have Modulos(eta)*Modulos(psi) = Level(Ml)";
   require #SequenceToSet(k) eq 1: "We only support EisensteinSeries with parallel weight";
   k := k[1];
 
-  X := Parent(eta); Y := Parent(psi);
-  CoefficientField := X`TargetRing; // where the character values live
+  CoefficientField := Parent(eta)`TargetRing; // where the character values live
 
-  n := Degree(BaseField(M));
-  aa := Modulus(eta); // aa := Conductor(eta);
-  bb := Modulus(psi); // bb := Conductor(psi);
-  assert aa*bb eq N;
-  vprintf HilbertModularForms: "aa = %o\n", aa;
-  vprintf HilbertModularForms: "bb = %o\n", bb;
   Haa := HeckeCharacterGroup(aa);
   Hbb := HeckeCharacterGroup(bb);
+
+
+  // deal with L-values
+  if aa eq ideal<Order(aa)|1> then // aa = 1
+    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    c0aa := LValue_Recognized(M, Mk, prim);
+  else
+    c0aa := 0;
+  end if;
+  // k = 1 and bb == 1
+  if k eq 1 and bb eq ideal<Order(bb)|1> then
+    prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+    c0bb +:= LValue_Recognized(M, Mk, prim);
+  else
+    c0bb := 0;
+  end if;
+
 
   nus := ShintaniReps(M);
   coeffs := AssociativeArray();
   bbs := NarrowClassGroupReps(M);
   ZF := Integers(M);
-  for tt in bbs do
-    coeffs[tt] := AssociativeArray();
-    // a0 term for tt
-    // using Dasgupta, Darmon, Pollack - Hilbert Modular Forms and the Gross-Stark Conjecture
-    coeffs[tt][0*ZF] := 0;
-    c0 := 0;
-    if aa eq ideal<Order(aa)|1> then // aa = 1
-      prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-      Lvalue := LValue_Recognized(M, Mk, prim);
-      c0 +:= (eta^(-1))(tt)*Lvalue;
-    end if;
-    // k = 1 and bb == 1
-    if k eq 1 and bb eq ideal<Order(bb)|1> then
-        prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
-        c0 +:= (psi^(-1))(tt) * LValue_Recognized(M, Mk, prim);
-    end if;
-    coeffs[tt][0*ZF] := 2^(-n) * c0;
+  n := Degree(BaseField(M));
+  for bb in NarrowClassGroupReps(M) do
+    coeffs[bb] := AssociativeArray();
+    // zero term for bb, equation (49) and (50)
+    // For them [nn] = \lambda, while we have [nn][bb']=[(1)]
+    // Thus we may take tt_lambda = 1/bb'$
+    bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
+    tt_lambda := bbp^-1;
+    coeffs[bb][0] := 2^(-n)*( (eta^(-1))(tt_lambda)*c0aa +  (psi^(-1))(tt_lambda)*c0bb );
 
     // All other coefficients, equation (48)
-    for nn in IdealsByNarrowClassGroup(M)[tt] do
-      if not IsZero(nn) then
-        coeffs[tt][nn] := &+[eta(nn/rr)*psi(rr)*Norm(rr^(k - 1)) : rr in Divisors(nn)];
+    for nu->nn in ShintaniRepsIdeal(M)[bb] do
+      if not IsZero(nu) then
+        coeffs[bb][nu] := &+[eta(nn/rr) * psi(rr) * Norm(rr)^(k - 1) : rr in Divisors(nn)];
       end if;
     end for;
-    // Makes coefficients rational
-    if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
-      for nn in IdealsByNarrowClassGroup(M)[tt] do
-        coeffs[tt][nn] := Rationals()!coeffs[tt][nn];
-      end for;
-    end if;
   end for;
-  E := HMF(Mk, coeffs : CoeffsByIdeals:=true);
+  E := HMF(Mk, coeffs);
+  // Makes coefficients rational
+  if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
+    E := ChangeCoefficientRing(E, Rationals());
+  end if;
   // Normalize coefficients
-  if not (coeffs[bbs[1]][0*ZF] in [0,1]) then
-    E := (1/coeffs[bbs[1]][0*ZF]) * E;
+  if not (coeffs[bbs[1]][0] in [0,1]) then
+    E := (1/coeffs[bbs[1]][0]) * E;
   end if;
   return E;
 end intrinsic;
@@ -86,19 +82,22 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, Mk::ModFrmHilD, prim::GrpHeckeElt
    // Maybe a separate function to compute L-values?
    CoefficientField := Parent(prim)`TargetRing; // where the character values live
    Lf := LSeries(prim : Precision := 100);
-   LSetPrecision(Lf, 100); // do we need this?
+   //LSetPrecision(Lf, 100); // do we need this?
    Lvalue := Evaluate(Lf, 1-k[1]);
-   // figure out the right place */
-   primes := PrimesUpTo(Precision(M), BaseField(M));
+   // figure out the right place to recognize
+   // i.e., figure out what complex embedding magma used to embed the L-function into CC
    places := InfinitePlaces(CoefficientField);
-   i := 1;
-   while #places gt 1 and i le #primes do
-     pp := primes[i];
-     app := prim(pp);
-     places := [pl : pl in places | Evaluate(app, pl) eq -Coefficients(EulerFactor(Lf, pp : Degree := 1))[2] ];
-     // why is this the right way to find the correct place to recognize? */
+   for p in PrimesUpTo(Precision(M), BaseField(M)) do
+     if #places eq 1 then
+       // there is only one place left, so that must be the one
+       break;
+      end if;
+     ap_K := prim(p); // in CoefficientField
+     ap_CC := -Coefficients(EulerFactor(Lf, p : Degree := 1))[2];
+     // restrict to the places where pl(ap_K) = ap_CC
+     places := [pl : pl in places | Evaluate(ap_K, pl) eq ap_CC ];
      i +:=1;
-   end while;
+   end for;
    assert #places eq 1;
    pl := places[1];
    CC<I> := ComplexField(Precision(Lvalue));

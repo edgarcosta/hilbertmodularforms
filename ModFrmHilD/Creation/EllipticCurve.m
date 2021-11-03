@@ -24,56 +24,39 @@ intrinsic EllipticCurveToHMF(M::ModFrmHilDGRng, E::CrvEll) -> ModFrmHilElt
   ZF := Integers(M);
   k := [2 : i in [1..Degree(F)]];
   Mk := HMFSpace(M,N,k);
-  coeffs := AssociativeArray();
-  // Step 1: a_0 and a_1
-  coeffs[0*ZF] := 0; coeffs[1*ZF] := 1;
-  // Step 2: a_p for primes
+  ev := AssociativeArray();
   L := LSeries(E);
   for p in AllPrimes(M) do
-    coeffs[p] := -Integers()!Coefficient(EulerFactor(L, p),1);
+    ev[p] := -Integers()!Coefficient(EulerFactor(L, p),1);
   end for;
-  // Step 3: a_n for composite ideals
-  for I in AllIdeals(M) do
-    if I notin Keys(coeffs) then
-      coeffs[I] := CoefficientsFromRecursion(M, N, I, k, coeffs);
-    end if;
-  end for;
-
-  // Storing coefficients
-  CoeffsArray := AssociativeArray();
-  bbs := NarrowClassGroupReps(M);
-  for bb in bbs do
-    CoeffsArray[bb] := AssociativeArray();
-    for nn in IdealsByNarrowClassGroup(M)[bb] do
-        CoeffsArray[bb][nn] := coeffs[nn];
-    end for;
-  end for;
-  return HMF(Mk, CoeffsArray : CoeffsByIdeals := true);
+  return EigenformFromEigenValues(Mk, coeffs);
 end intrinsic;
 
 
 // The effort for these functions can ushually be set to 10-20;
-// Todo: Cache Elliptic curves and just pull them instead of searching.
-intrinsic EllipticNewForms(Mk::ModFrmHilD, Effort::RngIntElt) -> SeqEnum
+intrinsic EllipticNewForms(Mk::ModFrmHilD: Effort:=10) -> SeqEnum
   {Produces all elliptic newforms of conductor N}
-  M := Parent(Mk);
-  F := BaseField(Mk);
-  N := Level(Mk);
-  L := EllipticCurveSearch(N,Effort);
-  k := [2 : i in [1..Degree(F)]];
-  NewBasis := [];
+  if not assigned Mk`EllipticBasis then
+    M := Parent(Mk);
+    F := BaseField(Mk);
+    N := Level(Mk);
+    L := EllipticCurveSearch(N, Effort);
+    k := [2 : i in [1..Degree(F)]];
+    NewBasis := [];
 
-  // Repetitive but I think the fastest test for isogeny is literally computing the HMF
-  for elt in L do
-    f := EllipticCurveToHMF(M,elt);
-    if f notin NewBasis then Append(~NewBasis,f); end if;
-  end for;
+    // Repetitive but I think the fastest test for isogeny is literally computing the HMF
+    for elt in L do
+      f := EllipticCurveToHMF(M,elt);
+      if f notin NewBasis then Append(~NewBasis,f); end if;
+    end for;
 
-  // Testing to see if dimensions are correct
-  MF := HilbertCuspForms(F, N, k);
-  S := NewSubspace(MF);
-  require Dimension(S) eq #NewBasis: "Not all elliptic curves found. Set Effort higher!";
-  return NewBasis;
+    // Testing to see if dimensions are correct
+    MF := HilbertCuspForms(F, N, k);
+    S := NewSubspace(MF);
+    require Dimension(S) eq #NewBasis: "Not all elliptic curves found. Set Effort higher!";
+    Mk`EllipticBasis := NewBasis;
+  end if;
+  return Mk`EllipticBasis;
 end intrinsic;
 
 

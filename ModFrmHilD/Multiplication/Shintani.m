@@ -161,10 +161,10 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
     if t mod smallestTrace eq 0 then
       x := t div smallestTrace;
       C1,C2 := ShintaniWalls(ZF);
-      a1 := Evaluate(basis[1],places[1]);
-      b1 := Evaluate(basis[2],places[1]);
-      a2 := Evaluate(basis[1],places[2]);
-      b2 := Evaluate(basis[2],places[2]);
+      a1 := Evaluate(basis[1], places[1]);
+      b1 := Evaluate(basis[2], places[1]);
+      a2 := Evaluate(basis[1], places[2]);
+      b2 := Evaluate(basis[2], places[2]);
 
       lowerbnd := (C2*x*a2-x*a1)/(b1-C2*b2);
       upperbnd := (C1*x*a2-x*a1)/(b1-C1*b2);

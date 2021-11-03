@@ -2,30 +2,72 @@
 
 ////////// Creation of CuspForms from ModFrmHilDElt //////////
 
-intrinsic CoefficientsFromRecursion(M::ModFrmHilDGRng, N::RngOrdIdl, n::RngOrdIdl, k::SeqEnum[RngIntElt], coeff::Assoc) -> RngIntElt
-  {construct the coefficient for a_n from an associative array coeff with all a_p for p|n}
+intrinsic EigenformFromEigenValues(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
+  {given a_p constructs the modular form}
+  require IsTrivial(Character(Mk)) : "Only implemented for trivial character";
+  k := Weight(Mk);
+  require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
+  k := k[1];
+  N := Level(Mk);
+
+  ZF := Integers(Mk);
+  coeffs := AssociativeArray();
+  // a_0 and a_1
+  M := Parent(Mk);
+  all_ideals := AllIdeals(M); // sorted by norm
+  coeffs[0*ZF] := 0;
+  coeffs[1*ZF] := 1;
+
+
+  // set recursion
+  max_norm := Norm(all_ideals[#all_ideals]);
+  prec := Floor(Log(2, max_norm)) + 1;
   Q := Rationals();
-  k0 := Max(k);
-  Fact := Factorization(n);
-  // Power series ring for recusion
+  // Power series ring for recursion
   QX<X, Y> := PolynomialRing(Q, 2);
-  prec := Max([pair[2]: pair in Fact]) +1;
   R<T> := PowerSeriesRing(QX : Precision := prec);
   recursion := Coefficients(1/(1 - X*T + Y*T^2));
   // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
-  coeff_I := 1;
-  for pair in Fact do
-    pp := pair[1];
-    Np := Norm(pp)^(k0-1);
-    // if pp is bad
-    if N subset pp then
-      Np := 0;
+  prime_powers := [];
+  for p in AllPrimes(M) do
+    Np := Norm(p);
+    if N subset p then
+      Npk := 0;
+    else
+      Npk := Np^(k - 1);
     end if;
-    coeff_I *:= Evaluate(recursion[pair[2]+1], [coeff[pp], Np]);
+    pe := 1;
+    Npe := 1;
+    for e in [1..Floor(Log(Norm(p), max_norm))] do
+      pe *:= p; // p**e
+      Npe *:= Np;
+      // pe might not be in all_ideals, but still might show up as a factor
+      if Npe gt max_norm then
+        break;
+      end if;
+      Append(~prime_powers, <Npe, pe>);
+      coeffs[pe] := Evaluate(recursion[e+1], [EigenValues[p], Npk]);
+    end for;
   end for;
-  return coeff_I;
+  // extend multiplicatively
+  for n in all_ideals do
+    if not IsDefined(coeffs, n) then
+      coeffs[n] := &*[coeffs[pair[1]^pair[2]] : pair in Factorization(n)];
+    end if;
+  end for;
+
+  // coefficients by bb
+  CoeffsArray := AssociativeArray();
+  for bb in NarrowClassGroupReps(M) do
+    CoeffsArray[bb] := AssociativeArray();
+    for nu->nn in ShintaniRepsIdeal(M)[bb] do
+      CoeffsArray[bb][nu] := coeffs[nn];
+    end for;
+  end for;
+  return HMF(Mk, CoeffsArray);
 end intrinsic;
+
 
 intrinsic NewformToHMF(Mk::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
   {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
@@ -33,41 +75,16 @@ intrinsic NewformToHMF(Mk::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
   N := Level(Mk);
   k := Weight(Mk);
   ZF := Integers(Mk);
-  coeffs := AssociativeArray(); // Coefficient array indexed by ideals
+  ev := AssociativeArray(); // eigenvalues array indexed by ideals
 
-  // TODO
-  // an easier and simpler approach to do this is:
-  // 1- a_0 and a_1
-  // 2- then primes and prime powers
-  // 3- then extend multiplicatively by looping like
-  // for k in range(1, (len(an) - 1)//pp + 1)
-  // if gcd(k, pp) == 1:
-  //    an[pp*k] = an[pp]*an[k]
-  // However, HeckeEigenvalue is the **real** bottleneck!
 
-  // Step 1: a_0 and a_1
-  coeffs[0*ZF] := 0; coeffs[1*ZF] := 1;
-  // Step 2: a_p for primes
+  // a_p for primes
+
   for pp in AllPrimes(M) do
-    coeffs[pp] := HeckeEigenvalue(newform, pp);
-  end for;
-  // Step 3: a_n for composite ideals
-  for I in AllIdeals(M) do
-    if I notin Keys(coeffs) then
-      coeffs[I] := CoefficientsFromRecursion(M, N, I, k, coeffs);
-    end if;
+    ev[pp] := HeckeEigenvalue(newform, pp);
   end for;
 
-  // Storing coefficients
-  CoeffsArray := AssociativeArray();
-  bbs := NarrowClassGroupReps(M);
-  for bb in bbs do
-    CoeffsArray[bb] := AssociativeArray();
-    for nn in IdealsByNarrowClassGroup(M)[bb] do
-      CoeffsArray[bb][nn] := coeffs[nn];
-    end for;
-  end for;
-  return HMF(Mk, CoeffsArray : CoeffsByIdeals := true);
+  return EigenformFromEigenValues(Mk, ev);
 end intrinsic;
 
 
