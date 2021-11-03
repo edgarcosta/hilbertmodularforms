@@ -332,14 +332,13 @@ intrinsic HMFComp(Mk::ModFrmHilD,
 
   if CoeffsByIdeals then
     // first convert according to
-    //   nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
+    // nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
     coeffsnu := AssociativeArray();
-    for nn->nu in IdealShitaniReps(M)[bb] do // consists of a sequence of <nn, nu>
+    for nn->nu in IdealShitaniReps(M)[bb] do // mapping nn->nu, where nu \in bb' = bb*diff^-1
       if IsDefined(coeffs, nn) then
         coeffsnu[nu] := coeffs[nn];
       end if;
     end for;
-
     coeffs := coeffsnu;  // goodbye old data!
   end if;
 
