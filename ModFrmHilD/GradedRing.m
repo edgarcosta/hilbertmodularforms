@@ -22,13 +22,11 @@ declare attributes ModFrmHilDGRng:
   ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
   // ShintaniRepsIdeal and IdealShitaniReps cache the conversion nn <-> nu
   // where nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
+  // note [nn][bb'] = 1
   ShintaniRepsIdeal, // ShintaniReps[bb][nu] := nn
   IdealShitaniReps, // ShintaniReps[bb][nn] :=  nu
   ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
   ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][nn] = nu, such that nu is Shintani reduced
-  // Drop IdealsForComponent?
-  IdealsForComponent, // list of all ideals nn with [nn][bb'] = 1
-  // TODO: Check if IdealsByNarrowClassGroup is being properly used
   IdealsByNarrowClassGroup, // list of all ideals nn with [nn] = [bb]
   AllIdeals, // List of all ideals for all bb ordered by norm
   AllPrimes, // List of all prime ideals up max norm of AllIdeals
@@ -302,10 +300,9 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`IdealShitaniReps := AssociativeArray();
   M`ShintaniRepsByTrace := AssociativeArray();
   M`ReduceIdealToShintaniRep := AssociativeArray();
-  M`IdealsForComponent := AssociativeArray();
   M`IdealsByNarrowClassGroup := AssociativeArray();
   // Elements and Shintani domains
-  // instaciate all associative arrays
+  // instanciate all associative arrays
   for bb in M`NarrowClassGroupReps do
     M`ShintaniRepsByTrace[bb] := AssociativeArray();
     M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
@@ -325,12 +322,11 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
       M`ShintaniRepsIdeal[bb][nu] := nn;
       M`IdealShitaniReps[bb][nn] := nu;
     end for;
-    M`IdealsForComponent[bb] := SetToSequence(Keys(M`IdealShitaniReps[bb]));
-    norms := [CorrectNorm(nn) : nn in M`IdealsForComponent[bb]];
-    ParallelSort(~norms, ~M`IdealsForComponent[bb]);
     // the ideals generated in the previous for loop are not in bb class, but in bbpinv's class.
     repbbpinv := NarrowClassRepresentative(M, bbpinv);
-    M`IdealsByNarrowClassGroup[repbbpinv] := M`IdealsForComponent[bb];
+    M`IdealsByNarrowClassGroup[repbbpinv] := SetToSequence(Keys(M`IdealShitaniReps[bb]));
+    norms := [CorrectNorm(nn) : nn in M`IdealsByNarrowClassGroup[repbbpinv]];
+    ParallelSort(~norms, ~M`IdealsByNarrowClassGroup[repbbpinv]);
   end for;
 
   // M`Ideals
@@ -404,7 +400,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
 
 
   // First pass. A[a] := List of [b,a,D];
-  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do
+  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do // Edgar: are you sure?
     A[mm] := [];
     Points := SIndexOfSummation(M,mm);
     for i in Points do
@@ -442,7 +438,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
 
 
   // Third Pass. Append [D0, ZK, ff] to [b,a,D].
-  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do
+  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do // Edgar: are you sure?
     A[mm] := [ i cat S[i[3]] : i in A[mm]];
   end for;
 
@@ -462,7 +458,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
 
 
   // Fifth Pass. Append [h,w] to [b, a, D, D0, ZK, ff].
-  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do
+  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do // Edgar: are you sure?
     A[mm] := [ i cat T[i[4]] : i in A[mm]];
   end for;
   M`PrecomputationforTrace := A;

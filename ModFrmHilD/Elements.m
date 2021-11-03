@@ -288,7 +288,7 @@ intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
   for bb in reps do
     if not bb in Keys(coeffs) then
       coeffs[bb] := AssociativeArray();
-      for nn in IdealsByNarrowClassGroup(M)[bb] do
+      for nn in IdealsByNarrowClassGroup(M)[bb] do // Edgar: are you sure?
         coeffs[bb][nn] := 0;
       end for;
     end if;

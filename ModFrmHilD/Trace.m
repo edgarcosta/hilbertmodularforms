@@ -1057,7 +1057,7 @@ intrinsic TwoLinearDependence(List::SeqEnum[ModFrmHilDElt]) -> SeqEnum[RngIntElt
   bbs := NarrowClassGroupReps(M);
   CoeffLists := [[] : i in [1..#List]];
   for bb in bbs do
-    for nn in IdealsByNarrowClassGroup(M)[bb] do
+    for nn in IdealsByNarrowClassGroup(M)[bb] do // Edgar: are you sure?
       if nn ne 0*ZF then
         for i in [1..#List] do
           Append(~CoeffLists[i], Coefficients(List[i])[bb][nn]);
