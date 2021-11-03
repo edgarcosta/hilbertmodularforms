@@ -334,9 +334,9 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     // first convert according to
     //   nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
     coeffsnu := AssociativeArray();
-    for pair in IdealElementPairs(M)[bb] do // consists of a sequence of [* nn, nu *]
-      if IsDefined(coeffs, pair[1]) then
-        coeffsnu[pair[2]] := coeffs[pair[1]];
+    for nn->nu in IdealShitaniReps(M)[bb] do // consists of a sequence of <nn, nu>
+      if IsDefined(coeffs, nn) then
+        coeffsnu[nu] := coeffs[nn];
       end if;
     end for;
 
@@ -1089,23 +1089,24 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
 
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
   require N2 subset N1: "Level of f does not divide level of Mk";
-  require N2 subset mm: "Ideal does not divide level of Mk";
+  require N2 subset mm: "Ideal mm does not divide level of Mk";
 
   coeff := AssociativeArray();
   bb := ComponentIdeal(f);
-  mmbb := NarrowClassRepresentative(M,mm*bb);
+  mmbb := NarrowClassRepresentative(M, mm*bb);
 
   mminv := mm^-1;
-  idlEltPairs := IdealElementPairs(M)[bb];
-  for nn in IdealsByNarrowClassGroup(M)[mmbb] do
+  for nn -> nu in IdealShitaniReps(M)[mmbb] do
     if IsIntegral(nn*mminv) then
-      coeff[nn] := coeff_f[IdealToShintaniRepresentative(M, bb, ZF!!(nn*mminv))[1]];
+      // set b_nn = a_{nn/mm}
+      // in terms of shintani reps
+      coeff[nu] := coeff_f[IdealToShintaniRepresentative(M, bb, ZF!!(nn*mminv))];
     else
-      coeff[nn] := 0;
+      coeff[nu] := 0;
     end if;
   end for;
 
-  return HMFComp(Mk, mmbb, coeff : CoeffsByIdeals := true, unitchar:=UnitChar(f), prec:=Precision(f));
+  return HMFComp(Mk, mmbb, coeff : unitchar:=UnitChar(f), prec:=Precision(f));
 end intrinsic;
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
@@ -1127,11 +1128,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   N1 := Level(Parent(f));
   N2 := Level(Mk);
 
-  IncludedForms := [];
-  for dd in Divisors(N2/N1) do
-    Append(~IncludedForms, Inclusion(f,Mk,dd));
-  end for;
-  return IncludedForms;
+  return [Inclusion(f, Mk, dd) : dd in Divisors(N2/N1)];
 end intrinsic;
 
 intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt

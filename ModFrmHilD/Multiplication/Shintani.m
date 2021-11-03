@@ -200,11 +200,10 @@ end intrinsic;
 // Shintani reduction algorithm
 // Use this function: it first does a lookup to see if already in the
 // Shintani cone, else it seeks to minimize the trace
-intrinsic ReduceShintani(M::ModFrmHilDGRng,  bb::RngOrdFracIdl, nu::FldOrdElt) -> SeqEnum
+intrinsic ReduceShintani(M::ModFrmHilDGRng,  bb::RngOrdFracIdl, nu::FldOrdElt) -> RngOrdElt
   {Reduce the element nu in component labelled bb.}
-  assert Parent(nu) eq Integers(M);
-  shintani_reps := ShintaniReps(M)[bb];
-  if nu in shintani_reps then
+  // assert Parent(nu) eq Integers(M); Edgar: Why?
+  if nu in ShintaniReps(M)[bb] then
     // Is reduced
     return nu;
   else
@@ -287,29 +286,29 @@ end intrinsic;
 
 // Conversion : Shintani elements < = > Ideals
 // Converts pairs (bb,nu) <-> (bb,nn) based on the set of representatives bb for Cl^+(F)
-intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::RngOrdIdl) -> ModFrmHilDElt
+intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, bb::RngOrdIdl, nn::RngOrdIdl) -> RngOrdElt
   {Takes a representative [bb] in Cl^+(F) and an integral ideal nn in ZF
    with [nn] = [bbp^(-1)] where bbp = dd_F*bb^-1 and returns Shintani
    representative (nu) = nn*bbp = nn*bb*dd_F^(-1), dealing with nn = (0).}
 
-  F := BaseField(M);
-  ZF := Integers(M);
-  dd := Different(ZF);
-  // bbp := bb*(dd)^-1;
-  bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
-
   if IsZero(nn) then
-    return <0,1>;
+    return 0;
   end if;
 
-  mp := NarrowClassGroupMap(M);
-  require IsIdentity((nn*bbp)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
-  bool, gen := IsNarrowlyPrincipal(nn*bbp);
-  assert bool;
-  // This is hardcoded for quadratic Fields.
-  require Degree(F) eq 2: "This function is hardcoded for quadratic fields.";
-  shingen := ReduceShintaniMinimizeTrace(gen);
-  return shingen;
+  if not IsDefined(M`IdealShitaniReps[bb], nn) then
+    F := BaseField(M);
+    ZF := Integers(M);
+    // dd := Different(ZF);
+    // bbp := bb*(dd)^-1;
+    bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
+
+    mp := NarrowClassGroupMap(M);
+    require IsIdentity((nn*bbp)@@mp): "The ideals nn and bb must be inverses in CL+(F)";
+    bool, gen := IsNarrowlyPrincipal(nn*bbp);
+    assert bool;
+    M`IdealShitaniReps[bb][nn] := ReduceShintani(M, bb, gen);
+  end if;
+  return M`IdealShitaniReps[bb][nn];
 end intrinsic;
 
 // Conversion : Shintani elements < = > Ideals
@@ -324,7 +323,7 @@ intrinsic IdealToShintaniRepresentative(M::ModFrmHilDGRng, nn::RngOrdIdl) -> Rng
   assert bool;
   // This is hardcoded for quadratic Fields.
   require Degree(BaseField(M)) eq 2: "This function is hardcoded for quadratic fields.";
-  return ReduceShintaniMinimizeTrace(gen);
+  return ReduceShintaniMinimizeTrace(gen)[1]; // we don't care about the unit
 end intrinsic;
 
 // Converts nus to nns
