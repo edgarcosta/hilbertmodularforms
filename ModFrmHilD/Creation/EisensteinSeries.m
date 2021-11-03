@@ -3,12 +3,20 @@
 // Eisenstein Series have only been implemented for integral parallel weight
 intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> ModFrmHilDElt
   {Let aa*bb be the modulus of psi*eta^-1. Return the Eisenstein series E_k(eta,psi) in M_k(aa*bb,eta*psi).}
+  // We are following the notation in Section 2.2 of Dasgupta, Darmon, Pollack - Hilbert Modular Forms and the Gross-Stark Conjecture
   M := Parent(Mk);
   k := Weight(Mk);
   N := Level(Mk);
+  vprintf HilbertModularForms: "eta * psi = %o\n", eta*psi;
+  vprintf HilbertModularForms: "Character(Mk) = %o\n", Character(Mk);
+  vprintf HilbertModularForms: "eta*psi eq Character(Mk) = %o\n", eta*psi eq Character(Mk);
+  vprintf HilbertModularForms: "Parent(eta*psi) = %o Parent(Character(Mk)) = %o\n", Parent(eta*psi), Parent(Character(Mk));
+  require eta*psi eq Character(Mk): "we must have psi*eta = Character(Mk)";
+  vprintf HilbertModularForms: "EisensteinSeries(k=%o, N=%o, eta=%o, psi=%o)\n", k, N, eta, psi;
   Cl := NarrowClassGroup(M);
   mp := NarrowClassGroupMap(M);
-  assert #SequenceToSet(k) eq 1; // Checking if parallel weight
+  require #SequenceToSet(k) eq 1: "We only support EisensteinSeries with parallel weight";
+  k := k[1];
 
   X := Parent(eta); Y := Parent(psi);
   CoefficientField := X`TargetRing; // where the character values live
@@ -16,7 +24,9 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
   n := Degree(BaseField(M));
   aa := Modulus(eta); // aa := Conductor(eta);
   bb := Modulus(psi); // bb := Conductor(psi);
-  assert aa eq bb; // this should be aa^2 = N;
+  assert aa*bb eq N;
+  vprintf HilbertModularForms: "aa = %o\n", aa;
+  vprintf HilbertModularForms: "bb = %o\n", bb;
   Haa := HeckeCharacterGroup(aa);
   Hbb := HeckeCharacterGroup(bb);
 
@@ -27,38 +37,25 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
   for tt in bbs do
     coeffs[tt] := AssociativeArray();
     // a0 term for tt
-    // k > 1
-    if k[1] ge 2 then
-      if aa eq 1*ZF then
-        prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-        coeffs[tt][0*ZF] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M, Mk, prim);
-      else
-        coeffs[tt][0*ZF] := 0;
-      end if;
-    // k = 1
-    elif k[1] eq 1 then
-      if aa eq ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
-        prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-        coeffs[1] := 2^(-n)*(eta^(-1))(tt)*LValue_Recognized(M,Mk, prim);
-      elif aa ne ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
-        prim := AssociatedPrimitiveCharacter(psi^(-1)*eta);
-        coeffs[1] := 2^(-n)*(psi^(-1))(tt)*LValue_Recognized(M, Mk, prim);
-      elif aa eq ideal<Order(aa)|1> and bb eq ideal<Order(bb)|1> then
-        prim1 := AssociatedPrimitiveCharacter(psi*eta^(-1));
-        prim2 := AssociatedPrimitiveCharacter(psi^(-1)*eta);
-        coeffs[1] := 2^(-n)*((eta^(-1))(tt)*LValue_Recognized(M, Mk, prim1) + (psi^(-1))(tt)*LValue_Recognized(M, Mk, prim2));
-      elif aa ne ideal<Order(aa)|1> and bb ne ideal<Order(bb)|1> then
-        coeffs[1] := 0;
-      end if;
+    // using Dasgupta, Darmon, Pollack - Hilbert Modular Forms and the Gross-Stark Conjecture
+    coeffs[tt][0*ZF] := 0;
+    c0 := 0;
+    if aa eq ideal<Order(aa)|1> then // aa = 1
+      prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+      Lvalue := LValue_Recognized(M, Mk, prim);
+      c0 +:= (eta^(-1))(tt)*Lvalue;
     end if;
-    // All other coefficients
+    // k = 1 and bb == 1
+    if k eq 1 and bb eq ideal<Order(bb)|1> then
+        prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+        c0 +:= (psi^(-1))(tt) * LValue_Recognized(M, Mk, prim);
+    end if;
+    coeffs[tt][0*ZF] := 2^(-n) * c0;
+
+    // All other coefficients, equation (48)
     for nn in IdealsByNarrowClassGroup(M)[tt] do
-      if nn ne 0*ZF then
-        sum := 0;
-        for rr in Divisors(nn) do
-          sum +:= eta(nn/rr)*psi(rr)*Norm(rr^(k[1]-1));
-        end for;
-        coeffs[tt][nn] := sum;
+      if not IsZero(nn) then
+        coeffs[tt][nn] := &+[eta(nn/rr)*psi(rr)*Norm(rr^(k - 1)) : rr in Divisors(nn)];
       end if;
     end for;
     // Makes coefficients rational
@@ -69,7 +66,7 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
     end if;
   end for;
   E := HMF(Mk, coeffs : CoeffsByIdeals:=true);
-  // Normalized coefficients here.
+  // Normalize coefficients
   if not (coeffs[bbs[1]][0*ZF] in [0,1]) then
     E := (1/coeffs[bbs[1]][0*ZF]) * E;
   end if;
