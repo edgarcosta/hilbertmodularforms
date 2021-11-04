@@ -1052,17 +1052,16 @@ intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false,
     prec := Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
   end if;
 
-  M := Matrix([
+  mat := Matrix([
     &cat[
       &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in ShintaniRepsUpToTrace(M, bb, prec)]
       : bb in bbs]
     : f in list]);
-  return M;
+  nus := &cat[ShintaniRepsUpToTrace(M, bb, prec) : bb in bbs];
+  return mat, nus;
 end intrinsic;
 
 //TODO add optional flag to limit the number of coefficients
-//TODO make outputs to be of the same type
-//TODO take working precision
 intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, prec:=false ) -> SeqEnum[RngIntElt]
   {Finds any linear relations between the forms (returns 0 if none are found).
     The optional parameter IdealClasses can be specified to look at the relations over a subset of narrow class reps }

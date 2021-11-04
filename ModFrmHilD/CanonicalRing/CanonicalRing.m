@@ -116,37 +116,18 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
   M := Parent(Mk);
   k := Weight(Mk);
   bbs := NarrowClassGroupReps(M);
-  SpaceCoeffLists := [[] : i in [1..#BasisWeightK]];
-  MonomialCoeffLists := [[]:i in [1..#EvaluatedMonomials]];
-  index := AssociativeArray();
-  indexnum := 1;
-  wt := [];
-  for bb in bbs do
-    for nu in ShintaniReps(M)[bb] do
-      index[nu] := indexnum;
-      indexnum +:= 1;
-      for i in [1..#BasisWeightK] do
-        Append(~SpaceCoeffLists[i], Coefficient(BasisWeightK[i], bb, nu));
-      end for;
-      for i in [1..#EvaluatedMonomials] do
-        Append(~MonomialCoeffLists[i], Coefficient(EvaluatedMonomials[i], bb, nu));
-      end for;
-      if IsZero(nu) then
-          Append(~wt, 1);
-      else
-          Append(~wt, Trace(nu));
-      end if;
-    end for;
-  end for;
 
-  Mat := Matrix(SpaceCoeffLists);
-  V := VectorSpaceWithBasis(Mat);
-  W := sub<V | MonomialCoeffLists>;
+  SpaceCoeffMatrix, nus1 := CoefficientsMatrix(BasisWeightK);
+  MonomialCoeffMatrix, nus2 := CoefficientsMatrix(EvaluatedMonomials);
+  assert nus1 eq nus2;
+
+  V := VectorSpaceWithBasis(SpaceCoeffMatrix);
+  W := sub<V | Rows(MonomialCoeffMatrix)>;
   if (Alg eq "Standard") then
-    ExtendMultBasis := ExtendBasis(W,V);
+    ExtendMultBasis := ExtendBasis(W, V);
   elif (Alg eq "LLL") then
-    ExtendMultBasis := ExtendBasis(W,V);
-    B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
+    ExtendMultBasis := ExtendBasis(W, V);
+    B := ExtendMultBasis[Dimension(W) + 1 .. Dimension(V)];
     if #B ne 0 then
         ExtendMultBasis := Basis(W) cat Rows(Matrix(LLL(B)));
     else
@@ -154,18 +135,20 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
     end if;
     assert #ExtendMultBasis eq Dimension(V);
   elif (Alg eq "WeightedLLL") then
-    ExtendMultBasis := ExtendBasis(W,V);
-    B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
+    ExtendMultBasis := ExtendBasis(W, V);
+    B := ExtendMultBasis[Dimension(W) + 1 .. Dimension(V)];
     if #B ne 0 then
         // wt := [Floor(Degree(B[1])/Sqrt(n)) : n in [1..Degree(B[1])]];
-        wt := [Floor(wt[#wt]/w) : w in wt];
+        traces := [Max(1, Trace(nu)): nu in nus1];
+        max_trace := Max(traces);
+        wt := [Floor(max_trace/t) : t in traces];
         ExtendMultBasis := Basis(W) cat Rows(LLL(Matrix(B) : Weight := wt));
     else
         ExtendMultBasis := Basis(W);
     end if;
     assert #ExtendMultBasis eq Dimension(V);
   elif (Alg eq "HNF") then
-    ExtendMultBasis := ExtendBasis(W,V);
+    ExtendMultBasis := ExtendBasis(W, V);
     B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
     denom := Denominator(Matrix(B));
     intmat := ChangeRing(denom * Matrix(B), Integers());
@@ -178,23 +161,9 @@ intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWe
     ExtendMultBasis := Basis(W) cat Rows(W_perp * basis_V);
   end if;
 
-  NewGeneratorsVec := [ExtendMultBasis[i]:i in [Dimension(W)+1..Dimension(V)]];
-  //Edgar: tripple check
-  NewGens := [];
-  for elt in NewGeneratorsVec do
-    newCoeffs := AssociativeArray();
-    for bb in bbs do
-      idealCoeffs := AssociativeArray();
-      for nu in ShintaniReps(M)[bb] do
-        idealCoeffs[nu] := elt[index[nu]];
-      end for;
-      newCoeffs[bb] := idealCoeffs;
-    end for;
-    newHMF := HMF(Mk, newCoeffs);
-    Append(~NewGens, newHMF);
-  end for;
-  //FIXME: remove the assert and use RHS
-  assert NewsGens eq [ &+[elt[i]*BasisWeightK[i] : i in [1..BasisWeightK]] : elt in Solution(Mat, ExtendMultBasis[Dimension(W)+1..Dimension(V)])];
+  NewGeneratorsCoeffs := ExtendMultBasis[Dimension(W) + 1..Dimension(V)];
+  sol := Solution(SpaceCoeffMatrix, NewGeneratorsCoeffs);
+  NewGens := [ &+[elt[i]*BasisWeightK[i] : i in [1..#BasisWeightK]] : elt in sol];
   return NewGens;
 end intrinsic;
 
@@ -202,7 +171,7 @@ end intrinsic;
 //V := VectorSpaceWithBasis(Matrix([Coefficients(i) : i in Basisweightk]));
 /*  W := sub< V | [Coefficients(i) : i in EvaluatedMonomials] >;
 
-  ExtendMultBasis := ExtendBasis(W,V);
+  ExtendMultBasis := ExtendBasis(W, V);
 
   NewGeneratorsVec := [ExtendMultBasis[i] : i in [Dimension(W)+1..Dimension(V)]];
   NewGens := [ HMF(M, N, [k,k], Eltseq(vec)) : vec in NewGeneratorsVec ];
