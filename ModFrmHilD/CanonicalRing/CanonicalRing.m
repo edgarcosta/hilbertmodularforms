@@ -227,7 +227,7 @@ intrinsic ConstructGeneratorsAndRelations(
   :
   LowestWeight:=2,
   Alg:="Standard",
-  IdealClassesSupport := false) -> Any
+  IdealClassesSupport:=false) -> Any
   {Finds all Generators and Relations}
 
   if IdealClassesSupport cmpeq false then
@@ -296,7 +296,7 @@ intrinsic ConstructGeneratorsAndRelations(
         require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
       end if;
 
-      Basisweightk := Basis(Mk: IdealClassesSupport := IdealClassesSupport);
+      Basisweightk := Basis(Mk: IdealClassesSupport:=IdealClassesSupport);
 
       vprintf HilbertModularForms : "Weight: %o     MonomialsGens: %o RelationsinR: %o Dim: %o\n", k, #MonomialsGens, #RelationsinR, #Basisweightk;
       NewGens := [];

@@ -83,7 +83,7 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   return Mk`EisensteinBasis;
 end intrinsic;
 
-intrinsic Basis(Mk::ModFrmHilD: IdealClassesSupport := false) -> SeqEnum[ModFrmHilDElt]
+intrinsic Basis(Mk::ModFrmHilD: IdealClassesSupport:=false) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   if not assigned Mk`Basis then
     vprintf HilbertModularForms: "Computing basis for space of parallel weight %o with precision %o\n", Weight(Mk)[1], Precision(Parent(Mk));
@@ -99,12 +99,12 @@ intrinsic Basis(Mk::ModFrmHilD: IdealClassesSupport := false) -> SeqEnum[ModFrmH
   else
     IdealClassesSupport := SequenceToSet(IdealClassesSupport); // Optionally we may specify a subset of ideal classes
   end if;
-  IdealClassesSupportComplement := IdealClassesSupport diff SequenceToSet(NarrowClassGroupReps(Parent(Mk)));
+  IdealClassesSupportComplement := SequenceToSet(NarrowClassGroupReps(Parent(Mk))) diff IdealClassesSupport;
   if #IdealClassesSupportComplement eq 0 then // in this case LinearDependence will return the identity matrix
     return Mk`Basis;
   end if;
   B := Mk`Basis;
-  relations := LinearDependence(B : IdealClasses := IdealClassesSupportComplement);
+  relations := LinearDependence(B : IdealClasses:=IdealClassesSupportComplement);
   res := [];
   for elt in relations do
     // f is only supported over IdealClassesSupport
