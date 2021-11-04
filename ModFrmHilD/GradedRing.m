@@ -41,7 +41,9 @@ declare attributes ModFrmHilDGRng:
   // a double indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
   HeckeEigenvalues,
   // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
-  Spaces
+  Spaces,
+  // Associative array (level, chi) -> dim E_k(level, chi)
+  EisensteinDimensions
   ;
 
 
@@ -338,6 +340,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // M`Primes contains primes not in AllIdeals
   M`AllPrimes := PrimesUpTo(norms[#norms], F);
   M`Spaces := AssociativeArray();
+  M`EisensteinDimensions := AssociativeArray();
   return M;
 end intrinsic;
 

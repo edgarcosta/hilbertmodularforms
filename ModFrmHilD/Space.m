@@ -14,6 +14,7 @@ declare attributes ModFrmHilD:
   CuspFormBasis, // SeqEnum[ModFrmHilDElt]
   EllipticBasis, // SeqEnum[ModFrmHilDElt]
   Dimension, // RngIntElt
+  CuspDimension, //RngIntElt
   Character; // GrpHeckeElt, JV: why aren't we using Dirichlet?
 
 
@@ -72,13 +73,7 @@ intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   return Mk`Character;
 end intrinsic;
 
-intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
-{}
-  if not assigned Mk`Dimension then
-    ComputeDimension(Mk);
-  end if;
-  return Mk`Dimension;
-end intrinsic;
+
 
 /* attributes of the parent */
 
@@ -175,29 +170,57 @@ end intrinsic;
 
 
 intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
-  {Returns the number of cusps for Gamma_0(N)}
-  M := Parent(Mk);
-  ZF := Integers(M);
-  k := Weight(Mk);
-  if SequenceToSet(k) eq Set([2]) then
-    print "Not using trace formula, might be slow (parallel weight 2). Talk to Ben";
-    EB := EisensteinBasis(Mk);
-    cuspDim := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
-    dim := #EB + Dimension(cuspDim);
-    return dim;
-  else
-    return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
+  {return the dimension of Mk}
+  if not assigned Mk`Dimension then
+    Mk`Dimension := EisensteinDimension(Mk) + CuspDimension(Mk);
   end if;
+  return Mk`Dimension;
+end intrinsic;
+
+intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
+{}
+  return Dimension(Mk);
+end intrinsic;
+
+// TODO swap the default
+intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
+  {return dimension of S(Mk)}
+  require version in ["builtin", "trace"] : "the options for trace are either \"builtin\" or \"trace formula\"";
+  if not assigned Mk`CuspDimension then
+    k := Weight(Mk);
+    if SequenceToSet(k) eq Set([2]) and version eq "trace" then
+      print "Juanita: Not using trace formula, might be slow (parallel weight 2). Talk to Ben";
+      version := "builtin";
+    end if;
+
+    if version eq "builtin" then
+      require IsTrivial(Character(Mk)): "we rely on magma built-in functions, which only works for trivial character";
+      Mk`CuspDimension := Dimension(HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk)));
+    else
+      M := Parent(Mk);
+      ZF := Integers(M);
+      // Edgar: Ben, should one use Strace?
+      Mk`CuspDimension := Trace(Mk,1*ZF);
+    end if;
+  end if;
+  return Mk`CuspDimension;
 end intrinsic;
 
 
-// We eventually want to replace this with the Dimension intrinsic (above). However we need to wait for Trace to work.
-intrinsic ComputeDimension(Mk::ModFrmHilD)
-  {compute the dimension of Mk and store it in Mk}
-  // we rely on HilbertCuspForms, which only works for trivial character
-  assert Character(Mk) eq HeckeCharacterGroup(Level(Mk))!1;
-  EB := EisensteinBasis(Mk);
-  cuspDim := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
-  dim := #EB + Dimension(cuspDim);
-  Mk`Dimension := dim;
+
+intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
+  {return the dimension of E(Mk)}
+  N := Level(Mk);
+  chi := Character(Mk);
+  tup := <N, chi>;
+  M := Parent(Mk);
+  if not IsDefined(M`EisensteinDimensions, tup) then
+    function Q(chi, m, n)
+      X := HeckeCharacterGroup(n, [1..Degree(BaseField(M))]);
+      Y := HeckeCharacterGroup(n/m, [1..Degree(BaseField(M))]);
+    return &+[1 : chi1 in Elements(X), chi2 in Elements(Y) | chi1*chi2 eq chi];
+    end function;
+    M`EisensteinDimensions[tup] := Degree(Parent(chi)`TargetRing) * &+[Q(chi, m, N) : m in Divisors(N)];
+  end if;
+  return M`EisensteinDimensions[tup];
 end intrinsic;

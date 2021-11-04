@@ -69,7 +69,6 @@ intrinsic EisensteinSeries(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -
   return E;
 end intrinsic;
 
-// TODO finish this and use in EisensteinSeries intrinsic
 
 //Toolbox function to use in the Eisenstein series function--gives us an L value
 intrinsic LValue_Recognized(M::ModFrmHilDGRng, Mk::ModFrmHilD, prim::GrpHeckeElt) -> FldNumElt

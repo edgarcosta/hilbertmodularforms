@@ -257,10 +257,12 @@ intrinsic ConstructGeneratorsAndRelations(
       MonomialsinR := MonomialsOfWeightedDegree(R, k);
       MonomialsGens := MonomialGenerators(R, Relations, k);
 
-      // Edgar: this triggers the (slow) computation of the EisensteinBasis and doesn't incorporate IdealClassesSupport
-      // Before we evaluate monomials, make sure precision is high enough
-      // CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-      // assert CoeffCount ge Dim(Mk);
+      // we don't yet have dimensions per component
+      if IdealClassesSupport eq NarrowClassGroupReps(M) then
+        // Before we evaluate monomials, make sure precision is high enough
+        CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
+        require CoeffCount ge Dim(Mk): "Precision is too low in comparison to the dimension of the space";
+      end if;
 
       EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
 
@@ -288,14 +290,15 @@ intrinsic ConstructGeneratorsAndRelations(
         Relations[k] := RelationsinR;
         Monomials[k] := MonomialsGens;
       end if;
-      // Edgar: this triggers the (slow) computation of the EisensteinBasis and doesn't incorporate IdealClassesSupport
-      //require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
+
+      // we don't yet have dimensions per component
+      if IdealClassesSupport eq NarrowClassGroupReps(M) then
+        require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
+      end if;
 
       Basisweightk := Basis(Mk: IdealClassesSupport := IdealClassesSupport);
 
       vprintf HilbertModularForms : "Weight: %o     MonomialsGens: %o RelationsinR: %o Dim: %o\n", k, #MonomialsGens, #RelationsinR, #Basisweightk;
-      //FIXME: remove print
-      print LinearDependence(Basisweightk cat EvaluatedMonomials);
       NewGens := [];
 
       if #MonomialsGens - #RelationsinR ne #Basisweightk then

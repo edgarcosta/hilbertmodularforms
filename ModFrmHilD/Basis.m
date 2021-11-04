@@ -16,7 +16,7 @@ intrinsic CuspFormBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
     require IsTrivial(Character(Mk)): "We only support CuspFormBasis  for trivial character, as we rely on the magma functionality";
     for dd in Divisors(N) do
       Mkdd := HMFSpace(Parent(Mk), dd, k);
-      dim:=Dimension(HilbertCuspForms(BaseField(Mk), dd, k));
+      dim := Dimension(HilbertCuspForms(BaseField(Mk), dd, k));
       if dim gt 0 then
         traceBoundIncl:=TraceBoundInclusion(Mkdd, Mk);
 
