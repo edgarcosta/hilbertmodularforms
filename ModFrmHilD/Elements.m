@@ -990,13 +990,7 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: Linear Algebra  //////////
 
-//TODO add optional flag to limit the number of coefficients
-/*
-intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt]) -> AlgMatElt
-  {returns a matrix with the coefficients of each modular form in each row}
-  return Matrix( [ Coefficients(elt) : elt in list] );
-end intrinsic;
-*/
+
 
 
 intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
@@ -1028,49 +1022,61 @@ intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) ->
 end intrinsic;
 
 
-intrinsic ShortLinearDependence(list::SeqEnum[SeqEnum]) -> SeqEnum[RngIntElt]
+intrinsic ShortLinearDependence(M::Mtrx) -> SeqEnum[RngIntElt]
   {
     finds a small non-trivial integral linear combination between components of v.
     If none can be found return 0.
   }
-  if IsNull(list) then return list; end if;
-  M := Matrix( [ elt : elt in list] );
   // in case M is defined over the rationals
   M := ChangeRing(Denominator(M)*M, Integers());
   B := Basis(Kernel(M));
   if #B ne 0 then return [Eltseq(i) : i in Rows(Matrix(LLL(B)))]; else return []; end if;
 end intrinsic;
 
-//TODO add optional flag to limit the number of coefficients
-//TODO make outputs to be of the same type
-//TODO take working precision
-intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses := false ) -> SeqEnum[RngIntElt]
-  {Finds any linear relations between the forms (returns 0 if none are found).
-    The optional parameter IdealClasses can be specified to look at the relations over a subset of narrow class reps }
-  if IsNull(list) then return list; end if;
+
+intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, prec:=false ) -> AlgMatElt
+  {returns a matrix with the coefficients of each modular form in each row}
   // assuring that all the forms have the same coefficient ring
   list := ChangeToCompositumOfCoefficientFields(list);
+
   M := GradedRing(list[1]);
   // The ideal classes from which we are taking the coefficients.
   if IdealClasses cmpeq false then
     bbs := NarrowClassGroupReps(M); // Default is all ideals classes
   else
+    bbs := IdealClasses;
+  end if;
+  require #bbs gt 0: "at least on ideal class must be specified";
+
+  if prec cmpeq false then
+    prec := Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
+  end if;
+
+  M := Matrix([
+    &cat[
+      &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in ShintaniRepsUpToTrace(M, bb, prec)]
+      : bb in bbs]
+    : f in list]);
+  return M;
+end intrinsic;
+
+//TODO add optional flag to limit the number of coefficients
+//TODO make outputs to be of the same type
+//TODO take working precision
+intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, prec:=false ) -> SeqEnum[RngIntElt]
+  {Finds any linear relations between the forms (returns 0 if none are found).
+    The optional parameter IdealClasses can be specified to look at the relations over a subset of narrow class reps }
+  if IsNull(list) then return list; end if;
+
+  // The ideal classes from which we are taking the coefficients.
+  if not IdealClasses cmpeq false then
     // ie, we will be looking at relations that makes the forms vanish on these components
-    bbs := IdealClasses; // Optionally we may specify a subset of ideal classes
+    if #IdealClasses eq 0 then
+      // the empty sum is zero
+      return IdentityMatrix(Integers(), #list);
+    end if;
   end if;
-  if #bbs eq 0 then
-    // the empty sum is zero
-    return IdentityMatrix(Integers(), #list);
-  end if;
-  // List of coefficients for the forms
-  L := [];
-  maxprec:=Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
-  // Loop over forms
-  for f in list do
-    CoefficientsOfForm := &cat[ &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in ShintaniRepsUpToTrace(M, bb, maxprec)] : bb in bbs];
-    Append(~L, CoefficientsOfForm);
-  end for;
-  return ShortLinearDependence(L);
+  return ShortLinearDependence(CoefficientsMatrix(list : IdealClasses:=IdealClasses, prec:=prec));
 end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
