@@ -487,7 +487,7 @@ intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilDGRng, N::RngOrdI
 end intrinsic;
 
 // Important! In order to run this version you must have already computed the generators for the ring using either ConstructGeneratorsAndRelations or ConstructGeneratorsAndRelationsV1.
-// This version DOES NOT look for any new generators, it only checks for relations amoung the generators you have found.
+// This version DOES NOT look for any new generators, it only checks for relations among the generators you have found.
 
 // Input: M = HMFspace
 // Input: Gens = An array of generators computed from ConstructGeneratorsAndRelations or ConstructGeneratorsAndRelationsV1
