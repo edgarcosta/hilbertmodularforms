@@ -200,19 +200,20 @@ end intrinsic;
 // Shintani reduction algorithm
 // Use this function: it first does a lookup to see if already in the
 // Shintani cone, else it seeks to minimize the trace
-intrinsic ReduceShintani(M::ModFrmHilDGRng,  bb::RngOrdFracIdl, nu::FldOrdElt) -> RngOrdElt
+intrinsic ReduceShintani(M::ModFrmHilDGRng,  bb::RngOrdFracIdl, nu::FldElt) -> RngOrdElt
   {Reduce the element nu in component labelled bb.}
   // assert Parent(nu) eq Integers(M); Edgar: Why?
   if nu in ShintaniReps(M)[bb] then
     // Is reduced
-    return nu;
+    return nu, 1;
   else
-    return ReduceShintaniMinimizeTrace(nu)[1]; // we don't care about the unit
+    newnu, epsilon := Explode(ReduceShintaniMinimizeTrace(nu));
+    return newnu, epsilon; // pass the unit as optional
   end if;
 end intrinsic;
 
 // Shintani reduction algorithm (workhorse)
-intrinsic ReduceShintaniMinimizeTrace(nu::FldOrdElt) -> Tup
+intrinsic ReduceShintaniMinimizeTrace(nu::FldElt) -> Tup
   {Reduce the element nu to the Shintani domain.}
 
   if nu eq 0 then

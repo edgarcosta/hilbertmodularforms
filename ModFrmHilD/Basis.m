@@ -83,7 +83,12 @@ intrinsic EisensteinBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   return Mk`EisensteinBasis;
 end intrinsic;
 
-intrinsic Basis(Mk::ModFrmHilD: IdealClassesSupport:=false) -> SeqEnum[ModFrmHilDElt]
+intrinsic Basis(
+  Mk::ModFrmHilD
+  :
+  IdealClassesSupport:=false,
+  GaloisInvariant:=false
+  ) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   if not assigned Mk`Basis then
     vprintf HilbertModularForms: "Computing basis for space of parallel weight %o with precision %o\n", Weight(Mk)[1], Precision(Parent(Mk));
@@ -94,24 +99,37 @@ intrinsic Basis(Mk::ModFrmHilD: IdealClassesSupport:=false) -> SeqEnum[ModFrmHil
     Mk`Basis := EB cat CB;
   end if;
 
+
+  // handle optional argument IdealClassesSupport
   if IdealClassesSupport cmpeq false then
     IdealClassesSupport := SequenceToSet(NarrowClassGroupReps(Parent(Mk))); // Default is all ideals classes
   else
     IdealClassesSupport := SequenceToSet(IdealClassesSupport); // Optionally we may specify a subset of ideal classes
   end if;
   IdealClassesSupportComplement := SequenceToSet(NarrowClassGroupReps(Parent(Mk))) diff IdealClassesSupport;
+
   if #IdealClassesSupportComplement eq 0 then // in this case LinearDependence will return the identity matrix
-    return Mk`Basis;
+    basis := Mk`Basis;
+  else
+    B := Mk`Basis;
+    relations := LinearDependence(B : IdealClasses:=IdealClassesSupportComplement);
+    basis := [];
+    for elt in relations do
+      // f is only supported over IdealClassesSupport
+      f := &+[elt[i]*B[i] : i in [1..#B]];
+      Append(~basis, f);
+    end for;
   end if;
-  B := Mk`Basis;
-  relations := LinearDependence(B : IdealClasses:=IdealClassesSupportComplement);
-  res := [];
-  for elt in relations do
-    // f is only supported over IdealClassesSupport
-    f := &+[elt[i]*B[i] : i in [1..#B]];
-    Append(~res, f);
-  end for;
-  return res;
+
+  // handle optional argument GaloisInvariant
+  if GaloisInvariant then
+    InvariantGenerators := [1/2*(b + Swap(b)) : b in basis];
+    coeffs := CoefficientsMatrix(basis : IdealClasses:=IdealClassesSupport);
+    m := Matrix(Basis(Nullspace(coeffs))); // already comes echelonized
+    redundant := { PivotColumn(m, i) : i in [1..#basis] };
+    basis := [basis[i] : i in [1..#basis] | i notin redundant];
+  end if;
+  return basis;
 end intrinsic;
 
 intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
