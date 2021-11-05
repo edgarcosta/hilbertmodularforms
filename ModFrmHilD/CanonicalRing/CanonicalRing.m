@@ -169,7 +169,7 @@ intrinsic ConstructGeneratorsAndRelations(
   end for;
 
   if #Gens gt 0 then
-    LowestWeight := Min(Keys(Gens))
+    LowestWeight := Min(Keys(Gens));
     vprintf HilbertModularForms : "Weight: %o     Generators: %o Relations: %o\n", LowestWeight, #Gens[LowestWeight],  0;
     if IdealClassesSupport eq NarrowClassGroupReps(M) then
       CoeffCount := NumberOfCoefficients(Gens[LowestWeight][1]);
@@ -237,7 +237,7 @@ intrinsic ConstructGeneratorsAndRelations(
         end if;
         newgens := IsDefined(Gens, k) select #Gens[k] else 0;
         vprintf HilbertModularForms : "Weight: %o     Generators: %o Relations: %o\n", k, newgens,  #RelationsinR;
-      else:
+      else
         vprintf HilbertModularForms : "Weight: %o > MaxWeightGens    Relations: %o\n", k, newgens,  #RelationsinR;
       end if;
     end for;
