@@ -988,7 +988,6 @@ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
   return HMFSumComponents(Parent(Values(comp)[1]), comp);
 end intrinsic;
 
-////////// ModFrmHilDElt: Linear Algebra  //////////
 
 
 
@@ -1022,61 +1021,6 @@ intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) ->
 end intrinsic;
 
 
-intrinsic ShortLinearDependence(M::Mtrx) -> SeqEnum[RngIntElt]
-  {
-    finds a small non-trivial integral linear combination between components of v.
-    If none can be found return 0.
-  }
-  // in case M is defined over the rationals
-  M := ChangeRing(Denominator(M)*M, Integers());
-  B := Basis(Kernel(M));
-  if #B ne 0 then return [Eltseq(i) : i in Rows(Matrix(LLL(B)))]; else return []; end if;
-end intrinsic;
-
-
-intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, prec:=false ) -> AlgMatElt
-  {returns a matrix with the coefficients of each modular form in each row}
-  // assuring that all the forms have the same coefficient ring
-  list := ChangeToCompositumOfCoefficientFields(list);
-
-  M := GradedRing(list[1]);
-  // The ideal classes from which we are taking the coefficients.
-  if IdealClasses cmpeq false then
-    bbs := NarrowClassGroupReps(M); // Default is all ideals classes
-  else
-    bbs := IdealClasses;
-  end if;
-  require #bbs gt 0: "at least on ideal class must be specified";
-
-  if prec cmpeq false then
-    prec := Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
-  end if;
-
-  mat := Matrix([
-    &cat[
-      &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in ShintaniRepsUpToTrace(M, bb, prec)]
-      : bb in bbs]
-    : f in list]);
-  nus := &cat[ShintaniRepsUpToTrace(M, bb, prec) : bb in bbs];
-  return mat, nus;
-end intrinsic;
-
-//TODO add optional flag to limit the number of coefficients
-intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, prec:=false ) -> SeqEnum[RngIntElt]
-  {Finds any linear relations between the forms (returns 0 if none are found).
-    The optional parameter IdealClasses can be specified to look at the relations over a subset of narrow class reps }
-  if IsNull(list) then return list; end if;
-
-  // The ideal classes from which we are taking the coefficients.
-  if not IdealClasses cmpeq false then
-    // ie, we will be looking at relations that makes the forms vanish on these components
-    if #IdealClasses eq 0 then
-      // the empty sum is zero
-      return IdentityMatrix(Integers(), #list);
-    end if;
-  end if;
-  return ShortLinearDependence(CoefficientsMatrix(list : IdealClasses:=IdealClasses, prec:=prec));
-end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
