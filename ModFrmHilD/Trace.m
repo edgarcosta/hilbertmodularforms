@@ -713,6 +713,7 @@ end intrinsic;
 I'm having type issues with switching from quadratic fields to higher degree.
 Apparently the Type RngOrdElt is not a subset of FldOrdElt. For quadratic fields
 elements of ZF are of Type RngOrdElt but for cubic fields they are of type FldOrdElt.
+Edgar: use FldElt
 */
 
 
