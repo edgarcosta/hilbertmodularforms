@@ -224,20 +224,20 @@ intrinsic CoefficientRing(f::ModFrmHilDElt) -> Any
 
   ZF := Integers(GradedRing(f));
   R := CoefficientRing(Components(f)[1*ZF]);
-  for bb -> fbb in Components(f) do 
+  for bb -> fbb in Components(f) do
     require CoefficientRing(fbb) eq R : "Need all base rings of all components to be equal";
   end for;
   return R;
 end intrinsic;
 
+intrinsic NumberOfCoefficients(f::ModFrmHilDEltComp) -> Any
+{}
+  return #Coefficients(f);
+end intrinsic;
+
 intrinsic NumberOfCoefficients(f::ModFrmHilDElt) -> Any
 {}
-  keys := SetToSequence(Keys(Coefficients(f)));
-  if IsNull(keys) then 
-    return 0;
-  end if;
-  coeffsperkey := #Keys(Coefficients(f)[keys[1]]);
-  return #keys*coeffsperkey;
+  return &+[NumberOfCoefficients(fcomp): fcomp in Components(f)];
 end intrinsic;
 
 
@@ -732,7 +732,7 @@ intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDEltComp, c::Any) -> ModFrmHilDEltComp
-  {scale f by scalar c.}
+  {return c*f with scalar c}
   return c*f;
 end intrinsic;
 
@@ -749,6 +749,16 @@ end intrinsic;
 intrinsic '*'(f::ModFrmHilDElt, c::Any) -> ModFrmHilDElt
   {scale f by scalar c}
   return c*f;
+end intrinsic;
+
+intrinsic '/'(f::ModFrmHilDEltComp, c::Any) -> ModFrmHilDEltComp
+  {return f/c with a scalar c.}
+  return (1/c)*f;
+end intrinsic;
+
+intrinsic '/'(f::ModFrmHilDElt, c::Any) -> ModFrmHilDElt
+  {return f/c with scalar c}
+  return (1/c)*f;
 end intrinsic;
 
 intrinsic '+'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
