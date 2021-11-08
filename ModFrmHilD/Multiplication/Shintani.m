@@ -200,7 +200,7 @@ end intrinsic;
 // Shintani reduction algorithm
 // Use this function: it first does a lookup to see if already in the
 // Shintani cone, else it seeks to minimize the trace
-intrinsic ReduceShintani(M::ModFrmHilDGRng,  bb::RngOrdFracIdl, nu::FldElt) -> RngOrdElt
+intrinsic ReduceShintani(M::ModFrmHilDGRng,  bb::RngOrdFracIdl, nu::RngElt) -> RngOrdElt
   {Reduce the element nu in component labelled bb.}
   // assert Parent(nu) eq Integers(M); Edgar: Why?
   if nu in ShintaniReps(M)[bb] then
@@ -213,7 +213,7 @@ intrinsic ReduceShintani(M::ModFrmHilDGRng,  bb::RngOrdFracIdl, nu::FldElt) -> R
 end intrinsic;
 
 // Shintani reduction algorithm (workhorse)
-intrinsic ReduceShintaniMinimizeTrace(nu::FldElt) -> Tup
+intrinsic ReduceShintaniMinimizeTrace(nu::RngElt) -> Tup
   {Reduce the element nu to the Shintani domain.}
 
   if nu eq 0 then
