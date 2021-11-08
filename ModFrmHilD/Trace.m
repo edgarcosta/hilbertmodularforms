@@ -97,7 +97,7 @@ end intrinsic;
 
 
 // Half of CM-Extensions
-intrinsic HalfOfCMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
+intrinsic HalfOfCMExtensions(M::ModFrmHilDGRng, a::RngElt) -> SeqEnum
   {Computes all elements b satifying b^2 << 4a, but only yields one of +/-b}
   F := BaseField(M);
   ZF := Integers(M);
@@ -108,7 +108,7 @@ intrinsic HalfOfCMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
   YLB := 0;
   XUB := 2*Sqrt(Evaluate(a,places[1]));
   YUB := 2*Sqrt(Evaluate(a,places[2]));
-  T := ElementsInABox(M,1*ZF,XLB,YLB,XUB,YUB);
+  T := ElementsInABox(M, 1*ZF, XLB, YLB, XUB, YUB);
   T := [ i : i in T | i^2-4*a ne 0]; // Zero is "technically" not totally positive for this computation
   return T;
 end intrinsic;
@@ -143,7 +143,7 @@ intrinsic IndexOfSummation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum
 
   // Finding a totally positive generator for mm
   _,a := IsNarrowlyPrincipal(mm);
-  a := ReduceShintaniMinimizeTrace(a);
+  a := ReduceShintaniMinimizeTrace(a)[1];
 
   // Looping over all totally positive generators of the form au for u a totally positive unit mod squares
   Indexforsum := [];
@@ -180,7 +180,7 @@ intrinsic SIndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl) -> SeqEnum
 
   // Finding a totally positive generator for mm
   _,a := IsNarrowlyPrincipal(mm);
-  a := ReduceShintaniMinimizeTrace(a);
+  a := ReduceShintaniMinimizeTrace(a)[1];
 
   // Looping over all totally positive generators of the form au for u a totally positive unit mod squares
   Indexforsum := [];
@@ -713,7 +713,7 @@ end intrinsic;
 I'm having type issues with switching from quadratic fields to higher degree.
 Apparently the Type RngOrdElt is not a subset of FldOrdElt. For quadratic fields
 elements of ZF are of Type RngOrdElt but for cubic fields they are of type FldOrdElt.
-Edgar: use FldElt
+Edgar: use RngElt
 */
 
 
