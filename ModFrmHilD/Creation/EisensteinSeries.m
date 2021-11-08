@@ -71,34 +71,39 @@ end intrinsic;
 
 
 //Toolbox function to use in the Eisenstein series function--gives us an L value
-intrinsic LValue_Recognized(M::ModFrmHilDGRng, Mk::ModFrmHilD, prim::GrpHeckeElt) -> FldNumElt
-   {This is a toolbox function to compute L values in the right space}
-    N:=Level(Mk);
-    k:=Weight(Mk);
-
-   // Lf := LSeries(prim : Precision := 50);
-   // TODO clean up precision
-   // Maybe a separate function to compute L-values?
-   CoefficientField := Parent(prim)`TargetRing; // where the character values live
-   Lf := LSeries(prim : Precision := 100);
-   //LSetPrecision(Lf, 100); // do we need this?
-   Lvalue := Evaluate(Lf, 1-k[1]);
-   // figure out the right place to recognize
-   // i.e., figure out what complex embedding magma used to embed the L-function into CC
-   places := InfinitePlaces(CoefficientField);
-   for p in PrimesUpTo(Precision(M), BaseField(M)) do
-     if #places eq 1 then
-       // there is only one place left, so that must be the one
-       break;
-      end if;
-     ap_K := prim(p); // in CoefficientField
-     ap_CC := -Coefficients(EulerFactor(Lf, p : Degree := 1))[2];
-     // restrict to the places where pl(ap_K) = ap_CC
-     places := [pl : pl in places | Evaluate(ap_K, pl) eq ap_CC ];
-     i +:=1;
-   end for;
-   assert #places eq 1;
-   pl := places[1];
-   CC<I> := ComplexField(Precision(Lvalue));
-   return RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
- end intrinsic;
+intrinsic LValue_Recognized(M::ModFrmHilDGRng, Mk::ModFrmHilD, psi::GrpHeckeElt) -> FldNumElt
+  {This is a toolbox function to compute L values in the right space}
+  require IsPrimitive(psi): "Hecke character must be primitive";
+  N:=Level(Mk);
+  k:=Weight(Mk);
+  require #SequenceToSet(k) eq 1: "LValue_Recognized only implemented for parallel weight";
+  k := k[1];
+  if not IsDefined(M`Lvalues, <k, psi>) then
+    // Maybe a separate function to compute L-values?
+    CoefficientField := Parent(psi)`TargetRing; // where the character values live
+    Lf := LSeries(psi : Precision := 50*k);
+    if IsTrivial(psi) then
+    LSetPrecision(Lf, 50*k); // Waiting for magma to fix
+    end if;
+    Lvalue := Evaluate(Lf, 1-k);
+    // figure out the right place to recognize
+    // i.e., figure out what complex embedding magma used to embed the L-function into CC
+    places := InfinitePlaces(CoefficientField);
+    for p in PrimesUpTo(Precision(M), BaseField(M)) do
+    if #places eq 1 then
+      // there is only one place left, so that must be the one
+      break;
+    end if;
+    ap_K := psi(p); // in CoefficientField
+    ap_CC := -Coefficients(EulerFactor(Lf, p : Degree := 1))[2];
+    // restrict to the places where pl(ap_K) = ap_CC
+    places := [pl : pl in places | Evaluate(ap_K, pl) eq ap_CC ];
+    i +:=1;
+    end for;
+    assert #places eq 1;
+    pl := places[1];
+    CC<I> := ComplexField(Precision(Lvalue));
+    M`Lvalues[<k, psi>] := RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
+  end if;
+  return M`Lvalues[<k, psi>];
+end intrinsic;
