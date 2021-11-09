@@ -465,10 +465,10 @@ intrinsic HMFZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   {create zero ModFrmHilDEltComp of weight k.}
   M := Parent(Mk);
   coeffs := AssociativeArray();
-  for nu in ShintaniRepsUpToTrace(M)[bb] do
+  for nu in ShintaniReps(M)[bb] do
     coeffs[nu] := 0;
   end for;
-  return HMF(Mk, bb, coeffs);
+  return HMFComp(Mk, bb, coeffs);
 end intrinsic;
 
 intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
