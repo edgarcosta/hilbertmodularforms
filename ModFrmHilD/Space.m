@@ -169,6 +169,7 @@ end intrinsic;
 
 
 
+// TODO: could one implement optional parameters without computing a basis
 intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
   {return the dimension of Mk}
   if not assigned Mk`Dimension then
