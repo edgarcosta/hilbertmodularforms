@@ -43,7 +43,9 @@ declare attributes ModFrmHilDGRng:
   // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
   Spaces,
   // Associative array (level, chi) -> dim E_k(level, chi)
-  EisensteinDimensions
+  EisensteinDimensions,
+  // Associative array (weight, psi) -> L(psi, 1-weight)
+  LValues
   ;
 
 
@@ -217,6 +219,11 @@ intrinsic AllPrimes(M::ModFrmHilDGRng) -> SeqEnum
   return M`AllPrimes;
 end intrinsic;
 
+intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
+  {}
+  return &+[#elt : elt in ShintaniReps(M)];
+end intrinsic;
+
 
 /* Old Code for Trace
 intrinsic HMFPrecomputation(M::ModFrmHilDGRng) -> Assoc
@@ -341,6 +348,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`AllPrimes := PrimesUpTo(norms[#norms], F);
   M`Spaces := AssociativeArray();
   M`EisensteinDimensions := AssociativeArray();
+  M`LValues := AssociativeArray();
   return M;
 end intrinsic;
 

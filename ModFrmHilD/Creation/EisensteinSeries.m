@@ -78,7 +78,7 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, Mk::ModFrmHilD, psi::GrpHeckeElt)
   k:=Weight(Mk);
   require #SequenceToSet(k) eq 1: "LValue_Recognized only implemented for parallel weight";
   k := k[1];
-  if not IsDefined(M`Lvalues, <k, psi>) then
+  if not IsDefined(M`LValues, <k, psi>) then
     // Maybe a separate function to compute L-values?
     CoefficientField := Parent(psi)`TargetRing; // where the character values live
     Lf := LSeries(psi : Precision := 50*k);
@@ -103,7 +103,7 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, Mk::ModFrmHilD, psi::GrpHeckeElt)
     assert #places eq 1;
     pl := places[1];
     CC<I> := ComplexField(Precision(Lvalue));
-    M`Lvalues[<k, psi>] := RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
+    M`LValues[<k, psi>] := RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
   end if;
-  return M`Lvalues[<k, psi>];
+  return M`LValues[<k, psi>];
 end intrinsic;
