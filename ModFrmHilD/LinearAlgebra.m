@@ -1,3 +1,22 @@
+// Generic Linear algebra
+intrinsic PivotColumns(A::Mtrx: is_echelonized:=false) -> SeqEnum[RngIntElt]
+  {Return the pivot column positions of the matrix A}
+  if not is_echelonized then
+    A := EchelonForm(A);
+  end if;
+  r := Rank(A);
+  return Sort(SetToSequence({ PivotColumn(A, i) : i in [1..r] }));
+end intrinsic;
+
+intrinsic PivotRows(A::Mtrx) -> SeqEnum[RngIntElt]
+  {Return the pivot row positions for the matrix A, which are a topmost
+  subset of the rows that span the row space and are linearly
+  independent}
+  return PivotColumns(Transpose(A) : is_echelonized:=false);
+end intrinsic;
+
+
+
 ////////// ModFrmHilDElt: Linear Algebra  //////////
 
 intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, prec:=false ) -> AlgMatElt
