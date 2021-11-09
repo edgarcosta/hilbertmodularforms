@@ -5,7 +5,7 @@ intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Creates the trace form in the space Mk}
   M := Parent(Mk);
   Q := Rationals();
-  coeffs := AssociativeArray(bbs);
+  coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
     for nu->nn in ShintaniRepsIdeal(M)[bb] do
@@ -21,7 +21,7 @@ intrinsic STraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Creates the trace form in the space Mk}
   M := Parent(Mk);
   Q := Rationals();
-  coeffs := AssociativeArray(bbs);
+  coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
     for nu->nn in ShintaniRepsIdeal(M)[bb] do
