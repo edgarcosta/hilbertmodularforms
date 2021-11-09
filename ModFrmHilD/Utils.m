@@ -3,6 +3,31 @@ intrinsic Values(a::Assoc) -> List
   return [* a[k] : k in Keys(a) *];
 end intrinsic;
 
+
+
+intrinsic Product(list::List: empty:=1) -> Any
+  {return the product of the elements of a list}
+  res := empty;
+  for x in list do
+    res *:= x;
+  end for;
+  return res;
+end intrinsic;
+
+intrinsic Sum(list::List: empty:=0) -> Any
+  {return the sum of the elements of a list}
+  res := empty;
+  for x in list do
+    res +:= x;
+  end for;
+  return res;
+end intrinsic;
+
+intrinsic '+'(S::List, T::List) -> List
+  {Concatenation of S and T}
+  return S cat T;
+end intrinsic;
+
 intrinsic 'eq'(a::Assoc, b::Assoc) -> BoolElt
   {return if two associative arrays are equal}
   if Universe(a) ne Universe(b) then
