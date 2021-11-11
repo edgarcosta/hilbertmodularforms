@@ -28,8 +28,9 @@ declare attributes ModFrmHilDGRng:
   ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
   ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][nn] = nu, such that nu is Shintani reduced
   IdealsByNarrowClassGroup, // list of all ideals nn with [nn] = [bb]
-  AllIdeals, // List of all ideals for all bb ordered by norm
-  AllPrimes, // List of all prime ideals up max norm of AllIdeals
+  Ideals, // List of all ideals for all bb ordered by norm
+  IdealsFactored, // a supset of Ideals, where we cache the object so that further Factorization calls are free
+  PrimeIdeals, // List of all prime ideals showing as factors of an element of Ideals
   MPairs, // Assoc: mapping nu to the sequence
   // [(<s(mu), epsilon>, <s(mu'), epsilon'>) :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu],
   // where nu is Shintani reduced, i.e., s(nu) = s(nu')
@@ -42,9 +43,7 @@ declare attributes ModFrmHilDGRng:
   HeckeEigenvalues,
   // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
   Spaces,
-  // Associative array (level, chi) -> dim E_k(level, chi)
-  EisensteinDimensions,
-  // Associative array (weight, psi) -> L(psi, 1-weight)
+  // Associative array (k, psi) -> L(psi, 1-k)
   LValues
   ;
 
@@ -209,14 +208,25 @@ intrinsic IdealsByNarrowClassGroup(M::ModFrmHilDGRng) -> Any
   return M`IdealsByNarrowClassGroup;
 end intrinsic;
 
-intrinsic AllIdeals(M::ModFrmHilDGRng) -> SeqEnum
+intrinsic Ideals(M::ModFrmHilDGRng) -> SeqEnum
   {}
-  return M`AllIdeals;
+  return M`Ideals;
 end intrinsic;
 
-intrinsic AllPrimes(M::ModFrmHilDGRng) -> SeqEnum
+intrinsic Factorization(M::ModFrmHilDGRng, nn::RngOrdIdl) -> SeqEnum
   {}
-  return M`AllPrimes;
+  i := Index(M`IdealsFactored, nn);
+  if i gt 0 then
+    return Factorization(M`IdealsFactored[i]);
+  else
+    Include(~M`IdealsFactored, nn);
+    return Factorization(nn);
+  end if;
+end intrinsic;
+
+intrinsic PrimeIdeals(M::ModFrmHilDGRng) -> SeqEnum
+  {}
+  return M`PrimeIdeals;
 end intrinsic;
 
 intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
@@ -343,11 +353,14 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // sort M`Ideals by Norm
   norms := [CorrectNorm(I) : I in all_ideals];
   ParallelSort(~norms, ~all_ideals);
-  M`AllIdeals := all_ideals;
-  // M`Primes contains primes not in AllIdeals
-  M`AllPrimes := PrimesUpTo(norms[#norms], F);
+  M`Ideals := all_ideals;
+  M`PrimeIdeals := SetToSequence(SequenceToSet(&cat[[fac[1] : fac in Factorization(nn)] : nn in all_ideals | not IsZero(nn)]));
+  // factorization is cached internally
+  M`IdealsFactored := SetToIndexedSet(SequenceToSet(all_ideals));
+  norms := [CorrectNorm(I) : I in M`PrimeIdeals];
+  ParallelSort(~norms, ~M`PrimeIdeals);
+
   M`Spaces := AssociativeArray();
-  M`EisensteinDimensions := AssociativeArray();
   M`LValues := AssociativeArray();
   return M;
 end intrinsic;
@@ -485,7 +498,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   F := BaseField(M);
   ZF := Integers(F);
   _<x> := PolynomialRing(F);
-
+Ideals
   // Storage
   AllDiscriminants := []; // Minimal set of discriminants
   A := AssociativeArray(); // Storage for precomputations

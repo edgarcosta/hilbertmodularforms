@@ -2,25 +2,19 @@
 
 ////////// Creation of CuspForms from ModFrmHilDElt //////////
 
-intrinsic EigenformFromEigenValues(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
-  {given a_p constructs the modular form}
-  require IsTrivial(Character(Mk)) : "Only implemented for trivial character";
-  k := Weight(Mk);
-  require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
-  k := k[1];
-  N := Level(Mk);
 
-  ZF := Integers(Mk);
-  coeffs := AssociativeArray();
-  // a_0 and a_1
-  M := Parent(Mk);
-  all_ideals := AllIdeals(M); // sorted by norm
-  coeffs[0*ZF] := 0;
-  coeffs[1*ZF] := 1;
 
+intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
+  { set a_nn := prod(a_p^e : (p,e) in factorization(nn) }
+  if factorization cmpeq false then
+    factorization := Factorization;
+  end if;
+
+  //TODO: take ideals[n] = Factorization(n), and make use of M`IdealsFactorization
 
   // set recursion
-  max_norm := Norm(all_ideals[#all_ideals]);
+  // ideals must be sorted by Norm
+  max_norm := Norm(ideals[#ideals]);
   prec := Floor(Log(2, max_norm)) + 1;
   Q := Rationals();
   // Power series ring for recursion
@@ -29,33 +23,53 @@ intrinsic EigenformFromEigenValues(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrm
   recursion := Coefficients(1/(1 - X*T + Y*T^2));
   // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
-  prime_powers := [];
-  for p in AllPrimes(M) do
+  for p in prime_ideals do
     Np := Norm(p);
     if N subset p then
       Npk := 0;
     else
       Npk := Np^(k - 1);
     end if;
-    pe := 1;
-    Npe := 1;
-    for e in [1..Floor(Log(Norm(p), max_norm))] do
+    pe := p;
+    Npe := Np;
+    for e in [2..Floor(Log(Norm(p), max_norm))] do
       pe *:= p; // p**e
       Npe *:= Np;
-      // pe might not be in all_ideals, but still might show up as a factor
+      // pe might not be in ideals, but still might show up as a factor
       if Npe gt max_norm then
         break;
       end if;
-      Append(~prime_powers, <Npe, pe>);
-      coeffs[pe] := Evaluate(recursion[e+1], [EigenValues[p], Npk]);
+      coeffs[pe] := Evaluate(recursion[e+1], [coeffs[p], Npk]);
     end for;
   end for;
   // extend multiplicatively
-  for n in all_ideals do
+  for n in ideals do
     if not IsDefined(coeffs, n) then
-      coeffs[n] := &*[coeffs[pair[1]^pair[2]] : pair in Factorization(n)];
+      coeffs[n] := &*[coeffs[pair[1]^pair[2]] : pair in factorization(n)];
     end if;
   end for;
+end intrinsic;
+
+intrinsic Eigenform(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
+  {given a_p constructs the modular form}
+  require IsTrivial(Character(Mk)) : "Only implemented for trivial character";
+  k := Weight(Mk);
+  require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
+  k := k[1];
+  N := Level(Mk);
+
+  ZF := Integers(Mk);
+  // a_0 and a_1
+  M := Parent(Mk);
+  coeffs := EigenValues;
+  coeffs[0*ZF] := 0;
+  coeffs[1*ZF] := 1;
+
+
+  function factorization(n)
+    return Factorization(M, n);
+  end function;
+  ExtendMultiplicatively(~coeffs, N, k, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
 
   // coefficients by bb
   CoeffsArray := AssociativeArray();
@@ -68,75 +82,112 @@ intrinsic EigenformFromEigenValues(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrm
   return HMF(Mk, CoeffsArray);
 end intrinsic;
 
-
-intrinsic NewformToHMF(Mk::ModFrmHilD, newform::ModFrmHilElt) -> ModFrmHilDElt
-  {Construct the ModFrmHilDElt in M determined (on prime ideals up to norm prec) by hecke_eigenvalues.}
+intrinsic Eigenform(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDElt
+  {return the inclusions of f, as ModFrmHilElt, into M}
+  require IsEigenform(f): "The form must be an eigenform";
   M := Parent(Mk);
-  N := Level(Mk);
-  k := Weight(Mk);
-  ZF := Integers(Mk);
-  ev := AssociativeArray(); // eigenvalues array indexed by ideals
+  N2 := Level(Mk);
+  N1 := Level(Parent(f));
+  require N2 eq N1: "The level of f must match the level of the target ambient space";
 
-
-  // a_p for primes
-
-  for pp in AllPrimes(M) do
-    ev[pp] := HeckeEigenvalue(newform, pp);
+  ev := AssociativeArray();
+  for pp in PrimeIdeals(M) do
+   ev[pp] := HeckeEigenvalue(f, pp);
   end for;
 
-  return EigenformFromEigenValues(Mk, ev);
+  return Eigenform(Mk, ev);
 end intrinsic;
 
-
-intrinsic NewformsToHMF(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  {returns Hilbert newforms}
-  N := Level(Mk);
-  k := Weight(Mk);
+// By doing all inclusions at once, we s that we only need to compute the
+intrinsic OldEigenformInclusions(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDElt
+  {return the inclusions of f, as ModFrmHilElt, into M}
   M := Parent(Mk);
-  F := BaseField(M);
-  MF := HilbertCuspForms(F, N, k);
-  S := NewSubspace(MF);
-  newspaces  := NewformDecomposition(S);
-  newforms := [* Eigenform(U) : U in newspaces *];
-  HMFnewforms := [* *];
-  for newform in newforms do
-    NewHMF := NewformToHMF(Mk, newform);
-    Append(~HMFnewforms, NewHMF);
-  end for;
-  return HMFnewforms;
-end intrinsic;
+  N2 := Level(Mk);
+  N1 := Level(Parent(f));
+  require N2 subset N1: "The level of f must divide the level of the target ambient space";
+  require IsEigenform(f): "The form must be an eigenform";
+  k := Weight(Parent(f));
+  require k eq Weight(Mk): "The weight of the form and space do not match";
+  require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
+  k := k[1];
 
-/*
-intrinsic NewformsToHMF2(M::ModFrmHilD, k::SeqEnum[RngIntElt]) -> SeqEnum[ModFrmHilDElt]
-  {returns Hilbert newforms}
+  coeffs := AssociativeArray();
+  for pp in PrimeIdeals(M) do
+   coeffs[pp] := HeckeEigenvalue(f, pp);
+  end for;
   F := BaseField(M);
-  N := Level(M); //input
-  prec := Precision(M);
-  HeckeEigenvalue := HeckeEigenvalues(M);
-  key :=  [* N, k *];
-  if not IsDefined(M, key) then
-    MF := HilbertCuspForms(F, N, k);
-    S := NewSubspace(MF);
-    newspaces  := NewformDecomposition(S);
-    newforms := [* Eigenform(U) : U in newspaces *];
-    primes := Primes(M);
-    EVnewforms := [];
-    for newform in newforms do
-      eigenvalues := [];
-      for i in [1..#primes] do
-          eigenvalues[i] := HeckeEigenvalue(newform, primes[i]);
+  ZF := Integers(F);
+  coeffs[0*ZF] := 0;
+  coeffs[1*ZF] := 1;
+  divisors := Divisors(N2/N1);
+  ideals := &cat[[ZF !! (nn*ddinv) : nn in Ideals(M) | IsIntegral(nn*ddinv)] where ddinv := dd^-1 : dd in divisors];
+  // remove duplicates
+  ideals := SetToSequence(SequenceToSet(ideals));
+  norms := [CorrectNorm(I) : I in ideals];
+  ParallelSort(~norms, ~ideals);
+  primes := SetToSequence(SequenceToSet(&cat[[fac[1] : fac in Factorization(M, nn)] : nn in ideals | not IsZero(nn)]));
+  function factorization(nn)
+    return Factorization(M, nn);
+  end function;
+
+  ExtendMultiplicatively(~coeffs, N1, k, primes, ideals : factorization:=factorization);
+
+  res := [];
+  for dd in Divisors(N2/N1) do
+    ddinv := dd^-1;
+    // coefficients by bb
+    CoeffsArray := AssociativeArray();
+    for bb in NarrowClassGroupReps(M) do
+      CoeffsArray[bb] := AssociativeArray();
+      for nu->nn in ShintaniRepsIdeal(M)[bb] do
+        nnddinv := nn * ddinv;
+        if IsIntegral(nnddinv) then
+          nnddinv := ZF !! nnddinv;
+          bool, v := IsDefined(coeffs, ZF !! nn*ddinv);
+        else
+          v := 0;
+        end if;
+        CoeffsArray[bb][nu] := bool select v else 0;
       end for;
-      Append(~EVnewforms, eigenvalues);
     end for;
-    HeckeEigenvalue[key] := EVnewforms;
-  else
-    EVnewforms := HeckeEigenvalue[key];
-  end if;
-  HMFnewforms := [];
-  for eigenvalues in EVnewforms do
-      ef := EigenformToHMF(M, k, eigenvalues); //FIXME, this is not correct
-      Append(~HMFnewforms, ef);
-    end for;
-  return HMFnewforms;
+    Append(~res, HMF(Mk, CoeffsArray));
+  end for;
+  return res;
 end intrinsic;
-*/
+
+intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {return the inclusion of MkN1 into MkN2}
+  require Weight(MkN1) eq Weight(MkN2) : "the weights must match";
+  require BaseField(MkN1) eq BaseField(MkN2) : "the base fields must match";
+  M := Parent(MkN1);
+  F := BaseField(M);
+  ZF := Integers(F);
+  N1 := Level(MkN1);
+  N2 := Level(MkN2);
+  require N2 subset N1: "the level of the first argument must divide the level of the second argument";
+  require N2 ne N1: "the level of the first argument must differ from the level of the second argument";
+  return &cat[OldEigenformInclusions(MkN2, f) : f in MagmaNewCuspForms(MkN1)];
+end intrinsic;
+
+intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
+  {return the eigenforms in magma type}
+  require IsTrivial(Character(Mk)): "We only support Newforms for trivial character, as we rely on the magma functionality";
+  if not assigned Mk`MagmaNewCuspForms then
+    N := Level(Mk);
+    k := Weight(Mk);
+    vprintf HilbertModularForms: "Decomposing HilbertCuspForms for N = %o and weight = %o\n", IdealOneLine(N), k;
+    M := Parent(Mk);
+    F := BaseField(M);
+    MF := HilbertCuspForms(Mk);
+    S := NewSubspace(MF);
+    Mk`MagmaNewCuspForms := [* Eigenform(U) :  U in NewformDecomposition(S) *];
+  end if;
+  return Mk`MagmaNewCuspForms;
+end intrinsic;
+
+
+intrinsic NewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {returns Hilbert newforms}
+  return [Eigenform(Mk, f) : f in MagmaNewCuspForms(Mk)];
+end intrinsic;
+

@@ -1041,11 +1041,11 @@ intrinsic ActualTraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Returns that Trace form as computed by Magma}
   require Set(Weight(Mk)) ne {2}: "Not implemented when k = (2,..,2)";
   require Norm(Level(Mk)) eq 1: "Only implemented in trivial level";
-  N := NewformsToHMF(Mk);
+  N := Newforms(Mk);
   if #N eq 0 then
     return HMFZero(Mk);
   else
-    return &+[NewformTrace(i) : i in NewformsToHMF(Mk)];
+    return &+[NewformTrace(i) : i in M];
   end if;
 end intrinsic;
 

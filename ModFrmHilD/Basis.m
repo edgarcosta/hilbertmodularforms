@@ -45,80 +45,53 @@ intrinsic CuspFormBasis(
   if not assigned Mk`CuspFormBasis then
     N := Level(Mk);
     k := Weight(Mk);
-    Cuspbasis := [];
+    cuspbasis := [];
     // This only works for trivial character, as we rely on the magma functionality
     require IsTrivial(Character(Mk)): "We only support CuspFormBasis  for trivial character, as we rely on the magma functionality";
     for dd in Divisors(N) do
       Mkdd := HMFSpace(Parent(Mk), dd, k);
-      dim := Dimension(HilbertCuspForms(BaseField(Mk), dd, k));
-      if dim gt 0 then
-        traceBoundIncl:=TraceBoundInclusion(Mkdd, Mk);
-
-        vprintf HilbertModularForms: "Cusp old form basis in level of norm %o computed with precision %o (default prec = %o)\n", Norm(dd),  traceBoundIncl, Precision(Parent(Mk));
-
-        HigherPrecM:=GradedRingOfHMFs(BaseField(Mk), traceBoundIncl);
-        HigherPrecMkdd:=HMFSpace(HigherPrecM, dd, k);
-        // We are taking the Q orbits
-        HigherPrecNewSpace_dd := &cat[GaloisOrbitDescent(f) : f in NewformsToHMF(HigherPrecMkdd)];
-        OldSpace_dd := &cat[Inclusion(elt, Mk) : elt in HigherPrecNewSpace_dd];
-        Cuspbasis cat:= OldSpace_dd;
+      if CuspDimension(Mkdd) gt 0 then
+        if dd eq N then
+          cuspbasis cat:= NewCuspForms(Mk);
+        else
+          cuspbasis cat:= OldCuspForms(Mkdd, Mk);
+        end if;
       end if;
     end for;
-    Mk`CuspFormBasis := Cuspbasis;
+    // we are taking Q orbits
+    Mk`CuspFormBasis := &cat[GaloisOrbitDescent(f) : f in cuspbasis];
+    assert CuspDimension(Mk) eq #Mk`CuspFormBasis;
   end if;
   return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, GaloisInvariant);
 end intrinsic;
 
 
+// TODO: generalized to arbitrary character, see EisensteinDimension
 intrinsic EisensteinBasis(
   Mk::ModFrmHilD
   :
   IdealClassesSupport:=false,
-  GaloisInvariant:=false) -> SeqEnum[ModFrmHilDElt]
+  GaloisInvariant:=false
+  ) -> SeqEnum[ModFrmHilDElt]
   { returns a basis for the complement to the cuspspace of M of weight k }
   if not assigned Mk`EisensteinBasis then
     M := Parent(Mk);
     NN := Level(Mk);
     k := Weight(Mk);
     require #SequenceToSet(k) eq 1: "Only implemented for parallel weight";
-    require k[1] mod 2 eq 0 or k[1] eq 1: "Only implemented for even weight or weigh 1";  // Eisenstein series will work for parallel weight 1.
-    require IsTrivial(Character(Mk)): "Only implemented for trivial character";
+    k := k[1];
     F := BaseField(Mk);
     ZF := Integers(F);
     n := Degree(ZF);
-    aas := [aa : aa in Divisors(NN) | aa^2 in Divisors(NN)];
-    EB := [];  // Eisenstein basis, to be filled in
-    for aa in aas do // loop over
-      N0 := aa^2; // N0 divides N
-      Mk_N0 := HMFSpace(M, N0, k);
-      traceBoundIncl := TraceBoundInclusion(Mk_N0, Mk);
+    chi := Character(Mk);
+    X := Parent(chi);
+    chis := Elements(X);
 
-      vprintf HilbertModularForms: "Eisenstein old basis in level of norm %o computed with precision %o\n", Norm(N0), traceBoundIncl;
 
-      HCGaa := HeckeCharacterGroup(aa, [1..n]);
-      PrimitiveCharacters := [elt : elt in Elements(HCGaa) | IsPrimitive(elt)];
-      if aa eq 1*ZF then // Hack to add trivial character back in (It is imprimitive!)
-        Append(~PrimitiveCharacters, HCGaa!1);
-      end if;
-      for eta in PrimitiveCharacters do
-        // psi*eta = trivial
-        psi := eta^(-1);
-        // and Modulus(psi)*Modulos(eta) = aa^2 = N
-        if traceBoundIncl gt Precision(M) then
-          HigherPrecM := GradedRingOfHMFs(BaseField(Mk), traceBoundIncl);
-          HigherPrecMk_N0 := HMFSpace(HigherPrecM, N0, k);
-        else
-          HigherPrecM := M;
-          HigherPrecMk_N0 := Mk_N0;
-        end if;
-        E := EisensteinSeries(HigherPrecMk_N0, eta, psi);
-        EG := GaloisOrbitDescent(E); // Q orbits
-        EB cat:= &cat[Inclusion(elt, Mk) : elt in EG];
-      end for;
-    end for;
-    Mk`EisensteinBasis := EB;
+    pairs := EisensteinAdmissableCharacterPairs(Mk);
+    Mk`EisensteinBasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
+    assert #Mk`EisensteinBasis eq EisensteinDimension(Mk);
   end if;
-
 
   // this handles the optional parameters
   return SubBasis(Mk`EisensteinBasis, IdealClassesSupport, GaloisInvariant);

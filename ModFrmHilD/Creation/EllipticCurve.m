@@ -26,7 +26,7 @@ intrinsic EllipticCurveToHMF(M::ModFrmHilDGRng, E::CrvEll) -> ModFrmHilElt
   Mk := HMFSpace(M,N,k);
   ev := AssociativeArray();
   L := LSeries(E);
-  for p in AllPrimes(M) do
+  for p in PrimeIdeals(M) do
     ev[p] := -Integers()!Coefficient(EulerFactor(L, p),1);
   end for;
   return EigenformFromEigenValues(Mk, coeffs);
@@ -42,6 +42,7 @@ intrinsic EllipticNewForms(Mk::ModFrmHilD: Effort:=10) -> SeqEnum
     N := Level(Mk);
     L := EllipticCurveSearch(N, Effort);
     k := [2 : i in [1..Degree(F)]];
+    require Weight(Mk) eq k : "Mk needs to be weight parallel 2";
     NewBasis := [];
 
     // Repetitive but I think the fastest test for isogeny is literally computing the HMF
@@ -51,7 +52,7 @@ intrinsic EllipticNewForms(Mk::ModFrmHilD: Effort:=10) -> SeqEnum
     end for;
 
     // Testing to see if dimensions are correct
-    MF := HilbertCuspForms(F, N, k);
+    MF := HilbertCuspForms(Mk);
     S := NewSubspace(MF);
     require Dimension(S) eq #NewBasis: "Not all elliptic curves found. Set Effort higher!";
     Mk`EllipticBasis := NewBasis;
