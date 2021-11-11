@@ -1,8 +1,4 @@
-tests := [
-  "e2_Qsqrt13.m",
-  "e2_Qsqrtm3.m",
-  "Theta_Qsqrt13.m"
-  ];
+tests := Split(Pipe("ls Tests", ""), "\n");
 AttachSpec("ModFrmHilD/spec");
 failed := [];
 for filename in tests do
