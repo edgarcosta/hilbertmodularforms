@@ -1045,7 +1045,7 @@ intrinsic ActualTraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   if #N eq 0 then
     return HMFZero(Mk);
   else
-    return &+[NewformTrace(i) : i in M];
+    return &+[NewformTrace(i) : i in N];
   end if;
 end intrinsic;
 
