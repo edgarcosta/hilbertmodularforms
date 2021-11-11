@@ -175,7 +175,7 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   require not IsZero(nn) : "The zero coefficient exists on each component";
 
   M := GradedRing(f);
-  if not nn in AllIdeals(M) then
+  if not nn in Ideals(M) then
     return false, _;
   end if;
   F := BaseField(M);
@@ -1089,17 +1089,24 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   return [Inclusion(f, Mk, dd) : dd in Divisors(N2/N1)];
 end intrinsic;
 
-intrinsic TraceBoundInclusion(Mk_f, Mk) -> RngIntElt
+intrinsic TraceBoundInclusion(MkN1::ModFrmHilD, MkN2::ModFrmHilD) -> RngIntElt
   {Gives absolute initial trace precision bound to be able to include f(dd*z) into Mk}
-  M := Parent(Mk);
-  F := BaseField(Mk);
+  require Weight(MkN1) eq Weight(MkN2) : "the weights must match";
+  require BaseField(MkN1) eq BaseField(MkN2) : "the base fields must match";
+  M := Parent(MkN1);
+  F := BaseField(M);
   ZF := Integers(F);
-  N1 := Level(Mk_f);
-  N2 := Level(Mk);
-  absTraceBound:=Precision(Parent(Mk));
+  N1 := Level(MkN1);
+  N2 := Level(MkN2);
+  require N2 subset N1: "the level of the first argument must divide the level of the second argument";
+  if N1 eq N2 then
+    return Precision(M);
+  end if;
+  absTraceBound := Precision(M);
+  ideals := Ideals(M);
   for dd in Divisors(N2/N1) do
-    for nn in AllIdeals(M) do
-      if (not nn/dd in AllIdeals(M)) and IsIntegral(nn/dd) then
+    for nn in ideals do
+      if (not nn/dd in ideals) and IsIntegral(nn/dd) then
         nu:=IdealToShintaniRepresentative(M, nn/dd);
         tnu:=Trace(nu);
         if tnu gt absTraceBound then
