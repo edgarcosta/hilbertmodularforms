@@ -3,6 +3,10 @@ intrinsic Values(a::Assoc) -> List
   return [* a[k] : k in Keys(a) *];
 end intrinsic;
 
+intrinsic '+'(S::List, T::List) -> List
+  {Concatenation of S and T}
+  return S cat T;
+end intrinsic;
 
 
 intrinsic Product(list::List: empty:=1) -> Any
@@ -23,9 +27,9 @@ intrinsic Sum(list::List: empty:=0) -> Any
   return res;
 end intrinsic;
 
-intrinsic '+'(S::List, T::List) -> List
-  {Concatenation of S and T}
-  return S cat T;
+intrinsic Sum(list::List, empty::Any) -> Any
+  {return the sum of the elements of a list}
+  return Sum(list: empty:=empty);
 end intrinsic;
 
 intrinsic 'eq'(a::Assoc, b::Assoc) -> BoolElt
