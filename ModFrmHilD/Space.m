@@ -9,8 +9,17 @@ declare attributes ModFrmHilD:
   Parent, // ModFrmHilDGRng
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
-    Dimension, // RngIntElt
-  Character; // GrpHeckeElt
+  Basis, // = EisensteinBasis cat CuspFormBasis SeqEnum[ModFrmHilDElt]
+  Character, // GrpHeckeElt, JV: why aren't we using Dirichlet?
+  EisensteinBasis, // SeqEnum[ModFrmHilDElt]
+  CuspFormBasis, // SeqEnum[ModFrmHilDElt]
+  EllipticBasis, // SeqEnum[ModFrmHilDElt]
+  Dimension, // RngIntElt
+  CuspDimension, //RngIntElt
+  EisensteinDimension, //RngIntElt
+  EisensteinAdmissableCharacterPairs, // List of pairs of primitive characters
+  MagmaSpace, //ModFrmHil
+  MagmaNewCuspForms; // SeqEnum[ModFrmHilElt]
 
 
 ////////// ModFrmHilD fundamental intrinsics //////////
@@ -68,13 +77,7 @@ intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   return Mk`Character;
 end intrinsic;
 
-intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
-{}
-if not assigned Mk`Dimension then 
-ComputeDimension(Mk);
-end if;
-return Mk`Dimension;
-end intrinsic;
+
 
 /* attributes of the parent */
 
@@ -109,10 +112,17 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Parent := M;
   Mk`Weight := k;
   Mk`Level := N;
+  require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
+  comps := Components(chi);
+  for i->v in InfinitePlaces(BaseField(M)) do
+    chiv := comps[v];
+    require chiv(-1) eq (-1)^k[i] : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
+  end for;
   Mk`Character := chi;
   AddToSpaces(M, Mk, N, k, chi);
   return Mk;
 end intrinsic;
+
 
 // overloaded for trivial level and character
 intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
@@ -121,7 +131,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   Mk`Weight := k;
   ZF := Integers(M);
   N := ideal<ZF|1>;
-  X := HeckeCharacterGroup(N);
+  X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
   return HMFSpace(M, N, k, chi);
 end intrinsic;
@@ -132,7 +142,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> Mo
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
   ZF := Integers(M);
-  X := HeckeCharacterGroup(N);
+  X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
   return HMFSpace(M, N, k, chi);
 end intrinsic;
@@ -169,22 +179,115 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 
+intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
+  {return the Magma's builtin object}
+  if not assigned Mk`MagmaSpace then
+    require IsTrivial(Character(Mk)): "Magma's builtin tools only supports trivial characters";
+    Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Weight(Mk));
+  end if;
+  return Mk`MagmaSpace;
+end intrinsic;
 
+// TODO: could one implement optional parameters without computing a basis
 intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
-  {Returns the number of cusps for Gamma_0(N)}
-  M := Parent(Mk);
-  ZF := Integers(M);
-  return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
+  {return the dimension of Mk}
+  if not assigned Mk`Dimension then
+    Mk`Dimension := EisensteinDimension(Mk) + CuspDimension(Mk);
+  end if;
+  return Mk`Dimension;
+end intrinsic;
+
+intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
+{}
+  return Dimension(Mk);
+end intrinsic;
+
+// TODO swap the default
+intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
+  {return dimension of S(Mk)}
+  require version in ["builtin", "trace"] : "the options for trace are either \"builtin\" or \"trace formula\"";
+  if not assigned Mk`CuspDimension then
+    k := Weight(Mk);
+    if SequenceToSet(k) eq Set([2]) and version eq "trace" then
+      print "Juanita: Not using trace formula, might be slow (parallel weight 2). Talk to Ben";
+      version := "builtin";
+    end if;
+
+    if version eq "builtin" then
+      require IsTrivial(Character(Mk)): "we rely on magma built-in functions, which only works for trivial character";
+      Mk`CuspDimension := Dimension(HilbertCuspForms(Mk));
+    else
+      M := Parent(Mk);
+      ZF := Integers(M);
+      // Edgar: Ben, should one use Strace?
+      Mk`CuspDimension := Trace(Mk,1*ZF);
+    end if;
+  end if;
+  return Mk`CuspDimension;
 end intrinsic;
 
 
-// We eventually want to replace this with the Dimension intrinsic (above). However we need to wait for Trace to work. 
-intrinsic ComputeDimension(Mk::ModFrmHilD)
-{compute the dimension of Mk and store it in Mk}
-// we rely on HilbertCuspForms, which only works for trivial character
-assert Character(Mk) eq HeckeCharacterGroup(Level(Mk))!1;
-EB:=EisensteinBasis(Mk);
-cusps := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
-dim := #EB + Dimension(cusps);
-Mk`Dimension := dim;
+
+intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
+  {return the dimension of E(Mk)}
+  if not assigned Mk`EisensteinDimension then
+    N := Level(Mk);
+    chi := Character(Mk);
+    tup := <N, chi>;
+    M := Parent(Mk);
+    X := Parent(chi);
+    newforms_levels := {* Conductor(pair[1]) * Conductor(pair[2]) : pair in EisensteinAdmissableCharacterPairs(Mk) *};
+    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*mult : mm->mult in newforms_levels];
+  end if;
+  return Mk`EisensteinDimension;
 end intrinsic;
+
+
+intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
+  {}
+  if not assigned Mk`EisensteinAdmissableCharacterPairs then
+    N := Level(Mk);
+    k := Weight(Mk);
+    if #SequenceToSet(k) ne 1 then
+      // there are no Eisenstein series in nonparallel weight
+      Mk`EisensteinAdmissableCharacterPairs := [* *];
+      return Mk`EisensteinAdmissableCharacterPairs;
+    end if;
+    k := k[1];
+    chi := Character(Mk);
+    M := Parent(Mk);
+    X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
+    assert X eq Parent(chi);
+    chis := Elements(X);
+    chiscond := [Conductor(c) : c in chis];
+    chisdict := AssociativeArray();
+    for i->c in chis do
+      chisdict[c] := i;
+    end for;
+    // [i, j] pairs st chis[i]*chis[j]
+    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis ];
+    // filter based on conductor
+    pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];
+    if k eq 1 then
+      // only keep one of the pairs [i, j], [j, i]
+      // we E(chi, psi) = E(psi, chi)
+      newpairs := [];
+      for k0->p in pairs do
+        i, j := Explode(p);
+        k1 := Index(pairs, [j, i]);
+        assert k1 gt 0;
+        if k1 ge k0 then
+          Append(~newpairs, p);
+        end if;
+      end for;
+      pairs := newpairs;
+    end if;
+    prims := AssociativeArray();
+    for i in SequenceToSet(&cat pairs) do
+      prims[i] := AssociatedPrimitiveCharacter(chis[i]);
+    end for;
+    Mk`EisensteinAdmissableCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
+  end if;
+  return Mk`EisensteinAdmissableCharacterPairs;
+end intrinsic;
+

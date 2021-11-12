@@ -10,21 +10,13 @@
 ///////////   Building the Ring  //////////////////
 
 // Builds weighted monomial ring R.
-// Input: Gens = An assoctive array indexed by weight of generators
+// Input: Gens: k -> Gens[k] // generators of weight k
 // Output: R = Weighted polynomial ring
-intrinsic ConstructRing(Gens::Assoc)-> Any
-{Returns the full weighted polynomial ring}
-    
-    GenWeights := [];
-    for i in Keys(Gens) do
-		for j in [1..#Gens[i]] do
-			Append(~GenWeights,i);
-		end for;
-	end for;
-
-	R := PolynomialRing(Rationals(),GenWeights);
-
-	return R;
+intrinsic ConstructWeightedPolynomialRing(Gens::Assoc)-> Any
+  {Return a weighted polynomial ring with #Gens[k] generators of degree k, for k in the keys of Gens}
+  GenWeights := &cat[[w : j in [1..#g]] : w->g in Gens];
+  R := PolynomialRing(Rationals(), GenWeights);
+  return R;
 end intrinsic;
 
 
@@ -33,16 +25,13 @@ end intrinsic;
 // Input: Relations = An associative array of relations index by weight
 // Output: I
 intrinsic ConstructIdeal(R::RngMPol, Relations::Assoc)-> Any
-	{Returns the ideal I determined by the relations}
+  {Returns the ideal I determined by the relations}
 
-    PolynomialList := [];
-	for i in Keys(Relations) do
-		PolynomialList cat:= RelationstoPolynomials(R, Relations[i],i);
-	end for;
-
-	I := ideal<R | PolynomialList>;
-
-	return I;
+  PolynomialList := [];
+  for i in Keys(Relations) do
+    PolynomialList cat:= RelationstoPolynomials(R, Relations[i],i);
+  end for;
+  return ideal<R | PolynomialList>;
 end intrinsic;
 
 
@@ -57,46 +46,46 @@ end intrinsic;
 // Input: k = the weight.
 // Output: polynomials in the graded ring representing the relations
 intrinsic RelationstoPolynomials(R::RngMPol, Relationlist::SeqEnum, k::RngIntElt) -> Any
-	{Contructs polynomials from the relations}
+  {Contructs polynomials from the relations}
 
-	Monomials := MonomialsOfWeightedDegree(R,k);
-
-	PolynomialList := [];
-	for rel in Relationlist do
-		RelationPolynomial := 0;
-		for j := 1 to #rel do
-			RelationPolynomial +:= Monomials[j]*rel[j];
-		end for;
-		Append(~PolynomialList,RelationPolynomial);
-	end for;
-	return PolynomialList;
+  Monomials := MonomialsOfWeightedDegree(R, k);
+  PolynomialList := [];
+  for rel in Relationlist do
+    RelationPolynomial := 0;
+    for j := 1 to #rel do
+      RelationPolynomial +:= Monomials[j]*rel[j];
+    end for;
+    Append(~PolynomialList,RelationPolynomial);
+  end for;
+  return PolynomialList;
 end intrinsic;
 
 // Converts the abstract monomials back into HMFS.
+// Input: GenList = the list of HMFS corresponding to the variables of the polynomials
 // Input: MonomialGens = the list of abstract polynomial generators
-// Input: GenList = the list of HMFS cooresponding to the variables of the polynomials
+// Input: The space
 // Output: The evaluated monomials, so a list of modular forms.
-intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt],Mk::ModFrmHilD) -> Any
-	{For a given set of HMF this produces all multiples with weight k}
+intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt], Mk::ModFrmHilD) -> Any
+  {For a given set of HMF this produces all multiples with weight k}
 
-	GenList := [**];
-	for i in Keys(Gens) do
-		GenList cat:= [* j : j in Gens[i] *];
-	end for;
+  // this uses the same order as ConstructWeightedPolynomialRing
+  GenList := Sum([* SequenceToList(g): w->g in Gens*] : empty := [* *]);
 
-	EvalMonomials := [];
-	for j := 1 to #MonomialGens do
-		Exp := Exponents(MonomialGens[j]);
-		CurrMonomial := 1;
-		for k := 1 to #GenList do
-			if Exp[k] ne 0 then
-				CurrMonomial *:= GenList[k]^Exp[k];
-			end if;
-		end for;
-		EvalMonomials[j] := CurrMonomial;
-	end for;
+  return [ Product([* GenList[k]^exp[k] : k in [1..#GenList] *]) where exp := Exponents(mon) : mon in MonomialGens ];
+  /*
+  for j := 1 to #MonomialGens do
+    Exp := Exponents(MonomialGens[j]);
+    CurrMonomial := 1;
+    for k := 1 to #GenList do
+      if Exp[k] ne 0 then
+        CurrMonomial *:= GenList[k]^Exp[k];
+      end if;
+    end for;
+    EvalMonomials[j] := CurrMonomial;
+  end for;
 
-	return EvalMonomials;
+  return EvalMonomials;
+  */
 
 end intrinsic;
 
@@ -109,124 +98,15 @@ end intrinsic;
 // Input: k weight for monomials
 // Output: MonomialGens = List of monomials generating the weight k space inside R/I
 intrinsic MonomialGenerators(R::RngMPol, Relations::Assoc, k::RngIntElt) -> Any
-	{Returns Generators for the weight k monomials in R/I}
+  {Returns generators for the weight k monomials in R/I}
 
-	monoms := MonomialsOfWeightedDegree(R,k);
-	Ideal := ConstructIdeal(R,Relations);
-	leadmonoms := [LeadingMonomial(f) : f in GroebnerBasis(Ideal)];
-	MonomialGens := [f : f in monoms | &and[not IsDivisibleBy(f,m) : m in leadmonoms]];
-
-	return MonomialGens;
+  monoms := MonomialsOfWeightedDegree(R,k);
+  Ideal := ConstructIdeal(R, Relations);
+  leadmonoms := [LeadingMonomial(f) : f in GroebnerBasis(Ideal)];
+  return [f : f in monoms | &and[not IsDivisibleBy(f, m) : m in leadmonoms]];
 end intrinsic;
 
-// Given monomials and a number of relations amongst them, computes the rest of a basis of HilbertModularForms(M,k)
-// Input: M = Space of HMFs
-// Input: k = weight
-// Input: EvaluatedMonomials = list of HMF obtained by evaluating the monomials in terms of our generators
-// Output: a list of modular forms, one corresponding to each new generator
 
-// TODO : The WeightedLLL algorithm should be doing better than Standard,
-// but for some reason it doesn't.
-
-intrinsic FindNewGenerators(Mk::ModFrmHilD, EvaluatedMonomials::SeqEnum, BasisWeightK::SeqEnum : Alg := "Standard")-> Any
-	{Constructs generators for the complement of the subspace generated by multiplication from lower weights}
-
-	M := Parent(Mk);
-	k := Weight(Mk);
-	bbs := NarrowClassGroupReps(M);
-	SpaceCoeffLists := [[] : i in [1..#BasisWeightK]];
-	MonomialCoeffLists := [[]:i in [1..#EvaluatedMonomials]];
-	index := AssociativeArray();
-	indexnum := 1;
-    wt := [];
-    
-	for bb in bbs do
-		for nn in IdealsByNarrowClassGroup(M)[bb] do
-		  	index[[bb,nn]] := indexnum;
-			indexnum := indexnum + 1;
-			for i in [1..#BasisWeightK] do
-				Append(~SpaceCoeffLists[i], Coefficients(BasisWeightK[i])[bb][nn]);
-			end for;
-			for i in [1..#EvaluatedMonomials] do
-				Append(~MonomialCoeffLists[i], Coefficients(EvaluatedMonomials[i])[bb][nn]);
-			end for;
-            if IsZero(nn) then
-                Append(~wt, 1);
-            else
-                Append(~wt, Norm(nn));
-            end if;
-		end for;
-	end for;
-
-	Mat := Matrix([elt : elt in SpaceCoeffLists]);
-	V := VectorSpaceWithBasis(Mat);
-	W := sub<V | [MonomialCoeffLists[i] : i in [1..#EvaluatedMonomials]]>;
-    if (Alg eq "Standard") then
-        ExtendMultBasis := ExtendBasis(W,V);
-    elif (Alg eq "LLL") then
-        ExtendMultBasis := ExtendBasis(W,V);
-        B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
-        if #B ne 0 then
-            ExtendMultBasis := Basis(W) cat Rows(Matrix(LLL(B)));
-        else
-            ExtendMultBasis := Basis(W);
-        end if;
-        assert #ExtendMultBasis eq Dimension(V);
-    elif (Alg eq "WeightedLLL") then
-        ExtendMultBasis := ExtendBasis(W,V);
-        B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
-        if #B ne 0 then
-            // This is because LLL uses 2^{w_i}
-            wt := [Round(-Maximum(k)*Log(2,w)/2) : w in wt];
-            // Make the weights nonnegative
-            wt := [-Minimum(wt) + w : w in wt];
-            // wt := [Floor(wt[#wt]/w) : w in wt];
-            ExtendMultBasis := Basis(W) cat Rows(LLL(Matrix(B) : Weight := wt));
-        else
-            ExtendMultBasis := Basis(W);
-        end if;
-        assert #ExtendMultBasis eq Dimension(V);
-    elif (Alg eq "HNF") then
-        ExtendMultBasis := ExtendBasis(W,V);
-        B := ExtendMultBasis[Dimension(W)+1..Dimension(V)];
-        denom := Denominator(Matrix(B));
-        intmat := ChangeRing(denom * Matrix(B), Integers());
-        ExtendMultBasis := Basis(W) cat Rows(ChangeRing(HermiteForm(intmat), Rationals())/denom);
-    elif (Alg eq "Orthogonal") then
-        coeffs_W := Solution(Matrix(Basis(V)), Matrix(Basis(W)));
-        coeffs_W := ChangeRing(Matrix([Denominator(v)*v : v in Rows(coeffs_W)]), Integers());
-        W_perp := Matrix(Basis(Kernel(Transpose(coeffs_W))));
-        basis_V := ChangeRing(Matrix([Denominator(v)*v : v in Basis(V)]), Integers());
-        ExtendMultBasis := Basis(W) cat Rows(W_perp * basis_V);
-    end if;
-
-	NewGeneratorsVec := [ExtendMultBasis[i]:i in [Dimension(W)+1..Dimension(V)]];
-	NewGens:=[];
-	for elt in NewGeneratorsVec do
-		newCoeffs := AssociativeArray();
-		for bb in bbs do
-       		idealCoeffs := AssociativeArray();
-			for nn in IdealsByNarrowClassGroup(M)[bb] do
-       			idealCoeffs[nn]:=elt[index[[bb,nn]]];
-	 		end for;
-			newCoeffs[bb]:= idealCoeffs;
-		end for;
-		newHMF := HMF(Mk, newCoeffs);
-	  Append(~NewGens, newHMF);
-	end for;
-	return NewGens;
-end intrinsic;
-// V is basis for modular forms of current weight and W is the subspace of forms coming from multiplication.
-//V:=VectorSpaceWithBasis(Matrix([Coefficients(i) : i in Basisweightk]));
-/*	W := sub< V | [Coefficients(i) : i in EvaluatedMonomials] >;
-
-	ExtendMultBasis := ExtendBasis(W,V);
-
-	NewGeneratorsVec := [ExtendMultBasis[i] : i in [Dimension(W)+1..Dimension(V)]];
-	NewGens := [ HMF(M, N, [k,k], Eltseq(vec)) : vec in NewGeneratorsVec ];
-
-	return NewGens;
-*/
 
 
 
@@ -234,487 +114,262 @@ end intrinsic;
 
 
 ////////////////////////// Main functions /////////////////////////////
-
 //////////////////////////////////////////////////////////////////////
 
-/*
 
-There are two versions of this algorithm currently.
+// Iteratively looks for generators up to MaxWeightGens and relations up to a MaxWeightRelations.
+// I recommend using ConstructGeneratorsAndRelations at high precision (200-1000) and MaxWeightGens ~ 10
+// and MaxWeightRelations as high as you want.
+intrinsic ConstructGeneratorsAndRelations(
+  M::ModFrmHilDGRng,
+  N::RngOrdIdl,
+  MaxWeightGens::RngIntElt,
+  MaxWeightRelations::RngIntElt
+  :
+  LowestWeight:=2,
+  Alg:="Standard",
+  IdealClassesSupport:=false,
+  GaloisInvariant:=false,
+  ComputeNewGenerators:=true,
+  PrecomputedGens:=AssociativeArray()
+  ) -> Any
+  {
+  Find generators and relations in M of level N. Generators will have parallel weight upto MaxWeightGens, and relations will have parallel upto MaxWeightRelations.
+  Return a three Associative arrays, indexed by weight, corresponding to generators, relations and the monomials.
+  Use the optional parameter 'LowestWeight' to specifiy the lowest weight for the generators.
+  The optional parameter 'Alg' is passed to ComplementBasis.
+  Use the optional parameter 'IdealClassesSupport' to restrict the support of the generators to a given set of components.
+  Use the optional parameter 'GaloisInvariant' to restrict the generators to be Galois invariant, i.e., invariant under the swap map.
+  Use the optional parameters 'PrecomputedGens' as an AssociativeArray to provide precomputed generators.
+  Use the optional parameters 'ComputeNewGenerators' to determine if new generators will be computed.
+  }
 
-- ConstructGeneratorsAndRelations is slow and check for generators and relations in each level (opens Basis(M) function).
+  if IdealClassesSupport cmpeq false then
+    IdealClassesSupport := NarrowClassGroupReps(M); // the default is all ideals classes
+  end if;
 
-	There are three different versions of this function depending on the basis
-	a)  ConstructGeneratorsAndRelations               —    Uses standard basis for M(Gamma)..
-	b)  ConstructGeneratorsAndRelationsOnComponent    —    Uses a basis for single component of M(Gamma). In other words the forms are look like (f,0) and (g,0).
-	c)  ConstructGeneratorsAndRelationsSymmetric      —    Uses basis for the symmetric subspace of M(Gamma).
+  require Type(PrecomputedGens) eq Assoc: "The parameter 'PrecomputedGens' must be an associative array";
+  Gens := AssociativeArray();
+  Relations := AssociativeArray();
+  Monomials := AssociativeArray();
+  n := Degree(BaseField(M));
+  CoeffCount := NumberOfCoefficients(M);
 
-- Relations takes as input the associtive arrays found in ConstructGeneratorsAndRelations
-  It then checks for further relations (NOT GENERATORS!) in higher weights. It doesn't open up the Basis(M) so it runs extremely quickly.
+  LowestWeightBasis := []; // IsNull = True
+  for k := LowestWeight to MaxWeightGens by 2 do
+    if IsDefined(PrecomputedGens, k) then
+      LowestWeightBasis := PrecomputedGens[k];
+    elif ComputeNewGenerators then
+      Mk := HMFSpace(M, N, [k : i in [1..n]]);
+      LowestWeightBasis := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
+    end if;
+    if not IsNull(LowestWeightBasis) then
+      Gens[k] := LowestWeightBasis;
+      break;
+    end if;
+  end for;
 
-  As a check, this version prints the dimension of the space from the Hilbert Series vs the dimension we have found to see if
-  a)  you missed any generators or
-  b)  your precision is set too low leading to false relations.
+  if #Gens gt 0 then
+    LowestWeight := Min(Keys(Gens));
+    vprintf HilbertModularForms : "Weight: %o     Generators: %o Relations: %o\n", LowestWeight, #Gens[LowestWeight],  0;
 
-I recommend using ConstructGeneratorsAndRelations at High precision (200-1000) and low weight 2-10 to try to find the
-generators. Once you think you have found all generators plug the outputs of this into Relations to check for further relations.
+    for k := LowestWeight + 2 to MaxWeightRelations by 2 do
+      vprintf HilbertModularForms : "Weight: %o, Gens = %o\n", k, [<elt, #Gens[elt]> : elt in Keys(Gens)];
+      Mk := HMFSpace(M, N, [k : i in [1..n]]);
+      R := ConstructWeightedPolynomialRing(Gens);
+      MonomialsinR := MonomialsOfWeightedDegree(R, k);
+      MonomialsGens := MonomialGenerators(R, Relations, k);
 
-*/
+      // we don't have dimensions per component
+      have_dim_formula := IdealClassesSupport eq NarrowClassGroupReps(M) and not GaloisInvariant;
+      if have_dim_formula then
+        // Before we evaluate monomials, make sure precision is high enough
+        require CoeffCount ge Dimension(Mk): "Precision is too low in comparison to the dimension of the space";
+      end if;
 
-// Iteratively looks for generators and relations up to a bound.
-// Input: M = HMFspace
-// Input: LowestWeight = first weight with HMFS
-// Input: MaxWeight = highest weight to check for relations in
-// Output: Associative array of generators in each weight, Associative array of Relations in each weight and Quotient Ring
-intrinsic ConstructGeneratorsAndRelations(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWeight::RngIntElt:verbose:=true, LowestWeight := 2, Alg := "Standard") -> Any
-	{Finds all Generators and Relations}
+      EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
 
-	Gens := AssociativeArray();
-	Relations := AssociativeArray();
-Monomials := AssociativeArray();
-	n := Degree(BaseField(M));
+      // first compute the relations in R/I.
+      RelationsinQuotient := LinearDependence(EvaluatedMonomials : IdealClasses:=IdealClassesSupport);
+      vprintf HilbertModularForms : "RelationsinQuotient: %o\n", RelationsinQuotient;
 
-// LowestWeight := 2;
-LowestMk := HMFSpace(M,N,[2:i in [1..n]]);
-LowestWeightBasis := Basis(LowestMk);
-while IsNull(LowestWeightBasis) and LowestWeight lt MaxWeight do 
-	    LowestWeight := LowestWeight + 2;
-	    LowestMk := HMFSpace(M,N,[LowestWeight:i in [1..n]]);
-LowestWeightBasis := Basis(LowestMk);
-	      end while;
+      // This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k).
+      // Mainly for storage.
+      RelationsinR := [];
+      for rel in RelationsinQuotient do
+        relR := [];
+        for j in MonomialsinR do
+          I := Index(MonomialsGens,j);
+          Q := Rationals();
+          if I ne 0 then
+            Append(~relR, Q!rel[I]);
+          else
+            Append(~relR, Q!0);
+          end if;
+        end for;
+        Append(~RelationsinR, relR);
+      end for;
 
-if not IsNull(LowestWeightBasis) then 
-Gens[LowestWeight] := LowestWeightBasis;
+      if #RelationsinR ne 0 then
+        Relations[k] := RelationsinR;
+        Monomials[k] := MonomialsGens;
+      end if;
 
-if verbose then 
-	print "Weight:", LowestWeight,  "     Generators", #Gens[LowestWeight], " Relations", 0;
-end if;
+      if k le MaxWeightGens then
+        if IsDefined(PrecomputedGens, k) then
+          if not IsNull(Gens[k]) then
+            Gens[k] := PrecomputedGens[k];
+            // assure that we cannot write the new generator in terms of the old ones
+            require #LinearDependence(Gens[k] cat EvaluatedMonomials : IdealClasses:=IdealClassesSupport) eq #RelationsinQuotient: Sprintf("A subset of PrecomputedGens[%o] can be generated by lower order terms", k);
+          end if;
+        elif ComputeNewGenerators then
+          if have_dim_formula then
+            Basisweightk := false;
+            dim := Dimension(Mk);
+          else
+            Basisweightk := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
+            dim := #Basisweightk;
+          end if;
+          vprintf HilbertModularForms : "Weight: %o Dim: %o, #MonomialsGens - #RelationsinR: %o\n", k,  dim, #MonomialsGens - #RelationsinR;
 
-	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
+          if #MonomialsGens - #RelationsinR ne dim then
+            // we need more generators to span the full space
+            if Basisweightk cmpeq false then
+              // first try our luck with just Eisenstein series
+              eisensteinbasis := EisensteinBasis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
+              forms := eisensteinbasis cat EvaluatedMonomials;
+              coeffs_matrix := CoefficientsMatrix(forms : IdealClasses:=IdealClassesSupport);
+              if Rank(coeffs_matrix) eq dim then
+                Basisweightk := [forms[i] : i in PivotRows(coeffs_matrix)];
+              else
+                Basisweightk := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
+              end if;
+            end if;
+            Gens[k] := ComplementBasis(EvaluatedMonomials, Basisweightk: Alg := Alg);
+          end if;
+        end if;
+      end if;
+      newgens := IsDefined(Gens, k) select #Gens[k] else 0;
+      // we don't have dimensions per component
+      dim := (IdealClassesSupport eq NarrowClassGroupReps(M) and not GaloisInvariant) select Dimension(Mk) else "??";
+      weight_str := Sprintf((k gt MaxWeightGens) select "Weight: %o > MaxWeightGens" else "Weight: %o", k);
+      vprintf HilbertModularForms : "%o, Dimension: %o, Monomial generators: %o, Relations: %o, New generators: %o \n", weight_str, dim, #MonomialsGens, #RelationsinR, newgens;
+    end for;
+  end if;
 
-		k := 2*i;
-		Mk := HMFSpace(M, N, [k : i in [1..n]]);
-
-		R := ConstructRing(Gens);
-		MonomialsinR := MonomialsOfWeightedDegree(R,k);
-		MonomialsGens := MonomialGenerators(R,Relations,k);
-
-// Before we evaluate monomials, make sure precision is high enough
-CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-//assert CoeffCount ge Dim(Mk);
-
-		EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
-
-		// I first compute the relations in R/I.
-		RelationsinQuotient := LinearDependence(EvaluatedMonomials);
-
-		// This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k).
-		// Mainly for storage.
-		RelationsinR := [];
-		for rel in RelationsinQuotient do
-			relR := [];
-			for j in MonomialsinR do
-				I := Index(MonomialsGens,j);
-				Q := Rationals();
-				if I ne 0 then
-					Append(~relR,Q!rel[I]);
-				else
-					Append(~relR,Q!0);
-				end if;
-			end for;
-			Append(~RelationsinR,relR);
-		end for;
-
-		if #RelationsinR ne 0 then
-			Relations[k] := RelationsinR;
-Monomials[k]:=MonomialsGens;
-		end if;
-//		require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
-
-		Basisweightk := Basis(Mk);
-
-		NewGens := [];
-
-		if #MonomialsGens - #RelationsinR ne #Basisweightk then
-			NewGens := FindNewGenerators(Mk, EvaluatedMonomials, Basisweightk
-                                         : Alg := Alg);
-			Gens[k] := NewGens;
-		end if;
- 
-
-if verbose then 
-print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
-end if;
-
-	end for;
-end if;
-
-return Gens,Relations,Monomials;
+  return <Gens, Relations, Monomials>;
 end intrinsic;
 
-
-
-
-
-// Iteratively looks for generators and relations up to a bound.
-// Input: M = HMFspace
-// Input: LowestWeight = first weight with HMFS
-// Input: MaxWeight = highest weight to check for relations in
-// Output: Associative array of generators in each weight, Associative array of Relations in each weight and Quotient Ring
-intrinsic ConstructGeneratorsAndRelationsOnComponent(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWeight::RngIntElt, bb::RngOrdIdl : verbose:=true ) -> Any
-	{Finds all Generators and Relations}
-
-	Gens := AssociativeArray();
-	Relations := AssociativeArray();
-    Monomials := AssociativeArray();
-	n := Degree(BaseField(M));
-
-    LowestWeight := 2;
-    LowestMk := HMFSpace(M,N,[2:i in [1..n]]);
-    LowestWeightBasis := SpecifiedComponentBasis(LowestMk,bb);
-    while IsNull(LowestWeightBasis) and LowestWeight lt MaxWeight do 
-	    LowestWeight := LowestWeight + 2;
-	    LowestMk := HMFSpace(M,N,[LowestWeight:i in [1..n]]);
-        LowestWeightBasis := SpecifiedComponentBasis(LowestMk,bb);
-	end while;
-
-	if not IsNull(LowestWeightBasis) then 
-		Gens[LowestWeight] := LowestWeightBasis;
-		
-		if verbose then 
-			print "Weight:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
-		end if;
-
-		for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
-			k := 2*i;
-			Mk := HMFSpace(M, N, [k : i in [1..n]]);
-
-			R := ConstructRing(Gens);
-			MonomialsinR := MonomialsOfWeightedDegree(R,k);
-			MonomialsGens := MonomialGenerators(R,Relations,k);
-
-			// Before we evaluate monomials, make sure precision is high enough
-			CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-			//assert CoeffCount ge Dim(Mk);
-
-			EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
-
-			// I first compute the relations in R/I.
-			RelationsinQuotient := LinearDependence(EvaluatedMonomials);
-
-			// This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k).
-			// Mainly for storage.
-			RelationsinR := [];
-			for rel in RelationsinQuotient do
-				relR := [];
-				for j in MonomialsinR do
-					I := Index(MonomialsGens,j);
-					Q := Rationals();
-					if I ne 0 then
-						Append(~relR,Q!rel[I]);
-					else
-						Append(~relR,Q!0);
-					end if;
-				end for;
-				Append(~RelationsinR,relR);
-			end for;
-
-			if #RelationsinR ne 0 then
-				Relations[k] := RelationsinR;
-				Monomials[k]:=MonomialsGens;
-			end if;
-			//	require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
-
-			Basisweightk := SpecifiedComponentBasis(Mk,bb);
-
-			NewGens := [];
-			if #MonomialsGens - #RelationsinR ne #Basisweightk then
-				NewGens := FindNewGenerators(Mk, EvaluatedMonomials, Basisweightk);
-				Gens[k] := NewGens;
-			end if;
-
-			if verbose then 
-				print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
-			end if;
-		end for;
-	end if;
-	return Gens,Relations,Monomials;
-end intrinsic;
-
-
-
-
-
-
-
-
-
-//Generators and relations in the subring of symmetric HMFs (invariant under the Galois action induced on the ideals)
-intrinsic ConstructGeneratorsAndRelationsSymmetric(M::ModFrmHilDGRng, N::RngOrdIdl, MaxWeight::RngIntElt:verbose:=true) -> Any
-	{Finds all Generators and Relations}
-
-	Gens := AssociativeArray();
-	Relations := AssociativeArray();
-Monomials := AssociativeArray();
-	n := Degree(BaseField(M));
-
-LowestWeight := 2;
-LowestMk := HMFSpace(M,N,[2:i in [1..n]]);
-LowestWeightBasis := GaloisInvariantBasis(LowestMk);
-while IsNull(LowestWeightBasis) and LowestWeight lt MaxWeight do 
-	    LowestWeight := LowestWeight + 2;
-	    LowestMk := HMFSpace(M,N,[LowestWeight:i in [1..n]]);
-LowestWeightBasis := Basis(LowestMk);
-	      end while;
-
-if not IsNull(LowestWeightBasis) then 
-Gens[LowestWeight] := LowestWeightBasis;
-
-if verbose then 
-	print "Weight:", 2,  "     Generators", #Gens[LowestWeight], " Relations", 0;
-end if;
-
-	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
-
-		k := 2*i;
-		Mk := HMFSpace(M, N, [k : i in [1..n]]);
-
-		R := ConstructRing(Gens);
-		MonomialsinR := MonomialsOfWeightedDegree(R,k);
-		MonomialsGens := MonomialGenerators(R,Relations,k);
-		EvaluatedMonomials := EvaluateMonomials(Gens,MonomialsGens,Mk);
-
-		// I first compute the relations in R/I.
-		RelationsinQuotient := LinearDependence(EvaluatedMonomials);
-
-		// This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k).
-		// Mainly for storage.
-		RelationsinR := [];
-		for rel in RelationsinQuotient do
-			relR := [];
-			for j in MonomialsinR do
-				I := Index(MonomialsGens,j);
-				Q := Rationals();
-				if I ne 0 then
-					Append(~relR,Q!rel[I]);
-				else
-					Append(~relR,Q!0);
-				end if;
-			end for;
-			Append(~RelationsinR,relR);
-		end for;
-
-		if #RelationsinR ne 0 then
-			Relations[k] := RelationsinR;
-Monomials[k]:=MonomialsGens;
-		end if;
-
-		Basisweightk := GaloisInvariantBasis(Mk);
-
-		NewGens := [];
-		if #MonomialsGens - #RelationsinR ne #Basisweightk then
-			NewGens := FindNewGenerators(Mk, EvaluatedMonomials, Basisweightk);
-			Gens[k] := NewGens;
-		end if;
-
-if verbose then 
-print "Weight:", k,  "     Generators", #NewGens, " Relations", #RelationsinR;
-end if;
-
-	end for;
-end if;
-
-return Gens,Relations,Monomials;
-end intrinsic;
-
-// Important! In order to run this version you must have already computed the generators for the ring using either ConstructGeneratorsAndRelations or ConstructGeneratorsAndRelationsV1.
-// This version DOES NOT look for any new generators, it only checks for relations amoung the generators you have found.
-
-// Input: M = HMFspace
-// Input: Gens = An array of generators computed from ConstructGeneratorsAndRelations or ConstructGeneratorsAndRelationsV1
-// Input: Relations = An array of relations computed from ConstructGeneratorsAndRelations or ConstructGeneratorsAndRelationsV1
-// Input: MaxWeight = highest weight to check for relations in
-// Output: Associative array of generators in each weight, associative array of relations in each weight and quotient ring
-
-intrinsic Relations(Gens::Assoc, Relations::Assoc, Monomials::Assoc, MaxWeight::RngIntElt) -> Any
-	{Finds all Generators and Relations}
-// Need to find graded ring which contains all these, so I need a key
-keys := Keys(Gens);
-if IsNull(keys) then return Gens, Relations, Monomials; end if;
-Mi := Parent(Gens[SetToSequence(keys)[1]][1]);
-N := Level(Mi);
-M := Parent(Mi);
-n := Degree(BaseField(M));
-
-
-	LowestWeight := Max([i : i in Keys(Gens)] cat [i : i in Keys(Relations)]);
-
-	P<x> := PowerSeriesRing(Rationals(),100);
-//	G := DimensionGeneratingFunction(M);
-
-	for i := (LowestWeight div 2 + 1) to (MaxWeight div 2) do
-
-		k := 2*i;
-
-		Mk := HMFSpace(M, N, [k : i in [1..n]]);
-
-		R := ConstructRing(Gens);
-		MonomialsinR := MonomialsOfWeightedDegree(R,k);
-		MonomialsGens := MonomialGenerators(R,Relations,k);
-
-// Before we evaluate monomials, make sure precision is high enough
-CoeffCount := NumberOfCoefficients(Gens[SetToSequence(Keys(Gens))[1]][1]);
-//require CoeffCount ge Dim(Mk): "Precision is too low";
-
-		EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
-
-
-		// I first compute the relations in R/I.
-		RelationsinQuotient := LinearDependence(EvaluatedMonomials);
-		
-
-
-		// This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k).
-		// Mainly for storage.
-		RelationsinR := [];
-		for rel in RelationsinQuotient do
-			relR := [];
-			for j in MonomialsinR do
-				I := Index(MonomialsGens,j);
-				if I ne 0 then
-				Append(~relR,Rationals()!rel[I]);
-				else
-				  Append(~relR,Rationals()!0);
-				end if;
-			end for;
-			Append(~RelationsinR,relR);
-		end for;
-
-		if #RelationsinR ne 0 then
-			Relations[k] := RelationsinR;
-Monomials[k]:=MonomialsGens;
-		end if;
-
-//		require #MonomialsGens - #RelationsinR eq Dim(Mk): "Precision is too low";
-	end for;
-
-
-
-/*	print "Relations";
-	for i in Keys(Relations) do
-		print i, #Relations[i];
-	end for;
-*/
-return Gens,Relations,Monomials;
-end intrinsic;
 
 
 
 
 ///////////////////////// Aux Functions /////////////////
 intrinsic QuadSpace(D::RngIntElt, prec::RngIntElt)-> Any
-	{Easy way to produces a quadratic space with Discriminant D and precision prec}
+  {Easy way to produces a quadratic space with Discriminant D and precision prec}
 
-    K := QuadraticField(D);
-    OK := Integers(K);
-    M := GradedRingOfHMFs(K, prec);
-    return M,1*OK;
+  K := QuadraticField(D);
+  OK := Integers(K);
+  M := GradedRingOfHMFs(K, prec);
+  return M,1*OK;
 end intrinsic;
 
 intrinsic MakeScheme(Gens::Assoc, Relations::Assoc)-> Any
-	{Returns the Scheme}
-    R := ConstructRing(Gens);
-    PolynomialList := [];
-	for i in Keys(Relations) do
-		PolynomialList cat:= RelationstoPolynomials(R,Relations[i],i);
-	end for;
+  {Returns the Scheme}
+  R := ConstructWeightedPolynomialRing(Gens);
+  PolynomialList := [];
+  for i in Keys(Relations) do
+    PolynomialList cat:= RelationstoPolynomials(R,Relations[i],i);
+  end for;
 
-	P := ProjectiveSpace(R);
-	S := Scheme(P, PolynomialList);
-	return S;
+  P := ProjectiveSpace(R);
+  S := Scheme(P, PolynomialList);
+  return S;
 end intrinsic;
 
 intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
-	{Returns Hilbert series with precision n}
+  {Returns Hilbert series with precision n}
 
-    R := ConstructRing(Gens);
+  R := ConstructWeightedPolynomialRing(Gens);
 
-    PolynomialList := [];
-	for i in Keys(Relations) do
-		PolynomialList cat:= RelationstoPolynomials(R,Relations[i],i);
-	end for;
+  PolynomialList := [];
+  for i in Keys(Relations) do
+    PolynomialList cat:= RelationstoPolynomials(R,Relations[i],i);
+  end for;
 
-	I := ideal<R | PolynomialList>;
+  I := ideal<R | PolynomialList>;
 
-	N := HilbertNumerator(I);
-	D := HilbertDenominator(I);
-	H := HilbertSeries(I, n);
+  N := HilbertNumerator(I);
+  D := HilbertDenominator(I);
+  H := HilbertSeries(I, n);
 
-	//return N,D
-	return H;
+  //return N,D
+  return H;
 end intrinsic;
 
 intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc,f::ModFrmHilDElt) -> any
 {return a basis for the space of modular forms in weight n, in terms of
-			  monomials of the "canonical" generators}
+        monomials of the "canonical" generators}
 
-Weight := Weight(f);
-R := ConstructRing(Gens);
-MonomialsinR := MonomialsOfWeightedDegree(R,Weight[1]);
-MonomialsGens := MonomialGenerators(R,Relations,Weight[1]);
-EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens,Parent(f));
+  Weight := Weight(f);
+  R := ConstructWeightedPolynomialRing(Gens);
+  MonomialsinR := MonomialsOfWeightedDegree(R,Weight[1]);
+  MonomialsGens := MonomialGenerators(R,Relations,Weight[1]);
+  EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens,Parent(f));
 
-relations := LinearDependence(EvaluatedMonomials);
-while relations ne [] do
-		r := relations[1];
-i := 1;
-while r[i] eq 0 do
-i := i + 1;
-end while;
-Remove(~EvaluatedMonomials,i);
-end while;
+  relations := LinearDependence(EvaluatedMonomials);
+  while relations ne [] do
+    r := relations[1];
+  i := 1;
+    while r[i] eq 0 do
+      i := i + 1;
+    end while;
+    Remove(~EvaluatedMonomials,i);
+  end while;
 
-return EvaluatedMonomials,MonomialsGens;
+  return EvaluatedMonomials, MonomialsGens;
 end intrinsic;
 
 intrinsic GeneratorsAndRelations(F::FldNum, N::RngOrdIdl: Precision:=20, MaxRelationWeight:=20, MaxGeneratorWeight:=2, LowestWeight := 2, Alg := "Standard") -> any
 {returns relations up to weight MaxRelationWeight in generators up to MaxGeneratorWeight; only for parallel weight}
-GrRing := GradedRingOfHMFs(F,Precision);
-g,r,m := ConstructGeneratorsAndRelations(GrRing,N,MaxGeneratorWeight
+  GrRing := GradedRingOfHMFs(F, Precision);
+  g, r, m := ConstructGeneratorsAndRelations(GrRing,N,MaxGeneratorWeight
                                          : LowestWeight := LowestWeight,
                                             Alg := Alg);
-gens, rels, mons := Relations(g,r,m,MaxRelationWeight);
-return gens, rels, mons;
+  gens, rels, mons := Relations(g, r, m, MaxRelationWeight);
+  return gens, rels, mons;
 end intrinsic;
 
 
 function testGeneratorsAndRelations(F, N, Precision,
                                     MaxRelationWeight,
                                     MaxGeneratorWeight :
-                                    HilbSerPrec := 20, Alg := "Standard")
-    M := GradedRingOfHMFs(F,Precision);
-    g,r,m := GeneratorsAndRelations(F, N : Precision := Precision,
-                                    MaxRelationWeight := MaxRelationWeight,
-                                    MaxGeneratorWeight := MaxGeneratorWeight,
-                                    Alg := Alg);
-    hilb := MakeHilbertSeries(g,r,HilbSerPrec);
-    max_k := HilbSerPrec-2;
-    ZF := Integers(F);
-    dim4 := Dimension(HMFSpace(M,N,[4,4]));
-    dim_eis := dim4 - Trace(HMFSpace(M,N,[4,4]), 1*ZF);
-    for half_k in [2..max_k div 2] do
-        k := 2*half_k;
-        trace := Trace(HMFSpace(M,N,[k,k]), 1*ZF);
-        if (trace + dim_eis ne Coefficient(hilb,k)) then
-            vprintf HilbertModularForms : "missing generators in degree %o\n", k;
-            return false, k;
-        end if;
-    end for;
-    return true;
+                                    HilbSerPrec:=20,
+                                    Alg:="Standard")
+  M := GradedRingOfHMFs(F,Precision);
+  g, r, m := GeneratorsAndRelations(F, N : Precision := Precision,
+                                    MaxRelationWeight:=MaxRelationWeight,
+                                    MaxGeneratorWeight:=MaxGeneratorWeight, Alg := Alg);
+  hilb := MakeHilbertSeries(g,r,HilbSerPrec);
+  max_k := HilbSerPrec-2;
+  ZF := Integers(F);
+  dim4 := Dimension(HMFSpace(M, N, [4,4]));
+  dim_eis := dim4 - Trace(HMFSpace(M, N, [4,4]), 1*ZF);
+  for half_k in [2..max_k div 2] do
+    k := 2*half_k;
+    trace := Trace(HMFSpace(M,N,[k,k]), 1*ZF);
+    if (trace + dim_eis ne Coefficient(hilb,k)) then
+      vprintf HilbertModularForms : "missing generators in degree %o\n", k;
+      return false, k;
+    end if;
+  end for;
+  return true;
 end function;
 
-function polyComplexity(X)
+function polyComplexity(g,r)
+    X := MakeScheme(g,r);
     polys := DefiningPolynomials(X);
     vecs := [* Vector(Coefficients(p)) : p in polys *];
-    vecs := [* Denominator(v)*v : v in vecs *];
+    // TODO : Replace by height (max (num, denom))
     return &+[(v,v) : v in vecs];
 end function;

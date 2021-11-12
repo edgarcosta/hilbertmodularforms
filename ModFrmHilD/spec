@@ -1,13 +1,18 @@
 {
-  GradedRing.m
-  Space.m
-  Elements.m
-  Workspace.m
-  Formatting.m
-  Hecke.m
   Basis.m
+  Elements.m
+  FldExt.m
+  Formatting.m
+  GradedRing.m
+  HJ-CFrac.m
+  Hecke.m
+  LinearAlgebra.m
+  Space.m
   Trace.m
+  UnitChar.m
+  Utils.m
   Verbose.m
+  Workspace.m
 }
 
 Multiplication
