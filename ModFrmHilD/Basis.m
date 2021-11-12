@@ -73,21 +73,8 @@ intrinsic EisensteinBasis(
   IdealClassesSupport:=false,
   GaloisInvariant:=false
   ) -> SeqEnum[ModFrmHilDElt]
-  { returns a basis for the complement to the cuspspace of M of weight k }
+  { return a basis for the complement to the cuspspace of Mk }
   if not assigned Mk`EisensteinBasis then
-    M := Parent(Mk);
-    NN := Level(Mk);
-    k := Weight(Mk);
-    require #SequenceToSet(k) eq 1: "Only implemented for parallel weight";
-    k := k[1];
-    F := BaseField(Mk);
-    ZF := Integers(F);
-    n := Degree(ZF);
-    chi := Character(Mk);
-    X := Parent(chi);
-    chis := Elements(X);
-
-
     pairs := EisensteinAdmissableCharacterPairs(Mk);
     Mk`EisensteinBasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
     assert #Mk`EisensteinBasis eq EisensteinDimension(Mk);

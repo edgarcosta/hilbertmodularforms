@@ -248,7 +248,11 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   if not assigned Mk`EisensteinAdmissableCharacterPairs then
     N := Level(Mk);
     k := Weight(Mk);
-    require #SequenceToSet(k) eq 1: "Only implemented for parallel weight";
+    if #SequenceToSet(k) ne 1 then
+      // there are no Eisenstein series in nonparallel weight
+      Mk`EisensteinAdmissableCharacterPairs := [* *];
+      return Mk`EisensteinAdmissableCharacterPairs;
+    end if;
     k := k[1];
     chi := Character(Mk);
     M := Parent(Mk);
@@ -285,26 +289,5 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
     Mk`EisensteinAdmissableCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
   end if;
   return Mk`EisensteinAdmissableCharacterPairs;
-
-  /*
-  chis[i := [* AssociatedPrimitiveCharacter(c) : c in Elements(Parent(chi)) *];
-  chiinverse := chi^-1;
-  pairs := [*
-    <chi1, chi2>
-    : chi1 in chis, chi2 in chis
-    | chi1*chi2 eq chi and N subset Conductor(chi1)*Conductor(chi2) *];
-  if k eq 1 then // remove the only relation E(chi, psi) = E(psi, chi)
-    newpairs := [* *];
-    for i:=1 to #pairs do
-      chi1, chi2 := Explode(pairs[i]);
-      j := Index(pairs, <chi2, chi1>);
-      assert j gt 0;
-      if j ge i then
-        Append(~newpairs, pairs[i]);
-      end if;
-    end for;
-    pairs := newpairs;
-  end if;
-  */
 end intrinsic;
 
