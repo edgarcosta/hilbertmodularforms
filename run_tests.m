@@ -3,13 +3,14 @@ AttachSpec("ModFrmHilD/spec");
 failed := [];
 for filename in tests do
   fullPath := "Tests/" cat filename;
+  timestamp := Time();
   try
     printf "%o: ", filename;
     assert eval Read(fullPath);
-    printf "Success!\n";
+    printf "Success! %o s\n", Time(timestamp);
   catch e
     Append(~failed, filename);
-    printf "Fail!\n";
+    printf "Fail! %o s\n", Time(timestamp);;
   end try;
 end for;
 if #failed gt 0 then

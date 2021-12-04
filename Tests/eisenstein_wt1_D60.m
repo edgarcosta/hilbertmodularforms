@@ -13,6 +13,5 @@ E2 := EisensteinBasis(M2);
 assert #E1 eq 2;
 assert #E2 eq 2;
 assert E1[1]*E2[1] eq E1[2]*E2[2];
-print "Success!";
 return true;
 

@@ -77,24 +77,6 @@ end intrinsic;
 ////////////////////////////////// CM - Extensions ///////////////////////////////////////////////
 
 // CM-Extensions
-// Computes all CM-Quadratic fields needed for computation x^2 + tx + n with t^2 >> n
-intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
-  {Computes all elements b satifying b^2 << 4a}
-  F := BaseField(M);
-  ZF := Integers(M);
-  places := Places(M);
-  // Every element b^2 << 4a satifies |b| < 2sqrt(a).
-  // This is a square centered at the origin. We will enumerate half of it.
-  XLB := -2*Sqrt(Evaluate(a,places[1])); // XLB = X lower bound
-  YLB := 0;
-  XUB := 2*Sqrt(Evaluate(a,places[1]));
-  YUB := 2*Sqrt(Evaluate(a,places[2]));
-  T := ElementsInABox(M,1*ZF,XLB,YLB,XUB,YUB);
-  T := [ i : i in T | i^2-4*a ne 0]; // Zero is "technically" not totally positive for this computation
-  T cat:= [-i : i in T | i ne 0];
-  return T;
-end intrinsic;
-
 
 // Half of CM-Extensions
 intrinsic HalfOfCMExtensions(M::ModFrmHilDGRng, a::RngElt) -> SeqEnum
@@ -113,6 +95,17 @@ intrinsic HalfOfCMExtensions(M::ModFrmHilDGRng, a::RngElt) -> SeqEnum
   return T;
 end intrinsic;
 
+// Computes all CM-Quadratic fields needed for computation x^2 + tx + n with t^2 >> n
+intrinsic CMExtensions(M::ModFrmHilDGRng,a::RngOrdElt) -> SeqEnum
+  {Computes all elements b satifying b^2 << 4a}
+  T := HalfOfCMExtensions(M, a);
+  T cat:= [-i : i in T | i ne 0];
+  return T;
+end intrinsic;
+
+
+
+
 
 ////////////////////////////////// Index of Summation: Trace ///////////////////////////////////////////////
 
@@ -129,7 +122,7 @@ intrinsic IndexOfSummation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum
   ZF := Integers(Mk);
 
   // Computing totally positive units mod squares
-  U,mU := UnitGroup(ZF);
+  U, mU := UnitGroup(ZF);
   Ugens := [mU(u) : u in Generators(U)];
   TotallyPositiveUnits := [];
   // Every totally positive unit mod squares can be written as e = u_i^a_i where a_i = 0,1 and u_i are the generators for the unit group
@@ -137,19 +130,17 @@ intrinsic IndexOfSummation(Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum
   for v in CartesianPower([0,1],#Ugens) do
     unitelt := &*[Ugens[i]^v[i] : i in [1..#Ugens]];
     if IsTotallyPositive(unitelt) then
-      Append(~TotallyPositiveUnits,unitelt);
+      Append(~TotallyPositiveUnits, unitelt);
     end if;
   end for;
 
   // Finding a totally positive generator for mm
-  _,a := IsNarrowlyPrincipal(mm);
+  bool, a := IsNarrowlyPrincipal(mm);
+  require bool : Sprintf("Ideal %o is not narrowly principal", IdealOneLine(mm));
   a := ReduceShintaniMinimizeTrace(a)[1];
 
   // Looping over all totally positive generators of the form au for u a totally positive unit mod squares
-  Indexforsum := [];
-  for u in TotallyPositiveUnits do
-    Indexforsum cat:= [[b,a*u] : b in CMExtensions(M,a*u)]; // Index for summation
-  end for;
+  Indexforsum := &cat[[[b,a*u] : b in CMExtensions(M, a*u)] : u in TotallyPositiveUnits];
 
   return Indexforsum;
 end intrinsic;
@@ -179,7 +170,8 @@ intrinsic SIndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl) -> SeqEnum
   end for;
 
   // Finding a totally positive generator for mm
-  _,a := IsNarrowlyPrincipal(mm);
+  bool, a := IsNarrowlyPrincipal(mm);
+  require bool : Sprintf("Ideal %o is not narrowly principal", IdealOneLine(mm));
   a := ReduceShintaniMinimizeTrace(a)[1];
 
   // Looping over all totally positive generators of the form au for u a totally positive unit mod squares
@@ -234,11 +226,11 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   P<x> := PolynomialRing(ZF);
 
   // Units and class group
-  UF,mUF := UnitGroup(ZF);
+  UF, mUF := UnitGroup(ZF);
   SetClassGroupBounds("GRH"); // I'm OK without a proof!
 
-  // Index
-  Indexforsum := IndexOfSummation(Mk,mm);
+  // Index 
+  Indexforsum := IndexOfSummation(Mk, mm);
 
   // Computation of summation
   Sumterm := 0;
@@ -284,7 +276,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
 
     // We now factor D = df^2
     DD := Discriminant(ZK); // Discriminant
-    _, d := IsNarrowlyPrincipal(DD); // Discriminant element
+    //_, d := IsNarrowlyPrincipal(DD); // Discriminant element 
     ff := Sqrt((D*ZF)/DD); // Conductor
 
     // Artin Symbol — this should be the same as QuadraticCharacter(F!d)! but does not create a ray class group
@@ -687,7 +679,7 @@ intrinsic ClassGroupandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, ZF
     // the factor 2 comes into play only when B*ZF = aa^2 and aa is principal
     issquare, aa := IsSquare(B*ZF);
     if issquare eq true then
-      if IsNarrowlyPrincipal(aa) then
+      if IsPrincipal(aa) then // Edgar: Narrowly?
         unitindex *:= 2;
       end if;
     end if;
