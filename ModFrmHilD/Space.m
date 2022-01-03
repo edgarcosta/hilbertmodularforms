@@ -232,10 +232,6 @@ intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   {return the dimension of E(Mk)}
   if not assigned Mk`EisensteinDimension then
     N := Level(Mk);
-    chi := Character(Mk);
-    tup := <N, chi>;
-    M := Parent(Mk);
-    X := Parent(chi);
     newforms_levels := {* Conductor(pair[1]) * Conductor(pair[2]) : pair in EisensteinAdmissableCharacterPairs(Mk) *};
     Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*mult : mm->mult in newforms_levels];
   end if;
