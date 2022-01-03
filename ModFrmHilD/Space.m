@@ -241,7 +241,9 @@ end intrinsic;
 
 
 intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
-  {}
+  {returns a list of all the primitive pairs <chi1, chi2> such that
+  chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Leve;(Mk)
+  If the weight is 1, we only return pairs up to permutation}
   if not assigned Mk`EisensteinAdmissableCharacterPairs then
     N := Level(Mk);
     k := Weight(Mk);
@@ -261,7 +263,7 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
     for i->c in chis do
       chisdict[c] := i;
     end for;
-    // [i, j] pairs st chis[i]*chis[j]
+    // [i, j] pairs st chis[i]*chis[j] = chi
     pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis ];
     // filter based on conductor
     pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];
