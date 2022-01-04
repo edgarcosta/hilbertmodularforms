@@ -248,7 +248,7 @@ end intrinsic;
 intrinsic TracePrecomputation(M::ModFrmHilDGRng) -> Assoc
   {}
   if not assigned M`PrecomputationforTrace then
-    HMFTracePrecomputation(M);
+    M`PrecomputationforTrace := HMFTracePrecomputation(M);
   end if;
   return M`PrecomputationforTrace;
 end intrinsic;
@@ -409,7 +409,7 @@ end intrinsic;
 
 /////////////// ModFrmHilD: Trace Precomputation ////////////////
 
-intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
+intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng) -> Assoc
   {Fills in the CM-extensions}
   F := BaseField(M); // Base Field
   ZF := Integers(F); // Ring of Integers
@@ -423,10 +423,13 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
   A := AssociativeArray(); // Storage for precomputations
 
 
+  ideals := IdealsByNarrowClassGroup(M)[1*ZF];
+  Include(~ideals, 1*ZF); // assure that 1*ZF is always there
+
   // First pass. A[a] := List of [b,a,D];
-  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do // Edgar: are you sure?
+  for mm in ideals do
     A[mm] := [];
-    Points := SIndexOfSummation(M,mm);
+    Points := SIndexOfSummation(M, mm);
     for i in Points do
       b := i[1]; // Trace
       a := i[2]; // Norm
@@ -462,7 +465,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
 
 
   // Third Pass. Append [D0, ZK, ff] to [b,a,D].
-  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do // Edgar: are you sure?
+  for mm in ideals do
     A[mm] := [ i cat S[i[3]] : i in A[mm]];
   end for;
 
@@ -482,10 +485,10 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng)
 
 
   // Fifth Pass. Append [h,w] to [b, a, D, D0, ZK, ff].
-  for mm in IdealsByNarrowClassGroup(M)[1*ZF] do // Edgar: are you sure?
+  for mm in ideals do
     A[mm] := [ i cat T[i[4]] : i in A[mm]];
   end for;
-  M`PrecomputationforTrace := A;
+  return A;
 end intrinsic;
 
 

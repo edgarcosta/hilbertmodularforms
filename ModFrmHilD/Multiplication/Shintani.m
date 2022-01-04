@@ -61,11 +61,14 @@ intrinsic PositiveElementsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[Rn
   if t mod smallestTrace eq 0 then
     x := t div smallestTrace;
     a_1 := Evaluate(basis[1],places[1]);
-    b_1 := Evaluate(basis[2],places[1]);
     a_2 := Evaluate(basis[1],places[2]);
+    b_1 := Evaluate(basis[2],places[1]);
     b_2 := Evaluate(basis[2],places[2]);
-    lower_bnd := Ceiling(Min(-x*a_1/b_1,-x*a_2/b_2));
-    upper_bnd := Floor(Max(-x*a_1/b_1,-x*a_2/b_2));
+    assert b_1 lt 0 and b_2 gt 0; // if this assumption changes, the inequalities get swapped
+    // at place 2, x*a2 + y*b2 >= 0 => y >= -x*a2/b2
+    lower_bnd := Ceiling(-x*a_2/b_2);
+    // at place 1, x*a1 + y*b1 >= 0 => y <= -x*a1/b1
+    upper_bnd := Floor(-x*a_1/b_1);
     for y in [lower_bnd .. upper_bnd] do
       Append(~T, x*basis[1]+y*basis[2]);
     end for;
@@ -75,7 +78,7 @@ end intrinsic;
 
 intrinsic ElementsInABox(M::ModFrmHilDGRng, aa::RngOrdFracIdl,
                          XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
-  {Enumerates all elements c in aa with 0 < c_1 < Xbound and  0 < c_2 < Ybound}
+  {Enumerates all elements c in aa with XLBound <= c_1 <= XUBound and  YLBound <= c_2 <= YUBound}
 
   for bnd in [XUBound, YUBound, XLBound, YLBound] do
     require ISA(Type(bnd),FldReElt) : "Bounds must be coercible to real numbers";
@@ -83,23 +86,31 @@ intrinsic ElementsInABox(M::ModFrmHilDGRng, aa::RngOrdFracIdl,
   basis := TraceBasis(aa);
   F := BaseField(M);
   ZF := Integers(M);
-  places := InfinitePlaces(F);
+  places := Places(M);
+
+  //if Evaluate(basis[2],places[1]) lt 0 then
+  //  basis := [basis[1], -basis[2]];
+  //end if;
+
 
   // Precomputationss
   a_1 := Evaluate(basis[1], places[1]);
-  b_1 := Evaluate(basis[2], places[1]);
   a_2 := Evaluate(basis[1], places[2]);
+  b_1 := Evaluate(basis[2], places[1]);
   b_2 := Evaluate(basis[2], places[2]);
+  assert b_1 lt 0 and b_2 gt 0; // if this assumption changes, the inequalities get swapped
 
   // List of all Elements
   T := [];
   trLBound := Ceiling(XLBound+YLBound);
   trUBound := Floor(XUBound+YUBound);
-  for x in [trLBound..trUBound] do
-    lBound := Ceiling(Max((XLBound-x*a_1)/b_1,(YUBound-x*a_2)/b_2));
-    uBound := Floor(Min((XUBound-x*a_1)/b_1,(YLBound-x*a_2)/b_2));
-    for y in [lBound..uBound] do
-      Append(~T, x*basis[1]+y*basis[2]);
+  for i in [trLBound..trUBound] do
+    // at place 1, i*a2 + j*b2 <= XUBound => j >= (XUBound -i*a1)/b1
+    // at place 2, i*a2 + j*b2 >= YLBound => j >= (YLBound -i*a2)/b2
+    lBound := Ceiling(Max((XUBound-i*a_1)/b_1, (YLBound-i*a_2)/b_2));
+    uBound := Floor(Min((XLBound-i*a_1)/b_1, (YUBound-i*a_2)/b_2));
+    for j in [lBound..uBound] do
+      Append(~T, i*basis[1] + j*basis[2]);
     end for;
   end for;
 

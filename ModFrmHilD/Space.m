@@ -161,13 +161,14 @@ end intrinsic;
 
 intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   {Returns the number of cusps for Gamma_0(N)}
+  // at the moment Corollary 5.1.27 in the paper
   M := Parent(Mk);
   N := Level(Mk);
   ZF := Integers(M);
   U := UnitGroup(M);
   mU := UnitGroupMap(M);
-  h := NarrowClassNumber(M);
-  require h eq 1: "Not verified for Cl^+(F) > 1";
+  hplus := NarrowClassNumber(M);
+  h := ClassNumber(ZF);
   // Helper function
   phi_u := function(aa)
     Q, mQ := quo<ZF | aa>;
@@ -175,7 +176,7 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
     S := sub<U1 | [(mQ(mU(e)))@@mU1 : e in Generators(U)]>;
     return Integers()!(#U1/#S);
   end function;
-  return h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
+  return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
 
@@ -232,10 +233,6 @@ intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   {return the dimension of E(Mk)}
   if not assigned Mk`EisensteinDimension then
     N := Level(Mk);
-    chi := Character(Mk);
-    tup := <N, chi>;
-    M := Parent(Mk);
-    X := Parent(chi);
     newforms_levels := {* Conductor(pair[1]) * Conductor(pair[2]) : pair in EisensteinAdmissableCharacterPairs(Mk) *};
     Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*mult : mm->mult in newforms_levels];
   end if;
@@ -244,7 +241,9 @@ end intrinsic;
 
 
 intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
-  {}
+  {returns a list of all the primitive pairs <chi1, chi2> such that
+  chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Leve;(Mk)
+  If the weight is 1, we only return pairs up to permutation}
   if not assigned Mk`EisensteinAdmissableCharacterPairs then
     N := Level(Mk);
     k := Weight(Mk);
@@ -264,7 +263,7 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
     for i->c in chis do
       chisdict[c] := i;
     end for;
-    // [i, j] pairs st chis[i]*chis[j]
+    // [i, j] pairs st chis[i]*chis[j] = chi
     pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis ];
     // filter based on conductor
     pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];

@@ -1,4 +1,4 @@
-printf "Testing the computatin of the Canonical ring for Q(sqrt(-5))...";
+printf "Testing the computation of the Canonical ring for Q(sqrt(5))...";
 
 F<nu> := QuadraticField(5);
 ZF := Integers(F);
