@@ -169,11 +169,27 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   mU := UnitGroupMap(M);
   hplus := NarrowClassNumber(M);
   h := ClassNumber(ZF);
+  // Eran: I'm adding in these lines so that we will
+  // quotient out by the totally positive units
+  gens := [U.i : i in [1..Ngens(U)]];
+  // this matrix is the signature of the generators over Z/2Z
+  mat := Matrix([[GF(2)!((1-Sign(x)) div 2) : x in RealEmbeddings(mU(u))]
+                 : u in gens]);
+  // The kernel recovers the subspace of U/U^2 of totally positive units
+  ker := Kernel(mat);
+  tot_pos := [&+[b[i]*gens[i] : i in [1..#gens]] : b in Basis(ker)];
+  assert &and[IsTotallyPositive(mU(u)) : u in tot_pos];
+  U_pos := sub<U | tot_pos cat [2*g : g in gens]>;
   // Helper function
+  // This is from corollary 5.1.27 in our paper
+  // phi is the size of (Z_F / aa)^{\times} modded out by the totally
+  // positive units.
   phi_u := function(aa)
     Q, mQ := quo<ZF | aa>;
     U1,mU1 := UnitGroup(Q);
-    S := sub<U1 | [(mQ(mU(e)))@@mU1 : e in Generators(U)]>;
+    // This is wrong, we need to divide only by the totally positive ones
+    // S := sub<U1 | [(mQ(mU(e)))@@mU1 : e in Generators(U)]>;
+    S := sub<U1 | [(mQ(mU(e)))@@mU1 : e in Generators(U_pos)]>;
     return Integers()!(#U1/#S);
   end function;
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
