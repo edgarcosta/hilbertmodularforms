@@ -4,7 +4,7 @@ ModFrmHilDElt
 
 ////////// ModFrmHilDEltComp attributes //////////
 
-declare type ModFrmHilDEltComp;
+declare type ModFrmHilDEltComp [ModFrmHilDElt];
 declare attributes ModFrmHilDEltComp:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
@@ -14,7 +14,6 @@ declare attributes ModFrmHilDEltComp:
   UnitCharacter, // GrpCharUnitTotElt: TotallyPositiveUnits(Parent(Parent)) -> CoefficientRing
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
 
-declare type ModFrmHilDElt;
 declare attributes ModFrmHilDElt:
   Parent,
   Components; // Assoc: bb --> f_bb, each f_bb of type ModFrmHilDEltComp
