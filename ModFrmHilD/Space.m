@@ -306,3 +306,121 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   return Mk`EisensteinAdmissableCharacterPairs;
 end intrinsic;
 
+intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
+{Given an ideal a of R, and an ideal I of O, an order over R, Returns the ideal a*I.}
+  return &+[g * I : g in Generators(a)];
+end intrinsic;
+
+// This function returns the matrix describing the action
+// of the ideal J on the space M of Hilbert modular forms.
+// These are the operators denoted by P(J) in [Voight]
+// and by S(J) in [Shimura]
+
+function DiamondOperator(M, J)
+    // We would have liked to use that, but it is only available for parallel weight 2
+    //raw_data := InternalHMFRawDataDefinite(M);
+    //ideal_classes := raw_data`RightIdealClassReps;
+
+    //    Instead, we force the computation of the attributes we care about.
+    if (not assigned M`rids) then
+	K := BaseField(M);
+	p := PrimeIdealsOverPrime(K, 2)[1];
+	_ := HeckeOperator(M,p);
+    end if;
+    ideal_classes := M`rids;
+    
+    // J acts by left multiplication on the classes of right ideals.
+    JIs := [J*I : I in ideal_classes];
+    // This creates a permutation of the ideal classes, which we now construct
+    perm := &cat[[j : j in [1..#ideal_classes] | IsIsomorphic(JI, ideal_classes[j])] : JI in JIs];
+
+    // If the weight is trivial, we do not need the direct factors (and they are aso not computed)
+    
+    // This is an artifact of the implementation -
+    // When the weight is trivial, the basis_matrix describes the cuspidal space inside
+    // the entire space of modular forms. We have to dig it out.
+    // In the general case, the matrix describes the embedding into the h copies of W.
+    // This makes sense since the entire space is cuspidal, but requires different handling.
+    if (M`weight_dimension eq 1) then
+	d_J := PermutationMatrix(M`weight_base_field, perm);
+	// This is the operator on the subspace corresponding to M
+	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
+	return d_J;
+    end if;
+
+    // case II - nontrivial weight
+    
+    // In order to gain the action on our space, we have to blockify according to the
+    // subspaces of direct factors
+    hmsdf := M`ModFrmHilDirFacts;
+    // dimensions of the different H0(W, Gamma_i)
+    dims := [Nrows(h`basis_matrix) : h in hmsdf];
+    // cumulative sums for the next line
+    cumsum := [&+dims[1..i] : i in [0..#dims]];
+    // the blockified permutation
+    big_perm := &cat[[cumsum[perm[i]]+j : j in [1..dims[i]]] : i in [1..#perm]];
+    // This is the operator on the entire space of Hilbert modular forms
+    d_J := PermutationMatrix(M`weight_base_field, big_perm);
+    
+    return d_J;
+end function;
+
+// This function is copied from ModFrmHil/hackobj.m
+// Optimally, we would just import it
+function HMF0(F, N, Nnew, Chi, k, C)
+  M := New(ModFrmHil);
+  M`Field := F;
+  M`Level := N;
+  M`NewLevel := Nnew;
+  M`DirichletCharacter := Chi;
+  M`Weight := k;
+  M`CentralCharacter := C;
+  assert C eq Max(k) - 2; // currently
+  M`is_cuspidal := true; // always true, currently
+  M`Hecke    := AssociativeArray();
+  M`HeckeBig := AssociativeArray();
+  M`HeckeBigColumns := AssociativeArray();
+  M`HeckeCharPoly := AssociativeArray();
+  M`AL       := AssociativeArray();
+  M`DegDown1 := AssociativeArray();
+  M`DegDownp := AssociativeArray();
+  if forall{w : w in k | w eq 2} then
+    M`hecke_matrix_field := Rationals();
+    M`hecke_matrix_field_is_minimal := true;
+  else 
+    M`hecke_matrix_field_is_minimal := false;
+  end if;
+  return M;
+end function;
+
+// Here M is a ModFrmHil (HibertCuspForms(M))
+// Currently just works for trivial weight.
+function HeckeCharacterSubspace(M, chi)
+    K := BaseRing(M);
+    Z_K := Integers(K);
+    cl_K, cl_map := NarrowClassGroup(Z_K);
+    Js := [cl_map(cl_K.i) : i in [1..Ngens(cl_K)]];
+    dJs := [<J, DiamondOperator(M,J)> : J in Js];
+    Id_M := IdentityMatrix(Rationals(), Dimension(M));
+    
+    subsp := &meet [Kernel(dJ[2] - chi(dJ[1])*Id_M) : dJ in dJs];
+
+    dim := Dimension(subsp);
+    
+    Id_Msub := IdentityMatrix(Rationals(), dim);
+    
+    M_sub := HMF0(BaseField(M), Level(M), 1*Integers(K), chi, Weight(M), CentralCharacter(M));
+    M_sub`basis_matrix_wrt_ambient := BasisMatrix(subsp);
+    
+    M_sub`basis_matrix_wrt_ambient_inv := 
+        Transpose(Solution( Transpose(M_sub`basis_matrix_wrt_ambient), Id_Msub));
+    if assigned M`basis_matrix then
+       M_sub`basis_matrix := M_sub`basis_matrix_wrt_ambient * M`basis_matrix;
+       M_sub`basis_matrix_inv := Transpose(Solution( Transpose(M_sub`basis_matrix), Id_Msub));
+    end if;
+
+    M_sub`Ambient := M;
+    M_sub`Dimension := dim;
+    
+    return M_sub;
+end function;

@@ -2,3 +2,4 @@ ModFrmHilD/*.sig
 *.sig
 *.swp
 .DS_Store
+*.m~
