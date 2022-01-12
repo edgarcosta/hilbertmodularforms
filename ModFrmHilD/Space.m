@@ -195,14 +195,14 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
-forward HilbertCharacterSubspace;
+forward HeckeCharacterSubspace;
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
     require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
     Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Weight(Mk));
-    Mk`MagmaSpace := HilbertCharacterSubspace(Mk`MagmaSpace, Character(Mk));
+    Mk`MagmaSpace := HeckeCharacterSubspace(Mk`MagmaSpace, Character(Mk));
   end if;
   return Mk`MagmaSpace;
 end intrinsic;
@@ -314,8 +314,8 @@ intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
 end intrinsic;
 
 function getWeightBaseField(M)
-    is_parallel, w := IsParallelWeight(M);
-    if is_parallel and w eq 2 then
+    // is_parallel, w := IsParallelWeight(M);
+    if not assigned M`weight_base_field then
 	return Rationals();
     end if;
     assert assigned M`weight_base_field;
