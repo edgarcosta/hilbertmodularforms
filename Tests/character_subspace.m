@@ -1,3 +1,4 @@
+// Warning - currently only testing trivial weight and level
 dim_list := AssociativeArray();
 /*
 Generated with
@@ -572,3 +573,4 @@ for i->d in ds do
     end for;
     printf "\n";
 end for;
+return true;
