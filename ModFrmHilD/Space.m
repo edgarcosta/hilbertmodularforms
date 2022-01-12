@@ -124,6 +124,7 @@ place where they do not match.}
   F := NumberField(Order(Modulus(chi)));
   weight := [k : v in InfinitePlaces(F)];
   is_compat, idx := IsCompatibleWeight(chi, weight);
+  if is_compat then return true, _; end if;
   return is_compat, idx;
 end intrinsic;
 
@@ -202,7 +203,7 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
                  : u in gens]);
   // The kernel recovers the subspace of U/U^2 of totally positive units
   ker := Kernel(mat);
-  tot_pos := [&+[b[i]*gens[i] : i in [1..#gens]] : b in Basis(ker)];
+  tot_pos := [&+[(Integers()!b[i])*gens[i] : i in [1..#gens]] : b in Basis(ker)];
   assert &and[IsTotallyPositive(mU(u)) : u in tot_pos];
   U_pos := sub<U | tot_pos cat [2*g : g in gens]>;
   // Helper function

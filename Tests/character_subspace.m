@@ -556,8 +556,9 @@ end procedure;
 num_tests := 5;
 
 fund_discs := Keys(dim_list);
+B := Maximum(fund_discs);
 ds := [Random(fund_discs) : i in [1..num_tests]];
-ns := [[n : n in [1..Floor(Sqrt(200/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d in ds];
+ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d in ds];
 
 printf "Checking dimensions at d=";
 for i->d in ds do
@@ -567,4 +568,5 @@ for i->d in ds do
 	printf "%o ", n;
 	testHeckeCharacterSubspace(d,n, dim_list);
     end for;
+    printf "\n";
 end for;
