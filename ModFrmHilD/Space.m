@@ -311,12 +311,28 @@ intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
   return &+[g * I : g in Generators(a)];
 end intrinsic;
 
+function getWeightBaseField(M)
+    is_parallel, w := IsParallelWeight(M);
+    if is_parallel and w eq 2 then
+	return Rationals();
+    end if;
+    assert assigned M`weight_base_field;
+    return M`weight_base_field;
+end function;
+
 // This function returns the matrix describing the action
 // of the ideal J on the space M of Hilbert modular forms.
 // These are the operators denoted by P(J) in [Voight]
 // and by S(J) in [Shimura]
 
 function DiamondOperator(M, J)
+
+    F_weight := getWeightBaseField(M);
+    
+    if Dimension(M) eq 0 then
+	return MatrixAlgebra(F_weight, 0)!1;
+    end if;
+    
     // We would have liked to use that, but it is only available for parallel weight 2
     //raw_data := InternalHMFRawDataDefinite(M);
     //ideal_classes := raw_data`RightIdealClassReps;
@@ -332,7 +348,8 @@ function DiamondOperator(M, J)
     // J acts by left multiplication on the classes of right ideals.
     JIs := [J*I : I in ideal_classes];
     // This creates a permutation of the ideal classes, which we now construct
-    perm := &cat[[j : j in [1..#ideal_classes] | IsIsomorphic(JI, ideal_classes[j])] : JI in JIs];
+    perm := &cat[[j : j in [1..#ideal_classes] | IsIsomorphic(JI, ideal_classes[j])]
+		 : JI in JIs];
 
     // If the weight is trivial, we do not need the direct factors (and they are aso not computed)
     
@@ -342,7 +359,7 @@ function DiamondOperator(M, J)
     // In the general case, the matrix describes the embedding into the h copies of W.
     // This makes sense since the entire space is cuspidal, but requires different handling.
     if (M`weight_dimension eq 1) then
-	d_J := PermutationMatrix(M`weight_base_field, perm);
+	d_J := PermutationMatrix(F_weight, perm);
 	// This is the operator on the subspace corresponding to M
 	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
 	return d_J;
@@ -360,7 +377,7 @@ function DiamondOperator(M, J)
     // the blockified permutation
     big_perm := &cat[[cumsum[perm[i]]+j : j in [1..dims[i]]] : i in [1..#perm]];
     // This is the operator on the entire space of Hilbert modular forms
-    d_J := PermutationMatrix(M`weight_base_field, big_perm);
+    d_J := PermutationMatrix(F_weight, big_perm);
     
     return d_J;
 end function;
@@ -399,15 +416,20 @@ function HeckeCharacterSubspace(M, chi)
     K := BaseRing(M);
     Z_K := Integers(K);
     cl_K, cl_map := NarrowClassGroup(Z_K);
+    if IsTrivial(cl_K) then
+	return M;
+    end if;
     Js := [cl_map(cl_K.i) : i in [1..Ngens(cl_K)]];
     dJs := [<J, DiamondOperator(M,J)> : J in Js];
-    Id_M := IdentityMatrix(Rationals(), Dimension(M));
+    
+    F_weight := getWeightBaseField(M);
+    Id_M := IdentityMatrix(F_weight, Dimension(M));
     
     subsp := &meet [Kernel(dJ[2] - chi(dJ[1])*Id_M) : dJ in dJs];
 
     dim := Dimension(subsp);
     
-    Id_Msub := IdentityMatrix(Rationals(), dim);
+    Id_Msub := IdentityMatrix(F_weight, dim);
     
     M_sub := HMF0(BaseField(M), Level(M), 1*Integers(K), chi, Weight(M), CentralCharacter(M));
     M_sub`basis_matrix_wrt_ambient := BasisMatrix(subsp);
@@ -424,3 +446,48 @@ function HeckeCharacterSubspace(M, chi)
     
     return M_sub;
 end function;
+
+// This function test that we have the correct dimension
+// for the new subspace of Hilbert modular forms of trivial character
+// and weight, for a quadratic field of discriminant d, with level n*Z_K.
+// It does so by considering the oriented genera of quaternary
+// quadratic forms.
+// We restrict to trivial level and weight because
+// we don't have access here to the algebraic modular form package
+// which can compute those for arbitrary level and weight.
+// update : instead of computing on the spot, we just compare to a
+// value from a precomputed list.
+// This is the computation for d,n - 
+// &+[Dimension(OrthogonalModularForms(g[1] : Special))-1
+// : g in QuaternaryQuadraticLattices(d*n^2)]
+procedure testHeckeCharacterSubspace(d,n)
+
+    // This is the current length of the precomputed list
+    assert d*n^2 ne 1 and d*n^2 le 200;
+    K := QuadraticField(d);
+    D := Discriminant(K);
+
+    // This is currently only worked out for GCD(D,n) eq 1 and n square free
+    // (The theorem transferring orthogonal modular forms to Hilbert modular forms)
+    assert GCD(D,n) eq 1 and IsSquarefree(n);
+    
+    dim_list := [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 3, 2, 0, 0, 4, 2, 0, 0, 0, 2, 0, 0, 1, 3, 0, 0, 1, 2, 0, 0, 4, 3, 0, 0, 0, 0, 0, 0, 7, 4, 0, 0, 5, 3, 0, 0, 5, 4, 0, 0, 5, 3, 0, 0, 0, 4, 0, 0, 6, 8, 0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 8, 1, 0, 0, 10, 3, 0, 0, 7, 0, 0, 0, 0, 6, 0, 0, 4, 5, 0, 0, 8, 5, 0, 0, 10, 7, 0, 0, 0, 8, 0, 0, 11, 6, 0, 0, 9, 2, 0, 0, 12, 6, 0, 0, 10, 9, 0, 0, 4, 10, 0, 0, 14, 0, 0, 0, 10, 7, 0, 0, 8, 11, 0, 0, 4, 7, 0, 0, 11, 8, 0, 0, 11, 0, 0, 0, 0, 9, 0, 0, 0, 8, 0, 0, 2 ];
+    
+    if Type(K) eq FldRat then
+	K := QNF();
+    end if;
+    Z_K := Integers(K);
+    N := ideal<Z_K|n>;
+
+    // We might need that at some point
+    // is_new := IsEven(#RealPlaces(K) + #PrimeDivisors(n));
+    
+    hmf_cusp := NewSubspace(HilbertCuspForms(K, N, 2));
+    X := HeckeCharacterGroup(N, [1..#RealPlaces(K)]);
+    hmf_triv := HeckeCharacterSubspace(hmf_cusp, X!1);
+    dim_hmf_triv := Dimension(hmf_triv);
+
+    
+    assert dim_hmf_triv eq dim_list[D*n^2];
+    
+end procedure;

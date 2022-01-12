@@ -3,3 +3,5 @@ ModFrmHilD/*.sig
 *.swp
 .DS_Store
 *.m~
+*.m#
+ModFrmHilD/.#Space.m
