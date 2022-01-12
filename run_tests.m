@@ -17,7 +17,7 @@ for filename in tests do
       printf "Success! %o s\n", Time(timestamp);
     catch e
       Append(~failed, filename);
-      printf "Fail! %o s\n", Time(timestamp);;
+      printf "Fail! %o s\n %o\n", e, Time(timestamp);;
     end try;
   end if;
 end for;
