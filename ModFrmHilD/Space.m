@@ -99,6 +99,34 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   return M;
 end intrinsic;
 
+intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
+{Check if the character chi is compatible with the weight k, i.e. the parity
+is the same at all infinite places. If it fails, returns the index of the first infinite
+place where they do not match.}
+  comps := Components(chi);
+  level, places := Modulus(chi);
+  F := NumberField(Order(level));
+  require places eq [1..Degree(F)] : "Chi is not a narrow class group character.";
+  require (Degree(F) eq #InfinitePlaces(F)) : "The field is not totally real.";
+  for i->v in InfinitePlaces(F) do
+    chiv := comps[v];
+    if (chiv(-1) ne (-1)^k[i]) then
+	return false, i;
+    end if;
+  end for;
+  return true, _;
+end intrinsic;
+
+intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngIntElt
+{Check if the character chi is compatible with the weight k, i.e. the parity
+is the same at all infinite places. If it fails, returns the index of the first infinite
+place where they do not match.}
+  F := NumberField(Order(Modulus(chi)));
+  weight := [k : v in InfinitePlaces(F)];
+  is_compat, idx := IsCompatibleWeight(chi, weight);
+  return is_compat, idx;
+end intrinsic;
+
 // TODO: some checks here? or leave it up to the user?
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt) -> ModFrmHilD
   {}
@@ -113,11 +141,8 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Weight := k;
   Mk`Level := N;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
-  comps := Components(chi);
-  for i->v in InfinitePlaces(BaseField(M)) do
-    chiv := comps[v];
-    require chiv(-1) eq (-1)^k[i] : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
-  end for;
+  is_compat, i := IsCompatibleWeight(chi, k);
+  require is_compat : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
   Mk`Character := chi;
   AddToSpaces(M, Mk, N, k, chi);
   return Mk;
