@@ -11,7 +11,7 @@
 /* TODO
 * Nonparallel weight: We have Norm(mm)^(Integers()!(k[1]/2-1)) which should be m_i^(k_i/2-1). This comes from trace on weight space
 * Character: The character is on the narrow class group of modulus NN where NN is the level, but
-in magma this yeilds 0 for ideals that are not comprime to the level and we need this to be 1. */
+in magma this yields 0 for ideals that are not coprime to the level and we need this to be 1. */
 // Returns the constant term for the trace formula
 // Notes: None
 intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
