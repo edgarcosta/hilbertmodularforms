@@ -546,8 +546,9 @@ procedure testHeckeCharacterSubspace(d,n, dim_list)
     hmf := HMFSpace(R, N, [2,2]);
     dim_hmf := Dimension(hmf);
     dim_cusp := CuspDimension(hmf);
-    
-    assert dim_hmf eq dim_list[D][n][1];
+
+    // This is not true, since Eisenstein series do not surject in JL
+    // assert dim_hmf eq dim_list[D][n][1];
     assert dim_cusp eq dim_list[D][n][2];
     
 end procedure;
@@ -558,7 +559,8 @@ num_tests := 5;
 fund_discs := Keys(dim_list);
 B := Maximum(fund_discs);
 ds := [Random(fund_discs) : i in [1..num_tests]];
-ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d in ds];
+// ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d in ds];
+ns := [[1] : d in ds];
 
 printf "Checking dimensions at d=";
 for i->d in ds do

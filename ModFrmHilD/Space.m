@@ -259,7 +259,7 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
     end if;
 
     if version eq "builtin" then
-      require IsTrivial(Character(Mk)): "we rely on magma built-in functions, which only works for trivial character";
+      require IsTrivial(DirichletRestriction(Character(Mk))): "we rely on magma built-in functions, which only works for characters whose associated Dirichlet character is trivial";
       Mk`CuspDimension := Dimension(HilbertCuspForms(Mk));
     else
       M := Parent(Mk);
