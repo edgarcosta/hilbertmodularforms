@@ -1,4 +1,4 @@
-printf "Testing Einstein series over Q(sqrt(3))..."; //use printf with no \n
+printf "Testing Eisenstein series over Q(sqrt(3))..."; //use printf with no \n
 prec := 10;
 D := 12;
 F:=QuadraticField(D);
