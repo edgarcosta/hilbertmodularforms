@@ -378,27 +378,29 @@ function DiamondOperator(M, J)
     perm := &cat[[j : j in [1..#ideal_classes] | IsIsomorphic(JI, ideal_classes[j])]
 		 : JI in JIs];
 
-    // If the weight is trivial, we do not need the direct factors (and they are aso not computed)
+    // TODO - there are more cases to distinguish here.
+    // I am not completely sure when and if the direct factors are actually called
+    // However, if they are not needed for computing the Hecke operator above,
+    // the basis matrix describes the embedding of M into the space of modular forms.
     
     // This is an artifact of the implementation -
     // When the weight is trivial, the basis_matrix describes the cuspidal space inside
     // the entire space of modular forms. We have to dig it out.
     // In the general case, the matrix describes the embedding into the h copies of W.
     // This makes sense since the entire space is cuspidal, but requires different handling.
-    if (M`weight_dimension eq 1) then
-	d_J := PermutationMatrix(F_weight, perm);
-	// This is the operator on the subspace corresponding to M
+    
+    if not assigned M`ModFrmHilDirFacts then
+	d_J := PermutationMatrix(F_weight,perm);
 	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
 	return d_J;
     end if;
-
-    // case II - nontrivial weight
     
     // In order to gain the action on our space, we have to blockify according to the
     // subspaces of direct factors
     hmsdf := M`ModFrmHilDirFacts;
     // dimensions of the different H0(W, Gamma_i)
     dims := [Nrows(h`basis_matrix) : h in hmsdf];
+    
     // cumulative sums for the next line
     cumsum := [&+dims[1..i] : i in [0..#dims]];
     // the blockified permutation
@@ -406,6 +408,10 @@ function DiamondOperator(M, J)
     // This is the operator on the entire space of Hilbert modular forms
     d_J := PermutationMatrix(F_weight, big_perm);
     
+    if (M`weight_dimension eq 1) then
+	// This is the operator on the subspace corresponding to M
+	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
+    end if;
     return d_J;
 end function;
 
@@ -473,48 +479,3 @@ function HeckeCharacterSubspace(M, chi)
     
     return M_sub;
 end function;
-
-// This function test that we have the correct dimension
-// for the new subspace of Hilbert modular forms of trivial character
-// and weight, for a quadratic field of discriminant d, with level n*Z_K.
-// It does so by considering the oriented genera of quaternary
-// quadratic forms.
-// We restrict to trivial level and weight because
-// we don't have access here to the algebraic modular form package
-// which can compute those for arbitrary level and weight.
-// update : instead of computing on the spot, we just compare to a
-// value from a precomputed list.
-// This is the computation for d,n - 
-// &+[Dimension(OrthogonalModularForms(g[1] : Special))-1
-// : g in QuaternaryQuadraticLattices(d*n^2)]
-procedure testHeckeCharacterSubspace(d,n)
-
-    // This is the current length of the precomputed list
-    assert d*n^2 ne 1 and d*n^2 le 200;
-    K := QuadraticField(d);
-    D := Discriminant(K);
-
-    // This is currently only worked out for GCD(D,n) eq 1 and n square free
-    // (The theorem transferring orthogonal modular forms to Hilbert modular forms)
-    assert GCD(D,n) eq 1 and IsSquarefree(n);
-    
-    dim_list := [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 3, 2, 0, 0, 4, 2, 0, 0, 0, 2, 0, 0, 1, 3, 0, 0, 1, 2, 0, 0, 4, 3, 0, 0, 0, 0, 0, 0, 7, 4, 0, 0, 5, 3, 0, 0, 5, 4, 0, 0, 5, 3, 0, 0, 0, 4, 0, 0, 6, 8, 0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 8, 1, 0, 0, 10, 3, 0, 0, 7, 0, 0, 0, 0, 6, 0, 0, 4, 5, 0, 0, 8, 5, 0, 0, 10, 7, 0, 0, 0, 8, 0, 0, 11, 6, 0, 0, 9, 2, 0, 0, 12, 6, 0, 0, 10, 9, 0, 0, 4, 10, 0, 0, 14, 0, 0, 0, 10, 7, 0, 0, 8, 11, 0, 0, 4, 7, 0, 0, 11, 8, 0, 0, 11, 0, 0, 0, 0, 9, 0, 0, 0, 8, 0, 0, 2 ];
-    
-    if Type(K) eq FldRat then
-	K := QNF();
-    end if;
-    Z_K := Integers(K);
-    N := ideal<Z_K|n>;
-
-    // We might need that at some point
-    // is_new := IsEven(#RealPlaces(K) + #PrimeDivisors(n));
-    
-    hmf_cusp := NewSubspace(HilbertCuspForms(K, N, 2));
-    X := HeckeCharacterGroup(N, [1..#RealPlaces(K)]);
-    hmf_triv := HeckeCharacterSubspace(hmf_cusp, X!1);
-    dim_hmf_triv := Dimension(hmf_triv);
-
-    
-    assert dim_hmf_triv eq dim_list[D*n^2];
-    
-end procedure;
