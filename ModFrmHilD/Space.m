@@ -195,12 +195,14 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
+forward HilbertCharacterSubspace;
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
-    require IsTrivial(Character(Mk)): "Magma's builtin tools only supports trivial characters";
+    require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
     Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Weight(Mk));
+    Mk`MagmaSpace := HilbertCharacterSubspace(Mk`MagmaSpace, Character(Mk));
   end if;
   return Mk`MagmaSpace;
 end intrinsic;
