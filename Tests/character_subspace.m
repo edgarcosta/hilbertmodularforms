@@ -1,4 +1,4 @@
-// Warning - currently only testing trivial weight and level
+// Warning - currently only testing trivial weight and character
 dim_list := AssociativeArray();
 /*
 Generated with
@@ -23,177 +23,177 @@ fprintf "hilbertmodularforms/Tests/character_subspace.m", "%o", output_str;
 
 dim_list[5] := [
 [ 1, 0 ],
-[ 4, 0 ],
-[ 8, 2 ],
-[ 24, 8 ],
-[ 8, 4 ],
-[ 80, 52 ],
-[ 28, 22 ],
-[ 148, 99 ],
-[ 104, 76 ]
+[ 1, 0 ],
+[ 1, 0 ],
+[ 0, 0 ],
+[ 0, 0 ],
+[ 2, 1 ],
+[ 2, 1 ],
+[ 0, 0 ],
+[ 0, 0 ]
 ];
 dim_list[8] := [
 [ 1, 0 ],
-[ 5, 0 ],
-[ 14, 8 ],
-[ 20, 6 ],
-[ 30, 24 ],
-[ 98, 68 ],
-[ 56, 50 ]
+[ 0, 0 ],
+[ 2, 1 ],
+[ 0, 0 ],
+[ 3, 2 ],
+[ 0, 0 ],
+[ 4, 3 ]
 ];
 dim_list[12] := [
 [ 2, 0 ],
-[ 12, 2 ],
-[ 15, 7 ],
-[ 67, 35 ],
-[ 60, 48 ],
-[ 154, 100 ]
+[ 0, 0 ],
+[ 0, 0 ],
+[ 0, 0 ],
+[ 6, 4 ],
+[ 0, 0 ]
 ];
 dim_list[13] := [
 [ 1, 0 ],
-[ 8, 4 ],
-[ 16, 10 ],
-[ 57, 39 ],
-[ 40, 34 ]
+[ 2, 1 ],
+[ 2, 1 ],
+[ 0, 0 ],
+[ 4, 3 ]
 ];
 dim_list[17] := [
 [ 1, 0 ],
-[ 10, 6 ],
-[ 24, 18 ],
-[ 84, 62 ],
-[ 68, 60 ]
+[ 2, 1 ],
+[ 3, 2 ],
+[ 0, 0 ],
+[ 6, 5 ]
 ];
 dim_list[21] := [
 [ 2, 0 ],
-[ 18, 10 ],
-[ 19, 11 ],
-[ 141, 103 ]
+[ 4, 2 ],
+[ 0, 0 ],
+[ 0, 0 ]
 ];
 dim_list[24] := [
 [ 3, 1 ],
-[ 18, 8 ],
-[ 28, 20 ],
-[ 83, 55 ]
+[ 0, 0 ],
+[ 0, 0 ],
+[ 0, 0 ]
 ];
 dim_list[28] := [
 [ 3, 1 ],
-[ 22, 12 ],
-[ 56, 42 ],
-[ 168, 128 ]
+[ 0, 0 ],
+[ 6, 4 ],
+[ 0, 0 ]
 ];
 dim_list[29] := [
 [ 2, 1 ],
-[ 18, 12 ],
-[ 40, 32 ]
+[ 4, 3 ],
+[ 5, 4 ]
 ];
 dim_list[33] := [
 [ 3, 1 ],
-[ 28, 18 ],
-[ 36, 28 ]
+[ 4, 2 ],
+[ 0, 0 ]
 ];
 dim_list[37] := [
 [ 2, 1 ],
-[ 22, 16 ],
-[ 44, 37 ]
+[ 5, 4 ],
+[ 4, 3 ]
 ];
 dim_list[40] := [
 [ 4, 2 ],
-[ 26, 16 ],
-[ 84, 70 ]
+[ 0, 0 ],
+[ 8, 6 ]
 ];
 dim_list[41] := [
 [ 2, 1 ],
-[ 24, 19 ],
-[ 72, 64 ]
+[ 3, 2 ],
+[ 9, 8 ]
 ];
 dim_list[44] := [
 [ 4, 2 ],
-[ 38, 24 ],
-[ 88, 72 ]
+[ 0, 0 ],
+[ 12, 10 ]
 ];
 dim_list[53] := [
 [ 3, 2 ],
-[ 32, 26 ]
+[ 7, 6 ]
 ];
 dim_list[56] := [
 [ 5, 3 ],
-[ 34, 24 ]
+[ 0, 0 ]
 ];
 dim_list[57] := [
 [ 4, 2 ],
-[ 46, 36 ]
+[ 6, 4 ]
 ];
 dim_list[60] := [
 [ 8, 4 ],
-[ 76, 48 ]
+[ 0, 0 ]
 ];
 dim_list[61] := [
 [ 3, 2 ],
-[ 40, 34 ]
+[ 8, 7 ]
 ];
 dim_list[65] := [
 [ 4, 2 ],
-[ 48, 38 ]
+[ 6, 4 ]
 ];
 dim_list[69] := [
 [ 5, 3 ],
-[ 60, 50 ]
+[ 12, 10 ]
 ];
 dim_list[73] := [
 [ 3, 2 ],
-[ 50, 45 ]
+[ 5, 4 ]
 ];
 dim_list[76] := [
 [ 6, 4 ],
-[ 64, 50 ]
+[ 0, 0 ]
 ];
 dim_list[77] := [
 [ 5, 3 ],
-[ 60, 48 ]
+[ 12, 10 ]
 ];
 dim_list[85] := [
 [ 6, 4 ],
-[ 72, 60 ]
+[ 14, 12 ]
 ];
 dim_list[88] := [
 [ 7, 5 ],
-[ 54, 44 ]
+[ 0, 0 ]
 ];
 dim_list[89] := [
 [ 4, 3 ],
-[ 60, 55 ]
+[ 5, 4 ]
 ];
 dim_list[92] := [
 [ 7, 5 ],
-[ 78, 62 ]
+[ 0, 0 ]
 ];
 dim_list[93] := [
 [ 6, 4 ],
-[ 78, 66 ]
+[ 16, 14 ]
 ];
 dim_list[97] := [
 [ 4, 3 ],
-[ 72, 67 ]
+[ 6, 5 ]
 ];
 dim_list[101] := [
 [ 5, 4 ],
-[ 68, 62 ]
+[ 13, 12 ]
 ];
 dim_list[104] := [
 [ 8, 6 ],
-[ 58, 48 ]
+[ 0, 0 ]
 ];
 dim_list[105] := [
 [ 12, 8 ],
-[ 128, 108 ]
+[ 12, 8 ]
 ];
 dim_list[109] := [
 [ 5, 4 ],
-[ 84, 78 ]
+[ 16, 15 ]
 ];
 dim_list[113] := [
 [ 5, 4 ],
-[ 82, 76 ]
+[ 8, 7 ]
 ];
 dim_list[120] := [
 [ 14, 10 ]
@@ -508,6 +508,7 @@ dim_list[457] := [
 [ 33, 32 ]
 ];
 
+
 // This function test that we have the correct dimension
 // for the new subspace of Hilbert modular forms of trivial character
 // and weight, for a quadratic field of discriminant d, with level n*Z_K.
@@ -539,14 +540,23 @@ procedure testHeckeCharacterSubspace(d,n, dim_list)
 	K := QNF();
     end if;
     Z_K := Integers(K);
-    N := ideal<Z_K|n^2>;
+    N := ideal<Z_K|n>;
 
-    // We might need that at some point
-    // is_new := IsEven(#RealPlaces(K) + #PrimeDivisors(n));
+    // to igure out which space we should be looking at, we have to understtand the
+    // ramification of the quaternion algebra B_K
+    // We assumed that disc(B) and K are relatively prime, so
+    // the primes ramifying in B are precisely the ones dividing n.
+    // Such a prime (i.e. the primes above it) is also ramified in B_K iff its is split in K.
+    
+    new_level := &*([1] cat [p : p in PrimeDivisors(n) | IsSplit(p, Z_K)]);
     R := GradedRingOfHMFs(K, 1);
     hmf := HMFSpace(R, N, [2,2]);
-    dim_hmf := Dimension(hmf);
-    dim_cusp := CuspDimension(hmf);
+    // !! TODO - we should implement a new-subspace intrinsic for HMFSpaces
+    // That would make the following easier.
+    // dim_hmf := Dimension(hmf);
+    // dim_cusp := CuspDimension(hmf);
+    hcf := NewSubspace(HilbertCuspForms(hmf), new_level * Z_K);
+    dim_cusp := Dimension(hcf);
 
     // This is not true, since Eisenstein series do not surject in JL
     // assert dim_hmf eq dim_list[D][n][1];
@@ -560,8 +570,7 @@ num_tests := 5;
 fund_discs := Keys(dim_list);
 B := Maximum(fund_discs);
 ds := [Random(fund_discs) : i in [1..num_tests]];
-// ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d in ds];
-ns := [[1] : d in ds];
+ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d in ds];
 
 printf "Checking dimensions at d=";
 for i->d in ds do

@@ -348,6 +348,34 @@ function getWeightBaseField(M)
     return M`weight_base_field;
 end function;
 
+// This function is needed to handle the coinduction implementation in nontrivial level
+// Eventually, we hope to be able to describe the action completely on reprsentatives
+// without lifting to ideals, but for now that will do.
+// It returns the right ideal J_a corresponding to a as in [Dembele-Voight]
+function getIdealRepresentedByP1(M, a)
+    O_B := QuaternionOrder(M);
+    Z_K := BaseRing(O_B);
+    N := Level(M);
+    basis_O_B := &cat[[g*pb[2] : g in Generators(pb[1])] : pb in PseudoBasis(O_B)];
+    sm := M`splitting_map;
+    // These are the images of the basis elements under the splitting map
+    // made into a matrix in which we could work out relations on the entries
+    sm_mats := Transpose(Matrix([Eltseq(sm(x)) : x in basis_O_B]));
+    // we want the image under the splitting map to be [[0,a[1]*t],[0,a[2]*t]]
+    // so that it will be preserved by right multiplication by the upper triangular matrices
+    rels := Matrix([sm_mats[1], sm_mats[3], a[2,1]*sm_mats[2]-a[1,1]*sm_mats[4]]);
+    rels := ChangeRing(rels, quo<Z_K | N>);
+    ker := Kernel(Transpose(rels));
+    ker_basis := [ChangeRing(v, Z_K) : v in Basis(ker)];
+    a_invs := [&+[v[i]*basis_O_B[i] : i in [1..#basis_O_B]] : v in ker_basis];
+    assert &and [a[1,1]*sm(x)[2,2] - a[2,1] * sm(x)[1,2] in N : x in a_invs];
+    assert &and [sm(x)[1,1] in N : x in a_invs];
+    assert &and [sm(x)[2,1] in N : x in a_invs];
+    J_a := lideal<O_B | a_invs cat Generators(N)>;
+    assert Norm(J_a) eq N;
+    return J_a;
+end function;
+
 // This function returns the matrix describing the action
 // of the ideal J on the space M of Hilbert modular forms.
 // These are the operators denoted by P(J) in [Voight]
@@ -449,7 +477,10 @@ end function;
 function HeckeCharacterSubspace(M, chi)
     K := BaseRing(M);
     Z_K := Integers(K);
-    cl_K, cl_map := NarrowClassGroup(Z_K);
+    cl_K, cl_map := RayClassGroup(Level(M), [1..Degree(K)]);
+    // This should be enough since the restriction of the character to
+    // a Dirichlet character is always trivial, but meanwhile we are on the safe side
+    // cl_K, cl_map := NarrowClassGroup(Z_K);
     if IsTrivial(cl_K) then
 	return M;
     end if;
