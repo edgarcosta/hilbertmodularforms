@@ -99,6 +99,35 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   return M;
 end intrinsic;
 
+intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
+{Check if the character chi is compatible with the weight k, i.e. the parity
+is the same at all infinite places. If it fails, returns the index of the first infinite
+place where they do not match.}
+  comps := Components(chi);
+  level, places := Modulus(chi);
+  F := NumberField(Order(level));
+  require places eq [1..Degree(F)] : "Chi is not a narrow class group character.";
+  require (Degree(F) eq #InfinitePlaces(F)) : "The field is not totally real.";
+  for i->v in InfinitePlaces(F) do
+    chiv := comps[v];
+    if (chiv(-1) ne (-1)^k[i]) then
+	return false, i;
+    end if;
+  end for;
+  return true, _;
+end intrinsic;
+
+intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngIntElt
+{Check if the character chi is compatible with the weight k, i.e. the parity
+is the same at all infinite places. If it fails, returns the index of the first infinite
+place where they do not match.}
+  F := NumberField(Order(Modulus(chi)));
+  weight := [k : v in InfinitePlaces(F)];
+  is_compat, idx := IsCompatibleWeight(chi, weight);
+  if is_compat then return true, _; end if;
+  return is_compat, idx;
+end intrinsic;
+
 // TODO: some checks here? or leave it up to the user?
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt) -> ModFrmHilD
   {}
@@ -113,11 +142,8 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Weight := k;
   Mk`Level := N;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
-  comps := Components(chi);
-  for i->v in InfinitePlaces(BaseField(M)) do
-    chiv := comps[v];
-    require chiv(-1) eq (-1)^k[i] : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
-  end for;
+  is_compat, i := IsCompatibleWeight(chi, k);
+  require is_compat : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
   Mk`Character := chi;
   AddToSpaces(M, Mk, N, k, chi);
   return Mk;
@@ -177,7 +203,7 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
                  : u in gens]);
   // The kernel recovers the subspace of U/U^2 of totally positive units
   ker := Kernel(mat);
-  tot_pos := [&+[b[i]*gens[i] : i in [1..#gens]] : b in Basis(ker)];
+  tot_pos := [&+[(Integers()!b[i])*gens[i] : i in [1..#gens]] : b in Basis(ker)];
   assert &and[IsTotallyPositive(mU(u)) : u in tot_pos];
   U_pos := sub<U | tot_pos cat [2*g : g in gens]>;
   // Helper function
@@ -195,12 +221,14 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
+forward HeckeCharacterSubspace;
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
-    require IsTrivial(Character(Mk)): "Magma's builtin tools only supports trivial characters";
+    require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
     Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Weight(Mk));
+    Mk`MagmaSpace := HeckeCharacterSubspace(Mk`MagmaSpace, Character(Mk));
   end if;
   return Mk`MagmaSpace;
 end intrinsic;
@@ -231,7 +259,7 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
     end if;
 
     if version eq "builtin" then
-      require IsTrivial(Character(Mk)): "we rely on magma built-in functions, which only works for trivial character";
+      require IsTrivial(DirichletRestriction(Character(Mk))): "we rely on magma built-in functions, which only works for characters whose associated Dirichlet character is trivial";
       Mk`CuspDimension := Dimension(HilbertCuspForms(Mk));
     else
       M := Parent(Mk);
@@ -306,3 +334,180 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   return Mk`EisensteinAdmissableCharacterPairs;
 end intrinsic;
 
+intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
+{Given an ideal a of R, and an ideal I of O, an order over R, Returns the ideal a*I.}
+  return &+[g * I : g in Generators(a)];
+end intrinsic;
+
+function getWeightBaseField(M)
+    // is_parallel, w := IsParallelWeight(M);
+    if not assigned M`weight_base_field then
+	return Rationals();
+    end if;
+    assert assigned M`weight_base_field;
+    return M`weight_base_field;
+end function;
+
+// This function is needed to handle the coinduction implementation in nontrivial level
+// Eventually, we hope to be able to describe the action completely on reprsentatives
+// without lifting to ideals, but for now that will do.
+// It returns the right ideal J_a corresponding to a as in [Dembele-Voight]
+function getIdealRepresentedByP1(M, a)
+    O_B := QuaternionOrder(M);
+    Z_K := BaseRing(O_B);
+    N := Level(M);
+    basis_O_B := &cat[[g*pb[2] : g in Generators(pb[1])] : pb in PseudoBasis(O_B)];
+    sm := M`splitting_map;
+    // These are the images of the basis elements under the splitting map
+    // made into a matrix in which we could work out relations on the entries
+    sm_mats := Transpose(Matrix([Eltseq(sm(x)) : x in basis_O_B]));
+    // we want the image under the splitting map to be [[0,a[1]*t],[0,a[2]*t]]
+    // so that it will be preserved by right multiplication by the upper triangular matrices
+    rels := Matrix([sm_mats[1], sm_mats[3], a[2,1]*sm_mats[2]-a[1,1]*sm_mats[4]]);
+    rels := ChangeRing(rels, quo<Z_K | N>);
+    ker := Kernel(Transpose(rels));
+    ker_basis := [ChangeRing(v, Z_K) : v in Basis(ker)];
+    a_invs := [&+[v[i]*basis_O_B[i] : i in [1..#basis_O_B]] : v in ker_basis];
+    assert &and [a[1,1]*sm(x)[2,2] - a[2,1] * sm(x)[1,2] in N : x in a_invs];
+    assert &and [sm(x)[1,1] in N : x in a_invs];
+    assert &and [sm(x)[2,1] in N : x in a_invs];
+    J_a := lideal<O_B | a_invs cat Generators(N)>;
+    assert Norm(J_a) eq N;
+    return J_a;
+end function;
+
+// This function returns the matrix describing the action
+// of the ideal J on the space M of Hilbert modular forms.
+// These are the operators denoted by P(J) in [Voight]
+// and by S(J) in [Shimura]
+
+function DiamondOperator(M, J)
+
+    F_weight := getWeightBaseField(M);
+    
+    if Dimension(M) eq 0 then
+	return MatrixAlgebra(F_weight, 0)!1;
+    end if;
+    
+    // We would have liked to use that, but it is only available for parallel weight 2
+    //raw_data := InternalHMFRawDataDefinite(M);
+    //ideal_classes := raw_data`RightIdealClassReps;
+
+    //    Instead, we force the computation of the attributes we care about.
+    if (not assigned M`rids) then
+	K := BaseField(M);
+	p := PrimeIdealsOverPrime(K, 2)[1];
+	_ := HeckeOperator(M,p);
+    end if;
+    ideal_classes := M`rids;
+    
+    // J acts by left multiplication on the classes of right ideals.
+    JIs := [J*I : I in ideal_classes];
+    // This creates a permutation of the ideal classes, which we now construct
+    perm := &cat[[j : j in [1..#ideal_classes] | IsIsomorphic(JI, ideal_classes[j])]
+		 : JI in JIs];
+
+    // TODO - there are more cases to distinguish here.
+    // I am not completely sure when and if the direct factors are actually called
+    // However, if they are not needed for computing the Hecke operator above,
+    // the basis matrix describes the embedding of M into the space of modular forms.
+    
+    // This is an artifact of the implementation -
+    // When the weight is trivial, the basis_matrix describes the cuspidal space inside
+    // the entire space of modular forms. We have to dig it out.
+    // In the general case, the matrix describes the embedding into the h copies of W.
+    // This makes sense since the entire space is cuspidal, but requires different handling.
+    
+    if not assigned M`ModFrmHilDirFacts then
+	d_J := PermutationMatrix(F_weight,perm);
+	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
+	return d_J;
+    end if;
+    
+    // In order to gain the action on our space, we have to blockify according to the
+    // subspaces of direct factors
+    hmsdf := M`ModFrmHilDirFacts;
+    // dimensions of the different H0(W, Gamma_i)
+    dims := [Nrows(h`basis_matrix) : h in hmsdf];
+    
+    // cumulative sums for the next line
+    cumsum := [&+dims[1..i] : i in [0..#dims]];
+    // the blockified permutation
+    big_perm := &cat[[cumsum[perm[i]]+j : j in [1..dims[i]]] : i in [1..#perm]];
+    // This is the operator on the entire space of Hilbert modular forms
+    d_J := PermutationMatrix(F_weight, big_perm);
+    
+    if (M`weight_dimension eq 1) then
+	// This is the operator on the subspace corresponding to M
+	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
+    end if;
+    return d_J;
+end function;
+
+// This function is copied from ModFrmHil/hackobj.m
+// Optimally, we would just import it
+function HMF0(F, N, Nnew, Chi, k, C)
+  M := New(ModFrmHil);
+  M`Field := F;
+  M`Level := N;
+  M`NewLevel := Nnew;
+  M`DirichletCharacter := Chi;
+  M`Weight := k;
+  M`CentralCharacter := C;
+  assert C eq Max(k) - 2; // currently
+  M`is_cuspidal := true; // always true, currently
+  M`Hecke    := AssociativeArray();
+  M`HeckeBig := AssociativeArray();
+  M`HeckeBigColumns := AssociativeArray();
+  M`HeckeCharPoly := AssociativeArray();
+  M`AL       := AssociativeArray();
+  M`DegDown1 := AssociativeArray();
+  M`DegDownp := AssociativeArray();
+  if forall{w : w in k | w eq 2} then
+    M`hecke_matrix_field := Rationals();
+    M`hecke_matrix_field_is_minimal := true;
+  else 
+    M`hecke_matrix_field_is_minimal := false;
+  end if;
+  return M;
+end function;
+
+// Here M is a ModFrmHil (HibertCuspForms(M))
+// Currently just works for trivial weight.
+function HeckeCharacterSubspace(M, chi)
+    K := BaseRing(M);
+    Z_K := Integers(K);
+    cl_K, cl_map := RayClassGroup(Level(M), [1..Degree(K)]);
+    // This should be enough since the restriction of the character to
+    // a Dirichlet character is always trivial, but meanwhile we are on the safe side
+    // cl_K, cl_map := NarrowClassGroup(Z_K);
+    if IsTrivial(cl_K) then
+	return M;
+    end if;
+    Js := [cl_map(cl_K.i) : i in [1..Ngens(cl_K)]];
+    dJs := [<J, DiamondOperator(M,J)> : J in Js];
+    
+    F_weight := getWeightBaseField(M);
+    Id_M := IdentityMatrix(F_weight, Dimension(M));
+    
+    subsp := &meet [Kernel(dJ[2] - chi(dJ[1])*Id_M) : dJ in dJs];
+
+    dim := Dimension(subsp);
+    
+    Id_Msub := IdentityMatrix(F_weight, dim);
+    
+    M_sub := HMF0(BaseField(M), Level(M), 1*Integers(K), chi, Weight(M), CentralCharacter(M));
+    M_sub`basis_matrix_wrt_ambient := BasisMatrix(subsp);
+    
+    M_sub`basis_matrix_wrt_ambient_inv := 
+        Transpose(Solution( Transpose(M_sub`basis_matrix_wrt_ambient), Id_Msub));
+    if assigned M`basis_matrix then
+       M_sub`basis_matrix := M_sub`basis_matrix_wrt_ambient * M`basis_matrix;
+       M_sub`basis_matrix_inv := Transpose(Solution( Transpose(M_sub`basis_matrix), Id_Msub));
+    end if;
+
+    M_sub`Ambient := M;
+    M_sub`Dimension := dim;
+    
+    return M_sub;
+end function;
