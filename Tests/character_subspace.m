@@ -549,13 +549,14 @@ procedure testHeckeCharacterSubspace(d,n, dim_list)
     // Such a prime (i.e. the primes above it) is also ramified in B_K iff its is split in K.
     
     new_level := &*([1] cat [p : p in PrimeDivisors(n) | IsSplit(p, Z_K)]);
-    R := GradedRingOfHMFs(K, 1);
+    prec := 1;
+    R := GradedRingOfHMFs(K, prec);
     hmf := HMFSpace(R, N, [2,2]);
     // !! TODO - we should implement a new-subspace intrinsic for HMFSpaces
     // That would make the following easier.
     // dim_hmf := Dimension(hmf);
     // dim_cusp := CuspDimension(hmf);
-    hcf := NewSubspace(HilbertCuspForms(hmf), new_level * Z_K);
+    hcf := NewSubspace(hmf, new_level * Z_K);
     dim_cusp := Dimension(hcf);
 
     // This is not true, since Eisenstein series do not surject in JL

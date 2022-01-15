@@ -184,6 +184,25 @@ intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
   return M1k;
 end intrinsic;
 
+// !! TODO - this currently only cuts out the magma space of newforms,
+// and throws out the Eisenstein series
+// and if there are other properties that we care about.
+
+forward HeckeCharacterSubspace;
+
+intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
+{Returns the subspace of forms which are N-new.}
+
+  Mk := ModFrmHilDInitialize();
+  Mk`Parent := M`Parent;
+  Mk`Weight := M`Weight;
+  Mk`Level := M`Level;
+  Mk`Character := M`Character;
+  Mk`MagmaSpace := HeckeCharacterSubspace(NewSubspace(HilbertCuspForms(M), N), M`Character);
+  Mk`EisensteinDimension := 0;
+  return Mk;
+end intrinsic;
+
 
 intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   {Returns the number of cusps for Gamma_0(N)}
@@ -220,8 +239,6 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   end function;
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
-
-forward HeckeCharacterSubspace;
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
@@ -413,6 +430,12 @@ function TopAmbient(M)
 end function;
 
 function restriction(T, M)
+    // needs to force computation of basis_matrix
+     if (not assigned M`basis_matrix) then
+	K := BaseField(M);
+	p := PrimeIdealsOverPrime(K, 2)[1];
+	_ := HeckeOperator(M,p);
+    end if;
     bm := M`basis_matrix;
     bmi := M`basis_matrix_inv;
     bmT := bm * ChangeRing(T, BaseRing(bm));
@@ -456,7 +479,7 @@ function DiamondOperator(M, J)
     // so far we have implemented it only for the definite spaces
     assert IsDefinite(M);
     MA := TopAmbient(M);
-    dJ_big := DiamondOperatorBigDefinite(M, J);
+    dJ_big := DiamondOperatorBigDefinite(MA, J);
     return restriction(dJ_big, M);
 end function;
 
