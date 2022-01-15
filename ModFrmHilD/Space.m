@@ -348,32 +348,82 @@ function getWeightBaseField(M)
     return M`weight_base_field;
 end function;
 
-// This function is needed to handle the coinduction implementation in nontrivial level
-// Eventually, we hope to be able to describe the action completely on reprsentatives
-// without lifting to ideals, but for now that will do.
-// It returns the right ideal J_a corresponding to a as in [Dembele-Voight]
-function getIdealRepresentedByP1(M, a)
+// TODO : Is this any different than Generators?
+function getIdealGens(I)
+    return &cat[[g*pb[2] : g in Generators(pb[1])] : pb in PseudoBasis(I)];
+end function;
+
+function getEichlerOrder(M)
+    // get the Eichler order corresponding to the level of M
     O_B := QuaternionOrder(M);
     Z_K := BaseRing(O_B);
-    N := Level(M);
-    basis_O_B := &cat[[g*pb[2] : g in Generators(pb[1])] : pb in PseudoBasis(O_B)];
+    // N := Level(M);
+    HMDF := M`ModFrmHilDirFacts;
+    N := HMDF[1]`PLD`Level;
+    // basis_O_B := &cat[[g*pb[2] : g in Generators(pb[1])] : pb in PseudoBasis(O_B)];
+    basis_O_B := getIdealGens(O_B);
     sm := M`splitting_map;
-    // These are the images of the basis elements under the splitting map
-    // made into a matrix in which we could work out relations on the entries
     sm_mats := Transpose(Matrix([Eltseq(sm(x)) : x in basis_O_B]));
-    // we want the image under the splitting map to be [[0,a[1]*t],[0,a[2]*t]]
-    // so that it will be preserved by right multiplication by the upper triangular matrices
-    rels := Matrix([sm_mats[1], sm_mats[3], a[2,1]*sm_mats[2]-a[1,1]*sm_mats[4]]);
+    rels := Matrix([sm_mats[3]]); // we want upper triangular matrices under sm
     rels := ChangeRing(rels, quo<Z_K | N>);
     ker := Kernel(Transpose(rels));
     ker_basis := [ChangeRing(v, Z_K) : v in Basis(ker)];
     a_invs := [&+[v[i]*basis_O_B[i] : i in [1..#basis_O_B]] : v in ker_basis];
-    assert &and [a[1,1]*sm(x)[2,2] - a[2,1] * sm(x)[1,2] in N : x in a_invs];
-    assert &and [sm(x)[1,1] in N : x in a_invs];
-    assert &and [sm(x)[2,1] in N : x in a_invs];
-    J_a := lideal<O_B | a_invs cat Generators(N)>;
-    assert Norm(J_a) eq N;
-    return J_a;
+    NO_B := [g*x : g in Generators(N), x in basis_O_B];
+    O := Order(a_invs cat NO_B);
+    assert Discriminant(O) eq Level(M);
+    return O;
+end function;
+
+// At the moment we assume the action on the rids in trivial level is trivial.
+// Later we will change that.
+function getActionOnP1Reps(M, J, I_perm)
+    sm := M`splitting_map;
+    HMDF := M`ModFrmHilDirFacts;
+    nCFD := [#hmdf`CFD : hmdf in HMDF];
+    p1reps := [hmdf`PLD`P1Rep : hmdf in HMDF];
+    lookups := [hmdf`PLD`Lookuptable : hmdf in HMDF];
+    O := getEichlerOrder(M);
+    // _, alpha := IsPrincipal(rideal<O | Generators(J)>);
+    fds := [hmdf`PLD`FD : hmdf in HMDF];
+    rid_perms := [];
+    I := M`rids;
+    for rid_idx in [1..#HMDF] do
+	target_idx := I_perm[rid_idx];
+	_, alpha := IsIsomorphic(J*I[rid_idx], I[target_idx]);
+	rid_perm := [];
+	for a in fds[target_idx] do
+	    _, Ja := p1reps[target_idx](sm(alpha)*a, true, false);
+	    Append(~rid_perm, lookups[target_idx][Ja,1]);
+	end for;
+	Append(~rid_perms, rid_perm);
+    end for;
+    cumdims := [&+nCFD[1..i] : i in [0..#nCFD]];
+    big_perm := &cat[[cumdims[I_perm[i]] + idx : idx in rid_perms[i]] : i in [1..#rid_perms]];
+    assert Set(big_perm) eq {1..&+nCFD};
+    return big_perm;
+end function;
+
+function TopAmbient(M)
+  top := M;
+  while assigned top`Ambient do
+    top := top`Ambient;
+  end while;
+  return top;
+end function;
+
+function restriction(T, M)
+    bm := M`basis_matrix;
+    bmi := M`basis_matrix_inv;
+    bmT := bm * ChangeRing(T, BaseRing(bm));
+    if assigned bmi then
+	TM := bmT * bmi;
+    else
+	// solve bm * TM = bmT
+	TM, K := Solution(bm, bmT);
+	assert Dimension(K) eq 0;
+    end if;
+    return TM;
 end function;
 
 // This function returns the matrix describing the action
@@ -381,14 +431,48 @@ end function;
 // These are the operators denoted by P(J) in [Voight]
 // and by S(J) in [Shimura]
 
-function DiamondOperator(M, J)
+forward DiamondOperatorBigDefinite;
 
+function DiamondOperator(M, J)
     F_weight := getWeightBaseField(M);
     
     if Dimension(M) eq 0 then
 	return MatrixAlgebra(F_weight, 0)!1;
     end if;
+
+    // we compute it on the ambient space
+    if assigned M`basis_matrix_wrt_ambient then 
+
+	// (TO DO: is this always better than getting it directly from the big operator?)
+	bm := M`basis_matrix_wrt_ambient;
+	bmi := M`basis_matrix_wrt_ambient_inv;
+	dJ_amb := DiamondOperator(M`Ambient, J);
+	dJ_amb := ChangeRing(dJ_amb, BaseRing(bm));
+	dJ := bm * dJ_amb * bmi;
+
+	return dJ;
+    end if;
+
+    // so far we have implemented it only for the definite spaces
+    assert IsDefinite(M);
+    MA := TopAmbient(M);
+    dJ_big := DiamondOperatorBigDefinite(M, J);
+    return restriction(dJ_big, M);
+end function;
+
+function DiamondOperatorBigDefinite(M, J)    
+
+    assert IsDefinite(M);
+    F_weight := getWeightBaseField(M);
     
+    // Form here on we assume this is an ambient space
+    assert (not assigned M`Ambient);
+    
+    N := Level(M);
+    weight2 := Seqset(Weight(M)) eq {2};
+    easy := weight2 and N eq Discriminant(QuaternionOrder(M));
+    // easy = basis of big space is given by the rids
+
     // We would have liked to use that, but it is only available for parallel weight 2
     //raw_data := InternalHMFRawDataDefinite(M);
     //ideal_classes := raw_data`RightIdealClassReps;
@@ -400,13 +484,13 @@ function DiamondOperator(M, J)
 	_ := HeckeOperator(M,p);
     end if;
     ideal_classes := M`rids;
+    h := #ideal_classes;
     
     // J acts by left multiplication on the classes of right ideals.
     JIs := [J*I : I in ideal_classes];
     // This creates a permutation of the ideal classes, which we now construct
-    perm := &cat[[j : j in [1..#ideal_classes] | IsIsomorphic(JI, ideal_classes[j])]
-		 : JI in JIs];
-
+    perm := &cat[[j : j in [1..h] | IsIsomorphic(JI, ideal_classes[j])] : JI in JIs];
+    
     // TODO - there are more cases to distinguish here.
     // I am not completely sure when and if the direct factors are actually called
     // However, if they are not needed for computing the Hecke operator above,
@@ -418,29 +502,46 @@ function DiamondOperator(M, J)
     // In the general case, the matrix describes the embedding into the h copies of W.
     // This makes sense since the entire space is cuspidal, but requires different handling.
     
-    if not assigned M`ModFrmHilDirFacts then
+    // if not assigned M`ModFrmHilDirFacts then
+    if easy then 
 	d_J := PermutationMatrix(F_weight,perm);
-	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
+//	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
 	return d_J;
     end if;
-    
+
+    // not easy...
     // In order to gain the action on our space, we have to blockify according to the
     // subspaces of direct factors
-    hmsdf := M`ModFrmHilDirFacts;
-    // dimensions of the different H0(W, Gamma_i)
-    dims := [Nrows(h`basis_matrix) : h in hmsdf];
     
+    HMDF := M`ModFrmHilDirFacts;
+    // dimensions of the different H0(W, Gamma_i)
+    nCFD := [#xx`CFD : xx in HMDF];
+    assert h eq #HMDF;
+    wd := M`weight_dimension; // = 1 for weight2
+
+    big_perm := getActionOnP1Reps(M, J, perm);
+
+    // dims := [wd : i in [1..&+nCFD]];
+    // cumdims := [&+dims[1..i] : i in [0..#dims]];
+    // cumdims := [wd*i : i in [0..&+nCFD]];
+    // big_perm := &cat[[cumdims[big_perm[i]]+j : j in [1..dims[i]]] : i in [1..#big_perm]];
+    big_perm := &cat[[wd*(big_perm[i]-1)+j : j in [1..wd]] : i in [1..#big_perm]];
+    /*
     // cumulative sums for the next line
-    cumsum := [&+dims[1..i] : i in [0..#dims]];
+    cumdims := [&+dims[1..i] : i in [0..#dims]];
     // the blockified permutation
-    big_perm := &cat[[cumsum[perm[i]]+j : j in [1..dims[i]]] : i in [1..#perm]];
+    big_perm := &cat[[cumdims[perm[i]]+j : j in [1..dims[i]]] : i in [1..#perm]];
+
+   */
+
     // This is the operator on the entire space of Hilbert modular forms
     d_J := PermutationMatrix(F_weight, big_perm);
-    
+/*    
     if (M`weight_dimension eq 1) then
 	// This is the operator on the subspace corresponding to M
 	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
     end if;
+*/
     return d_J;
 end function;
 
@@ -475,6 +576,7 @@ end function;
 // Here M is a ModFrmHil (HibertCuspForms(M))
 // Currently just works for trivial weight.
 function HeckeCharacterSubspace(M, chi)
+    
     K := BaseRing(M);
     Z_K := Integers(K);
     cl_K, cl_map := RayClassGroup(Level(M), [1..Degree(K)]);
