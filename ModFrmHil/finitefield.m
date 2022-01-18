@@ -110,7 +110,7 @@ intrinsic HilbertCuspFormsFiniteField(
   pp := random_large_split_prime(K);
 
   _ := WeightRepresentationFiniteField(M, pp);
-  return M;
+  return M, pp;
 end intrinsic;
 
 /************** end of new intrinsic ****************/
