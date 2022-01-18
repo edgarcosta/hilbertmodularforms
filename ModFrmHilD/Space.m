@@ -356,10 +356,26 @@ intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
   return &+[g * I : g in Generators(a)];
 end intrinsic;
 
+// we compute a Hecke operator to force magma to compute the space
+procedure forceSpaceComputation(M)
+    K := BaseField(M);
+    p := PrimeIdealsOverPrime(K, 2)[1];
+    _ := HeckeOperator(M,p);
+end procedure;
+
 function getWeightBaseField(M)
     // is_parallel, w := IsParallelWeight(M);
     if not assigned M`weight_base_field then
-	return Rationals();
+	if Seqset(Weight(M)) eq {2} then
+	    return Rationals();
+	end if;
+	if assigned M`basis_matrix_wrt_ambient then
+	    return BaseRing(M`basis_matrix_wrt_ambient);
+	end if;
+	if assigned M`Ambient and assigned M`Ambient`weight_base_field then
+	    return M`Ambient`weight_base_field;
+	end if;
+	forceSpaceComputation(M);
     end if;
     assert assigned M`weight_base_field;
     return M`weight_base_field;
@@ -431,10 +447,8 @@ end function;
 
 function restriction(T, M)
     // needs to force computation of basis_matrix
-     if (not assigned M`basis_matrix) then
-	K := BaseField(M);
-	p := PrimeIdealsOverPrime(K, 2)[1];
-	_ := HeckeOperator(M,p);
+    if (not assigned M`basis_matrix) then
+	forceSpaceComputation(M);
     end if;
     bm := M`basis_matrix;
     bmi := M`basis_matrix_inv;
@@ -486,7 +500,6 @@ end function;
 function DiamondOperatorBigDefinite(M, J)    
 
     assert IsDefinite(M);
-    F_weight := getWeightBaseField(M);
     
     // Form here on we assume this is an ambient space
     assert (not assigned M`Ambient);
@@ -502,10 +515,9 @@ function DiamondOperatorBigDefinite(M, J)
 
     //    Instead, we force the computation of the attributes we care about.
     if (not assigned M`rids) then
-	K := BaseField(M);
-	p := PrimeIdealsOverPrime(K, 2)[1];
-	_ := HeckeOperator(M,p);
+	forceSpaceComputation(M);
     end if;
+    F_weight := getWeightBaseField(M);
     ideal_classes := M`rids;
     h := #ideal_classes;
     
