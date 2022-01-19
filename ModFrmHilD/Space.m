@@ -376,6 +376,12 @@ function getWeightBaseField(M)
 	    return M`Ambient`weight_base_field;
 	end if;
 	forceSpaceComputation(M);
+	if assigned M`basis_matrix_wrt_ambient then
+	    return BaseRing(M`basis_matrix_wrt_ambient);
+	end if;
+	if assigned M`Ambient and assigned M`Ambient`weight_base_field then
+	    return M`Ambient`weight_base_field;
+	end if;
     end if;
     assert assigned M`weight_base_field;
     return M`weight_base_field;
