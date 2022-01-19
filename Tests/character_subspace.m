@@ -6,6 +6,7 @@ foo.m:
 // This is an arbitrary bound (the maximal discriminant in the first file in Nipp's database)
 B := 457; 
 fund_discs := [d : d in [1..B] | IsFundamentalDiscriminant(d)];
+ks := [[k,k] : k in [2..10 by 2]];
 for d in fund_discs do
   for k in ks do
     dims := [];
