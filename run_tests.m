@@ -1,7 +1,7 @@
 // usage: magma target:=SUBSTRING run_tests.m
 
 tests := Split(Pipe("ls Tests", ""), "\n");
-AttachSpec("ModFrmHilD/spec");
+load "config.m";
 failed := [];
 if not assigned target then
   target := "";
