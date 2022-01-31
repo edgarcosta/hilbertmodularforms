@@ -1,4 +1,4 @@
-
+import "../Space.m" : HeckeCharacterSubspace;
 
 ////////// Creation of CuspForms from ModFrmHilDElt //////////
 
@@ -179,7 +179,7 @@ intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
     M := Parent(Mk);
     F := BaseField(M);
     MF := HilbertCuspForms(Mk);
-    S := NewSubspace(MF);
+    S := HeckeCharacterSubspace(NewSubspace(MF), Character(Mk));
     Mk`MagmaNewCuspForms := [* Eigenform(U) :  U in NewformDecomposition(S) *];
   end if;
   return Mk`MagmaNewCuspForms;
