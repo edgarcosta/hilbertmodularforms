@@ -5,7 +5,7 @@
 ///////////////////////////////////////////////////
 
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
-intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := false) -> ModFrmHilDElt
   {Returns T(nn)(f) for the character chi modulo the level of f}
 
   Mk := Parent(f);
@@ -63,7 +63,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
 
   // Attempting to increase precision using a basis
   // This is not very efficient, as it does not remember the underlying vector space, but it works.
-  if assigned Mk`Basis then
+  if (assigned Mk`Basis) or MaximalPrecision then
       B := Basis(Mk);
       mats := [];
       vec := [];
