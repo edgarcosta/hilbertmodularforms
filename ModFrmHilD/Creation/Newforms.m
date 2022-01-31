@@ -52,7 +52,7 @@ end intrinsic;
 
 intrinsic Eigenform(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
   {given a_p constructs the modular form}
-  require IsTrivial(Character(Mk)) : "Only implemented for trivial character";
+  require IsTrivial(DirichletRestriction(Character(Mk))) : "Only implemented for character whose Dirichlet restriction is trivial";
   k := Weight(Mk);
   require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
   k := k[1];
@@ -94,7 +94,7 @@ intrinsic Eigenform(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDElt
   for pp in PrimeIdeals(M) do
    ev[pp] := HeckeEigenvalue(f, pp);
   end for;
-
+  
   return Eigenform(Mk, ev);
 end intrinsic;
 
@@ -171,7 +171,7 @@ end intrinsic;
 
 intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
   {return the eigenforms in magma type}
-  require IsTrivial(Character(Mk)): "We only support Newforms for trivial character, as we rely on the magma functionality";
+  require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
   if not assigned Mk`MagmaNewCuspForms then
     N := Level(Mk);
     k := Weight(Mk);

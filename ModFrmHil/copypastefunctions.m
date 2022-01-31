@@ -705,3 +705,41 @@ function weight_map_arch(q, splittings, K, m, n)
    end for;
    return M;
 end function;
+
+/********************   from hecke.m    *********************/
+
+function minimal_hecke_matrix_field(M)
+  bool, minimal := HasAttribute(M, "hecke_matrix_field_is_minimal");
+  if bool and minimal then
+    H := M`hecke_matrix_field;
+  elif assigned M`Ambient then
+    H := minimal_hecke_matrix_field(M`Ambient);
+  elif IsParallelWeight(M) then
+    H := Rationals();
+  else
+    vprintf ModFrmHil: "Figuring out the \'Hecke matrix field\' ... "; 
+    time0 := Cputime();
+
+    // The field where they currently live was created as an ext of Kgal.
+    // The hecke_matrix_field is the subfield of Kgal corresponding to
+    // the subgroup of the Galois group that fixes Weight(M).
+    K := BaseField(M);
+    assert assigned K`SplittingField; // WeightRepresentation should set it 
+    Kgal, rts := Explode(K`SplittingField);
+    assert IsAbsoluteField(Kgal);
+    Aut, _, Autmap := AutomorphismGroup(Kgal);
+    // figure out the Galois group as a permutation group acting on rts
+    Sym := SymmetricGroup(AbsoluteDegree(K));
+    gens := [Aut.i@Autmap : i in [1..Ngens(Aut)]];
+    images := [Sym| [Index(rts, r@a) : r in rts] : a in gens];
+    G := sub< Sym | images >;
+    Aut_to_G := hom< Aut -> G | images >;
+    act := func< w,g | [w[i] : i in Eltseq(g^-1)] >;
+    Gw := sub< G | [g : g in G | act(w,g) eq w] > where w is Weight(M);
+    Gw_in_Aut := sub< Aut | [h@@Aut_to_G : h in Generators(Gw)] >;
+    H := FixedField(Kgal, Gw_in_Aut);  
+
+    vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
+  end if;
+  return H;
+end function;
