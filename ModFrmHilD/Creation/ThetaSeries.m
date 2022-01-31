@@ -22,20 +22,21 @@ end intrinsic;
 
 intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::FldQuadElt,  GM::AlgMatElt) -> FldNumElt
   { inputs: M a graded ring,
-    v a totally positive element in a totally real field,
-    GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
-    L the ZZ-lattice of the map Tr(Q(v)) where Q is the quadratic form with Gram matrix GM;
-   output: the coefficient in the theta series for v}
+            v a totally positive element in a totally real field,
+            GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
+    output: the coefficient in the theta series for v}
   K := BaseField(M);
   //force matrix over field
   GM := Matrix(K, GM);
   assert Nrows(GM) mod 2 eq 0; //half weight not implemented yet
-  L:=LatticeWithGram(QuadraticZ(K, GM));
+  L:=LatticeWithGram(QuadraticZ(K, GM)); // L is the ZZ-lattice of the map Tr(Q(v)) where Q is the quadratic form with Gram matrix GM
 	BasisK := Basis(K);
 	ZK := Integers(K);
 	B := Basis(ZK);
 	n := #B;
 	t := Trace(v);
+  if not IsTotallyPositive(t) then print([t, v]);
+  end if;
 	d := Integers() ! (Dimension(L)/n);
 
   //Preimages of Trace(v) as vectors over ZZ
@@ -101,6 +102,8 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
       if IsZero(nu) then
         coeffs[bb][nu] := 1;
       else
+        if not IsTotallyPositive(nu/epsrootd)  then print([nu, epsrootd, nu/epsrootd, K.1, K.1^2]);
+        end if;
         coeffs[bb][nu] := ThetaCoefficient(M, nu/epsrootd, GM);
       end if;
     end for;

@@ -8,7 +8,7 @@ ZF := Integers(F);
 print Sprintf("dimensions[%o] := %o;\n", d, [[Dimension(HilbertCuspForms(F, n*ZF, [k,k])) : n in [1..5]]: k in [4..16 by 2]]);
 exit;
 
-and 
+and
 parallel --eta magma -b d:={1} foo.m ::: 5 8 12 13 17 20 21 24 28 29 32 33 37 40 41 44 45 48 52 53 56 57 60 61 65 68 69 72 73 76 77 80 84 85 88 89 92 93 96 97
 */
 dimensions[68] := [
