@@ -29,7 +29,6 @@ intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
     M := Parent(Mk);
     NN := Level(Mk);
     k := Weight(Mk);
-    chi := Character(Mk);
     F := BaseField(Mk);
     ZF := Integers(Mk);
     n := Degree(F);
