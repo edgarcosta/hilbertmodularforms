@@ -11,6 +11,8 @@ declare attributes ModFrmHilD:
   Level, // RngOrdIdl
   Basis, // = EisensteinBasis cat CuspFormBasis SeqEnum[ModFrmHilDElt]
   Character, // GrpHeckeElt, JV: why aren't we using Dirichlet?
+  UnitCharacter, // Assoc: unit[bb] = omega
+                 // Type(omega) = GrpCharUnitTotElt: TotallyPositiveUnits(Parent(Parent)) -> CoefficientRing
   EisensteinBasis, // SeqEnum[ModFrmHilDElt]
   CuspFormBasis, // SeqEnum[ModFrmHilDElt]
   EllipticBasis, // SeqEnum[ModFrmHilDElt]
