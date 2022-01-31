@@ -60,6 +60,28 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl) -> ModFrmHilDElt
       end if;
     end for;
   end for;
+
+  // Attempting to increase precision using a basis
+  // This is not very efficient, as it does not remember the underlying vector space, but it works.
+  if assigned Mk`Basis then
+      B := Basis(Mk);
+      mats := [];
+      vec := [];
+      for bb in Keys(coeffsTnnf) do
+	  nus := Keys(coeffsTnnf[bb]);
+	  mat := Matrix([[Coefficients(f)[bb][nu] : nu in nus] : f in B]);
+	  Append(~mats, mat);
+	  vec cat:= [coeffsTnnf[bb][nu] : nu in nus];
+      end for;
+      mat := HorizontalJoin(mats);
+      // If the matrix is invertible, there will be a unique solutions, and we can use it.
+      if Rank(mat) eq #B then
+	  vec_sol := Solution(mat, Vector(vec));
+	  g := &+[vec_sol[i]*B[i] : i in [1..#B]];
+	  return g;
+      end if;
+  end if;
+  
   g := HMF(Mk, coeffsTnnf : CoeffsByIdeals:=false, prec:=prec);
   return g;
 end intrinsic;
