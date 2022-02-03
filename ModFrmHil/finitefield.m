@@ -1,7 +1,6 @@
 
 
-import "copypastefunctions.m" : hecke_matrix_field,
-                                random_large_split_prime_using_max_order,
+import "copypastefunctions.m" : random_large_split_prime_using_max_order,
                                 random_large_split_prime,
                                 reduction,
                                 dimension_lower_bound,
@@ -19,6 +18,8 @@ import "copypastefunctions.m" : hecke_matrix_field,
                                 HMF0,
                                 weight_map_arch,
 				minimal_hecke_matrix_field;
+
+import "diamond.m" : hecke_matrix_field;
 
 
 forward WeightRepresentationFiniteField;
@@ -117,7 +118,7 @@ end intrinsic;
 /************** end of new intrinsic ****************/
 
 // originally from hecke.m
-function reduction_mod_random_large_split_prime(T, F : hack := true)
+function reduction_mod_random_large_split_prime(T, F : hack := false)
     if hack then
 	// hack begins
 	if IsFinite(F) then
@@ -133,7 +134,7 @@ function reduction_mod_random_large_split_prime(T, F : hack := true)
 end function;
 
 // originally from definite.m
-function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Map
+function WeightRepresentationFiniteField(M, p : hack := false) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the
 //  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
 //  map H^* -> GL(2, K)^g -> GL(V_k) is contructed, where g is the degree of F and V_k the weight space.
@@ -233,7 +234,7 @@ end function;
 
 
 
-intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0, hack := true) -> List
+intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0, hack := false) -> List
 {Given a new space M of Hilbert modular forms, this decomposes M into subspaces
  that are irreducible as Hecke modules, and returns this list of new spaces}
 
@@ -546,7 +547,7 @@ end if;
   return ND;
 end intrinsic;
 
-intrinsic Eigenform(M::ModFrmHil : hack := true) -> ModFrmHilElt
+intrinsic Eigenform(M::ModFrmHil : hack := false) -> ModFrmHilElt
 {An eigenform in the space M of Hilbert modular forms
  (which must be an irreducible module under the Hecke action)}
 
