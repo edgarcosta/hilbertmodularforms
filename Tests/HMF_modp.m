@@ -251,15 +251,20 @@ function check(d)
     ZF := Integers(F);
     prec := 1;
     R := GradedRingOfHMFs(F, prec);
-    dims := [[ Dimension(NewSubspace(HilbertCuspFormsFiniteField(F, n*ZF, [k, k]))) : n in levels]: k in weights];
-    assert newdimensions[d] eq dims;
+    // testing all the way to weight 16 is too slow, thus we restrict ourselves to weight <= 8
+    dims := [[ Dimension(NewSubspace(HilbertCuspFormsFiniteField(F, n*ZF, [k, k]))) : n in levels]: k in weights[1..3]];
+    assert newdimensions[d][1..3] eq dims;
     // one could also check that the eigenforms agree modulo p
     // however, that would require computing over characteristic 0
     return true;
 end function;
 
 ds := [];
+t := Time();
 for counter in [1..5] do
+    if StringToInteger(Split(Time(t), ".")[1]) ge 30 then
+        break;
+    end if;
     if Set(ds) eq Keys(newdimensions) then
         break;
     end if;
