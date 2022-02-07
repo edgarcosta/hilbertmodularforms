@@ -93,8 +93,18 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   K := BaseField(M);
   ZK := IntegerRing(K);
   discriminant := Discriminant(ZK);
+  if discriminant mod 4 eq 0 then
+    diffGen:=2*K.1;
+  else
+    diffGen:=K.1;
+  end if;
   coeffs := AssociativeArray();
-  epsrootd:=FundamentalUnit(ZK)/K.1;
+  eps:=FundamentalUnit(ZK);
+  if RealEmbeddings(eps)[1] gt 0 then 
+    epsrootd:=FundamentalUnit(ZK)/diffGen;
+  else
+    epsrootd:=-FundamentalUnit(ZK)/diffGen;
+  end if;
   require NarrowClassNumber(K) eq 1: "Theta Series only impliemented with narrow class number one";
   for bb in reps do
     coeffs[bb] := AssociativeArray();
