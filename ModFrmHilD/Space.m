@@ -3,6 +3,7 @@ ModFrmHilD
 *****/
 
 import "../ModFrmHil/copypastefunctions.m" : TopAmbient;
+import "../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
 
 ////////// ModFrmHilD attributes //////////
 
@@ -189,8 +190,6 @@ end intrinsic;
 // !! TODO - this currently only cuts out the magma space of newforms,
 // and throws out the Eisenstein series
 // and if there are other properties that we care about.
-
-forward HeckeCharacterSubspace;
 
 intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
 {Returns the subspace of forms which are N-new.}
