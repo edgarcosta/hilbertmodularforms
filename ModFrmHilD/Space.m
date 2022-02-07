@@ -2,6 +2,8 @@
 ModFrmHilD
 *****/
 
+import "../ModFrmHil/copypastefunctions.m" : TopAmbient;
+
 ////////// ModFrmHilD attributes //////////
 
 declare type ModFrmHilD [ModFrmHilDElt];
@@ -441,14 +443,6 @@ function getActionOnP1Reps(M, J, I_perm)
     big_perm := &cat[[cumdims[I_perm[i]] + idx : idx in rid_perms[i]] : i in [1..#rid_perms]];
     assert Set(big_perm) eq {1..&+nCFD};
     return big_perm;
-end function;
-
-function TopAmbient(M)
-  top := M;
-  while assigned top`Ambient do
-    top := top`Ambient;
-  end while;
-  return top;
 end function;
 
 function restriction(T, M)
