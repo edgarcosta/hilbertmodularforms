@@ -1,5 +1,15 @@
 import "copypastefunctions.m" : IsBianchi,
+                                HMF0,
                                 TopAmbient;
+
+/**************** New intrinsics **********************/
+
+intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
+{Given an ideal a of R, and an ideal I of O, an order over R, Returns the ideal a*I.}
+  return &+[g * I : g in Generators(a)];
+end intrinsic;
+
+/********************************************************/
 
 // originally from hecke.m
 
@@ -19,17 +29,14 @@ function hecke_matrix_field(M : hack := true)
   end if;
 end function;
 
-intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
-{Given an ideal a of R, and an ideal I of O, an order over R, Returns the ideal a*I.}
-  return &+[g * I : g in Generators(a)];
-end intrinsic;
-
 // we compute a Hecke operator to force magma to compute the space
 procedure forceSpaceComputation(M)
     K := BaseField(M);
     p := PrimeIdealsOverPrime(K, 2)[1];
     _ := HeckeOperator(M,p);
 end procedure;
+
+// a function to find the weight base field of a magma space
 
 function getWeightBaseField(M)
     // is_parallel, w := IsParallelWeight(M);
@@ -111,9 +118,10 @@ function getActionOnP1Reps(M, J, I_perm)
     return big_perm;
 end function;
 
-function restriction(T, M)
+// originaly from hecke.m
+function restriction(T, M : hack := true)
     // needs to force computation of basis_matrix
-    if (not assigned M`basis_matrix) then
+    if hack and (not assigned M`basis_matrix) then
 	forceSpaceComputation(M);
     end if;
     bm := M`basis_matrix;
@@ -244,34 +252,6 @@ function DiamondOperatorBigDefinite(M, J)
     end if;
 */
     return d_J;
-end function;
-
-// This function is copied from ModFrmHil/hackobj.m
-// Optimally, we would just import it
-function HMF0(F, N, Nnew, Chi, k, C)
-  M := New(ModFrmHil);
-  M`Field := F;
-  M`Level := N;
-  M`NewLevel := Nnew;
-  M`DirichletCharacter := Chi;
-  M`Weight := k;
-  M`CentralCharacter := C;
-  assert C eq Max(k) - 2; // currently
-  M`is_cuspidal := true; // always true, currently
-  M`Hecke    := AssociativeArray();
-  M`HeckeBig := AssociativeArray();
-  M`HeckeBigColumns := AssociativeArray();
-  M`HeckeCharPoly := AssociativeArray();
-  M`AL       := AssociativeArray();
-  M`DegDown1 := AssociativeArray();
-  M`DegDownp := AssociativeArray();
-  if forall{w : w in k | w eq 2} then
-    M`hecke_matrix_field := Rationals();
-    M`hecke_matrix_field_is_minimal := true;
-  else 
-    M`hecke_matrix_field_is_minimal := false;
-  end if;
-  return M;
 end function;
 
 // Here M is a ModFrmHil (HibertCuspForms(M))
