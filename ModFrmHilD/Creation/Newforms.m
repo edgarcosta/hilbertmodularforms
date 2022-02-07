@@ -1,4 +1,4 @@
-import "../Space.m" : HeckeCharacterSubspace;
+import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
 
 ////////// Creation of CuspForms from ModFrmHilDElt //////////
 
