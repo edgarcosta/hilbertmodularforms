@@ -118,7 +118,7 @@ end intrinsic;
 /************** end of new intrinsic ****************/
 
 // originally from hecke.m
-function reduction_mod_random_large_split_prime(T, F : hack := false)
+function reduction_mod_random_large_split_prime(T, F : hack := true)
     if hack then
 	// hack begins
 	if IsFinite(F) then
@@ -134,7 +134,7 @@ function reduction_mod_random_large_split_prime(T, F : hack := false)
 end function;
 
 // originally from definite.m
-function WeightRepresentationFiniteField(M, p : hack := false) // ModFrmHil -> Map
+function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the
 //  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
 //  map H^* -> GL(2, K)^g -> GL(V_k) is contructed, where g is the degree of F and V_k the weight space.
@@ -234,7 +234,7 @@ end function;
 
 
 
-intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0, hack := false) -> List
+intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0, hack := true) -> List
 {Given a new space M of Hilbert modular forms, this decomposes M into subspaces
  that are irreducible as Hecke modules, and returns this list of new spaces}
 
@@ -321,8 +321,10 @@ and dim ne 1 // beware recursion
 	end if;
     end if;
 
-    // decomposition should be over the true hecke field (= Q for parallel weight)
-    chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
+    if (not hack) or not IsFinite(K) then
+	// decomposition should be over the true hecke field (= Q for parallel weight)
+	chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
+    end if;
 
     vprintf ModFrmHil: "Factoring the polynomial: ";
     vtime ModFrmHil:
@@ -547,7 +549,7 @@ end if;
   return ND;
 end intrinsic;
 
-intrinsic Eigenform(M::ModFrmHil : hack := false) -> ModFrmHilElt
+intrinsic Eigenform(M::ModFrmHil : hack := true) -> ModFrmHilElt
 {An eigenform in the space M of Hilbert modular forms
  (which must be an irreducible module under the Hecke action)}
 
@@ -576,7 +578,10 @@ if METHOD lt 3 then
      vprintf ModFrmHil: "CharacteristicPolynomial: ";
      vtime ModFrmHil:
      chi := CharacteristicPolynomial(t);
-     chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
+     K := BaseRing(t);
+     if (not hack) or not IsFinite(K) then
+	 chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
+     end if;
      require IsIrreducible(chi) :
             "The space M is not an irreducible module under the Hecke action";
 

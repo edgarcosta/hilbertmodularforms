@@ -1,3 +1,6 @@
+import "copypastefunctions.m" : IsBianchi,
+                                TopAmbient;
+
 // originally from hecke.m
 
 function hecke_matrix_field(M : hack := true)
