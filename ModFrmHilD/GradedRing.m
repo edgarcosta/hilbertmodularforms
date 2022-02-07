@@ -143,7 +143,7 @@ intrinsic UnitGroupMap(M::ModFrmHilDGRng) -> Any
   return M`UnitGroupMap;
 end intrinsic;
 
-intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrbAb, Map
+intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrpAb, Map
   {return the group of totally positive units of the base as an abstract group and the map from abstract totally positive unit group into F^\times_>0}
   return TotallyPositiveUnits(BaseField(M));
 end intrinsic;
