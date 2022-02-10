@@ -6,3 +6,4 @@ ModFrmHilD/*.sig
 *.m#
 ModFrmHilD/.#Space.m
 ModFrmHilD/.magma-scan/Space.m.el
+*.auto*
