@@ -37,4 +37,6 @@ CanonicalRing
 {
   CanonicalRing.m
   HilbertSeries.m
+  IntersectionRing.m
+  StupidCongruenceSubgroup.m
 }
