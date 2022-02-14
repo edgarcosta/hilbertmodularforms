@@ -249,9 +249,7 @@ newdimensions[37] := [
 
 
 
-// modifying to make it run on reasonable time
-// weights := [4..16 by 2];
-weights := [4..4 by 2];
+weights := [4..16 by 2];
 levels := [1..5];
 
 printf "Testing the computation of the HilbertCuspForms mod p gives same dimensions...d=";
