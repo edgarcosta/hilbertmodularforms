@@ -373,3 +373,41 @@ function polyComplexity(g,r)
     // TODO : Replace by height (max (num, denom))
     return &+[(v,v) : v in vecs];
 end function;
+
+intrinsic HilbertModularSurface(F::FldQuad, N::RngOrdIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
+				: Precision := 100,
+				  LowestWeight:=2,
+				  Alg:="Standard",
+				  IdealClassesSupport:=false,
+				  GaloisInvariant:=false,
+				  ComputeNewGenerators:=true,
+				  PrecomputedGens:=AssociativeArray()) -> Srfc
+{
+  Compute a model for the (canonical ring of the) Hilbert modular surface over F of level N.     
+  Generators will have parallel weight upto MaxWeightGens, and relations will have parallel upto MaxWeightRelations.
+  Return a three Associative arrays, indexed by weight, corresponding to generators, relations and the monomials.
+  Use the optional parameter 'LowestWeight' to specifiy the lowest weight for the generators.
+  The optional parameter 'Alg' is passed to ComplementBasis.
+  Use the optional parameter 'IdealClassesSupport' to restrict the support of the generators to a given set of components.
+  Use the optional parameter 'GaloisInvariant' to restrict the generators to be Galois invariant, i.e., invariant under the swap map.
+  Use the optional parameters 'PrecomputedGens' as an AssociativeArray to provide precomputed generators.
+  Use the optional parameters 'ComputeNewGenerators' to determine if new generators will be computed.}
+  R := GradedRingOfHMFs(F, Precision);
+  dict := ConstructGeneratorsAndRelations(R,N,MaxGeneratorWeight,MaxRelationWeight:
+					  LowestWeight:=LowestWeight,
+					  Alg:=Alg,
+					  IdealClassesSupport:=IdealClassesSupport,
+					  GaloisInvariant:=GaloisInvariant,
+					  ComputeNewGenerators:=ComputeNewGenerators,
+					  PrecomputedGens:=PrecomputedGens);
+  Gens := dict[1];
+  Rels := dict[2];
+  Mons := dict[3];
+ 
+  S := MakeScheme(Gens,Rels);
+  P_wtd<[x]> := Ambient(S);
+  eqns_S := DefiningEquations(S);
+  P := Parent(eqns_S[1]);
+  return S;
+  // return Surface(P, eqns_S);
+end intrinsic;
