@@ -240,6 +240,13 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+function RssMM(ss, MM)
+  F := Ring(Parent(ss));
+  ZF := Integers(F);
+
+end function;
+
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
