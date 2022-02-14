@@ -641,7 +641,6 @@ function IsBianchi(M)
   return ISA(Type(M), ModFrmBianchi);
 end function;
 
-
 function Ambient(M)
   if assigned M`Ambient then
     return M`Ambient;
