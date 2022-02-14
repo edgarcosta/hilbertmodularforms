@@ -5,3 +5,4 @@ ModFrmHilD/*.sig
 *.m~
 *.m#
 ModFrmHilD/.#Space.m
+ModFrmHilD/.magma-scan/Space.m.el

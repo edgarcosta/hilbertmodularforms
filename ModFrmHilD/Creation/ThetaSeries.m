@@ -22,20 +22,21 @@ end intrinsic;
 
 intrinsic ThetaCoefficient(M::ModFrmHilDGRng, v::FldQuadElt,  GM::AlgMatElt) -> FldNumElt
   { inputs: M a graded ring,
-    v a totally positive element in a totally real field,
-    GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
-    L the ZZ-lattice of the map Tr(Q(v)) where Q is the quadratic form with Gram matrix GM;
-   output: the coefficient in the theta series for v}
+            v a totally positive element in a totally real field,
+            GM the Gram matrix of a quadratic form (should be equal to (1/2)*inner product matrix with respect to the standard basis),
+    output: the coefficient in the theta series for v}
   K := BaseField(M);
   //force matrix over field
   GM := Matrix(K, GM);
   assert Nrows(GM) mod 2 eq 0; //half weight not implemented yet
-  L:=LatticeWithGram(QuadraticZ(K, GM));
+  L:=LatticeWithGram(QuadraticZ(K, GM)); // L is the ZZ-lattice of the map Tr(Q(v)) where Q is the quadratic form with Gram matrix GM
 	BasisK := Basis(K);
 	ZK := Integers(K);
 	B := Basis(ZK);
 	n := #B;
 	t := Trace(v);
+  if not IsTotallyPositive(t) then print([t, v]);
+  end if;
 	d := Integers() ! (Dimension(L)/n);
 
   //Preimages of Trace(v) as vectors over ZZ
@@ -92,8 +93,18 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   K := BaseField(M);
   ZK := IntegerRing(K);
   discriminant := Discriminant(ZK);
+  if discriminant mod 4 eq 0 then
+    diffGen:=2*K.1;
+  else
+    diffGen:=K.1;
+  end if;
   coeffs := AssociativeArray();
-  epsrootd:=FundamentalUnit(ZK)/K.1;
+  eps:=FundamentalUnit(ZK);
+  if RealEmbeddings(eps)[1] gt 0 then 
+    epsrootd:=FundamentalUnit(ZK)/diffGen;
+  else
+    epsrootd:=-FundamentalUnit(ZK)/diffGen;
+  end if;
   require NarrowClassNumber(K) eq 1: "Theta Series only impliemented with narrow class number one";
   for bb in reps do
     coeffs[bb] := AssociativeArray();
@@ -101,6 +112,8 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
       if IsZero(nu) then
         coeffs[bb][nu] := 1;
       else
+        if not IsTotallyPositive(nu/epsrootd)  then print([nu, epsrootd, nu/epsrootd, K.1, K.1^2]);
+        end if;
         coeffs[bb][nu] := ThetaCoefficient(M, nu/epsrootd, GM);
       end if;
     end for;

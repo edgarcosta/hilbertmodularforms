@@ -667,16 +667,16 @@ intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
 end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
-{compares Parent and Components.}
+{compares Parent and Components.}	   
   return &and[a(f) eq a(g): a in [Parent, Components]];
 end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDEltComp, c::RngElt) -> BoolElt
   {compare f against a scalar c}
-  if Coefficient(f)[0] ne c then
+  if Coefficients(f)[0] ne c then
     return false;
   end if;
-  return IsZero([Coefficient(f)[nu] : nu in Keys(Coefficient(f)) | nu ne 0]);
+  return IsZero([Coefficients(f)[nu] : nu in Keys(Coefficients(f)) | nu ne 0]);
 end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDElt, c::RngElt) -> BoolElt
