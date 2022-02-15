@@ -240,7 +240,7 @@ intrinsic ReduceShintani(M::ModFrmHilDGRng,  bb::RngOrdFracIdl, nu::RngElt) -> R
 end intrinsic;
 
 // Shintani reduction algorithm (workhorse)
-intrinsic ReduceShintaniMinimizeTrace(nu::RngElt) -> Tup
+intrinsic ReduceShintaniMinimizeTrace(nu::RngElt : Precision := 100) -> Tup
   {Reduce the element nu to the Shintani domain.}
 
   if nu eq 0 then
@@ -256,10 +256,10 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngElt) -> Tup
 
   // Fundamental unit
   eps := FundamentalUnitTotPos(F);
+  eps_RR := EmbedNumberFieldElement(eps : Precision := Precision);
 
-  eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
-  slope_eps := Slope(eps);
-  slope_nu := Slope(nu);
+  slope_eps := Slope(eps : Precision := Precision);
+  slope_nu := Slope(nu : Precision := Precision);
 
   RR := RealField(100);
   ratio := RR!(1/2)*Log(RR!slope_nu)/Log(RR!eps_RR[1]);
@@ -282,7 +282,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngElt) -> Tup
   end if;
 end intrinsic;
 
-intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100) -> Tup
+intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100) -> Any 
   {Find the multiple of nu by a totally positive unit that is closest to the origin.}
 
   F := Parent(nu);
