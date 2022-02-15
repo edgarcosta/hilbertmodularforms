@@ -259,7 +259,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngElt) -> Tup
 
   eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
   slope_eps := Slope(eps);
-  slope_nu := Abs(Slope(nu)); // hack
+  slope_nu := Slope(nu);
 
   RR := RealField(100);
   ratio := RR!(1/2)*Log(RR!slope_nu)/Log(RR!eps_RR[1]);
