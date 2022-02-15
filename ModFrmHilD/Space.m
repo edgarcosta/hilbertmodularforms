@@ -322,7 +322,7 @@ end intrinsic;
 
 intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   {returns a list of all the primitive pairs <chi1, chi2> such that
-  chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Leve;(Mk)
+  chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk)
   If the weight is 1, we only return pairs up to permutation}
   if not assigned Mk`EisensteinAdmissableCharacterPairs then
     N := Level(Mk);
