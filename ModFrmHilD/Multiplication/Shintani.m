@@ -288,7 +288,7 @@ intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100) -> Tu
   F := Parent(nu);
   require Degree(F) eq 2: "Shintani domains only implemented for quadratic fields";
   if nu eq 0 then
-    return <Parent(nu)!0, 1>;
+    return Parent(nu)!0, 1;
   end if;
   eps := FundamentalUnitTotPos(F);
   eps_RR := EmbedNumberFieldElement(eps : Precision := Precision);
