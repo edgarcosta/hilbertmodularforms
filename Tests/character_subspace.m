@@ -1,4 +1,4 @@
-// Warning - currently only testing trivial weight and character
+// Warning - currently only testing trivial character
 dim_list := AssociativeArray();
 /*
 Generated with
