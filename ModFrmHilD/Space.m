@@ -168,7 +168,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
     require Type(unitcharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
     require Keys(unitcharacters) eq SequenceToSet(NarrowClassGroupReps(Parent(Mk))) :"we expect the keys of the associative array to be narrow class group reprsentatives";
     require {Type(v): v in unitcharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
-    require &and[BaseField(v) eq BaseField(Parent(M)): v in unitcharacters]: "we expect all the unit characters to have the same base field";
+    require &and[BaseField(v) eq BaseField(M): v in unitcharacters]: "we expect all the unit characters to have the same base field";
   end if;
   AddToSpaces(M, Mk, N, k, chi);
   return Mk;
@@ -253,7 +253,7 @@ intrinsic '/'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
   end for;
   return HMFSpace(Parent(M1),
                     Level(M1),
-                    [Weight(M1)[i] + Weight(M2)[i] : i in [1..#Weight(M1)] ],
+                    [Weight(M1)[i] - Weight(M2)[i] : i in [1..#Weight(M1)] ],
                     Character(M1)/Character(M2)
                     : unitcharacters:=unitcharacters);
 end intrinsic;

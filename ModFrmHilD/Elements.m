@@ -118,7 +118,7 @@ end intrinsic;
 
 intrinsic UnitCharacter(f::ModFrmHilDEltComp) -> GrpCharUnitTotElt
   {return the unit character of f}
-  return Parent(f)`UnitCharacters[Component(f)];
+  return UnitCharacters(Parent(f))[ComponentIdeal(f)];
 end intrinsic;
 
 
@@ -819,7 +819,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
     end for;
     coeffs_h[nu] := c;
   end for;
-  return HMFComp(Parent(f)*Parent(g), ComponentIdeal(f), coeffs_h : unitchar:=char_h, prec:=prec);
+  return HMFComp(Parent(f)*Parent(g), ComponentIdeal(f), coeffs_h : prec:=prec);
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -909,11 +909,7 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   for bb in Keys(comp_f) do
     comp[bb] := comp_f[bb] / comp_g[bb];
   end for;
-  Space := HMFSpace(GradedRing(f),
-                    Level(f),
-                    [Weight(f)[i] - Weight(g)[i] : i in [1..#Weight(f)]],
-                    Character(Parent(f))/Character(Parent(g)));
-  return HMFSumComponents(Space, comp);
+  return HMFSumComponents(Parent(f)/Parent(g), comp);
 end intrinsic;
 
 intrinsic Inverse(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
