@@ -261,7 +261,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngElt : Precision := 100) -> Tup
   slope_eps := Slope(eps : Precision := Precision);
   slope_nu := Slope(nu : Precision := Precision);
 
-  RR := RealField(100);
+  RR := RealField(Precision);
   ratio := RR!(1/2)*Log(RR!slope_nu)/Log(RR!eps_RR[1]);
   ratio_ceiling := Ceiling(ratio);
   ratio_floor := Floor(ratio);
