@@ -1,13 +1,29 @@
 ///// Shintani Algorithms + Enumerations of Totally positive elements in ideals /////////
 
-intrinsic Slope(alpha::RngElt) -> FldReElt
+intrinsic EmbedNumberFieldElement(nu::FldNumElt : Precision := 100) -> SeqEnum
+  {}
+  F := Parent(nu);
+  return [Evaluate(nu, place : Precision := Precision) : place in InfinitePlaces(F)];
+end intrinsic;
+
+intrinsic EmbedNumberFieldElement(nu::RngElt : Precision := 100) -> SeqEnum
+  {}
+  R := Parent(nu);
+  F := NumberField(R);
+  return EmbedNumberFieldElement(F!nu : Precision := Precision);
+end intrinsic;
+
+intrinsic Slope(alpha::RngElt : Precision := 100) -> FldReElt
   { Input:  alpha, an element of ZF for F a totally real quadratic number field
     Output: The "slope" defined by alpha: sigma_2(alpha)/sigma_1(alpha) where
     sigma_i is the ith embedding of F}
-  OK := Parent(alpha);
-  K := NumberField(OK);
-  places := InfinitePlaces(K);
-  return Evaluate(alpha, places[2]) / Evaluate(alpha, places[1]);
+  embed := EmbedNumberFieldElement(alpha : Precision := Precision);
+  return embed[2]/embed[1];
+end intrinsic;
+
+intrinsic DistanceSquared(L::SeqEnum) -> Any
+  {}
+  return &+[Abs(el)^2 : el in L];
 end intrinsic;
 
 // Rearranges the basis for an ideal so that the second basis vector has trace 0
@@ -243,7 +259,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngElt) -> Tup
 
   eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
   slope_eps := Slope(eps);
-  slope_nu := Slope(nu);
+  slope_nu := Abs(Slope(nu)); // hack
 
   RR := RealField(100);
   ratio := RR!(1/2)*Log(RR!slope_nu)/Log(RR!eps_RR[1]);
@@ -266,8 +282,37 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngElt) -> Tup
   end if;
 end intrinsic;
 
+intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100) -> Tup
+  {Find the multiple of nu by a totally positive unit that is closest to the origin.}
 
+  F := Parent(nu);
+  require Degree(F) eq 2: "Shintani domains only implemented for quadratic fields";
+  if nu eq 0 then
+    return <Parent(nu)!0, 1>;
+  end if;
+  eps := FundamentalUnitTotPos(F);
+  eps_RR := EmbedNumberFieldElement(eps : Precision := Precision);
+  nu_RR := EmbedNumberFieldElement(nu : Precision := Precision);
+  r := 1/(2*(Log(eps_RR[1])-Log(eps_RR[2])))*(Log(-(nu_RR[2]^2/nu_RR[1]^2)*(Log(eps_RR[2])/Log(eps_RR[1]))));
+  r_floor := Floor(r);
+  r_ceiling := Ceiling(r);
+  rs := [r_floor, r_ceiling];
+  nus_min := [eps^r_floor*nu, eps^r_ceiling*nu];
+  dists := [];
+  for el in nus_min do
+    embed := EmbedNumberFieldElement(el : Precision := Precision);
+    Append(~dists, embed[1]^2 + embed[2]^2);
+  end for;
+  _, ind := Min(dists);
+  return nus_min[ind], eps^rs[ind];
+end intrinsic;
 
+intrinsic ReduceShintaniMinimizeDistance(nu::RngElt : Precision := 100) -> Tup
+  {}
+  R := Parent(nu);
+  F := NumberField(R);
+  return ReduceShintaniMinimizeDistance(F!nu : Precision := Precision);
+end intrinsic;
 
 // Test if an element is Shintani reduced
 intrinsic IsShintaniReduced(nu::RngElt) -> BoolElt

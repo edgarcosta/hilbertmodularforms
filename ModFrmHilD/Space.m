@@ -242,11 +242,22 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-function RssMM(ss, MM)
+intrinsic RssMM(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {}
   F := Ring(Parent(ss));
   ZF := Integers(F);
-
-end function;
+  Q, mp := quo< ZF | (ss^-1)*MM >;
+  UQ, mpUQ := UnitGroup(Q);
+  UQ_seq := [ZF!mpUQ(el) : el in UQ];
+  // quotient by action of totally positive units by computing Shintani reduced elts
+  UQ_mod := SetToSequence(SequenceToSet([ReduceShintaniMinimizeDistance(el) : el in UQ_seq]));
+  // Finally, go back to (ss/(ss*MM))^* by dividing by denominator
+  d := Denominator(ss);
+  if d le 0 then
+    d := -d;
+  end if;
+  return [el/d : el in UQ_mod];
+end intrinsic;
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
