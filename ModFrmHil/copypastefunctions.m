@@ -678,6 +678,66 @@ function BMF_with_ambient(A)
   return M;
 end function;
 
+// Discriminant of an algebra or order returned as an ideal 
+function _Discriminant(A)
+  disc := Discriminant(A);
+  if Type(disc) eq FldRatElt then disc := Integers()!disc; end if;
+  if Type(disc) eq RngIntElt then disc := disc*Integers(); end if;
+  return disc;
+end function;
+
+procedure set_quaternion_order(M, QO)
+   assert not assigned M`QuaternionOrder;
+   assert not assigned M`Ambient;
+   assert M`Field eq BaseRing(Algebra(QO));
+   assert M`NewLevel eq _Discriminant(QO);
+   M`QuaternionOrder := QO;
+
+   // cache the space on QO, if caching is switched on
+   if assigned M`Field`ModFrmHils then
+     if not assigned QO`ModFrmHils then
+       QO`ModFrmHils := AssociativeArray();
+     end if;
+     N := M`Level;
+     if IsDefined(QO`ModFrmHils, N) then
+       Append(~QO`ModFrmHils[N], M);
+assert M in QO`ModFrmHils[N];
+     else
+       QO`ModFrmHils[N] := [M];
+     end if;
+   end if;
+end procedure;
+
+function is_cached_hmf(QO, F, N, k)
+  if QO cmpne 0 and assigned QO`ModFrmHils and IsDefined(QO`ModFrmHils, N) then
+    for M in QO`ModFrmHils[N] do
+      if Weight(M) eq k then
+        return true, M;
+      end if;
+    end for;
+  end if;
+  if assigned F`ModFrmHils and IsDefined(F`ModFrmHils, N) then
+    Ms := [];
+    for M in F`ModFrmHils[N] do 
+      if Level(M) eq N and Weight(M) eq k then
+        if QO cmpne 0 and assigned M`QuaternionOrder and IsIdentical(M`QuaternionOrder, QO) then
+          return true, M;
+        elif QO cmpeq 0 then 
+          Append(~Ms, M);
+        end if;
+      end if;
+    end for;
+    if QO cmpeq 0 then
+      if exists(M){M : M in Ms | assigned M`QuaternionOrder} then
+        return true, M;
+      elif #Ms gt 0 then
+        return true, Ms[1];
+      end if;
+    end if;
+  end if;
+  return false, _;
+end function;
+
 function HMF0(F, N, Nnew, Chi, k, C)
   M := New(ModFrmHil);
   M`Field := F;
@@ -701,6 +761,40 @@ function HMF0(F, N, Nnew, Chi, k, C)
   else
     M`hecke_matrix_field_is_minimal := false;
   end if;
+  return M;
+end function;
+
+function HMF(F, N, k : Chi:=1, QuaternionOrder:=0)
+
+  // TO DO: errors should be passed back to the calling intrinsic
+
+if Chi cmpeq 1 then
+  bool, M := is_cached_hmf(QuaternionOrder, F, N, k);
+  if bool then
+    return M;
+  end if;
+end if;
+
+  bool, _, _, C := IsArithmeticWeight(F, k); assert bool; // already checked
+
+  M := HMF0(F, N, 1*Integers(F), Chi, k, C);
+
+  if QuaternionOrder cmpne 0 then 
+    ok, message := IsSuitableQuaternionOrder(QuaternionOrder, M);
+    error if not ok, message;
+    set_quaternion_order(M, QuaternionOrder); // cache on QuaternionOrder
+  end if;
+
+  // cache on F
+  if assigned F`ModFrmHils then
+    if IsDefined(F`ModFrmHils, N) then
+      Append(~F`ModFrmHils[N], M);
+assert M in F`ModFrmHils[N];
+    else
+      F`ModFrmHils[N] := [* M *];
+    end if;
+  end if;
+
   return M;
 end function;
 

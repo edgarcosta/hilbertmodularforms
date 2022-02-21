@@ -1,8 +1,35 @@
 import "copypastefunctions.m" : IsBianchi,
+                                HMF,
                                 HMF0,
                                 TopAmbient;
 
 /**************** New intrinsics **********************/
+
+intrinsic HilbertCuspForms(
+  chi::GrpHeckeElt,
+  k::SeqEnum[RngIntElt]
+  :
+  QuaternionOrder:=0
+  ) -> ModFrmHil
+{The space of Hilbert modular forms over the totally real number field F,
+ with character chi and weight k.
+ Here chi should be a Hecke character and k should be a
+ sequence of integers.
+ If the optional argument QuaternionOrder is specified, this order
+ will be used for all computations of the space.}
+  N := Modulus(Parent(chi));
+  F := NumberField(Order(N));
+  require IsAbsoluteField(F) : 
+         "The base field F must be an absolute extension of Q";
+  require IsTotallyReal(F) : 
+         "The base field F must be totally real";
+  require #k eq Degree(F) : 
+         "The weight k should be a sequence of d integers, where d is the degree of the field";
+  require IsArithmeticWeight(F, k) :
+         "The weight should be a sequence of integers that are all at least 2, and all of the same parity";
+  M := HMF(F, N, k : Chi:= chi, QuaternionOrder:=QuaternionOrder);
+  return M;
+end intrinsic;
 
 intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
 {Given an ideal a of R, and an ideal I of O, an order over R, Returns the ideal a*I.}
