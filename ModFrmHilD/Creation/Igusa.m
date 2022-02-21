@@ -128,10 +128,10 @@ end intrinsic;
 intrinsic UniversalIgusa(M::ModFrmHilDGRng) -> Any
 {Computes the IgusaClebsch invariants for QQ(sqrt(i)), using specified precision}
 
-SiegEis4 := SiegelEisensteinPullback(M,4);
-SiegEis6 := SiegelEisensteinPullback(M,6);
-SiegEis10 := SiegelEisensteinPullback(M,10);
-SiegEis12 := SiegelEisensteinPullback(M,12);
+SiegEis4 := SiegelEisensteinPullback(M,[4,4]);
+SiegEis6 := SiegelEisensteinPullback(M,[6,6]);
+SiegEis10 := SiegelEisensteinPullback(M,[10,10]);
+SiegEis12 := SiegelEisensteinPullback(M,[12,12]);
 
 
 Chi10 := -43867/(2^12*3^5*5^2*7^1*53^1)*(SiegEis4*SiegEis6-SiegEis10);
