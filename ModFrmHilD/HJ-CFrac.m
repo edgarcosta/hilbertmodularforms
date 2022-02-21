@@ -114,7 +114,7 @@ intrinsic CeilingOfSquareRoot(n:: RngIntElt, b:: RngIntElt) -> RngIntElt
     y := Sign(b) * y;
     //If not, then compute ceiling of square root using sufficient real precision
     if (x ne 1) then
-	prec := Ceiling(Log(n)) + 10;
+	prec := Ceiling(Log(n)/Log(10)) + 10;
 	R := RealField(prec);
 	y := Sign(b) * SquareRoot(R ! n);
 	y := Ceiling(y);
