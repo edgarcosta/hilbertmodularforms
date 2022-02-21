@@ -6,6 +6,7 @@ import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
 
 intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
   { set a_nn := prod(a_p^e : (p,e) in factorization(nn) }
+  // TODO: take character into acount
   if factorization cmpeq false then
     factorization := Factorization;
   end if;

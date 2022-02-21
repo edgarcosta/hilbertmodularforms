@@ -14,6 +14,8 @@ declare attributes ModFrmHilD:
   Level, // RngOrdIdl
   Basis, // = EisensteinBasis cat CuspFormBasis SeqEnum[ModFrmHilDElt]
   Character, // GrpHeckeElt, JV: why aren't we using Dirichlet?
+  UnitCharacters, // Assoc: unit[bb] = omega
+                 // Type(omega) = GrpCharUnitTotElt: TotallyPositiveUnits(Parent(Parent)) -> CoefficientRing
   EisensteinBasis, // SeqEnum[ModFrmHilDElt]
   CuspFormBasis, // SeqEnum[ModFrmHilDElt]
   EllipticBasis, // SeqEnum[ModFrmHilDElt]
@@ -54,8 +56,11 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-return Parent(M1) eq Parent(M2) and Weight(M1) eq Weight(M2) and
-Level(M1) eq Level(M2) and Character(M1) eq Character(M2);
+return Parent(M1) eq Parent(M2) and
+Weight(M1) eq Weight(M2) and
+Level(M1) eq Level(M2) and
+Character(M1) eq Character(M2) and
+UnitCharacters(M1) eq UnitCharacters(M2);
 end intrinsic;
 
 ////////// ModFrmHilD access to attributes //////////
@@ -80,6 +85,11 @@ intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   return Mk`Character;
 end intrinsic;
 
+
+intrinsic UnitCharacters(Mk::ModFrmHilD) -> Assoc
+  {}
+  return Mk`UnitCharacters;
+end intrinsic;
 
 
 /* attributes of the parent */
@@ -132,7 +142,7 @@ place where they do not match.}
 end intrinsic;
 
 // TODO: some checks here? or leave it up to the user?
-intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt : unitcharacters:=false) -> ModFrmHilD
   {}
   spaces := Spaces(M);
   if N in Keys(spaces) then
@@ -148,6 +158,18 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   is_compat, i := IsCompatibleWeight(chi, k);
   require is_compat : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
   Mk`Character := chi;
+  if unitcharacters cmpeq false then
+    Mk`UnitCharacters := AssociativeArray();
+    for bb in NarrowClassGroupReps(Parent(Mk)) do
+      Mk`UnitCharacters[bb] := TrivialUnitCharacter(BaseField(Mk));
+    end for;
+  else
+    Mk`UnitCharacters := unitcharacters;
+    require Type(unitcharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
+    require Keys(unitcharacters) eq SequenceToSet(NarrowClassGroupReps(Parent(Mk))) :"we expect the keys of the associative array to be narrow class group reprsentatives";
+    require {Type(v): v in unitcharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
+    require &and[BaseField(v) eq BaseField(M): v in unitcharacters]: "we expect all the unit characters to have the same base field";
+  end if;
   AddToSpaces(M, Mk, N, k, chi);
   return Mk;
 end intrinsic;
@@ -203,6 +225,39 @@ intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
   Mk`EisensteinDimension := 0;
   return Mk;
 end intrinsic;
+
+
+intrinsic '*'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
+  {return M1*M2 with the same level}
+  require Parent(M1) eq Parent(M2): "we only support multiplication inside the same graded ring";
+  require Level(M1) eq Level(M2) : "we only support multiplication with the same level";
+  unitcharacters := AssociativeArray();
+  for bb in Keys(UnitCharacters(M1)) do
+    unitcharacters[bb] := UnitCharacters(M1)[bb] * UnitCharacters(M2)[bb];
+  end for;
+  return HMFSpace(Parent(M1),
+                    Level(M1),
+                    [Weight(M1)[i] + Weight(M2)[i] : i in [1..#Weight(M1)] ],
+                    Character(M1)*Character(M2)
+                    : unitcharacters:=unitcharacters);
+end intrinsic;
+
+
+intrinsic '/'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
+  {return M1/M2 with the same level}
+  require Parent(M1) eq Parent(M2): "we only support multiplication inside the same graded ring";
+  require Level(M1) eq Level(M2) : "we only support multiplication with the same level";
+  unitcharacters := AssociativeArray();
+  for bb in Keys(UnitCharacters(M1)) do
+    unitcharacters[bb] := UnitCharacters(M1)[bb]/UnitCharacters(M2)[bb];
+  end for;
+  return HMFSpace(Parent(M1),
+                    Level(M1),
+                    [Weight(M1)[i] - Weight(M2)[i] : i in [1..#Weight(M1)] ],
+                    Character(M1)/Character(M2)
+                    : unitcharacters:=unitcharacters);
+end intrinsic;
+
 
 
 intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
