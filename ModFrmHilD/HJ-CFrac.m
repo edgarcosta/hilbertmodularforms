@@ -103,3 +103,63 @@ intrinsic VerifyExactHJContinuedFraction(a : Precision := 30, PeriodBound := 100
   return eq_bool;
 end intrinsic;
 
+
+intrinsic CeilingOfSquareRoot(n:: RngIntElt, b:: RngIntElt) -> RngIntElt
+{Given a nonnegative integer n, compute the ceiling of sign(b) * sqrt(n)}
+    if (n eq 0) then
+	return 0;
+    end if;
+    //Is n a perfect square?
+    x, y := SquareFree(n);
+    y := Sign(b) * y;
+    //If not, then compute ceiling of square root using sufficient real precision
+    if (x ne 1) then
+	prec := Ceiling(Log(n)) + 10;
+	R := RealField(prec);
+	y := Sign(b) * SquareRoot(R ! n);
+	y := Ceiling(y);
+    end if;    
+    return y;
+end intrinsic;
+
+intrinsic UpperIntegerPart(w:: FldQuadElt) -> RngIntElt
+{Compute the ceiling of w seen as a real number, assuming F.1 is positive}
+    F := Parent(w);
+    den := Denominator(w);
+    seq := ElementToSequence(den * w); //Coefficients of den*w in canonical basis
+    a := seq[1];
+    b := seq[2];
+    x := (b*F.1)^2;
+    res := a + CeilingOfSquareRoot(Integers() ! x, Integers() ! b);
+    return Ceiling(res/den);
+end intrinsic;
+
+intrinsic ContinuedFraction(w:: FldQuadElt) -> Any
+{Compute the head and periodic parts of the Hirzebruch--Jung continued fraction expansion of w}
+    stop := false;
+    steps := [];
+    coefficients := [];
+    head := [];
+    periodic := [];
+    while not stop do
+	a := UpperIntegerPart(w);
+	Append(~steps, w);
+	Append(~coefficients, a);
+	if (w eq a) then
+	    // w is a rational number; stop
+	    head := coefficients;
+	    return head, periodic;
+	end if;
+	nextw := -1/(w - a);
+	// Check if nextw already appears in previously computed algebraic numbers
+	n := Index(steps, nextw);
+	if (n gt 0) then //Periodic continued fraction has been found
+	    stop := true;
+	    head := coefficients[1..n-1];
+	    periodic := coefficients[n..#coefficients];
+	end if;
+	w := nextw;
+    end while;
+    return head, periodic;
+end intrinsic;
+ 
