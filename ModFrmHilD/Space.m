@@ -242,7 +242,6 @@ intrinsic '*'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
                     : unitcharacters:=unitcharacters);
 end intrinsic;
 
-
 intrinsic '/'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
   {return M1/M2 with the same level}
   require Parent(M1) eq Parent(M2): "we only support multiplication inside the same graded ring";
@@ -257,8 +256,6 @@ intrinsic '/'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
                     Character(M1)/Character(M2)
                     : unitcharacters:=unitcharacters);
 end intrinsic;
-
-
 
 intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   {Returns the number of cusps for Gamma_0(N)}
@@ -294,6 +291,24 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
     return Integers()!(#U1/#S);
   end function;
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {}
+  F := Ring(Parent(ss));
+  ZF := Integers(F);
+  Q, mp := quo< ZF | (ss^-1)*MM >;
+  UQ, mpUQ := UnitGroup(Q);
+  UQ_seq := [ZF!mpUQ(el) : el in UQ];
+  // quotient by action of totally positive units by computing Shintani reduced elts
+  UQ_mod := SetToSequence(SequenceToSet([ReduceShintaniMinimizeDistance(el) : el in UQ_seq]));
+  // Finally, go back to (ss/(ss*MM))^* by dividing by denominator
+  d := Denominator(ss);
+  if d le 0 then
+    d := -d;
+  end if;
+  return [el/d : el in UQ_mod];
 end intrinsic;
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
@@ -359,7 +374,7 @@ end intrinsic;
 
 intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   {returns a list of all the primitive pairs <chi1, chi2> such that
-  chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Leve;(Mk)
+  chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk)
   If the weight is 1, we only return pairs up to permutation}
   if not assigned Mk`EisensteinAdmissableCharacterPairs then
     N := Level(Mk);
