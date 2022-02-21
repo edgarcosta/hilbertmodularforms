@@ -4,20 +4,22 @@ S<x> := PolynomialRing(QQ);
 F<a> := QuadraticField(5);
 ZF := Integers(F);
 bb := 1*ZF;
-NN := 273*ZF;
-eps := FundamentalUnitTotPos(F);
-eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
+NN := 27*ZF;
+//eps := FundamentalUnitTotPos(F);
+//eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
 ss := (1/a)*ZF;
 MM := 7*ZF;
-Q, mp := quo< ZF | (ss^-1)*MM >;
-UQ, mpUQ := UnitGroup(Q);
-UQ_seq := [ZF!mpUQ(el) : el in UQ];
-nu := UQ_seq[8];
-nu_RR := [Evaluate(nu,pl) : pl in InfinitePlaces(F)];
-r := 1/(2*(Log(eps_RR[1]) - Log(eps_RR[2])))*(Log(-(nu_RR[2]^2/nu_RR[1]^2)*(Log(eps_RR[2])/Log(eps_RR[1]))));
-mixed := [el : el in UQ_seq | Signature(el) in [[1,-1], [-1, 1]]];
-pairs := [ReduceShintaniMinimizeDistance(el) : el in mixed];
-mixed_red := [el[1] : el in pairs];
+/*
+  Q, mp := quo< ZF | (ss^-1)*MM >;
+  UQ, mpUQ := UnitGroup(Q);
+  UQ_seq := [ZF!mpUQ(el) : el in UQ];
+  nu := UQ_seq[8];
+  nu_RR := [Evaluate(nu,pl) : pl in InfinitePlaces(F)];
+  r := 1/(2*(Log(eps_RR[1]) - Log(eps_RR[2])))*(Log(-(nu_RR[2]^2/nu_RR[1]^2)*(Log(eps_RR[2])/Log(eps_RR[1]))));
+  mixed := [el : el in UQ_seq | Signature(el) in [[1,-1], [-1, 1]]];
+  pairs := [ReduceShintaniMinimizeDistance(el) : el in mixed];
+  mixed_red := [el[1] : el in pairs];
+*/
 
 /*
   for i := 1 to #mixed do
@@ -36,6 +38,8 @@ mixed_red := [el[1] : el in pairs];
 */
 RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
 RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
+bb := 1*ZF;
+Gamma1Quadruples(NN, bb);
 
 // alternative way of forming ss/(ss*MM)
 /*
@@ -46,4 +50,23 @@ RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/
   quo<ss_ded | ssMM_ded>;
 
   quo< Module([ss]) | Module([ss*MM])>;  // just this
+*/
+
+/*
+  s_module := Module([ss]);
+  sm_module := Module([ss*MM]);
+  ElementaryDivisors(s_module, sm_module);
+*/
+
+/*
+  ss_basis := AbsoluteBasis(ss);
+  ZFMM, mpMM := quo< ZF | MM>;
+  quotient_gens := [];
+  for el in ZFMM do
+    a := ZF!el;
+    t := &+[a[i]*ss_basis[i] : i in [1..#ss_basis]];
+    if t*ss + ss*MM eq ss then
+      Append(~quotient_gens, t);
+    end if;
+  end for;
 */

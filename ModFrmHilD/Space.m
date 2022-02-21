@@ -298,18 +298,67 @@ intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl
   {}
   F := Ring(Parent(ss));
   ZF := Integers(F);
-  Q, mp := quo< ZF | (ss^-1)*MM >;
-  UQ, mpUQ := UnitGroup(Q);
-  UQ_seq := [ZF!mpUQ(el) : el in UQ];
+  ss_basis := AbsoluteBasis(ss);
+  ZFMM, mpMM := quo< ZF | MM>;
+  quotient_gens := [];
+  for el in ZFMM do
+    a := ZF!el;
+    t := &+[a[i]*ss_basis[i] : i in [1..#ss_basis]];
+    if t*ss + ss*MM eq ss then
+      Append(~quotient_gens, t);
+    end if;
+  end for;
   // quotient by action of totally positive units by computing Shintani reduced elts
-  UQ_mod := SetToSequence(SequenceToSet([ReduceShintaniMinimizeDistance(el) : el in UQ_seq]));
-  // Finally, go back to (ss/(ss*MM))^* by dividing by denominator
-  d := Denominator(ss);
-  if d le 0 then
-    d := -d;
-  end if;
-  return [el/d : el in UQ_mod];
+  return SetToSequence(SequenceToSet([ReduceShintaniMinimizeDistance(el) : el in quotient_gens]));
 end intrinsic;
+
+// P_1(NN)_bb in eqn 5.1.6 in paper, or Lemma 3.6 of Dasgupta-Kakde
+intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
+  {}
+  ZF := Ring(Parent(NN));
+  F := NumberField(ZF);
+  Cl, mpCl := ClassGroup(ZF);
+  Cl_seq := [mpCl(el) : el in Cl];
+ 
+  quads := [];
+  for ss in Cl_seq do
+    for MM in Divisors(NN) do
+      RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
+      RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
+      for a in RssMM do
+        for c in RssMM_comp do
+          Append(~quads, [* ss, MM, a, c*]);
+        end for;
+      end for;
+    end for;
+  end for;
+  return quads;
+end intrinsic;
+
+// P_0(NN)_bb in eqn 5.1.9 in paper
+intrinsic Gamma0Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
+  {}
+  ZF := Ring(Parent(NN));
+  F := NumberField(ZF);
+  Cl, mpCl := ClassGroup(ZF);
+  Cl_seq := [mpCl(el) : el in Cl];
+ 
+  quads := [];
+  for ss in Cl_seq do
+    for MM in Divisors(NN) do
+      RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
+      RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
+      // TODO: mod out by (ZF/NN)^*
+      for a in RssMM do
+        for c in RssMM_comp do
+          Append(~quads, [* ss, MM, a, c*]);
+        end for;
+      end for;
+    end for;
+  end for;
+  return quads;
+end intrinsic;
+
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
