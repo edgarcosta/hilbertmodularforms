@@ -44,10 +44,13 @@ end intrinsic;
 intrinsic Print(Gamma::StupidCongruenceSubgroup)
 {Print.}	    
     print "Congruence Subgroup of Hilbert Modular group.";
-    print "Real Quadratic Field: ", Field(Gamma);
-    print "Level:                ", Level(Gamma);
-    print "Component:            ", Component(Gamma);
-    print "Real Quadratic Field: ", Index(Gamma);
+    print "Real Quadratic Field:";
+    print Field(Gamma);
+    print "Level:";
+    print Level(Gamma);
+    print "Component:";
+    print Component(Gamma);
+    print "Index: ", Index(Gamma);
     return;
 end intrinsic;
 
@@ -79,6 +82,15 @@ intrinsic Component(Gamma::StupidCongruenceSubgroup) -> RngIntElt
 {Return the ComponentIdeal Attribute. That is, \frak(b), the ideal indexing the 
 component of the Hilbert Modular Surface}
     return ComponentIdeal(Gamma);
+end intrinsic;
+
+////////// Basic functionality //////////
+
+intrinsic 'eq'(Gamma1::StupidCongruenceSubgroup, Gamma2::StupidCongruenceSubgroup) -> BoolElt
+{}
+    return (Field(Gamma1) eq Field(Gamma2) and
+	    Level(Gamma1) eq Level(Gamma2) and
+	    Index(Gamma1) eq Index(Gamma2));
 end intrinsic;
 
 
@@ -129,8 +141,8 @@ elliptic points of this type up to congugacy in Gamma.
     end if;
     
     if Index(Gamma) eq 1 then
-	// If we are looking at the full Hilbert Modular Group with component \frak{b}, then [vdG, p. 267]
-	// provides tables to compute the number and types of torsion points.
+	// If we are looking at the full Hilbert Modular Group with component \frak{b},
+	// then [vdG, p. 267] provides tables to compute the number and types of torsion points.
 
 	// Order 2 points.
 	//
@@ -142,7 +154,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    Dby4 := ExactQuotient(D, 4);
 	    h := ClassNumber(-Dby4);
 	    
-	    case [Dby4, B mod 4]:
+	    case [Dby4 mod 4, B mod 4]:
 	    when [3,1]:
 		ellipticData[<2,1,1>] := 10*h;
 	    when [3,3]:
@@ -164,7 +176,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    Dby3 := ExactQuotient(D, 3);
 	    h := ClassNumber(-Dby3);
 	    
-	    case [Dby3, B mod 3]:
+	    case [Dby3 mod 3, B mod 3]:
 	    when [1,1]:	
 		ellipticData[<3,1,1>] := 4*h;
 		ellipticData[<3,1,-1>] := h;
@@ -184,7 +196,8 @@ elliptic points of this type up to congugacy in Gamma.
 	end if;
 	
     elif GCD(B, Norm(N)) eq 1 then
- 	// TODO: Side remark: I assume (A, N) means GCD, but it could mean Hilbert Symbol. I'm really not sure.
+ 	// TODO: Side remark: I assume (A, N) means GCD, but it could mean Hilbert Symbol.
+	//                    I'm really not sure.
 	//
 	// Let A := Norm(\frak{b}), where \frak{b} := ComponentIdeal(Gamma). We use the following
 	// remark of [vdG, p. 110]
@@ -233,6 +246,19 @@ elliptic points of this type up to congugacy in Gamma.
     Gamma`EllipticPointData := ellipticData;
     return ellipticData;
 end intrinsic;
+
+
+intrinsic NumberOfEllipticPoints(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+{}
+    return #EllipticPointData(Gamma);
+end intrinsic;
+
+intrinsic NumberOfEllipticPoints(Gamma::StupidCongruenceSubgroup, singType::Tup) -> RngIntElt
+{}
+    boo, val := IsDefined(Gamma, singType);
+    return boo select val else 0;
+end intrinsic;
+
 
 /////////////////////////////////////////////////////////////////////////////////
 //
@@ -283,6 +309,11 @@ intrinsic NumberOfCusps(Gamma::StupidCongruenceSubgroup) -> RngIntElt
     return NumberOfCusps(Mn); // TODO: XXX: This function assumes that Gamma is Gamma_0(N).
 
     // Sam is implementing a more complete version.
+end intrinsic;
+
+intrinsic NumberOfParabolicPoints(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+{}
+    return NumberOfCusps(Gamma);
 end intrinsic;
 
 
