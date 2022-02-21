@@ -134,7 +134,7 @@ intrinsic UpperIntegerPart(w:: FldQuadElt) -> RngIntElt
     return Ceiling(res/den);
 end intrinsic;
 
-intrinsic ContinuedFraction(w:: FldQuadElt) -> Any
+intrinsic HJContinuedFraction(w:: FldQuadElt) -> Any
 {Compute the head and periodic parts of the Hirzebruch--Jung continued fraction expansion of w}
     stop := false;
     steps := [];
