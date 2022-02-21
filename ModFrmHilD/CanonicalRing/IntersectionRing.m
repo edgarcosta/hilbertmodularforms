@@ -81,7 +81,7 @@ with coefficients in BR.}
     //////////////
     // Parabolic Points
 
-    rawParabolicResolutionData := [[1,2,3], [4,5,6]];
+    rawParabolicResolutionData := [<[1,2,3], [1,1,1]>, <[4,5,6], [1,1,1]>];
 
     //////////////
     // Assembly of main structures.
@@ -91,7 +91,7 @@ with coefficients in BR.}
 
     // The multiplication table is determined by the resolution cycles.
 
-    M := _RawToIntersectionMatrix(BR, rawEllipticResolutionData, rawParabolicResolutionData);
+    M := _RawToIntersectionMatrix(Gamma, BR, rawEllipticResolutionData, rawParabolicResolutionData);
     R`MultiplicationTable := M;
     D := Nrows(M)-2;
 
@@ -103,7 +103,6 @@ with coefficients in BR.}
     // TODO: The indexing system should remember the types of the points involved.
     // R`EllipticPointIndices := [[2, 3], [4, 5]];
     // R`ParabolicPointIndices := [[6, 7, 8]];
-
 
     R1 := RSpace(BR, D);
 
@@ -122,26 +121,30 @@ end intrinsic;
 
 ///// Hilferfunktionen ///
 
-intrinsic _RawToIntersectionMatrix(BR::Rng, ellipticData, parabolicData) -> MtrxSprs
+intrinsic _RawToIntersectionMatrix(G, BR::Rng, ellipticData, parabolicData) -> MtrxSprs
 {Internal constructor for the intersection matrix.}
 
     if #ellipticData gt 0 then
-	ned := &+[#cycles : cycles in ellipticData];
+	ned := &+[#resolutionTuple[1] : resolutionTuple in ellipticData];
     else
 	ned := 0;
     end if;
 
     if #parabolicData gt 0 then
-	npd := &+[#cycles : cycles in parabolicData];
+	npd := &+[#resolutionTuple[1] : resolutionTuple in parabolicData];
     else
 	npd := 0;
     end if;
-    
+
     D := 1 + ned + npd;
-    
+
     // NOTE: We "store" multiplication values for the cross-degree terms.
     M := SparseMatrix(BR, D+2, D+2);
 
+    // We compute this by updating it with the local Chern class information.
+    // It is eventually an integer, but only after all of the updates.
+    firstChernNumber := 2 * VolumeOfFundamentalDomain(G);
+    
     // Encode multiplication by the point class.
     for i in [1..D+2] do
 	M[i,1] := 1;
@@ -154,25 +157,75 @@ intrinsic _RawToIntersectionMatrix(BR::Rng, ellipticData, parabolicData) -> Mtrx
     ////////////////////
     // Populate elliptic resolution data.
     for resolutionData in ellipticData do
-
 	// TODO: The resolution cycle for a quotient singularity might be a chain of lines,
 	//       rather than a cycle.
 	
-	localCycle  := resolutionData[1];
+	resolutionCycle  := resolutionData[1];
 	chernCoeffs := resolutionData[2];
 
-	for i in [1..#localCycle-1] do
-	    M[shift+i, shift+i] := -localCycle[i];
+	for i in [1..#resolutionCycle-1] do
+	    M[shift+i, shift+i] := -resolutionCycle[i];
 	    M[shift+i, shift+i+1] := 1;
 	    M[shift+i+1, shift+i] := 1;
 	end for;
 
 	// Update the last row/column in the block.
-	i := #localCycle;
-	M[shift + i, shift + i] := -localCycle[i];
+	i := #resolutionCycle;
+	M[shift + i, shift + i] := -resolutionCycle[i];
 
 	if i gt 1 then
-	    M[shift+1, shift + i]   := 1;
+	    M[shift + 1, shift + i] := 1;
+	    M[shift + i, shift + 1] := 1;
+	end if;
+
+	// Update the coefficients of the first Chern cycle using the local Chern
+	// cycle data.
+	//
+	// NOTE: These local Chern coefficients are often rational numbers!
+
+	for i in [1..#resolutionCycle] do
+
+	    nrc := #resolutionCycle;
+	    kappa_dot_localChern := &+[-chernCoeffs[i] * M[shift+i, shift+j] : j in [1..nrc]];
+	    
+	    M[2, shift+i] := kappa_dot_localChern;
+	    M[shift+i, 2] := kappa_dot_localChern;
+	end for;
+
+	// Finally, we need the update to c1^2 from the local Chern cycle.
+	for i in [1..#resolutionCycle] do
+	    for j in [1..#resolutionCycle] do
+		firstChernNumber +:= chernCoeffs[i] * M[shift+i, shift+j] * chernCoeffs[j];
+	    end for;
+	end for;
+
+	// Update the shift.
+	shift +:= #resolutionCycle;
+    end for;
+
+    /////////////////////
+    // Populate parabolic resolution data.
+    for resolutionData in parabolicData do
+
+	resolutionCycle  := resolutionData[1];
+	chernCoeffs := resolutionData[2];
+
+	// NOTE: For a cuspidal resolution, the Chern coefficients are all equal to 1.
+
+	// NOTE: If there is only one cycle, you need to do something special.
+	//       Thus, even though the code is identical to the above that might change.
+	for i in [1..#resolutionCycle-1] do
+	    M[shift+i, shift+i] := -resolutionCycle[i];
+	    M[shift+i, shift+i+1] := 1;
+	    M[shift+i+1, shift+i] := 1;
+	end for;
+
+	// Update the last row/column in the block.
+	i := #resolutionCycle;
+	M[shift + i, shift + i] := -resolutionCycle[i];
+
+	if i gt 1 then
+	    M[shift + 1, shift + i] := 1;
 	    M[shift + i, shift + 1] := 1;
 	end if;
 
@@ -181,52 +234,22 @@ intrinsic _RawToIntersectionMatrix(BR::Rng, ellipticData, parabolicData) -> Mtrx
 
 	// NOTE: These local Chern coefficients are often rational numbers! But the
 	//       self-intersection will turn out to be an integer (because of reasons).
-	for i in [1..#localCycle] do
-	    M[2, shift+i] := chernCoeffs[i];
-	    M[shift+i, 2] := chernCoeffs[i];
+	for i in [1..#resolutionCycle] do
+	    M[2, shift+i] := 2 - resolutionCycle[i];
+	    M[shift+i, 2] := 2 - resolutionCycle[i];
+	end for;
+
+	// Update first Chern Number with local term
+	for i in [1..#resolutionCycle] do
+	    firstChernNumber +:= 2 - resolutionCycle[i];
 	end for;
 	
 	// Update the shift.
-	shift +:= #localCycle;
+	shift +:= #resolutionCycle;
     end for;
-
-    /////////////////////
-    // Populate parabolic resolution data.
-    for localCycle in parabolicData do
-
-	// NOTE: If there is only one cycle, you need to do something special.
-	//       Thus, even though the code is identical to the above that might change.
-	
-	for i in [1..#localCycle-1] do
-	    M[shift+i, shift+i] := -localCycle[i];
-	    M[shift+i, shift+i+1] := 1;
-	    M[shift+i+1, shift+i] := 1;
-	end for;
-
-	// Update the last row/column in the block.
-	i := #localCycle;
-	M[shift + i, shift + i] := -localCycle[i];
-
-	if i gt 1 then
-	    M[shift+1, shift + i]   := 1;
-	    M[shift + i, shift + 1] := 1;
-	end if;
-
-	// Update the shift.
-	shift +:= #localCycle;
-    end for;
-
 
     // The very last thing to do is update the canonical class.
-
-    
-    // TODO: XXX: Actually implement this.
-
-    // Yeah...it looks like on the singular HMS the Chern forms only define QQ-divisors.
-    // damned stackiness.
-    
-    
-    // Return.
+    M[2,2] := firstChernNumber;
     return M;
 end intrinsic;
 
@@ -253,7 +276,8 @@ intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::Seq
     q := type[3] mod n;
 
     _, _, qpr := XGCD(n, q);
-
+    qpr := qpr mod n;
+    
     assert (qpr*q) mod n eq 1;
     
     RM := VectorSpace(Rationals(), 2);
@@ -274,7 +298,6 @@ intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::Seq
 	C[i+2] := c[i+1] * C[i+1] - C[i];
     end for;
 
-    print C; // TODO: If the length of the resolution cycle is 1, need to truncate.
     
     // Now that we have the coordinates, we can return the list of  (li + mi - 1).
     // Note that the beginning and ending terms of the `C` don't correspond to curves
@@ -702,6 +725,13 @@ intrinsic BasisCycleInformation(x::ChowRngHMSElt) -> BoolElt, MonStgElt, RngIntE
     return false, "quotient", 1;
 end intrinsic;
 
+intrinsic IntersectionMatrix(R::ChowRngHMS) -> MtrxSprs
+{}
+    M := MultiplicationTable(R);
+    n := Ncols(M);
+    return Submatrix(M, [2..n-1], [2..n-1]);
+end intrinsic;
+
 /////////////////////////////////////////////////////
 //
 //    Dispatch for Number Field Input.
@@ -738,7 +768,7 @@ end intrinsic;
 
 intrinsic VolumeOfFundamentalDomain(F::FldNum) -> Any
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
-    return VolumeOfFundamentalDomain(F, 1*RingOfIntegers(F));
+    return VolumeOfFundamentalDomain(F, 1*MaximalOrder(F));
 end intrinsic;
 
 /////////////////////////////////////////////////////
@@ -750,32 +780,32 @@ end intrinsic;
 intrinsic ChernNumbersOfMinimalResolution(F::FldNum, N::RngOrdIdeal) -> SeqEnum
 {Returns a tuple <c1^2, c2> corresponding to the Chern numbers of the 
 minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
-    Gamma := StupidCongruenceSubgroup(F, N);
+    Gamma := CongruenceSubgroup(F, N);
     return ChernNumbersOfMinimalResolution(Gamma);
 end intrinsic;
 
 intrinsic IntersectionRing(F::FldNum, N::RngOrdIdeal) -> Any
 {Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
-    Gamma := StupidCongruenceSubgroup(F, N);
+    Gamma := CongruenceSubgroup(F, N);
     return IntersectionRing(Gamma);
 end intrinsic;
 
 intrinsic IntersectionRingOfCuspidalResolution(F::FldNum, N::RngOrdIdeal) -> Any
 {Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
-    Gamma := StupidCongruenceSubgroup(F, N);
+    Gamma := CongruenceSubgroup(F, N);
     return IntersectionRingOfCuspidalResolution(Gamma);
 end intrinsic;
 
 intrinsic IntersectionRingOfMinimalResolution(F::FldNum, N::RngOrdIdeal) -> Any
 {Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
-    Gamma := StupidCongruenceSubgroup(F, N);
+    Gamma := CongruenceSubgroup(F, N);
     return IntersectionRingOfMinimalResolution(Gamma);
 end intrinsic;
 
 
-intrinsic VolumeOfFundamentalDomain(F::FldNum, N::RngOrdIdeal) -> Any
+intrinsic VolumeOfFundamentalDomain(F::FldNum, N::RngOrdIdl) -> Any
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
-    Gamma := StupidCongruenceSubgroup(F, N);
+    Gamma := CongruenceSubgroup(F, N);
     return VolumeOfFundamentalDomain(Gamma);
 end intrinsic;
 
@@ -792,7 +822,7 @@ end intrinsic;
 intrinsic ChernNumbersOfMinimalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> SeqEnum
 {Returns a tuple <c1^2, c2> corresponding to the Chern numbers of the 
 minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
-    Gamma := StupidCongruenceSubgroup(Field(M), N);
+    Gamma := CongruenceSubgroup(Field(M), N);
     return ChernNumbersOfMinimalResolution(Gamma);
 end intrinsic;
 
@@ -814,7 +844,7 @@ end intrinsic;
 
 intrinsic VolumeOfFundamentalDomain(M::ModFrmHilDGRng, N::RngOrdIdl) -> Any
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
-    Gamma := StupidCongruenceSubgroup(Field(M), N);
+    Gamma := CongruenceSubgroup(Field(M), N);
     return VolumeOfFundamentalDomain(Gamma);
 end intrinsic;
 
@@ -913,10 +943,10 @@ intrinsic IntersectionRingOfMinimalResolution(Gamma::StupidCongruenceSubgroup) -
     error "Not Implemented.";
 end intrinsic;
 
-
+import "../Creation/DedekindZetaExact.m" : DedekindZetaExact;
 intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> Any
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
-    return Index(Gamma) * Evaluate(DedekindZeta(Field(Gamma)), -1);
+    return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);
 end intrinsic;
 
 
@@ -929,6 +959,11 @@ end intrinsic;
 intrinsic ChowRing(Gamma) -> ChowRngHMS
 {}
     return IntersectionRing(Gamma);
+end intrinsic;
+
+intrinsic ChowRing(Gamma, BR) -> ChowRngHMS
+{}
+    return IntersectionRing(Gamma, BR);
 end intrinsic;
 
 
