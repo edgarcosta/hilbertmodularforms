@@ -32,8 +32,7 @@ mixed_red := [el[1] : el in pairs];
     print "";
   end for;
 */
-
-RssMM(s,M);
+GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(s,M);
 
 // alternative way of forming s/(s*M)
 /*

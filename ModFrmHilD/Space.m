@@ -242,7 +242,6 @@ intrinsic '*'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
                     : unitcharacters:=unitcharacters);
 end intrinsic;
 
-
 intrinsic '/'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
   {return M1/M2 with the same level}
   require Parent(M1) eq Parent(M2): "we only support multiplication inside the same graded ring";
@@ -257,8 +256,6 @@ intrinsic '/'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
                     Character(M1)/Character(M2)
                     : unitcharacters:=unitcharacters);
 end intrinsic;
-
-
 
 intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   {Returns the number of cusps for Gamma_0(N)}
@@ -297,7 +294,7 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic RssMM(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {}
   F := Ring(Parent(ss));
   ZF := Integers(F);

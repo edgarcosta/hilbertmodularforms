@@ -297,13 +297,17 @@ intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100) -> An
   r_floor := Floor(r);
   r_ceiling := Ceiling(r);
   rs := [r_floor, r_ceiling];
-  nus_min := [eps^r_floor*nu, eps^r_ceiling*nu];
-  dists := [];
-  for el in nus_min do
-    embed := EmbedNumberFieldElement(el : Precision := Precision);
-    Append(~dists, embed[1]^2 + embed[2]^2);
-  end for;
-  _, ind := Min(dists);
+  epses := [eps^el : el in rs];
+  nus_min := [el*nu : el in epses];
+  //printf "minimal nus = %o\n", nus_min;
+  nus_min_RR := [EmbedNumberFieldElement(el : Precision := Precision) : el in nus_min];
+  nus_min_RR_x := [el[1] : el in nus_min_RR];
+  dists := [DistanceSquared(el) : el in nus_min_RR];
+  if dists[1] eq dists[2] then
+    _, ind := Min(nus_min_RR_x); // tie-break by x-coord
+  else // else, just minimize distance
+    _, ind := Min(dists);
+  end if;
   return nus_min[ind], eps^rs[ind];
 end intrinsic;
 
