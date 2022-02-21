@@ -3,11 +3,13 @@ S<x> := PolynomialRing(QQ);
 //F<a> := NumberField(x^2 - 5);
 F<a> := QuadraticField(5);
 ZF := Integers(F);
+bb := 1*ZF;
+NN := 273*ZF;
 eps := FundamentalUnitTotPos(F);
 eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
-s := (1/a)*ZF;
-M := 7*ZF;
-Q, mp := quo< ZF | (s^-1)*M >;
+ss := (1/a)*ZF;
+MM := 7*ZF;
+Q, mp := quo< ZF | (ss^-1)*MM >;
 UQ, mpUQ := UnitGroup(Q);
 UQ_seq := [ZF!mpUQ(el) : el in UQ];
 nu := UQ_seq[8];
@@ -32,14 +34,16 @@ mixed_red := [el[1] : el in pairs];
     print "";
   end for;
 */
-GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(s,M);
+RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
+RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
 
-// alternative way of forming s/(s*M)
+// alternative way of forming ss/(ss*MM)
 /*
-  s_lat := NumberFieldLattice([Vector(F,[1])] : Ideals := [s]);
-  sm_lat := NumberFieldLattice([Vector(F,[1])] : Ideals := [s*M]);
-  s_ded := Module(s_lat);
-  sm_ded := Module(sm_lat);
-  quo<s_ded | sm_ded>;
-  quo< Module([s]) | Module([s*M])>;
+  ss_lat := NumberFieldLattice([Vector(F,[1])] : Ideals := [ss]);
+  ssMM_lat := NumberFieldLattice([Vector(F,[1])] : Ideals := [ss*MM]);
+  ss_ded := Module(ss_lat);
+  ssMM_ded := Module(ssMM_lat);
+  quo<ss_ded | ssMM_ded>;
+
+  quo< Module([ss]) | Module([ss*MM])>;  // just this
 */
