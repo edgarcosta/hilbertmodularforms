@@ -47,7 +47,7 @@ intrinsic CuspFormBasis(
     k := Weight(Mk);
     cuspbasis := [];
     // This only works for trivial character, as we rely on the magma functionality
-    require IsTrivial(Character(Mk)): "We only support CuspFormBasis  for trivial character, as we rely on the magma functionality";
+    require IsTrivial(DirichletRestriction(Character(Mk))): "We only support CuspFormBasis for characters with trivial dirichlet restriction, as we rely on the magma functionality";
     for dd in Divisors(N) do
       Mkdd := HMFSpace(Parent(Mk), dd, k);
       if CuspDimension(Mkdd) gt 0 then
