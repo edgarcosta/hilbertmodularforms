@@ -5,7 +5,7 @@ declare type ModFrmHilDEltComp [ModFrmHilDElt];
 declare attributes ModFrmHilDEltComp:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
-  Coefficients, // Assoc:  coeffs_bb[nu] = a_(bb,nu) = a_(nu bb'^-1), 
+  Coefficients, // Assoc:  coeffs_bb[nu] = a_(bb,nu) = a_(nu bb'^-1),
                 // where nu in Shintani cone with Tr(nu) <= Precision
   CoefficientRing, // Rng: where the coefficients live (does this depend on bb?)
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
@@ -41,6 +41,12 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
       t := Trace(nu);
       printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs[nu];
       count +:= 1;
+
+      if t ge working_prec then
+        printf "\n \t Cannot print more coefficients; precision is too small", num_coeffs;
+        break;
+      end if;
+
       if count ge num_coeffs then
         printf "\n...";
         break;
@@ -667,7 +673,7 @@ intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
 end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
-{compares Parent and Components.}	   
+{compares Parent and Components.}
   return &and[a(f) eq a(g): a in [Parent, Components]];
 end intrinsic;
 
