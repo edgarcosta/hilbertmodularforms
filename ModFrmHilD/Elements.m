@@ -26,10 +26,6 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
     M := Parent(Mk);
     k := Weight(Mk);
     working_prec := Precision(f);
-    if num_coeffs gt working_prec then
-      printf "Warning: cannot print %o coefficients; precision of form is %o.\n", num_coeffs, working_prec;
-      num_coeffs := working_prec;
-    end if;
     coeffs := Coefficients(f);
     N := Level(Mk);
     if level ne "Minimal" then
@@ -45,6 +41,12 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
       t := Trace(nu);
       printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs[nu];
       count +:= 1;
+
+      if t ge working_prec then
+        printf "\n \t Cannot print more coefficients; precision is too small", num_coeffs;
+        break;
+      end if;
+
       if count ge num_coeffs then
         printf "\n...";
         break;
