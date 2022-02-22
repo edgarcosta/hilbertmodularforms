@@ -176,7 +176,7 @@ end intrinsic;
 
 
 // overloaded for trivial level and character
-intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]: unitcharacters:=false) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
@@ -184,18 +184,18 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   N := ideal<ZF|1>;
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
-  return HMFSpace(M, N, k, chi);
+  return HMFSpace(M, N, k, chi: unitcharacters:=unitcharacters);
 end intrinsic;
 
 // overloaded for trivial character
-intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]: unitcharacters:=false) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
   ZF := Integers(M);
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
-  return HMFSpace(M, N, k, chi);
+  return HMFSpace(M, N, k, chi: unitcharacters:=unitcharacters);
 end intrinsic;
 
 intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD

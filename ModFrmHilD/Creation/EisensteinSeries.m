@@ -151,18 +151,25 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
     // figure out the right place to recognize
     // i.e., figure out what complex embedding magma used to embed the L-function into CC
     places := InfinitePlaces(CoefficientField);
-    for p in PrimesUpTo(Precision(M), BaseField(M)) do
-    if #places eq 1 then
-      // there is only one place left, so that must be the one
-      break;
-    end if;
-    ap_K := psi(p); // in CoefficientField
-    ap_CC := -Coefficients(EulerFactor(Lf, p : Degree := 1))[2];
-    // restrict to the places where pl(ap_K) = ap_CC
-    places := [pl : pl in places | Evaluate(ap_K, pl) eq ap_CC ];
-    i +:=1;
+    for p in PrimesUpTo(1000) do
+      if Conductor(Lf) mod p eq 0 then continue; end if;
+      if #places eq 1 then
+        // there is only one place left, so that must be the one
+        break;
+      end if;
+      assert #places ge 1;
+      ap_K := psi(p); // in CoefficientField
+      // Over degree 2
+      // EulerFactor = 1 - psi(p) T^2 if p inert
+      //             = 1 - ? + psi(p)T^2 if p splits
+      pfactor := Factorisation(p*Integers(BaseField(M)));
+      sign := (-1)^(&+[elt[2] : elt in pfactor]);
+      ap_CC := sign*Coefficient(EulerFactor(Lf, p), Degree(Lf));
+      // print ap_K, ap_CC, EulerFactor(Lf, p);
+      // restrict to the places where pl(ap_K) = ap_CC
+      places := [pl : pl in places | Evaluate(ap_K, pl) eq ap_CC ];
     end for;
-    assert #places eq 1;
+    // we did our best, if #places > 1, then any embedding should work, e.g, the Image is smaller than the Codomain
     pl := places[1];
     CC<I> := ComplexField(Precision(Lvalue));
     val := RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
