@@ -570,8 +570,8 @@ end intrinsic;
 //       to compress all the singularities of the same type into a single intersection class.
 //
 intrinsic IntersectionRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
-{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.
-with coefficients in BR.}
+{Computes the Chow ring of the minimal desingularization of the Bailey-Borel compactification 
+of the Hilbert Modular Surface with coefficients in BR.}
 
     R := New(ChowRngHMS);
     R`CongruenceSubgroup := Gamma;
@@ -606,7 +606,7 @@ with coefficients in BR.}
     rawEllipticResolutionData := [];
 
     shift := 2;
-    for singType in Keys(EllipticPointData(Gamma)) do
+    for singType in Keys(EPData) do
 
 	// Massage the type so that <a,b> = <1, positive>
 	stdForm := <singType[1], 1, (singType[3] + (1 - singType[2])) mod singType[1]>;
@@ -618,28 +618,29 @@ with coefficients in BR.}
 	localChernCoeffs := QuotientLocalChernCoefficients(singType, head cat tail);
 	for i in [1..EPData[singType]] do
 	    Append(~rawEllipticResolutionData, <head cat tail, localChernCoeffs>);
+
+	    // Associate a singular point to the resolution cycle.
+	    P := SingularPointHMS("Elliptic", singType);
+
+	    // Populate the Resolution Cycle dictionary with indices.
+	    numCycles := #head + #tail;
+	    R`ResolutionCycles[P] := [(shift - 1) + 1 .. (shift - 1) + numCycles];
+
+	    // Update shift.
+	    shift +:= numCycles;
 	end for;
 
-	// Associate a singular point to the resolution cycle.
-	P := SingularPointHMS("Elliptic", singType);
-
-	// Populate the Resolution Cycle dictionary with indices.
-	numCycles := #head + #tail;
-	R`ResolutionCycles[P] := [(shift - 1) + 1 .. (shift - 1) + numCycles];
-
-	// Update shift.
-	shift +:= numCycles;
     end for;
 
     //////////////
     // Parabolic Points
 
     // TODO: Hook in Sam's functionality.
-    rawParabolicResolutionData := [<[1,2,3], [1,1,1]>, <[4,5,6], [1,1,1]>];
+    rawParabolicResolutionData := [<[9,9,9], [1,1,1]>, <[9,9,9], [1,1,1]>];
 
     for par in rawParabolicResolutionData do
 	P := SingularPointHMS("Cuspidal", <"Fake">);
-	R`ResolutionCycles[P] := [shift + 1 .. shift + #par[2]];
+	R`ResolutionCycles[P] := [(shift - 1) + 1 .. (shift - 1) + #par[2]];
 	shift +:= #par[2];
     end for;
     
@@ -662,11 +663,7 @@ with coefficients in BR.}
     R1 := RSpace(BR, D);
     R2 := RSpace(BR, 1);
     R`GradedComponents := <R0, R1, R2>;
-
-    // TODO: The indexing system should remember the types of the points involved.
-    // R`EllipticPointIndices := [[2, 3], [4, 5]];
-    // R`ParabolicPointIndices := [[6, 7, 8]];
-
+    
     // Finally, Cache the generators, since I suspect users will use them often.
     R`Generators := [CreateElement(R, 0, R1.i, 0) : i in [1..D]];
 
@@ -862,23 +859,66 @@ end intrinsic;
 /////////////////////////////////////////////////////
 
 intrinsic IntersectionRing(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
-{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
+{Equivalent to IntersectionRing(Gamma, Integers()).}
     return IntersectionRing(Gamma, Integers());
 end intrinsic;
 
 intrinsic IntersectionRing(F::FldNum) -> ChowRngHMS
-{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
+{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
         return IntersectionRing(F, 1*RingOfIntegers(F));
 end intrinsic;
 
 intrinsic IntersectionRingOfCuspidalResolution(F::FldNum) -> ChowRngHMS
-{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
+{Computes the Chow ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
     return IntersectionRingOfCuspidalResolution(F, 1*RingOfIntegers(F));
 end intrinsic;
 
 intrinsic IntersectionRingOfMinimalResolution(F::FldNum) -> ChowRngHMS
-{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
+{Computes the Chow ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
     return IntersectionRingOfMinimalResolution(F, 1*RingOfIntegers(F));
+end intrinsic;
+
+intrinsic IntersectionRing(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
+{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
+    error "Not Implemented.";
+end intrinsic;
+
+intrinsic IntersectionRingOfCuspidalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
+{Computes the Chow ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
+    error "Not Implemented.";
+end intrinsic;
+
+intrinsic IntersectionRingOfMinimalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
+{Computes the Chow ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
+    error "Not Implemented.";
+end intrinsic;
+
+intrinsic IntersectionRing(F::FldNum, N::RngOrdIdl) -> ChowRngHMS
+{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
+    Gamma := CongruenceSubgroup(F, N);
+    return IntersectionRing(Gamma);
+end intrinsic;
+
+intrinsic IntersectionRingOfCuspidalResolution(F::FldNum, N::RngOrdIdl) -> ChowRngHMS
+{Computes the Chow ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
+    Gamma := CongruenceSubgroup(F, N);
+    return IntersectionRingOfCuspidalResolution(Gamma);
+end intrinsic;
+
+intrinsic IntersectionRingOfMinimalResolution(F::FldNum, N::RngOrdIdeal) -> ChowRngHMS
+{Computes the Chow ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
+    Gamma := CongruenceSubgroup(F, N);
+    return IntersectionRingOfMinimalResolution(Gamma);
+end intrinsic;
+
+intrinsic IntersectionRingOfCuspidalResolution(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+{Computes the Chow ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
+    error "Not Implemented.";
+end intrinsic;
+
+intrinsic IntersectionRingOfMinimalResolution(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+{Computes the Chow ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
+    error "Not Implemented.";
 end intrinsic;
 
 
@@ -888,12 +928,6 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////
 
-// TODO: Navigation of the classes in the Chow ring.
-intrinsic BasisCycleInformation(x::ChowRngHMSElt) -> BoolElt, MonStgElt, RngIntElt
-{}
-    return false, "quotient", 1;
-end intrinsic;
-
 intrinsic IntersectionMatrix(R::ChowRngHMS) -> MtrxSprs
 {Return the matrix [R.i * R.j : i,j] of cycles of degree 1 in the Hilbert Modular Surface.}
     M := MultiplicationTable(R);
@@ -901,48 +935,6 @@ intrinsic IntersectionMatrix(R::ChowRngHMS) -> MtrxSprs
     return Submatrix(M, [2..n-1], [2..n-1]);
 end intrinsic;
 
-intrinsic IntersectionRing(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
-{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
-
-intrinsic IntersectionRingOfCuspidalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
-{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
-
-intrinsic IntersectionRingOfMinimalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
-{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
-
-intrinsic IntersectionRing(F::FldNum, N::RngOrdIdeal) -> ChowRngHMS
-{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
-    Gamma := CongruenceSubgroup(F, N);
-    return IntersectionRing(Gamma);
-end intrinsic;
-
-intrinsic IntersectionRingOfCuspidalResolution(F::FldNum, N::RngOrdIdeal) -> ChowRngHMS
-{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
-    Gamma := CongruenceSubgroup(F, N);
-    return IntersectionRingOfCuspidalResolution(Gamma);
-end intrinsic;
-
-intrinsic IntersectionRingOfMinimalResolution(F::FldNum, N::RngOrdIdeal) -> ChowRngHMS
-{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
-    Gamma := CongruenceSubgroup(F, N);
-    return IntersectionRingOfMinimalResolution(Gamma);
-end intrinsic;
-
-intrinsic IntersectionRingOfCuspidalResolution(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
-{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
-
-intrinsic IntersectionRingOfMinimalResolution(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
-{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
 
 /////////////////////////////////////////////////////
 //
@@ -1017,13 +1009,15 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////
 
-
 intrinsic ChernNumbersOfMinimalResolution(Gamma::StupidCongruenceSubgroup) -> SeqEnum
-{Returns a tuple <c1^2, c2> corresponding to the Chern numbers of the 
+{Returns `c1^2, c2`,  corresponding to the Chern numbers of the 
 minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
+    return ChernNumbers(IntersectionRing(Gamma));
+end intrinsic;
 
-  error "Not implemented.";
-  // For now, let us assume the groups is torsion-free.
+
+intrinsic ChernNumbers(R::ChowRngHMS) -> RngIntElt, RngIntElt
+{Return the Chern numbers `c1^2, c2` of the Hilbert Modular Surface associated to `R`.}
 
   // We use the description of the Chern Numbers of a Hilbert Modular Surface
   // from van der Geer, Theorem IV.2.5 (page 64). To expand on this a bit,
@@ -1113,11 +1107,3 @@ intrinsic ChowRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
 {}
     return IntersectionRing(Gamma, BR);
 end intrinsic;
-
-
-/////////////////////////////////////////////////////////////////////////////////
-//
-// Test Intersection Ring
-//
-/////////////////////////////////////////////////////////////////////////////////
-

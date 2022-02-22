@@ -24,6 +24,15 @@ intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl) -> StupidCongruenceSubgrou
     return CongruenceSubgroup(F, N, 1*MaximalOrder(F));
 end intrinsic;
 
+intrinsic CongruenceSubgroup(F::FldNum, N::RngQuad) -> StupidCongruenceSubgroup
+{}
+    if N eq MaximalOrder(F) then
+	return CongruenceSubgroup(F);
+    else
+	error "CongruenceSubgroup not implemented for arbitrary orders.";
+    end if;
+end intrinsic;
+
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
 The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
@@ -267,7 +276,8 @@ end intrinsic;
 /////////////////////////////////////////////////////////////////////////////////
 
 intrinsic IndexOfPrincipalCongruenceSubgroup(F::FldNum, N::RngOrdIdl) -> RngIntElt
-{}
+{Return the index of the principal congruence subgroup of level `N` within the
+full Hilbert modular group.}
     q := Norm(N);
     if q eq 1 then return 1; end if;
     
@@ -275,7 +285,6 @@ intrinsic IndexOfPrincipalCongruenceSubgroup(F::FldNum, N::RngOrdIdl) -> RngIntE
     return q * (q^2 - 1);
 end intrinsic;
 
-// TODO: Check if this index is correct.
 intrinsic IsPrincipalCongruenceSubgroup(Gamma::StupidCongruenceSubgroup) -> BoolElt
 {}
     return Index(Gamma) eq IndexOfPrincipalCongruenceSubgroup(Field(Gamma), Level(Gamma));
@@ -296,7 +305,9 @@ end intrinsic;
 ////////// Functions for cusps  //////////
 
 intrinsic NumberOfCusps(Gamma::StupidCongruenceSubgroup) -> RngIntElt
-{Computes the number of cusps of Gamma}
+{Computes the number of cusps of Gamma_0(N).}
+
+    error "Congruence Subgroup of the form Gamma_0(N) not implemented.";
     
     // Create the HMF ring.
     F := Field(Gamma);
@@ -306,20 +317,10 @@ intrinsic NumberOfCusps(Gamma::StupidCongruenceSubgroup) -> RngIntElt
     Mn := HMFSpace(M, N, [k : k in [1..Degree(F)]]);
 
     // Return the number of cusps.
-    return NumberOfCusps(Mn); // TODO: XXX: This function assumes that Gamma is Gamma_0(N).
-
-    // Sam is implementing a more complete version.
+    return NumberOfCusps(Mn); // TODO: XXX: 
 end intrinsic;
 
 intrinsic NumberOfParabolicPoints(Gamma::StupidCongruenceSubgroup) -> RngIntElt
-{}
+{Return the number of cusps of the Hilbert modular surface associated to Gamma.}
     return NumberOfCusps(Gamma);
 end intrinsic;
-
-
-/////////////////////////////////////////////////////////////////////////////////
-//
-// Test StupidCongruenceSubgroup
-//
-/////////////////////////////////////////////////////////////////////////////////
-
