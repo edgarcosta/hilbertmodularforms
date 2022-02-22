@@ -9,7 +9,7 @@
 /////////////////////////////////////////////////////
 
 declare type StupidSingularPointHMS;
-declare attributes StupidSingularPointHMS : Parent, Point, SingularityType;
+declare attributes StupidSingularPointHMS : Parent, Point, SingularityType, SingularityInfo, ID;
 
 // TODO: Once actually correct data is attached to singular points,
 //       we can remove this.
@@ -32,33 +32,58 @@ end intrinsic;
 
 ///////////////////// Singular Point HMS intrinsics /////////////////////
 
-intrinsic SingularPointHMS(type::Tup) -> StupidSingularPointHMS
+intrinsic SingularPointHMS(typename::MonStgElt, info::Tup) -> StupidSingularPointHMS
 {}
+    acceptableQuotientNames := ["Elliptic", "Quotient", "Orbifold"];
+    acceptableCuspidalNames := ["Cusp", "Cuspidal", "Parabolic"];
+    
+    if typename in acceptableQuotientNames then
+	singname := "Quotient";
+    elif typename in acceptableCuspidalNames then
+	singname := "Cusp";
+    else
+	error "Singularity type: `", typename, "` not regconized for HMS singularity.";
+    end if;
+    
     p := New(StupidSingularPointHMS);
-    p`SingularityType := type;
-    p`Point := <"Fake", GlobalSingularPointHMSCount`Count>;
+    p`SingularityType := singname;
+    p`SingularityInfo := info;
+    p`Point := "Fake Coordinates";
+    p`ID := GlobalSingularPointHMSCount`Count;
     Increment(GlobalSingularPointHMSCount);
     return p;
 end intrinsic;
 
-intrinsic SingularPointHMS(type::Tup, point) -> StupidSingularPointHMS
+intrinsic SingularPointHMS(typename::MonStgElt, info::Tup, point) -> StupidSingularPointHMS
 {}
-    p := New(StupidSingularPointHMS);
-    p`SingularityType := type;
-    p`Point := Point;
+    p := SingularPointHMS(typename, info);
+    p`Point := point;
     return p;
 end intrinsic;
 
 intrinsic 'eq'(x::StupidSingularPointHMS, y::StupidSingularPointHMS) -> BoolElt
 {}
     // TODO: Once we assign parents to such things, we should check it.
-    return x`Point cmpeq y`Point;
+    // TODO: Once the data structure of a singular point is determined, the `eq` function
+    //       should change to reflect it.
+    return x`ID eq y`ID;
 end intrinsic;
 
 intrinsic Print(p::StupidSingularPointHMS)
 {}
-    print "Singular Point representative of Hilbert Modular Surface.";
-    print p`Point;
+    singType := p`SingularityType;
+
+    if singType eq "Quotient" then
+	msgpart := Sprintf("%o singularity of type %o", p`SingularityType, p`SingularityInfo);
+
+    elif singType eq "Cusp" then
+	msgpart := Sprintf("%o", p`SingularityType);
+    else
+	print singType;
+    end if;
+
+    print "Representative of", msgpart, "of Hilbert Modular Surface.";
+    print "With object ID: ", p`ID;
     return;
 end intrinsic;
 
@@ -522,6 +547,18 @@ intrinsic IsCoercible(X::ChowRngHMS, y::Any) -> BoolElt, .
     return false, "Illegal coercion.";
 end intrinsic;
 
+intrinsic GeneratorInfo(x::ChowRngHMSElt) -> Any
+{Given a generator, return either "Canonical", or the singular point on the Hilbert modular
+surface associated to `x`.}
+    R := Parent(x);
+    try
+	return R`GeneratorInfo[x];
+    catch e
+	error "Element not recognized as a generator for ", R;
+    end try;
+end intrinsic;
+
+
 /////////////////////////////////////////////////////
 //
 //    Creation
@@ -584,7 +621,7 @@ with coefficients in BR.}
 	end for;
 
 	// Associate a singular point to the resolution cycle.
-	P := SingularPointHMS(singType);
+	P := SingularPointHMS("Elliptic", singType);
 
 	// Populate the Resolution Cycle dictionary with indices.
 	numCycles := #head + #tail;
@@ -601,7 +638,7 @@ with coefficients in BR.}
     rawParabolicResolutionData := [<[1,2,3], [1,1,1]>, <[4,5,6], [1,1,1]>];
 
     for par in rawParabolicResolutionData do
-	P := SingularPointHMS(<"Fake">);
+	P := SingularPointHMS("Cuspidal", <"Fake">);
 	R`ResolutionCycles[P] := [shift + 1 .. shift + #par[2]];
 	shift +:= #par[2];
     end for;
