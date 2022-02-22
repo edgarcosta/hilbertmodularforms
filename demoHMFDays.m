@@ -62,10 +62,9 @@ B6:=Basis(HMFSpace(GR, [6,6]));
 B8:=Basis(HMFSpace(GR, [8,8]));
 B10:=Basis(HMFSpace(GR, [10,10]));
 
-// What comes next does not work yet...
-/*
 a,b,c,d,e,f:=UniversalIgusa(GR);
 
+/*
 function Slash(eta, k, M)
 // eta a totally positive unit,
 // an even parallel weight k
