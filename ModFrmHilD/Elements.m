@@ -5,7 +5,7 @@ declare type ModFrmHilDEltComp [ModFrmHilDElt];
 declare attributes ModFrmHilDEltComp:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
-  Coefficients, // Assoc:  coeffs_bb[nu] = a_(bb,nu) = a_(nu bb'^-1), 
+  Coefficients, // Assoc:  coeffs_bb[nu] = a_(bb,nu) = a_(nu bb'^-1),
                 // where nu in Shintani cone with Tr(nu) <= Precision
   CoefficientRing, // Rng: where the coefficients live (does this depend on bb?)
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
@@ -26,6 +26,10 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
     M := Parent(Mk);
     k := Weight(Mk);
     working_prec := Precision(f);
+    if num_coeffs gt working_prec then
+      printf "Warning: cannot print %o coefficients; precision of form is %o.\n", num_coeffs, working_prec;
+      num_coeffs := working_prec;
+    end if;
     coeffs := Coefficients(f);
     N := Level(Mk);
     if level ne "Minimal" then
@@ -667,7 +671,7 @@ intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
 end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
-{compares Parent and Components.}	   
+{compares Parent and Components.}
   return &and[a(f) eq a(g): a in [Parent, Components]];
 end intrinsic;
 
