@@ -1,14 +1,66 @@
-AttachSpec("spec");
+//AttachSpec("spec");
 S<x> := PolynomialRing(QQ);
 //F<a> := NumberField(x^2 - 5);
 F<a> := QuadraticField(5);
 ZF := Integers(F);
 bb := 1*ZF;
-NN := 27*ZF;
+NN := 21*ZF;
 //eps := FundamentalUnitTotPos(F);
 //eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
 ss := (1/a)*ZF;
 MM := 7*ZF;
+RssMM0 := GeneratorsOfQuotientModule(ss,MM);
+RssMM_comp0 := GeneratorsOfQuotientModule(ss*bb*MM,(NN/MM));
+RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
+RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
+bb := 1*ZF;
+P1 := Gamma1Quadruples(NN, bb);
+
+X := CartesianProduct(RssMM, RssMM_comp);
+Q, mpQ := quo< ZF | NN>;
+UQ, mpUQ := UnitGroup(Q);
+
+// act by (R/NN)^*
+gens_ab := Generators(UQ);
+gens := [mpUQ(el) : el in gens_ab];
+new := (ZF!gens[1])*RssMM[1];
+new := ReduceShintaniMinimizeDistance(new);
+
+// should be congruent to something in RssMM mod ss*MM
+for el in RssMM do
+  el - new in MM;
+end for;
+
+// alternative way of forming ss/(ss*MM)
+/*
+  ss_lat := NumberFieldLattice([Vector(F,[1])] : Ideals := [ss]);
+  ssMM_lat := NumberFieldLattice([Vector(F,[1])] : Ideals := [ss*MM]);
+  ss_ded := Module(ss_lat);
+  ssMM_ded := Module(ssMM_lat);
+  quo<ss_ded | ssMM_ded>;
+
+  quo< Module([ss]) | Module([ss*MM])>;  // just this
+*/
+
+/*
+  ss_module := Module([ss]);
+  ssMM_module := Module([ss*MM]);
+  ElementaryDivisors(s_module, sm_module);
+*/
+
+/*
+  ss_basis := AbsoluteBasis(ss);
+  ZFMM, mpMM := quo< ZF | MM>;
+  quotient_gens := [];
+  for el in ZFMM do
+    a := ZF!el;
+    t := &+[a[i]*ss_basis[i] : i in [1..#ss_basis]];
+    if t*ss + ss*MM eq ss then
+      Append(~quotient_gens, t);
+    end if;
+  end for;
+*/
+
 /*
   Q, mp := quo< ZF | (ss^-1)*MM >;
   UQ, mpUQ := UnitGroup(Q);
@@ -36,37 +88,4 @@ MM := 7*ZF;
     print "";
   end for;
 */
-RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
-RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
-bb := 1*ZF;
-Gamma1Quadruples(NN, bb);
 
-// alternative way of forming ss/(ss*MM)
-/*
-  ss_lat := NumberFieldLattice([Vector(F,[1])] : Ideals := [ss]);
-  ssMM_lat := NumberFieldLattice([Vector(F,[1])] : Ideals := [ss*MM]);
-  ss_ded := Module(ss_lat);
-  ssMM_ded := Module(ssMM_lat);
-  quo<ss_ded | ssMM_ded>;
-
-  quo< Module([ss]) | Module([ss*MM])>;  // just this
-*/
-
-/*
-  s_module := Module([ss]);
-  sm_module := Module([ss*MM]);
-  ElementaryDivisors(s_module, sm_module);
-*/
-
-/*
-  ss_basis := AbsoluteBasis(ss);
-  ZFMM, mpMM := quo< ZF | MM>;
-  quotient_gens := [];
-  for el in ZFMM do
-    a := ZF!el;
-    t := &+[a[i]*ss_basis[i] : i in [1..#ss_basis]];
-    if t*ss + ss*MM eq ss then
-      Append(~quotient_gens, t);
-    end if;
-  end for;
-*/

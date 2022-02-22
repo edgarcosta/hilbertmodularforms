@@ -294,20 +294,61 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+intrinsic GeneratorsOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {}
-  F := Ring(Parent(ss));
-  ZF := Integers(F);
-  ss_basis := AbsoluteBasis(ss);
+  // CoprimeRepresentative
+  // SafeUniformizer
+  // CRT
+  facts := Factorization(ss*MM);
+  residues := [];
+  for fact in facts do
+    P := facts[1];
+    ord := facts[2];
+    aP := SafeUniformizer(P);
+    Append(~residues, aP^ord);
+  end for;
+  return false;
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module.}
+  ZF := Order(ss);
+  F := NumberField(ZF);
   ZFMM, mpMM := quo< ZF | MM>;
+  // loop over all elts of ss/(ss*MM)
+  ss_gens := Generators(ss);
+  ss_ngens := #ss_gens;
   quotient_gens := [];
-  for el in ZFMM do
-    a := ZF!el;
-    t := &+[a[i]*ss_basis[i] : i in [1..#ss_basis]];
-    if t*ss + ss*MM eq ss then
+  ss_seq := [];
+  for el in CartesianPower(ZFMM, ss_ngens) do
+    t := ZF!0;
+    for i := 1 to ss_ngens do
+      t +:= (el[i] @@ mpMM)*ss_gens[i];
+    end for;
+    Append(~ss_seq, t);
+    // check if new mod ss*MM
+    new_bool := true;
+    for q in quotient_gens do
+      if (q - t) in ss*MM then
+        new_bool := false;
+      end if;
+    end for;
+    if (t*ZF + ss*MM eq ss) and new_bool then
       Append(~quotient_gens, t);
     end if;
   end for;
+  quotient_gens := SetToSequence(SequenceToSet(quotient_gens));
+  //printf "# of quotient gens = %o\n", #quotient_gens;
+  //printf "number of units in ZF/ideal = %o\n", #UnitGroup(ZFMM);
+  assert #quotient_gens eq #UnitGroup(ZFMM);
+  return quotient_gens;
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.}
+  quotient_gens := GeneratorsOfQuotientModule(ss,MM);
   // quotient by action of totally positive units by computing Shintani reduced elts
   return SetToSequence(SequenceToSet([ReduceShintaniMinimizeDistance(el) : el in quotient_gens]));
 end intrinsic;
