@@ -103,7 +103,9 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> 
     for bb in NarrowClassGroupReps(M) do
       minusunitchar[bb] := UnitCharacter(F, [-1]);
     end for;
-    Mkminus := HMFSpace(M, k : unitchar := minusunitchar);
+    X := HeckeCharacterGroup(1*ZF, [1..Degree(BaseField(M))]);
+    chi := X!1;
+    Mkminus := HMFSpace(M, 1*ZF, k, chi : unitcharacters := minusunitchar);
   else
     Mkminus := Mkplus;
   end if;
