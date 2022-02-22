@@ -1,11 +1,144 @@
-import "copypastefunctions.m" : BasisMatrixDefinite,
+import "copypastefunctions.m" : _ResidueMatrixRing,
+                                basis_matrix,
+                                ComputeBasisMatrixOfNewSubspaceDefinite,
+				DimensionBianchi,
+                                get_rids,
                                 get_tps,
 			        IsBianchi,
                                 HMF,
                                 HMF0,
-                                TopAmbient;
+				HMSDF,
+				ModFrmHilDirFact,
+				P1_congruence_classes,
+				ProjectiveLineOrbits,
+				please_report,
+				RemoveEisenstein,
+				TopAmbient,
+				weight_map_arch;
+forward BasisMatrixDefinite;
+forward HilbertModularSpaceDirectFactors;
 
 /**************** New intrinsics **********************/
+
+intrinsic Dimension(M::ModFrmHil : UseFormula:=true, hack := true) -> RngIntElt
+{The dimension of the space M of Hilbert modular forms}
+
+  if assigned M`Dimension then 
+    return M`Dimension;
+  end if;
+
+  if IsBianchi(M) then
+    return DimensionBianchi(M);
+  end if;
+
+  OA := QuaternionOrder(M);
+  definite := IsDefinite(M);
+
+  // begin hack
+  // Right now we don't yet have trace formula with character, so
+  // we simply not use the formula
+  if hack or (not UseFormula)
+		 // end hack
+     or Seqset(Weight(M)) ne {2}				 
+  then
+      if definite then
+	  // hack begins
+	  if Seqset(Weight(M)) ne {2} then
+              _ := BasisMatrixDefinite(M : EisensteinAllowed, hack := hack);
+	  else
+	      _ := BasisMatrixDefinite(M : EisensteinAllowed := false, hack := hack);
+	  end if;
+	  // hack ends
+      else
+        M`Dimension := Rank(basis_matrix(M));
+      end if;
+
+  elif definite then
+      discA := Discriminant(OA);
+      eis := NarrowClassNumber(MaximalOrder(BaseRing(OA)));
+
+      vprintf ModFrmHil: "Computing dimension via class numbers ... ";
+      vprintf Shimura: "\n";
+      vtime ModFrmHil:
+
+      if NewLevel(M) eq discA then
+        full := DefiniteClassNumber(discA, Level(M)/discA);
+        M`Dimension := full - eis;
+
+      else
+        // Inclusion-exclusion to get dimension of new space from dimensions of full spaces.
+        // Let f(n) = dimension of full space of level n,
+        // and g(n) = dimension of new subspace of level n.
+        // Then we have f(n) = Sum_{m|n} d(m)*g(n/m), because the images of a new space under
+        // degeneracy maps don't intersect, and the number of maps is d(m) = # of divisors of m,
+        // Inverting this, g(n) = Sum_{m|n} c(m)*f(n/m) where c is the multiplicative function
+        // defined on prime powers by c(p) = -2, c(p^2) = 1, c(p^k) = 0 for k > 3.
+        // One proves this using zeta generating functions: writing K for BaseField(M),
+        // Zeta_d(s) := Sum_{ideals n} d(n)/n^s = Zeta_K(s)^2, hence Zeta_c(s) = Zeta_K(s)^-2
+
+        dim := 0;
+        eichler_level := Level(M)/discA;
+        newLevel := NewLevel(M)/discA;
+        dim := 0;
+        for J in Divisors(newLevel) do
+          Jfact := Factorization(J);
+          if forall{tup : tup in Jfact | tup[2] le 2} then
+            cJ := (-2) ^ #{tup : tup in Jfact | tup[2] eq 1};
+            dimJ := DefiniteClassNumber(discA, eichler_level/J);
+            dim +:= cJ * (dimJ - eis);
+          end if;
+        end for;
+        M`Dimension := dim;
+      end if;
+
+  else // indefinite
+      if BaseRing(OA) cmpeq Integers() then
+        discA:= Integers()! Discriminant(OA);
+        eichler_level := Integers()!(Generator(Level(M))/discA);  
+        newLevel := Integers()!(Generator(NewLevel(M))/discA);
+      else 
+        discA := Discriminant(OA);
+        eichler_level := Level(M)/discA;
+        newLevel := NewLevel(M)/discA;
+      end if;
+      if assigned OA`FuchsianGroup and assigned OA`FuchsianGroup`ShimGroup 
+                                   and eichler_level eq discA and newLevel eq discA then
+        shim_group := OA`FuchsianGroup`ShimGroup;
+        dim := ((#Generators(shim_group) - #Relations(shim_group) + 1) div 2)
+               * NarrowClassNumber(BaseField(M));
+      else
+        // Inclusion-exclusion (see comment in definite case)
+        dim := 0;
+        use_genus := NarrowClassNumber(BaseField(M)) eq 1;
+        if use_genus then
+          vprintf ModFrmHil: "Computing dimension via genus formula ... \n";
+        else
+          vprintf ModFrmHil: "Computing dimension via basis matrix ... \n";
+        end if;
+        vtime ModFrmHil:
+        for J in Divisors(newLevel) do
+          Jfact := Factorization(J);
+          if forall{tup : tup in Jfact | tup[2] le 2} then
+            cJ := (-2) ^ #{tup : tup in Jfact | tup[2] eq 1};
+            NdivJ := Parent(J)! (eichler_level/J);
+            if use_genus then
+              dimJ := Genus(FuchsianGroup(BaseField(M), discA, NdivJ : ComputeAlgebra:=false))
+                        * NarrowClassNumber(BaseField(M));
+            else
+              // Just compute the space--otherwise, we waste time computing the structure of the
+              // intermediate groups; Shapiro's lemma is superior.
+              Gamma := FuchsianGroup(OA);
+              dimJ := Nrows(HeckeMatrix(Gamma, NdivJ, "Infinity"))/2;
+              dimJ := Integers()!dimJ;
+            end if;
+            dim +:= cJ * dimJ;
+          end if;
+        end for;
+      end if;
+      M`Dimension := Integers()!dim;
+  end if;
+  return M`Dimension;
+end intrinsic;
 
 intrinsic HilbertCuspForms(
   chi::GrpHeckeElt,
@@ -70,12 +203,20 @@ function HeckeOperatorDefiniteBig(M, p : Columns:="all", hack := true)
    N := Level(M);
    chi := DirichletCharacter(M);
    weight2 := Seqset(Weight(M)) eq {2};
-   easy := weight2 and N eq Discriminant(QuaternionOrder(M))
-	   and IsTrivial(DirichletRestriction(Character(M)));
+   // hack begins
+   if hack then
+       easy := weight2 and N eq Discriminant(QuaternionOrder(M))
+	       and IsTrivial(DirichletRestriction(Character(M)));
+   else
+       easy := weight2 and N eq Discriminant(QuaternionOrder(M));
+   end if;
+   // hack ends
    // easy = basis of big space is given by the rids
 
    if not assigned M`basis_matrix then
-     _ := BasisMatrixDefinite(M : EisensteinAllowed);
+       // hack begins
+       _ := BasisMatrixDefinite(M : EisensteinAllowed, hack := hack);
+       // hack ends
    end if;
    dim := Ncols(M`basis_matrix_big);
 
@@ -196,8 +337,14 @@ function HeckeOperatorDefiniteBig(M, p : Columns:="all", hack := true)
                           if bool then
                              n := lookup[u0,1]; 
                              // assert n eq Index(HMDF[l]`CFD, n);
-                             // Tplm[n,mm] +:= 1;
-			     Tplm[n,mm] +:= chi(Norm(tpml[ll]));
+			     // hack begins
+			     if hack then
+				 // Tplm[n,mm] +:= chi(Norm(tpml[ll]));
+				 Tplm[n,mm] +:= chi(sm(tpml[ll])[2,2]);
+			     else
+				 Tplm[n,mm] +:= 1;
+			     end if;
+			     // hack ends
                           end if;
                        end for;
                     end for;
@@ -229,7 +376,16 @@ function HeckeOperatorDefiniteBig(M, p : Columns:="all", hack := true)
                              if n ne 0 then
                                 quat1 := units1[elt_data[2]]^-1 * tpml[ll]; 
                                 X := ExtractBlock(Tplm, (n-1)*wd+1, (mm-1)*wd+1, wd, wd);
-                                X +:= chi(Norm(quat1))*weight_map(quat1);
+				// !! TODO - check if we need that,
+				// or if we already twist the representation by chi!
+				// hack begins
+				
+				//if hack then
+                                //    X +:= chi(split_map(quat1)[2,2])*weight_map(quat1);
+				//else
+				    X +:= weight_map(quat1);
+				// end if;
+				// hack ends
                                 InsertBlock(~Tplm, X, (n-1)*wd+1, (mm-1)*wd+1);
                              end if;
                           end if;
@@ -280,13 +436,13 @@ function hecke_matrix_field(M : hack := true)
   elif IsBianchi(M) or not IsDefinite(M) then
     return Rationals();
   else
-      if hack then
-	  // hack begins
+      // hack begins
+      if hack then	  
 	  return TopAmbient(M)`weight_base_field;
-	  // hack ends
       else
 	  return Ambient(M)`weight_base_field;
       end if;
+      // hack ends
   end if;
 end function;
 
@@ -381,10 +537,12 @@ end function;
 
 // originaly from hecke.m
 function restriction(T, M : hack := true)
+    // hack begins
     // needs to force computation of basis_matrix
     if hack and (not assigned M`basis_matrix) then
 	forceSpaceComputation(M);
     end if;
+    // hack ends
     bm := M`basis_matrix;
     bmi := M`basis_matrix_inv;
     bmT := bm * ChangeRing(T, BaseRing(bm));
@@ -559,7 +717,7 @@ end function;
 
 
 
-function WeightRepresentation(M) // ModFrmHil -> Map
+function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the 
 //  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
 //  map H^* -> GL(2, K)^g -> GL(V_k) is contructed, where g is the degree of F and V_k the weight space.
@@ -568,7 +726,16 @@ function WeightRepresentation(M) // ModFrmHil -> Map
       return M`weight_rep, M`weight_dimension, M`weight_base_field;
    else
        H:=Algebra(QuaternionOrder(M));
-       chi := Character(M);
+       // hack begins
+       if hack then
+	   chi := DirichletCharacter(M);
+	   if not assigned M`splitting_map then
+		d := Level(M)/Discriminant(H);
+		M`splitting_map := _ResidueMatrixRing(M`QuaternionOrder, d);
+	   end if;
+	   split_map := M`splitting_map;
+       end if;
+       // hack ends
        F:=BaseField(H); 
        k:=M`Weight;
        bool, m, n, C := IsArithmeticWeight(F,k);  
@@ -576,10 +743,20 @@ function WeightRepresentation(M) // ModFrmHil -> Map
        assert C eq M`CentralCharacter;
 
        if Seqset(k) eq {2} then // parallel weight 2
-           I := IdentityMatrix(Rationals(), 1);
-           Mat1 := Parent(I);
-           M`weight_rep := map< H -> Mat1 | q :-> chi(Norm(H))*I >;
-           M`weight_base_field := Rationals();
+	   // hack begins
+	   if hack then
+	       coeff_fld := Parent(chi)`TargetRing;
+	       I := IdentityMatrix(coeff_fld, 1);
+               Mat1 := Parent(I);
+               M`weight_rep := map< H -> Mat1 | q :-> chi(split_map(q)[2,2])*I >;
+	       M`weight_base_field := coeff_fld;
+	   else
+	       I := IdentityMatrix(Rationals(), 1);
+               Mat1 := Parent(I);
+	       M`weight_rep := map< H -> Mat1 | q :-> I >;
+	       M`weight_base_field := Rationals();
+	   end if;
+	   // hack ends
            M`weight_dimension := 1; 
        else
          // define weight_base_field = extension K/F containing Galois closure of F and 
@@ -602,6 +779,11 @@ function WeightRepresentation(M) // ModFrmHil -> Map
                 Append(~alphas, Roots(hh)[1][1]);
             end if;
          end for;
+	 // hack begins
+	 if hack then
+	     K := Compositum(K, Parent(chi)`TargetRing);
+	 end if;
+	 // hack ends
          // make weight_base_field an (optimized) absolute field, for efficiency in later calculations 
          weight_field := K; // names appears in verbose output
          K := AbsoluteField(K);
@@ -628,7 +810,15 @@ function WeightRepresentation(M) // ModFrmHil -> Map
          end for;
          M`weight_dimension := &* [x+1 : x in n];
          M2K:=MatrixRing(K, M`weight_dimension);
-         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
+	 // hack begins
+	 if hack then
+	     // !!! Have to change chi!!! It should act on the lower right entry !!!
+	     M`weight_rep:=map<H -> M2K|
+			      q :-> chi(split_map(q)[2,2])*weight_map_arch(q, splitting_seq, K, m, n)>;
+	 else
+             M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
+	 end if;
+	 // hack ends
       end if;
       return M`weight_rep, M`weight_dimension, M`weight_base_field;
    end if;
@@ -637,7 +827,7 @@ end function;
 // The space M is a direct sum of one "direct factor" (or "component")
 // for each right ideal class
 
-function HilbertModularSpaceDirectFactors(M)
+function HilbertModularSpaceDirectFactors(M : hack := true)
   
    if not assigned M`ModFrmHilDirFacts then 
       
@@ -656,9 +846,17 @@ function HilbertModularSpaceDirectFactors(M)
 
       LOs := [I`LeftOrder: I in get_rids(M)]; 
 
-      if (Seqset(Weight(M)) eq {2})
-	  and IsTrivial(DirichletRestriction(Character(M))) then // parallel weight 2
-
+      // hack begins
+      if hack and Type(DirichletCharacter(M)) eq GrpHeckeElt then
+	  trivial_wt := (Seqset(Weight(M)) eq {2})
+			and IsTrivial(DirichletRestriction(DirichletCharacter(M)));
+      else
+	  trivial_wt := (Seqset(Weight(M)) eq {2});
+      end if;
+      
+      if trivial_wt then // parallel weight 2
+	 // hack ends
+	  
          HMDFs := [];
          Q := Rationals();
 
@@ -713,7 +911,7 @@ end function;
 // M is given by the rows of A, with A*B=I
 // The base ring of A and B is M`weight_base_field
 
-function BasisMatrixDefinite(M : EisensteinAllowed:=false)
+function BasisMatrixDefinite(M : EisensteinAllowed:=false, hack := true)
 
    if assigned M`basis_matrix then
       return M`basis_matrix, M`basis_matrix_inv, M`Dimension;
@@ -733,45 +931,60 @@ function BasisMatrixDefinite(M : EisensteinAllowed:=false)
       weight2 := Seqset(Weight(M)) eq {2};
 
       if not assigned M`basis_matrix_big then
-          easy := weight2 and Level(M) eq Discriminant(QuaternionOrder(M))
-		  and IsTrivial(DirichletRestriction(Character(M)));
-        // easy = basis of space is given by the rids (ie each P^1 is trivial)
+	  // hack begins
+	  if hack then
+	      chi := DirichletCharacter(M);
+              easy := weight2 and Level(M) eq Discriminant(QuaternionOrder(M))
+		      and IsTrivial(DirichletRestriction(chi));
+	  else
+	      easy := weight2 and Level(M) eq Discriminant(QuaternionOrder(M));
+	  end if;
+	  // hack ends
+          // easy = basis of space is given by the rids (ie each P^1 is trivial)
 
-        if weight2 then
-          M`weight_base_field := Rationals();
-          M`weight_dimension := 1;
-        end if;
+          if weight2 then
+	      // hack begins
+	      if hack and Type(chi) eq GrpHeckeElt then
+		  M`weight_base_field := Parent(chi)`TargetRing;
+	      else
+		  M`weight_base_field := Rationals();
+	      end if;
+	      // hack ends
+              M`weight_dimension := 1;
+          end if;
 
-        if easy then
-          // basis of M is given by rids
-          d := #get_rids(M);
-          Id := MatrixAlgebra(Rationals(), d) ! 1;
-          M`basis_matrix_big := Id;
-          M`basis_matrix_big_inv := Id;
-        else
-          HMDF := HilbertModularSpaceDirectFactors(M);
-          nrows := &+ [Nrows(HMDF[m]`basis_matrix): m in [1..#HMDF]];
-          ncols := &+ [Ncols(HMDF[m]`basis_matrix): m in [1..#HMDF]];
-          B := Matrix(BaseRing(HMDF[1]`basis_matrix), nrows, ncols, []);
-          row := 1; 
-          col := 1;
-          for hmdf in HMDF do 
-             if not IsEmpty(hmdf`CFD) then
-                InsertBlock(~B, hmdf`basis_matrix, row, col);
-                row +:= Nrows(hmdf`basis_matrix);
-                col +:= Ncols(hmdf`basis_matrix);
-             end if;
-          end for;
-          Binv := Transpose(Solution(Transpose(B), IdentityMatrix(BaseRing(B), Nrows(B))));
-          M`basis_matrix_big := B; 
-          M`basis_matrix_big_inv := Binv; 
-        end if;
+          if easy then
+              // basis of M is given by rids
+              d := #get_rids(M);
+              Id := MatrixAlgebra(Rationals(), d) ! 1;
+              M`basis_matrix_big := Id;
+              M`basis_matrix_big_inv := Id;
+          else
+              HMDF := HilbertModularSpaceDirectFactors(M : hack := hack);
+              nrows := &+ [Nrows(HMDF[m]`basis_matrix): m in [1..#HMDF]];
+              ncols := &+ [Ncols(HMDF[m]`basis_matrix): m in [1..#HMDF]];
+              B := Matrix(BaseRing(HMDF[1]`basis_matrix), nrows, ncols, []);
+              row := 1; 
+              col := 1;
+              for hmdf in HMDF do 
+		  if not IsEmpty(hmdf`CFD) then
+                      InsertBlock(~B, hmdf`basis_matrix, row, col);
+                      row +:= Nrows(hmdf`basis_matrix);
+                      col +:= Ncols(hmdf`basis_matrix);
+		  end if;
+              end for;
+              Binv := Transpose(Solution(Transpose(B), IdentityMatrix(BaseRing(B), Nrows(B))));
+              M`basis_matrix_big := B; 
+              M`basis_matrix_big_inv := Binv; 
+          end if;
       end if;
         
       if weight2 and not EisensteinAllowed then
         RemoveEisenstein(~M);
         dim := Nrows(M`basis_matrix);
-      elif weight2 then
+	// hack begins
+      elif weight2 and not hack then
+	// hack ends
         dim := Nrows(M`basis_matrix_big) - #NarrowClassGroup(BaseField(M));
       else
         M`basis_matrix := M`basis_matrix_big;
@@ -789,5 +1002,110 @@ function BasisMatrixDefinite(M : EisensteinAllowed:=false)
    end if;
   
    // Retrieve the answer (now cached)
-   return BasisMatrixDefinite(M : EisensteinAllowed:=EisensteinAllowed);
+   // hack begins
+   return BasisMatrixDefinite(M : EisensteinAllowed:=EisensteinAllowed, hack := hack);
+   // hack ends
+end function;
+
+// Up1 and Down1 have a lot in common
+// (but keep separate, since we always call only one or the other)
+
+// The operator from level N to level N/p 
+// given by double cosets of the identity matrix
+
+function DegeneracyDown1DefiniteBig(M, p : hack := true)  
+
+   assert not assigned M`Ambient; // M is an ambient
+
+   if not assigned M`DegDown1Big then
+      M`DegDown1Big := AssociativeArray(Parent(p));
+   else
+      cached, D := IsDefined(M`DegDown1Big, p);
+      if cached then
+         return Matrix(D);
+      end if;
+   end if;
+
+   N := Level(M) / Discriminant(QuaternionOrder(M));
+   Np := N/p;
+   assert ISA(Type(Np), RngOrdIdl); // integral
+
+   if not assigned M`basis_matrix then
+      _ := BasisMatrixDefinite(M : EisensteinAllowed, hack := hack);
+   end if;
+   dim := Ncols(M`basis_matrix_big);
+
+   HMDF := M`ModFrmHilDirFacts; 
+   h := #HMDF;
+   wd := M`weight_dimension; // = 1 for weight2
+   F := M`weight_base_field;
+
+   P1N := HMDF[1]`PLD`P1List;
+
+   assert forall{x : x in HMDF | IsIdentical(x`PLD`P1List, P1N)};
+   // (the same P1 was attached to each block)
+
+   C := P1_congruence_classes(P1N, N, Np);
+
+   weight2 := Seqset(Weight(M)) eq {2};
+   assert weight2;
+
+   // begin hack
+   if not hack then
+       assert M`DirichletCharacter cmpeq 1;
+   end if;
+   // hack ends
+
+   // TO DO: easy case where N/p = 1, get the matrix just using stab_orders
+
+   D := MatrixRing(F, dim) ! 0; 
+   row := 0; 
+
+   for l := 1 to #HMDF do 
+
+      dl := wd*#HMDF[l]`CFD;
+      if dl eq 0 then
+assert false;
+         continue;
+      end if;
+
+      FDl    := HMDF[l]`PLD`FD; 
+      lookup := HMDF[l]`PLD`Lookuptable; 
+
+      Dl := MatrixRing(F, dl) ! 0;
+
+      ii := {};
+      for i := 1 to #FDl do
+         if i in ii then
+            continue;
+         end if;
+
+         v := FDl[i];
+
+         // find the congruence class of v
+         assert exists(c){c : c in C | v in c}; 
+         
+         // express its congruence class as an indicator vector relative to FDl
+         cvec := Matrix(F, #FDl, 1, []);
+         for y in c do
+            n := lookup[y,1];
+            cvec[n,1] +:= 1;
+         end for;
+
+         // each element of FDl which meets the class c has image given by the row cvec
+         s := {t[1] : t in Support(cvec)};
+         ii := ii join s;
+         for j in s do
+            InsertBlock(~Dl, cvec, 1, j);
+         end for;
+
+      end for;
+      assert #ii eq #FDl;
+
+      InsertBlock(~D, Dl, row+1, row+1);
+      row +:= dl;
+   end for; // l
+
+   M`DegDown1Big[p] := SparseMatrix(D);
+   return D; 
 end function;

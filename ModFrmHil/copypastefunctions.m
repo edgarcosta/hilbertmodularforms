@@ -1,7 +1,7 @@
 forward IsBianchi;
 forward Ambient;
 forward TopAmbient, AtkinLehnerDefiniteBig,
-	DegeneracyDown1DefiniteBig, DegeneracyDownpDefiniteBig;
+	DegeneracyDownpDefiniteBig;
 forward residue_class_reps;
 forward get_rids, WeightRepresentation;
 forward ComputeBasisMatrixOfNewSubspaceDefinite;
@@ -12,7 +12,11 @@ forward RealValuations, junk_for_IsIsomorphic, Jprime,
 forward convert_rids, RightIdealClassesAndOrders;
 forward get_tps_for_rids, convert_tps;
 
-import "diamond.m" : HeckeOperatorDefiniteBig, BasisMatrixDefinite;
+import "diamond.m" : BasisMatrixDefinite,
+                     HeckeOperatorDefiniteBig,
+		     HilbertModularSpaceDirectFactors,
+		     DegeneracyDown1DefiniteBig;
+
 import "finitefield.m" : reduction_mod_random_large_split_prime;
 /********************   from hecke.m    *********************/
 
@@ -1517,6 +1521,62 @@ function Zcomplement(w)
   return B, Bi;
 end function;
 
+// In parallel weight 2, there are Eisenstein series in the raw space.
+// They are easy to write down as "indicator vectors" corresponding 
+// to ideal classes.
+// TO DO: if CentralCharacter is not 0, can't easily write down the eigenvectors,
+// but instead can compute the subspace using that its dimension = h and that it 
+// is killed by T_p^e - (Np+1)^e , where e is the exponent of the narrow class group.
+
+function EisensteinBasis(M)
+  if assigned M`eisenstein_basis then
+    return M`eisenstein_basis;
+  end if;
+
+  // M must be an ambient of weight 2
+  assert not assigned M`Ambient;
+  assert Seqset(Weight(M)) eq {2};
+
+  Cl, Clmap := NarrowClassGroup(BaseField(M));
+  // list elts in the same order as the rids
+  Clelts := [Cl | cl : cl in Cl]; 
+  eltseqs := [Eltseq(cl) : cl in Cl];
+  ParallelSort(~eltseqs, ~Clelts); 
+
+  rids := get_rids(M);
+  easy := Level(M) eq Discriminant(QuaternionOrder(M));
+
+  if easy then
+    // basis is given by rids
+    Eis := Matrix(Integers(), #Cl, #rids, []);
+    for j := 1 to #rids do 
+      cl := Norm(rids[j]) @@ Clmap;
+      i := Index(Clelts, cl);
+      Eis[i,j] := 1;
+    end for;
+  else
+    b := [Ncols(X`basis_matrix) : X in M`ModFrmHilDirFacts];
+    Eis := Matrix(Integers(), #Cl, &+b, []);
+    bsum := 0;
+    for k := 1 to #b do
+      cl := Norm(rids[k]) @@ Clmap;
+      i := Index(Clelts, cl);
+      for j := bsum + 1 to bsum + b[k] do 
+        Eis[i,j] := 1;
+      end for;
+      bsum +:= b[k];
+    end for;
+  end if;
+
+  // Check Eis consists of consecutive blocks of ones
+  assert Eis eq EchelonForm(Eis);
+  assert &+ Eltseq(Eis) eq Ncols(Eis);
+
+  Eis := ChangeRing(Eis, Rationals());
+  M`eisenstein_basis := Eis;
+  return Eis;
+end function;
+
 procedure RemoveEisenstein(~M)
   vprintf ModFrmHil: "Quotienting out the Eisenstein subspace: ";
   time0_eis := Cputime();
@@ -1656,6 +1716,169 @@ assert not weight2;
    M`basis_matrix_wrt_ambient_inv := pseudo_inverse(M`basis_matrix_wrt_ambient, BasisMatrix(W));
    M`basis_matrix := M`basis_matrix_wrt_ambient * MA`basis_matrix;
    M`basis_matrix_inv := MA`basis_matrix_inv * M`basis_matrix_wrt_ambient_inv;
+end procedure;
+
+procedure ComputeBasisMatrixOfNewSubspaceDefinite(M)
+   assert IsDefinite(M); 
+
+   weight2 := Seqset(Weight(M)) eq {2};
+   if not weight2 then
+      // TO DO implement IP
+      ComputeBasisMatrixOfNewSubspaceDefinite_general(M);
+      return;
+   end if;         
+
+   MA := M`Ambient; // must be assigned with QuaternionOrder (unless NewLevel = Level)
+   _ := BasisMatrixDefinite(MA : EisensteinAllowed);
+   K := Rationals(); // TO DO: in general MA`weight_base_field;
+
+   F := BaseField(M);
+   D := Discriminant(QuaternionOrder(M));
+   L := Level(M);
+   Lnew := NewLevel(M);
+   assert NewLevel(MA) eq D; 
+   N := Lnew/D; 
+   assert ISA(Type(N), RngOrdIdl); // integral
+   assert not IsOne(N);
+
+   vprintf ModFrmHil: "Degeneracy maps for (Eichler) level of norm %o = %o\n",
+                       Norm(N), [<Norm(t[1]), t[2]>  : t in Factorization(N)];
+   IndentPush();
+
+   eisenstein_present := weight2;
+   Ds := <>;
+   for t in Factorization(N) do
+      P, e := Explode(t);
+/*
+stuff := DegeneracyUpDefiniteBigStuff(MA, P);
+D1new := DegeneracyUp1DefiniteBig(MA, P, stuff);
+*/
+      // Use upward or downward degeneracy maps? 
+      use_up := e eq 1; // for now keep it simple, use up whenever possible
+
+      check := debug and Norm(L) lt 1000 and e eq 1;
+
+      if use_up or check then
+
+         MP := DegeneracyMapDomain(MA, L/P);
+         _ := BasisMatrixDefinite(MP : EisensteinAllowed);
+         dP := Dimension(MP);
+         if dP eq 0 then
+            continue t;
+         end if;
+
+         vprintf ModFrmHil: "First upward degeneracy operator for prime of norm %o:\n", Norm(P);
+         t0 := Cputime();
+         IndentPush(); 
+         D1 := DegeneracyMap(MP, MA, 1*Integers(F) : Big);
+/*
+assert    Nrows(D1) eq Nrows(D1new);
+assert RowSpace(D1) eq RowSpace(D1new);
+*/
+         IndentPop(); 
+         vprintf ModFrmHil: "%os\n", Cputime(t0);
+
+         vprintf ModFrmHil: "Second upward degeneracy operator for prime of norm %o:\n", Norm(P);
+         t0 := Cputime();
+         IndentPush(); 
+         DP := DegeneracyMap(MP, MA, P : Big);
+         IndentPop(); 
+         vprintf ModFrmHil: "%os\n", Cputime(t0);
+/*
+DI := DegeneracyImage(MA, P);
+assert RowSpace(DI) eq RowSpace(VerticalJoin(D1,DP)); "okay up";
+*/
+         IP := ChangeRing(InnerProductMatrixBig(MA), K);
+         D1 := Transpose(D1 * IP);
+         DP := Transpose(DP * IP);
+
+      end if;
+      if not use_up then
+
+         if check then
+            D11 := D1;
+            DP1 := DP;
+            dP1 := dP;
+         end if;
+
+         dP := Dimension(NewSubspace(HilbertCuspForms(F, L/P, Weight(M)), D) : UseFormula:=false); 
+         if check then
+            assert dP eq dP1;
+         end if;
+         if dP eq 0 then
+            continue t;
+         end if;
+
+         eisenstein_present := false; // the eisenstein part is not in these kernels
+
+         vprintf ModFrmHil: "First downward degeneracy operator for prime of norm %o:\n", Norm(P);
+         t0 := Cputime();
+         IndentPush(); 
+         D1 := DegeneracyDown1DefiniteBig(MA, P);
+         IndentPop(); 
+         vprintf ModFrmHil: "%os\n", Cputime(t0);
+   
+         vprintf ModFrmHil: "Second downward degeneracy operator for prime of norm %o:\n", Norm(P);
+         t0 := Cputime();
+         IndentPush(); 
+         DP := DegeneracyDownpDefiniteBig(MA, P);
+         IndentPop(); 
+         vprintf ModFrmHil: "%os\n", Cputime(t0);
+
+         // In this situation, delete the precomputation at large primes (or prime powers)
+         // (it's too much memory, and the user is not likely to expect it has been done/saved)
+         if Norm(P) gt 1000 then
+            DeleteHeckePrecomputation(QuaternionOrder(MA), P);
+         end if;
+
+         // TO DO: why isn't the sum of the images equal to the P-oldspace?
+         if check then
+            printf "[debug] Checking that up/down degeneracy agree ... ";
+            IP := ChangeRing(InnerProductMatrixBig(MA), K);
+            E := Transpose(EisensteinBasis(MA) * IP);
+            assert Kernel(HorizontalJoin(D1, DP)) eq Kernel(HorizontalJoin(<D11, DP1, E>));
+            /*
+            assert Kernel(D1) eq Kernel(HorizontalJoin(D11,E));
+            assert Kernel(DP) eq Kernel(HorizontalJoin(DP1,E));
+            */
+            printf "okay\n";
+         end if;
+
+      end if;
+/*
+IP := ChangeRing(InnerProductMatrixBig(MA), K);
+DI := DegeneracyImage(MA, P);
+assert Kernel(HorizontalJoin(D1,DP)) eq Kernel(IP*Transpose(DI)); "okay down";
+*/
+      Append(~Ds, D1);
+      Append(~Ds, DP);
+   end for;
+
+   if eisenstein_present then
+     // the eisenstein part might not have been removed by the kernels
+     IP := ChangeRing(InnerProductMatrixBig(MA), K);
+     Append(~Ds, Transpose(EisensteinBasis(MA) * IP) );
+   end if;
+
+   IndentPop();
+
+   vprintf ModFrmHil: "Kernel of degeneracy maps: ";
+   vtime ModFrmHil:
+   B := KernelMatrix(HorizontalJoin(Ds));
+/*
+IP := ChangeRing(InnerProductMatrixBig(MA), K);
+for t in Factorization(N) do
+ DI := DegeneracyImage(MA, t[1]);
+ D1new := DegeneracyUp1DefiniteBig(MA, t[1], 0);
+ assert B * IP * Transpose(D1new) eq 0;
+ assert B * IP * Transpose(DI) eq 0;
+end for;
+*/
+   vprintf ModFrmHil: "Inverse basis matrix for new space: "; 
+   vtime ModFrmHil:
+   M`basis_matrix_inv := Transpose(Solution(Transpose(B), MatrixRing(BaseRing(B),Nrows(B))!1));
+   M`basis_matrix  := B; 
+   M`basis_is_honest := true;
 end procedure;
 
 function AtkinLehnerDefiniteBig(M, p)
@@ -1861,104 +2084,6 @@ function P1_congruence_classes(P1N, N, Np)
 
    return C;
 
-end function;
-
-// Up1 and Down1 have a lot in common
-// (but keep separate, since we always call only one or the other)
-
-// The operator from level N to level N/p 
-// given by double cosets of the identity matrix
-
-function DegeneracyDown1DefiniteBig(M, p)  
-
-   assert not assigned M`Ambient; // M is an ambient
-
-   if not assigned M`DegDown1Big then
-      M`DegDown1Big := AssociativeArray(Parent(p));
-   else
-      cached, D := IsDefined(M`DegDown1Big, p);
-      if cached then
-         return Matrix(D);
-      end if;
-   end if;
-
-   N := Level(M) / Discriminant(QuaternionOrder(M));
-   Np := N/p;
-   assert ISA(Type(Np), RngOrdIdl); // integral
-
-   if not assigned M`basis_matrix then
-      _ := BasisMatrixDefinite(M : EisensteinAllowed);
-   end if;
-   dim := Ncols(M`basis_matrix_big);
-
-   HMDF := M`ModFrmHilDirFacts; 
-   h := #HMDF;
-   wd := M`weight_dimension; // = 1 for weight2
-   F := M`weight_base_field;
-
-   P1N := HMDF[1]`PLD`P1List;
-
-   assert forall{x : x in HMDF | IsIdentical(x`PLD`P1List, P1N)};
-   // (the same P1 was attached to each block)
-
-   C := P1_congruence_classes(P1N, N, Np);
-
-   weight2 := Seqset(Weight(M)) eq {2};
-assert weight2;
-assert M`DirichletCharacter cmpeq 1;
-
-   // TO DO: easy case where N/p = 1, get the matrix just using stab_orders
-
-   D := MatrixRing(F, dim) ! 0; 
-   row := 0; 
-
-   for l := 1 to #HMDF do 
-
-      dl := wd*#HMDF[l]`CFD;
-      if dl eq 0 then
-assert false;
-         continue;
-      end if;
-
-      FDl    := HMDF[l]`PLD`FD; 
-      lookup := HMDF[l]`PLD`Lookuptable; 
-
-      Dl := MatrixRing(F, dl) ! 0;
-
-      ii := {};
-      for i := 1 to #FDl do
-         if i in ii then
-            continue;
-         end if;
-
-         v := FDl[i];
-
-         // find the congruence class of v
-         assert exists(c){c : c in C | v in c}; 
-         
-         // express its congruence class as an indicator vector relative to FDl
-         cvec := Matrix(F, #FDl, 1, []);
-         for y in c do
-            n := lookup[y,1];
-            cvec[n,1] +:= 1;
-         end for;
-
-         // each element of FDl which meets the class c has image given by the row cvec
-         s := {t[1] : t in Support(cvec)};
-         ii := ii join s;
-         for j in s do
-            InsertBlock(~Dl, cvec, 1, j);
-         end for;
-
-      end for;
-      assert #ii eq #FDl;
-
-      InsertBlock(~D, Dl, row+1, row+1);
-      row +:= dl;
-   end for; // l
-
-   M`DegDown1Big[p] := SparseMatrix(D);
-   return D; 
 end function;
 
 // Tensor product is associative; for efficiency always do
@@ -2330,6 +2455,8 @@ end function;
 // tps[<j,i>] := sequence of reps t in A, up to units of LeftOrder(Ii)
 // such that P*Ii < t*Ij < Ii and the size of (t*Ij)\Ii is Norm(P)^2
 // (Note that when eP > 1, we don't remove the "non-Hecke elements" here)
+
+forward TotallyPositiveUnits;
 
 procedure precompute_tps(OH, P, ridls, record_idx, rows)
 
@@ -4182,7 +4309,21 @@ end function;
 
 AlgAssVOrdIdlData := recformat< 
    Jprimes:List               // list of tuples <JJ,b,n> containing output of Jprime
-                              >;
+                         >;
+
+function TotallyPositiveUnits(Z_F)
+  if assigned Z_F`TotallyPositiveUnits then 
+    return Z_F`TotallyPositiveUnits; 
+  end if;
+
+  UF, mUF := UnitGroup(Z_F);
+  M := [[(1-t) div 2 : t in RealSigns(mUF(UF.i))] : i in [1..#Generators(UF)]];
+  hk := hom<UF -> AbelianGroup([2 : ind in [1..Degree(Z_F)]]) | M>;
+  UFplus := sub<UF | Kernel(hk)>;
+  UFplusmodsq,msq := quo<UFplus | [2*UF.i : i in [1..#Generators(UF)]]>;
+  Z_F`TotallyPositiveUnits := [mUF(u@@msq) : u in UFplusmodsq];
+  return Z_F`TotallyPositiveUnits;
+end function;
 
 // Given a sequence of right ideal class reps, compute a sequence
 // of equivalent reps with norms supported in the given primes
@@ -4637,4 +4778,453 @@ function has_element_of_norm(ZB, Nnu : all:=false, svp:=true, prune:=false)
   else 
     return false, _; 
   end if;
+end function;
+
+/*********************************************
+* From Geometry/BianchiNew/defs.m
+**********************************************/
+
+HomologyRec:=recformat<
+    zero_sharbly_space,//
+    H,//homology as a quotient
+    ToH,//map to quotient H
+    coefficient_ring,// coeff ring of homology
+    relations,//boundary relations
+    cycles
+    >;
+
+OrbitRec:=recformat<
+    rStab,//stabilizer subgroup image in GL_2(rF)
+    entry,//a list giving the total order number of
+    //each Gamma0 class to know where to put the entry
+    //in the matrix for the boundary
+    orbit_type, //line orbits
+    total_number, //number of this type of orbit
+    gamma_list,//This is a list of gamma in Gamma_0, such that
+    //[0:1]*gamma = a0, where a0 is the first point in each orbit.
+    //It is used to pick a representative of the polytope when
+    //we compute homology.
+    orbit_mover_list,
+    //this is a list of g in Stab(cell) such that a sends the point
+    //a to a0 in its orbit.  It is given in the order from
+    //projective_list.
+    orbit_number_list,
+    //This is a list of +/- 1 that tells if a in orbit agrees or
+    //disagrees with orientation of a0
+    non_orientable_orbits //a sequence of the non-orientable orbits indices
+	>;
+
+/*********************************************
+* From Geometry/BianchiNew/setlevel.m
+**********************************************/
+
+function gamma_list(LO,proj,level)
+    //Computes gamma_list;
+    O:=Parent(proj[1,1]);
+    gammalist:=[ ];
+    //these take [0:1] to a0.  Given as a list, one for each Gamma0 type;
+    for Gamma0type in [1..Maximum(LO)] do
+	ind:=Position(LO, Gamma0type); //Is this guaranteed to be the first
+	//occurence of Gamma0type in LO?
+	//ind:=Minimum([i:i in [1..#LO]|LO[i] eq Gamma0type]);
+	olda:=proj[ind];
+	a:=olda;
+	id := ideal<O|a[1],a[2]>;
+	while id ne 1*O do
+	    n := Random(Basis(level));
+	    a:=[a[1]+n,a[2]];
+	    id := ideal<O|a[1],a[2]>;
+	end while;
+	if a[1] eq 0 then
+	    gamma:=Matrix([[O|1,0],[O|0,1]]);
+	elif a[1] eq 1 then
+	    gamma:=Matrix([[O|0,-1],[O|1,a[2]]]);
+	else
+	    I:=ideal<O|a[1]>;
+	    J:=ideal<O|a[2]>;
+	    tf,i,j:=Idempotents(I,J);
+	    assert tf;
+	    s:=O!(i/a[1]);
+	    t:=O!(j/a[2]);
+	    gamma:=Matrix([[O|t,-s],[O|a[1],a[2]]]);
+	end if;
+	gammalist[Gamma0type]:=gamma;
+    end for;
+    return gammalist;
+end function;
+
+function orbit_number_list(OT,F,cell,proj,proj_map)
+    onumber:=[];
+    OF := Integers(F);
+    stabplus := [Matrix(OF,A) : A in cell`stabilizer_plus];
+    for otype in [1..Maximum(OT)] do
+	ind:=[i:i in [1..#proj]|OT[i] eq otype];
+	a0:=proj[ind[1]];
+	for i in ind do
+	    b:=proj[i];
+	    tf:=exists(g){g: g in stabplus | rep eq a0 
+		             where _,rep:=proj_map(b*g,false,false)};
+	    if tf then
+		onumber[i]:=1;
+	    else onumber[i]:=-1;
+	    end if;
+	end for;
+	assert onumber[ind[1]] eq 1;
+    end for;
+    return onumber;
+end function;
+
+function non_orientable_orbits(OT,F,cell,proj,proj_map)
+    no:=[];
+    OF := Integers(F);
+    stabplus := [Matrix(OF,A) : A in cell`stabilizer_plus];
+    stab := [Matrix(OF,A) : A in cell`stabilizer];
+    for otype in [1..Maximum(OT)] do
+	ind:=[i:i in [1..#proj]|OT[i] eq otype];
+	b:=proj[ind[1]];
+	S:=[g:g in stab | g notin stabplus ];
+	tf:=exists(g){g: g in S| rep eq b
+		         where _,rep:=proj_map(b*g,false,false)};
+	if tf then Append(~no,otype); end if;
+    end for;
+    return no;
+end function;
+
+function brm(M,g)
+    O:=Integers(BaseField(M));
+    proj:=M`LevelData`projective_space;
+    proj_map:=M`LevelData`projective_space_map;
+    v:=[O | g[2,1],g[2,2]];
+    _,nv:=proj_map(v,false,false);
+    ans:=Position(proj,nv);
+    return ans;
+end function;
+
+function GetOrbits(M,polydim)
+    vprintf Bianchi,2:"Computing %o-dimensional cell orbits.\n",polydim;
+    F:=BaseField(M);
+    OF := Integers(F);
+    levelrec:=M`LevelData;
+    total:=[];
+    level:=Level(M);
+    if polydim eq 3 then
+	std:=M`ModFrmData`three_poly;
+    elif
+	polydim eq 2 then
+	std:=M`ModFrmData`two_poly;
+    elif
+	polydim eq 1 then
+	std:=M`ModFrmData`one_poly;
+    end if;
+    proj:=levelrec`projective_space;
+    proj_map:=levelrec`projective_space_map;
+    rF:=levelrec`rF;
+    base:=0;
+    for cell in std do
+	Stab:=[Matrix(OF,A) : A in cell`stabilizer];
+	orbitrec:=rec<OrbitRec|>;
+	orbitrec`orbit_type:=ProjectiveLineOrbits(Stab,proj,proj_map);
+	orbitrec`total_number:=Maximum(orbitrec`orbit_type);
+	orbitrec`gamma_list:=gamma_list(orbitrec`orbit_type,proj,level);
+	assert &and[brm(M,g[i]) eq Position(orbitrec`orbit_type,i)
+	    where g:=orbitrec`gamma_list:i in [1.. #orbitrec`gamma_list]];
+	orbitrec`orbit_number_list:=
+	    orbit_number_list(orbitrec`orbit_type,F,cell,proj,proj_map);
+	orbitrec`non_orientable_orbits:=
+	    non_orientable_orbits(orbitrec`orbit_type,F,cell,proj,proj_map);
+	orbitrec`entry:=[base+i:i in [1..orbitrec`total_number]];
+	Append(~total,orbitrec);
+	base:=base+orbitrec`total_number;
+    end for;
+    vprintf Bianchi,2:"  Found %o Gamma0-orbits of cells.\n",
+	&+[a`total_number:a in total];
+    return total;
+end function;
+
+procedure SetLevel(M)
+    //Given F and level, attaches ModFrmData M`LevelDataord.
+    //Assumes F has been set up and cells have been computed.}
+    level:=Level(M);
+    if not assigned M`LevelData`projective_space then 
+	F:=BaseField(M);
+	O:=Integers(F);
+	rF:=quo<O|level>;
+	M`LevelData`rF:=rF;
+	M`LevelData`good_a:=AssociativeArray();
+	M`LevelData`projective_space, M`LevelData`projective_space_map:=
+            ProjectiveLine(rF:Type:="Vector");
+    end if;
+    
+    if not assigned M`LevelData`two_orbits then 
+	M`LevelData`two_orbits:=GetOrbits(M,2);
+	M`LevelData`one_orbits:=GetOrbits(M,1);
+	M`LevelData`total_number_of_one_orbits:=
+	    &+[a`total_number:a in M`LevelData`one_orbits];
+	M`LevelData`total_number_of_two_orbits:=
+	    &+[a`total_number:a in M`LevelData`two_orbits];
+	M`LevelData`homology:=rec<HomologyRec|>;
+    end if;
+end procedure;
+
+/*********************************************
+* From Geometry/BianchiNew/cohomology.m
+**********************************************/
+
+function get_column(M,GLtype2,Gamma0type2);
+    //returns the column in the boundary matrix associated to the GLtype
+    //and Gamma0type.  Does not throw out non-orientable sharblies.
+    //Just adds them to the relations.
+    GLstd2:=M`ModFrmData`two_poly[GLtype2];
+    orbits2:=M`LevelData`two_orbits[GLtype2];
+    gamma0:=orbits2`gamma_list[Gamma0type2];
+    boundary:=[ L : L in GLstd2`GL_facet_types | L[1] ne 0 ];
+    sofar:=[0:i in [1..M`LevelData`total_number_of_one_orbits]];
+    
+    //We know the boundary of the standard 2 polytopes.  We get the
+    //boundaries of the Gamma0 classes of 2-polytopes by translation.
+    for L in boundary do
+	//gamma0 moves standard 2-poly to here.
+	mover:=L[3];//moves std edge to here
+	sgn:=L[2];
+	GLtype1:=L[1];
+	i:=brm(M,gamma0*mover);
+	Gamma0type1:=M`LevelData`one_orbits[GLtype1]`orbit_type[i];
+		
+	onumber:=M`LevelData`one_orbits[GLtype1]`orbit_number_list[i];
+	totsgn:=sgn*onumber;
+	j:=M`LevelData`one_orbits[GLtype1]`entry[Gamma0type1];
+	sofar[j] +:= totsgn ;
+    end for;
+    vprintf Bianchi,4: "This relation involves edges %o.\n",
+	Support(Vector(sofar));
+    return sofar;
+end function;
+
+function relations(M)
+    //Assumes F and M`LevelData have already been set up correctly
+    vprint Bianchi, 1:"Computing relations and non-orientable cells.";
+    orbits2:=M`LevelData`two_orbits;
+    orbits1:=M`LevelData`one_orbits;
+    L:=[];
+    for GLtype2 in [1..#orbits2] do
+	orbit:=orbits2[GLtype2];
+	for Gamma0type2 in [1..orbit`total_number] do
+	    if not Gamma0type2 in orbit`non_orientable_orbits then 
+		col:=get_column(M,GLtype2,Gamma0type2);
+		Append(~L,col);
+	    end if;
+	end for;
+    end for;
+
+    // the above computes the relations coming from the
+    // orientable facets of the
+    // polytopes.  Now we still must introduce the relations coming from
+    // non-orientable orbits of edges.
+    noedge_index:=&cat[[edge`entry[i]: i in edge`non_orientable_orbits] : edge in orbits1];
+    non_orientables:=[[0: i in [1..M`LevelData`total_number_of_one_orbits]]:
+	j in [1..#noedge_index]];
+    for i in [1..#noedge_index] do
+	non_orientables[i][noedge_index[i]]:=1;
+	vprintf Bianchi, 4:
+	    "edge number %o is non-orientable.\n", noedge_index[i];
+    end for;
+
+    L:=L cat non_orientables;
+    vprintf Bianchi, 3:
+	"     There are %o relations and %o non-orientable edges.\n",#L,#non_orientables;
+    return L;
+
+end function;
+
+forward abmat, unimodularize;
+
+function cusptype(M,alpha,cusplist)
+    // given a minimal vector defining a cusp alpha and a list of standard
+    // cusps, return the type.  If v is new, return 1+maxtype.  Append
+    // v to list of cusplist and return it as well.
+    OF := Integers(BaseField(M));
+    alpha := unimodularize(M,alpha);
+    a1 := alpha[1];
+    a2 := alpha[2];
+    a := ideal<OF | a1,a2>;
+    level := Level(M);
+    H,f := ClassGroup(BaseField(M));
+    assert a + level eq 1*OF;
+    aplist := [ ideal<OF | w[1], w[2]> : w in cusplist ];
+    for type in [ 1..#cusplist ] do
+	if aplist[type] eq a then
+	    ap1 := cusplist[type,1];
+	    ap2 := cusplist[type,2];
+	    ap := ideal<OF | ap1,ap2>;
+	    
+	    btype := Position([I@@f : I in M`ModFrmData`ideal_reps],-(a@@f));
+	    assert btype ne 0;
+	    b := M`ModFrmData`ideal_reps[btype];
+	    b1, b2 := Explode(Basis(b));
+	    	    
+	    M1 := abmat(a1,a2,b);
+	    M2 := abmat(ap1,ap2,b);
+	   
+	    b1 := M1[1,2];
+	    b2 := M1[2,2];
+	    bp1 := M2[1,2];
+	    bp2 := M2[2,2];
+	    
+	    if (a2*OF + level) eq (ap2*OF + level) then
+		//abd2 := a*b*(a2*OF + level);  // I don't think this is right.   
+		abd2 := OF!!(a^(-1) * b * ((a2*ap2)*OF) + a*b * level);
+		tf := exists(u){u : u in M`ModFrmData`torsion_units |
+		    a2*bp2 mod abd2 eq u*ap2*b2 mod abd2};
+		if tf then
+		    return type, cusplist;
+		end if;
+	    end if;
+	end if;
+    end for;
+    // if it reaches here, then it is not conjugate to any so far.
+    return #cusplist + 1, Append(cusplist,Eltseq(alpha));
+end function;
+
+procedure homologydata(M)
+    //Attaches a record of the homology
+    SetLevel(M);
+    OF := Integers(BaseField(M));
+    Coeff:=M`homology_coefficients;
+    if not assigned  M`LevelData`homology`relations then 
+	M`LevelData`homology`relations := relations(M);
+    end if;
+    M`LevelData`homology`coefficient_ring:=Coeff;
+
+    if not assigned M`LevelData`homology`zero_sharbly_space then 	
+	// now try to compute cuspidal part.
+	
+	boundary := [];
+	cuspclasses := [Basis(a) : a in M`ModFrmData`ideal_reps];
+	for GLtype in [1..#M`LevelData`one_orbits] do
+	    for gamma in M`LevelData`one_orbits[GLtype]`gamma_list do
+		alpha :=
+		    Eltseq(gamma*Matrix(OF,1,M`ModFrmData`one_poly[GLtype]`O2_vertices[1]));
+		atype,cuspclasses := cusptype(M,alpha,cuspclasses);
+		beta :=
+		    Eltseq(gamma*Matrix(OF,1,M`ModFrmData`one_poly[GLtype]`O2_vertices[2]));
+		btype,cuspclasses := cusptype(M,beta,cuspclasses);
+		type := [atype, btype];
+		if GLtype in M`ModFrmData`zero_reversers then 
+		    Append(~boundary,Reverse([atype, btype]));
+		else
+		    Append(~boundary,type);
+		end if;
+	    end for;
+	end for;
+	M`ModFrmData`cuspclasses := cuspclasses;
+	
+	
+	zss:=RSpace(Coeff,M`LevelData`total_number_of_one_orbits);
+	// Now need to kill off non-orientable cells and 1-sharbly relations
+	rel := M`LevelData`homology`relations;
+	mss,mf := quo<zss | rel >;
+	
+	
+	
+	// define map from homology space to 
+	boundarymap := [];
+
+	for i in [1..M`LevelData`total_number_of_one_orbits] do
+	    col := [0 : i in [1..#cuspclasses]];
+	    col[boundary[i,1]] := 1;
+	    col[boundary[i,2]] +:= -col[boundary[i,1]];
+	    Append(~boundarymap,col);
+	end for;
+
+	Z := RSpace(M`homology_coefficients,#cuspclasses);
+	bmap := Hom(zss,Z)!boundarymap;
+
+
+
+	for i in [1..#rel] do
+	    assert IsZero(bmap(Vector(rel[i])));
+	end for;
+
+	cmap := Hom(mss,Z)![Eltseq(bmap(v@@mf)) : v in Basis(mss)];
+	M`bmap := cmap;	
+	H,f := NullSpace(cmap);
+	M`LevelData`homology`zero_sharbly_space:=zss;
+	M`LevelData`homology`H:=H;
+	M`LevelData`homology`ToH:= mf; // map from zss to H.
+	M`Dimension := Dimension(H);
+	
+	
+	bm:=BasisMatrix(H);
+	M`basis_matrix := bm;
+	I:=IdentityMatrix(CoefficientRing(bm),NumberOfRows(bm)); 
+	M`basis_matrix_inv:=
+	    Transpose(Solution(Transpose(M`basis_matrix),I));
+    end if;
+
+end procedure;
+
+/*********************************************
+* From Geometry/BianchiNew/hackobj.m
+**********************************************/
+
+function DimensionBianchi(M)
+    vprint Bianchi,1:"Computing dimension of the cuspidal space.";
+     if not assigned M`Dimension then 
+	homologydata(M);
+    end if;
+    return M`Dimension; 
+end function;
+
+/*********************************************
+* From Geometry/BianchiNew/sharbly.m
+**********************************************/
+
+function unimodularize(M,v)
+    //return v; // don't need to do below.
+    //  I think we need this to implement Cremona cusp boundary
+    // technique.
+	
+    //O:=CoefficientRing(v);
+    O:=Integers(BaseField(M));
+    G,f:=ClassGroup(O);
+    I:=ideal<O|v[1],v[2]>;
+    GI:=I@@f;
+    tf:=exists(stdrep){r :r in M`ModFrmData`ideal_reps|r@@f eq GI};
+    _,d:=IsPrincipal(I/stdrep);
+    return Vector([O|v[1]/d, v[2]/d]);    
+end function;
+
+/*********************************************
+* From Geometry/BianchiNew/cuspidal.m
+**********************************************/
+
+function abmat(a1,a2,b)
+    // given a1, a2 in OF and ideal B, find ab matrix.
+    OF := Parent(a1);
+    a := ideal<OF | a1,a2>;
+    tf,g := IsPrincipal(a*b);
+    assert tf;
+    
+    if a1*a2 eq 0 then
+	assert b eq 1*OF;
+	if a2 eq 0 then 
+	    A:= Matrix(OF,2,[a1,0,0,1/a1]);
+	else
+	    A :=  Matrix(OF,2,[0,a2,-1/a2,0]);
+	end if;
+    else
+
+	I := a1/g*b;
+	J := a2/g*b;
+	tf,i,j := Idempotents(I,J);
+	assert i + j eq 1;
+	// now i + j = 1.
+	b2 := g*i/a1;
+	b1 := -j*g/a2;
+	
+	assert ideal<OF | b1, b2> eq b;
+	A :=  Matrix(OF,2,[a1,b1,a2,b2]);
+    end if;
+    assert ideal<OF| Determinant(A)> eq a*b;
+    return A;
 end function;
