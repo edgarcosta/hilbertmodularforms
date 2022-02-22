@@ -1,6 +1,5 @@
 forward IsBianchi;
 forward Ambient;
-forward BasisMatrixDefinite;
 forward TopAmbient, AtkinLehnerDefiniteBig,
 	DegeneracyDown1DefiniteBig, DegeneracyDownpDefiniteBig;
 forward residue_class_reps;
@@ -13,7 +12,7 @@ forward RealValuations, junk_for_IsIsomorphic, Jprime,
 forward convert_rids, RightIdealClassesAndOrders;
 forward get_tps_for_rids, convert_tps;
 
-import "diamond.m" : HeckeOperatorDefiniteBig;
+import "diamond.m" : HeckeOperatorDefiniteBig, BasisMatrixDefinite;
 import "finitefield.m" : reduction_mod_random_large_split_prime;
 /********************   from hecke.m    *********************/
 
@@ -1459,76 +1458,6 @@ function HMSDF(P1, P1rep, LO, d, split_map, weight_map, weight_dim, wt_base_fiel
                                 weight_base_field:=F, max_order_units:=units>;
 end function;
 
-// The space M is a direct sum of one "direct factor" (or "component")
-// for each right ideal class
-
-function HilbertModularSpaceDirectFactors(M)
-  
-   if not assigned M`ModFrmHilDirFacts then 
-      
-      F := BaseField(M);
-      A := Algebra(QuaternionOrder(M));
-      d := Level(M)/Discriminant(A);
-
-      vprintf ModFrmHil, 2: "Projective line modulo ideal of norm %o: ", Norm(d);
-      vtime ModFrmHil, 2:
-      P1, P1rep := ProjectiveLine(quo<Order(d)|d> : Type:="Matrix");
-
-      if not assigned M`splitting_map then
-         M`splitting_map := _ResidueMatrixRing(M`QuaternionOrder, d);
-      end if;
-      split_map := M`splitting_map;
-
-      LOs := [I`LeftOrder: I in get_rids(M)]; 
-
-      if Seqset(Weight(M)) eq {2} then // parallel weight 2
-
-         HMDFs := [];
-         Q := Rationals();
-
-         for LO in LOs do 
-
-            U, mU := UnitGroup(LO); 
-            units := [A| s @ mU : s in U];
-
-            PLD := ProjectiveLineOrbits(P1, P1rep, d, mU, units, split_map : DoStabs:=false);
-
-            dim := #PLD`FD;
-            Id := MatrixRing(Rationals(), dim) ! 1;
-
-            Append(~HMDFs, 
-               rec< ModFrmHilDirFact | 
-                    PLD := PLD, 
-                    CFD:= IndexedSet([1 .. dim]), // TO DO: get rid of this, and the basis_matrices
-                    basis_matrix := Id, 
-                    basis_matrix_inv := Id, 
-                    weight_dimension := 1, 
-                    weight_base_field := Q, 
-                    max_order_units := units
-                  > );
-         end for;
-
-      else 
-
-         if not assigned M`weight_rep then
-            _ := WeightRepresentation(M);
-         end if;
- 
-         wr := M`weight_rep;
-         wd := M`weight_dimension;
-         wF := M`weight_base_field;
- 
-         HMDFs := [HMSDF(P1, P1rep, LO, d, split_map, wr, wd, wF) : LO in LOs];
-
-      end if; // parallel weight 2
-
-      M`ModFrmHilDirFacts := HMDFs;
-   end if;
-   
-   return M`ModFrmHilDirFacts;
-end function;
-
-
 function InnerProductMatrixBig(M)
   if not assigned M`InnerProductBig then
     assert not assigned M`Ambient;
@@ -1586,93 +1515,6 @@ function Zcomplement(w)
   end for;
   assert IsOne(B * Bi);
   return B, Bi;
-end function;
-
-// Main function for the basis of a definite space
-
-// Only to be called by basis_matrix, Dimension and within this file;
-// and M`basis_matrix, M`basis_matrix_big etc are assigned only here.
-
-// Returns two matrices A and B such that 
-// M is given by the rows of A, with A*B=I
-// The base ring of A and B is M`weight_base_field
-
-function BasisMatrixDefinite(M : EisensteinAllowed:=false)
-
-   if assigned M`basis_matrix then
-      return M`basis_matrix, M`basis_matrix_inv, M`Dimension;
-   elif EisensteinAllowed and not assigned M`Ambient and 
-      assigned M`basis_matrix_big 
-   then
-      return M`basis_matrix_big;
-   end if;
-
-   if assigned M`Ambient then
-
-      ComputeBasisMatrixOfNewSubspaceDefinite(M);
-      dim := Nrows(M`basis_matrix);
-
-   else // M is ambient
-
-      weight2 := Seqset(Weight(M)) eq {2};
-
-      if not assigned M`basis_matrix_big then
-        easy := weight2 and Level(M) eq Discriminant(QuaternionOrder(M));
-        // easy = basis of space is given by the rids (ie each P^1 is trivial)
-
-        if weight2 then
-          M`weight_base_field := Rationals();
-          M`weight_dimension := 1;
-        end if;
-
-        if easy then
-          // basis of M is given by rids
-          d := #get_rids(M);
-          Id := MatrixAlgebra(Rationals(), d) ! 1;
-          M`basis_matrix_big := Id;
-          M`basis_matrix_big_inv := Id;
-        else
-          HMDF := HilbertModularSpaceDirectFactors(M);
-          nrows := &+ [Nrows(HMDF[m]`basis_matrix): m in [1..#HMDF]];
-          ncols := &+ [Ncols(HMDF[m]`basis_matrix): m in [1..#HMDF]];
-          B := Matrix(BaseRing(HMDF[1]`basis_matrix), nrows, ncols, []);
-          row := 1; 
-          col := 1;
-          for hmdf in HMDF do 
-             if not IsEmpty(hmdf`CFD) then
-                InsertBlock(~B, hmdf`basis_matrix, row, col);
-                row +:= Nrows(hmdf`basis_matrix);
-                col +:= Ncols(hmdf`basis_matrix);
-             end if;
-          end for;
-          Binv := Transpose(Solution(Transpose(B), IdentityMatrix(BaseRing(B), Nrows(B))));
-          M`basis_matrix_big := B; 
-          M`basis_matrix_big_inv := Binv; 
-        end if;
-      end if;
-        
-      if weight2 and not EisensteinAllowed then
-        RemoveEisenstein(~M);
-        dim := Nrows(M`basis_matrix);
-      elif weight2 then
-        dim := Nrows(M`basis_matrix_big) - #NarrowClassGroup(BaseField(M));
-      else
-        M`basis_matrix := M`basis_matrix_big;
-        M`basis_matrix_inv := M`basis_matrix_big_inv;
-        dim := Nrows(M`basis_matrix);
-      end if;
-
-   end if;
-
-   if not assigned M`Dimension then
-      M`Dimension := dim;
-   else 
-      error if M`Dimension ne dim,
-           "The space has been computed incorrectly!!!\n" * please_report;
-   end if;
-  
-   // Retrieve the answer (now cached)
-   return BasisMatrixDefinite(M : EisensteinAllowed:=EisensteinAllowed);
 end function;
 
 procedure RemoveEisenstein(~M)
@@ -2151,82 +1993,6 @@ function weight_map_arch(q, splittings, K, m, n)
       end if;
    end for;
    return M;
-end function;
-
-
-
-function WeightRepresentation(M) // ModFrmHil -> Map
-//  Given a space of Hilbert modular forms over a totally real number field F. This determines if the 
-//  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
-//  map H^* -> GL(2, K)^g -> GL(V_k) is contructed, where g is the degree of F and V_k the weight space.
-
-   if assigned M`weight_rep then
-      return M`weight_rep, M`weight_dimension, M`weight_base_field;
-   else
-      H:=Algebra(QuaternionOrder(M)); 
-      F:=BaseField(H); 
-      k:=M`Weight;
-      bool, m, n, C := IsArithmeticWeight(F,k);  
-      assert bool;
-      assert C eq M`CentralCharacter;
-
-      if Seqset(k) eq {2} then // parallel weight 2
-         I := IdentityMatrix(Rationals(), 1);
-         Mat1 := Parent(I);
-         M`weight_rep := map< H -> Mat1 | q :-> I >;
-         M`weight_base_field := Rationals();
-         M`weight_dimension := 1; 
-      else
-         // define weight_base_field = extension K/F containing Galois closure of F and 
-         // containing a root of every conjugate of the minimal polynomial of H.1
-         if assigned F`SplittingField then
-           K,rts:=Explode(F`SplittingField);
-         else
-           K,rts:=SplittingField(F : Abs:=true, Opt:=false);
-           F`SplittingField:=<K, rts>;
-         end if;
-         embeddings_F_to_K:=[hom<F->K | r> : r in rts];
-         H1coeffs:=Coefficients(MinimalPolynomial(H.1));
-         alphas:=[K| ];
-         for FtoK in embeddings_F_to_K do
-             hh:=PolynomialRing(K)! [c@FtoK : c in H1coeffs];
-             if IsIrreducible(hh) then
-                K:=ext<K|hh>;
-                alphas:=ChangeUniverse(alphas,K) cat [K.1];
-            else
-                Append(~alphas, Roots(hh)[1][1]);
-            end if;
-         end for;
-         // make weight_base_field an (optimized) absolute field, for efficiency in later calculations 
-         weight_field := K; // names appears in verbose output
-         K := AbsoluteField(K);
-         K := OptimizedRepresentation(K);
-         embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
-         M`weight_base_field:=K;
-         vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
-         vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
-
-         assert H.1*H.2 eq H.3; // this is assumed in the defn of the splitting homomorphism below
-         splitting_seq:=[];
-         for i:=1 to Degree(F) do
-            h:=embeddings_F_to_K[i];
-            // need a splitting homomorphism (H tensor K) -> Mat_2(K) whose restriction to K is h 
-            alpha:=alphas[i];
-            b:= K! h(F!(H.2^2));
-            iK:=Matrix(K, 2, [alpha, 0, 0, -alpha]); 
-            jK:=Matrix(K, 2, [0, 1, b, 0]); 
-            kK:=iK*jK;
-            assert K! h(H.3^2) eq (kK^2)[1,1]; 
-            Append(~splitting_seq, 
-                   map< H -> MatrixRing(K,2)|
-                        q:-> h(s[1])+h(s[2])*iK+h(s[3])*jK+h(s[4])*kK where s:=Eltseq(q) >);
-         end for;
-         M`weight_dimension := &* [x+1 : x in n];
-         M2K:=MatrixRing(K, M`weight_dimension);
-         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
-      end if;
-      return M`weight_rep, M`weight_dimension, M`weight_base_field;
-   end if;
 end function;
 
 /************************************************************
