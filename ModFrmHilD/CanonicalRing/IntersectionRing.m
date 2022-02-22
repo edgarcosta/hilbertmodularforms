@@ -1031,49 +1031,46 @@ intrinsic ChernNumbers(R::ChowRngHMS) -> RngIntElt, RngIntElt
   // The volume term happens to be an Euler number of the (non-compact) fundamental domain,
   // plus correction term for the quotient singularities and (zero-dimensional) boundary.
 
-  ///////////////////////////////////////////////
-  // Computing the Euler number (c2)
-  
+  //// Computing c1^2.
+  firstChernNumber := MultiplicationTable(R)[2,2];
+
+  //// Computing the Euler number (c2)  
   // 1. Determine the Volume of Gamma.
-  volume := VolumeOfFundamentalDomain(Gamma);
+  volume := VolumeOfFundamentalDomain(CongruenceSubgroup(R));
 
+  // 2. Count resolution cycles.
+  Rcs := ResolutionCycleIndices(R);
+  singularities := Keys(Rcs);
+
+  secondChernNumber := volume;
   
-  // 2. Determine the branch points of the natural cover of X_{Gamma_K}.
-  // 3. Apply Riemann-Hurwitz (Theorem IV.1.2, vdG)
-  // 4. Add "1" for each cusp.
+  for p in singularities do
+      if p`SingularityType eq "Quotient" then
+	  tup := p`SingularityInfo;
+	  n := tup[1];
+	  secondChernNumber +:= #Rcs[p] + (n-1)/n;
+	  
+      elif p`SingularityType eq "Cusp" then
+	  secondChernNumber +:= #Rcs[p];
+	  
+      else
+	  error "Singular point has unexpected value in `SingularityType`:", p`SingularityType;
+      end if;
+  end for;
   
-  secondChernNumber := volume + NumberOfCusps(Gamma);
-
-  ///////////////////////////////////////////////
-  // Computing c1^2.
-
-  // 1. Compute 2*Volume, as above.
-  // 2. Compute the b_k for the resolution cycles at the cusp.
-  // 3. Add (2-b_k) for each cusp.
-
-  // bks := [SomeFunction(cc) : cc in theCusps];
-
-  firstChernNumber := -100;
+  // For a nonsingular surface, this must be an integer.
+  secondChernNumber := Integers() ! secondChernNumber;
   
-  //////////////
-  // Adding correction terms for the quotient singularities.
-
-  // 1. Compute the torsion in Gamma.
-  // 2. Compute the correction terms appearing in Theorem 2.5.
-  if not IsTorsionFree(Gamma) then
-      // Placeholder.
-      C1TorsionCorrectionTerms := -100;
-      C2TorsionCorrectionTerms := -100;
-      
-      firstChernNumber +:= C1TorsionCorrectionTerms;
-      secondChernNumber +:= C2TorsionCorrectionTerms;
-
-      error "Not Implemented when Gamma has torsion.";
-  end if;
-      
-  return <"Not Implemented", secondChernNumber>;
+  return firstChernNumber, secondChernNumber;
 end intrinsic;
 
+intrinsic ChernNumber(R::ChowRngHMS, i::RngIntElt) -> RngIntElt
+{Return the `i`-th Chern number of the Hilbert Modular Surface associated to `R`.}
+    c1sqed, c2 := ChernNumbers(R);
+    return [c1sqed, c2][i];
+end intrinsic;
+    
+					     
 intrinsic ResolutionCycleData(tup) -> Any
 {Given a tuple describing the type of a quotient singularity, return the
 cycle of curves in the resolution together with the intersection matrix.}
