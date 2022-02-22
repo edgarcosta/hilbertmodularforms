@@ -744,7 +744,8 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 
 	for i in [1..#resolutionCycle] do
 	    nrc := #resolutionCycle;
-	    kappa_dot_localChern := &+[-chernCoeffs[i] * M[shift+i, shift+j] : j in [1..nrc]];
+	    // NOTE: Canonical is -c1(TX). Thus, we reverse our sign here.
+	    kappa_dot_localChern := &+[chernCoeffs[i] * M[shift+i, shift+j] : j in [1..nrc]];
 	    
 	    M[2, shift+i] := kappa_dot_localChern;
 	    M[shift+i, 2] := kappa_dot_localChern;
@@ -786,9 +787,10 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 
 	// Update the coefficients of the first Chern cycle using the local Chern
 	// cycle data.
+	// NOTE: Canonical is -c1(TX). Thus, we reverse our sign here.
 	for i in [1..#resolutionCycle] do
-	    M[2, shift+i] := 2 - resolutionCycle[i];
-	    M[shift+i, 2] := 2 - resolutionCycle[i];
+	    M[2, shift+i] := resolutionCycle[i] - 2;
+	    M[shift+i, 2] := resolutionCycle[i] - 2;
 	end for;
 
 	// Update first Chern Number with local term
@@ -804,14 +806,6 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
     M[2,2] := firstChernNumber;
     return M;
 end intrinsic;
-
-/* function _ExtractRawEllipticResolutionData() */
-/*     return true; */
-/* end function; */
-
-/* function _ExtractRawParabolicResolutionData() */
-/*     return true; */
-/* end function; */
 
 
 intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::SeqEnum) -> SeqEnum
