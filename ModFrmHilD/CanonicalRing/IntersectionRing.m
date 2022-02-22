@@ -2,12 +2,65 @@
 //////////// Intersection Ring Code  ////////////////
 /////////////////////////////////////////////////////
 
-/*
-// TODO:
--- Chern numbers for Hilbert Modular Group
--- Chern numbers for Gamma commensurable with the Hilbert Modular Group (torsion-free/with torsion)
--- Implementation of the intersection ring.
-*/
+/////////////////////////////////////////////////////
+//
+//    Singular Point labels
+//
+/////////////////////////////////////////////////////
+
+declare type StupidSingularPointHMS;
+declare attributes StupidSingularPointHMS : Parent, Point, SingularityType;
+
+// TODO: Once actually correct data is attached to singular points,
+//       we can remove this.
+declare type GlobalSingularPointHMSCounter;
+declare attributes GlobalSingularPointHMSCounter : Count;
+
+GlobalSingularPointHMSCount := New(GlobalSingularPointHMSCounter);
+GlobalSingularPointHMSCount`Count := 0;
+
+intrinsic GetSingularPointHMSCount() -> RngIntElt
+{}
+    return GlobalSingularPointHMSCount`Count;
+end intrinsic;
+
+intrinsic Increment(globalvar::GlobalSingularPointHMSCounter)
+{}
+    globalvar`Count +:= 1;
+    return;
+end intrinsic;
+
+///////////////////// Singular Point HMS intrinsics /////////////////////
+
+intrinsic SingularPointHMS(type::Tup) -> StupidSingularPointHMS
+{}
+    p := New(StupidSingularPointHMS);
+    p`SingularityType := type;
+    p`Point := <"Fake", GlobalSingularPointHMSCount`Count>;
+    Increment(GlobalSingularPointHMSCount);
+    return p;
+end intrinsic;
+
+intrinsic SingularPointHMS(type::Tup, point) -> StupidSingularPointHMS
+{}
+    p := New(StupidSingularPointHMS);
+    p`SingularityType := type;
+    p`Point := Point;
+    return p;
+end intrinsic;
+
+intrinsic 'eq'(x::StupidSingularPointHMS, y::StupidSingularPointHMS) -> BoolElt
+{}
+    // TODO: Once we assign parents to such things, we should check it.
+    return x`Point cmpeq y`Point;
+end intrinsic;
+
+intrinsic Print(p::StupidSingularPointHMS)
+{}
+    print "Singular Point representative of Hilbert Modular Surface.";
+    print p`Point;
+    return;
+end intrinsic;
 
 /////////////////////////////////////////////////////
 //
@@ -16,7 +69,7 @@
 /////////////////////////////////////////////////////
 
 declare type ChowRngHMS[ChowRngHMSElt];
-declare attributes ChowRngHMS[ChowRngHMSElt] : CongruenceSubgroup, EllipticPointIndices, ParabolicPointIndices, MultiplicationTable, GradedComponents, Generators;
+declare attributes ChowRngHMS[ChowRngHMSElt] : CongruenceSubgroup, ResolutionCycles, MultiplicationTable, GradedComponents, Generators, GeneratorInfo;
 declare attributes ChowRngHMSElt : Parent, GradedComponents;
 
 // The Chow ring of a Hilbert Modular surface:
@@ -30,286 +83,12 @@ declare attributes ChowRngHMSElt : Parent, GradedComponents;
 //    by hand using a (Sparse) multiplication table.
 //
 // -- We also keep track of blocks of indices corresponding to the resolution cycles of
-//    the elliptic and quotient singularities. 
+//    the elliptic and quotient singularities. `ResolutionCycles` is an AssociativeArray whose
+//    keys are singular points and whose values are the resolution cycles over that point.
 //
-
-
-intrinsic IntersectionRing(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
-{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
-    return IntersectionRing(Gamma, Integers());
-end intrinsic;
-
-// TODO: Depending on the subgroup, there may be MANY different quotient singularities
-//       and cusps to resolve. It may be a good idea to implement a "Diagonal" option
-//       to compress all the singularities of the same type into a single intersection class.
+// -- Additionally, we cache the reverse map from Generators to the associated singular point.
+//    This is the AssociativeArray `GeneratorInfo`.
 //
-intrinsic IntersectionRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
-{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.
-with coefficients in BR.}
-
-    R := New(ChowRngHMS);
-    R`CongruenceSubgroup := Gamma;
-
-
-    // Figure out the number of elliptic + parabolic points and the lengths of the
-    // resolution cycles.
-
-
-    //////////////
-    // Elliptic Points
-    
-    // For elliptic points, the precision should be irrelevant.
-    RR := RealField(20);
-    EPData := EllipticPointData(Gamma);
-    rawEllipticResolutionData := [];
-    
-    for singType in Keys(EllipticPointData(Gamma)) do
-
-	// Massage the type so that <a,b> = <1, positive>
-	stdForm := <singType[1], 1, (singType[3] + (1 - singType[2])) mod singType[1]>;
-
-	// Compute the HJContinuedFraction
-	head, tail, isPeriodicOrFinite := HJContinuedFraction(RR ! (stdForm[1]/stdForm[3]));
-	assert isPeriodicOrFinite;
-	
-	localChernCoeffs := QuotientLocalChernCoefficients(singType, head cat tail);
-	for i in [1..EPData[singType]] do
-	    Append(~rawEllipticResolutionData, <head cat tail, localChernCoeffs>);
-	end for;
-    end for;
-
-    //////////////
-    // Parabolic Points
-
-    rawParabolicResolutionData := [<[1,2,3], [1,1,1]>, <[4,5,6], [1,1,1]>];
-
-    //////////////
-    // Assembly of main structures.
-
-    //////////////////////
-    // Set up the multiplication table.
-
-    // The multiplication table is determined by the resolution cycles.
-
-    M := _RawToIntersectionMatrix(Gamma, BR, rawEllipticResolutionData, rawParabolicResolutionData);
-    R`MultiplicationTable := M;
-    D := Nrows(M)-2;
-
-    //////////////////////
-    // Set up the graded components.
-    
-    R0 := RSpace(BR, 1);
-
-    // TODO: The indexing system should remember the types of the points involved.
-    // R`EllipticPointIndices := [[2, 3], [4, 5]];
-    // R`ParabolicPointIndices := [[6, 7, 8]];
-
-    R1 := RSpace(BR, D);
-
-    // The top component.
-    R2 := RSpace(BR, 1);
-
-    R`GradedComponents := <R0, R1, R2>;
-
-
-    // Finally, Cache the generators, since I suspect users will use them often.
-    R`Generators := [CreateElement(R, 0, R1.i, 0) : i in [1..D]];
-    
-    return R;
-end intrinsic;
-
-
-///// Hilferfunktionen ///
-
-intrinsic _RawToIntersectionMatrix(G, BR::Rng, ellipticData, parabolicData) -> MtrxSprs
-{Internal constructor for the intersection matrix.}
-
-    if #ellipticData gt 0 then
-	ned := &+[#resolutionTuple[1] : resolutionTuple in ellipticData];
-    else
-	ned := 0;
-    end if;
-
-    if #parabolicData gt 0 then
-	npd := &+[#resolutionTuple[1] : resolutionTuple in parabolicData];
-    else
-	npd := 0;
-    end if;
-
-    D := 1 + ned + npd;
-
-    // NOTE: We "store" multiplication values for the cross-degree terms.
-    M := SparseMatrix(BR, D+2, D+2);
-
-    // We compute this by updating it with the local Chern class information.
-    // It is eventually an integer, but only after all of the updates.
-    firstChernNumber := 2 * VolumeOfFundamentalDomain(G);
-    
-    // Encode multiplication by the point class.
-    for i in [1..D+2] do
-	M[i,1] := 1;
-	M[1,i] := 1;
-    end for;
-
-    // Begin the shift counter
-    shift := 2;
-
-    ////////////////////
-    // Populate elliptic resolution data.
-    for resolutionData in ellipticData do
-	// TODO: The resolution cycle for a quotient singularity might be a chain of lines,
-	//       rather than a cycle.
-	
-	resolutionCycle  := resolutionData[1];
-	chernCoeffs := resolutionData[2];
-
-	for i in [1..#resolutionCycle-1] do
-	    M[shift+i, shift+i] := -resolutionCycle[i];
-	    M[shift+i, shift+i+1] := 1;
-	    M[shift+i+1, shift+i] := 1;
-	end for;
-
-	// Update the last row/column in the block.
-	i := #resolutionCycle;
-	M[shift + i, shift + i] := -resolutionCycle[i];
-
-	if i gt 1 then
-	    M[shift + 1, shift + i] := 1;
-	    M[shift + i, shift + 1] := 1;
-	end if;
-
-	// Update the coefficients of the first Chern cycle using the local Chern
-	// cycle data.
-	//
-	// NOTE: These local Chern coefficients are often rational numbers!
-
-	for i in [1..#resolutionCycle] do
-
-	    nrc := #resolutionCycle;
-	    kappa_dot_localChern := &+[-chernCoeffs[i] * M[shift+i, shift+j] : j in [1..nrc]];
-	    
-	    M[2, shift+i] := kappa_dot_localChern;
-	    M[shift+i, 2] := kappa_dot_localChern;
-	end for;
-
-	// Finally, we need the update to c1^2 from the local Chern cycle.
-	for i in [1..#resolutionCycle] do
-	    for j in [1..#resolutionCycle] do
-		firstChernNumber +:= chernCoeffs[i] * M[shift+i, shift+j] * chernCoeffs[j];
-	    end for;
-	end for;
-
-	// Update the shift.
-	shift +:= #resolutionCycle;
-    end for;
-
-    /////////////////////
-    // Populate parabolic resolution data.
-    for resolutionData in parabolicData do
-
-	resolutionCycle  := resolutionData[1];
-	chernCoeffs := resolutionData[2];
-
-	// NOTE: For a cuspidal resolution, the Chern coefficients are all equal to 1.
-
-	// NOTE: If there is only one cycle, you need to do something special.
-	//       Thus, even though the code is identical to the above that might change.
-	for i in [1..#resolutionCycle-1] do
-	    M[shift+i, shift+i] := -resolutionCycle[i];
-	    M[shift+i, shift+i+1] := 1;
-	    M[shift+i+1, shift+i] := 1;
-	end for;
-
-	// Update the last row/column in the block.
-	i := #resolutionCycle;
-	M[shift + i, shift + i] := -resolutionCycle[i];
-
-	if i gt 1 then
-	    M[shift + 1, shift + i] := 1;
-	    M[shift + i, shift + 1] := 1;
-	end if;
-
-	// Update the coefficients of the first Chern cycle using the local Chern
-	// cycle data.
-
-	// NOTE: These local Chern coefficients are often rational numbers! But the
-	//       self-intersection will turn out to be an integer (because of reasons).
-	for i in [1..#resolutionCycle] do
-	    M[2, shift+i] := 2 - resolutionCycle[i];
-	    M[shift+i, 2] := 2 - resolutionCycle[i];
-	end for;
-
-	// Update first Chern Number with local term
-	for i in [1..#resolutionCycle] do
-	    firstChernNumber +:= 2 - resolutionCycle[i];
-	end for;
-	
-	// Update the shift.
-	shift +:= #resolutionCycle;
-    end for;
-
-    // The very last thing to do is update the canonical class.
-    M[2,2] := firstChernNumber;
-    return M;
-end intrinsic;
-
-/* function _ExtractRawEllipticResolutionData() */
-/*     return true; */
-/* end function; */
-
-/* function _ExtractRawParabolicResolutionData() */
-/*     return true; */
-/* end function; */
-
-
-intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::SeqEnum) -> SeqEnum
-{}
-    // NOTE: Figuring out the local Chern cycle is a little tricky, as it is actually
-    //       a QQ-divisor! See [vdG, p. 64]. For the definition of the (li, mi), see
-    //       [vdG, p. 53].
-
-    // In order to compute the local Chern cycle, we need the coordinates of the points
-    // on the lower convex hull associated to the (positive) exponents.
-
-    n := type[1];
-    assert type[2] eq 1;
-    q := type[3] mod n;
-
-    _, _, qpr := XGCD(n, q);
-    qpr := qpr mod n;
-    
-    assert (qpr*q) mod n eq 1;
-    
-    RM := VectorSpace(Rationals(), 2);
-    C0 := RM ! [1,0];
-    C1 := RM ! [qpr/n, 1/n];
-
-    N := 10;
-    
-    c := selfIntersectionNumbers cat selfIntersectionNumbers;
-    C := [C0, C1] cat [Zero(RM) : i in [2..#c-2]];
-
-    // Choose `d` as in [vdG]. That is, the length of the continued fraction
-    // expansion (plus one).
-    d := #selfIntersectionNumbers;
-    
-    // Use the equation C[i] * ci = C[i+1] + C[i-1].
-    for i in [1..d] do
-	C[i+2] := c[i+1] * C[i+1] - C[i];
-    end for;
-
-    
-    // Now that we have the coordinates, we can return the list of  (li + mi - 1).
-    // Note that the beginning and ending terms of the `C` don't correspond to curves
-    // in the resolution cycle, but instead to "coordinate axes" of `G\CC^2`. These points
-    // are necessarily equal to `(1,0)` and `(0,1)`, so cancel
-
-    lst := [c[1] + c[2] - 1 : c in C];
-    assert lst[1] eq 0 and lst[#lst] eq 0;
-    assert #lst ge 3; //i.e., check the resolution cycle has at least one curve.
-    return lst[2..#lst-1];
-    
-end intrinsic;
 
 /////////////// attribute access ///////////////////////////////////
 
@@ -318,37 +97,61 @@ intrinsic BaseRing(R::ChowRngHMS) -> Rng
     return BaseRing(GradedComponent(R, 0));
 end intrinsic;
 
-intrinsic GradedComponent(R::ChowRngHMS, i::RngIntElt) -> Any
+intrinsic GradedComponent(R::ChowRngHMS, i::RngIntElt) -> ModTupRng
 {}
     return GradedComponents(R)[i+1];
 end intrinsic;
 
-intrinsic GradedComponents(R::ChowRngHMS) -> Any
+intrinsic GradedComponents(R::ChowRngHMS) -> Tup
 {}
     return R`GradedComponents;
 end intrinsic;
 
-intrinsic CongruenceSubgroup(R::ChowRngHMS) -> Any
+intrinsic CongruenceSubgroup(R::ChowRngHMS) -> StupidCongruenceSubgroup
 {}
     return R`CongruenceSubgroup;
 end intrinsic;
 
 intrinsic MultiplicationTable(R::ChowRngHMS) -> MtrxSprs
-{}
+{Return a table encoding multiplication in the Chow ring. The first row/column of the table
+corresponds to the trivial class, and the last row/column corresponds to the basis degree 2 class.}
     return R`MultiplicationTable;
 end intrinsic;
 
-intrinsic '.'(R::ChowRngHMS, i::RngIntElt) -> Any
+intrinsic '.'(R::ChowRngHMS, i::RngIntElt) -> ChowRngHMSElt
 {}
-    // TODO: Check with other people if they find this inoffensive.
-    if i eq 0 then
-	return R ! 1;
-    elif i eq Dimension(GradedComponent(R, 1)) + 1 then
-	return TopForm(R);
+    if i notin [1..Ngens(R)] then
+	n := Ngens(R);
+	msg := Sprintf("Runtime error in '.': Value for name index (%o) should be in the range [1..%o]", i, n);
+	error msg;
     end if;
     
     return Generators(R)[i];
 end intrinsic;
+
+intrinsic ResolutionCycles(R::ChowRngHMS) -> SeqEnum
+{Return an AssociativeArray whose keys are (representatives of) the singular points of the
+Bailey Borel compactification of the Hilbert Modular surface associated to `R`, and the value
+at `p` is a sequence listing the generators of `R` corresponding to the resolution cycles over 
+the point `p`}
+    A := R`ResolutionCycles;
+    B := AssociativeArray();
+    gens := Generators(R);
+
+    for p in Keys(A) do
+	B[p] := [gens[i] : i in A[p]];
+    end for;
+    return B;
+end intrinsic;
+
+intrinsic ResolutionCycleIndices(R::ChowRngHMS) -> SeqEnum
+{Return an AssociativeArray whose keys are (representatives of) the singular points of the
+Bailey Borel compactification of the Hilbert Modular surface associated to `R`, and the value
+at `p` is a sequence listing the indices of the generators of `R` corresponding to the 
+resolution cycles over the point `p`}
+    return R`ResolutionCycles;
+end intrinsic;
+
 
 /////////// Basic functionality //////////////////////
 
@@ -377,6 +180,11 @@ end intrinsic;
 intrinsic Generators(R::ChowRngHMS) -> SeqEnum
 {Return the generators for the Chow ring as a polynomial ring over ZZ. We identify H^0(X, ZZ) with constants.}
     return R`Generators;
+end intrinsic;
+
+intrinsic Ngens(R::ChowRngHMS) -> RngIntElt
+{}
+    return #Generators(R);
 end intrinsic;
 
 // intrinsic EllipticResolutionCycles(R::ChowRngHMS) -> SeqEnum
@@ -556,8 +364,6 @@ intrinsic '+'(y::ChowRngHMSElt, x::RngElt) -> ChowRngHMSElt
     return x + y;
 end intrinsic;
 
-
-
 intrinsic '-'(x::ChowRngHMSElt, y::ChowRngHMSElt) -> ChowRngHMSElt
 {}
     R := Parent(x);
@@ -702,7 +508,7 @@ intrinsic IsInvertible(x::ChowRngHMSElt) -> BoolElt, ChowRngHMSElt
 end intrinsic;
     
 
-intrinsic IsCoercible(X::ChowRngHMS, y::.) -> BoolElt, .
+intrinsic IsCoercible(X::ChowRngHMS, y::Any) -> BoolElt, .
 {Return whether y is coercible into X and the result if so}
 
     if Type(y) eq RngIntElt then
@@ -716,8 +522,340 @@ intrinsic IsCoercible(X::ChowRngHMS, y::.) -> BoolElt, .
     return false, "Illegal coercion.";
 end intrinsic;
 
+/////////////////////////////////////////////////////
+//
+//    Creation
+//
+/////////////////////////////////////////////////////
 
-////////////// Greater functionality ////////////////
+// TODO? Depending on the subgroup, there may be MANY different quotient singularities
+//       and cusps to resolve. It may be a good idea to implement a "Diagonal" option
+//       to compress all the singularities of the same type into a single intersection class.
+//
+intrinsic IntersectionRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
+{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.
+with coefficients in BR.}
+
+    R := New(ChowRngHMS);
+    R`CongruenceSubgroup := Gamma;
+    R`GeneratorInfo := AssociativeArray();
+    R`ResolutionCycles := AssociativeArray();
+    R`GeneratorInfo := AssociativeArray();
+    
+    // The method to compute the Chow Ring of a Hilbert Modular Surface is based on
+    // van der Geer's "Hilbert Modular Surfaces" (referred to as [vdG]). The first result
+    // we need is
+    //
+    // Theorem [vdG, p121]: The cohomology of a Hilbert Modular Surface is generated by
+    // The classes of the Chern forms and the resolution cycles.
+    //
+    // Thus, the majority of the work is to determine the interesction structure of the
+    // resolution cycles. Much of this is described in [vdG, Chapters II-IV].
+    //
+    // Once the local resolution cycles have been determined, we can compute the intersection
+    // numbers of the first Chern class with the local Chern cycles. A formula for c1(X)^2
+    // is given in [vdg, Theorem IV.2.5].
+
+    
+    // Figure out the number of elliptic + parabolic points and the lengths of the
+    // resolution cycles.
+
+    //////////////
+    // Elliptic Points
+    
+    // For elliptic points, the precision should be irrelevant.
+    RR := RealField(20);
+    EPData := EllipticPointData(Gamma);
+    rawEllipticResolutionData := [];
+
+    shift := 2;
+    for singType in Keys(EllipticPointData(Gamma)) do
+
+	// Massage the type so that <a,b> = <1, positive>
+	stdForm := <singType[1], 1, (singType[3] + (1 - singType[2])) mod singType[1]>;
+
+	// Compute the HJContinuedFraction
+	head, tail, isPeriodicOrFinite := HJContinuedFraction(RR ! (stdForm[1]/stdForm[3]));
+	assert isPeriodicOrFinite;
+	
+	localChernCoeffs := QuotientLocalChernCoefficients(singType, head cat tail);
+	for i in [1..EPData[singType]] do
+	    Append(~rawEllipticResolutionData, <head cat tail, localChernCoeffs>);
+	end for;
+
+	// Associate a singular point to the resolution cycle.
+	P := SingularPointHMS(singType);
+
+	// Populate the Resolution Cycle dictionary with indices.
+	numCycles := #head + #tail;
+	R`ResolutionCycles[P] := [(shift - 1) + 1 .. (shift - 1) + numCycles];
+
+	// Update shift.
+	shift +:= numCycles;
+    end for;
+
+    //////////////
+    // Parabolic Points
+
+    // TODO: Hook in Sam's functionality.
+    rawParabolicResolutionData := [<[1,2,3], [1,1,1]>, <[4,5,6], [1,1,1]>];
+
+    for par in rawParabolicResolutionData do
+	P := SingularPointHMS(<"Fake">);
+	R`ResolutionCycles[P] := [shift + 1 .. shift + #par[2]];
+	shift +:= #par[2];
+    end for;
+    
+    //////////////
+    // Assembly of main structures.
+
+    //////////////////////
+    // Set up the multiplication table.
+
+    // The multiplication table is determined by the resolution cycles.
+
+    M := _RawToIntersectionMatrix(Gamma, BR, rawEllipticResolutionData, rawParabolicResolutionData);
+    R`MultiplicationTable := M;
+    D := Nrows(M)-2;
+
+    //////////////////////
+    // Set up the graded components.
+    
+    R0 := RSpace(BR, 1);
+    R1 := RSpace(BR, D);
+    R2 := RSpace(BR, 1);
+    R`GradedComponents := <R0, R1, R2>;
+
+    // TODO: The indexing system should remember the types of the points involved.
+    // R`EllipticPointIndices := [[2, 3], [4, 5]];
+    // R`ParabolicPointIndices := [[6, 7, 8]];
+
+    // Finally, Cache the generators, since I suspect users will use them often.
+    R`Generators := [CreateElement(R, 0, R1.i, 0) : i in [1..D]];
+
+    // Update the resolution cycle dictionary with a new singular point, and    
+
+    for P in Keys(R`ResolutionCycles) do
+	for i in R`ResolutionCycles[P] do
+	    R`GeneratorInfo[R.i] := P;	    
+	end for;
+    end for;
+
+    R`GeneratorInfo[R.1] := "Canonical";
+    
+    return R;
+end intrinsic;
+
+
+///////// Hilferfunktionen ///////////
+
+intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipticData, parabolicData) -> MtrxSprs
+{}
+
+    if #ellipticData gt 0 then
+	ned := &+[#resolutionTuple[1] : resolutionTuple in ellipticData];
+    else
+	ned := 0;
+    end if;
+
+    if #parabolicData gt 0 then
+	npd := &+[#resolutionTuple[1] : resolutionTuple in parabolicData];
+    else
+	npd := 0;
+    end if;
+
+    D := 1 + ned + npd;
+
+    // NOTE: We "store" multiplication values for the cross-degree terms.
+    M := SparseMatrix(BR, D+2, D+2);
+
+    // We compute this by updating it with the local Chern class information.
+    // It is eventually an integer, but only after all of the updates.
+    firstChernNumber := 2 * VolumeOfFundamentalDomain(G);
+    
+    // Encode multiplication by the point class.
+    for i in [1..D+2] do
+	M[i,1] := 1;
+	M[1,i] := 1;
+    end for;
+
+    // Begin the shift counter
+    shift := 2;
+
+    ////////////////////
+    // Populate elliptic resolution data.
+    for resolutionData in ellipticData do
+	// NOTE: The resolution cycle for a cyclic quotient singularity is a chain of
+	//       P1's. 
+	resolutionCycle := resolutionData[1];
+	chernCoeffs := resolutionData[2];
+
+	for i in [1..#resolutionCycle-1] do
+	    M[shift+i, shift+i] := -resolutionCycle[i];
+	    M[shift+i, shift+i+1] := 1;
+	    M[shift+i+1, shift+i] := 1;
+	end for;
+
+	// Update the last row/column in the block.
+	i := #resolutionCycle;
+	M[shift + i, shift + i] := -resolutionCycle[i];
+
+	// Update the coefficients of the first Chern cycle using the local Chern
+	// cycle data.
+	//
+	// NOTE: These local Chern coefficients are often rational numbers!
+
+	for i in [1..#resolutionCycle] do
+	    nrc := #resolutionCycle;
+	    kappa_dot_localChern := &+[-chernCoeffs[i] * M[shift+i, shift+j] : j in [1..nrc]];
+	    
+	    M[2, shift+i] := kappa_dot_localChern;
+	    M[shift+i, 2] := kappa_dot_localChern;
+	end for;
+
+	// Finally, we need the update to c1^2 from the local Chern cycle.
+	for i in [1..#resolutionCycle] do
+	    for j in [1..#resolutionCycle] do
+		firstChernNumber +:= chernCoeffs[i] * M[shift+i, shift+j] * chernCoeffs[j];
+	    end for;
+	end for;
+
+	// Update the shift.
+	shift +:= #resolutionCycle;
+    end for;
+
+    /////////////////////
+    // Populate parabolic resolution data.
+    for resolutionData in parabolicData do
+
+	// NOTE: For a cuspidal resolution, the Chern coefficients are all equal to 1.
+	resolutionCycle  := resolutionData[1];
+	chernCoeffs := resolutionData[2];
+	
+	for i in [1..#resolutionCycle-1] do
+	    M[shift+i, shift+i] := -resolutionCycle[i];
+	    M[shift+i, shift+i+1] := 1;
+	    M[shift+i+1, shift+i] := 1;
+	end for;
+
+	// Update the last row/column in the block.
+	i := #resolutionCycle;
+	M[shift + i, shift + i] := -resolutionCycle[i];
+
+	if i gt 1 then
+	    M[shift + 1, shift + i] := 1;
+	    M[shift + i, shift + 1] := 1;
+	end if;
+
+	// Update the coefficients of the first Chern cycle using the local Chern
+	// cycle data.
+	for i in [1..#resolutionCycle] do
+	    M[2, shift+i] := 2 - resolutionCycle[i];
+	    M[shift+i, 2] := 2 - resolutionCycle[i];
+	end for;
+
+	// Update first Chern Number with local term
+	for i in [1..#resolutionCycle] do
+	    firstChernNumber +:= 2 - resolutionCycle[i];
+	end for;
+	
+	// Update the shift.
+	shift +:= #resolutionCycle;
+    end for;
+
+    // The very last thing to do is update the canonical class.
+    M[2,2] := firstChernNumber;
+    return M;
+end intrinsic;
+
+/* function _ExtractRawEllipticResolutionData() */
+/*     return true; */
+/* end function; */
+
+/* function _ExtractRawParabolicResolutionData() */
+/*     return true; */
+/* end function; */
+
+
+intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::SeqEnum) -> SeqEnum
+{}
+    // NOTE: Figuring out the local Chern cycle is a little tricky, as it is actually
+    //       a QQ-divisor! See [vdG, p. 64]. For the definition of the (li, mi), see
+    //       [vdG, p. 53].
+
+    // In order to compute the local Chern cycle, we need the coordinates of the points
+    // on the lower convex hull associated to the (positive) exponents.
+
+    n := type[1];
+    assert type[2] eq 1;
+    q := type[3] mod n;
+
+    _, _, qpr := XGCD(n, q);
+    qpr := qpr mod n;
+    
+    assert (qpr*q) mod n eq 1;
+    
+    RM := VectorSpace(Rationals(), 2);
+    C0 := RM ! [1,0];
+    C1 := RM ! [qpr/n, 1/n];
+
+    c := selfIntersectionNumbers cat selfIntersectionNumbers;
+    C := [C0, C1] cat [Zero(RM) : i in [2..#c-2]];
+
+    // Choose `d` as in [vdG]. That is, the length of the continued fraction
+    // expansion (plus one).
+    d := #selfIntersectionNumbers;
+    
+    // Use the equation C[i] * ci = C[i+1] + C[i-1].
+    for i in [1..d] do
+	C[i+2] := c[i+1] * C[i+1] - C[i];
+    end for;
+
+    
+    // Now that we have the coordinates, we can return the list of  (li + mi - 1).
+    // Note that the beginning and ending terms of the `C` don't correspond to curves
+    // in the resolution cycle, but instead to "coordinate axes" of `G\CC^2`. These points
+    // are necessarily equal to `(1,0)` and `(0,1)`, so cancel
+
+    lst := [c[1] + c[2] - 1 : c in C];
+    assert lst[1] eq 0 and lst[#lst] eq 0;
+    assert #lst ge 3; //i.e., check the resolution cycle has at least one curve.
+    return lst[2..#lst-1];
+    
+end intrinsic;
+
+/////////////////////////////////////////////////////
+//
+//    Creation Dispatch
+//
+/////////////////////////////////////////////////////
+
+intrinsic IntersectionRing(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+{Computes the Chow ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
+    return IntersectionRing(Gamma, Integers());
+end intrinsic;
+
+intrinsic IntersectionRing(F::FldNum) -> ChowRngHMS
+{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
+        return IntersectionRing(F, 1*RingOfIntegers(F));
+end intrinsic;
+
+intrinsic IntersectionRingOfCuspidalResolution(F::FldNum) -> ChowRngHMS
+{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
+    return IntersectionRingOfCuspidalResolution(F, 1*RingOfIntegers(F));
+end intrinsic;
+
+intrinsic IntersectionRingOfMinimalResolution(F::FldNum) -> ChowRngHMS
+{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
+    return IntersectionRingOfMinimalResolution(F, 1*RingOfIntegers(F));
+end intrinsic;
+
+
+/////////////////////////////////////////////////////
+//
+//    Greater functionality
+//
+/////////////////////////////////////////////////////
 
 // TODO: Navigation of the classes in the Chow ring.
 intrinsic BasisCycleInformation(x::ChowRngHMSElt) -> BoolElt, MonStgElt, RngIntElt
@@ -726,10 +864,53 @@ intrinsic BasisCycleInformation(x::ChowRngHMSElt) -> BoolElt, MonStgElt, RngIntE
 end intrinsic;
 
 intrinsic IntersectionMatrix(R::ChowRngHMS) -> MtrxSprs
-{}
+{Return the matrix [R.i * R.j : i,j] of cycles of degree 1 in the Hilbert Modular Surface.}
     M := MultiplicationTable(R);
     n := Ncols(M);
     return Submatrix(M, [2..n-1], [2..n-1]);
+end intrinsic;
+
+intrinsic IntersectionRing(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
+{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
+    error "Not Implemented.";
+end intrinsic;
+
+intrinsic IntersectionRingOfCuspidalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
+{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
+    error "Not Implemented.";
+end intrinsic;
+
+intrinsic IntersectionRingOfMinimalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
+{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
+    error "Not Implemented.";
+end intrinsic;
+
+intrinsic IntersectionRing(F::FldNum, N::RngOrdIdeal) -> ChowRngHMS
+{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
+    Gamma := CongruenceSubgroup(F, N);
+    return IntersectionRing(Gamma);
+end intrinsic;
+
+intrinsic IntersectionRingOfCuspidalResolution(F::FldNum, N::RngOrdIdeal) -> ChowRngHMS
+{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
+    Gamma := CongruenceSubgroup(F, N);
+    return IntersectionRingOfCuspidalResolution(Gamma);
+end intrinsic;
+
+intrinsic IntersectionRingOfMinimalResolution(F::FldNum, N::RngOrdIdeal) -> ChowRngHMS
+{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
+    Gamma := CongruenceSubgroup(F, N);
+    return IntersectionRingOfMinimalResolution(Gamma);
+end intrinsic;
+
+intrinsic IntersectionRingOfCuspidalResolution(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
+    error "Not Implemented.";
+end intrinsic;
+
+intrinsic IntersectionRingOfMinimalResolution(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
+    error "Not Implemented.";
 end intrinsic;
 
 /////////////////////////////////////////////////////
@@ -750,23 +931,7 @@ minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.
     return ChernNumbersOfMinimalResolution(F, 1*RingOfIntegers(F));
 end intrinsic;
 
-intrinsic IntersectionRing(F::FldNum) -> Any
-{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
-        return IntersectionRing(F, 1*RingOfIntegers(F));
-end intrinsic;
-
-intrinsic IntersectionRingOfCuspidalResolution(F::FldNum) -> Any
-{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
-    return IntersectionRingOfCuspidalResolution(F, 1*RingOfIntegers(F));
-end intrinsic;
-
-intrinsic IntersectionRingOfMinimalResolution(F::FldNum) -> Any
-{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
-    return IntersectionRingOfMinimalResolution(F, 1*RingOfIntegers(F));
-end intrinsic;
-
-
-intrinsic VolumeOfFundamentalDomain(F::FldNum) -> Any
+intrinsic VolumeOfFundamentalDomain(F::FldNum) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     return VolumeOfFundamentalDomain(F, 1*MaximalOrder(F));
 end intrinsic;
@@ -784,26 +949,7 @@ minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.
     return ChernNumbersOfMinimalResolution(Gamma);
 end intrinsic;
 
-intrinsic IntersectionRing(F::FldNum, N::RngOrdIdeal) -> Any
-{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
-    Gamma := CongruenceSubgroup(F, N);
-    return IntersectionRing(Gamma);
-end intrinsic;
-
-intrinsic IntersectionRingOfCuspidalResolution(F::FldNum, N::RngOrdIdeal) -> Any
-{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
-    Gamma := CongruenceSubgroup(F, N);
-    return IntersectionRingOfCuspidalResolution(Gamma);
-end intrinsic;
-
-intrinsic IntersectionRingOfMinimalResolution(F::FldNum, N::RngOrdIdeal) -> Any
-{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
-    Gamma := CongruenceSubgroup(F, N);
-    return IntersectionRingOfMinimalResolution(Gamma);
-end intrinsic;
-
-
-intrinsic VolumeOfFundamentalDomain(F::FldNum, N::RngOrdIdl) -> Any
+intrinsic VolumeOfFundamentalDomain(F::FldNum, N::RngOrdIdl) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     Gamma := CongruenceSubgroup(F, N);
     return VolumeOfFundamentalDomain(Gamma);
@@ -826,23 +972,8 @@ minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.
     return ChernNumbersOfMinimalResolution(Gamma);
 end intrinsic;
 
-intrinsic IntersectionRing(M::ModFrmHilDGRng, N::RngOrdIdl) -> Any
-{Computes the Cohomology ring of the Bailey-Borel compactification of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
 
-intrinsic IntersectionRingOfCuspidalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> Any
-{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
-
-intrinsic IntersectionRingOfMinimalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> Any
-{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
-
-
-intrinsic VolumeOfFundamentalDomain(M::ModFrmHilDGRng, N::RngOrdIdl) -> Any
+intrinsic VolumeOfFundamentalDomain(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     Gamma := CongruenceSubgroup(Field(M), N);
     return VolumeOfFundamentalDomain(Gamma);
@@ -895,9 +1026,6 @@ minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.
   // 2. Compute the b_k for the resolution cycles at the cusp.
   // 3. Add (2-b_k) for each cusp.
 
-  // TODO: Sam is writing a function for computing the resolution cycles. 
-
-  // theCusps := SamIsWorkingOnThis();
   // bks := [SomeFunction(cc) : cc in theCusps];
 
   firstChernNumber := -100;
@@ -932,19 +1060,8 @@ cycle of curves in the resolution together with the intersection matrix.}
     return "";
 end intrinsic;
 
-// TODO: Move the IntersectionRing intrinsic down here after done with the creation logic.
-intrinsic IntersectionRingOfCuspidalResolution(Gamma::StupidCongruenceSubgroup) -> Any
-{Computes the Cohomology ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
-
-intrinsic IntersectionRingOfMinimalResolution(Gamma::StupidCongruenceSubgroup) -> Any
-{Computes the Cohomology ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
-    error "Not Implemented.";
-end intrinsic;
-
 import "../Creation/DedekindZetaExact.m" : DedekindZetaExact;
-intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> Any
+intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);
 end intrinsic;
@@ -956,12 +1073,12 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-intrinsic ChowRing(Gamma) -> ChowRngHMS
+intrinsic ChowRing(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
 {}
     return IntersectionRing(Gamma);
 end intrinsic;
 
-intrinsic ChowRing(Gamma, BR) -> ChowRngHMS
+intrinsic ChowRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
 {}
     return IntersectionRing(Gamma, BR);
 end intrinsic;
