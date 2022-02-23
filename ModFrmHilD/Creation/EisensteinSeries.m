@@ -1,6 +1,3 @@
-// TODO needs testing
-// TODO fix normalization at the end
-// Eisenstein Series have only been implemented for integral parallel weight
 intrinsic EisensteinSeries(
   Mk::ModFrmHilD,
   eta::GrpHeckeElt,
@@ -74,12 +71,16 @@ intrinsic EisensteinCoefficients(
   require #SequenceToSet(Weight) eq 1: "We only support EisensteinSeries with parallel weight";
   k := Weight[1];
 
-  CoefficientField := Parent(eta)`TargetRing; // where the character values live
-
+  //Set the coefficient field to be the common field for eta and psi.
+  lcm := LCM(Order(eta), Order(psi));
+  L<z> := CyclotomicField(lcm);
+  SetTargetRing(~eta, z);
+  SetTargetRing(~psi, z);
 
   // deal with L-values
   if IsOne(aa) then // aa = 1
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    SetTargetRing(~prim, z);
     c0aa := LValue_Recognized(M, k, prim);
   else
     c0aa := 0;
@@ -87,6 +88,7 @@ intrinsic EisensteinCoefficients(
   // k = 1 and bb == 1
   if k eq 1 and IsOne(bb) then
     prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+    SetTargetRing(~prim, z);
     c0bb := LValue_Recognized(M, k, prim);
   else
     c0bb := 0;
@@ -121,15 +123,22 @@ intrinsic EisensteinCoefficients(
       coeffs[nn] := c0inv * &+[eta(nn/rr) * psi(rr) * Norm(rr)^(k - 1) : rr in Divisors(nn)];
     end if;
   end for;
-  // Makes coefficients rational
-  if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
+
+  // reduce field of definition
+  if Degree(L) eq 1 then
+    Lsub := Rationals();
+  else
+    Lsub := sub<L | [elt : elt in (Values(coeffs) cat Values(constant_term))]>;
+  end if;
+  if L ne Lsub then
     for nn->c in coeffs do
-      coeffs[nn] := Rationals()!c;
+      coeffs[nn] := Lsub!c;
     end for;
     for bb->c in constant_term do
-      constant_term[bb] := Rationals()!c;
+      constant_term[bb] := Lsub!c;
     end for;
   end if;
+
   return <constant_term, coeffs>;
 end intrinsic;
 
@@ -165,9 +174,9 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
       pfactor := Factorisation(p*Integers(BaseField(M)));
       sign := (-1)^(&+[elt[2] : elt in pfactor]);
       ap_CC := sign*Coefficient(EulerFactor(Lf, p), Degree(Lf));
-      // print ap_K, ap_CC, EulerFactor(Lf, p);
+      // print Evaluate(ap_K, places[1]), ap_CC, EulerFactor(Lf, p);
       // restrict to the places where pl(ap_K) = ap_CC
-      places := [pl : pl in places | Evaluate(ap_K, pl) eq ap_CC ];
+      places := [pl : pl in places | -3 gt Log(Abs(Evaluate(ap_K, pl) - ap_CC)) ];
     end for;
     // we did our best, if #places > 1, then any embedding should work, e.g, the Image is smaller than the Codomain
     pl := places[1];
