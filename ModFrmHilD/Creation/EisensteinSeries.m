@@ -1,6 +1,3 @@
-// TODO needs testing
-// TODO fix normalization at the end
-// Eisenstein Series have only been implemented for integral parallel weight
 intrinsic EisensteinSeries(
   Mk::ModFrmHilD,
   eta::GrpHeckeElt,
