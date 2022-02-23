@@ -2,13 +2,13 @@
 SetDebugOnError(true);
 S<x> := PolynomialRing(QQ);
 //F<a> := NumberField(x^2 - 5);
-F<a> := QuadraticField(5);
+F<nu> := QuadraticField(5);
 ZF := Integers(F);
 bb := 1*ZF;
 NN := 21*ZF;
 //eps := FundamentalUnitTotPos(F);
 //eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
-ss := (1/a)*ZF;
+ss := (1/nu)*ZF;
 MM := 7*ZF;
 //GeneratorOfQuotientModuleCRT(ss,MM);
 

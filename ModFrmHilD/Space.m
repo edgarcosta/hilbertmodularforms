@@ -333,6 +333,32 @@ intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqE
   return a_num/a_den;
 end intrinsic;
 
+intrinsic IdealToModule(a::FldElt, ss::RngOrdFracIdl) -> ModDedElt 
+  {Map an element a of a fractional ideal ss to ss thought of as a module}
+  assert a in ss;
+  ss_mod := Module([ss]);
+  return ss_mod!(a*ss_mod.1);
+end intrinsic;
+
+intrinsic ModuleToIdeal(a::ModDedElt) -> RngElt
+  {Map an element a of a fractional ideal thought of a module to an element of the fractional ideal}
+  b := Eltseq(a)[1];
+  F := Parent(b);
+  ZF := Integers(F);
+  if IsIntegral(b) then
+    return ZF!b;
+  else
+    return b;
+  end if;
+end intrinsic;
+
+intrinsic IdealToModule(a::RngOrdElt, ss::RngOrdFracIdl) -> ModDedElt
+  {}
+  R := Parent(a);
+  F := NumberField(R);
+  return IdealToModule(F!a,ss);
+end intrinsic;
+
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
 intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module.}
