@@ -31,10 +31,13 @@ Creation
    Siegel.m
    EllipticCurve.m
    TraceForm.m
+   ExactDedekindZeta.m   
 }
 
 CanonicalRing
 {
   CanonicalRing.m
   HilbertSeries.m
+  IntersectionRing.m
+  StupidCongruenceSubgroup.m
 }
