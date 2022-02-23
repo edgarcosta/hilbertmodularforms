@@ -31,7 +31,8 @@ Creation
    Siegel.m
    EllipticCurve.m
    TraceForm.m
-   ExactDedekindZeta.m   
+   ExactDedekindZeta.m
+   Weight1.m
 }
 
 CanonicalRing
