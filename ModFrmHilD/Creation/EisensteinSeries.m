@@ -126,15 +126,18 @@ intrinsic EisensteinCoefficients(
       coeffs[nn] := c0inv * &+[eta(nn/rr) * psi(rr) * Norm(rr)^(k - 1) : rr in Divisors(nn)];
     end if;
   end for;
-  // Makes coefficients rational
-  if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
+
+  // reduce field of definition
+  Lsub := sub<L | Values(coeffs) cat Values(constant_term)>;
+  if Degree(L) gt Degree(Lsub) then
     for nn->c in coeffs do
-      coeffs[nn] := Rationals()!c;
+      coeffs[nn] := Lsub!c;
     end for;
     for bb->c in constant_term do
-      constant_term[bb] := Rationals()!c;
+      constant_term[bb] := Lsub!c;
     end for;
   end if;
+
   return <constant_term, coeffs>;
 end intrinsic;
 
