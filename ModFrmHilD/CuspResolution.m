@@ -139,7 +139,7 @@ Accepted flags are:
 	when 0:
 	    m := 2;
 	when 1:
-	    if IsEven(m) and UnitIsPm1Mod(ZF, n, w^(m/2)) then m := m;
+	    if IsEven(m) and UnitIsPm1Mod(ZF, n, w^(m div 2)) then m := m;
 	    else m := 2*m;
 	    end if;
 	when 2:
