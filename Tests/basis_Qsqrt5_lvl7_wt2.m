@@ -1,4 +1,4 @@
-printf "Testing that the space S_2(Gamma0(7)) for F = Q(sqrt(5)) is correct"; //use printf with no \n
+printf "Testing that the space S_2(Gamma0(7)) for F = Q(sqrt(5)) is correct..."; //use printf with no \n
 // Create the graded ring
 F:=QuadraticField(5);
 prec:=5;

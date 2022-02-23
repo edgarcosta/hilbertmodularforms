@@ -87,10 +87,10 @@ end intrinsic;
 intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> Any
 {Returns the pullback of the Siegel Eisenstein series of a given weight}
   F := BaseField(M);
-  ZF:=Integers(F);
-  Clplus, mp:=NarrowClassGroup(F);
-  h:=ClassNumber(F);
-  bb:=mp(Different(ZF)@@mp);
+  ZF := Integers(F);
+  Clplus, mp := NarrowClassGroup(F);
+  h := ClassNumber(F);
+  bb := mp(Different(ZF)@@mp);
   _, factors:=IsPrincipal(Different(ZF)/bb);
   if not IsTotallyPositive(factors) then
     factors:=-factors;
@@ -109,19 +109,21 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> 
   else
     Mkminus := Mkplus;
   end if;
-  eta:=unitmp(G.1);
+  eta := unitmp(G.1);
   elts := ShintaniReps(M)[bb];
-  fpluscoeffs:=AssociativeArray();
-  fminuscoeffs:=AssociativeArray();
+  fpluscoeffs := AssociativeArray();
+  fminuscoeffs := AssociativeArray();
   for j := 1 to #elts do
-    elt:=ZF!(elts[j]*factors);
-    anuplus:=Coeff(elt, k[1]);
-    anuminus:=Coeff(elt*eta^(-1), k[1]);
-    fpluscoeffs[elts[j]]:=1/2*(anuplus+anuminus);
-    fminuscoeffs[elts[j]]:=1/2*(anuplus-anuminus);
+    elt := ZF!(elts[j]*factors);
+    anuplus := Coeff(elt, k[1]);
+    anuminus := Coeff(elt*eta^(-1), k[1]);
+    fpluscoeffs[elts[j]] := 1/2*(anuplus+anuminus);
+    fminuscoeffs[elts[j]] := 1/2*(anuplus-anuminus);
   end for;
-  fplus:=HMFComp(Mkplus, bb, fpluscoeffs);
-  fminus:=HMFComp(Mkminus, bb, fminuscoeffs);
+
+  // creates an HMF only supported at bb
+  fplus := HMF(HMFComp(Mkplus, bb, fpluscoeffs));
+  fminus := HMF(HMFComp(Mkminus, bb, fminuscoeffs));
   return fplus, fminus;
 end intrinsic;
 
