@@ -176,7 +176,7 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
       ap_CC := sign*Coefficient(EulerFactor(Lf, p), Degree(Lf));
       // print Evaluate(ap_K, places[1]), ap_CC, EulerFactor(Lf, p);
       // restrict to the places where pl(ap_K) = ap_CC
-      places := [pl : pl in places | -3 gt Log(Abs(Evaluate(ap_K, pl) - ap_CC)) ];
+      places := [pl : pl in places | IsWeaklyZero(Evaluate(ap_K, pl) - ap_CC) ];
     end for;
     // we did our best, if #places > 1, then any embedding should work, e.g, the Image is smaller than the Codomain
     pl := places[1];
