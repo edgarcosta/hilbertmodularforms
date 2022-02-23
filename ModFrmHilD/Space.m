@@ -333,6 +333,7 @@ intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqE
   return a_num/a_den;
 end intrinsic;
 
+// moving from RngOrdFracIdl to ModDed and back
 intrinsic IdealToModule(a::FldElt, ss::RngOrdFracIdl) -> ModDedElt 
   {Map an element a of a fractional ideal ss to ss thought of as a module}
   assert a in ss;
@@ -359,6 +360,18 @@ intrinsic IdealToModule(a::RngOrdElt, ss::RngOrdFracIdl) -> ModDedElt
   return IdealToModule(F!a,ss);
 end intrinsic;
 
+//intrinsic ReduceModuloIdeal(a::FldElt, I::RngOrdFracIdl, J::RngOrdFracIdl) -> FldElt
+intrinsic ReduceModuloIdeal(a::RngElt, I::RngOrdFracIdl, J::RngOrdFracIdl) -> FldElt
+  {Take an element a of I, reduce it mod J, and then lift it back to an element of I.}
+  assert J subset I;
+  I_mod := Module([I]);
+  J_mod := Module([J]);
+  ImodJ , mp := quo< I_mod | J_mod >;
+  a_mod := IdealToModule(a, I);
+  a_modJ := mp(a_mod);
+  return ModuleToIdeal(a_modJ @@ mp);
+end intrinsic;
+
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
 intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module.}
@@ -375,14 +388,17 @@ intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnu
       t +:= (el[i] @@ mpMM)*ss_gens[i];
     end for;
     // check if new mod ss*MM
-    new_bool := true;
-    for q in quotient_gens do
-      if (t - q) in ss*MM then
-        new_bool := false;
-      end if;
-    end for;
-    if (t*ZF + ss*MM eq ss) and new_bool then
-      Append(~quotient_gens, t);
+    /*
+      new_bool := true;
+      for q in quotient_gens do
+        if (t - q) in ss*MM then
+          new_bool := false;
+        end if;
+      end for;
+    */
+    //if (t*ZF + ss*MM eq ss) and new_bool then
+    if (t*ZF + ss*MM eq ss) then
+      Append(~quotient_gens, ReduceModuloIdeal(t, ss, ss*MM));
     end if;
   end for;
   quotient_gens := SetToSequence(SequenceToSet(quotient_gens));
@@ -393,17 +409,67 @@ intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnu
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnitsBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.}
+
+  quotient_gens := GeneratorsOfQuotientModule(ss,MM);
+  F := Parent(quotient_gens[1]);
+  F := NumberField(F);
+  eps := FundamentalUnitTotPos(F);
+
+  // compute orbits of the elements of quotient_gens under totally positive units
+  // by repeatedly Shintani-reducing and reducing mod ss*MM (using ReduceModuloIdeal)
+  remaining := [1..#quotient_gens];
+  orbits := [];
+  while #remaining ne 0 do
+    ind0 := remaining[1];
+    a := quotient_gens[ind0];
+    orb := [ind0];
+    rep_bool := false;
+    while not rep_bool do
+      a := ReduceModuloIdeal(eps*a, ss, ss*MM);
+      ind := Index(quotient_gens, a);
+      if ind eq ind0 then
+        rep_bool := true;
+        break;
+      end if;
+      Append(~orb, ind);
+    end while;
+    Append(~orbits, orb);
+    printf "orbit found = %o\n", orb;
+    remaining := [el : el in remaining | not el in orb];
+    printf "remaining indices = %o\n", remaining;
+  end while;
+  printf "orbits = %o\n", orbits;
+  // return one element from each orbit
+  return [orb[1] : orb in orbits];
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+// Use transversal for <eps> < (ZF/MM)^* to get one representative from each of the orbits of (ss/(ss*MM))^* under the action of epsilon
 intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.}
+
   quotient_gens := GeneratorsOfQuotientModule(ss,MM);
-  // quotient by action of totally positive units by computing Shintani reduced elts
-  return SetToSequence(SequenceToSet([ReduceShintaniMinimizeDistance(el) : el in quotient_gens]));
+  a := quotient_gens[1];
+  F := Parent(a);
+  F := NumberField(F);
+  ZF := Integers(F);
+  eps := FundamentalUnitTotPos(F);
+
+  ZFMM, mp := quo<ZF |MM>;
+  UQ, mpQ := UnitGroup(ZFMM);
+  eps_bar := mp(eps) @@ mpQ;
+  eps_gp := sub< UQ | eps_bar>;
+  T := [mpQ(el) : el in Transversal(UQ, eps_gp)];
+  reps := [a*(el @@ mp) : el in T];
+  return [ReduceModuloIdeal(el, ss, ss*MM) : el in reps];
 end intrinsic;
 
 // P_1(NN)_bb in eqn 5.1.6 in paper, or Lemma 3.6 of Dasgupta-Kakde
 intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
-  {}
-  ZF := Ring(Parent(NN));
+  {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde, which is in bijection with cusps of Gamma1(NN)_bb.}
+  ZF := Order(NN);
   F := NumberField(ZF);
   Cl, mpCl := ClassGroup(ZF);
   Cl_seq := [mpCl(el) : el in Cl];
@@ -415,12 +481,23 @@ intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
       RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
       for a in RssMM do
         for c in RssMM_comp do
-          Append(~quads, [* ss, MM, a, c*]);
+          Append(~quads, [* ss, MM, [a,c] *]);
         end for;
       end for;
     end for;
   end for;
   return quads;
+end intrinsic;
+
+intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
+  {}
+  ZF := Order(NN);
+  F := NumberField(ZF);
+  quads := Gamma1Quadruples(NN, bb);
+  cusps_seq := [el[3] : el in quads];
+  PP1 := ProjectiveSpace(F,1);
+  cusps := [PP1!el : el in cusps_seq];
+  return SetToSequence(SequenceToSet(cusps));
 end intrinsic;
 
 // P_0(NN)_bb in eqn 5.1.9 in paper

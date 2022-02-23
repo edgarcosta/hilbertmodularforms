@@ -6,18 +6,39 @@ F<nu> := QuadraticField(5);
 ZF := Integers(F);
 bb := 1*ZF;
 NN := 21*ZF;
-//eps := FundamentalUnitTotPos(F);
+eps := FundamentalUnitTotPos(F);
 //eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
+bb := 1*ZF;
 ss := (1/nu)*ZF;
 MM := 7*ZF;
 //GeneratorOfQuotientModuleCRT(ss,MM);
+/*
+  ss_mod := Module([ss]);
+  ssMM_mod := Module([ss*MM]);
+  ss_quo, mp_ss_quo := quo< ss_mod | ssMM_mod >;  // just this
+*/
 
 RssMM0 := GeneratorsOfQuotientModule(ss,MM);
 RssMM_comp0 := GeneratorsOfQuotientModule(ss*bb*MM,(NN/MM));
+/*
+  a := RssMM0[1];
+  inds := [1];
+  rep_bool := false;
+  while not rep_bool do
+    a := ReduceModuloIdeal(eps*a, ss, ss*MM);
+    ind := Index(RssMM0, a);
+    if ind eq 1 then
+      rep_bool := true;
+      break;
+    end if;
+    Append(~inds, ind);
+  end while;
+*/
+
 RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
 RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
-bb := 1*ZF;
-P1 := Gamma1Quadruples(NN, bb);
+//P1 := Gamma1Quadruples(NN, bb);
+cusps := Gamma1Cusps(NN, bb);
 
 X := CartesianProduct(RssMM, RssMM_comp);
 Q, mpQ := quo< ZF | NN>;
