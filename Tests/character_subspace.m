@@ -4,7 +4,7 @@ dim_list := AssociativeArray();
 Generated with
 foo.m:
 // This is an arbitrary bound (the maximal discriminant in the first file in Nipp's database)
-B := 457; 
+B := 457;
 fund_discs := [d : d in [1..B] | IsFundamentalDiscriminant(d)];
 ks := [[k,k] : k in [2..10 by 2]];
 for d in fund_discs do
@@ -730,23 +730,23 @@ dim_list[<457, [ 10, 10 ]>] := [ 2431 ];
 // which can compute those for arbitrary level and weight.
 // update : instead of computing on the spot, we just compare to a
 // value from a precomputed list.
-// This is the computation for d,n - 
+// This is the computation for d,n -
 // &+[Dimension(OrthogonalModularForms(g[1] : Special))-1
 // : g in QuaternaryQuadraticLattices(d*n^2)]
 procedure testHeckeCharacterSubspace(d,n,dim_list : k := [2,2])
 
     K := QuadraticField(d);
     D := Discriminant(K);
-    
+
     // Verify that we have the precomputed values
     assert <D,k> in Keys(dim_list);
     assert (1 le n) and (n le #dim_list[<D,k>]);
-    
+
     // This is currently only worked out for GCD(D,n) eq 1 and n square free
     // (The theorem transferring orthogonal modular forms to Hilbert modular forms)
     // We have precomputed the other ones as well, but the map is no longer an isomorphism
     assert GCD(D,n) eq 1 and IsSquarefree(n);
-    
+
     if Type(K) eq FldRat then
 	K := QNF();
     end if;
@@ -758,7 +758,7 @@ procedure testHeckeCharacterSubspace(d,n,dim_list : k := [2,2])
     // We assumed that disc(B) and K are relatively prime, so
     // the primes ramifying in B are precisely the ones dividing n.
     // Such a prime (i.e. the primes above it) is also ramified in B_K iff its is split in K.
-    
+
     new_level := &*([1] cat [p : p in PrimeDivisors(n) | IsSplit(p, Z_K)]);
     prec := 1;
     R := GradedRingOfHMFs(K, prec);
@@ -773,7 +773,6 @@ procedure testHeckeCharacterSubspace(d,n,dim_list : k := [2,2])
     // This is not true, since Eisenstein series do not surject in JL
     // assert dim_hmf eq dim_list[D][n][1];
     assert dim_cusp eq dim_list[<D,k>][n];
-    
 end procedure;
 
 // we run tests for 5 of the keys
@@ -786,19 +785,22 @@ ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d 
 weights := [[k,k] : k in [2..10 by 2]];
 ks := [ [Random(weights)] : d in ds];
 
-printf "Checking dimensions at d=";
+printf "Checking dimensions at ";
 for i->d in ds do
-    printf "%o ", d;
-//    printf "k=";
+    printf "d=%o ", d;
     for k in ks[i] do
-      printf "k=%o ", k;    
+      printf "k=%o ", k;
       printf "n=";
       for n in ns[i] do
-	printf "%o ", n;
+        printf "%o ", n;
         testHeckeCharacterSubspace(d,n,dim_list : k := k);
       end for;
     end for;
-    printf "\n";
+    if i ne #ds then
+        printf ", ";
+    else
+        printf "...";
+    end if;
 end for;
 return true;
 
