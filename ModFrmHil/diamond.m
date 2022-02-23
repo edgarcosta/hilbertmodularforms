@@ -43,10 +43,10 @@ intrinsic Dimension(M::ModFrmHil : UseFormula:=true, hack := true) -> RngIntElt
   then
       if definite then
 	  // hack begins
-	  if Seqset(Weight(M)) ne {2} then
-              _ := BasisMatrixDefinite(M : EisensteinAllowed, hack := hack);
+	  if (Seqset(Weight(M)) eq {2}) and IsTrivial(DirichletCharacter(M)) then
+              _ := BasisMatrixDefinite(M : EisensteinAllowed := false, hack := hack);
 	  else
-	      _ := BasisMatrixDefinite(M : EisensteinAllowed := false, hack := hack);
+	      _ := BasisMatrixDefinite(M : EisensteinAllowed, hack := hack);
 	  end if;
 	  // hack ends
       else
@@ -779,15 +779,15 @@ function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
                 Append(~alphas, Roots(hh)[1][1]);
             end if;
          end for;
+         // make weight_base_field an (optimized) absolute field, for efficiency in later calculations 
+         weight_field := K; // names appears in verbose output
+         K := AbsoluteField(K);
+         K := OptimizedRepresentation(K);
 	 // hack begins
 	 if hack then
 	     K := Compositum(K, Parent(chi)`TargetRing);
 	 end if;
 	 // hack ends
-         // make weight_base_field an (optimized) absolute field, for efficiency in later calculations 
-         weight_field := K; // names appears in verbose output
-         K := AbsoluteField(K);
-         K := OptimizedRepresentation(K);
          embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
          M`weight_base_field:=K;
          vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";

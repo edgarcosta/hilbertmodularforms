@@ -299,7 +299,8 @@ and dim ne 1 // beware recursion
     vtime ModFrmHil:
     if hack then 
 	// hack starts
-	if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K) then
+	if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K)
+	  or not IsTrivial(DirichletCharacter(M)) then
 	    // hack ends
 	    chi := CharacteristicPolynomial(t);
 	else
