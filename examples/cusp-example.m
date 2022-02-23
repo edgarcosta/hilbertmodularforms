@@ -1,4 +1,5 @@
 //AttachSpec("spec");
+SetDebugOnError(true);
 S<x> := PolynomialRing(QQ);
 //F<a> := NumberField(x^2 - 5);
 F<a> := QuadraticField(5);
@@ -9,6 +10,8 @@ NN := 21*ZF;
 //eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
 ss := (1/a)*ZF;
 MM := 7*ZF;
+//GeneratorOfQuotientModuleCRT(ss,MM);
+
 RssMM0 := GeneratorsOfQuotientModule(ss,MM);
 RssMM_comp0 := GeneratorsOfQuotientModule(ss*bb*MM,(NN/MM));
 RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);

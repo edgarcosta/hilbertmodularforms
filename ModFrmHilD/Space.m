@@ -294,20 +294,43 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorsOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {}
   // CoprimeRepresentative
   // SafeUniformizer
   // CRT
+  ZF := Order(ss);
   facts := Factorization(ss*MM);
-  residues := [];
+  facts_num := [];
+  facts_den := [];
   for fact in facts do
-    P := facts[1];
-    ord := facts[2];
-    aP := SafeUniformizer(P);
-    Append(~residues, aP^ord);
+    if fact[2] gt 0 then // primes with positive valuation
+      Append(~facts_num, fact);
+    else // primes with negative valuation
+      Append(~facts_den, fact);
+    end if;
   end for;
-  return false;
+  residues_num := [];
+  residues_den := [];
+  for fact in facts_num do
+    P := fact[1];
+    ord := fact[2];
+    aP := SafeUniformizer(P);
+    assert IsIntegral(aP);
+    Append(~residues_num, ZF!(aP^ord));
+  end for;
+  for fact in facts_den do
+    P := fact[1];
+    ord := -fact[2]; // want positive valuation
+    aP := SafeUniformizer(P);
+    assert IsIntegral(aP);
+    Append(~residues_den, ZF!(aP^ord));
+  end for;
+  Ps_num := [el[1] : el in facts_num];
+  Ps_den := [el[1] : el in facts_den];
+  a_num := CRT(residues_num, Ps_num);
+  a_den := CRT(residues_den, Ps_den);
+  return a_num/a_den;
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
@@ -320,17 +343,15 @@ intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnu
   ss_gens := Generators(ss);
   ss_ngens := #ss_gens;
   quotient_gens := [];
-  ss_seq := [];
   for el in CartesianPower(ZFMM, ss_ngens) do
     t := ZF!0;
     for i := 1 to ss_ngens do
       t +:= (el[i] @@ mpMM)*ss_gens[i];
     end for;
-    Append(~ss_seq, t);
     // check if new mod ss*MM
     new_bool := true;
     for q in quotient_gens do
-      if (q - t) in ss*MM then
+      if (t - q) in ss*MM then
         new_bool := false;
       end if;
     end for;
