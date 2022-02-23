@@ -42,31 +42,38 @@ intrinsic CuspFormBasis(
   IdealClassesSupport:=false,
   GaloisInvariant:=false) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
+
+  require #SequenceToSet(Weight(Mk)) eq 1: "We only support parallel weight.";
+
   if not assigned Mk`CuspFormBasis then
     N := Level(Mk);
     k := Weight(Mk);
-    cuspbasis := [];
-    // This only works for trivial character, as we rely on the magma functionality
-    require IsTrivial(DirichletRestriction(Character(Mk))): "We only support CuspFormBasis for characters with trivial dirichlet restriction, as we rely on the magma functionality";
-    for dd in Divisors(N) do
-      Mkdd := HMFSpace(Parent(Mk), dd, k);
-      if CuspDimension(Mkdd) gt 0 then
-        if dd eq N then
-          cuspbasis cat:= NewCuspForms(Mk);
-        else
-          cuspbasis cat:= OldCuspForms(Mkdd, Mk);
+
+    if k[1] ge 2 then
+      cuspbasis := [];
+      // This only works for trivial character, as we rely on the magma functionality
+      require IsTrivial(DirichletRestriction(Character(Mk))): "We only support CuspFormBasis for characters with trivial dirichlet restriction, as we rely on the magma functionality";
+      for dd in Divisors(N) do
+        Mkdd := HMFSpace(Parent(Mk), dd, k);
+        if CuspDimension(Mkdd) gt 0 then
+          if dd eq N then
+            cuspbasis cat:= NewCuspForms(Mk);
+          else
+            cuspbasis cat:= OldCuspForms(Mkdd, Mk);
+          end if;
         end if;
-      end if;
-    end for;
-    // we are taking Q orbits
-    Mk`CuspFormBasis := &cat[GaloisOrbitDescent(f) : f in cuspbasis];
-    assert CuspDimension(Mk) eq #Mk`CuspFormBasis;
+      end for;
+      // we are taking Q orbits
+      Mk`CuspFormBasis := &cat[GaloisOrbitDescent(f) : f in cuspbasis];
+      assert CuspDimension(Mk) eq #Mk`CuspFormBasis;
+    else
+      Mk`CuspFormBasis := Weight1CuspBasis(Mk);
+    end if;
   end if;
   return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, GaloisInvariant);
 end intrinsic;
 
 
-// TODO: generalized to arbitrary character, see EisensteinDimension
 intrinsic EisensteinBasis(
   Mk::ModFrmHilD
   :
@@ -76,7 +83,8 @@ intrinsic EisensteinBasis(
   { return a basis for the complement to the cuspspace of Mk }
   if not assigned Mk`EisensteinBasis then
     pairs := EisensteinAdmissableCharacterPairs(Mk);
-    Mk`EisensteinBasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
+    eisensteinbasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
+    Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
     assert #Mk`EisensteinBasis eq EisensteinDimension(Mk);
   end if;
 

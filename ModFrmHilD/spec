@@ -31,10 +31,13 @@ Creation
    Siegel.m
    EllipticCurve.m
    TraceForm.m
+   Weight1.m
 }
 
 CanonicalRing
 {
   CanonicalRing.m
   HilbertSeries.m
+  IntersectionRing.m
+  StupidCongruenceSubgroup.m
 }
