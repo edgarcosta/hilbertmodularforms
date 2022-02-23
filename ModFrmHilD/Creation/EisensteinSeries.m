@@ -74,12 +74,16 @@ intrinsic EisensteinCoefficients(
   require #SequenceToSet(Weight) eq 1: "We only support EisensteinSeries with parallel weight";
   k := Weight[1];
 
-  CoefficientField := Parent(eta)`TargetRing; // where the character values live
-
+  //Set the coefficient field to be the common field for eta and psi.
+  lcm := LCM(Order(eta), Order(psi));
+  CoefficientField<z> := CyclotomicField(lcm);
+  SetTargetRing(~eta, z);
+  SetTargetRing(~psi, z);
 
   // deal with L-values
   if IsOne(aa) then // aa = 1
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    SetTargetRing(~prim, z);
     c0aa := LValue_Recognized(M, k, prim);
   else
     c0aa := 0;
@@ -87,6 +91,7 @@ intrinsic EisensteinCoefficients(
   // k = 1 and bb == 1
   if k eq 1 and IsOne(bb) then
     prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+    SetTargetRing(~prim, z);
     c0bb := LValue_Recognized(M, k, prim);
   else
     c0bb := 0;
@@ -165,9 +170,9 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
       pfactor := Factorisation(p*Integers(BaseField(M)));
       sign := (-1)^(&+[elt[2] : elt in pfactor]);
       ap_CC := sign*Coefficient(EulerFactor(Lf, p), Degree(Lf));
-      // print ap_K, ap_CC, EulerFactor(Lf, p);
+      // print Evaluate(ap_K, places[1]), ap_CC, EulerFactor(Lf, p);
       // restrict to the places where pl(ap_K) = ap_CC
-      places := [pl : pl in places | Evaluate(ap_K, pl) eq ap_CC ];
+      places := [pl : pl in places | -3 gt Log(Abs(Evaluate(ap_K, pl) - ap_CC)) ];
     end for;
     // we did our best, if #places > 1, then any embedding should work, e.g, the Image is smaller than the Codomain
     pl := places[1];
