@@ -76,7 +76,7 @@ intrinsic EisensteinBasis(
   if not assigned Mk`EisensteinBasis then
     pairs := EisensteinAdmissableCharacterPairs(Mk);
     eisensteinbasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
-    Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in cuspbasis];
+    Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
     assert #Mk`EisensteinBasis eq EisensteinDimension(Mk);
   end if;
 

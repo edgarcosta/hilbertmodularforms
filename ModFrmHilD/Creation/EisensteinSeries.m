@@ -73,7 +73,7 @@ intrinsic EisensteinCoefficients(
 
   //Set the coefficient field to be the common field for eta and psi.
   lcm := LCM(Order(eta), Order(psi));
-  CoefficientField<z> := CyclotomicField(lcm);
+  L<z> := CyclotomicField(lcm);
   SetTargetRing(~eta, z);
   SetTargetRing(~psi, z);
 
@@ -125,8 +125,12 @@ intrinsic EisensteinCoefficients(
   end for;
 
   // reduce field of definition
-  Lsub := sub<L | Values(coeffs) cat Values(constant_term)>;
-  if Degree(L) gt Degree(Lsub) then
+  if Degree(L) eq 1 then
+    Lsub := Rationals();
+  else
+    Lsub := sub<L | [elt : elt in (Values(coeffs) cat Values(constant_term))]>;
+  end if;
+  if L ne Lsub then
     for nn->c in coeffs do
       coeffs[nn] := Lsub!c;
     end for;
