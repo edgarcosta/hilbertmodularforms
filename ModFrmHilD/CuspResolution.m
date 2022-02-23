@@ -1,5 +1,5 @@
 
-intrinsic IsCoprime(a :: RngQuadFracIdl, b :: RngQuadFracIdl) -> Bool
+intrinsic IsCoprime(a :: RngQuadFracIdl, b :: RngFracIdl) -> Bool
 {Decide if fractional ideals a and b are coprime}
     if a eq 0*a or b eq 0*b then return false;
     end if;
@@ -56,7 +56,7 @@ end intrinsic;
 
 intrinsic CuspResolutionMinimalUnit(F :: FldQuad, per :: SeqEnum[RngIntElt]) -> FldQuadElt
 {Compute a generator of U_M+ in Van der Geer's notation}
-    w := HJCyclicProductOfReconstructions(F, periodic);
+    w := HJCyclicProductOfReconstructions(F, per);
     //Check that we indeed have a totally positive unit
     ZF := Integers(F);
     assert w in ZF;
@@ -77,6 +77,15 @@ intrinsic UnitMultiplicativeOrderMod(ZF :: RngQuad, p :: RngQuadIdl, eps :: RngQ
         n := n+1; u := eps*u;
     end while;
     return n;
+end intrinsic;
+
+intrinsic UnitIsPm1Mod(ZF :: RngQuad, p :: RngQuadIdl, eps :: RngQuadElt) -> Bool
+{Decide whether eps is +-1 mod p}
+    require p ne 0*p: "Ideal p must not be zero";
+    require IsUnit(eps): "eps must be a unit";
+
+    Q := quo<ZF|p>;
+    return (Q!1 eq Q!eps or Q!(-1) eq Q!eps);
 end intrinsic;
 
 intrinsic RepeatSequence(l :: SeqEnum, n :: RngIntElt) -> SeqEnum
@@ -101,34 +110,40 @@ Accepted flags are:
 
     require IsCoprime(n, b):
 	  "Ideals b (defining the full modular group) and n (defining the level) must be coprime";
-    require alpha*beta ne 0:
+    require alpha ne 0 or beta ne 0:
 	  "Cusp (alpha:beta) in P^1 cannot have both coordinates zero";
     requirerange flag, -1, 2;
 
     ZF := Integers(F);
-    M := CuspResolutionM(F, b, n, alpha, beta, flag);
-    V := CuspResolutionV(n, flag);
+    M := CuspResolutionM(F, b, n, alpha, beta: flag:=flag);
+    V := CuspResolutionV(n: flag:=flag);
     periodic := CuspResolutionMinimalSequence(F, M);
     w := CuspResolutionMinimalUnit(F, periodic);
     issqr, x := IsSquare(w);
-    
+
+    m := UnitMultiplicativeOrderMod(ZF, n, w);
+        
     if issqr then
 	case V:
 	when 0:
 	    m := 1;
 	when 1:
-	    m := UnitMultiplicativeOrderMod(ZF, n, x);
+	    m := m;
 	when 2:
-	    m := UnitMultiplicativeOrderMod(ZF, n, w);
+	    if UnitIsPm1Mod(ZF, n, x^m) then m := m;
+	    else m := 2*m;
+	    end if;
 	end case;
     else
 	case V:
 	when 0:
 	    m := 2;
 	when 1:
-	    m := 2*UnitMultiplicativeOrderMod(ZF, n, w);
+	    if IsEven(m) and UnitIsPm1Mod(ZF, n, w^(m/2)) then m := m;
+	    else m := 2*m;
+	    end if;
 	when 2:
-	    m := Lcm(2, UnitMultiplicativeOrderMod(ZF, n, w));
+	    m := Lcm(2, m);
 	end case;
     end if;
     L := RepeatSequence(periodic, m);
