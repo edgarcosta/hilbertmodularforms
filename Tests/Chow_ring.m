@@ -1,4 +1,4 @@
-printf "Testing the computation of the Chow Ring for QQ(sqrt(13)).";
+printf "Testing the computation of the Chow Ring for QQ(sqrt(13))...";
 
 // Basic tests.
 K := QuadraticField(13);
