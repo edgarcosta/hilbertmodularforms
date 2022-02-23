@@ -227,7 +227,14 @@ intrinsic CoefficientRing(f::ModFrmHilDElt) -> Any
   ZF := Integers(GradedRing(f));
   R := CoefficientRing(Components(f)[1*ZF]);
   for bb -> fbb in Components(f) do
-    require CoefficientRing(fbb) eq R : "Need all base rings of all components to be equal";
+    if CoefficientRing(fbb) ne R then
+      // check that not a subset
+      if R subset CoefficientRing(fbb) then
+        R := CoefficientRing(fbb);
+      else
+        require CoefficientRing(fbb) subset R : "Need all base rings of all components to be equal";
+      end if;
+    end if;
   end for;
   return R;
 end intrinsic;
@@ -551,7 +558,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       if test1 and test2 and test3 and test4 then // all tests must be true to coerce
         if Type(f) eq ModFrmHilDEltComp then
           A := TotallyPositiveUnits(M);
-          return true, HMFComp(Mk, Coefficients(f): prec:=Precision(f));
+          return true, HMFComp(Mk, ComponentIdeal(f), Coefficients(f): prec:=Precision(f));
         end if;
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
