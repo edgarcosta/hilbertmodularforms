@@ -74,7 +74,6 @@ intrinsic CuspFormBasis(
 end intrinsic;
 
 
-// TODO: generalized to arbitrary character, see EisensteinDimension
 intrinsic EisensteinBasis(
   Mk::ModFrmHilD
   :
@@ -84,7 +83,8 @@ intrinsic EisensteinBasis(
   { return a basis for the complement to the cuspspace of Mk }
   if not assigned Mk`EisensteinBasis then
     pairs := EisensteinAdmissableCharacterPairs(Mk);
-    Mk`EisensteinBasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
+    eisensteinbasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
+    Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
     assert #Mk`EisensteinBasis eq EisensteinDimension(Mk);
   end if;
 

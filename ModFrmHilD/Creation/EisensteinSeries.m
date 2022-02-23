@@ -1,6 +1,3 @@
-// TODO needs testing
-// TODO fix normalization at the end
-// Eisenstein Series have only been implemented for integral parallel weight
 intrinsic EisensteinSeries(
   Mk::ModFrmHilD,
   eta::GrpHeckeElt,
@@ -76,7 +73,7 @@ intrinsic EisensteinCoefficients(
 
   //Set the coefficient field to be the common field for eta and psi.
   lcm := LCM(Order(eta), Order(psi));
-  CoefficientField<z> := CyclotomicField(lcm);
+  L<z> := CyclotomicField(lcm);
   SetTargetRing(~eta, z);
   SetTargetRing(~psi, z);
 
@@ -126,15 +123,22 @@ intrinsic EisensteinCoefficients(
       coeffs[nn] := c0inv * &+[eta(nn/rr) * psi(rr) * Norm(rr)^(k - 1) : rr in Divisors(nn)];
     end if;
   end for;
-  // Makes coefficients rational
-  if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
+
+  // reduce field of definition
+  if Degree(L) eq 1 then
+    Lsub := Rationals();
+  else
+    Lsub := sub<L | [elt : elt in (Values(coeffs) cat Values(constant_term))]>;
+  end if;
+  if L ne Lsub then
     for nn->c in coeffs do
-      coeffs[nn] := Rationals()!c;
+      coeffs[nn] := Lsub!c;
     end for;
     for bb->c in constant_term do
-      constant_term[bb] := Rationals()!c;
+      constant_term[bb] := Lsub!c;
     end for;
   end if;
+
   return <constant_term, coeffs>;
 end intrinsic;
 
