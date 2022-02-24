@@ -51,20 +51,13 @@ MaxRelWeight := 16;
 time H := HilbertModularSurface(F, 1*ZF,MaxGenWeight,MaxRelWeight: Precision := prec );
 
 /// Igusa unit character not 1
-D := 12;
-F:=QuadraticField(D);
-prec:=4;
-ZF:=Integers(F);
-GR := GradedRingOfHMFs(F,prec);
+prec := 4;
+F := QuadraticField(5);
+ZF := Integers(F);
+M := GradedRingOfHMFs(F, prec);
+a,b,c,d,e,f := UniversalIgusa(M);
 
-B4:=Basis(HMFSpace(GR, [4,4]));
-B6:=Basis(HMFSpace(GR, [6,6]));
-B8:=Basis(HMFSpace(GR, [8,8]));
-B10:=Basis(HMFSpace(GR, [10,10]));
-
-a,b,c,d,e,f:=UniversalIgusa(GR);
-
-/*
+/* This part of the demo still does not run
 function Slash(eta, k, M)
 // eta a totally positive unit,
 // an even parallel weight k

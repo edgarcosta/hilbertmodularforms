@@ -90,29 +90,29 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> 
   ZF := Integers(F);
   Clplus, mp := NarrowClassGroup(F);
   h := ClassNumber(F);
+  // We get the ideal class corresponding to the component for the different ideal
   bb := mp(Different(ZF)@@mp);
-  _, factors:=IsPrincipal(Different(ZF)/bb);
-  if not IsTotallyPositive(factors) then
+  _, factors:=IsNarrowlyPrincipal(Different(ZF)/bb); //this will be a factor that will make sure our nu later on are totally positive integral elements
+  if not IsTotallyPositive(factors) then //just in case factors is negative
     factors:=-factors;
   end if;
   G, unitmp := TotallyPositiveUnits(M);
 
   Mkplus := HMFSpace(M, k);
+  // Dealing with unit characters
   if #Clplus gt h then
     minusunitchar := AssociativeArray();
     for bb in NarrowClassGroupReps(M) do
       minusunitchar[bb] := UnitCharacter(F, [-1]);
     end for;
-    //X := HeckeCharacterGroup(1*ZF, [1..Degree(BaseField(M))]);
-    //chi := X!1;
     Mkminus := HMFSpace(M, k: unitcharacters:=minusunitchar);
   else
     Mkminus := Mkplus;
   end if;
-  eta := unitmp(G.1);
-  elts := ShintaniReps(M)[bb];
   fpluscoeffs := AssociativeArray();
   fminuscoeffs := AssociativeArray();
+  eta := unitmp(G.1);
+  elts := ShintaniReps(M)[bb]; //elements in bb/Different(ZF), totally positive. We need them in ZF>>0, therefore we will multiply by factors
   for j := 1 to #elts do
     elt := ZF!(elts[j]*factors);
     anuplus := Coeff(elt, k[1]);
