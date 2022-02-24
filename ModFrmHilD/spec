@@ -8,6 +8,7 @@
   CuspResolution.m
   Hecke.m
   LinearAlgebra.m
+  Restriction.m
   Space.m
   Trace.m
   UnitChar.m
