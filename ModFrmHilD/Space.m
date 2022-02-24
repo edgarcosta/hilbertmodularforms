@@ -37,7 +37,8 @@ intrinsic Print(Mk::ModFrmHilD, level::MonStgElt)
     printf "Precision: %o\n", Precision(M);
     printf "Weight: %o\n", Weight(Mk);
     printf "Character: %o\n", Character(Mk);
-    printf "Level: %o", IdealOneLine(Level(Mk));
+    printf "Level: %o\n", IdealOneLine(Level(Mk));
+    printf "UnitCharacters: %o", JoinString([Sprint(ValuesOnGens(UnitCharacters(Mk)[bb])) : bb in NarrowClassGroupReps(M)], ", ");
   elif level eq "Magma" then
     error "not implemented!";
   else
@@ -56,11 +57,11 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-return Parent(M1) eq Parent(M2) and
-Weight(M1) eq Weight(M2) and
-Level(M1) eq Level(M2) and
-Character(M1) eq Character(M2) and
-UnitCharacters(M1) eq UnitCharacters(M2);
+  return Parent(M1) eq Parent(M2) and
+  Weight(M1) eq Weight(M2) and
+  Level(M1) eq Level(M2) and
+  Character(M1) eq Character(M2) and
+  UnitCharacters(M1) eq UnitCharacters(M2);
 end intrinsic;
 
 ////////// ModFrmHilD access to attributes //////////
@@ -145,10 +146,21 @@ end intrinsic;
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt : unitcharacters:=false) -> ModFrmHilD
   {}
   spaces := Spaces(M);
-  if N in Keys(spaces) then
-    if <k, chi> in Keys(spaces[N]) then
-      return spaces[N][<k, chi>];
+  if unitcharacters cmpeq false then
+    unitcharacters := AssociativeArray();
+    for bb in NarrowClassGroupReps(M) do
+      unitcharacters[bb] := TrivialUnitCharacter(BaseField(M));
+    end for;
+  end if;
+
+  uc_values := &cat[ValuesOnGens(unitcharacters[bb]) : bb in NarrowClassGroupReps(M)];
+
+  if IsDefined(spaces, N) then
+    if IsDefined(spaces[N], <k, chi, uc_values>) then
+      return spaces[N][<k, chi, uc_values>];
     end if;
+  else
+    M`Spaces[N] := AssociativeArray();
   end if;
   Mk := ModFrmHilDInitialize();
   Mk`Parent := M;
@@ -158,19 +170,12 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   is_compat, i := IsCompatibleWeight(chi, k);
   require is_compat : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
   Mk`Character := chi;
-  if unitcharacters cmpeq false then
-    Mk`UnitCharacters := AssociativeArray();
-    for bb in NarrowClassGroupReps(Parent(Mk)) do
-      Mk`UnitCharacters[bb] := TrivialUnitCharacter(BaseField(Mk));
-    end for;
-  else
-    Mk`UnitCharacters := unitcharacters;
-    require Type(unitcharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
-    require Keys(unitcharacters) eq SequenceToSet(NarrowClassGroupReps(Parent(Mk))) :"we expect the keys of the associative array to be narrow class group reprsentatives";
-    require {Type(v): v in unitcharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
-    require &and[BaseField(v) eq BaseField(M): v in unitcharacters]: "we expect all the unit characters to have the same base field";
-  end if;
-  AddToSpaces(M, Mk, N, k, chi);
+  Mk`UnitCharacters := unitcharacters;
+  require Type(Mk`UnitCharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
+  require Keys(Mk`UnitCharacters) eq SequenceToSet(NarrowClassGroupReps(M)) :"we expect the keys of the associative array to be narrow class group reprsentatives";
+  require {Type(v): v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
+  require &and[BaseField(v) eq BaseField(M): v in Mk`UnitCharacters]: "we expect all the unit characters to have the same base field";
+  M`Spaces[N][<k, chi, uc_values>] := Mk;
   return Mk;
 end intrinsic;
 
