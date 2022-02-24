@@ -388,8 +388,8 @@ intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqE
     //printf "moduli for den = %o\n", moduli_den;
     a_den := CRT(residues_den, moduli_den);
   end if;
-  printf "a_num = %o\n", a_num;
-  printf "a_den = %o\n", a_den;
+  //printf "a_num = %o\n", a_num;
+  //printf "a_den = %o\n", a_den;
   // verify it generates
   a := a_num/a_den;
   assert a*ZF + ss*MM eq ss;
@@ -440,7 +440,7 @@ intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnu
   U, mpU := UnitGroup(ZFMM);
   U_seq := [mpU(el) : el in U];
   a := GeneratorOfQuotientModuleCRT(ss,MM);
-  return [a*el : el in U_seq];
+  return [a*(el @@ mpMM) : el in U_seq];
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
@@ -524,6 +524,8 @@ intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   return quads;
 end intrinsic;
 
+// FIXME: not correct currently
+// Need to lift the [a,c] in the quadruples in a special way that respects certain congruences
 intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   {}
   ZF := Order(NN);
