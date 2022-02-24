@@ -74,8 +74,12 @@ intrinsic EisensteinCoefficients(
   //Set the coefficient field to be the common field for eta and psi.
   lcm := LCM(Order(eta), Order(psi));
   L<z> := CyclotomicField(lcm);
+  etainv := eta^-1;
+  psiinv := psi^-1;
   SetTargetRing(~eta, z);
   SetTargetRing(~psi, z);
+  SetTargetRing(~etainv, z);
+  SetTargetRing(~psiinv, z);
 
   // deal with L-values
   if IsOne(aa) then // aa = 1
@@ -96,6 +100,26 @@ intrinsic EisensteinCoefficients(
 
   constant_term := AssociativeArray();
   n := Degree(BaseField(M));
+
+  // deal with L-values
+  if IsOne(aa) then // aa = 1
+    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    SetTargetRing(~prim, z);
+    c0aa := L!LValue_Recognized(M, k, prim);
+  else
+    c0aa := 0;
+  end if;
+  // k = 1 and bb == 1
+  if k eq 1 and IsOne(bb) then
+    prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+    SetTargetRing(~prim, z);
+    c0bb := L!LValue_Recognized(M, k, prim);
+  else
+    c0bb := 0;
+  end if;
+
+  constant_term := AssociativeArray();
+  n := Degree(BaseField(M));
   bbs := NarrowClassGroupReps(M);
   for bb in bbs do
     constant_term[bb] := AssociativeArray();
@@ -104,7 +128,7 @@ intrinsic EisensteinCoefficients(
     // Thus we may take tt_lambda = 1/bb'$
     bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     tt_lambda := bbp^-1;
-    constant_term[bb] := 2^(-n)*( (eta^(-1))(tt_lambda)*c0aa +  (psi^(-1))(tt_lambda)*c0bb );
+    constant_term[bb] := 2^(-n)*( etainv(tt_lambda)*c0aa +  psiinv(tt_lambda)*c0bb );
   end for;
 
 
@@ -151,7 +175,8 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
   bool, val := IsDefined(M`LValues, <k, psi>);
   if not bool then
     // Maybe a separate function to compute L-values?
-    CoefficientField := Parent(psi)`TargetRing; // where the character values live
+    CoefficientField<z> := CyclotomicField(Order(psi)); // where the character values live
+    SetTargetRing(~psi, z);
     // TODO: this is a total guess...
     prec := 100 + k^2;
     Lf := LSeries(psi : Precision:=prec);

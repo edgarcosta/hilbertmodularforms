@@ -22,7 +22,7 @@ declare attributes ModFrmHilD:
   Dimension, // RngIntElt
   CuspDimension, //RngIntElt
   EisensteinDimension, //RngIntElt
-  EisensteinAdmissableCharacterPairs, // List of pairs of primitive characters
+  EisensteinAdmissibleCharacterPairs, // List of pairs of primitive characters
   MagmaSpace, //ModFrmHil
   MagmaNewCuspForms; // SeqEnum[ModFrmHilElt]
 
@@ -584,24 +584,31 @@ intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   {return the dimension of E(Mk)}
   if not assigned Mk`EisensteinDimension then
     N := Level(Mk);
-    newforms_levels := {* Conductor(pair[1]) * Conductor(pair[2]) : pair in EisensteinAdmissableCharacterPairs(Mk) *};
-    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*mult : mm->mult in newforms_levels];
+    newforms_levels := AssociativeArray();
+    for pair in EisensteinAdmissibleCharacterPairs(Mk) do
+      lvl := Conductor(pair[1]) * Conductor(pair[2]);
+      if not IsDefined(newforms_levels, lvl) then
+        newforms_levels[lvl] := 0;
+      end if;
+      newforms_levels[lvl] +:= EulerPhi(LCM([Order(e) : e in pair]));
+    end for;
+    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*rel_dim : mm->rel_dim in newforms_levels];
   end if;
   return Mk`EisensteinDimension;
 end intrinsic;
 
 
-intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
+intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   {returns a list of all the primitive pairs <chi1, chi2> such that
   chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk)
   If the weight is 1, we only return pairs up to permutation}
-  if not assigned Mk`EisensteinAdmissableCharacterPairs then
+  if not assigned Mk`EisensteinAdmissibleCharacterPairs then
     N := Level(Mk);
     k := Weight(Mk);
     if #SequenceToSet(k) ne 1 then
       // there are no Eisenstein series in nonparallel weight
-      Mk`EisensteinAdmissableCharacterPairs := [* *];
-      return Mk`EisensteinAdmissableCharacterPairs;
+      Mk`EisensteinAdmissibleCharacterPairs := [* *];
+      return Mk`EisensteinAdmissibleCharacterPairs;
     end if;
     k := k[1];
     chi := Character(Mk);
@@ -636,7 +643,7 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
     for i in SequenceToSet(&cat pairs) do
       prims[i] := AssociatedPrimitiveCharacter(chis[i]);
     end for;
-    Mk`EisensteinAdmissableCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
+    Mk`EisensteinAdmissibleCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
   end if;
-  return Mk`EisensteinAdmissableCharacterPairs;
+  return Mk`EisensteinAdmissibleCharacterPairs;
 end intrinsic;
