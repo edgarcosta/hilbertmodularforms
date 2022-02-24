@@ -1,6 +1,7 @@
 import "copypastefunctions.m" : IsBianchi,
                                 HMF0,
-                                TopAmbient;
+                                TopAmbient,
+				WeightRepresentation;
 
 /**************** New intrinsics **********************/
 
@@ -102,6 +103,7 @@ function getActionOnP1Reps(M, J, I_perm)
     fds := [hmdf`PLD`FD : hmdf in HMDF];
     rid_perms := [];
     I := M`rids;
+    alphas := [];
     for rid_idx in [1..#HMDF] do
 	target_idx := I_perm[rid_idx];
 	_, alpha := IsIsomorphic(J*I[rid_idx], I[target_idx]);
@@ -111,11 +113,12 @@ function getActionOnP1Reps(M, J, I_perm)
 	    Append(~rid_perm, lookups[target_idx][Ja,1]);
 	end for;
 	Append(~rid_perms, rid_perm);
+        Append(~alphas, alpha);
     end for;
     cumdims := [&+nCFD[1..i] : i in [0..#nCFD]];
     big_perm := &cat[[cumdims[I_perm[i]] + idx : idx in rid_perms[i]] : i in [1..#rid_perms]];
     assert Set(big_perm) eq {1..&+nCFD};
-    return big_perm;
+    return big_perm, alphas;
 end function;
 
 // originaly from hecke.m
@@ -228,7 +231,27 @@ function DiamondOperatorBigDefinite(M, J)
     assert h eq #HMDF;
     wd := M`weight_dimension; // = 1 for weight2
 
-    big_perm := getActionOnP1Reps(M, J, perm);
+    big_perm, alphas := getActionOnP1Reps(M, J, perm);
+    hh := #big_perm;
+
+    zero := MatrixAlgebra(F_weight, wd)!0;
+    blocks := [[zero : j in [1..hh]] : i in [1..hh]];
+    for rid_idx in [1..h] do
+	target_idx := perm[rid_idx];
+	alpha := alphas[target_idx];
+	for i in [1..nCFD[rid_idx]] do
+	    idx := &+nCFD[1..rid_idx-1] + i;
+	    if weight2 then
+		alpha_rep := IdentityMatrix(F_weight, 1);
+	    else
+		alpha_rep := M`weight_rep(alpha);
+		alpha_rep *:= Norm(alpha)^(-CentralCharacter(M));
+	    end if;
+	    blocks[big_perm[idx]][idx] := alpha_rep;
+	end for;
+    end for;
+
+    d_J := BlockMatrix(blocks);
 
     // dims := [wd : i in [1..&+nCFD]];
     // cumdims := [&+dims[1..i] : i in [0..#dims]];
@@ -244,7 +267,10 @@ function DiamondOperatorBigDefinite(M, J)
    */
 
     // This is the operator on the entire space of Hilbert modular forms
-    d_J := PermutationMatrix(F_weight, big_perm);
+    // d_J := PermutationMatrix(F_weight, big_perm);
+    if weight2 then
+	assert d_J eq PermutationMatrix(F_weight, big_perm);
+    end if;
 /*    
     if (M`weight_dimension eq 1) then
 	// This is the operator on the subspace corresponding to M
