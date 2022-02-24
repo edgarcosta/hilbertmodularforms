@@ -7,5 +7,5 @@ M := GradedRingOfHMFs(F, prec);
 S4plus, S4minus := SiegelEisensteinPullback(M,[4,4]);
 S6plus, S6minus := SiegelEisensteinPullback(M,[6,6]);
 B10 := Basis(HMFSpace(M, [10,10]));
-LinearDependence([S4plus*S6plus] cat B10);
+assert #LinearDependence([S4plus*S6plus] cat B10) eq 1;
 return true;

@@ -172,11 +172,13 @@ end intrinsic;
 intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -> FldNumElt
   {This is a toolbox function to compute L values in the right space}
   require IsPrimitive(psi): "Hecke character must be primitive";
-  bool, val := IsDefined(M`LValues, <k, psi>);
+  if not IsDefined(M`LValues, Parent(psi))  then
+    M`LValues[Parent(psi)] := AssociativeArray();
+  end if;
+  bool, val := IsDefined(M`LValues[Parent(psi)], <k, psi>);
   if not bool then
     // Maybe a separate function to compute L-values?
-    CoefficientField<z> := CyclotomicField(Order(psi)); // where the character values live
-    SetTargetRing(~psi, z);
+    CoefficientField := Parent(psi`Zeta); // where the character values live
     // TODO: this is a total guess...
     prec := 100 + k^2;
     Lf := LSeries(psi : Precision:=prec);
@@ -207,7 +209,7 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
     pl := places[1];
     CC<I> := ComplexField(Precision(Lvalue));
     val := RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
-    M`LValues[<k, psi>] := val;
+    M`LValues[Parent(psi)][<k, psi>] := val;
   end if;
   return val;
 end intrinsic;
