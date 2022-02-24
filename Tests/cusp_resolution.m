@@ -1,4 +1,4 @@
-
+printf "Compute resolution of cusp at infinity following the examples in Van der Geer...";
 //Compute resolution of cusp at infinity following the examples in Van
 //der Geer, starting p.189
 
@@ -12,14 +12,14 @@ function EqUpToCyclicPermutation(L1, L2)
     return false;
 end function;
 
-//p.189: Discriminant 5, level Gamma(2)                                                
+//p.189: Discriminant 5, level Gamma(2)
 F := QuadraticField(5);
 ZF := Integers(F);
 L := CuspResolutionIntersections(F, 1*ZF, 2*ZF, F!1, F!0);
 test := [-3,-3,-3];
 assert EqUpToCyclicPermutation(L, test);
 
-//p.193: Same field, Gamma(3) 
+//p.193: Same field, Gamma(3)
 L := CuspResolutionIntersections(F, 1*ZF, 3*ZF, F!1, F!0);
 test := [-3,-3,-3,-3];
 assert EqUpToCyclicPermutation(L, test);
@@ -32,7 +32,7 @@ L := CuspResolutionIntersections(F, 1*ZF, p7, F!1, F!0);
 test := [-2,-4,-2,-4,-2,-4];
 assert EqUpToCyclicPermutation(L, test);
 
-//p.197: Discriminant 13, not quite Gamma(2) but close  
+//p.197: Discriminant 13, not quite Gamma(2) but close
 F := QuadraticField(13);
 ZF := Integers(F);
 p := 2*ZF;
@@ -63,3 +63,4 @@ p := Factorization(2*ZF)[1][1];
 L := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0);
 test := [-2,-3,-4,-3];
 assert EqUpToCyclicPermutation(L, test);
+return true;
