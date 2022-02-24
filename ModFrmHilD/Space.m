@@ -37,7 +37,8 @@ intrinsic Print(Mk::ModFrmHilD, level::MonStgElt)
     printf "Precision: %o\n", Precision(M);
     printf "Weight: %o\n", Weight(Mk);
     printf "Character: %o\n", Character(Mk);
-    printf "Level: %o", IdealOneLine(Level(Mk));
+    printf "Level: %o\n", IdealOneLine(Level(Mk));
+    printf "UnitCharacters: %o", JoinString([Sprint(ValuesOnGens(UnitCharacters(Mk)[bb])) : bb in NarrowClassGroupReps(M)], ", ");
   elif level eq "Magma" then
     error "not implemented!";
   else
@@ -56,11 +57,11 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-return Parent(M1) eq Parent(M2) and
-Weight(M1) eq Weight(M2) and
-Level(M1) eq Level(M2) and
-Character(M1) eq Character(M2) and
-UnitCharacters(M1) eq UnitCharacters(M2);
+  return Parent(M1) eq Parent(M2) and
+  Weight(M1) eq Weight(M2) and
+  Level(M1) eq Level(M2) and
+  Character(M1) eq Character(M2) and
+  UnitCharacters(M1) eq UnitCharacters(M2);
 end intrinsic;
 
 ////////// ModFrmHilD access to attributes //////////
@@ -159,7 +160,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
       return spaces[N][<k, chi, uc_values>];
     end if;
   else
-    spaces[N] := AssociativeArray();
+    M`Spaces[N] := AssociativeArray();
   end if;
   Mk := ModFrmHilDInitialize();
   Mk`Parent := M;
@@ -174,7 +175,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   require Keys(Mk`UnitCharacters) eq SequenceToSet(NarrowClassGroupReps(M)) :"we expect the keys of the associative array to be narrow class group reprsentatives";
   require {Type(v): v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
   require &and[BaseField(v) eq BaseField(M): v in Mk`UnitCharacters]: "we expect all the unit characters to have the same base field";
-  spaces[N][<k, chi, uc_values>] := Mk;
+  M`Spaces[N][<k, chi, uc_values>] := Mk;
   return Mk;
 end intrinsic;
 
