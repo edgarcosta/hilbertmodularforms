@@ -231,7 +231,6 @@ intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
   return Mk;
 end intrinsic;
 
-
 intrinsic '*'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
   {return M1*M2 with the same level}
   require Parent(M1) eq Parent(M2): "we only support multiplication inside the same graded ring";
@@ -298,46 +297,6 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
-// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
-  {}
-  // CoprimeRepresentative
-  // SafeUniformizer
-  // CRT
-  ZF := Order(ss);
-  facts := Factorization(ss*MM);
-  facts_num := [];
-  facts_den := [];
-  for fact in facts do
-    if fact[2] gt 0 then // primes with positive valuation
-      Append(~facts_num, fact);
-    else // primes with negative valuation
-      Append(~facts_den, fact);
-    end if;
-  end for;
-  residues_num := [];
-  residues_den := [];
-  for fact in facts_num do
-    P := fact[1];
-    ord := fact[2];
-    aP := SafeUniformizer(P);
-    assert IsIntegral(aP);
-    Append(~residues_num, ZF!(aP^ord));
-  end for;
-  for fact in facts_den do
-    P := fact[1];
-    ord := -fact[2]; // want positive valuation
-    aP := SafeUniformizer(P);
-    assert IsIntegral(aP);
-    Append(~residues_den, ZF!(aP^ord));
-  end for;
-  Ps_num := [el[1] : el in facts_num];
-  Ps_den := [el[1] : el in facts_den];
-  a_num := CRT(residues_num, Ps_num);
-  a_den := CRT(residues_den, Ps_den);
-  return a_num/a_den;
-end intrinsic;
-
 // moving from RngOrdFracIdl to ModDed and back
 intrinsic IdealToModule(a::FldElt, ss::RngOrdFracIdl) -> ModDedElt 
   {Map an element a of a fractional ideal ss to ss thought of as a module}
@@ -378,8 +337,73 @@ intrinsic ReduceModuloIdeal(a::RngElt, I::RngOrdFracIdl, J::RngOrdFracIdl) -> Fl
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
-  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module.}
+intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {}
+  ZF := Order(ss);
+  facts := Factorization(ss*MM);
+  //printf "factors of ss*MM: %o\n", facts;
+  facts_num := [];
+  facts_den := [];
+  ss_vals_num := [];
+  ss_vals_den := [];
+  for fact in facts do
+    if fact[2] gt 0 then // primes with positive valuation
+      Append(~facts_num, fact);
+      Append(~ss_vals_num, Valuation(ss,fact[1]));
+    else // primes with negative valuation
+      Append(~facts_den, fact);
+      Append(~ss_vals_den, Valuation(ss,fact[1]));
+    end if;
+  end for;
+  //printf "ss_vals num = %o\n", ss_vals_num;
+  //printf "ss_vals den = %o\n", ss_vals_den;
+  residues_num := [];
+  residues_den := [];
+  moduli_num := [];
+  moduli_den := [];
+  for i := 1 to #facts_num do
+    fact := facts_num[i];
+    P := fact[1];
+    //v := fact[2];
+    v := ss_vals_num[i];
+    t := UniformizingElement(P);
+    residues_num cat:= [0, (t^v mod P^(v+1))]; // might be a problem if v=0
+    moduli_num cat:= [P^v, P^(v+1)];
+  end for;
+  for i := 1 to #facts_den do
+    fact := facts_den[i];
+    P := fact[1];
+    //v := -fact[2]; // want positive valuation
+    v := -ss_vals_den[i]; // want positive valuation
+    t := UniformizingElement(P);
+    residues_den cat:= [0, (t^v mod P^(v+1))];
+    moduli_den cat:= [P^v, P^(v+1)];
+  end for;
+  if #moduli_num eq 0 then // if list of moduli is empty
+    a_num := ZF!1;
+  else
+    //printf "residues for num = %o\n", residues_num;
+    //printf "moduli for num = %o\n", moduli_num;
+    a_num := CRT(residues_num, moduli_num);
+  end if;
+  if #moduli_den eq 0 then
+    a_den := ZF!1;
+  else
+    //printf "residues for den = %o\n", residues_den;
+    //printf "moduli for den = %o\n", moduli_den;
+    a_den := CRT(residues_den, moduli_den);
+  end if;
+  //printf "a_num = %o\n", a_num;
+  //printf "a_den = %o\n", a_den;
+  // verify it generates
+  a := a_num/a_den;
+  assert a*ZF + ss*MM eq ss;
+  return a;
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+intrinsic GeneratorsOfQuotientModuleBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module by looping over all elements of ss/(ss*MM).}
   ZF := Order(ss);
   F := NumberField(ZF);
   ZFMM, mpMM := quo< ZF | MM>;
@@ -411,6 +435,17 @@ intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnu
   //printf "number of units in ZF/ideal = %o\n", #UnitGroup(ZFMM);
   assert #quotient_gens eq #UnitGroup(ZFMM);
   return quotient_gens;
+end intrinsic;
+
+intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module using CRT.}
+  ZF := Order(ss);
+  F := NumberField(ZF);
+  ZFMM, mpMM := quo< ZF | MM>;
+  U, mpU := UnitGroup(ZFMM);
+  U_seq := [mpU(el) : el in U];
+  a := GeneratorOfQuotientModuleCRT(ss,MM);
+  return [a*(el @@ mpMM) : el in U_seq];
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
@@ -494,6 +529,8 @@ intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   return quads;
 end intrinsic;
 
+// FIXME: not correct currently
+// Need to lift the [a,c] in the quadruples in a special way that respects certain congruences
 intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   {}
   ZF := Order(NN);
