@@ -1,15 +1,145 @@
 
-intrinsic IsCoprime(a :: RngQuadFracIdl, b :: RngFracIdl) -> Bool
+intrinsic OneAsLinearCombination(F :: FldQuad, a :: FldQuadElt, Ia :: RngQuadFracIdl,
+				 b :: FldQuadElt, Ib :: RngQuadFracIdl) -> FldQuadElt, FldQuadElt
+								     
+{Compute lambda in Ia, mu in Ib such that lambda*a + mu*b = 1, assuming they exist}
+    xa, ya := Explode(Basis(Ia));
+    xb, yb := Explode(Basis(Ib));
+    latticegens := [a*x: x in [xa,ya]] cat [b*x: x in [xb,yb]];
+    M := ZeroMatrix(Integers(), 2, 4);
+    for j := 1 to 4 do
+	S := ElementToSequence(latticegens[j]);
+	for i := 1 to 2 do M[i, j] := S[i]; end for;
+    end for;
+    target = Vector(Integers(), 2, [1,0]);
+    sol, N := Solution(Transpose(M), target); //Runtime error if fails
+    lambda := sol[1]*xa + sol[2]*ya;
+    mu := sol[2]*xb + sol[2]*yb;
+
+    assert lambda*a + mu*b eq 1;
+    assert lambda in Ia;
+    assert lambda in Ib;    
+end intrinsic;
+
+intrinsic CuspChangeMatrix(F :: FldQuad, b :: RngQuadFracIdl,
+			   alpha :: FldQuadElt, beta :: FldQuadElt) -> AlgMatElt
+
+{Given alpha, beta in F not both zero, compute g in SL2(F) such that
+g(alpha:beta) = oo with the following property: if I = alpha*ZF +
+beta*b^-1, then g has the shape [I^-1, I^-1*b^-1; I*b, I]}
+    
+    require alpha ne 0 or beta ne 0: "alpha or beta must be nonzero";
+    ZF := Integers(F);
+    I := alpha * ZF + beta * b^-1;
+    lambda, mu := OneAsLinearCombination(F, alpha, I^-1, beta, I^-1*b^-1);
+    g := Matrix(F, 2, 2, [lambda, mu, -beta, alpha]);
+    assert Determinant(g) eq 1;
+    return g;
+end intrinsic;
+
+intrinsic NormalizeCusp(F :: FldQuad, alpha :: FldQuadElt,
+			beta :: FldQuadElt, n :: RngQuadIdl) -> FldQuadElt, FldQuadElt
+
+{Given alpha, beta not both zero, compute another representation
+(alpha', beta') of (alpha:beta) in P^1(F) such that alpha, beta are
+integers and one of them is coprime to n}
+    
+    ZF := Integers(F);
+    Cl, m := ClassGroup(F);
+    primelift := ClassGroupPrimeRepresentatives(ZF, n);
+    fac := [f[1] : f in Factorization(n)];
+    
+    for p in fac do
+	n := Max(Valuation(alpha, p), Valuation(beta, p));
+	pnclass := (p^n) @ m; //class of p^n in the ideal class group
+	//We want to compute a generator of p^n * c, where c is coprime to n
+	c := (pnclass^-1) @ primelift;
+	gens := Generators(c * p^n);
+	assert #gens eq 1;
+	gen := gens[1];
+	alpha := gen*alpha;
+	beta := gen*beta;
+    end for;
+    //Now alpha, beta should be coprime to n
+    assert IsCoprime(alpha*ZF, n);
+    assert IsCoprime(beta*ZF, n);
+
+    //Convert to integers
+    denom := Gcd(alpha*ZF, beta*ZF);
+    denom := Gcd(denom, ZF);
+    denom := denom^-1; //denom is an integer ideal
+    c := ((denom^-1) @ m) @ primelift;
+    gens := Generators(c * denom);
+    assert #gens eq 1;
+    gen := gens[1];
+    alpha := gen*alpha;
+    beta := gen*beta;
+    assert alpha in ZF;
+    assert beta in ZF;
+
+    //Simplify when possible: enumerate divisors of Gcd which are principal ideals
+    g := Gcd(alpha*ZF, beta*ZF);
+    prdivs := [p : p in Divisors(g) | IsPrincipal(p) and p ne 1*ZF];
+    while prdivs ne [] do
+	p := prdivs[1];
+	c := Generators(p)[1];
+	alpha := alpha/gen;
+	beta := beta/gen;
+	g := Gcd(alpha*ZF, beta*ZF);
+	prdivs := [p : p in Divisors(g) | IsPrincipal(p) and p ne 1*ZF];
+    end while;
+    
+    return alpha, beta;    
+end intrinsic;
+										
+intrinsic CuspCRT(F :: FldQuad, a :: RngQuadFracIdl, n :: RngQuadIdl, y :: FldQuadElt)
+	  -> FldQuadElt
+
+{Assuming a and the denominator of y are coprime to n, compute x in a such that x=y mod n}
+    require IsCoprime(a, n): "a and n must be coprime";
+    ZF := Integers(F);
+    denom := Gcd(y*ZF, 1*ZF)^-1;
+    require IsCoprime(denom, n): "n and denominator of y must be coprime";
+    
+    a := Lcm(a, Integers(F)); //Now an integral ideal
+    //Find a multiple of denominator of y which is 1 mod n
+    d := CRT(denom, n, ZF!0, ZF!1);
+    x := CRT(a, n, ZF!0, d*y);
+
+    assert x in a;
+    assert x-d*y in n;    
+    return x;
+end intrinsic;
+
+intrinsic NormalizedCuspChangeMatrix(F :: FldQuad, b :: RngQuadFracIdl,
+				     alpha :: FldQuadElt, beta :: FldQuadElt,
+				     n :: RngQuadIdl) -> AlgMatElt
+
+{Given a cusp (alpha:beta) that is normalized with respect to n
+(cf. NormalizeCusp), compute g as in CuspChangeMatrix with the
+additional property that the conjugation g*[v, m; 0, 1]*g^-1 is of the
+form [1+xm, y(v-1)+zm; xm, y(v-1)+zm+1] modulo n, for some x,y,z in
+ZF/n with y invertible}
+
+    require IsNormalizedCusp(F, alpha, beta, n): "Cusp must be normalized (see CuspNormalize)";
+    require IsCoprime(b, n): "b must be prime to the level n";
+				
+    g := CuspChangeMatrix(F, b, alpha, beta);
+    if beta ne 0 then
+	x := CuspCRT(F, I^-1*b^-1, n, alpha/beta);
+	g := g * Matrix(F, 2, 2, [1, x, 0, 1]);
+    end if;
+    return g;
+end intrinsic;
+				     
+intrinsic IsCoprime(a :: RngQuadFracIdl, b :: RngQuadFracIdl) -> Bool
 {Decide if fractional ideals a and b are coprime}
+    
     if a eq 0*a or b eq 0*b then return false;
     end if;
-    primes_a := [f[1] : f in Factorization(a)];
-    primes_b := [f[1] : f in Factorization(b)];
-    for p in primes_a do
-	if p in primes_b then return false;
-	end if;
-    end for;
-    return true;
+    a := Lcm(a, a^-1);
+    b := Lcm(b, b^-1);
+    return IsCoprime(a, b);
 end intrinsic;       
 
 intrinsic CuspResolutionM(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
