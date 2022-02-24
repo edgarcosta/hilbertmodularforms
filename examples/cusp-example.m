@@ -18,8 +18,8 @@ MM := 7*ZF;
   ss_quo, mp_ss_quo := quo< ss_mod | ssMM_mod >;  // just this
 */
 
-RssMM0 := GeneratorsOfQuotientModule(ss,MM);
-RssMM_comp0 := GeneratorsOfQuotientModule(ss*bb*MM,(NN/MM));
+//RssMM0 := GeneratorsOfQuotientModule(ss,MM);
+//RssMM_comp0 := GeneratorsOfQuotientModule(ss*bb*MM,(NN/MM));
 /*
   a := RssMM0[1];
   inds := [1];
@@ -112,4 +112,3 @@ end for;
     print "";
   end for;
 */
-
