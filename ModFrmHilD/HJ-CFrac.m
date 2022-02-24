@@ -106,6 +106,7 @@ end intrinsic;
 
 intrinsic CeilingOfSquareRoot(n:: RngIntElt, b:: RngIntElt) -> RngIntElt
 {Given a nonnegative integer n, compute the ceiling of sign(b) * sqrt(n)}
+    require n ge 0: "n must be nonnegative";
     if (n eq 0) then
 	return 0;
     end if;
@@ -134,7 +135,7 @@ intrinsic UpperIntegerPart(w:: FldQuadElt) -> RngIntElt
     return Ceiling(res/den);
 end intrinsic;
 
-intrinsic HJContinuedFraction(w:: FldQuadElt) -> Any
+intrinsic HJContinuedFraction(w:: FldQuadElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt]
 {Compute the head and periodic parts of the Hirzebruch--Jung continued fraction expansion of w}
     stop := false;
     steps := [];
@@ -162,4 +163,68 @@ intrinsic HJContinuedFraction(w:: FldQuadElt) -> Any
     end while;
     return head, periodic;
 end intrinsic;
- 
+
+intrinsic HJReconstructPeriodic(F :: FldQuad,periodic :: SeqEnum[RngIntElt]) -> FldQuadElt
+{Reconstruct an element of F given its HJ periodic expansion}
+    require #periodic ge 1: "periodic must not be empty";
+    //Convert periodic expansion in degree 2 equation over QQ
+    R<X> := RationalFunctionField(Rationals());
+    P<Y> := PolynomialRing(F);
+    n := #periodic;
+    f := X;
+    for i := 0 to n-1 do
+        f := periodic[n-i] - 1/f;
+    end for;
+    pol := Numerator(X) * Denominator(f) - Numerator(f);
+    //Compute roots of degree 2 equations
+    rts := Roots(P!pol);
+    if #rts eq 1 then
+	return rts[1][1];
+    else
+	assert #rts eq 2;
+	w1, w2 := Explode([rt[1]: rt in rts]);
+    end if;
+    //To check what which one it really is, recompute HJ expansions
+    head, check := HJContinuedFraction(w1);
+    if head eq [] and check eq periodic then
+	return w1;
+    else
+	head, check := HJContinuedFraction(w2);
+	assert head eq [] and check eq periodic;
+	return w2;
+    end if;
+end intrinsic;
+
+intrinsic HJReconstruct(F :: FldQuad, head :: SeqEnum[RngIntElt],
+			periodic :: SeqEnum[RngIntElt]) -> FldQuadElt
+{Reconstruct an algebraic number given its HJ continued fraction expansion}
+    //Look at periodic part; 0 if empty
+    n := #head;
+    if periodic eq [] then
+	x := head[n];
+    elif head eq [] then
+	x := HJReconstructPeriodic(F, periodic);
+    else
+	x := head[n] - 1/HJReconstructPeriodic(F, periodic);
+    end if;
+    //Add head[1..n-1]
+    for i := 1 to n-1 do
+        x := head[n-i] - 1/x;
+    end for;
+    return x;
+end intrinsic;
+
+intrinsic HJCyclicProductOfReconstructions(F :: FldQuad, periodic :: SeqEnum[RngIntElt]) -> FldQuadElt
+{Given [b1,...,bk], compute the product of all elements of F of the form [bi,...,bn,b1,...bi-1]}
+    require periodic ne []: "periodic must not be empty";
+    n := #periodic;
+    w := 1;
+    for i := 1 to n do
+        u := HJReconstructPeriodic(F, periodic);
+        w := w*u;
+	b1 := periodic[1];
+        periodic := periodic[2..n] cat [b1];
+    end for;
+    return w;
+end intrinsic;
+
