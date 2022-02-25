@@ -1088,6 +1088,16 @@ intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> FldRatEl
     return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);
 end intrinsic;
 
+intrinsic ChernNumbersOfLogCanonical(Gamma::StupidCongruenceSubgroup) -> FldRatElt
+{}
+
+end intrinsic;
+
+intrinsic Covolume(Gamma::StupidCongruenceSubgroup) -> FldRatElt
+{Alias for VolumeOfFundamentalDomain.}
+    return VolumeOfFundamentalDomain(Gamma);
+end intrinsic;
+							  
 
 /////////////////////////////////////////////////////////////////////////////////
 //
