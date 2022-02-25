@@ -287,6 +287,9 @@ Accepted flags are:
     ZF := Integers(F);
     M := CuspResolutionM(F, b, n, alpha, beta: flag:=flag);
     V := CuspResolutionV(n: flag:=flag);
+    if (V eq 0) or (V eq 1) then
+	printf "Warning: CuspResolutionIntersections does not always return a correct result for Gamma0 or Gamma1, cf. paper\n";
+	//[JK] Since the result in these cases is not as simple as for Gamma(n), we should probably implement V as a real subgroup of units instead of just a flag
     periodic := CuspResolutionMinimalSequence(F, M);
     w := CuspResolutionMinimalUnit(F, periodic);
     issqr, x := IsSquare(w);
