@@ -422,7 +422,7 @@ intrinsic '-'(y::ChowRngHMSElt, x::RngElt) -> ChowRngHMSElt
     ycom := GradedComponents(y);
     newcom := <ycom[1] - x*R0.1, ycom[2], ycom[3]>;
 
-    return CreateElement(R, ycom);
+    return CreateElement(R, newcom);
 end intrinsic;
 
 
@@ -525,7 +525,7 @@ end intrinsic;
 intrinsic IsInvertible(x::ChowRngHMSElt) -> BoolElt, ChowRngHMSElt
 {}
     boo, u := IsInvertible(GradedComponent(x, 0)[1]);
-    if not boo then return false; end if;
+    if not boo then return false, _; end if;
 
     R := Parent(x);
     z := u * x - One(R);
@@ -1140,4 +1140,39 @@ end intrinsic;
 intrinsic ChowRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
 {}
     return IntersectionRing(Gamma, BR);
+end intrinsic;
+
+
+/////////////////////////////////////////////////////////////////////////////////
+//
+// Conversion
+//
+/////////////////////////////////////////////////////////////////////////////////
+
+intrinsic AffineAlgebra(R::ChowRngHMS) -> RngMPolRes, UserProgram
+{Return a ring `R[x1, ..., xn]/I` isomorphic to `R`, and a conversion function.}
+
+    D  := #Generators(R) + 1;
+    PR := PolynomialRing(BaseRing(R), D);
+    T  := MultiplicationTable(R);
+    PRtop := PR.D;
+
+    relations := [PR.i * PR.j - T[i,j] * PRtop : i, j in [1..D]];
+    I := ideal<PR | relations>;
+    
+    // Construct the conversion function.
+    function foo(x)
+	coeffs := Coefficients(x);
+	
+	return coeffs[1] + &+[coeffs[i+1] * PR.i : i in [1..D]];
+    end function;
+    
+    return quo<PR | I>, foo;
+end intrinsic;
+
+
+intrinsic RegularRepresentation(R::ChowRngHMS)
+{Return a matrix algebra corresponding to the regular representation of R.}
+    error "Not Implemented.";
+    return;
 end intrinsic;
