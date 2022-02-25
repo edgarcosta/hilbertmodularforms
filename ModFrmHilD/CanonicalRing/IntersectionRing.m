@@ -600,30 +600,23 @@ of the Hilbert Modular Surface with coefficients in BR.}
     //////////////
     // Elliptic Points
     
-    // For elliptic points, the precision should be irrelevant.
-    RR := RealField(20);
     EPData := EllipticPointData(Gamma);
     rawEllipticResolutionData := [];
 
     shift := 2;
     for singType in Keys(EPData) do
-
-	// Massage the type so that <a,b> = <1, positive>
-	stdForm := <singType[1], 1, (singType[3] + (1 - singType[2])) mod singType[1]>;
-
-	// Compute the HJContinuedFraction
-	head, tail, isPeriodicOrFinite := HJContinuedFraction(RR ! (stdForm[1]/stdForm[3]));
-	assert isPeriodicOrFinite;
 	
-	localChernCoeffs := QuotientLocalChernCoefficients(singType, head cat tail);
+	//localChernCoeffs := QuotientLocalChernCoefficients(singType, head cat tail);
+	selfINumbers, localChernCoeffs := EllipticLocalChernData(singType);
+	
 	for i in [1..EPData[singType]] do
-	    Append(~rawEllipticResolutionData, <head cat tail, localChernCoeffs>);
+	    Append(~rawEllipticResolutionData, <selfINumbers, localChernCoeffs>);
 
 	    // Associate a singular point to the resolution cycle.
 	    P := SingularPointHMS("Elliptic", singType);
 
 	    // Populate the Resolution Cycle dictionary with indices.
-	    numCycles := #head + #tail;
+	    numCycles := #localChernCoeffs;
 	    R`ResolutionCycles[P] := [(shift - 1) + 1 .. (shift - 1) + numCycles];
 
 	    // Update shift.
@@ -805,8 +798,10 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 end intrinsic;
 
 
-intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::SeqEnum) -> SeqEnum
-{}
+intrinsic EllipticLocalChernData(type::Tup) -> SeqEnum, SeqEnum
+{Return the self intersection numbers of the resolution cycles over an elliptic point, as 
+well as the (possibly rational) coefficients of the local Chern cycle of a quotient singularity.}
+
     // NOTE: Figuring out the local Chern cycle is a little tricky, as it is actually
     //       a QQ-divisor! See [vdG, p. 64]. For the definition of the (li, mi), see
     //       [vdG, p. 53].
@@ -814,6 +809,17 @@ intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::Seq
     // In order to compute the local Chern cycle, we need the coordinates of the points
     // on the lower convex hull associated to the (positive) exponents.
 
+    // For elliptic points, the precision should be irrelevant.
+    RR := RealField(20);
+
+    // Massage the type so that <a,b> = <1, positive>
+    stdForm := <type[1], 1, (type[3] + (1 - type[2])) mod type[1]>;
+
+    // Compute the HJContinuedFraction
+    head, tail, isPeriodicOrFinite := HJContinuedFraction(RR ! (stdForm[1]/stdForm[3]));
+    assert isPeriodicOrFinite;
+    selfIntersectionNumbers := head cat tail;
+    
     n := type[1];
     assert type[2] eq 1;
     q := type[3] mod n;
@@ -839,7 +845,6 @@ intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::Seq
 	C[i+2] := c[i+1] * C[i+1] - C[i];
     end for;
 
-    
     // Now that we have the coordinates, we can return the list of  (li + mi - 1).
     // Note that the beginning and ending terms of the `C` don't correspond to curves
     // in the resolution cycle, but instead to "coordinate axes" of `G\CC^2`. These points
@@ -848,8 +853,7 @@ intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::Seq
     lst := [c[1] + c[2] - 1 : c in C];
     assert lst[1] eq 0 and lst[#lst] eq 0;
     assert #lst ge 3; //i.e., check the resolution cycle has at least one curve.
-    return lst[2..#lst-1];
-    
+    return selfIntersectionNumbers, lst[2..#lst-1];    
 end intrinsic;
 
 /////////////////////////////////////////////////////
@@ -1090,7 +1094,7 @@ end intrinsic;
 
 intrinsic ChernNumbersOfLogCanonical(Gamma::StupidCongruenceSubgroup) -> FldRatElt
 {}
-
+    return 2 * VolumeOfFundamentalDomain(Gamma);
 end intrinsic;
 
 intrinsic Covolume(Gamma::StupidCongruenceSubgroup) -> FldRatElt
