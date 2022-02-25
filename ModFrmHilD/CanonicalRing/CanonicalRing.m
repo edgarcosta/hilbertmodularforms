@@ -412,3 +412,16 @@ intrinsic HilbertModularSurface(F::FldQuad, N::RngOrdIdl, MaxGeneratorWeight::Rn
   return S;
   // return Surface(P, eqns_S);
 end intrinsic;
+
+
+/////////////////////////////////////////////////////
+//
+//    Generator bound.
+//
+/////////////////////////////////////////////////////
+
+intrinsic GeneratorDegreeBound(R::Any) -> RngIntElt
+{Determine a bound for the maximum degree of a generator in the graded ring of modular forms.}
+    return -9999;
+end intrinsic;
+	
