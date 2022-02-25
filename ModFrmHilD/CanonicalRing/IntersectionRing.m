@@ -1093,17 +1093,27 @@ intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> FldRatEl
 end intrinsic;
 
 intrinsic ChernNumbersOfLogCanonical(Gamma::StupidCongruenceSubgroup) -> FldRatElt, FldRatElt
-{Return the Chern numbers of the log canonical sheaf.}
+{Return the Chern numbers of the log-canonical sheaf.}
     vol := VolumeOfFundamentalDomain(Gamma);
     return 2 * vol, vol;
 end intrinsic;
 
 intrinsic ChernNumberOfLogCanonical(Gamma::StupidCongruenceSubgroup, i::RngIntElt) -> FldRatElt
-{Return the i-th Chern number of the non-canonical sheaf.}
+{Return the i-th Chern number of the log-canonical sheaf.}
     a, b := ChernNumbersOfLogCanonical(Gamma);
     return [a, b][i];
 end intrinsic;
 											  
+intrinsic ChernNumbersOfLogCanonical(R::ChowRngHMS) -> FldRatElt
+{Return the Chern numbers of the log-canonical class.}
+    return ChernNumbersOfLogCanonical(CongruenceSubgroup(R));
+end intrinsic;
+
+intrinsic ChernNumberOfLogCanonical(R::ChowRngHMS, i::RngIntElt) -> FldRatElt
+{Return the i-th Chern number of the log-canonical class.}
+    return ChernNumberOfLogCanonical(CongruenceSubgroup(R), i);
+end intrinsic;
+
 
 intrinsic Covolume(Gamma::StupidCongruenceSubgroup) -> FldRatElt
 {Alias for VolumeOfFundamentalDomain.}
