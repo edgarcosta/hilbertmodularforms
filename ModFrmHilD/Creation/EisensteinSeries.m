@@ -178,7 +178,8 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
   bool, val := IsDefined(M`LValues[Parent(psi)], <k, psi>);
   if not bool then
     // Maybe a separate function to compute L-values?
-    CoefficientField := Parent(psi`Zeta); // where the character values live
+    z := psi`Zeta;
+    CoefficientField := Parent(z); // where the character values live
     // TODO: this is a total guess...
     prec := 100 + k^2;
     Lf := LSeries(psi : Precision:=prec);
@@ -187,28 +188,17 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
     // figure out the right place to recognize
     // i.e., figure out what complex embedding magma used to embed the L-function into CC
     places := InfinitePlaces(CoefficientField);
-    for p in PrimesUpTo(1000) do
-      if Conductor(Lf) mod p eq 0 then continue; end if;
-      if #places eq 1 then
-        // there is only one place left, so that must be the one
-        break;
-      end if;
-      assert #places ge 1;
-      ap_K := psi(p); // in CoefficientField
-      // Over degree 2
-      // EulerFactor = 1 - psi(p) T^2 if p inert
-      //             = 1 - ? + psi(p)T^2 if p splits
-      pfactor := Factorisation(p*Integers(BaseField(M)));
-      sign := (-1)^(&+[elt[2] : elt in pfactor]);
-      ap_CC := sign*Coefficient(EulerFactor(Lf, p), Degree(Lf));
-      // print Evaluate(ap_K, places[1]), ap_CC, EulerFactor(Lf, p);
-      // restrict to the places where pl(ap_K) = ap_CC
-      places := [pl : pl in places | IsWeaklyZero(Evaluate(ap_K, pl) - ap_CC) ];
-    end for;
-    // we did our best, if #places > 1, then any embedding should work, e.g, the Image is smaller than the Codomain
-    pl := places[1];
-    CC<I> := ComplexField(Precision(Lvalue));
-    val := RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
+    CC<I> := ComplexField(Precision(Parent(Lvalue)));
+    zCC := Exp(2*Pi(CC)*I/CyclotomicOrder(CoefficientField));
+    v0, p0 := Minimum([Abs(Evaluate(z, pl : Precision := Precision(CC)) - zCC) : pl in places]);
+    v1, p1 := Minimum([Abs(ComplexConjugate(Evaluate(z, pl : Precision := Precision(CC))) - zCC) : pl in places]);
+    conjugate := v1 lt v0;
+    if conjugate then
+      pl := places[p1];
+    else
+      pl := places[p0];
+    end if;
+    val := RecognizeOverK(CC!Lvalue, CoefficientField, pl, conjugate);
     M`LValues[Parent(psi)][<k, psi>] := val;
   end if;
   return val;
