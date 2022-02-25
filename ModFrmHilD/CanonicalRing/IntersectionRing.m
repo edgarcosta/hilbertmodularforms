@@ -231,7 +231,7 @@ end intrinsic;
 // Tensor ring over ZZ.
 intrinsic ChangeRing(R::ChowRngHMS, BR::Rng) -> ChowRngHMS
 {You know what this does.}
-    return IntersectionRing(R, BR);
+    return IntersectionRing(CongruenceSubgroup(R), BR);
 end intrinsic;
 
 intrinsic Zero(R::ChowRngHMS) -> ChowRngHMSElt
@@ -1101,7 +1101,30 @@ intrinsic Covolume(Gamma::StupidCongruenceSubgroup) -> FldRatElt
 {Alias for VolumeOfFundamentalDomain.}
     return VolumeOfFundamentalDomain(Gamma);
 end intrinsic;
-							  
+
+
+intrinsic LocalChernCycle(R::ChowRngHMS, P::StupidSingularPointHMS) -> HMSChowRngElt
+{Given a singular point on a Hilbert Modular Surface, return the local Chern cycle of
+resolution curves over `P`. If the coefficients of the local Chern cycle are coercible
+into the base ring of `R`, then the result is returned as an element of `R`. Otherwise,
+an error is thrown.}
+
+    indices := ResolutionCycleIndices(R)[P];
+    cycles  := ResolutionCycles(R)[P];
+
+    if P`SingularityType eq "Cusp" then
+	return &+cycles;
+    end if;
+
+    // Otherwise, P must be a quotient singularity.
+    assert P`SingularityType eq "Quotient";
+    _, coeffs := EllipticLocalChernData(P`SingularityInfo);
+
+    if &and [IsCoercible(BaseRing(R), y) : y in coeffs] then
+	return &+[coeffs[i] * cycles[i] : i in [1..#cycles]];
+    end if;
+    error "(Rational) Coefficients of local Chern cycle not coercible into Chow ring.";
+end intrinsic;
 
 /////////////////////////////////////////////////////////////////////////////////
 //
