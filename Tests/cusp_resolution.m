@@ -1,3 +1,5 @@
+
+printf "Test computation of change-of-cusp matrices...\n";
 //Test change of cusp matrices: example where class group of F is nontrivial
 F := QuadraticField(79);
 ZF := Integers(F);
@@ -55,9 +57,7 @@ assert F!Coefficient(Coefficient(conj[1,1]-1, V, 0), M, 0) in I^-1*n;
 
 //-----------------------------------------------//
 
-=======
 printf "Compute resolution of cusp at infinity following the examples in Van der Geer...";
->>>>>>> ce4156e8c8d3988b29954a91c4db52bf6967bedb
 //Compute resolution of cusp at infinity following the examples in Van
 //der Geer, starting p.189
 
