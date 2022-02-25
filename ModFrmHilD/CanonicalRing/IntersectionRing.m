@@ -36,7 +36,7 @@ intrinsic SingularPointHMS(typename::MonStgElt, info::Tup) -> StupidSingularPoin
 {}
     acceptableQuotientNames := ["Elliptic", "Quotient", "Orbifold"];
     acceptableCuspidalNames := ["Cusp", "Cuspidal", "Parabolic"];
-    
+
     if typename in acceptableQuotientNames then
 	singname := "Quotient";
     elif typename in acceptableCuspidalNames then
@@ -44,7 +44,7 @@ intrinsic SingularPointHMS(typename::MonStgElt, info::Tup) -> StupidSingularPoin
     else
 	error "Singularity type: `", typename, "` not regconized for HMS singularity.";
     end if;
-    
+
     p := New(StupidSingularPointHMS);
     p`SingularityType := singname;
     p`SingularityInfo := info;
