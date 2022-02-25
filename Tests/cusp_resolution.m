@@ -1,4 +1,61 @@
 
+//Test change of cusp matrices: example where class group of F is nontrivial
+F := QuadraticField(79);
+ZF := Integers(F);
+G, lift := ClassGroup(ZF);
+idreps := [lift(x) : x in G];
+id := idreps[2];
+alpha, beta := Explode([F!x : x in Generators(id)]);
+//id is a prime above 3. Normalize that cusp for level 3
+n := 3*ZF;
+alpha1, beta1 := NormalizeCusp(F, F!alpha, F!beta, n);
+//Choose nonprincipal ideal b, prime to n
+b := Factorization(5*ZF)[1][1];
+
+assert IsCoprimeFracIdl(b, n);
+assert not IsPrincipal(b);
+assert alpha1/beta1 eq alpha/beta;
+assert alpha1 in ZF and beta1 in ZF;
+assert IsCoprimeFracIdl(alpha1*ZF, n) or IsCoprimeFracIdl(beta1*ZF, n);
+assert IsNormalizedCusp(F, alpha1, beta1, n);
+
+g := CuspChangeMatrix(F, b, F!alpha, F!beta);
+I := alpha*ZF + beta*b^-1;
+
+assert g[1,1] in I^-1;
+assert g[1,2] in I^-1*b^-1;
+assert g[2,1] in I*b;
+assert g[2,2] in I;
+assert g[2,1]*alpha + g[2,2]*beta eq 0;
+
+I := alpha1*ZF + beta1*b^-1;
+y := alpha1/beta1;
+denom := Gcd(y*ZF, 1*ZF)^-1;
+assert IsCoprimeFracIdl(I, n);
+assert IsCoprimeFracIdl(denom, n);
+
+x := CuspCRT(F, I, n, y);
+assert x in I;
+
+g := NormalizedCuspChangeMatrix(F, b, alpha1, beta1, n);
+assert g[1,1] in I^-1;
+assert g[1,2] in I^-1*b^-1;
+assert g[2,1] in I*b;
+assert g[2,2] in I;
+assert Determinant(g) eq 1;
+
+R<V,M> := PolynomialRing(F, 2);
+stab_elt := Matrix(R, 2, 2, [V, M, 0, 1]);
+conj := g*stab_elt*g^-1;
+
+//conj should be of the form [xm+1, y(v-1)+zm; xm, y(v-1)+zm+1] mod n with x invertible
+assert F!Coefficient(conj[2,1], V, 1) in I*b*n;
+assert F!Coefficient(Coefficient(conj[2,1], V, 0), M, 0) in I*b*n;
+assert F!Coefficient(conj[1,1]-1, V, 1) in I^-1*n;
+assert F!Coefficient(Coefficient(conj[1,1]-1, V, 0), M, 0) in I^-1*n;
+
+//-----------------------------------------------//
+
 //Compute resolution of cusp at infinity following the examples in Van
 //der Geer, starting p.189
 

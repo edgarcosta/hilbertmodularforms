@@ -11,14 +11,15 @@ intrinsic OneAsLinearCombination(F :: FldQuad, a :: FldQuadElt, Ia :: RngQuadFra
 	S := ElementToSequence(latticegens[j]);
 	for i := 1 to 2 do M[i, j] := S[i]; end for;
     end for;
-    target = Vector(Integers(), 2, [1,0]);
+    target := Vector(Integers(), 2, [1,0]);
     sol, N := Solution(Transpose(M), target); //Runtime error if fails
     lambda := sol[1]*xa + sol[2]*ya;
-    mu := sol[2]*xb + sol[2]*yb;
+    mu := sol[3]*xb + sol[4]*yb;
 
     assert lambda*a + mu*b eq 1;
     assert lambda in Ia;
-    assert lambda in Ib;    
+    assert lambda in Ib;
+    return lambda, mu;
 end intrinsic;
 
 intrinsic CuspChangeMatrix(F :: FldQuad, b :: RngQuadFracIdl,
@@ -37,6 +38,24 @@ beta*b^-1, then g has the shape [I^-1, I^-1*b^-1; I*b, I]}
     return g;
 end intrinsic;
 
+intrinsic IdealClassPrimeRepresentative(m :: Map, p :: RngQuadFracIdl) -> RngQuadIdl
+									      
+{Given a map m computed via ClassGroupPrimeRepresentatives, find an
+element in the image of m that belongs to the class of p. This solves
+a stupid Magma issue that reduction map from ClassGroup and lift map
+from ClassGroupPrimeRepresentatives do not seem to be compatible}
+
+    pinv := p^-1;
+    for cl in Domain(m) do
+	lift := cl@m;
+	if IsPrincipal(pinv * lift) then
+	    assert IsPrincipal(lift * p^-1);
+	    return lift;
+	end if;
+    end for;
+end intrinsic;
+			
+
 intrinsic NormalizeCusp(F :: FldQuad, alpha :: FldQuadElt,
 			beta :: FldQuadElt, n :: RngQuadIdl) -> FldQuadElt, FldQuadElt
 
@@ -45,33 +64,26 @@ intrinsic NormalizeCusp(F :: FldQuad, alpha :: FldQuadElt,
 integers and one of them is coprime to n}
     
     ZF := Integers(F);
-    Cl, m := ClassGroup(F);
     primelift := ClassGroupPrimeRepresentatives(ZF, n);
     fac := [f[1] : f in Factorization(n)];
     
     for p in fac do
-	n := Max(Valuation(alpha, p), Valuation(beta, p));
-	pnclass := (p^n) @ m; //class of p^n in the ideal class group
-	//We want to compute a generator of p^n * c, where c is coprime to n
-	c := (pnclass^-1) @ primelift;
-	gens := Generators(c * p^n);
-	assert #gens eq 1;
-	gen := gens[1];
+	v := Min(Valuation(alpha, p), Valuation(beta, p));
+	c := IdealClassPrimeRepresentative(primelift, p^v);
+	t, gen := IsPrincipal(c*p^(-v));
+	assert t;
 	alpha := gen*alpha;
 	beta := gen*beta;
     end for;
     //Now alpha, beta should be coprime to n
-    assert IsCoprime(alpha*ZF, n);
-    assert IsCoprime(beta*ZF, n);
+    assert IsCoprimeFracIdl(alpha*ZF, n) or IsCoprimeFracIdl(beta*ZF, n);
 
     //Convert to integers
     denom := Gcd(alpha*ZF, beta*ZF);
-    denom := Gcd(denom, ZF);
-    denom := denom^-1; //denom is an integer ideal
-    c := ((denom^-1) @ m) @ primelift;
-    gens := Generators(c * denom);
-    assert #gens eq 1;
-    gen := gens[1];
+    denom := Gcd(denom, 1*ZF); //denom is an integer ideal
+    c := IdealClassPrimeRepresentative(primelift, denom^-1);
+    t, gen := IsPrincipal(c * denom);
+    assert t;
     alpha := gen*alpha;
     beta := gen*beta;
     assert alpha in ZF;
@@ -91,20 +103,31 @@ integers and one of them is coprime to n}
     
     return alpha, beta;    
 end intrinsic;
+
+intrinsic IsNormalizedCusp(F :: FldQuad, alpha :: FldQuadElt, beta :: FldQuadElt,
+			   n :: RngQuadIdl) -> Bool
+{True iff alpha, beta are both integral and one of them is prime to n}
+    ZF := Integers(F);
+    ints := alpha in ZF and beta in ZF;
+    coprime := IsCoprimeFracIdl(alpha*ZF, n) or IsCoprimeFracIdl(beta*ZF, n);
+    return ints and coprime;
+end intrinsic;
 										
 intrinsic CuspCRT(F :: FldQuad, a :: RngQuadFracIdl, n :: RngQuadIdl, y :: FldQuadElt)
 	  -> FldQuadElt
 
 {Assuming a and the denominator of y are coprime to n, compute x in a such that x=y mod n}
-    require IsCoprime(a, n): "a and n must be coprime";
+    require IsCoprimeFracIdl(a, n): "a and n must be coprime";
     ZF := Integers(F);
     denom := Gcd(y*ZF, 1*ZF)^-1;
-    require IsCoprime(denom, n): "n and denominator of y must be coprime";
+    require IsCoprimeFracIdl(denom, n): "n and denominator of y must be coprime";
     
-    a := Lcm(a, Integers(F)); //Now an integral ideal
+    a := Lcm(a, 1*Integers(F)); //Now an integral ideal
+    a, da := IntegralSplit(a); assert da eq 1 or da eq -1;
+    denom, dd := IntegralSplit(denom); assert dd eq 1 or dd eq -1;
     //Find a multiple of denominator of y which is 1 mod n
     d := CRT(denom, n, ZF!0, ZF!1);
-    x := CRT(a, n, ZF!0, d*y);
+    x := CRT(a, n, ZF!0, ZF!(d*y));
 
     assert x in a;
     assert x-d*y in n;    
@@ -123,7 +146,9 @@ ZF/n with y invertible}
 
     require IsNormalizedCusp(F, alpha, beta, n): "Cusp must be normalized (see CuspNormalize)";
     require IsCoprime(b, n): "b must be prime to the level n";
-				
+
+    ZF := Integers(F);
+    I := alpha * ZF + beta * b^-1;
     g := CuspChangeMatrix(F, b, alpha, beta);
     if beta ne 0 then
 	x := CuspCRT(F, I^-1*b^-1, n, alpha/beta);
@@ -132,13 +157,14 @@ ZF/n with y invertible}
     return g;
 end intrinsic;
 				     
-intrinsic IsCoprime(a :: RngQuadFracIdl, b :: RngQuadFracIdl) -> Bool
+intrinsic IsCoprimeFracIdl(a :: RngOrdFracIdl, b :: RngOrdFracIdl) -> Bool
 {Decide if fractional ideals a and b are coprime}
-    
     if a eq 0*a or b eq 0*b then return false;
     end if;
     a := Lcm(a, a^-1);
     b := Lcm(b, b^-1);
+    a, da := IntegralSplit(a); assert da eq 1 or da eq -1;
+    b, db := IntegralSplit(b); assert db eq 1 or db eq -1;
     return IsCoprime(a, b);
 end intrinsic;       
 
@@ -148,6 +174,16 @@ intrinsic CuspResolutionM(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
 						
 {Compute the module M in Van der Geer's notation as a fractional ideal in F.
 See CuspResolutionIntersections for restrictions and definition of flags}
+    //Explanation for the following code:
+    //g := NormalizedCuspChangeMatrix(F, b, alpha, beta, n)
+    //(Assuming the cusp (alpha:beta) has been reduced first)
+    //would return a matrix g sending (alpha:beta) to infinity, with
+    //g = [x, y; z, 0] mod n, and det(g) = 1.
+    //Thus z will be invertible mod n.
+    //We can compute g*[v, m; 0, v^-1]*g^-1 and intersect that with Gamma_0(n) in SL(ZF+b);
+    //Lower left term will be -z^2*m, which is zero iff m=0 mod n, and lies in b
+    //iff m is in I^-2*b^-1
+    
     ZF := Integers(F);
     a := alpha*ZF + beta*b^-1;
     if flag in [-1..2] then 
@@ -163,6 +199,10 @@ Result semantics:
 0 means V consists of squares of units
 1 means V consists of squares of (units which are 1 mod n)
 2 means V consists of (squares of units) which are 1 mod n}
+    //Explanation for the following code:
+    //Keep the notation used in CuspResolutionM. Then m=0 mod n. The upper left entry of
+    //g[v,m;0,v^-1]g^-1
+    //is equal to v^-1 mod n.
     requirerange flag, -1, 2;
     case flag:
     when -1:
@@ -238,7 +278,7 @@ Accepted flags are:
 1  for Gamma_1(n);
 2  for Ker(Gamma(1) -> PSL(ZF/n)}
 
-    require IsCoprime(n, b):
+    require IsCoprimeFracIdl(n, b):
 	  "Ideals b (defining the full modular group) and n (defining the level) must be coprime";
     require alpha ne 0 or beta ne 0:
 	  "Cusp (alpha:beta) in P^1 cannot have both coordinates zero";
