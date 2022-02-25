@@ -2,8 +2,8 @@
 ModFrmHilD
 *****/
 
-import "../ModFrmHil/copypastefunctions.m" : TopAmbient;
 import "../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
+
 
 ////////// ModFrmHilD attributes //////////
 
