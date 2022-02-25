@@ -1,4 +1,4 @@
-printf "Testing Universal Igusa over Q(sqrt(d))... d ="; //use printf with no \n
+printf "Testing Universal Igusa over Q(sqrt(d))... d="; //use printf with no \n
 prec := 4;
 for D in [5, 12] do
   printf "%o ", D;
