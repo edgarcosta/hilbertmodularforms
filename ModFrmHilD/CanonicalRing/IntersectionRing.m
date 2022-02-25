@@ -1171,8 +1171,20 @@ intrinsic AffineAlgebra(R::ChowRngHMS) -> RngMPolRes, UserProgram
 end intrinsic;
 
 
-intrinsic RegularRepresentation(R::ChowRngHMS)
+intrinsic RegularRepresentation(R::ChowRngHMS) -> AlgMat, UserProgram
 {Return a matrix algebra corresponding to the regular representation of R.}
-    error "Not Implemented.";
-    return;
+
+    BR := BaseRing(R);
+    B := Basis(R);
+    
+    mats := [Matrix(BR, [Coefficients(a * b) : a in B]) : b in B];
+    AR := MatrixAlgebra<BR, #B | mats>;
+    
+    // Construct the conversion function.
+    function foo(x)
+	coeffs := Coefficients(x);
+	return &+[coeffs[i] * AR.i : i in [1..#B]];
+    end function;
+    
+    return AR, foo;
 end intrinsic;
