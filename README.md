@@ -5,5 +5,6 @@ Mockup implementation of Hilbert Modular Forms
 # Authors:
 
 * John Doe
+* Jane Doe
 
 
