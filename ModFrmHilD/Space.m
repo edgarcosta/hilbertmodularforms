@@ -340,6 +340,9 @@ end intrinsic;
 intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {}
   ZF := Order(ss);
+  if ss*MM eq ss then
+    return ZF!1;
+  end if;
   facts := Factorization(ss*MM);
   //printf "factors of ss*MM: %o\n", facts;
   facts_num := [];
@@ -490,8 +493,7 @@ end intrinsic;
 intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.}
 
-  quotient_gens := GeneratorsOfQuotientModule(ss,MM);
-  a := quotient_gens[1];
+  a := GeneratorOfQuotientModuleCRT(ss,MM);
   F := Parent(a);
   F := NumberField(F);
   ZF := Integers(F);
@@ -529,20 +531,117 @@ intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   return quads;
 end intrinsic;
 
-// FIXME: not correct currently
+// see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
+intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
+  {With the notation as in section 5 of the paper, given c_bar in P_1(NN)_bb, lift c_bar to a c satisfying GCD(c*bb^-1,NN) = MM.}
+
+  ZF := Order(ss);
+  facts := Factorization(ss*bb*NN);
+  //printf "factors of ss*bb*NN: %o\n", facts;
+  Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
+  mults_num := [fact[2] : fact in facts | fact[2] gt 0];
+  Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
+  mults_den := [fact[2] : fact in facts | fact[2] lt 0];
+
+  residues_num := [];
+  residues_den := [];
+  moduli_num := [];
+  moduli_den := [];
+  // numerator residues and moduli
+  print "making numerator";
+  for i := 1 to #Ps_num do
+    P := Ps_num[i];
+    //v := mults_num[i];
+    v := Valuation(ss*bb*MM,P);
+    if v gt 0 then
+      printf "nonzero valuation; P = %o, v = %o\n", P, v;
+      residues_num cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
+      moduli_num cat:= [P^v, P^(v+1)];
+    else
+      residues_num cat:= [(c_bar mod P^mults_num[i])]; // might be a problem if v=0
+      moduli_num cat:= [P^mults_num[i]];
+    end if;
+  end for;
+  // denominator residues and moduli
+  print "making denominator";
+  for i := 1 to #Ps_den do
+    P := Ps_den[i];
+    //v := -mults_den[i];
+    v := -Valuation(ss*bb*MM,P);
+    if v gt 0 then
+      print "nonzero valuation; P = %o, v = %o\n", P, v;
+      residues_den cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
+      moduli_den cat:= [P^v, P^(v+1)];
+    else
+      residues_den cat:= [(c_bar mod P^mults_den[i])]; // might be a problem if v=0
+      moduli_den cat:= [P^mults_den[i]];
+    end if;
+  end for;
+
+  printf "residues for num = %o\n", residues_num;
+  printf "moduli for num = %o\n", moduli_num;
+  printf "residues for den = %o\n", residues_den;
+  printf "moduli for den = %o\n", moduli_den;
+
+  if #moduli_num eq 0 then // if list of moduli is empty
+    c_num := ZF!1;
+  else
+    c_num := CRT(residues_num, moduli_num);
+  end if;
+  if #moduli_den eq 0 then
+    c_den := ZF!1;
+  else
+    c_den := CRT(residues_den, moduli_den);
+  end if;
+  c := c_num/c_den;
+  assert GCD(c*(bb^-1),NN) eq MM;
+  return c;
+end intrinsic;
+
+// see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
+intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
+  {}
+  ZF := Order(ss);
+  if c eq 0 then
+    pbool, a := IsPrincipal(ss);
+    assert pbool;
+  else
+    a := ZF!GeneratorOfQuotientModuleCRT(ss, ideal< ZF | c*(bb^-1) >);
+  end if;
+  printf "generator for ss/(c*(bb^-1)) = %o\n", a;
+  // FIXME: Use CRT instead, I guess
+  if not (a-a_bar) in ss*MM then
+    Q, mpQ := quo< ZF | ss*MM >;
+    lambda_bar := mpQ(a)^-1*mpQ(a_bar);
+    printf "lambda_bar = %o\n", lambda_bar;
+    a *:= (lambda_bar @@ mpQ);
+  end if;
+  assert a*ZF + c*(bb^-1) eq ss;
+  assert a - a_bar in ss*MM;
+  return a;
+end intrinsic;
+
 // Need to lift the [a,c] in the quadruples in a special way that respects certain congruences
 intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   {}
   ZF := Order(NN);
   F := NumberField(ZF);
   quads := Gamma1Quadruples(NN, bb);
-  cusps_seq := [el[3] : el in quads];
+  cusps_seq := [];
+  for quad in quads do
+    ss, MM, ac_bar := Explode(quad);
+    a_bar, c_bar := Explode(ac_bar);
+    c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
+    a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
+    Append(~cusps_seq, [a,c]);
+  end for;
   PP1 := ProjectiveSpace(F,1);
   cusps := [PP1!el : el in cusps_seq];
-  return SetToSequence(SequenceToSet(cusps));
+  return cusps;
 end intrinsic;
 
 // P_0(NN)_bb in eqn 5.1.9 in paper
+// TODO: figure out how to mod out by (ZF/NN)^*
 intrinsic Gamma0Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   {}
   ZF := Ring(Parent(NN));
@@ -565,7 +664,6 @@ intrinsic Gamma0Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   end for;
   return quads;
 end intrinsic;
-
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}

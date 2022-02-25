@@ -37,8 +37,16 @@ MM := 7*ZF;
 
 RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
 RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
-//P1 := Gamma1Quadruples(NN, bb);
+P1 := Gamma1Quadruples(NN, bb);
 cusps := Gamma1Cusps(NN, bb);
+
+quad := P1[5];
+a_bar, c_bar := Explode(quad[3]);
+a_bar, c_bar;
+c := CuspLiftSecondCoordinate(c_bar, quad[1], quad[2], NN, bb);
+a := CuspLiftFirstCoordinate(a_bar, c, quad[1], quad[2], NN, bb);
+
+//cusps := Gamma1Cusps(NN, bb);
 
 X := CartesianProduct(RssMM, RssMM_comp);
 Q, mpQ := quo< ZF | NN>;
