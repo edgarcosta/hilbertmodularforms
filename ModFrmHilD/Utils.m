@@ -62,3 +62,14 @@ intrinsic IsOddAtoo(chi:GrpHeckeElt) -> BoolElt
   F := NumberField(Ring(Domain(Parent(chi))));
   return &and[IsOdd(c[v]) : v in InfinitePlaces(F)] where c:=Components(chi);
 end intrinsic;
+
+
+intrinsic JoinString(list::SeqEnum[MonStgElt], sep::MonStgElt) -> MonStgElt
+  {The concatenation of the strings of list with seperator sep.}
+  if IsEmpty(list) then return ""; end if;
+  s:=list[1]; list:=list[2..#list];
+  for i in list do
+    s *:=sep*i;
+  end for;
+  return s;
+end intrinsic;

@@ -143,7 +143,7 @@ intrinsic UnitGroupMap(M::ModFrmHilDGRng) -> Any
   return M`UnitGroupMap;
 end intrinsic;
 
-intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrbAb, Map
+intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrpAb, Map
   {return the group of totally positive units of the base as an abstract group and the map from abstract totally positive unit group into F^\times_>0}
   return TotallyPositiveUnits(BaseField(M));
 end intrinsic;
@@ -262,14 +262,6 @@ end intrinsic;
 intrinsic Spaces(M::ModFrmHilDGRng) -> Assoc
   {return the Spaces attribute}
   return M`Spaces;
-end intrinsic;
-
-intrinsic AddToSpaces(M::ModFrmHilDGRng, Mk::ModFrmHilD, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt)
-  { adds Mk to the AssociativeArray M`Spaces}
-  if not N in Keys(M`Spaces) then
-    M`Spaces[N] := AssociativeArray();
-  end if;
-  M`Spaces[N][<k, chi>] := Mk;
 end intrinsic;
 
 

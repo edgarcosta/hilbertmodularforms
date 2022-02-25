@@ -5,8 +5,10 @@
   Formatting.m
   GradedRing.m
   HJ-CFrac.m
+  CuspResolution.m
   Hecke.m
   LinearAlgebra.m
+  Restriction.m
   Space.m
   Trace.m
   UnitChar.m
@@ -31,7 +33,7 @@ Creation
    Siegel.m
    EllipticCurve.m
    TraceForm.m
-   ExactDedekindZeta.m   
+   Weight1.m
 }
 
 CanonicalRing

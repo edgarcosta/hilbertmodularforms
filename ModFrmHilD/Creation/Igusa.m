@@ -14,7 +14,7 @@ values:=[];
 if [a,b] eq [0,0] then
   return [[0,0,0]];
 end if;
-if (b^2*D^2+4*a*b*D+4*a^2-b^2*D) ge 0 then 
+if (b^2*D^2+4*a*b*D+4*a^2-b^2*D) ge 0 then
   leftpt:=Ceiling(((b*D+2*a)-Sqrt(b^2*D^2+4*a*b*D+4*a^2-b^2*D))/D);
   rightpt:=Floor(((b*D+2*a)+Sqrt(b^2*D^2+4*a*b*D+4*a^2-b^2*D))/D);
   for m_2 in [Max([0, leftpt])..rightpt] do
@@ -31,10 +31,10 @@ intrinsic ConvertBasis(nu::RngOrdElt) -> Any
     {given a Shintani rep gives [a,b] such that a e_1+ b e_2=nu for  e_1=1, e_2=(D+sqrt(D))/2}
     ZF:=Parent(nu);
     D:=Discriminant(ZF);
-    assert (D mod 4 eq 0) or (D mod 4 eq 1); 
+    assert (D mod 4 eq 0) or (D mod 4 eq 1);
     if D mod 4 eq 0 then
       Ord:=Order([ZF.1, (D*ZF.1+2*ZF.2)/2]: IsBasis:=true);
-    else 
+    else
       Ord:=Order([ZF.1, ZF.2+(D-1)/2]: IsBasis:=true);
     end if;
     return Ord!nu;
@@ -87,39 +87,43 @@ end intrinsic;
 intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> Any
 {Returns the pullback of the Siegel Eisenstein series of a given weight}
   F := BaseField(M);
-  ZF:=Integers(F);
-  Clplus, mp:=NarrowClassGroup(F);
-  h:=ClassNumber(F);
-  bb:=mp(Different(ZF)@@mp);
-  _, factors:=IsPrincipal(Different(ZF)/bb);
-  if not IsTotallyPositive(factors) then
+  ZF := Integers(F);
+  Clplus, mp := NarrowClassGroup(F);
+  h := ClassNumber(F);
+  // We get the ideal class corresponding to the component for the different ideal
+  bb := mp(Different(ZF)@@mp);
+  _, factors:=IsNarrowlyPrincipal(Different(ZF)/bb); //this will be a factor that will make sure our nu later on are totally positive integral elements
+  if not IsTotallyPositive(factors) then //just in case factors is negative
     factors:=-factors;
   end if;
   G, unitmp := TotallyPositiveUnits(M);
 
   Mkplus := HMFSpace(M, k);
+  // Dealing with unit characters
   if #Clplus gt h then
     minusunitchar := AssociativeArray();
     for bb in NarrowClassGroupReps(M) do
       minusunitchar[bb] := UnitCharacter(F, [-1]);
     end for;
-    Mkminus := HMFSpace(M, k : unitchar := minusunitchar);
+    Mkminus := HMFSpace(M, k: unitcharacters:=minusunitchar);
   else
     Mkminus := Mkplus;
   end if;
-  eta:=unitmp(G.1);
-  elts := ShintaniReps(M)[bb];
-  fpluscoeffs:=AssociativeArray();
-  fminuscoeffs:=AssociativeArray();
+  fpluscoeffs := AssociativeArray();
+  fminuscoeffs := AssociativeArray();
+  eta := unitmp(G.1);
+  elts := ShintaniReps(M)[bb]; //elements in bb/Different(ZF), totally positive. We need them in ZF>>0, therefore we will multiply by factors
   for j := 1 to #elts do
-    elt:=ZF!(elts[j]*factors);
-    anuplus:=Coeff(elt, k[1]);
-    anuminus:=Coeff(elt*eta^(-1), k[1]);
-    fpluscoeffs[elts[j]]:=1/2*(anuplus+anuminus);
-    fminuscoeffs[elts[j]]:=1/2*(anuplus-anuminus);
+    elt := ZF!(elts[j]*factors);
+    anuplus := Coeff(elt, k[1]);
+    anuminus := Coeff(elt*eta^(-1), k[1]);
+    fpluscoeffs[elts[j]] := 1/2*(anuplus+anuminus);
+    fminuscoeffs[elts[j]] := 1/2*(anuplus-anuminus);
   end for;
-  fplus:=HMFComp(Mkplus, bb, fpluscoeffs);
-  fminus:=HMFComp(Mkminus, bb, fminuscoeffs);
+
+  // creates an HMF only supported at bb
+  fplus := HMF(HMFComp(Mkplus, bb, fpluscoeffs));
+  fminus := HMF(HMFComp(Mkminus, bb, fminuscoeffs));
   return fplus, fminus;
 end intrinsic;
 
@@ -128,18 +132,18 @@ end intrinsic;
 intrinsic UniversalIgusa(M::ModFrmHilDGRng) -> Any
 {Computes the IgusaClebsch invariants for QQ(sqrt(i)), using specified precision}
 
-SiegEis4 := SiegelEisensteinPullback(M,4);
-SiegEis6 := SiegelEisensteinPullback(M,6);
-SiegEis10 := SiegelEisensteinPullback(M,10);
-SiegEis12 := SiegelEisensteinPullback(M,12);
+  SiegEis4 := SiegelEisensteinPullback(M,[4,4]);
+  SiegEis6 := SiegelEisensteinPullback(M,[6,6]);
+  SiegEis10 := SiegelEisensteinPullback(M,[10,10]);
+  SiegEis12 := SiegelEisensteinPullback(M,[12,12]);
 
 
-Chi10 := -43867/(2^12*3^5*5^2*7^1*53^1)*(SiegEis4*SiegEis6-SiegEis10);
-Chi12Const := 131*593/(2^13*3^7*5^3*7^2*337^1);
-Chi12Form := (3^2*7^2*SiegEis4*SiegEis4*SiegEis4+2^1*5^3*SiegEis6*SiegEis6-691*SiegEis12);
-Chi12 := Chi12Const*Chi12Form;
+  Chi10 := -43867/(2^12*3^5*5^2*7^1*53^1)*(SiegEis4*SiegEis6+(-1)*SiegEis10);
+  Chi12Const := 131*593/(2^13*3^7*5^3*7^2*337^1);
+  Chi12Form := (3^2*7^2*SiegEis4*SiegEis4*SiegEis4+2^1*5^3*SiegEis6*SiegEis6+(-691)*SiegEis12);
+  Chi12 := Chi12Const*Chi12Form;
 
-return SiegEis4,SiegEis6,SiegEis10,SiegEis12,Chi10,Chi12;
+  return SiegEis4,SiegEis6,SiegEis10,SiegEis12,Chi10,Chi12;
 
 end intrinsic;
 
