@@ -65,7 +65,7 @@ intrinsic CuspFormBasis(
       end for;
       // we are taking Q orbits
       Mk`CuspFormBasis := &cat[GaloisOrbitDescent(f) : f in cuspbasis];
-      assert CuspDimension(Mk) eq #Mk`CuspFormBasis;
+      require CuspDimension(Mk) eq #Mk`CuspFormBasis : "CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis;
     else
       Mk`CuspFormBasis := Weight1CuspBasis(Mk);
     end if;
@@ -85,7 +85,7 @@ intrinsic EisensteinBasis(
     pairs := EisensteinAdmissibleCharacterPairs(Mk);
     eisensteinbasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
     Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
-    assert #Mk`EisensteinBasis eq EisensteinDimension(Mk);
+    require #Mk`EisensteinBasis eq EisensteinDimension(Mk) : "#Mk`EisensteinBasis = %o != %o = EisensteinDimension(Mk)", #Mk`EisensteinBasis, EisensteinDimension(Mk);
   end if;
 
   // this handles the optional parameters
