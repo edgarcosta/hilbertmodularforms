@@ -95,7 +95,7 @@ intrinsic Eigenform(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDElt
   for pp in PrimeIdeals(M) do
    ev[pp] := HeckeEigenvalue(f, pp);
   end for;
-  
+
   return Eigenform(Mk, ev);
 end intrinsic;
 
@@ -191,4 +191,3 @@ intrinsic NewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns Hilbert newforms}
   return [Eigenform(Mk, f) : f in MagmaNewCuspForms(Mk)];
 end intrinsic;
-

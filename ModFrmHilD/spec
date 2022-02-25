@@ -8,6 +8,7 @@
   CuspResolution.m
   Hecke.m
   LinearAlgebra.m
+  Restriction.m
   Space.m
   Trace.m
   UnitChar.m
@@ -32,10 +33,13 @@ Creation
    Siegel.m
    EllipticCurve.m
    TraceForm.m
+   Weight1.m
 }
 
 CanonicalRing
 {
   CanonicalRing.m
   HilbertSeries.m
+  IntersectionRing.m
+  StupidCongruenceSubgroup.m
 }

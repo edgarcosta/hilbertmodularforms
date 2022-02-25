@@ -12,7 +12,7 @@
 3. If you don't have a pair of public/private RSA keys, create one, by doing:
 `ssh-keygen`.
 Now copy the content of your public key `~/.ssh/id_rsa.pub`, you can access the content of the file by doing `cat ~/.ssh/id_rsa.pub`,
-and add it to `https://github.com/settings/keys`.
+and add it to [https://github.com/settings/keys](https://github.com/settings/keys).
 
 4. Open a terminal on your computer, and go to a folder where you would like to store your personal copy of `hilbertmodularforms`
  For example: `cd secretprojets/`
@@ -77,5 +77,3 @@ You can merge this changes, with your current branch by doing
 # Exercises
 
 1. Edit the `README.md` and `LICENSE` file and add your name
-
-

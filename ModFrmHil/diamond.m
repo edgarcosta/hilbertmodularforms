@@ -291,6 +291,9 @@ function HeckeCharacterSubspace(M, chi)
 
     M_sub`Ambient := M;
     M_sub`Dimension := dim;
+    if assigned M`is_new then
+      M_sub`is_new := M`is_new;
+    end if;
     
     return M_sub;
 end function;

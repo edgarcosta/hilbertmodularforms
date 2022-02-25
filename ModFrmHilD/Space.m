@@ -22,7 +22,7 @@ declare attributes ModFrmHilD:
   Dimension, // RngIntElt
   CuspDimension, //RngIntElt
   EisensteinDimension, //RngIntElt
-  EisensteinAdmissableCharacterPairs, // List of pairs of primitive characters
+  EisensteinAdmissibleCharacterPairs, // List of pairs of primitive characters
   MagmaSpace, //ModFrmHil
   MagmaNewCuspForms; // SeqEnum[ModFrmHilElt]
 
@@ -37,7 +37,8 @@ intrinsic Print(Mk::ModFrmHilD, level::MonStgElt)
     printf "Precision: %o\n", Precision(M);
     printf "Weight: %o\n", Weight(Mk);
     printf "Character: %o\n", Character(Mk);
-    printf "Level: %o", IdealOneLine(Level(Mk));
+    printf "Level: %o\n", IdealOneLine(Level(Mk));
+    printf "UnitCharacters: %o", JoinString([Sprint(ValuesOnGens(UnitCharacters(Mk)[bb])) : bb in NarrowClassGroupReps(M)], ", ");
   elif level eq "Magma" then
     error "not implemented!";
   else
@@ -56,11 +57,11 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-return Parent(M1) eq Parent(M2) and
-Weight(M1) eq Weight(M2) and
-Level(M1) eq Level(M2) and
-Character(M1) eq Character(M2) and
-UnitCharacters(M1) eq UnitCharacters(M2);
+  return Parent(M1) eq Parent(M2) and
+  Weight(M1) eq Weight(M2) and
+  Level(M1) eq Level(M2) and
+  Character(M1) eq Character(M2) and
+  UnitCharacters(M1) eq UnitCharacters(M2);
 end intrinsic;
 
 ////////// ModFrmHilD access to attributes //////////
@@ -145,10 +146,21 @@ end intrinsic;
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt : unitcharacters:=false) -> ModFrmHilD
   {}
   spaces := Spaces(M);
-  if N in Keys(spaces) then
-    if <k, chi> in Keys(spaces[N]) then
-      return spaces[N][<k, chi>];
+  if unitcharacters cmpeq false then
+    unitcharacters := AssociativeArray();
+    for bb in NarrowClassGroupReps(M) do
+      unitcharacters[bb] := TrivialUnitCharacter(BaseField(M));
+    end for;
+  end if;
+
+  uc_values := &cat[ValuesOnGens(unitcharacters[bb]) : bb in NarrowClassGroupReps(M)];
+
+  if IsDefined(spaces, N) then
+    if IsDefined(spaces[N], <k, chi, uc_values>) then
+      return spaces[N][<k, chi, uc_values>];
     end if;
+  else
+    M`Spaces[N] := AssociativeArray();
   end if;
   Mk := ModFrmHilDInitialize();
   Mk`Parent := M;
@@ -158,25 +170,18 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   is_compat, i := IsCompatibleWeight(chi, k);
   require is_compat : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
   Mk`Character := chi;
-  if unitcharacters cmpeq false then
-    Mk`UnitCharacters := AssociativeArray();
-    for bb in NarrowClassGroupReps(Parent(Mk)) do
-      Mk`UnitCharacters[bb] := TrivialUnitCharacter(BaseField(Mk));
-    end for;
-  else
-    Mk`UnitCharacters := unitcharacters;
-    require Type(unitcharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
-    require Keys(unitcharacters) eq SequenceToSet(NarrowClassGroupReps(Parent(Mk))) :"we expect the keys of the associative array to be narrow class group reprsentatives";
-    require {Type(v): v in unitcharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
-    require &and[BaseField(v) eq BaseField(M): v in unitcharacters]: "we expect all the unit characters to have the same base field";
-  end if;
-  AddToSpaces(M, Mk, N, k, chi);
+  Mk`UnitCharacters := unitcharacters;
+  require Type(Mk`UnitCharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
+  require Keys(Mk`UnitCharacters) eq SequenceToSet(NarrowClassGroupReps(M)) :"we expect the keys of the associative array to be narrow class group reprsentatives";
+  require {Type(v): v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
+  require &and[BaseField(v) eq BaseField(M): v in Mk`UnitCharacters]: "we expect all the unit characters to have the same base field";
+  M`Spaces[N][<k, chi, uc_values>] := Mk;
   return Mk;
 end intrinsic;
 
 
 // overloaded for trivial level and character
-intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]: unitcharacters:=false) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
@@ -184,18 +189,18 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   N := ideal<ZF|1>;
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
-  return HMFSpace(M, N, k, chi);
+  return HMFSpace(M, N, k, chi: unitcharacters:=unitcharacters);
 end intrinsic;
 
 // overloaded for trivial character
-intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]: unitcharacters:=false) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
   ZF := Integers(M);
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
-  return HMFSpace(M, N, k, chi);
+  return HMFSpace(M, N, k, chi: unitcharacters:=unitcharacters);
 end intrinsic;
 
 intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
@@ -225,7 +230,6 @@ intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
   Mk`EisensteinDimension := 0;
   return Mk;
 end intrinsic;
-
 
 intrinsic '*'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
   {return M1*M2 with the same level}
@@ -293,23 +297,275 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
-// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
-  {}
-  F := Ring(Parent(ss));
-  ZF := Integers(F);
-  Q, mp := quo< ZF | (ss^-1)*MM >;
-  UQ, mpUQ := UnitGroup(Q);
-  UQ_seq := [ZF!mpUQ(el) : el in UQ];
-  // quotient by action of totally positive units by computing Shintani reduced elts
-  UQ_mod := SetToSequence(SequenceToSet([ReduceShintaniMinimizeDistance(el) : el in UQ_seq]));
-  // Finally, go back to (ss/(ss*MM))^* by dividing by denominator
-  d := Denominator(ss);
-  if d le 0 then
-    d := -d;
-  end if;
-  return [el/d : el in UQ_mod];
+// moving from RngOrdFracIdl to ModDed and back
+intrinsic IdealToModule(a::FldElt, ss::RngOrdFracIdl) -> ModDedElt 
+  {Map an element a of a fractional ideal ss to ss thought of as a module}
+  assert a in ss;
+  ss_mod := Module([ss]);
+  return ss_mod!(a*ss_mod.1);
 end intrinsic;
+
+intrinsic ModuleToIdeal(a::ModDedElt) -> RngElt
+  {Map an element a of a fractional ideal thought of a module to an element of the fractional ideal}
+  b := Eltseq(a)[1];
+  F := Parent(b);
+  ZF := Integers(F);
+  if IsIntegral(b) then
+    return ZF!b;
+  else
+    return b;
+  end if;
+end intrinsic;
+
+intrinsic IdealToModule(a::RngOrdElt, ss::RngOrdFracIdl) -> ModDedElt
+  {}
+  R := Parent(a);
+  F := NumberField(R);
+  return IdealToModule(F!a,ss);
+end intrinsic;
+
+//intrinsic ReduceModuloIdeal(a::FldElt, I::RngOrdFracIdl, J::RngOrdFracIdl) -> FldElt
+intrinsic ReduceModuloIdeal(a::RngElt, I::RngOrdFracIdl, J::RngOrdFracIdl) -> FldElt
+  {Take an element a of I, reduce it mod J, and then lift it back to an element of I.}
+  assert J subset I;
+  I_mod := Module([I]);
+  J_mod := Module([J]);
+  ImodJ , mp := quo< I_mod | J_mod >;
+  a_mod := IdealToModule(a, I);
+  a_modJ := mp(a_mod);
+  return ModuleToIdeal(a_modJ @@ mp);
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {}
+  ZF := Order(ss);
+  facts := Factorization(ss*MM);
+  //printf "factors of ss*MM: %o\n", facts;
+  facts_num := [];
+  facts_den := [];
+  ss_vals_num := [];
+  ss_vals_den := [];
+  for fact in facts do
+    if fact[2] gt 0 then // primes with positive valuation
+      Append(~facts_num, fact);
+      Append(~ss_vals_num, Valuation(ss,fact[1]));
+    else // primes with negative valuation
+      Append(~facts_den, fact);
+      Append(~ss_vals_den, Valuation(ss,fact[1]));
+    end if;
+  end for;
+  //printf "ss_vals num = %o\n", ss_vals_num;
+  //printf "ss_vals den = %o\n", ss_vals_den;
+  residues_num := [];
+  residues_den := [];
+  moduli_num := [];
+  moduli_den := [];
+  for i := 1 to #facts_num do
+    fact := facts_num[i];
+    P := fact[1];
+    //v := fact[2];
+    v := ss_vals_num[i];
+    t := UniformizingElement(P);
+    residues_num cat:= [0, (t^v mod P^(v+1))]; // might be a problem if v=0
+    moduli_num cat:= [P^v, P^(v+1)];
+  end for;
+  for i := 1 to #facts_den do
+    fact := facts_den[i];
+    P := fact[1];
+    //v := -fact[2]; // want positive valuation
+    v := -ss_vals_den[i]; // want positive valuation
+    t := UniformizingElement(P);
+    residues_den cat:= [0, (t^v mod P^(v+1))];
+    moduli_den cat:= [P^v, P^(v+1)];
+  end for;
+  if #moduli_num eq 0 then // if list of moduli is empty
+    a_num := ZF!1;
+  else
+    //printf "residues for num = %o\n", residues_num;
+    //printf "moduli for num = %o\n", moduli_num;
+    a_num := CRT(residues_num, moduli_num);
+  end if;
+  if #moduli_den eq 0 then
+    a_den := ZF!1;
+  else
+    //printf "residues for den = %o\n", residues_den;
+    //printf "moduli for den = %o\n", moduli_den;
+    a_den := CRT(residues_den, moduli_den);
+  end if;
+  //printf "a_num = %o\n", a_num;
+  //printf "a_den = %o\n", a_den;
+  // verify it generates
+  a := a_num/a_den;
+  assert a*ZF + ss*MM eq ss;
+  return a;
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+intrinsic GeneratorsOfQuotientModuleBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module by looping over all elements of ss/(ss*MM).}
+  ZF := Order(ss);
+  F := NumberField(ZF);
+  ZFMM, mpMM := quo< ZF | MM>;
+  // loop over all elts of ss/(ss*MM)
+  ss_gens := Generators(ss);
+  ss_ngens := #ss_gens;
+  quotient_gens := [];
+  for el in CartesianPower(ZFMM, ss_ngens) do
+    t := ZF!0;
+    for i := 1 to ss_ngens do
+      t +:= (el[i] @@ mpMM)*ss_gens[i];
+    end for;
+    // check if new mod ss*MM
+    /*
+      new_bool := true;
+      for q in quotient_gens do
+        if (t - q) in ss*MM then
+          new_bool := false;
+        end if;
+      end for;
+    */
+    //if (t*ZF + ss*MM eq ss) and new_bool then
+    if (t*ZF + ss*MM eq ss) then
+      Append(~quotient_gens, ReduceModuloIdeal(t, ss, ss*MM));
+    end if;
+  end for;
+  quotient_gens := SetToSequence(SequenceToSet(quotient_gens));
+  //printf "# of quotient gens = %o\n", #quotient_gens;
+  //printf "number of units in ZF/ideal = %o\n", #UnitGroup(ZFMM);
+  assert #quotient_gens eq #UnitGroup(ZFMM);
+  return quotient_gens;
+end intrinsic;
+
+intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module using CRT.}
+  ZF := Order(ss);
+  F := NumberField(ZF);
+  ZFMM, mpMM := quo< ZF | MM>;
+  U, mpU := UnitGroup(ZFMM);
+  U_seq := [mpU(el) : el in U];
+  a := GeneratorOfQuotientModuleCRT(ss,MM);
+  return [a*(el @@ mpMM) : el in U_seq];
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnitsBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.}
+
+  quotient_gens := GeneratorsOfQuotientModule(ss,MM);
+  F := Parent(quotient_gens[1]);
+  F := NumberField(F);
+  eps := FundamentalUnitTotPos(F);
+
+  // compute orbits of the elements of quotient_gens under totally positive units
+  // by repeatedly Shintani-reducing and reducing mod ss*MM (using ReduceModuloIdeal)
+  remaining := [1..#quotient_gens];
+  orbits := [];
+  while #remaining ne 0 do
+    ind0 := remaining[1];
+    a := quotient_gens[ind0];
+    orb := [ind0];
+    rep_bool := false;
+    while not rep_bool do
+      a := ReduceModuloIdeal(eps*a, ss, ss*MM);
+      ind := Index(quotient_gens, a);
+      if ind eq ind0 then
+        rep_bool := true;
+        break;
+      end if;
+      Append(~orb, ind);
+    end while;
+    Append(~orbits, orb);
+    printf "orbit found = %o\n", orb;
+    remaining := [el : el in remaining | not el in orb];
+    printf "remaining indices = %o\n", remaining;
+  end while;
+  printf "orbits = %o\n", orbits;
+  // return one element from each orbit
+  return [orb[1] : orb in orbits];
+end intrinsic;
+
+// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
+// Use transversal for <eps> < (ZF/MM)^* to get one representative from each of the orbits of (ss/(ss*MM))^* under the action of epsilon
+intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.}
+
+  quotient_gens := GeneratorsOfQuotientModule(ss,MM);
+  a := quotient_gens[1];
+  F := Parent(a);
+  F := NumberField(F);
+  ZF := Integers(F);
+  eps := FundamentalUnitTotPos(F);
+
+  ZFMM, mp := quo<ZF |MM>;
+  UQ, mpQ := UnitGroup(ZFMM);
+  eps_bar := mp(eps) @@ mpQ;
+  eps_gp := sub< UQ | eps_bar>;
+  T := [mpQ(el) : el in Transversal(UQ, eps_gp)];
+  reps := [a*(el @@ mp) : el in T];
+  return [ReduceModuloIdeal(el, ss, ss*MM) : el in reps];
+end intrinsic;
+
+// P_1(NN)_bb in eqn 5.1.6 in paper, or Lemma 3.6 of Dasgupta-Kakde
+intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
+  {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde, which is in bijection with cusps of Gamma1(NN)_bb.}
+  ZF := Order(NN);
+  F := NumberField(ZF);
+  Cl, mpCl := ClassGroup(ZF);
+  Cl_seq := [mpCl(el) : el in Cl];
+ 
+  quads := [];
+  for ss in Cl_seq do
+    for MM in Divisors(NN) do
+      RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
+      RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
+      for a in RssMM do
+        for c in RssMM_comp do
+          Append(~quads, [* ss, MM, [a,c] *]);
+        end for;
+      end for;
+    end for;
+  end for;
+  return quads;
+end intrinsic;
+
+// FIXME: not correct currently
+// Need to lift the [a,c] in the quadruples in a special way that respects certain congruences
+intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
+  {}
+  ZF := Order(NN);
+  F := NumberField(ZF);
+  quads := Gamma1Quadruples(NN, bb);
+  cusps_seq := [el[3] : el in quads];
+  PP1 := ProjectiveSpace(F,1);
+  cusps := [PP1!el : el in cusps_seq];
+  return SetToSequence(SequenceToSet(cusps));
+end intrinsic;
+
+// P_0(NN)_bb in eqn 5.1.9 in paper
+intrinsic Gamma0Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
+  {}
+  ZF := Ring(Parent(NN));
+  F := NumberField(ZF);
+  Cl, mpCl := ClassGroup(ZF);
+  Cl_seq := [mpCl(el) : el in Cl];
+ 
+  quads := [];
+  for ss in Cl_seq do
+    for MM in Divisors(NN) do
+      RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
+      RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
+      // TODO: mod out by (ZF/NN)^*
+      for a in RssMM do
+        for c in RssMM_comp do
+          Append(~quads, [* ss, MM, a, c*]);
+        end for;
+      end for;
+    end for;
+  end for;
+  return quads;
+end intrinsic;
+
 
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
@@ -365,24 +621,31 @@ intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   {return the dimension of E(Mk)}
   if not assigned Mk`EisensteinDimension then
     N := Level(Mk);
-    newforms_levels := {* Conductor(pair[1]) * Conductor(pair[2]) : pair in EisensteinAdmissableCharacterPairs(Mk) *};
-    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*mult : mm->mult in newforms_levels];
+    newforms_levels := AssociativeArray();
+    for pair in EisensteinAdmissibleCharacterPairs(Mk) do
+      lvl := Conductor(pair[1]) * Conductor(pair[2]);
+      if not IsDefined(newforms_levels, lvl) then
+        newforms_levels[lvl] := 0;
+      end if;
+      newforms_levels[lvl] +:= EulerPhi(LCM([Order(e) : e in pair]));
+    end for;
+    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*rel_dim : mm->rel_dim in newforms_levels];
   end if;
   return Mk`EisensteinDimension;
 end intrinsic;
 
 
-intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
+intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   {returns a list of all the primitive pairs <chi1, chi2> such that
   chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk)
   If the weight is 1, we only return pairs up to permutation}
-  if not assigned Mk`EisensteinAdmissableCharacterPairs then
+  if not assigned Mk`EisensteinAdmissibleCharacterPairs then
     N := Level(Mk);
     k := Weight(Mk);
     if #SequenceToSet(k) ne 1 then
       // there are no Eisenstein series in nonparallel weight
-      Mk`EisensteinAdmissableCharacterPairs := [* *];
-      return Mk`EisensteinAdmissableCharacterPairs;
+      Mk`EisensteinAdmissibleCharacterPairs := [* *];
+      return Mk`EisensteinAdmissibleCharacterPairs;
     end if;
     k := k[1];
     chi := Character(Mk);
@@ -417,7 +680,7 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
     for i in SequenceToSet(&cat pairs) do
       prims[i] := AssociatedPrimitiveCharacter(chis[i]);
     end for;
-    Mk`EisensteinAdmissableCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
+    Mk`EisensteinAdmissibleCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
   end if;
-  return Mk`EisensteinAdmissableCharacterPairs;
+  return Mk`EisensteinAdmissibleCharacterPairs;
 end intrinsic;

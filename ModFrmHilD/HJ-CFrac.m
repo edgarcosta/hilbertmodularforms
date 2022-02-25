@@ -39,17 +39,17 @@ intrinsic HJContinuedFraction(w0::FldReElt : PeriodBound := 100, Epsilon := -1) 
     end if;
     i := i + 1;
   end while;
-  printf "bs = %o\n", bs;
+  //printf "bs = %o\n", bs;
   // now return the appropriate lists
   if zero_bool then
     return bs, [], true;
   elif rep_bool then
-    print "periodic continued fraction";
+    //print "periodic continued fraction";
     head := bs[1..(rep_ind - 1)];
     tail := bs[rep_ind..#bs];
     return head, tail, true;
   else
-    print "non-periodic continued fraction";
+    //print "non-periodic continued fraction";
     return bs, [], false;
   end if;
 end intrinsic;
@@ -89,14 +89,14 @@ intrinsic VerifyExactHJContinuedFraction(a::FldNumElt : Precision := 30, PeriodB
     for el in head do
       y := -1/(y-el);
     end for;
-    printf "LHS y = %o\n", y;
+    //printf "LHS y = %o\n", y;
     //y2 := a;
     y2 := y;
     cs := Reverse(tail);
     for i := 1 to #cs do
       y2 := cs[i] - 1/y2;
     end for;
-    printf "RHS y = %o\n", y2;
+    //printf "RHS y = %o\n", y2;
     eq_bool and:= (y eq y2);
     assert y eq y2;
   end for;
