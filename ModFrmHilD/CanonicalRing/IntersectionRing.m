@@ -231,7 +231,7 @@ end intrinsic;
 // Tensor ring over ZZ.
 intrinsic ChangeRing(R::ChowRngHMS, BR::Rng) -> ChowRngHMS
 {You know what this does.}
-    return IntersectionRing(R, BR);
+    return IntersectionRing(CongruenceSubgroup(R), BR);
 end intrinsic;
 
 intrinsic Zero(R::ChowRngHMS) -> ChowRngHMSElt
@@ -422,7 +422,7 @@ intrinsic '-'(y::ChowRngHMSElt, x::RngElt) -> ChowRngHMSElt
     ycom := GradedComponents(y);
     newcom := <ycom[1] - x*R0.1, ycom[2], ycom[3]>;
 
-    return CreateElement(R, ycom);
+    return CreateElement(R, newcom);
 end intrinsic;
 
 
@@ -525,7 +525,7 @@ end intrinsic;
 intrinsic IsInvertible(x::ChowRngHMSElt) -> BoolElt, ChowRngHMSElt
 {}
     boo, u := IsInvertible(GradedComponent(x, 0)[1]);
-    if not boo then return false; end if;
+    if not boo then return false, _; end if;
 
     R := Parent(x);
     z := u * x - One(R);
@@ -600,30 +600,23 @@ of the Hilbert Modular Surface with coefficients in BR.}
     //////////////
     // Elliptic Points
     
-    // For elliptic points, the precision should be irrelevant.
-    RR := RealField(20);
     EPData := EllipticPointData(Gamma);
     rawEllipticResolutionData := [];
 
     shift := 2;
     for singType in Keys(EPData) do
-
-	// Massage the type so that <a,b> = <1, positive>
-	stdForm := <singType[1], 1, (singType[3] + (1 - singType[2])) mod singType[1]>;
-
-	// Compute the HJContinuedFraction
-	head, tail, isPeriodicOrFinite := HJContinuedFraction(RR ! (stdForm[1]/stdForm[3]));
-	assert isPeriodicOrFinite;
 	
-	localChernCoeffs := QuotientLocalChernCoefficients(singType, head cat tail);
+	//localChernCoeffs := QuotientLocalChernCoefficients(singType, head cat tail);
+	selfINumbers, localChernCoeffs := EllipticLocalChernData(singType);
+	
 	for i in [1..EPData[singType]] do
-	    Append(~rawEllipticResolutionData, <head cat tail, localChernCoeffs>);
+	    Append(~rawEllipticResolutionData, <selfINumbers, localChernCoeffs>);
 
 	    // Associate a singular point to the resolution cycle.
 	    P := SingularPointHMS("Elliptic", singType);
 
 	    // Populate the Resolution Cycle dictionary with indices.
-	    numCycles := #head + #tail;
+	    numCycles := #localChernCoeffs;
 	    R`ResolutionCycles[P] := [(shift - 1) + 1 .. (shift - 1) + numCycles];
 
 	    // Update shift.
@@ -805,8 +798,10 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 end intrinsic;
 
 
-intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::SeqEnum) -> SeqEnum
-{}
+intrinsic EllipticLocalChernData(type::Tup) -> SeqEnum, SeqEnum
+{Return the self intersection numbers of the resolution cycles over an elliptic point, as 
+well as the (possibly rational) coefficients of the local Chern cycle of a quotient singularity.}
+
     // NOTE: Figuring out the local Chern cycle is a little tricky, as it is actually
     //       a QQ-divisor! See [vdG, p. 64]. For the definition of the (li, mi), see
     //       [vdG, p. 53].
@@ -814,6 +809,17 @@ intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::Seq
     // In order to compute the local Chern cycle, we need the coordinates of the points
     // on the lower convex hull associated to the (positive) exponents.
 
+    // For elliptic points, the precision should be irrelevant.
+    RR := RealField(20);
+
+    // Massage the type so that <a,b> = <1, positive>
+    stdForm := <type[1], 1, (type[3] + (1 - type[2])) mod type[1]>;
+
+    // Compute the HJContinuedFraction
+    head, tail, isPeriodicOrFinite := HJContinuedFraction(RR ! (stdForm[1]/stdForm[3]));
+    assert isPeriodicOrFinite;
+    selfIntersectionNumbers := head cat tail;
+    
     n := type[1];
     assert type[2] eq 1;
     q := type[3] mod n;
@@ -839,7 +845,6 @@ intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::Seq
 	C[i+2] := c[i+1] * C[i+1] - C[i];
     end for;
 
-    
     // Now that we have the coordinates, we can return the list of  (li + mi - 1).
     // Note that the beginning and ending terms of the `C` don't correspond to curves
     // in the resolution cycle, but instead to "coordinate axes" of `G\CC^2`. These points
@@ -848,8 +853,7 @@ intrinsic QuotientLocalChernCoefficients(type::Tup, selfIntersectionNumbers::Seq
     lst := [c[1] + c[2] - 1 : c in C];
     assert lst[1] eq 0 and lst[#lst] eq 0;
     assert #lst ge 3; //i.e., check the resolution cycle has at least one curve.
-    return lst[2..#lst-1];
-    
+    return selfIntersectionNumbers, lst[2..#lst-1];    
 end intrinsic;
 
 /////////////////////////////////////////////////////
@@ -1088,6 +1092,39 @@ intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> FldRatEl
     return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);
 end intrinsic;
 
+intrinsic ChernNumbersOfLogCanonical(Gamma::StupidCongruenceSubgroup) -> FldRatElt
+{}
+    return 2 * VolumeOfFundamentalDomain(Gamma);
+end intrinsic;
+
+intrinsic Covolume(Gamma::StupidCongruenceSubgroup) -> FldRatElt
+{Alias for VolumeOfFundamentalDomain.}
+    return VolumeOfFundamentalDomain(Gamma);
+end intrinsic;
+
+
+intrinsic LocalChernCycle(R::ChowRngHMS, P::StupidSingularPointHMS) -> HMSChowRngElt
+{Given a singular point on a Hilbert Modular Surface, return the local Chern cycle of
+resolution curves over `P`. If the coefficients of the local Chern cycle are coercible
+into the base ring of `R`, then the result is returned as an element of `R`. Otherwise,
+an error is thrown.}
+
+    indices := ResolutionCycleIndices(R)[P];
+    cycles  := ResolutionCycles(R)[P];
+
+    if P`SingularityType eq "Cusp" then
+	return &+cycles;
+    end if;
+
+    // Otherwise, P must be a quotient singularity.
+    assert P`SingularityType eq "Quotient";
+    _, coeffs := EllipticLocalChernData(P`SingularityInfo);
+
+    if &and [IsCoercible(BaseRing(R), y) : y in coeffs] then
+	return &+[coeffs[i] * cycles[i] : i in [1..#cycles]];
+    end if;
+    error "(Rational) Coefficients of local Chern cycle not coercible into Chow ring.";
+end intrinsic;
 
 /////////////////////////////////////////////////////////////////////////////////
 //
@@ -1103,4 +1140,51 @@ end intrinsic;
 intrinsic ChowRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
 {}
     return IntersectionRing(Gamma, BR);
+end intrinsic;
+
+
+/////////////////////////////////////////////////////////////////////////////////
+//
+// Conversion
+//
+/////////////////////////////////////////////////////////////////////////////////
+
+intrinsic AffineAlgebra(R::ChowRngHMS) -> RngMPolRes, UserProgram
+{Return a ring `R[x1, ..., xn]/I` isomorphic to `R`, and a conversion function.}
+
+    D  := #Generators(R) + 1;
+    PR := PolynomialRing(BaseRing(R), D);
+    T  := MultiplicationTable(R);
+    PRtop := PR.D;
+
+    relations := [PR.i * PR.j - T[i,j] * PRtop : i, j in [1..D]];
+    I := ideal<PR | relations>;
+    
+    // Construct the conversion function.
+    function foo(x)
+	coeffs := Coefficients(x);
+	
+	return coeffs[1] + &+[coeffs[i+1] * PR.i : i in [1..D]];
+    end function;
+    
+    return quo<PR | I>, foo;
+end intrinsic;
+
+
+intrinsic RegularRepresentation(R::ChowRngHMS) -> AlgMat, UserProgram
+{Return a matrix algebra corresponding to the regular representation of R.}
+
+    BR := BaseRing(R);
+    B := Basis(R);
+    
+    mats := [Matrix(BR, [Coefficients(a * b) : a in B]) : b in B];
+    AR := MatrixAlgebra<BR, #B | mats>;
+    
+    // Construct the conversion function.
+    function foo(x)
+	coeffs := Coefficients(x);
+	return &+[coeffs[i] * AR.i : i in [1..#B]];
+    end function;
+    
+    return AR, foo;
 end intrinsic;
