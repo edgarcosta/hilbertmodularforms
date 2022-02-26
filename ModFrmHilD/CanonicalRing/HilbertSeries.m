@@ -40,12 +40,12 @@ end intrinsic;
 // Generating function for the dimension of the space of HMFs according to weight k
 // Input: M = HMFspace
 // Output: G = Hilbert Series (i.e. generating function for dimensions)
-intrinsic HilbertSeriesVasquez(K::FldNum) -> RngSerPowElt
+intrinsic HilbertSeriesVasquez(K::FldNum) -> FldFunRatUElt
 {Use the Formulas from Vasquez to compute the Hilbert series for the space of Hilbert modular
 forms (with respect to the full Hilbert Modular Group).}
     
     Disc := Discriminant(K);
-    P<x> := PowerSeriesRing(Rationals(), 200);
+    P<x> := FunctionField(Rationals());
 
     zeta := DedekindZetaExact(K, -1);
     chi, a3 := A3andGenus(Disc);
@@ -79,12 +79,12 @@ forms (with respect to the full Hilbert Modular Group).}
     return G;
 end intrinsic;
 
-intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> RngSerPowElt
+intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> FldFunRatUElt
 {Returns the dimension of the space of Hilbert Modular Forms of weight `k` and level `(1)`.}
     return HilbertSeriesVasquez(BaseField(M));
 end intrinsic;
 
-intrinsic HilbertSeries(G::StupidCongruenceSubgroup) -> RngSerPowElt
+intrinsic HilbertSeries(G::StupidCongruenceSubgroup) -> FldFunRatUElt
 {Return the Hilbert series for the space of Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
     require Index(G) eq 1 : "Only implemented for level = (1).";
