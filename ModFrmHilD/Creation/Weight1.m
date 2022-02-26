@@ -2,10 +2,14 @@
 intrinsic Weight1CuspBasis(
   Mk::ModFrmHilD
   :
-  pp := false
+  pp := false,
+  prove := true
   ) -> SeqEnum[ModFrmHilDElt]
-  {Compute the basis of cuspidal parallel weight 1 forms using Hecke operator at pp.
-    If pp not specified, choose the smallest pp prime to the level and discriminant.
+  {Compute the basis of cuspidal parallel weight 1 forms using the Hecke stability method.
+    The optional parameter pp specifies which Hecke operator T_pp to use;
+    otherwise use smallest pp coprime to the level.
+    The optional paramter prove should be true or false. If true, we verify that the candidates
+    for the weight one forms obtained from the Hecke stability method are indeed holomorphic.
   }
   M := Parent(Mk);
   k := Weight(Mk);
@@ -31,13 +35,10 @@ intrinsic Weight1CuspBasis(
   pair := AdmChars[1];
   E1 := EisensteinSeries(M1, pair[1], pair[2]);
 
-  //Choosing the prime pp.
+  //Choosing the prime pp, skipping primes dividing level just to be safe. Probably not needed?
   if pp cmpeq false then
     for p in PrimesUpTo(100) do
-      if 2*Norm(N) mod p eq 0 then
-        continue;
-      end if;
-      if Factorization(p*ZF)[1][2] eq 2 then
+      if Norm(N) mod p eq 0 then
         continue;
       end if;
     pp := Factorization(p*ZF)[1][1];
@@ -84,6 +85,24 @@ intrinsic Weight1CuspBasis(
     Vprev := Vnew;
     dimprev := #Vprev;
   end while;
+
+  if prove then
+    vprintf HilbertModularForms: "Checking that forms are holomorphic by squaring\n";
+
+    M2chi2 := HMFSpace(M, N, [2,2], chi^2);
+    B2chi2 := CuspFormBasis(M2);
+
+    for f in Vnew do
+      V2 := Append(B2chi2, f^2);
+      assert #LinearDependence(V2) gt 0;
+    end for;
+
+
+  print "Need to verify that the precision is large enough to compute the space larger space\n";
+
+  B4 := Basis(HMFSpace(M, N, [4,4]));
+  assert #LinearDependence(B4) eq 0;
+  end if;
 
   return Vnew;
 end intrinsic;
