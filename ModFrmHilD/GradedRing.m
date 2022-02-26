@@ -148,16 +148,6 @@ intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrpAb, Map
   return TotallyPositiveUnits(BaseField(M));
 end intrinsic;
 
-// TODO: Move this function to the DedekindZeta file.
-intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
-  {}
-  if not assigned M`DedekindZetatwo then
-    F := BaseField(M);
-    M`DedekindZetatwo := Evaluate(LSeries(F : Precision := 100),2); // Fixed Precision 100.
-  end if;
-  return M`DedekindZetatwo;
-end intrinsic;
-
 intrinsic Places(M::ModFrmHilDGRng) -> Any
   {}
   if not assigned M`Places then

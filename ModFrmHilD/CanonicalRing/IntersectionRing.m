@@ -1086,7 +1086,7 @@ cycle of curves in the resolution together with the intersection matrix.}
     return "";
 end intrinsic;
 
-import "../Creation/DedekindZetaExact.m" : DedekindZetaExact;
+
 intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);

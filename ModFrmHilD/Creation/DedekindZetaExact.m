@@ -7,11 +7,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-/* Evaluating Dedekind zeta functions at negative integers exactly */
 
 // Working with ideal class groups
-
-function CGPrimes(I, S, Generators, CoprimeTo, Minimal, Quotient)
+intrinsic CGPrimes(I, S, Generators, CoprimeTo, Minimal, Quotient) -> Any
+{}
   R:= Order(I);
   if not IsMaximal(R) or not IsAbsoluteOrder(R) then return false, "The order must be absolute and maximal"; end if;
   r1, r2:= Signature(NumberField(R));
@@ -120,21 +119,23 @@ function CGPrimes(I, S, Generators, CoprimeTo, Minimal, Quotient)
   ParallelSort(~Norms, ~L);
 
   return true, L;
-end function;
+end intrinsic;
 
-function ClassGroupPrimeIdealGenerators(I, S : CoprimeTo:= 1, Quotient:= [])
- // Returns prime ideals that generate the ray class group of I and the infinite places in S
+intrinsic ClassGroupPrimeIdealGenerators(I, S : CoprimeTo:= 1, Quotient:= []) -> Any
+{Returns prime ideals that generate the ray class group of I and the infinite places in S.}
+ 
   ok, L:= CGPrimes(I, S, true, CoprimeTo, true, Quotient);
   if not ok then
       error L;
   end if;
   return L;
-end function;
+end intrinsic;
 
-function ExtensionToHeckeCharacter(E)
+intrinsic ExtensionToHeckeCharacter(E)-> Any
+{}
   assert Degree(E) eq 2;
   K:= BaseField(E);
-//  if not IsAbsoluteField(K) then K:= AbsoluteField(K); end if;
+  //  if not IsAbsoluteField(K) then K:= AbsoluteField(K); end if;
   RE:= Integers(E);
 
   S:= [];
@@ -150,7 +151,7 @@ function ExtensionToHeckeCharacter(E)
   end for;
   S:= Sort(S);
 
-//  S:= [1..Degree(K)];
+  //  S:= [1..Degree(K)];
   bad:= Type(K) eq FldRat;
   if bad then
     DE:= Integers( QNF() ) * Discriminant(RE);
@@ -162,9 +163,10 @@ function ExtensionToHeckeCharacter(E)
   h:= HeckeCharacter(DE, S, T);
   assert IsPrimitive(h);
   return h;
-end function;
+end intrinsic;
 
-function myEval(K, z, Relative)
+intrinsic myEval(K, z, Relative)-> Any
+{}
   if IsOdd(z) then
     k:= 1-z;
     if Type(K) eq FldRat then
@@ -180,9 +182,9 @@ function myEval(K, z, Relative)
   if Relative then
     H:= ExtensionToHeckeCharacter(K);
     L:= LSeries(H);
-//    F:= BaseField(K);
-//    K:= OptimizedRepresentation(AbsoluteField(K));
-//    L:= LSeries(K : Method:= Degree(F) ge 5 select "Direct" else "Default") / LSeries(F);
+    //    F:= BaseField(K);
+    //    K:= OptimizedRepresentation(AbsoluteField(K));
+    //    L:= LSeries(K : Method:= Degree(F) ge 5 select "Direct" else "Default") / LSeries(F);
   else
     L:= LSeries(K);
   end if;
@@ -200,32 +202,25 @@ function myEval(K, z, Relative)
   until #X eq 1;
   X:= Rep(X);
 
-//  if Relative then
-//    assert Abs(Real(Evaluate(LSeries(H), z)) - X) le 10^-10;
-//  end if;
+  //  if Relative then
+  //    assert Abs(Real(Evaluate(LSeries(H), z)) - X) le 10^-10;
+  //  end if;
   return X;
-end function;
+end intrinsic;
 
-function DedekindZetaExact(K, z : Relative := false)
- // Evaluates the Dedekind zeta function of K at the negative integer z
-    if not( (Relative and z eq 0) or z lt 0) then
-    error "The argument must be a negative integer";
-    end if;
+
+intrinsic DedekindZetaExact(K::FldNum, z::RngIntElt : Relative := false) -> Any
+{Return the exact value of `DedekindZeta(K)` at the negative integer `z`.
+The keyword `Relative` can be set to true. I have no idea what this does.}
+    require ((Relative and z eq 0) or z lt 0): "The argument must be a negative integer";
     return myEval(K, z, Relative);
-end function;
-
-function DedekindZetaExact(K, z : Relative:= false)
-    if not ( (Relative and z eq 0) or z lt 0) then
-    error "The argument must be a negative integer";
-    end if;
-    return myEval(K, z, Relative);
-end function;
+end intrinsic;
 
 
-// For when we need other values of the Dedekind zeta function, which is never.
+// For when we need other values of the Dedekind zeta function, which is never...
 // This intrinsic is not used in the rest of the package.
 intrinsic DedekindZeta(K::FldNum) -> LSer
-{produces the DedekindZeta function}
+{Return the Dedekind Zeta function of the number field K as an L-series.}
     M := MaximalOrder(K);
     r1,r2 := Signature(K);
     gamma := [0: k in [1..r1+r2]] cat [1: k in [1..r2]];
@@ -239,3 +234,14 @@ intrinsic DedekindZeta(K::FldNum) -> LSer
 				       Residues := [-2^(r1+r2)*Pi(RealField())^(r2/2)*reg*h/mu]);
 end intrinsic;
 
+
+// For when we compute the value of the Dedekind zeta at 2, which SHOULD be never, since
+// Trace.m actually applies a functional equation and just uses Zeta(K, -1).
+intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
+{}
+  if not assigned M`DedekindZetatwo then
+    F := BaseField(M);
+    M`DedekindZetatwo := Evaluate(LSeries(F : Precision := 100),2); // Fixed Precision 100.
+  end if;
+  return M`DedekindZetatwo;
+end intrinsic;
