@@ -1071,10 +1071,3 @@ intrinsic TwoLinearDependence(List::SeqEnum[ModFrmHilDElt]) -> SeqEnum[RngIntElt
   return LinearDependence(CoeffLists);
 end intrinsic;
 */
-
-
-
-
-
-
-
