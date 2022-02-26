@@ -10,7 +10,13 @@
 // hooked in easily.
 
 declare type StupidCongruenceSubgroup;
-declare attributes StupidCongruenceSubgroup : Field, Level, Index, EllipticPointData, ComponentIdeal;
+declare attributes StupidCongruenceSubgroup : Field,
+	PrintString,
+	Level,
+	Index,
+	EllipticPointData,
+	ComponentIdeal,
+	GammaType;
 
 /////////////////// Creation ///////////////////
 
@@ -26,7 +32,7 @@ end intrinsic;
 
 intrinsic CongruenceSubgroup(F::FldNum, N::RngQuad) -> StupidCongruenceSubgroup
 {}
-    if N eq MaximalOrder(F) then
+    if N eq 1*MaximalOrder(F) then
 	return CongruenceSubgroup(F);
     else
 	error "CongruenceSubgroup not implemented for arbitrary orders.";
@@ -35,8 +41,8 @@ end intrinsic;
 
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
-The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
-}
+The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
+    
     isRealQuadraticField := Degree(F) eq 2 and BaseRing(F) eq Rationals() and Discriminant(F) gt 0;
     require isRealQuadraticField: "Number field must be Real Quadratic Field.";
 
@@ -45,21 +51,44 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     Gamma`ComponentIdeal := B;
     Gamma`Level := N;
     Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
+    Gamma`GammaType := "Principal";
     return Gamma;
+end intrinsic;
+
+
+// At the moment, this is the only way to create a group of type Gamma_0(N).
+intrinsic Gamma0(F::FldNum) -> StupidCongruenceSubgroup
+{Return the Hilbert Modular group over `F`.}
+    return CongruenceSubgroup(F);
+end intrinsic;
+
+// At the moment, this is the only way to create a group of type Gamma_0(N).
+intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> StupidCongruenceSubgroup
+{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
+    if N eq 1*MaximalOrder(F) then
+	return CongruenceSubgroup(F);
+    else
+	G := CongruenceSubgroup(F, N);
+
+	// Reassign all the important information.
+	G`GammaType := "Gamma_0";
+	G`Index := IndexOfGamma0(F, N);
+	return G;
+    end if;
 end intrinsic;
 
 /////////////////// Printing ///////////////////
 
+
+
 intrinsic Print(Gamma::StupidCongruenceSubgroup)
 {Print.}
     print "Congruence Subgroup of Hilbert Modular group.";
-    print "Real Quadratic Field:";
-    print Field(Gamma);
-    print "Level:";
-    print Level(Gamma);
-    print "Component:";
-    print Component(Gamma);
+    print "Field:", Field(Gamma);
+    printf "Level: (%o)\n", IdealOneLine(Level(Gamma));
+    printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
+    print "Gamma Type:", Gamma`GammaType;
     return;
 end intrinsic;
 
@@ -143,6 +172,11 @@ elliptic points of this type up to congugacy in Gamma.
 	return ellipticData;
     end if;
 
+    // TODO: XXX: Properly implement elliptic points for arbitrary congruence subgroups.
+    if not IsPrincipalCongruenceSubgroup(Gamma) then
+	error "Not implemented for non-principal congruence subgroups.";
+    end if;
+    
     // The next thing to check is if we are in one of the special discriminant cases.
     // The special discriminants vis a vis torsion are D = 5, 8, 12.
     if D in [5,8,12] then
@@ -284,6 +318,17 @@ full Hilbert modular group.}
     assert IsPrimePower(q);
     return q * (q^2 - 1);
 end intrinsic;
+
+intrinsic IndexOfGamma0(F::FldNum, N::RngOrdIdl) -> RngIntElt
+{Return the index of the principal congruence subgroup of level `N` within the
+full Hilbert modular group.}
+    q := Norm(N);
+    if q eq 1 then return 1; end if;
+    
+    assert IsPrimePower(q);
+    return q + 1;
+end intrinsic;
+
 
 intrinsic IsPrincipalCongruenceSubgroup(Gamma::StupidCongruenceSubgroup) -> BoolElt
 {}
