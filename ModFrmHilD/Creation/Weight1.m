@@ -25,7 +25,7 @@ intrinsic Weight1CuspBasis(
   vprintf HilbertModularForms: "Computing basis of cusp forms of weight [2,2] and level \n %o\n", N;
   M2 := HMFSpace(M, N, [2,2]);
   B2 := CuspFormBasis(M2);
-  printf "Size of basis is %o.\n", #B2;
+  vprintf HilbertModularForms: "Size of basis is %o.\n", #B2;
 
   //Load an Eisenstein series of weight [1,1], character chi.
   vprintf HilbertModularForms: "Computing an Eisenstein series of weight [1, 1] and character %o\n", chiinv;
