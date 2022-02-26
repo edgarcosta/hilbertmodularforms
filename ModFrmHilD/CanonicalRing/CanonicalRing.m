@@ -420,63 +420,86 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////
 
-intrinsic GeneratorDegreeBound(F::FldNum) -> RngIntElt
+intrinsic GeneratorWeightBound(F::FldNum) -> RngIntElt
 {}
-    return GeneratorDegreeBound(F, 1*MaximalOrder(F));
+    return GeneratorWeightBound(F, 1*MaximalOrder(F));
 end intrinsic;
 
-intrinsic GeneratorDegreeBound(F::FldNum, N::RngOrdIdl) -> RngIntElt
-{Determine a bound for the maximum degree of a generator in the graded ring of modular forms.}
+intrinsic GeneratorWeightBound(F::FldNum, N::RngOrdIdl) -> RngIntElt
+{}
+    return GeneratorWeightBound(CongruenceSubgroup(F, N));
+end intrinsic;
 
-    // Set-up.
-    // TODO: At the moment only Gamma_0(N) is supported.
-    G := Gamma0(F, N);
-    
+intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup) -> RngIntElt
+{Determine a bound for the maximum weight of a generator in the graded ring of modular forms.}
+    error "Not Implemented.";
+    return -9999;
+end intrinsic;
+
+
+// TODO: Eventually, this will be converted into the correct function.
+intrinsic WrongGeneratorWeightBound(G::StupidCongruenceSubgroup) -> Any
+{Experiment with the Neves style argument.}
+
     // The algorithm to compute a degree bound on the generator can be found in the Overleaf
     // document associated to the paper. It proceeds along the following steps.
 
     // 1. Compute the self-intersection number of the log-canonical sheaf.
+    //    NOTE: The Chern numbers of the log canonical are Not Necessarily Integers!
     Lsqed := ChernNumberOfLogCanonical(G, 1);
-
+    
     // 2. Choose a section `f \in L` of the log-canonical bundle.
     // Technically, I don't actually need this section. I only care about its existence.
 
     // 3. Compute the genus of the section cut out be `f` via adjuction.
     //    NOTE: As is explained in the paper, `L.{Resolution cycles} = 0`.
-    g := 2 * Lsqed;
+    deg_can := 2 * Lsqed;
+
+    // Not sure this makes sense, but...
+    // A section cut out by `f` is not really a curve, but a stacky curve with a QQ divisor
+    // coming from the resolution. In particular, `g` is not integral!
+    g := deg_can/2;
     
     // 4. Compute the Hilbert series.
-    //
-    // TODO: We Should have a HilbertSeriesExact.
-    HilbSerPrec := 100;
-    hilb := MakeHilbertSeries(g,r,HilbSerPrec);
-    
+    hilb := HilbertSeries(G);
+    P<t> := Parent(hilb);
     
     // 5. Use Hilbert series arithmetic to contruct a polynomial measuring the difference
     //    between the Hilbert series and the Hilbert series of the restriction to `Z(f)`.
-
+    hilbI := hilb * t^2;
+    Q := t^2 * g/(1-t^2)^2 + (1-g)/(1-t^2); // Riemann-Roch.
     
-
     // 6. The degree of this polynomial reveals the path to victory.
+    poly := hilb - hilbI - Q;
 
+    // NOTE: Things are not working out as expected if the discriminant is divisible by 3.
+    //       This is very weird.
+    PP<T> := PowerSeriesRing(BaseRing(P), 100); // For printing purposes.
 
-    //    \item
-    //        Compute $P_{\scrL}(t)$ the Hilbert series for $\mathcal{R}(X_\Gamma, \scrL)$.
-    //        
-    //    \item
-    //        Set $P_{I}(t) := t^{-1}(P_{\scrL}(t)-1)$.
-    //    \item
-    //        Set $Q_{\scrL|_C}(t) := t \cdot \frac{\deg \scrL|_C}{(1-t)^2} + \frac{(1-g)}{(1-t)}$.
-    //    \item
-    //        Set $b := \deg(P_{\scrL}(t) - P_{I}(t) - Q_{\scrL|_C}(t))$, the argument being a polynomial.
-    //        %
-    //        This step works because of Proposition~\ref{prop: finding the generator bound}.\\
-    //
-    //    \item
-    //        Set $m := \max(\frac{2g +1}{\deg \scrL|_C}, b)$
-    //
-    //    \item
-    //        \texttt{return} $\{f\} \cup \bigcup_{e=1}^{2m-1} \texttt{Basis}(\mathcal{R}(X_\Gamma, \scrL)_e)$.    
+    return g, hilb, hilbI, Q;
+    
+    print "Not genus:", g;
+    
+    print PP ! hilb;
+    print PP ! hilbI;
 
-    return -9999;
+    diffy := hilb - hilbI;
+
+    print "\ndiffy and floor.(Q)";
+
+    a, b, c := Coefficients(PP ! diffy);
+    print a;
+    print [Floor(x) : x in Coefficients(PP ! Q)];
+
+    // print "\nDifference\n", Coefficients(PP ! (diffy - t^2 * diffy));
+    // print "\n", g;
+
+    //print PP ! ((1-g)/(1-t^2));
+    //print PP ! (t^2 * g/(1-t^2)^2);
+
+    // 7. The degree of the polynomial tells us the last point where the Hilbert series and
+    //    Hilbert series of the restricted bundle differ. From this we can figure out the
+    //    desired degree bound.
+
+    // return -9999;
 end intrinsic;

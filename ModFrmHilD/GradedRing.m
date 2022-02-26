@@ -62,7 +62,19 @@ intrinsic Print(M::ModFrmHilDGRng, level::MonStgElt)
     printf "Graded ring of Hilbert modular forms over %o", M`Field;
     printf " with precision %o", M`Precision;
   elif level eq "Magma" then
-    printf "%o", PercentM(M);
+      printf "%o", PercentM(M);
+  elif level eq "Exosphere" then
+      msg := "\n";
+      msg *:= "        .-\"\"`\"\"-." * "\n";
+      msg *:= "     _/`oOoOoOoOo`\\_" * "\n";
+      msg *:= "    '.-= Hilbert =-.'" * "\n";
+      msg *:= "    '.-=-=-=-=-=-=-.'" * "\n";
+      msg *:= "      `-=.=-.-=.=-'  " * "\n";
+      msg *:= "         ^  ^  ^     " * "\n";
+
+      print msg;
+      printf "Mothership of Hilbert modular forms over %o", M`Field;
+      printf " with precision %o\n", M`Precision;
   else
     error "not a valid printing level.";
   end if;
