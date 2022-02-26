@@ -14,6 +14,8 @@
 in magma this yields 0 for ideals that are not coprime to the level and we need this to be 1. */
 // Returns the constant term for the trace formula
 // Notes: None
+//
+// TODO: Replace DedekindZetatwo with DedekindZetaExact(K, -1);
 intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   {Constant term for Summation}
   // Preliminaries

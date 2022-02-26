@@ -222,3 +222,20 @@ function DedekindZetaExact(K, z : Relative:= false)
 end function;
 
 
+// For when we need other values of the Dedekind zeta function, which is never.
+// This intrinsic is not used in the rest of the package.
+intrinsic DedekindZeta(K::FldNum) -> LSer
+{produces the DedekindZeta function}
+    M := MaximalOrder(K);
+    r1,r2 := Signature(K);
+    gamma := [0: k in [1..r1+r2]] cat [1: k in [1..r2]];
+    disc := Abs(Discriminant(M));
+    P<x> := PolynomialRing(Integers());
+    cf := func<p,d|&*[1-x^Degree(k[1]): k in Decomposition(M,p)]>;
+    h := #ClassGroup(M);
+    reg := Regulator(K);
+    mu := #TorsionSubgroup(UnitGroup(M));
+    return LSeries(1, gamma, disc, cf: Parent:=K, Sign:=1, Poles:=[1],
+				       Residues := [-2^(r1+r2)*Pi(RealField())^(r2/2)*reg*h/mu]);
+end intrinsic;
+

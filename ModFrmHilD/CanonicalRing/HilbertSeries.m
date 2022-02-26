@@ -10,23 +10,6 @@
 // Formula in Thomas, Vasquez - Rings of Hilbert Modular Forms pg 147-148 Theorem 3.4, Cubic fields pg 149-151 
 
 
-// Helper functions
-//Dedekind Zeta function implemented in Magma
-intrinsic DedekindZeta(K::FldNum) -> LSer
-	{produces the DedekindZeta function}
-    M := MaximalOrder(K);
-    r1,r2 := Signature(K);
-    gamma := [0: k in [1..r1+r2]] cat [1: k in [1..r2]];
-    disc := Abs(Discriminant(M));
-    P<x> := PolynomialRing(Integers());
-    cf := func<p,d|&*[1-x^Degree(k[1]): k in Decomposition(M,p)]>;
-    h := #ClassGroup(M);
-    reg := Regulator(K);
-    mu := #TorsionSubgroup(UnitGroup(M));
-    return LSeries(1, gamma, disc, cf: Parent:=K, Sign:=1, Poles:=[1], Residues := [-2^(r1+r2)*Pi(RealField())^(r2/2)*reg*h/mu]);
-end intrinsic;
-
-
 //List of Coefficients for A3 and the Arithmetic Genus. From HirzeBruch-Hilbert Modular Surfaces (A3 on pg. 198-200, chi on pg 239). This comes from Prestel Die Elliptischen fixpunte der hilbertshen Modulgruppen.
 intrinsic A3andGenus(D::RngIntElt) -> List
 	{Takes a Fundamental Discriminant D and returns the genus and value for a3}

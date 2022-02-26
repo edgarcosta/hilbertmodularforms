@@ -420,8 +420,63 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////
 
-intrinsic GeneratorDegreeBound(R::Any) -> RngIntElt
+intrinsic GeneratorDegreeBound(F::FldNum) -> RngIntElt
+{}
+    return GeneratorDegreeBound(F, 1*MaximalOrder(F));
+end intrinsic;
+
+intrinsic GeneratorDegreeBound(F::FldNum, N::RngOrdIdl) -> RngIntElt
 {Determine a bound for the maximum degree of a generator in the graded ring of modular forms.}
+
+    // Set-up.
+    // TODO: At the moment only Gamma_0(N) is supported.
+    G := Gamma0(F, N);
+    
+    // The algorithm to compute a degree bound on the generator can be found in the Overleaf
+    // document associated to the paper. It proceeds along the following steps.
+
+    // 1. Compute the self-intersection number of the log-canonical sheaf.
+    Lsqed := ChernNumberOfLogCanonical(G, 1);
+
+    // 2. Choose a section `f \in L` of the log-canonical bundle.
+    // Technically, I don't actually need this section. I only care about its existence.
+
+    // 3. Compute the genus of the section cut out be `f` via adjuction.
+    //    NOTE: As is explained in the paper, `L.{Resolution cycles} = 0`.
+    g := 2 * Lsqed;
+    
+    // 4. Compute the Hilbert series.
+    //
+    // TODO: We Should have a HilbertSeriesExact.
+    HilbSerPrec := 100;
+    hilb := MakeHilbertSeries(g,r,HilbSerPrec);
+    
+    
+    // 5. Use Hilbert series arithmetic to contruct a polynomial measuring the difference
+    //    between the Hilbert series and the Hilbert series of the restriction to `Z(f)`.
+
+    
+
+    // 6. The degree of this polynomial reveals the path to victory.
+
+
+    //    \item
+    //        Compute $P_{\scrL}(t)$ the Hilbert series for $\mathcal{R}(X_\Gamma, \scrL)$.
+    //        
+    //    \item
+    //        Set $P_{I}(t) := t^{-1}(P_{\scrL}(t)-1)$.
+    //    \item
+    //        Set $Q_{\scrL|_C}(t) := t \cdot \frac{\deg \scrL|_C}{(1-t)^2} + \frac{(1-g)}{(1-t)}$.
+    //    \item
+    //        Set $b := \deg(P_{\scrL}(t) - P_{I}(t) - Q_{\scrL|_C}(t))$, the argument being a polynomial.
+    //        %
+    //        This step works because of Proposition~\ref{prop: finding the generator bound}.\\
+    //
+    //    \item
+    //        Set $m := \max(\frac{2g +1}{\deg \scrL|_C}, b)$
+    //
+    //    \item
+    //        \texttt{return} $\{f\} \cup \bigcup_{e=1}^{2m-1} \texttt{Basis}(\mathcal{R}(X_\Gamma, \scrL)_e)$.    
+
     return -9999;
 end intrinsic;
-	
