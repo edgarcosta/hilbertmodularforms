@@ -21,6 +21,7 @@ jobs:
         run: |
           sudo lsmod # loads dummy
           sudo ip link add dumdum type dummy
+          ip link show dumdum
           sudo ifconfig dumdum hw ether "$MAGMA_MAC"
 
 
