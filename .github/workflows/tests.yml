@@ -7,17 +7,19 @@ on:
   pull_request_target:
 
 jobs:
-  printJob:
-    name: Print event
-    runs-on: ubuntu-latest
-    steps:
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        echo "$GITHUB_CONTEXT"
+
+  #  printJob:
+  #    name: Print event
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #    - name: Dump GitHub context
+  #      env:
+  #        GITHUB_CONTEXT: ${{ toJson(github) }}
+  #      run: |
+  #        echo "$GITHUB_CONTEXT"
   test:
     runs-on: ubuntu-latest
+    name: Run tests
 
     steps:
       - name: Check user permission
@@ -41,7 +43,7 @@ jobs:
 
       - name: Checkout for a PR event
         uses: actions/checkout@v2
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && steps.check.outputs.has-permission }}
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
