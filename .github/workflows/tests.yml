@@ -19,9 +19,7 @@ jobs:
           MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
         shell: bash
         run: |
-          sudo lsmod # loads dummy
           sudo ip link add dumdum type dummy
-          ip link show dumdum
           sudo ifconfig dumdum hw ether "$MAGMA_MAC"
 
 
@@ -30,7 +28,7 @@ jobs:
           MAGMA_URL: ${{ secrets.MAGMA_URL }}
         shell: bash
         run: |
-          wget "$MAGMA_URL" -O magma.tar.gz -o /dev/null
+          wget "$MAGMA_URL" -O magma.tar.gz
           tar xf magma.tar.gz
           echo | ./magma/magma
 
