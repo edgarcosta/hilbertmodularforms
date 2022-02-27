@@ -19,7 +19,7 @@ jobs:
           MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
         shell: bash
         run: |
-          sudo ip link show dummy # loads dummy
+          sudo lsmod # loads dummy
           sudo ip link add dumdum type dummy
           sudo ifconfig dumdum hw ether "$MAGMA_MAC"
 
