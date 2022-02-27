@@ -28,7 +28,7 @@ jobs:
           MAGMA_URL: ${{ secrets.MAGMA_URL }}
         shell: bash
         run: |
-          wget "$MAGMA_URL" -O magma.tar.gz
+          wget "$MAGMA_URL" -O magma.tar.gz --quiet
           tar xf magma.tar.gz
           echo | ./magma/magma
 
