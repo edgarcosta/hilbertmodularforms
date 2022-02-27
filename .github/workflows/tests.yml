@@ -7,15 +7,19 @@ on:
   pull_request_target:
 
 jobs:
+  printJob:
+    name: Print event
+    runs-on: ubuntu-latest
+    steps:
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: |
+        echo "$GITHUB_CONTEXT"
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print GitHub event
-        run: |
-          echo "${{ github.event.action }}"
-
-
       - name: Check user permission
         id: check
         uses: scherermichael-oss/action-has-permission@master
