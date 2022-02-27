@@ -37,13 +37,18 @@ jobs:
           echo "Sorry! Your permissions are insufficient."
           false
 
+      - name: The user has write access
+        if: "steps.check.outputs.has-permission"
+        run: |
+          echo "The user has write access"
+
       - name: Checkout for a push event
         uses: actions/checkout@v2
         if: ${{ github.event_name == 'push' }}
 
       - name: Checkout for a PR event
         uses: actions/checkout@v2
-        if: ${{ github.event_name == 'pull_request' && steps.check.outputs.has-permission }}
+        if: ${{ github.event_name == 'pull_request_target' }}
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
