@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Print GitHub event
         run: |
-          echo "${{ github.event }}"
+          echo "${{ github.event.action }}"
 
 
       - name: Check user permission
