@@ -69,9 +69,9 @@ forms (with respect to the full Hilbert Modular Group).}
     end if;
 
     B0 := 1;
-    B1 := Round(chi + h - 3);
-    B2 := Round(4*zeta - chi - sD*a3 - h + 3);
-    B3 := Round(4*zeta + 2*sD*a3 - 2);
+    B1 := chi + h - 3;
+    B2 := 4*zeta - chi - sD*a3 - h + 3;
+    B3 := 4*zeta + 2*sD*a3 - 2;
 
     B := B0 + B1*x^2 + B2*x^4 + B3*x^6 + B2*x^8 + B1*x^10 + B0*x^12;
     G := B*(1-x^2)^(-2)*(1-x^6)^(-1);
