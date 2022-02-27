@@ -4,17 +4,38 @@ on:
   push:
     branches: [ '**' ]
 
-  workflow_run:
-    workflows: ["Receive PR"]
-    types:
-      - completed
+  pull_request_target
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Check user permission
+        id: check
+        uses: scherermichael-oss/action-has-permission@master
+        with:
+          required-permission: write
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Stop workflow for users with no write access
+        if: "! steps.check.outputs.has-permission"
+        run: |
+          echo "Sorry! Your permissions are insufficient."
+          false
+
+      - name: Checkout for a push event
+        uses: actions/checkout@v2
+        if: github.event.type == "Push"
+
+      - name: Checkout for a PR event
+        uses: actions/checkout@v2
+        if: github.event.type == "PullRequest"
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
 
 
       - name: Create dummy network device
