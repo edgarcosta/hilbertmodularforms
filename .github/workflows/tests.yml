@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Print GitHub event
+        run: |
+          echo "${{ github.event }}"
       - name: Check user permission
         id: check
         uses: scherermichael-oss/action-has-permission@master
@@ -19,6 +22,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+        - name: Print GitHub event action
+        run: |
+          echo "${{ github.event.action }}"
 
       - name: Stop workflow for users with no write access
         if: "! steps.check.outputs.has-permission"
@@ -28,11 +34,11 @@ jobs:
 
       - name: Checkout for a push event
         uses: actions/checkout@v2
-        if: github.event.type == "Push"
+        if: ${{ github.event.type == 'Push' }}
 
       - name: Checkout for a PR event
         uses: actions/checkout@v2
-        if: github.event.type == "PullRequest"
+        if: ${{ github.event.type == 'PullRequest' }}
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
