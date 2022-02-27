@@ -1,6 +1,9 @@
 // usage: magma target:=SUBSTRING run_tests.m
-
-tests := Split(Pipe("ls Tests", ""), "\n");
+if assigned filename then
+  tests := [filename];
+else
+  tests := Split(Pipe("ls Tests", ""), "\n");
+end if;
 load "config.m";
 failed := [];
 if not assigned target then
@@ -26,4 +29,7 @@ if #failed gt 0 then
   for f in failed do
     print f;
   end for;
+end if;
+if assigned exitsignal then
+  exit #failed;
 end if;
