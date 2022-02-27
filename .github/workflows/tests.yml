@@ -3,8 +3,11 @@ name: Tests
 on:
   push:
     branches: [ '**' ]
-  pull_request:
-    branches: [ master ]
+
+  workflow_run:
+    workflows: ["Receive PR"]
+    types:
+      - completed
 
 jobs:
   test:
