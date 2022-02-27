@@ -32,3 +32,8 @@ jobs:
           tar xf magma.tar.gz
           echo | ./magma/magma
 
+      - name: Run tests
+        shell: bash
+        run: |
+          ./magma/magma -b exitsignal:="" run_tests.m
+
