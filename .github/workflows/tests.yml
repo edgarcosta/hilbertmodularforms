@@ -18,14 +18,15 @@ jobs:
   #      run: |
   #        echo "$GITHUB_CONTEXT"
   check-env:
-      outputs:
-          my-key: ${{ steps.my-key.outputs.defined }}
-      steps:
-          - id: my-key
-            env:
-                MY_KEY: ${{ secrets.MAGMA_MAC }}
-            if: "${{ env.MAGMA_MAC != '' }}"
-            run: echo "::set-output name=defined::true"
+    runs-on: ubuntu-latest
+    outputs:
+      my-key: ${{ steps.my-key.outputs.defined }}
+    steps:
+        - id: my-key
+          env:
+            MY_KEY: ${{ secrets.MAGMA_MAC }}
+          if: "${{ env.MAGMA_MAC != '' }}"
+          run: echo "::set-output name=defined::true"
 
   test:
     runs-on: ubuntu-latest
