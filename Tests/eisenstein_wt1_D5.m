@@ -1,4 +1,4 @@
-printf "Testing Eisenstein series of weight 1";
+printf "Testing Eisenstein series of weight 1...";
 F:=QuadraticField(5);
 prec:=20;
 M:=GradedRingOfHMFs(F, prec);

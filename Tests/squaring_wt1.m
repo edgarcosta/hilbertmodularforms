@@ -1,4 +1,4 @@
-printf "Testing squaring of weight one forms";
+printf "Testing squaring of weight one forms...";
 F:=QuadraticField(5);
 prec:=10;
 M:=GradedRingOfHMFs(F, prec);
