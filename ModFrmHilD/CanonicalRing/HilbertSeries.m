@@ -58,16 +58,16 @@ forms (with respect to the full Hilbert Modular Group).}
     end if;
 
     // Computing sd from formula 2.13 on pg 145.
-    if Disc ne 0 mod 3 then
+    if Disc mod 3 ne 0 then
 	sD := 1/6;
-    elif Disc gt 12 and Disc eq 3 mod 9 then
+    elif Disc gt 12 and (Disc mod 9) eq 3 then
 	sD := 4/15;
-    elif Disc eq 12 or Disc eq 6 mod 9 then
+    elif Disc eq 12 or (Disc mod 9) eq 6 then
 	sD := 1/3;
     else 
 	error "Not implemented when Discriminant is:", Disc;
     end if;
-
+    
     B0 := 1;
     B1 := chi + h - 3;
     B2 := 4*zeta - chi - sD*a3 - h + 3;
@@ -82,8 +82,6 @@ end intrinsic;
 intrinsic testHilbertSeriesVasquez() -> BoolElt
 {Consistency checks for HilbertSeriesVasquez.}
 
-    // It seems as though the Vasquez paper contains some kind of arithmetic error.
-
     K   := QuadraticField(21);
     h   := ClassNumber(K);
     a3  := 5;    // Number of elliptic points of order 3 on the HMS.
@@ -95,7 +93,7 @@ intrinsic testHilbertSeriesVasquez() -> BoolElt
     // zero.
     cuspFormDims := [0,
 		     chi - 1,
-		     zm1 + 1 - a3 * s,
+		     4 * zm1 + 1 - a3 * s,
 		     12 * zm1 + 1,
 		     24 * zm1 + 1,
 		     40 * zm1 + 1 - a3 * s,
