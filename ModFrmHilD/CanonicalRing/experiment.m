@@ -12,7 +12,7 @@ for D in [2..50] do
     K := QuadraticField(D);
     if Discriminant(K) gt 42 then continue; end if;
 
-    print "Discriminant:", D;
+    print "Discriminant:", Discriminant(K);
 
     PP<T> := PowerSeriesRing(Rationals(), 100);
 

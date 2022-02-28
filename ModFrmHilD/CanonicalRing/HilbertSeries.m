@@ -21,8 +21,8 @@ intrinsic A3andGenus(D::RngIntElt) -> List
     require D lt 42: "Tables not implemented for discriminant > 42.";
 
     T := [[2,3,5,6,7,10,11,13,14,15,17,19,21,22,23,26,29,30,31,33,34,35,37,38,39,41],
-	  [2,2,2,3,4,4,4,4,4,6,2,4,5,8,8,4,6,10,4,3,4,8,8,8,10,2],
-	  [1,1,1,1,1,2,2,1,2,1,1,3,1,3,3,5,2,3,4,1,6,4,2,6,7,2]];
+	  [2,2,2,3,4, 4, 4, 4, 4, 6, 2, 4, 5, 8, 8, 4, 6,10, 4, 3, 4, 8, 8, 8,10, 2],
+	  [1,1,1,1,1, 2, 2, 1, 2, 1, 1, 3, 1, 3, 3, 5, 2, 3, 4, 1, 6, 4, 2, 6, 7, 2]];
     
     d,e := SquareFree(D);
     i := Index(T[1],d);
@@ -78,6 +78,43 @@ forms (with respect to the full Hilbert Modular Group).}
 
     return G;
 end intrinsic;
+
+intrinsic testHilbertSeriesVasquez() -> BoolElt
+{Consistency checks for HilbertSeriesVasquez.}
+
+    // It seems as though the Vasquez paper contains some kind of arithmetic error.
+
+    K   := QuadraticField(21);
+    h   := ClassNumber(K);
+    a3  := 5;    // Number of elliptic points of order 3 on the HMS.
+    s   := 4/15; // Vasquez's mysterious constant.
+    chi := 1;    // Arithmetic genus of the HMS.
+    zm1 := DedekindZetaExact(K, -1);
+
+    // One obvious error is that the dimension of the space of cusp forms of weight 0 is
+    // zero.
+    cuspFormDims := [0,
+		     chi - 1,
+		     zm1 + 1 - a3 * s,
+		     12 * zm1 + 1,
+		     24 * zm1 + 1,
+		     40 * zm1 + 1 - a3 * s,
+		     60*zm1 + 1];
+
+    MkDims := [1] cat [h + cuspFormDims[i] : i in [2..#cuspFormDims]];
+
+    // Compare coefficients.
+    PP<t> := PowerSeriesRing(Rationals(), 20);
+    hilb  := PP ! HilbertSeriesVasquez(K);
+
+    evenCoeffs := [c : c in Coefficients(hilb)[1 .. 2*#MkDims by 2]];
+
+    comp := [MkDims[i] - evenCoeffs[i] : i in [1..#MkDims]];
+    print comp;
+    
+    return &and [c eq 0 : c in comp];
+end intrinsic;
+
 
 intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> FldFunRatUElt
 {Returns the dimension of the space of Hilbert Modular Forms of weight `k` and level `(1)`.}
