@@ -481,9 +481,14 @@ intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
-  {create one ModHilFrmDElt of weight zero.}
-  M := Parent(Mk); chi := Character(Mk); N := Level(Mk); k := [0 : i in Weight(Mk)];
-  M0 := HMFSpace(M, N, k, chi);
+  {create one ModHilFrmDElt of weight zero and trivial character}
+  M := Parent(Mk);
+  N := Level(Mk);
+  X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
+  chi := X!1;
+  k := [0 : i in Weight(Mk)];
+  uc := UnitCharacters(Mk);
+  M0 := HMFSpace(M, N, k, chi: unitcharacters:=uc);
   coeffs := AssociativeArray();
   for nu in ShintaniReps(M)[bb] do
     if IsZero(nu) then
@@ -496,7 +501,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
-  {create one ModHilFrmDElt of weight zero.}
+  {create one ModHilFrmDElt of weight zero and trivial character}
   M := Parent(Mk);
   C := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
