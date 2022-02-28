@@ -97,10 +97,12 @@ intrinsic Eigenform(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDElt
   N1 := Level(Parent(f));
   require N2 eq N1: "The level of f must match the level of the target ambient space";
 
+  vprintf HilbertModularForms: "Computing eigenvalues for %o...\n", f;
   ev := AssociativeArray();
   for pp in PrimeIdeals(M) do
    ev[pp] := HeckeEigenvalue(f, pp);
   end for;
+  vprintf HilbertModularForms: "Done\n";
 
   return Eigenform(Mk, ev);
 end intrinsic;
@@ -182,12 +184,20 @@ intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
   if not assigned Mk`MagmaNewCuspForms then
     N := Level(Mk);
     k := Weight(Mk);
-    vprintf HilbertModularForms: "Decomposing HilbertCuspForms for N = %o and weight = %o\n", IdealOneLine(N), k;
+    vprintf HilbertModularForms: "Decomposing HilbertCuspForms for N=%o and weight=%o...", IdealOneLine(N), k;
     M := Parent(Mk);
     F := BaseField(M);
+    vprintf HilbertModularForms: "creating ";
     MF := HilbertCuspForms(Mk);
-    S := HeckeCharacterSubspace(NewSubspace(MF), Character(Mk));
-    Mk`MagmaNewCuspForms := [* Eigenform(U) :  U in NewformDecomposition(S) *];
+    vprintf HilbertModularForms: "new ";
+    New := NewSubspace(MF);
+    vprintf HilbertModularForms: "hecke character subspace ";
+    S := HeckeCharacterSubspace(New, Character(Mk));
+    vprintf HilbertModularForms: "decomposition...";
+    NewDecomp := NewformDecomposition(S);
+    vprintf HilbertModularForms: "eigenforms...";
+    Mk`MagmaNewCuspForms := [* Eigenform(U) :  U in NewDecomp *];
+    vprintf HilbertModularForms: "Done\n", IdealOneLine(N), k;
   end if;
   return Mk`MagmaNewCuspForms;
 end intrinsic;

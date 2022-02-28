@@ -85,7 +85,6 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   assert NumberOfRows(GM) mod 2 eq 0;
   K := BaseField(M);
   ZK := Integers(K);
-  print("Warning: something is fishy with ThetaCoefficient perhaps related with the change from bb to bbp");
 
   //checking that the level of Theta divides the level of M
 

@@ -1,0 +1,81 @@
+name: Tests
+
+on:
+  push:
+    branches: [ '**' ]
+
+  pull_request_target:
+
+jobs:
+
+  #  printJob:
+  #    name: Print event
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #    - name: Dump GitHub context
+  #      env:
+  #        GITHUB_CONTEXT: ${{ toJson(github) }}
+  #      run: |
+  #        echo "$GITHUB_CONTEXT"
+
+  test:
+    runs-on: ubuntu-latest
+    name: Run tests
+    environment: development
+
+    steps:
+      - name: Check user permission
+        id: check
+        uses: scherermichael-oss/action-has-permission@master
+        with:
+          required-permission: write
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Stop workflow for users with no write access
+        if: "! steps.check.outputs.has-permission"
+        run: |
+          echo "Sorry! Your permissions are insufficient."
+          false
+
+      - name: The user has write access
+        if: "steps.check.outputs.has-permission"
+        run: |
+          echo "The user has write access"
+
+      - name: Checkout for a push event
+        uses: actions/checkout@v2
+        if: ${{ github.event_name == 'push' }}
+
+      - name: Checkout for a PR event
+        uses: actions/checkout@v2
+        if: ${{ github.event_name == 'pull_request_target' }}
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+
+
+      - name: Create dummy network device
+        env:
+          MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
+        shell: bash
+        run: |
+          sudo ip link add dumdum type dummy
+          sudo ifconfig dumdum hw ether "$MAGMA_MAC"
+
+
+      - name: Install magma
+        env:
+          MAGMA_URL: ${{ secrets.MAGMA_URL }}
+        shell: bash
+        run: |
+          wget "$MAGMA_URL" -O magma.tar.gz --quiet
+          tar xf magma.tar.gz
+          echo | ./magma/magma
+
+      - name: Run tests
+        shell: bash
+        run: |
+          ./magma/magma -b exitsignal:="" run_tests.m
+
