@@ -34,4 +34,3 @@ if assigned exitsignal then
   exit #failed;
 end if;
 
-// A pointless comment to test the CI setup.
