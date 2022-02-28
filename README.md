@@ -6,5 +6,6 @@ Mockup implementation of Hilbert Modular Forms
 
 * John Doe
 * Jane Doe
+* Edgar, the master of semicolons
 
 
