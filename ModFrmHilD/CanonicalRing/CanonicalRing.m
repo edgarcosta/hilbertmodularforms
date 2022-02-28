@@ -467,7 +467,9 @@ intrinsic WrongGeneratorWeightBound(G::StupidCongruenceSubgroup) -> Any
     // 5. Use Hilbert series arithmetic to contruct a polynomial measuring the difference
     //    between the Hilbert series and the Hilbert series of the restriction to `Z(f)`.
     hilbI := hilb * t^2;
-    Q := t^2 * g/(1-t^2)^2 + (1-g)/(1-t^2); // Riemann-Roch.
+    //Q := t^2 * g/(1-t^2)^2 + (1-g)/(1-t^2); // Riemann-Roch.
+
+    Q := t^4 * g/(1-t^2)^2 + 1;
     
     // 6. The degree of this polynomial reveals the path to victory.
     poly := hilb - hilbI - Q;

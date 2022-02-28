@@ -89,8 +89,6 @@ intrinsic testHilbertSeriesVasquez() -> BoolElt
     chi := 1;    // Arithmetic genus of the HMS.
     zm1 := DedekindZetaExact(K, -1);
 
-    // One obvious error is that the dimension of the space of cusp forms of weight 0 is
-    // zero.
     cuspFormDims := [0,
 		     chi - 1,
 		     4 * zm1 + 1 - a3 * s,
@@ -106,9 +104,7 @@ intrinsic testHilbertSeriesVasquez() -> BoolElt
     hilb  := PP ! HilbertSeriesVasquez(K);
 
     evenCoeffs := [c : c in Coefficients(hilb)[1 .. 2*#MkDims by 2]];
-
     comp := [MkDims[i] - evenCoeffs[i] : i in [1..#MkDims]];
-    print comp;
     
     return &and [c eq 0 : c in comp];
 end intrinsic;
