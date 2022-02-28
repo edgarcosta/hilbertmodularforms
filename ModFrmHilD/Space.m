@@ -2,8 +2,14 @@
 ModFrmHilD
 *****/
 
-import "../ModFrmHil/copypastefunctions.m" : TopAmbient;
-import "../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
+//FIXME
+//import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
+function HeckeCharacterSubspace(M, chi)
+  //FIXME
+  // while this is broken
+  return M;
+end function;
+
 
 ////////// ModFrmHilD attributes //////////
 
