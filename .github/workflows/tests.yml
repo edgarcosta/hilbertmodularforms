@@ -21,10 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       my-key: ${{ steps.my-key.outputs.defined }}
+
     steps:
         - id: my-key
           env:
-            MY_KEY: ${{ secrets.MAGMA_MAC }}
+            MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
           if: "${{ env.MAGMA_MAC != '' }}"
           run: echo "::set-output name=defined::true"
 
