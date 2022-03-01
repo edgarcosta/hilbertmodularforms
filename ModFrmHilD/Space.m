@@ -30,6 +30,7 @@ declare attributes ModFrmHilD:
   EisensteinDimension, //RngIntElt
   EisensteinAdmissibleCharacterPairs, // List of pairs of primitive characters
   MagmaSpace, //ModFrmHil
+  MagmaNewformDecomposition, // List
   MagmaNewCuspForms; // SeqEnum[ModFrmHilElt]
 
 
