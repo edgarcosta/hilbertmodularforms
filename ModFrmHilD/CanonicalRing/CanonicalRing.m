@@ -438,7 +438,7 @@ end intrinsic;
 
 
 // TODO: Eventually, this will be converted into the correct function.
-intrinsic WrongGeneratorWeightBound(G::StupidCongruenceSubgroup) -> Any
+intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup : experiment:=false) -> Any
 {Experiment with the Neves style argument.}
 
     // The algorithm to compute a degree bound on the generator can be found in the Overleaf
@@ -448,60 +448,55 @@ intrinsic WrongGeneratorWeightBound(G::StupidCongruenceSubgroup) -> Any
     //    NOTE: The Chern numbers of the log canonical are Not Necessarily Integers!
     Lsqed := ChernNumberOfLogCanonical(G, 1);
     
-    // 2. Choose a section `f \in L` of the log-canonical bundle.
-    // Technically, I don't actually need this section. I only care about its existence.
+    // 2. Compute the multiple of the log-canonical sheaf that's an actual line bundle.
+    // TODO: Address the special cases after things have been worked out.
 
-    // 3. Compute the genus of the section cut out be `f` via adjuction.
+    D := Discriminant(Field(G));
+    if D eq 5 then
+	m := 15;
+    elif D eq 8 then
+	m := 3;
+    elif D eq 12 then
+	m := 3;
+    else
+	ell_types := Keys(EllipticPointData(G));
+	if <3, 1, 1> in ell_types then
+	    m := 3;
+	else
+	    m := 1;
+	end if;
+    end if;
+
+
+    // 3. Compute the genus of a section cut out by `f \in m*L` via adjuction.
     //    NOTE: As is explained in the paper, `L.{Resolution cycles} = 0`.
-    deg_can := 2 * Lsqed;
+    deg_can := m * (m+1) * Lsqed;
+    g := deg_can/2 + 1;
+    degLC := m * Lsqed;
 
-    // Not sure this makes sense, but...
-    // A section cut out by `f` is not really a curve, but a stacky curve with a QQ divisor
-    // coming from the resolution. In particular, `g` is not integral!
-    g := deg_can/2;
-    
     // 4. Compute the Hilbert series.
     hilb := HilbertSeries(G);
-    P<t> := Parent(hilb);
+    P<s> := Parent(hilb);
+    t := s^2;
     
     // 5. Use Hilbert series arithmetic to contruct a polynomial measuring the difference
     //    between the Hilbert series and the Hilbert series of the restriction to `Z(f)`.
-    hilbI := hilb * t^2;
-    //Q := t^2 * g/(1-t^2)^2 + (1-g)/(1-t^2); // Riemann-Roch.
+    hilbI := hilb * t^m;
 
-    Q := t^4 * g/(1-t^2)^2 + 1;
+    Q := 1 + degLC * t/(1-t)^2 + (1-g) * t/(1-t); // Riemann-Roch.
+    Q +:= t^m; // The section `f` counts as a generator.
+    
     
     // 6. The degree of this polynomial reveals the path to victory.
     poly := hilb - hilbI - Q;
-
-    // NOTE: Things are not working out as expected if the discriminant is divisible by 3.
-    //       This is very weird.
-    PP<T> := PowerSeriesRing(BaseRing(P), 100); // For printing purposes.
-
-    return g, hilb, hilbI, Q;
     
-    print "Not genus:", g;
-    
-    print PP ! hilb;
-    print PP ! hilbI;
+    if experiment then
+	return g, hilb, hilbI, Q, poly;
+    end if;
 
-    diffy := hilb - hilbI;
+    assert Denominator(poly) eq 1;
 
-    print "\ndiffy and floor.(Q)";
-
-    a, b, c := Coefficients(PP ! diffy);
-    print a;
-    print [Floor(x) : x in Coefficients(PP ! Q)];
-
-    // print "\nDifference\n", Coefficients(PP ! (diffy - t^2 * diffy));
-    // print "\n", g;
-
-    //print PP ! ((1-g)/(1-t^2));
-    //print PP ! (t^2 * g/(1-t^2)^2);
-
-    // 7. The degree of the polynomial tells us the last point where the Hilbert series and
-    //    Hilbert series of the restricted bundle differ. From this we can figure out the
-    //    desired degree bound.
-
-    // return -9999;
+    // The only generators not accounted for in the restriction come from below the weight
+    // of the section.
+    return Maximum(m, Degree(Numerator(poly)));   
 end intrinsic;
