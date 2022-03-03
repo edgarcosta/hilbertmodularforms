@@ -62,7 +62,19 @@ intrinsic Print(M::ModFrmHilDGRng, level::MonStgElt)
     printf "Graded ring of Hilbert modular forms over %o", M`Field;
     printf " with precision %o", M`Precision;
   elif level eq "Magma" then
-    printf "%o", PercentM(M);
+      printf "%o", PercentM(M);
+  elif level eq "Exosphere" then
+      msg := "\n";
+      msg *:= "        .-\"\"`\"\"-." * "\n";
+      msg *:= "     _/`oOoOoOoOo`\\_" * "\n";
+      msg *:= "    '.-= Hilbert =-.'" * "\n";
+      msg *:= "    '.-=-=-=-=-=-=-.'" * "\n";
+      msg *:= "      `-=.=-.-=.=-'  " * "\n";
+      msg *:= "         ^  ^  ^     " * "\n";
+
+      print msg;
+      printf "Mothership of Hilbert modular forms over %o", M`Field;
+      printf " with precision %o\n", M`Precision;
   else
     error "not a valid printing level.";
   end if;
@@ -146,15 +158,6 @@ end intrinsic;
 intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrpAb, Map
   {return the group of totally positive units of the base as an abstract group and the map from abstract totally positive unit group into F^\times_>0}
   return TotallyPositiveUnits(BaseField(M));
-end intrinsic;
-
-intrinsic DedekindZetatwo(M::ModFrmHilDGRng) -> Any
-  {}
-  if not assigned M`DedekindZetatwo then
-    F := BaseField(M);
-    M`DedekindZetatwo := Evaluate(LSeries(F : Precision := 100),2); // Fixed Precision 100.
-  end if;
-  return M`DedekindZetatwo;
 end intrinsic;
 
 intrinsic Places(M::ModFrmHilDGRng) -> Any

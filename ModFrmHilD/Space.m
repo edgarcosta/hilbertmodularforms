@@ -48,7 +48,7 @@ intrinsic Print(Mk::ModFrmHilD, level::MonStgElt)
   elif level eq "Magma" then
     error "not implemented!";
   else
-    error "not a valid printing level.";
+      error "not a valid printing level.";
   end if;
 end intrinsic;
 

@@ -25,6 +25,7 @@ Multiplication
 
 Creation
 {
+   DedekindZetaExact.m
    Newforms.m
    EisensteinSeries.m
    ThetaSeries.m
