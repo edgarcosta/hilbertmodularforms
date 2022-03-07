@@ -605,42 +605,29 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
   return c;
 end intrinsic;
 
-// TODO: test if this works
 // see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
 intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
   {}
   ZF := Order(ss);
+  //facts := Factorization(ss*MM);
+  // if c=0, then ss should be principal
   if c eq 0 then
     pbool, a := IsPrincipal(ss);
     assert pbool;
+    facts := Factorization(ss*MM);
+    Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
+    //mults_num := [fact[2] : fact in facts | fact[2] gt 0];
+    mults_num := [Valuation((ss*MM), P) : P in Ps_num];
+    Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
+    //mults_den := [fact[2] : fact in facts | fact[2] lt 0];
+    mults_den := [Valuation((ss*MM), P) : P in Ps_den];
   else
-    a := ZF!GeneratorOfQuotientModuleCRT(ss, ideal< ZF | c*(bb^-1) >);
+    facts := Factorization(c*(bb^-1));
+    Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
+    mults_num := [Valuation((c*bb^-1), P) : P in Ps_num];
+    Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
+    mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
   end if;
-  printf "generator for ss/(c*(bb^-1)) = %o\n", a;
-  if not (a-a_bar) in ss*MM then
-    Q, mpQ := quo< ZF | c*(bb^-1) >; // breaks if c=0
-    lambda_bar := mpQ(a)^-1*mpQ(a_bar);
-    printf "lambda_bar = %o\n", lambda_bar;
-    a *:= (lambda_bar @@ mpQ);
-  end if;
-  assert a*ZF + c*(bb^-1) eq ss;
-  assert a - a_bar in ss*MM;
-  return a;
-end intrinsic;
-
-// see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
-/*
-intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
-  {}
-  ZF := Order(ss);
-  facts := Factorization(ss*MM);
-  //printf "factors of ss*bb*NN: %o\n", facts;
-  Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
-  //mults_num := [fact[2] : fact in facts | fact[2] gt 0];
-  mults_num := [Valuation((c*bb^-1), P) : P in Ps_num];
-  Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
-  //mults_den := [fact[2] : fact in facts | fact[2] lt 0];
-  mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
 
   residues_num := [];
   residues_den := [];
@@ -697,7 +684,31 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
   assert a - a_bar in ss*MM;
   return a;
 end intrinsic;
+
+// see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
+/*
+intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
+  {}
+  ZF := Order(ss);
+  if c eq 0 then
+    pbool, a := IsPrincipal(ss);
+    assert pbool;
+  else
+    a := ZF!GeneratorOfQuotientModuleCRT(ss, ideal< ZF | c*(bb^-1) >);
+  end if;
+  printf "generator for ss/(c*(bb^-1)) = %o\n", a;
+  if not (a-a_bar) in ss*MM then
+    Q, mpQ := quo< ZF | c*(bb^-1) >; // breaks if c=0
+    lambda_bar := mpQ(a)^-1*mpQ(a_bar);
+    printf "lambda_bar = %o\n", lambda_bar;
+    a *:= (lambda_bar @@ mpQ);
+  end if;
+  assert a*ZF + c*(bb^-1) eq ss;
+  assert a - a_bar in ss*MM;
+  return a;
+end intrinsic;
 */
+
 
 // Need to lift the [a,c] in the quadruples in a special way that respects certain congruences
 intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
