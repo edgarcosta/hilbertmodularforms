@@ -48,7 +48,7 @@ intrinsic Print(Mk::ModFrmHilD, level::MonStgElt)
   elif level eq "Magma" then
     error "not implemented!";
   else
-    error "not a valid printing level.";
+      error "not a valid printing level.";
   end if;
 end intrinsic;
 
@@ -174,7 +174,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Level := N;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
   is_compat, i := IsCompatibleWeight(chi, k);
-  require is_compat : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
+  require is_compat : Sprintf("The parity of the character at the infinite place %o does not match the parity of the weight", i);
   Mk`Character := chi;
   Mk`UnitCharacters := unitcharacters;
   require Type(Mk`UnitCharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";

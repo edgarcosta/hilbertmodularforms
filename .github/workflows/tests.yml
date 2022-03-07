@@ -8,18 +8,32 @@ on:
 
 jobs:
 
-  printJob:
-    name: Print event
+  #  printJob:
+  #    name: Print event
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #    - name: Dump GitHub context
+  #      env:
+  #        GITHUB_CONTEXT: ${{ toJson(github) }}
+  #      run: |
+  #        echo "$GITHUB_CONTEXT"
+  check-env:
     runs-on: ubuntu-latest
+    outputs:
+      my-key: ${{ steps.my-key.outputs.defined }}
+
     steps:
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        echo "$GITHUB_CONTEXT"
+        - id: my-key
+          env:
+            MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
+          if: "${{ env.MAGMA_MAC != '' }}"
+          run: echo "::set-output name=defined::true"
+
   test:
     runs-on: ubuntu-latest
     name: Run tests
+    needs: [check-env]
+    if: needs.check-env.outputs.my-key == 'true'
 
     steps:
       - name: Check user permission
