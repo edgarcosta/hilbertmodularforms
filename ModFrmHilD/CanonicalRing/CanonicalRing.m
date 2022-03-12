@@ -111,6 +111,43 @@ end intrinsic;
 
 
 
+////////////////////////// User friendly functions /////////////////////////////
+
+intrinsic Syzygies(lst::SeqEnum : MaxWeightRelations:=30) -> Any
+{}
+    return Syzygies([* x : x in lst *]);
+end intrinsic;
+
+intrinsic Syzygies(lst::List : MaxWeightRelations:=30) -> Any
+{This function finds all of the syzygies among all the provided modular forms.}
+
+    Mk := Parent(lst[1]); // Check non-empty
+    M := Parent(Mk);
+    N := Level(Mk);
+    
+    // Technically, the MaxWeightRelations 
+    
+    gens := AssociativeArray();
+
+    for elt in lst do
+        k := Weight(elt)[1]; // Fixme 
+        
+        if IsDefined(gens, k) then
+            Append(~gens[k], elt);
+        else
+            gens[k] := [elt];
+        end if;
+    end for;
+
+    maxweight := Maximum(Keys(gens));
+
+
+    
+    res := ConstructGeneratorsAndRelations(M, N, maxweight, MaxWeightRelations :
+                                           ComputeNewGenerators := false,
+                                           PrecomputedGens := gens);
+    return res;
+end intrinsic;
 
 
 ////////////////////////// Main functions /////////////////////////////
@@ -183,6 +220,8 @@ intrinsic ConstructGeneratorsAndRelations(
       // we don't have dimensions per component
       have_dim_formula := IdealClassesSupport eq NarrowClassGroupReps(M) and not GaloisInvariant;
       if have_dim_formula then
+
+         print k;
         // Before we evaluate monomials, make sure precision is high enough
         require CoeffCount ge Dimension(Mk): "Precision is too low in comparison to the dimension of the space";
       end if;
@@ -334,7 +373,7 @@ end intrinsic;
 intrinsic GeneratorsAndRelations(F::FldNum, N::RngOrdIdl: Precision:=20, MaxRelationWeight:=20, MaxGeneratorWeight:=2, LowestWeight := 2, Alg := "Standard") -> any
 {returns relations up to weight MaxRelationWeight in generators up to MaxGeneratorWeight; only for parallel weight}
   GrRing := GradedRingOfHMFs(F, Precision);
-  g, r, m := ConstructGeneratorsAndRelations(GrRing,N,MaxGeneratorWeight
+  g, r, m := ConstructGeneratorsAndRelations(GrRing, N, MaxGeneratorWeight
                                          : LowestWeight := LowestWeight,
                                             Alg := Alg);
   gens, rels, mons := Relations(g, r, m, MaxRelationWeight);
