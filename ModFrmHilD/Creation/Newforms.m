@@ -233,10 +233,11 @@ end intrinsic;
 
 intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[ModFrmHilDElt]
   {return Galois descent of a Hilbert newform}
+  vprintf HilbertModularForms: "Computing rational basis for %o...", S;
   M := Parent(Mk);
   // find a single generator
   p := PreviousPrime(Random(B,2*B) : Proof:=false) where B is Round(2^22.5);
-  vprintf HilbertModularForms: "Finding single genrator for Hecke algebra %o ...\n", S;
+  vprintf HilbertModularForms: "Finding single generator for Hecke algebra  ...";
   vtime HilbertModularForms:
   for pp in PrimeIdeals(M) do
       Tpp := HeckeOperator(S, pp);
@@ -260,7 +261,7 @@ intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[M
   require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
   k := k[1];
 
-  vprintf HilbertModularForms: "Computing HeckeOperators for %o...\n", S;
+  vprintf HilbertModularForms: "Computing HeckeOperators ...";
   HeckeOperators := AssociativeArray();
   vtime HilbertModularForms:
   for pp in PrimeIdeals(M) do
