@@ -97,18 +97,18 @@ end intrinsic;
 // Input: Quo = R/I The polynomial ring with weighted generators
 // Input: k weight for monomials
 // Output: MonomialGens = List of monomials generating the weight k space inside R/I
-intrinsic MonomialGenerators(R::RngMPol, Relations::Assoc, k::RngIntElt) -> Any
+intrinsic MonomialGenerators(R::RngMPol, Relations::Assoc, k::RngIntElt) -> SeqEnum
   {Returns generators for the weight k monomials in R/I}
-
-  monoms := MonomialsOfWeightedDegree(R,k);
-  Ideal := ConstructIdeal(R, Relations);
-  leadmonoms := [LeadingMonomial(f) : f in GroebnerBasis(Ideal)];
-  return [f : f in monoms | &and[not IsDivisibleBy(f, m) : m in leadmonoms]];
+      Ideal := ConstructIdeal(R, Relations);
+      return MonomialGenerators(R, Ideal, k);
 end intrinsic;
 
-
-
-
+intrinsic MonomialGenerators(R::RngMPol, I::RngMPol, k::RngIntElt) -> SeqEnum
+{}
+    monoms := MonomialsOfWeightedDegree(R,k);
+    leadmonoms := [LeadingMonomial(f) : f in GroebnerBasis(I)];
+    return [f : f in monoms | &and[not IsDivisibleBy(f, m) : m in leadmonoms]];
+end intrinsic;
 
 
 ////////////////////////// User friendly functions /////////////////////////////
@@ -339,14 +339,22 @@ intrinsic ConstructGeneratorsAndRelations(
   return <Gens, Relations, Monomials>;
 end intrinsic;
 
-/*
+
 intrinsic Syzygies(forms, knownRelations, degrees) -> Any
-{}
+{Return the ideal of Syzygies of the given list of Hilbert Modular Forms.}
+
+    require #forms gt 0: "Number of forms must be non-zero.";
+    Mothership := Parent(Parent(forms[1]));
+    N := Level(forms[1]);
+        
     // How to encode knownRelations?
     // -- Polynomials seems to be the most natural choice, but what should be assumed of the parent?
     // The parent R will be assumed to admit a morphism k[f1, f2, ..., fn] given by (R.i -> fi). 
     // (Note: Perhaps we have a convenient "project" parameter?)
 
+    // TODO: Initialize HMSMothership Mk.
+
+    
     ///////////////////////////////////
     // FINDING RELATIONS AMONG THE OLD GENERATORS IN THE CURRENT DEGREE.
     //
@@ -359,21 +367,33 @@ intrinsic Syzygies(forms, knownRelations, degrees) -> Any
         Gens[k] := IsDefined(Gens, k) select Append(Gens[k], f) else [f];
     end for;
 
+    R := ConstructWeightedPolynomialRing(Gens);
+    
     // Need to set Relations.
+    I := ideal<R|>;
     
     for k in degrees do
-        R := ConstructWeightedPolynomialRing(Gens);
         MonomialsinR := MonomialsOfWeightedDegree(R, k);
-        MonomialsGens := MonomialGenerators(R, Relations, k);
+        MonomialsGens := MonomialGenerators(R, I, k);
+
+        print R, MonomialsGens;
+
+        Mk := HMFSpace(Mothership, N, [k,k]);
+        
         EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
+
+        //RelationCoeffs := LinearDependence(EvaluatedMonomials : IdealClasses:=IdealClassesSupport);
+        RelationCoeffs := LinearDependence(EvaluatedMonomials);
+        
+        for rel in RelationCoeffs do
+            p := Polynomial(rel, EvaluatedMonomials);
+            I +:= ideal<R|p>;
+        end for;
     end for;
     
-    // first compute the relations in R/I.
-    RelationsinQuotient := LinearDependence(EvaluatedMonomials : IdealClasses:=IdealClassesSupport);
-
-    return 0;
+    return I;
 end intrinsic;
-*/
+
 
 
 ///////////////////////// Aux Functions /////////////////
