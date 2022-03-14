@@ -153,13 +153,18 @@ intrinsic ConstructGeneratorsAndRelations(
   {
   Find generators and relations in M of level N. Generators will have parallel weight upto MaxWeightGens, and relations will have parallel upto MaxWeightRelations.
   Return a three Associative arrays, indexed by weight, corresponding to generators, relations and the monomials.
-  Use the optional parameter 'LowestWeight' to specifiy the lowest weight for the generators.
-  The optional parameter 'Alg' is passed to ComplementBasis.
-  Use the optional parameter 'IdealClassesSupport' to restrict the support of the generators to a given set of components.
-  Use the optional parameter 'GaloisInvariant' to restrict the generators to be Galois invariant, i.e., invariant under the swap map.
-  Use the optional parameter 'PrecomputedGens' as an AssociativeArray to provide precomputed generators.
-                                               It is presumed that PrecomputedGens[k] contains all generators of weight `k`.
-  Use the optional parameter 'ComputeNewGenerators' to determine if new generators will be computed.
+
+  The Parameters control the behaviour of this function as follows:
+
+  'LowestWeight'         :  Specifiy the lowest weight for the generators.
+  'Alg'                  :  passed to ComplementBasis.
+  'IdealClassesSupport'  :  Restrict the support of the generators to a given set of components.
+  'GaloisInvariant'      :  Restrict the generators to be Galois invariant, i.e., invariant under the swap map.
+  'PrecomputedGens'      :  An AssociativeArray to provide precomputed generators.
+                            It is presumed that PrecomputedGens[k] contains all generators of weight `k`.
+
+  'ComputeNewGenerators' : Determine if the algorithm will search for missing generators, or if it can be assumed 
+                           that all of the generators have been provided as PrecomputedGens.
   }
 
   if IdealClassesSupport cmpeq false then
@@ -174,38 +179,59 @@ intrinsic ConstructGeneratorsAndRelations(
   CoeffCount := NumberOfCoefficients(M);
 
   have_dim_formula := IdealClassesSupport eq NarrowClassGroupReps(M) and not GaloisInvariant;
+  KnownRelations := false;
   
   /////////////////////
   // Generators of lowest weight.
 
-  LowestWeightBasis := []; // IsNull = True
-  for k := LowestWeight to MaxWeightGens by 2 do
-    if IsDefined(PrecomputedGens, k) then
-      Gens[k] := PrecomputedGens[k];
-      assert not IsNull(Gens[k]);
-      break;
+  ASSUME_PARALLEL_WEIGHT := true; // This may change in the future.
+  keys := Keys(PrecomputedGens);
 
-    elif ComputeNewGenerators then // Can't this be improved using the dimension formula, when available?
-      Mk := HMFSpace(M, N, [k : i in [1..n]]);
-      Bk := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
-
-      if not IsNull(Bk) then
-          Gens[k] := Bk;
-          break;
-      end if;       
-    end if;
-  end for;
-  ///////////////////
-
-  if #Gens eq 0 then
-    return <Gens, Relations, Monomials>;
-  end if;
+  assert ASSUME_PARALLEL_WEIGHT;
+  minimalGenWeight := 2;
   
-  LowestWeight := Min(Keys(Gens));
-  KnownRelations := false;
+  if IsDefined(PrecomputedGens, minimalGenWeight) then
+      basis := PrecomputedGens[minimalGenWeight];
+
+  elif ComputeNewGenerators then
+      basis := Basis(HMFSpace(M, N, [minimalGenWeight : i in [1..n]]));
+      assert not IsNull(basis);
+  else
+      msg := "No generators of parallel weight 2 found. Functionality for non-parallel weight "*
+             "is currently missing. If you did use the function for the parallel weight case, "*
+             "some other error has occured. Finally, if you want to compute Syzygies between "*
+             "the given set of Precomputed Generators, use the function `Syzygies`.";
+      error msg;
+  end if;
+
+  Gens[minimalGenWeight] := basis;
   vprintf HilbertModularForms : "Weight: %o     Generators: %o Relations: %o\n", LowestWeight, #Gens[LowestWeight],  0;
 
-  for k := LowestWeight + 2 to MaxWeightRelations by 2 do
+  // NOTE: Kept in case the code below inspires what to do in non-parallel weight.
+  //
+  /* LowestWeightBasis := []; // IsNull = True */
+  /* for k := LowestWeight to MaxWeightGens by 2 do */
+  /*   if IsDefined(PrecomputedGens, k) then */
+  /*     Gens[k] := PrecomputedGens[k]; */
+  /*     assert not IsNull(Gens[k]); */
+  /*     break; */
+
+  /*   elif ComputeNewGenerators then // Can't this be improved using the dimension formula, when available? */
+  /*     Mk := HMFSpace(M, N, [k : i in [1..n]]); */
+  /*     Bk := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant); */
+
+  /*     if not IsNull(Bk) then */
+  /*         Gens[k] := Bk; */
+  /*         break; */
+  /*     end if;        */
+  /*   end if; */
+  /* end for; */
+
+  /* if #Gens eq 0 then */
+  /*   return <Gens, Relations, Monomials>; */
+  /* end if; */
+
+  for k := minimalGenWeight + 2 to MaxWeightRelations by 2 do
     vprintf HilbertModularForms : "Weight: %o, Gens = %o\n", k, [<elt, #Gens[elt]> : elt in Keys(Gens)];
     Mk := HMFSpace(M, N, [k : i in [1..n]]);
 
@@ -217,13 +243,13 @@ intrinsic ConstructGeneratorsAndRelations(
 
 
     ///////////////////////////////////
-    // FINDING RELATIONS AMONG THE OLD GENERATORS IN THE CURRENT DEGREE.
+    // Finding relations among the old generators in the current degree.
 
     sordidKeys := Sort(Setseq(Keys(Gens)));
     gens := Sum([* SequenceToList(Gens[k]): k in sordidKeys *] : empty := [* *]);
 
     KnownRelations, weightedSymBasis := SyzygiesAndKBase(gens, k : KnownRelations:=KnownRelations, IdealClassesSupport:=IdealClassesSupport);
-    weightedSymBasis := [x : x in weightedSymBasis];
+    weightedSymBasis := [x : x in weightedSymBasis]; // Convert to SeqEnum
     fromLowerWeightDim := #weightedSymBasis;
     
     // Assign relations to the dictionary.             
@@ -231,13 +257,13 @@ intrinsic ConstructGeneratorsAndRelations(
 
     if not IsNull(weight_k_relations) then
       MonomialsinR := MonomialsOfWeightedDegree(Generic(KnownRelations), k);
-      RelationsinR := [[MonomialCoefficient(rel, m) : m in MonomialsinR] : rel in weight_k_relations];
-      Relations[k] := RelationsinR;
+      Relations[k] := [[MonomialCoefficient(rel, m) : m in MonomialsinR] : rel in weight_k_relations];
       Monomials[k] := MonomialGenerators(KnownRelations, k);
     end if;
 
+    
     ///////////////////////////////////
-    // SANITY CHECK THE INPUT.
+    // Sanity check.
 
     if IsDefined(PrecomputedGens, k) then
         //if not IsNull(Gens[k]) then // Gens[k] is never assigned before this, so this condition looks pointless.
@@ -248,40 +274,26 @@ intrinsic ConstructGeneratorsAndRelations(
     end if;
     
     ///////////////////////////////////
-    // ADDING NEW GENERATORS.
+    // Adding new generators.
     
     if k le MaxWeightGens and not IsDefined(PrecomputedGens, k) and ComputeNewGenerators then
-      use_fallback := true;
-      dim := have_dim_formula select Dimension(Mk) else "unknown";
 
-      if have_dim_formula and dim eq fromLowerWeightDim then
-          use_fallback := false;
-          Basisweightk := weightedSymBasis;
+      knownDim := have_dim_formula select Dimension(Mk) else false;
 
-      elif have_dim_formula and dim ne fromLowerWeightDim then
-          // First try our luck with just Eisenstein series. If that fails, use the fallback.
-          
-          eisensteinbasis := EisensteinBasis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
-          forms := eisensteinbasis cat weightedSymBasis;
-          coeffs_matrix := CoefficientsMatrix(forms : IdealClasses:=IdealClassesSupport);
+      basisWeightk := ExtendBasis(weightedSymBasis, Mk :
+                                  Alg := Alg,
+                                  KnownMkDimension := knownDim,
+                                  IdealClassesSupport := IdealClassesSupport,
+                                  GaloisInvariant := GaloisInvariant);
 
-          if Rank(coeffs_matrix) eq dim then
-              Basisweightk := [forms[i] : i in PivotRows(coeffs_matrix)];
-              use_fallback := false;
-          end if;
-      end if;
-
-      if use_fallback then
-          Basisweightk := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
-      end if;
-
+      newGens := basisWeightk[#weightedSymBasis + 1 .. #basisWeightk];
+      
       // Update the generators of degree k based on the computed weight k forms.
-      new_gens := ComplementBasis(weightedSymBasis, Basisweightk: Alg := Alg);
-      if not IsNull(new_gens) then
-          Gens[k] := new_gens;
+      if #newGens gt 0 then
+          Gens[k] := newGens;
       end if;
 
-      vprintf HilbertModularForms : "Weight: %o Dim: %o, #MonomialsGens - #RelationsinR: %o\n", k,  dim, fromLowerWeightDim;
+      vprintf HilbertModularForms : "Weight: %o Dim: %o, fromLowerWeightDim: %o\n", k,  knownDim, fromLowerWeightDim;
     end if;
 
     ///////////////////////////////////
@@ -291,10 +303,41 @@ intrinsic ConstructGeneratorsAndRelations(
     // TODO: we don't have dimensions per component
     dim := have_dim_formula select Dimension(Mk) else "??";
     weight_str := Sprintf((k gt MaxWeightGens) select "Weight: %o > MaxWeightGens" else "Weight: %o", k);
-    //vprintf HilbertModularForms : "%o, Dimension: %o, Monomial generators: %o, Relations: %o, New generators: %o \n", weight_str, dim, #MonomialsGens, #weight_k_relations, newgens;
+    vprintf HilbertModularForms : "%o, Dimension: %o, fromLowerWeightDim: %o, New generators: %o \n", weight_str, dim, fromLowerWeightDim, newgens;
   end for;
 
   return <Gens, Relations, Monomials>;
+end intrinsic;
+
+
+intrinsic ExtendBasis(forms::SeqEnum[ModFrmHilDElt], Mk :
+                      Alg                 := "Standard",
+                      KnownMkDimension    := false,
+                      IdealClassesSupport := false,
+                      GaloisInvariant     := false) -> SeqEnum
+{Given a sequence Q of r linearly independent elements of a space M and a subspace V of M 
+containing the elements of Q, extend the elements of Q to a basis for U; the basis is 
+returned in the form of a sequence T such that T[i] = Q[i] for i in [ 1 .. r ].
+It is assumed that `forms` are linearly independent.}
+
+    if KnownMkDimension cmpne false and KnownMkDimension eq #forms then
+        return forms;
+
+    elif KnownMkDimension cmpne false and KnownMkDimension ne #forms then
+        // First try our luck with just Eisenstein series. If that fails, use the fallback.
+        
+        eisensteinbasis := EisensteinBasis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
+        moreforms := forms cat eisensteinbasis;
+        coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
+
+        if Rank(coeffs_matrix) eq KnownMkDimension then
+            return moreforms;
+        end if;
+    end if;
+
+    // Apply the fallback strategy.
+    Basisweightk := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
+    return forms cat ComplementBasis(forms, Basisweightk: Alg := Alg);
 end intrinsic;
 
 
@@ -305,7 +348,7 @@ intrinsic Syzygies(forms, degree::RngIntElt : KnownRelations:=false) -> RngMPol
 {}
     return Syzygies(forms, [degree] : KnownRelations:=KnownRelations);
 end intrinsic;
-
+ 
 // TODO: Should degree refer to the weight of the Syzygy? The implementation is certainly more complicated.
 // It also totally screws up the use-case within ConstructGeneratorsAndRelations Probably should be a parameter.
 //     
@@ -317,11 +360,7 @@ Only Parallel weight is supported.}
     
     require #forms gt 0: "Number of forms must be non-zero.";
     Mothership := Parent(Parent(forms[1]));
-    
-    if IdealClassesSupport cmpeq false then // the default is all ideals classes
-        IdealClassesSupport := NarrowClassGroupReps(Mothership); 
-    end if;
-    
+        
     Gens := AssociativeArray();
     for f in forms do
         k := Weight(f)[1];
@@ -341,11 +380,12 @@ Only Parallel weight is supported.}
         require Type(KnownRelations) eq RngMPol : "Known relations must be encoded as an ideal.";
 
         UPar := Generic(KnownRelations);
-        tailvars := [UPar ! 0 : i in [1..Rank(R)]] cat [UPar.i : i in [Rank(R) + 1 .. Rank(UPar)]];
-
+        inclusionRank := Min(Rank(R), Rank(UPar));
+        
+        tailvars := [UPar!0 : i in [1..inclusionRank]] cat [UPar.i : i in [Rank(R) + 1 .. Rank(UPar)]];
         require &and[Degree(Evaluate(rel, tailvars)) le 0 : rel in Basis(KnownRelations)] : "Uncoercible variable in relations.";
 
-        main_part := [R.i : i in [1..Min(Rank(R), Rank(UPar))]];
+        main_part := [R.i : i in [1..inclusionRank]];
         zero_part := [0 : i in [1..Rank(UPar)-Rank(R)]];
 
         map_eqns :=  main_part cat zero_part;
