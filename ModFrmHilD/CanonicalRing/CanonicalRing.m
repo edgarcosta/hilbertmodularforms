@@ -412,3 +412,91 @@ intrinsic HilbertModularSurface(F::FldQuad, N::RngOrdIdl, MaxGeneratorWeight::Rn
   return S;
   // return Surface(P, eqns_S);
 end intrinsic;
+
+
+/////////////////////////////////////////////////////
+//
+//    Generator bound.
+//
+/////////////////////////////////////////////////////
+
+intrinsic GeneratorWeightBound(F::FldNum) -> RngIntElt
+{}
+    return GeneratorWeightBound(F, 1*MaximalOrder(F));
+end intrinsic;
+
+intrinsic GeneratorWeightBound(F::FldNum, N::RngOrdIdl) -> RngIntElt
+{}
+    return GeneratorWeightBound(CongruenceSubgroup(F, N));
+end intrinsic;
+
+intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup) -> RngIntElt
+{Determine a bound for the maximum weight of a generator in the graded ring of modular forms.}
+    error "Not Implemented.";
+    return -9999;
+end intrinsic;
+
+
+// TODO: Eventually, this will be converted into the correct function.
+intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup : experiment:=false) -> Any
+{Experiment with the Neves style argument.}
+
+    // The algorithm to compute a degree bound on the generator can be found in the Overleaf
+    // document associated to the paper. It proceeds along the following steps.
+
+    // 1. Compute the self-intersection number of the log-canonical sheaf.
+    //    NOTE: The Chern numbers of the log canonical are Not Necessarily Integers!
+    Lsqed := ChernNumberOfLogCanonical(G, 1);
+    
+    // 2. Compute the multiple of the log-canonical sheaf that's an actual line bundle.
+    // TODO: Address the special cases after things have been worked out.
+
+    D := Discriminant(Field(G));
+    if D eq 5 then
+	m := 15;
+    elif D eq 8 then
+	m := 3;
+    elif D eq 12 then
+	m := 3;
+    else
+	ell_types := Keys(EllipticPointData(G));
+	if <3, 1, 1> in ell_types then
+	    m := 3;
+	else
+	    m := 1;
+	end if;
+    end if;
+
+
+    // 3. Compute the genus of a section cut out by `f \in m*L` via adjuction.
+    //    NOTE: As is explained in the paper, `L.{Resolution cycles} = 0`.
+    deg_can := m * (m+1) * Lsqed;
+    g := deg_can/2 + 1;
+    degLC := m * Lsqed;
+
+    // 4. Compute the Hilbert series.
+    hilb := HilbertSeries(G);
+    P<s> := Parent(hilb);
+    t := s^2;
+    
+    // 5. Use Hilbert series arithmetic to contruct a polynomial measuring the difference
+    //    between the Hilbert series and the Hilbert series of the restriction to `Z(f)`.
+    hilbI := hilb * t^m;
+
+    Q := 1 + degLC * t/(1-t)^2 + (1-g) * t/(1-t); // Riemann-Roch.
+    Q +:= t^m; // The section `f` counts as a generator.
+    
+    
+    // 6. The degree of this polynomial reveals the path to victory.
+    poly := hilb - hilbI - Q;
+    
+    if experiment then
+	return g, hilb, hilbI, Q, poly;
+    end if;
+
+    assert Denominator(poly) eq 1;
+
+    // The only generators not accounted for in the restriction come from below the weight
+    // of the section.
+    return Maximum(m, Degree(Numerator(poly)));   
+end intrinsic;

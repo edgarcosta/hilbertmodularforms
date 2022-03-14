@@ -10,7 +10,13 @@
 // hooked in easily.
 
 declare type StupidCongruenceSubgroup;
-declare attributes StupidCongruenceSubgroup : Field, Level, Index, EllipticPointData, ComponentIdeal;
+declare attributes StupidCongruenceSubgroup : Field,
+	PrintString,
+	Level,
+	Index,
+	EllipticPointData,
+	ComponentIdeal,
+	GammaType;
 
 /////////////////// Creation ///////////////////
 
@@ -26,7 +32,7 @@ end intrinsic;
 
 intrinsic CongruenceSubgroup(F::FldNum, N::RngQuad) -> StupidCongruenceSubgroup
 {}
-    if N eq MaximalOrder(F) then
+    if N eq 1*MaximalOrder(F) then
 	return CongruenceSubgroup(F);
     else
 	error "CongruenceSubgroup not implemented for arbitrary orders.";
@@ -35,31 +41,54 @@ end intrinsic;
 
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
-The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
-}
+The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
+    
     isRealQuadraticField := Degree(F) eq 2 and BaseRing(F) eq Rationals() and Discriminant(F) gt 0;
     require isRealQuadraticField: "Number field must be Real Quadratic Field.";
-	
+
     Gamma := New(StupidCongruenceSubgroup);
     Gamma`Field := F;
     Gamma`ComponentIdeal := B;
     Gamma`Level := N;
     Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
+    Gamma`GammaType := "Principal";
     return Gamma;
+end intrinsic;
+
+
+// At the moment, this is the only way to create a group of type Gamma_0(N).
+intrinsic Gamma0(F::FldNum) -> StupidCongruenceSubgroup
+{Return the Hilbert Modular group over `F`.}
+    return CongruenceSubgroup(F);
+end intrinsic;
+
+// At the moment, this is the only way to create a group of type Gamma_0(N).
+intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> StupidCongruenceSubgroup
+{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
+    if N eq 1*MaximalOrder(F) then
+	return CongruenceSubgroup(F);
+    else
+	G := CongruenceSubgroup(F, N);
+
+	// Reassign all the important information.
+	G`GammaType := "Gamma_0";
+	G`Index := IndexOfGamma0(F, N);
+	return G;
+    end if;
 end intrinsic;
 
 /////////////////// Printing ///////////////////
 
+
+
 intrinsic Print(Gamma::StupidCongruenceSubgroup)
-{Print.}	    
+{Print.}
     print "Congruence Subgroup of Hilbert Modular group.";
-    print "Real Quadratic Field:";
-    print Field(Gamma);
-    print "Level:";
-    print Level(Gamma);
-    print "Component:";
-    print Component(Gamma);
+    print "Field:", Field(Gamma);
+    printf "Level: (%o)\n", IdealOneLine(Level(Gamma));
+    printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
+    print "Gamma Type:", Gamma`GammaType;
     return;
 end intrinsic;
 
@@ -113,7 +142,7 @@ intrinsic EllipticPointData(Gamma::StupidCongruenceSubgroup) -> SeqEnum
 {Given a congruence subgroup, return an associative array  A := (<r, a, b> => RngIntElt).
 The keys of this associative array are tuples <r; a, b> describing the local type of
 the elliptic point. By this, we mean an elliptic point with a stabilizer locally generated
-by 
+by
 
 (zeta_r^a, zeta_r^b)
 
@@ -122,14 +151,14 @@ elliptic points of this type up to congugacy in Gamma.
 }
 
     if assigned Gamma`EllipticPointData then return Gamma`EllipticPointData; end if;
-    
+
     // This method relies on the tables of van der Geer for the most part. Given a level "N",
     // we first rely on the comment in [vdG, p. 109].
 
     // Proposition: If Gamma is the principal congruence subgroup of level N of the Hilbert
     //              modular group Gamma_{K, \frak{b}}, and N^2 is not equal to either (2) or (3),
     //              then Gamma acts freely on the squared upper half plane.
-    
+
     // Thus, the first thing is the level and return an empty array in the trivial cases.
 
     K := Field(Gamma);
@@ -137,18 +166,23 @@ elliptic points of this type up to congugacy in Gamma.
     D := Discriminant(K);
     N := Level(Gamma);
     B := Norm(ComponentIdeal(Gamma));
-    
+
     ellipticData := AssociativeArray();
     if IsPrincipalCongruenceSubgroup(Gamma) and N^2 notin [1*ZK, 2*ZK, 3*ZK] then
 	return ellipticData;
     end if;
 
+    // TODO: XXX: Properly implement elliptic points for arbitrary congruence subgroups.
+    if not IsPrincipalCongruenceSubgroup(Gamma) then
+	error "Not implemented for non-principal congruence subgroups.";
+    end if;
+    
     // The next thing to check is if we are in one of the special discriminant cases.
     // The special discriminants vis a vis torsion are D = 5, 8, 12.
     if D in [5,8,12] then
 	error "Not implemented in special discriminant cases (D = 5, 8, 12).";
     end if;
-    
+
     if Index(Gamma) eq 1 then
 	// If we are looking at the full Hilbert Modular Group with component \frak{b},
 	// then [vdG, p. 267] provides tables to compute the number and types of torsion points.
@@ -162,7 +196,7 @@ elliptic points of this type up to congugacy in Gamma.
 	else
 	    Dby4 := ExactQuotient(D, 4);
 	    h := ClassNumber(-Dby4);
-	    
+
 	    case [Dby4 mod 4, B mod 4]:
 	    when [3,1]:
 		ellipticData[<2,1,1>] := 10*h;
@@ -186,7 +220,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    h := ClassNumber(-Dby3);
 	    
 	    case [Dby3 mod 3, B mod 3]:
-	    when [1,1]:	
+	    when [1,1]:
 		ellipticData[<3,1,1>] := 4*h;
 		ellipticData[<3,1,-1>] := h;
 
@@ -197,7 +231,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    when [2,1]:
 		ellipticData[<3,1,1>] := 3*h;
 		ellipticData[<3,1,-1>] := 0;
-		
+
 	    when [2,2]:
 		ellipticData[<3,1,1>] := 0;
 		ellipticData[<3,1,-1>] := 3*h;
@@ -219,7 +253,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    elif D mod 4 eq 0 then
 		Dby4 := ExactQuotient(D, 4);
 		h := ClassNumber(-Dby4);
-		
+
 		case Dby4 mod 8:
 		when 7:
 		    ellipticData[<2, 1, 1>] := 12 * h;
@@ -284,6 +318,17 @@ full Hilbert modular group.}
     assert IsPrimePower(q);
     return q * (q^2 - 1);
 end intrinsic;
+
+intrinsic IndexOfGamma0(F::FldNum, N::RngOrdIdl) -> RngIntElt
+{Return the index of the principal congruence subgroup of level `N` within the
+full Hilbert modular group.}
+    q := Norm(N);
+    if q eq 1 then return 1; end if;
+    
+    assert IsPrimePower(q);
+    return q + 1;
+end intrinsic;
+
 
 intrinsic IsPrincipalCongruenceSubgroup(Gamma::StupidCongruenceSubgroup) -> BoolElt
 {}

@@ -36,7 +36,7 @@ intrinsic SingularPointHMS(typename::MonStgElt, info::Tup) -> StupidSingularPoin
 {}
     acceptableQuotientNames := ["Elliptic", "Quotient", "Orbifold"];
     acceptableCuspidalNames := ["Cusp", "Cuspidal", "Parabolic"];
-    
+
     if typename in acceptableQuotientNames then
 	singname := "Quotient";
     elif typename in acceptableCuspidalNames then
@@ -44,7 +44,7 @@ intrinsic SingularPointHMS(typename::MonStgElt, info::Tup) -> StupidSingularPoin
     else
 	error "Singularity type: `", typename, "` not regconized for HMS singularity.";
     end if;
-    
+
     p := New(StupidSingularPointHMS);
     p`SingularityType := singname;
     p`SingularityInfo := info;
@@ -1086,7 +1086,7 @@ cycle of curves in the resolution together with the intersection matrix.}
     return "";
 end intrinsic;
 
-import "../Creation/DedekindZetaExact.m" : DedekindZetaExact;
+
 intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);
