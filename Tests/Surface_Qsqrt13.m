@@ -14,6 +14,8 @@ assert #RationalPoints(im) eq 212;
 
 // TODO: Make this test a little more robust.
 // this might fail in the future if the equations change...
+//StoredModel := 
+
 assert [[[c], [Exponents(m) : m in mon]] where c, mon := CoefficientsAndMonomials(elt) : elt in DefiningEquations(S)] eq
 [[[[-1,1,4,-4]],[[0,3,0,0,0],[1,1,0,1,0],[0,0,1,1,0],[0,0,0,2,0]]],[[[-1,4,816,-16,-3456,1,-4,2932,-784,-9872,-2948,11600,-912,64,912,-64]],[[4,2,0,0,0],[3,1,1,0,0],[1,2,1,0,0],[2,0,2,0,0],[0,1,2,0,0],[5,0,0,1,0],[3,1,0,1,0],[1,2,0,1,0],[2,0,1,1,0],[0,1,1,1,0],[2,0,0,2,0],[0,1,0,2,0],[0,2,0,0,1],[1,0,1,0,1],[1,0,0,1,1],[0,0,0,0,2]]]];
 return true;
