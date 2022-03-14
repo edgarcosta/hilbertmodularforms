@@ -12,11 +12,16 @@ m := map<Sp->ProjectiveSpace(Fp, #mon8 - 1) | SetToSequence(mon8)>;
 im := Image(m);
 assert #RationalPoints(im) eq 212;
 
-// TODO: Make this test a little more robust.
-// this might fail in the future if the equations change...
-//StoredModel := 
+// NOTE: This test cannot recognize if the surface is the same up to linear change
+// of coordinates. Thus, this might fail in the future if the equations change...
 
-assert [[[c], [Exponents(m) : m in mon]] where c, mon := CoefficientsAndMonomials(elt) : elt in DefiningEquations(S)] eq
-[[[[-1,1,4,-4]],[[0,3,0,0,0],[1,1,0,1,0],[0,0,1,1,0],[0,0,0,2,0]]],[[[-1,4,816,-16,-3456,1,-4,2932,-784,-9872,-2948,11600,-912,64,912,-64]],[[4,2,0,0,0],[3,1,1,0,0],[1,2,1,0,0],[2,0,2,0,0],[0,1,2,0,0],[5,0,0,1,0],[3,1,0,1,0],[1,2,0,1,0],[2,0,1,1,0],[0,1,1,1,0],[2,0,0,2,0],[0,1,0,2,0],[0,2,0,0,1],[1,0,1,0,1],[1,0,0,1,1],[0,0,0,0,2]]]];
+StoredAmbient<[x]> := ProjectiveSpace(Rationals(), [1,2,3,3,4]);
+storedEquations := [
+    -x[2]^3 + x[1]*x[2]*x[4] + 4*x[3]*x[4] - 4*x[4]^2,
+    -x[1]^4*x[2]^2 + 4*x[1]^3*x[2]*x[3] + 816*x[1]*x[2]^2*x[3] - 16*x[1]^2*x[3]^2 - 3456*x[2]*x[3]^2 + x[1]^5*x[4] - 4*x[1]^3*x[2]*x[4] + 2932*x[1]*x[2]^2*x[4] - 784*x[1]^2*x[3]*x[4] - 9872*x[2]*x[3]*x[4] - 2948*x[1]^2*x[4]^2 + 11600*x[2]*x[4]^2 - 912*x[2]^2*x[5] + 64*x[1]*x[3]*x[5] + 912*x[1]*x[4]*x[5] - 64*x[5]^2];
+
+storedS := Scheme(StoredAmbient, storedEquations);
+comparisonHom := map<S->storedS | x>;
+assert comparisonHom(S) eq storedS;
 return true;
 
