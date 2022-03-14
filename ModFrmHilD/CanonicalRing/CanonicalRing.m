@@ -65,13 +65,18 @@ end intrinsic;
 // Input: MonomialGens = the list of abstract polynomial generators
 // Input: The space
 // Output: The evaluated monomials, so a list of modular forms.
-intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt], Mk::ModFrmHilD) -> Any
+intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt]) -> Any
   {For a given set of HMF this produces all multiples with weight k}
 
   // this uses the same order as ConstructWeightedPolynomialRing
   GenList := Sum([* SequenceToList(g): w->g in Gens*] : empty := [* *]);
+  return EvaluateMonomials(GenList, MonomialGens);
+end intrinsic;
 
-  return [ Product([* GenList[k]^exp[k] : k in [1..#GenList] *]) where exp := Exponents(mon) : mon in MonomialGens ];
+intrinsic EvaluateMonomials(GenList::List, MonomialGens::SeqEnum[RngMPolElt]) -> Any
+  {For a given set of HMF this produces all multiples with weight k}
+
+  return [Product([* GenList[k]^exp[k] : k in [1..#GenList] *]) where exp := Exponents(mon) : mon in MonomialGens];
   /*
   for j := 1 to #MonomialGens do
     Exp := Exponents(MonomialGens[j]);
@@ -86,9 +91,7 @@ intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt], Mk::
 
   return EvalMonomials;
   */
-
 end intrinsic;
-
 
 ////////// Computing new relations in weight k ///////////////////
 
@@ -103,52 +106,29 @@ intrinsic MonomialGenerators(R::RngMPol, Relations::Assoc, k::RngIntElt) -> SeqE
       return MonomialGenerators(R, Ideal, k);
 end intrinsic;
 
+
+intrinsic MonomialGenerators(R::RngMPol, I::RngMPol, degrees::SeqEnum[RngIntElt]) -> SeqEnum
+{}
+    leadmonoms := [LeadingMonomial(f) : f in GroebnerBasis(I)];
+    result := [];
+    
+    for k in degrees do
+        monoms := MonomialsOfWeightedDegree(R,k);
+        result cat:= [f : f in monoms | &and[not IsDivisibleBy(f, m) : m in leadmonoms]];
+    end for;
+    
+    return result;
+end intrinsic;
+
 intrinsic MonomialGenerators(R::RngMPol, I::RngMPol, k::RngIntElt) -> SeqEnum
 {}
-    monoms := MonomialsOfWeightedDegree(R,k);
-    leadmonoms := [LeadingMonomial(f) : f in GroebnerBasis(I)];
-    return [f : f in monoms | &and[not IsDivisibleBy(f, m) : m in leadmonoms]];
+    return MonomialGenerators(R, I, [k]);
 end intrinsic;
 
-
-////////////////////////// User friendly functions /////////////////////////////
-
-intrinsic Syzygies(lst::SeqEnum : MaxWeightRelations:=30) -> Any
+intrinsic MonomialGenerators(I::RngMPol, k::RngIntElt) -> SeqEnum
 {}
-    return Syzygies([* x : x in lst *]);
+    return MonomialGenerators(Generic(I), I, [k]);
 end intrinsic;
-
-intrinsic Syzygies(lst::List : MaxWeightRelations:=30) -> Any
-{This function finds all of the syzygies among all the provided modular forms.}
-
-    Mk := Parent(lst[1]); // Check non-empty
-    M := Parent(Mk);
-    N := Level(Mk);
-    
-    // Technically, the MaxWeightRelations 
-    
-    gens := AssociativeArray();
-
-    for elt in lst do
-        k := Weight(elt)[1]; // Fixme 
-        
-        if IsDefined(gens, k) then
-            Append(~gens[k], elt);
-        else
-            gens[k] := [elt];
-        end if;
-    end for;
-
-    maxweight := Maximum(Keys(gens));
-
-
-    
-    res := ConstructGeneratorsAndRelations(M, N, maxweight, MaxWeightRelations :
-                                           ComputeNewGenerators := false,
-                                           PrecomputedGens := gens);
-    return res;
-end intrinsic;
-
 
 ////////////////////////// Main functions /////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -236,63 +216,24 @@ intrinsic ConstructGeneratorsAndRelations(
     end if;
 
 
-
     ///////////////////////////////////
     // FINDING RELATIONS AMONG THE OLD GENERATORS IN THE CURRENT DEGREE.
-    //
-    // Computation of the relations in the quotient.
-    gens := [* *];
-    for k in Sort(Setseq(Keys(Gens))) do
-        gens := gens cat SequenceToList(Gens[k]);
-    end for;
 
-    KnownRelations := Syzygies(gens, k : KnownRelations:=KnownRelations);
+    sordidKeys := Sort(Setseq(Keys(Gens)));
+    gens := Sum([* SequenceToList(Gens[k]): k in sordidKeys *] : empty := [* *]);
 
-    RelationRing := Generic(KnownRelations);
-    gens_from_lower_weight := MonomialGenerators(RelationRing, KnownRelations, k);
-    EvaluatedMonomials := EvaluateMonomials(Gens, gens_from_lower_weight, Mk);
+    KnownRelations, weightedSymBasis := SyzygiesAndKBase(gens, k : KnownRelations:=KnownRelations, IdealClassesSupport:=IdealClassesSupport);
+    weightedSymBasis := [x : x in weightedSymBasis];
+    fromLowerWeightDim := #weightedSymBasis;
     
-    MonomialsinR := MonomialsOfWeightedDegree(RelationRing, k);
-    RelationsinR := [];
-    for rel in [r : r in Basis(KnownRelations) | Degree(r) eq k] do
-        Append(~RelationsinR, [MonomialCoefficient(rel, m) : m in MonomialsinR]);
-    end for;
-          
+    // Assign relations to the dictionary.             
+    weight_k_relations := [r : r in Basis(KnownRelations) | Degree(r) eq k];
 
-    /* R := ConstructWeightedPolynomialRing(Gens); */
-    /* MonomialsinR := MonomialsOfWeightedDegree(R, k); */
-    /* MonomialsGens := MonomialGenerators(R, Relations, k); */
-    /* EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk); */
-
-    /* // first compute the relations in R/I. */
-    /* RelationsinQuotient := LinearDependence(EvaluatedMonomials : IdealClasses:=IdealClassesSupport); */
-    /* vprintf HilbertModularForms : "RelationsinQuotient: %o\n", RelationsinQuotient; */
-
-    /* //////// */
-    /* // Lift relations. */
-
-    /* // This lifts the relations in R/I to relations in R in terms of MonomialsOfWeightedDegree(R,k). */
-    /* // Mainly for storage. */
-    /* RelationsinR := []; */
-    /* for rel in RelationsinQuotient do */
-    /*   relR := []; */
-    /*   for j in MonomialsinR do */
-    /*     I := Index(MonomialsGens,j); */
-    /*     Q := Rationals(); */
-    /*     if I ne 0 then */
-    /*       Append(~relR, Q!rel[I]); */
-    /*     else */
-    /*       Append(~relR, Q!0); */
-    /*     end if; */
-    /*   end for; */
-    /*   Append(~RelationsinR, relR); */
-    /* end for; */
-    ///////////////////////////////////
-        
-    // Assign relations to the dictionary.
-    if #RelationsinR ne 0 then
+    if not IsNull(weight_k_relations) then
+      MonomialsinR := MonomialsOfWeightedDegree(Generic(KnownRelations), k);
+      RelationsinR := [[MonomialCoefficient(rel, m) : m in MonomialsinR] : rel in weight_k_relations];
       Relations[k] := RelationsinR;
-      Monomials[k] := gens_from_lower_weight;
+      Monomials[k] := MonomialGenerators(KnownRelations, k);
     end if;
 
     ///////////////////////////////////
@@ -300,10 +241,9 @@ intrinsic ConstructGeneratorsAndRelations(
 
     if IsDefined(PrecomputedGens, k) then
         //if not IsNull(Gens[k]) then // Gens[k] is never assigned before this, so this condition looks pointless.
-          Gens[k] := PrecomputedGens[k];
-          // assure that we cannot write the new generator in terms of the old ones
-          //hasExpectedRelations := #LinearDependence(Gens[k] cat EvaluatedMonomials : IdealClasses:=IdealClassesSupport) eq #RelationsinQuotient;
-          //require hasExpectedRelations: Sprintf("A subset of PrecomputedGens[%o] can be generated by lower order terms", k);
+        Gens[k] := PrecomputedGens[k];
+        shouldBeZero := #LinearDependence(Gens[k] cat weightedSymBasis : IdealClasses:=IdealClassesSupport);
+        require shouldBeZero: Sprintf("A subset of PrecomputedGens[%o] can be generated by lower order terms", k);
         //end if;
     end if;
     
@@ -314,15 +254,15 @@ intrinsic ConstructGeneratorsAndRelations(
       use_fallback := true;
       dim := have_dim_formula select Dimension(Mk) else "unknown";
 
-      if have_dim_formula and dim eq #gens_from_lower_weight then
+      if have_dim_formula and dim eq fromLowerWeightDim then
           use_fallback := false;
-          Basisweightk := EvaluatedMonomials;
+          Basisweightk := weightedSymBasis;
 
-      elif have_dim_formula and dim ne #gens_from_lower_weight then
-
+      elif have_dim_formula and dim ne fromLowerWeightDim then
           // First try our luck with just Eisenstein series. If that fails, use the fallback.
+          
           eisensteinbasis := EisensteinBasis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
-          forms := eisensteinbasis cat EvaluatedMonomials;
+          forms := eisensteinbasis cat weightedSymBasis;
           coeffs_matrix := CoefficientsMatrix(forms : IdealClasses:=IdealClassesSupport);
 
           if Rank(coeffs_matrix) eq dim then
@@ -336,12 +276,12 @@ intrinsic ConstructGeneratorsAndRelations(
       end if;
 
       // Update the generators of degree k based on the computed weight k forms.
-      new_gens := ComplementBasis(EvaluatedMonomials, Basisweightk: Alg := Alg);
+      new_gens := ComplementBasis(weightedSymBasis, Basisweightk: Alg := Alg);
       if not IsNull(new_gens) then
           Gens[k] := new_gens;
       end if;
 
-      vprintf HilbertModularForms : "Weight: %o Dim: %o, #MonomialsGens - #RelationsinR: %o\n", k,  dim, #gens_from_lower_weight;
+      vprintf HilbertModularForms : "Weight: %o Dim: %o, #MonomialsGens - #RelationsinR: %o\n", k,  dim, fromLowerWeightDim;
     end if;
 
     ///////////////////////////////////
@@ -351,7 +291,7 @@ intrinsic ConstructGeneratorsAndRelations(
     // TODO: we don't have dimensions per component
     dim := have_dim_formula select Dimension(Mk) else "??";
     weight_str := Sprintf((k gt MaxWeightGens) select "Weight: %o > MaxWeightGens" else "Weight: %o", k);
-    //vprintf HilbertModularForms : "%o, Dimension: %o, Monomial generators: %o, Relations: %o, New generators: %o \n", weight_str, dim, #MonomialsGens, #RelationsinR, newgens;
+    //vprintf HilbertModularForms : "%o, Dimension: %o, Monomial generators: %o, Relations: %o, New generators: %o \n", weight_str, dim, #MonomialsGens, #weight_k_relations, newgens;
   end for;
 
   return <Gens, Relations, Monomials>;
@@ -368,17 +308,15 @@ end intrinsic;
 
 // TODO: Should degree refer to the weight of the Syzygy? The implementation is certainly more complicated.
 // It also totally screws up the use-case within ConstructGeneratorsAndRelations Probably should be a parameter.
-// 
+//     
 intrinsic Syzygies(forms, degrees::SeqEnum[RngIntElt] :
                    KnownRelations := false,
                    IdealClassesSupport := false) -> RngMPol
 {Return the ideal of Syzygies of the given list of Hilbert Modular Forms. The degree refers to the weight of the relation.
 Only Parallel weight is supported.}
-
+    
     require #forms gt 0: "Number of forms must be non-zero.";
     Mothership := Parent(Parent(forms[1]));
-    fieldDegree := Degree(BaseField(Mothership));
-    N := Level(forms[1]);
     
     if IdealClassesSupport cmpeq false then // the default is all ideals classes
         IdealClassesSupport := NarrowClassGroupReps(Mothership); 
@@ -391,7 +329,6 @@ Only Parallel weight is supported.}
     end for;
 
     R := ConstructWeightedPolynomialRing(Gens);
-
 
     // The parent of the ring containing the KnownRelations is assumed to identify with the
     // given forms via the  morphism `UPar -> k[f1, f2, ..., fn]` given by `R.i -> fi`,
@@ -415,14 +352,12 @@ Only Parallel weight is supported.}
         mp := hom<UPar->R | map_eqns>;
         I := ideal<R | [mp(f) : f in Basis(KnownRelations)]>;
     end if;
-
     
     for k in degrees do
-        Mk := HMFSpace(Mothership, N, [k : i in [1..fieldDegree]]);
         MonomialsinR := MonomialsOfWeightedDegree(R, k);
         MonomialsGens := MonomialGenerators(R, I, k);
 
-        EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens, Mk);
+        EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens);
         RelationCoeffs := LinearDependence(EvaluatedMonomials : IdealClasses:=IdealClassesSupport);
         
         for rel in RelationCoeffs do
@@ -434,6 +369,43 @@ Only Parallel weight is supported.}
     return I;
 end intrinsic;
 
+
+intrinsic SyzygiesAndKBase(forms, degree::RngIntElt :
+                   KnownRelations := false,
+                   IdealClassesSupport := false) -> RngMPol
+{}
+    return SyzygiesAndKBase(forms, [degree] : KnownRelations:=KnownRelations, IdealClassesSupport:=IdealClassesSupport);
+end intrinsic;
+
+intrinsic SyzygiesAndKBase(forms, degrees::SeqEnum[RngIntElt] :
+                   KnownRelations := false,
+                   IdealClassesSupport := false) -> RngMPol
+{Return the ideal of Syzygies of the given list of Hilbert Modular Forms as well as a basis of
+modular forms for the k-vector space  `SUM_(d in degrees) k[f1, ..., fn]_d/Relations` . The degree 
+refers to the weight of the relation. Only Parallel weight is supported.}
+    
+    syz := Syzygies(forms, degrees : KnownRelations:=KnownRelations, IdealClassesSupport:=IdealClassesSupport);
+    R := Generic(syz);
+
+    kbase := [* *];
+    for k in degrees do
+        kbaseMonomials := MonomialGenerators(R, syz, k);
+        kbase := kbase cat SequenceToList(EvaluateMonomials(forms, kbaseMonomials));
+    end for;
+    
+    return syz, kbase;
+end intrinsic;
+
+
+intrinsic WeightedSymmetricPower(forms, k:
+                                 KnownRelations := false,
+                                 IdealClassesSupport := false) -> SeqEnum
+{Given a list of Hilbert Modular forms, compute the forms of weight `k` obtained by polynomial
+combinations of the given ones.}
+
+    _, kbase := SyzygiesAndKBase(forms, k : KnownRelations:=KnownRelations, IdealClassesSupport:=IdealClassesSupport);
+    return kbase;
+end intrinsic;
 
 
 ///////////////////////// Aux Functions /////////////////
@@ -487,7 +459,7 @@ intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc,f::ModFrmHilDElt) -> any
   R := ConstructWeightedPolynomialRing(Gens);
   MonomialsinR := MonomialsOfWeightedDegree(R,Weight[1]);
   MonomialsGens := MonomialGenerators(R,Relations,Weight[1]);
-  EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens,Parent(f));
+  EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens);
 
   relations := LinearDependence(EvaluatedMonomials);
   while relations ne [] do
