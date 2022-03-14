@@ -340,8 +340,19 @@ intrinsic ConstructGeneratorsAndRelations(
 end intrinsic;
 
 
-intrinsic Syzygies(forms, knownRelations, degrees) -> Any
-{Return the ideal of Syzygies of the given list of Hilbert Modular Forms.}
+
+
+intrinsic Syzygies(forms::SeqEnum[ModFrmHilDElt], degree::RngIntElt : KnownRelations:=false) -> RngMPol
+{}
+    return Syzygies(forms, [degree] : KnownRelations:=KnownRelations);
+end intrinsic;
+
+// TODO: Should degree refer to the weight of the Syzygy? The implementation is certainly more complicated.
+// It also totally screws up the use-case within ConstructGeneratorsAndRelations Probably should be a parameter.
+// 
+intrinsic Syzygies(forms::SeqEnum[ModFrmHilDElt], degrees::SeqEnum[RngIntElt] : KnownRelations := false) -> RngMPol
+{Return the ideal of Syzygies of the given list of Hilbert Modular Forms. The degree refers to the weight of the relation.
+Only Parallel weight is supported.}
 
     require #forms gt 0: "Number of forms must be non-zero.";
     Mothership := Parent(Parent(forms[1]));
@@ -352,8 +363,9 @@ intrinsic Syzygies(forms, knownRelations, degrees) -> Any
     // The parent R will be assumed to admit a morphism k[f1, f2, ..., fn] given by (R.i -> fi). 
     // (Note: Perhaps we have a convenient "project" parameter?)
 
-    // TODO: Initialize HMSMothership Mk.
-
+    if KnownRelations cmpne false then
+        error "Not Implemented.";
+    end if;
     
     ///////////////////////////////////
     // FINDING RELATIONS AMONG THE OLD GENERATORS IN THE CURRENT DEGREE.
@@ -369,7 +381,8 @@ intrinsic Syzygies(forms, knownRelations, degrees) -> Any
 
     R := ConstructWeightedPolynomialRing(Gens);
     
-    // Need to set Relations.
+    // TODO: Incorporate known relations.
+    // TODO: Allow Ideal Class support.
     I := ideal<R|>;
     
     for k in degrees do
@@ -386,7 +399,7 @@ intrinsic Syzygies(forms, knownRelations, degrees) -> Any
         RelationCoeffs := LinearDependence(EvaluatedMonomials);
         
         for rel in RelationCoeffs do
-            p := Polynomial(rel, EvaluatedMonomials);
+            p := Polynomial(rel, MonomialsGens);
             I +:= ideal<R|p>;
         end for;
     end for;
