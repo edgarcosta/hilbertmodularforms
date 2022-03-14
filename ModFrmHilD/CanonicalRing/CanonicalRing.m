@@ -12,19 +12,23 @@
 // Builds weighted monomial ring R.
 // Input: Gens: k -> Gens[k] // generators of weight k
 // Output: R = Weighted polynomial ring
-intrinsic ConstructWeightedPolynomialRing(Gens::Assoc)-> Any
+intrinsic ConstructWeightedPolynomialRing(Gens::Assoc)-> RngMPol
   {Return a weighted polynomial ring with #Gens[k] generators of degree k, for k in the keys of Gens}
   GenWeights := &cat[[w : j in [1..#g]] : w->g in Gens];
   R := PolynomialRing(Rationals(), GenWeights);
   return R;
 end intrinsic;
 
+intrinsic ConstructWeightedPolynomialRing(forms::List) -> RngMPol
+{Return a weighted polynomial ring whose variables correspond to the given forms.}
+    return PolynomialRing(Rationals(), [Weight(f)[1] : f in forms]);
+end intrinsic;
 
 // Builds The ideal I.
 // Input: R = weighted polynomial ring
 // Input: Relations = An associative array of relations index by weight
 // Output: I
-intrinsic ConstructIdeal(R::RngMPol, Relations::Assoc)-> Any
+intrinsic ConstructIdeal(R::RngMPol, Relations::Assoc)-> RngMPol
   {Returns the ideal I determined by the relations}
 
   PolynomialList := [];
@@ -330,8 +334,9 @@ It is assumed that `forms` are linearly independent.}
         moreforms := forms cat eisensteinbasis;
         coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
 
+        // TODO: This double complement call can surely be optimized away.
         if Rank(coeffs_matrix) eq KnownMkDimension then
-            return moreforms;
+            return forms cat ComplementBasis(forms, moreforms : Alg := Alg);
         end if;
     end if;
 
@@ -360,14 +365,7 @@ Only Parallel weight is supported.}
     
     require #forms gt 0: "Number of forms must be non-zero.";
     Mothership := Parent(Parent(forms[1]));
-        
-    Gens := AssociativeArray();
-    for f in forms do
-        k := Weight(f)[1];
-        Gens[k] := IsDefined(Gens, k) select Append(Gens[k], f) else [f];
-    end for;
-
-    R := ConstructWeightedPolynomialRing(Gens);
+    R := ConstructWeightedPolynomialRing(forms);
 
     // The parent of the ring containing the KnownRelations is assumed to identify with the
     // given forms via the  morphism `UPar -> k[f1, f2, ..., fn]` given by `R.i -> fi`,
@@ -397,7 +395,7 @@ Only Parallel weight is supported.}
         MonomialsinR := MonomialsOfWeightedDegree(R, k);
         MonomialsGens := MonomialGenerators(R, I, k);
 
-        EvaluatedMonomials := EvaluateMonomials(Gens, MonomialsGens);
+        EvaluatedMonomials := EvaluateMonomials(forms, MonomialsGens);
         RelationCoeffs := LinearDependence(EvaluatedMonomials : IdealClasses:=IdealClassesSupport);
         
         for rel in RelationCoeffs do
