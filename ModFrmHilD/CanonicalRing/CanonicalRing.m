@@ -24,6 +24,12 @@ intrinsic ConstructWeightedPolynomialRing(forms::List) -> RngMPol
     return PolynomialRing(Rationals(), [Weight(f)[1] : f in forms]);
 end intrinsic;
 
+intrinsic ConstructWeightedPolynomialRing(forms::SeqEnum) -> RngMPol
+{Return a weighted polynomial ring whose variables correspond to the given forms.}
+    return ConstructWeightedPolynomialRing([* f : f in forms *]);
+end intrinsic;
+
+
 // Builds The ideal I.
 // Input: R = weighted polynomial ring
 // Input: Relations = An associative array of relations index by weight
@@ -69,7 +75,7 @@ end intrinsic;
 // Input: MonomialGens = the list of abstract polynomial generators
 // Input: The space
 // Output: The evaluated monomials, so a list of modular forms.
-intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt]) -> Any
+intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt]) -> SeqEnum
   {For a given set of HMF this produces all multiples with weight k}
 
   // this uses the same order as ConstructWeightedPolynomialRing
@@ -77,7 +83,7 @@ intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt]) -> A
   return EvaluateMonomials(GenList, MonomialGens);
 end intrinsic;
 
-intrinsic EvaluateMonomials(GenList::List, MonomialGens::SeqEnum[RngMPolElt]) -> Any
+intrinsic EvaluateMonomials(GenList::List, MonomialGens::SeqEnum[RngMPolElt]) -> SeqEnum
   {For a given set of HMF this produces all multiples with weight k}
 
   return [Product([* GenList[k]^exp[k] : k in [1..#GenList] *]) where exp := Exponents(mon) : mon in MonomialGens];
@@ -96,6 +102,28 @@ intrinsic EvaluateMonomials(GenList::List, MonomialGens::SeqEnum[RngMPolElt]) ->
   return EvalMonomials;
   */
 end intrinsic;
+
+intrinsic EvaluateMonomials(GenList::SeqEnum, MonomialGens::SeqEnum[RngMPolElt]) -> Any
+  {For a given set of HMF this produces all multiples with weight k}
+
+  return EvaluateMonomials([* f : f in GenList *], MonomialGens);
+end intrinsic;
+
+intrinsic Evaluate(F::RngMPolElt, v::SeqEnum[ModFrmHilDElt]) -> ModFrmHilDElt
+{Given a multivariate polynomial `F` with `n` variables, and a list `v` of Hilbert Modular 
+Forms, return `F(v[1], ..., v[n])`. No attempt is made to check whether this is well-defined.}
+    return Evaluate(F, [* x : x in v *]);
+end intrinsic;
+
+// TODO: Someone, somewhere may override this function because List has no element type
+intrinsic Evaluate(F::RngMPolElt, v::List) -> ModFrmHilDElt
+{Given a multivariate polynomial `F` with `n` variables, and a list `v`, return 
+`F(v[1], ..., v[n])`. No attempt is made to check whether this is well-defined.}
+    coeffs, mons := CoefficientsAndMonomials(F);
+    eviled_mons := EvaluateMonomials([* F *], mons);
+    return &+[coeffs[i] * eviled_mons[i] : i in [1..#eviled_mons]];
+end intrinsic;
+
 
 ////////// Computing new relations in weight k ///////////////////
 
@@ -392,9 +420,8 @@ Only Parallel weight is supported.}
     end if;
     
     for k in degrees do
-        MonomialsinR := MonomialsOfWeightedDegree(R, k);
-        MonomialsGens := MonomialGenerators(R, I, k);
 
+        MonomialsGens := MonomialGenerators(R, I, k);
         EvaluatedMonomials := EvaluateMonomials(forms, MonomialsGens);
         RelationCoeffs := LinearDependence(EvaluatedMonomials : IdealClasses:=IdealClassesSupport);
         
@@ -432,6 +459,37 @@ refers to the weight of the relation. Only Parallel weight is supported.}
     end for;
     
     return syz, kbase;
+end intrinsic;
+
+
+intrinsic SymmetricPower(Mk::ModFrmHilD, m::RngIntElt :
+                         KnownRelations := false,
+                         IdealClassesSupport := false) -> SeqEnum
+{Given a space of Hilbert modular forms (of weight `k`), compute a basis for the `m`-th 
+symmetric power within the space of Hilbert Modular Forms of weight `km`. }
+    k := Weight(Mk)[1];
+    assert k eq Weight(Mk)[2];
+    
+    return SymmetricPower(Basis(Mk), m :
+                          KnownRelations:=KnownRelations,
+                          IdealClassesSupport := IdealClassesSupport);
+end intrinsic;
+
+intrinsic SymmetricPower(forms::SeqEnum, m::RngIntElt:
+                         KnownRelations := false,
+                         IdealClassesSupport := false) -> SeqEnum
+{Given a sequence of Hilbert modular forms of weight `k`, compute a basis for the `m`-th
+symmetric power of the space spanned by these forms.}
+    if #forms eq 0 then
+        return [];
+    end if;
+
+    // TODO: Right now only parallel weight is supported.
+    k := Weight(forms[1])[1];
+    assert k eq Weight(forms[1])[2];
+    return [f : f in WeightedSymmetricPower(forms, m*k :
+                                            KnownRelations := KnownRelations,
+                                            IdealClassesSupport := IdealClassesSupport)];
 end intrinsic;
 
 
