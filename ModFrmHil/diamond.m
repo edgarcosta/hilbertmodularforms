@@ -303,7 +303,9 @@ end function;
 
 forward DiamondOperatorDefiniteBig;
 
-function DiamondOperator(M, J)
+intrinsic DiamondOperator(M::ModFrmHil, J::RngOrdIdl) -> AlgMatElt
+{Returns the matrix representing the diamond operator <J> on M.}
+	  
     F_weight := getWeightBaseField(M);
     
     if Dimension(M) eq 0 then
@@ -331,7 +333,7 @@ function DiamondOperator(M, J)
     //dJ_big := DiamondOperatorDefiniteBig(MA, J);
     dJ_big := DiamondOperatorIdealsDefiniteBig(MA,J);
     return restriction(dJ_big, M);
-end function;
+end intrinsic;
 
 function DiamondOperatorDefiniteBig(M, J)    
 
