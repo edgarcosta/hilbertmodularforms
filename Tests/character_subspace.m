@@ -782,7 +782,9 @@ fund_discs := {x[1] : x in Keys(dim_list)};
 B := Maximum(fund_discs);
 ds := [Random(fund_discs) : i in [1..num_tests]];
 ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d in ds];
-weights := [[k,k] : k in [2..10 by 2]];
+// Weight 10 already takes too long
+// weights := [[k,k] : k in [2..10 by 2]];
+weights := [[k,k] : k in [2..8 by 2]];
 ks := [ [Random(weights)] : d in ds];
 
 printf "Checking dimensions at ";
