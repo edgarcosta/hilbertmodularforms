@@ -1,7 +1,12 @@
-import "copypastefunctions.m" : IsBianchi,
-                                HMF0,
-                                TopAmbient,
-				WeightRepresentation;
+import "copypaste/definite.m" : HilbertModularSpaceDirectFactors,
+                                WeightRepresentation;
+
+import "copypaste/hackobj.m" : IsBianchi, TopAmbient;
+import "hackobj.m" : HMF0;
+
+/**************** New Attributes **********************/
+
+declare attributes ModFrmHil : Diamond;
 
 /**************** New intrinsics **********************/
 
