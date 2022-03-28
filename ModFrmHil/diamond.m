@@ -25,48 +25,48 @@ function hecke_matrix_field(M : hack := true)
   elif IsBianchi(M) or not IsDefinite(M) then
     return Rationals();
   else
-    if hack then
-        // hack begins
-    return TopAmbient(M)`weight_base_field;
-    // hack ends
+      if hack then
+	  // hack begins
+	  return TopAmbient(M)`weight_base_field;
+	  // hack ends
       else
-    return Ambient(M)`weight_base_field;
+	  return Ambient(M)`weight_base_field;
       end if;
   end if;
 end function;
 
 // we compute a Hecke operator to force magma to compute the space
 procedure forceSpaceComputation(M)
-  K := BaseField(M);
-  p := PrimeIdealsOverPrime(K, 2)[1];
-  _ := HeckeOperator(M,p);
+    K := BaseField(M);
+    p := PrimeIdealsOverPrime(K, 2)[1];
+    _ := HeckeOperator(M,p);
 end procedure;
 
 // a function to find the weight base field of a magma space
 
 function getWeightBaseField(M)
-  // is_parallel, w := IsParallelWeight(M);
-  if not assigned M`weight_base_field then
-    if Seqset(Weight(M)) eq {2} then
-      return Rationals();
+    // is_parallel, w := IsParallelWeight(M);
+    if not assigned M`weight_base_field then
+	if Seqset(Weight(M)) eq {2} then
+	    return Rationals();
+	end if;
+	if assigned M`basis_matrix_wrt_ambient then
+	    return BaseRing(M`basis_matrix_wrt_ambient);
+	end if;
+	if assigned M`Ambient and assigned M`Ambient`weight_base_field then
+	    return M`Ambient`weight_base_field;
+	end if;
+	forceSpaceComputation(M);
+	if assigned M`basis_matrix_wrt_ambient then
+	    return BaseRing(M`basis_matrix_wrt_ambient);
+	end if;
+	if assigned M`Ambient and assigned M`Ambient`weight_base_field then
+	    return M`Ambient`weight_base_field;
+	end if;
     end if;
-    if assigned M`basis_matrix_wrt_ambient then
-      return BaseRing(M`basis_matrix_wrt_ambient);
-    end if;
-    if assigned M`Ambient and assigned M`Ambient`weight_base_field then
-      return M`Ambient`weight_base_field;
-    end if;
-    forceSpaceComputation(M);
-    if assigned M`basis_matrix_wrt_ambient then
-      return BaseRing(M`basis_matrix_wrt_ambient);
-    end if;
-    if assigned M`Ambient and assigned M`Ambient`weight_base_field then
-      return M`Ambient`weight_base_field;
-    end if;
-  end if;
-  assert assigned M`weight_base_field;
-  return M`weight_base_field;
-  end function;
+    assert assigned M`weight_base_field;
+    return M`weight_base_field;
+end function;
 
 // TODO : Is this any different than Generators?
 function getIdealGens(I)
@@ -284,21 +284,21 @@ end function;
 
 // originaly from hecke.m
 function restriction(T, M : hack := true)
-  // needs to force computation of basis_matrix
-  if hack and (not assigned M`basis_matrix) then
-    forceSpaceComputation(M);
-  end if;
-  bm := M`basis_matrix;
-  bmi := M`basis_matrix_inv;
-  bmT := bm * ChangeRing(T, BaseRing(bm));
-  if assigned bmi then
-    TM := bmT * bmi;
-  else
-    // solve bm * TM = bmT
-    TM, K := Solution(bm, bmT);
-    assert Dimension(K) eq 0;
-  end if;
-  return TM;
+    // needs to force computation of basis_matrix
+    if hack and (not assigned M`basis_matrix) then
+	forceSpaceComputation(M);
+    end if;
+    bm := M`basis_matrix;
+    bmi := M`basis_matrix_inv;
+    bmT := bm * ChangeRing(T, BaseRing(bm));
+    if assigned bmi then
+	TM := bmT * bmi;
+    else
+	// solve bm * TM = bmT
+	TM, K := Solution(bm, bmT);
+	assert Dimension(K) eq 0;
+    end if;
+    return TM;
 end function;
 
 // This function returns the matrix describing the action
@@ -320,21 +320,15 @@ intrinsic DiamondOperator(M::ModFrmHil, J::RngOrdIdl) -> AlgMatElt
     // we compute it on the ambient space
     if assigned M`basis_matrix_wrt_ambient then 
 
+	// (TO DO: is this always better than getting it directly from the big operator?)
+	bm := M`basis_matrix_wrt_ambient;
+	bmi := M`basis_matrix_wrt_ambient_inv;
+	dJ_amb := DiamondOperator(M`Ambient, J);
+	dJ_amb := ChangeRing(dJ_amb, BaseRing(bm));
+	dJ := bm * dJ_amb * bmi;
 
-  if Dimension(M) eq 0 then
-    return MatrixAlgebra(F_weight, 0)!1;
-  end if;
-
-  // we compute it on the ambient space
-  if assigned M`basis_matrix_wrt_ambient then
-    // (TO DO: is this always better than getting it directly from the big operator?)
-    bm := M`basis_matrix_wrt_ambient;
-    bmi := M`basis_matrix_wrt_ambient_inv;
-    dJ_amb := DiamondOperator(M`Ambient, J);
-    dJ_amb := ChangeRing(dJ_amb, BaseRing(bm));
-    dJ := bm * dJ_amb * bmi;
-    return dJ;
-  end if;
+	return dJ;
+    end if;
 
     // so far we have implemented it only for the definite spaces
     assert IsDefinite(M);
@@ -464,28 +458,6 @@ function DiamondOperatorDefiniteBig(M, J)
     // the blockified permutation
     big_perm := &cat[[cumdims[perm[i]]+j : j in [1..dims[i]]] : i in [1..#perm]];
 
-  // not easy...
-  // In order to gain the action on our space, we have to blockify according to the
-  // subspaces of direct factors
-
-  HMDF := M`ModFrmHilDirFacts;
-  // dimensions of the different H0(W, Gamma_i)
-  nCFD := [#xx`CFD : xx in HMDF];
-  assert h eq #HMDF;
-  wd := M`weight_dimension; // = 1 for weight2
-
-  big_perm := getActionOnP1Reps(M, J, perm);
-
-  // dims := [wd : i in [1..&+nCFD]];
-  // cumdims := [&+dims[1..i] : i in [0..#dims]];
-  // cumdims := [wd*i : i in [0..&+nCFD]];
-  // big_perm := &cat[[cumdims[big_perm[i]]+j : j in [1..dims[i]]] : i in [1..#big_perm]];
-  big_perm := &cat[[wd*(big_perm[i]-1)+j : j in [1..wd]] : i in [1..#big_perm]];
-  /*
-  // cumulative sums for the next line
-  cumdims := [&+dims[1..i] : i in [0..#dims]];
-  // the blockified permutation
-  big_perm := &cat[[cumdims[perm[i]]+j : j in [1..dims[i]]] : i in [1..#perm]];
    */
 
     // This is the operator on the entire space of Hilbert modular forms
@@ -495,11 +467,11 @@ function DiamondOperatorDefiniteBig(M, J)
     end if;
 /*    
     if (M`weight_dimension eq 1) then
-  // This is the operator on the subspace corresponding to M
-  d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
+	// This is the operator on the subspace corresponding to M
+	d_J := Solution(M`basis_matrix, M`basis_matrix * d_J);
     end if;
 */
-  return d_J;
+    return d_J;
 end function;
 
 // Here M is a ModFrmHil (HibertCuspForms(M))
@@ -543,29 +515,11 @@ function HeckeCharacterSubspace(M, chi)
        M_sub`basis_matrix_inv := Transpose(Solution( Transpose(M_sub`basis_matrix), Id_Msub));
     end if;
 
-  F_weight := getWeightBaseField(M);
-  Id_M := IdentityMatrix(F_weight, Dimension(M));
-
-  subsp := &meet [Kernel(dJ[2] - chi(dJ[1])*Id_M) : dJ in dJs];
-
-  dim := Dimension(subsp);
-
-  Id_Msub := IdentityMatrix(F_weight, dim);
-
-  M_sub := HMF0(BaseField(M), Level(M), 1*Integers(K), chi, Weight(M), CentralCharacter(M));
-  M_sub`basis_matrix_wrt_ambient := BasisMatrix(subsp);
-
-  M_sub`basis_matrix_wrt_ambient_inv :=
-      Transpose(Solution( Transpose(M_sub`basis_matrix_wrt_ambient), Id_Msub));
-  if assigned M`basis_matrix then
-     M_sub`basis_matrix := M_sub`basis_matrix_wrt_ambient * M`basis_matrix;
-     M_sub`basis_matrix_inv := Transpose(Solution( Transpose(M_sub`basis_matrix), Id_Msub));
-  end if;
-
-  M_sub`Ambient := M;
-  M_sub`Dimension := dim;
-  if assigned M`is_new then
-    M_sub`is_new := M`is_new;
-  end if;
-  return M_sub;
+    M_sub`Ambient := M;
+    M_sub`Dimension := dim;
+    if assigned M`is_new then
+      M_sub`is_new := M`is_new;
+    end if;
+    
+    return M_sub;
 end function;
