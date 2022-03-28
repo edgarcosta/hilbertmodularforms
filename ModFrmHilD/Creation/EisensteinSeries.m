@@ -1,6 +1,3 @@
-// TODO needs testing
-// TODO fix normalization at the end
-// Eisenstein Series have only been implemented for integral parallel weight
 intrinsic EisensteinSeries(
   Mk::ModFrmHilD,
   eta::GrpHeckeElt,
@@ -74,12 +71,20 @@ intrinsic EisensteinCoefficients(
   require #SequenceToSet(Weight) eq 1: "We only support EisensteinSeries with parallel weight";
   k := Weight[1];
 
-  CoefficientField := Parent(eta)`TargetRing; // where the character values live
-
+  //Set the coefficient field to be the common field for eta and psi.
+  lcm := LCM(Order(eta), Order(psi));
+  L<z> := CyclotomicField(lcm);
+  etainv := eta^-1;
+  psiinv := psi^-1;
+  SetTargetRing(~eta, z);
+  SetTargetRing(~psi, z);
+  SetTargetRing(~etainv, z);
+  SetTargetRing(~psiinv, z);
 
   // deal with L-values
   if IsOne(aa) then // aa = 1
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    SetTargetRing(~prim, z);
     c0aa := LValue_Recognized(M, k, prim);
   else
     c0aa := 0;
@@ -87,7 +92,28 @@ intrinsic EisensteinCoefficients(
   // k = 1 and bb == 1
   if k eq 1 and IsOne(bb) then
     prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+    SetTargetRing(~prim, z);
     c0bb := LValue_Recognized(M, k, prim);
+  else
+    c0bb := 0;
+  end if;
+
+  constant_term := AssociativeArray();
+  n := Degree(BaseField(M));
+
+  // deal with L-values
+  if IsOne(aa) then // aa = 1
+    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    SetTargetRing(~prim, z);
+    c0aa := L!LValue_Recognized(M, k, prim);
+  else
+    c0aa := 0;
+  end if;
+  // k = 1 and bb == 1
+  if k eq 1 and IsOne(bb) then
+    prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+    SetTargetRing(~prim, z);
+    c0bb := L!LValue_Recognized(M, k, prim);
   else
     c0bb := 0;
   end if;
@@ -102,7 +128,7 @@ intrinsic EisensteinCoefficients(
     // Thus we may take tt_lambda = 1/bb'$
     bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     tt_lambda := bbp^-1;
-    constant_term[bb] := 2^(-n)*( (eta^(-1))(tt_lambda)*c0aa +  (psi^(-1))(tt_lambda)*c0bb );
+    constant_term[bb] := 2^(-n)*( etainv(tt_lambda)*c0aa +  psiinv(tt_lambda)*c0bb );
   end for;
 
 
@@ -121,15 +147,22 @@ intrinsic EisensteinCoefficients(
       coeffs[nn] := c0inv * &+[eta(nn/rr) * psi(rr) * Norm(rr)^(k - 1) : rr in Divisors(nn)];
     end if;
   end for;
-  // Makes coefficients rational
-  if IsIsomorphic(CoefficientField, RationalsAsNumberField()) then
+
+  // reduce field of definition
+  if Degree(L) eq 1 then
+    Lsub := Rationals();
+  else
+    Lsub := sub<L | [elt : elt in (Values(coeffs) cat Values(constant_term))]>;
+  end if;
+  if L ne Lsub then
     for nn->c in coeffs do
-      coeffs[nn] := Rationals()!c;
+      coeffs[nn] := Lsub!c;
     end for;
     for bb->c in constant_term do
-      constant_term[bb] := Rationals()!c;
+      constant_term[bb] := Lsub!c;
     end for;
   end if;
+
   return <constant_term, coeffs>;
 end intrinsic;
 
@@ -139,10 +172,14 @@ end intrinsic;
 intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -> FldNumElt
   {This is a toolbox function to compute L values in the right space}
   require IsPrimitive(psi): "Hecke character must be primitive";
-  bool, val := IsDefined(M`LValues, <k, psi>);
+  if not IsDefined(M`LValues, Parent(psi))  then
+    M`LValues[Parent(psi)] := AssociativeArray();
+  end if;
+  bool, val := IsDefined(M`LValues[Parent(psi)], <k, psi>);
   if not bool then
     // Maybe a separate function to compute L-values?
-    CoefficientField := Parent(psi)`TargetRing; // where the character values live
+    z := psi`Zeta;
+    CoefficientField := Parent(z); // where the character values live
     // TODO: this is a total guess...
     prec := 100 + k^2;
     Lf := LSeries(psi : Precision:=prec);
@@ -151,29 +188,18 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
     // figure out the right place to recognize
     // i.e., figure out what complex embedding magma used to embed the L-function into CC
     places := InfinitePlaces(CoefficientField);
-    for p in PrimesUpTo(1000) do
-      if Conductor(Lf) mod p eq 0 then continue; end if;
-      if #places eq 1 then
-        // there is only one place left, so that must be the one
-        break;
-      end if;
-      assert #places ge 1;
-      ap_K := psi(p); // in CoefficientField
-      // Over degree 2
-      // EulerFactor = 1 - psi(p) T^2 if p inert
-      //             = 1 - ? + psi(p)T^2 if p splits
-      pfactor := Factorisation(p*Integers(BaseField(M)));
-      sign := (-1)^(&+[elt[2] : elt in pfactor]);
-      ap_CC := sign*Coefficient(EulerFactor(Lf, p), Degree(Lf));
-      // print ap_K, ap_CC, EulerFactor(Lf, p);
-      // restrict to the places where pl(ap_K) = ap_CC
-      places := [pl : pl in places | Evaluate(ap_K, pl) eq ap_CC ];
-    end for;
-    // we did our best, if #places > 1, then any embedding should work, e.g, the Image is smaller than the Codomain
-    pl := places[1];
-    CC<I> := ComplexField(Precision(Lvalue));
-    val := RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
-    M`LValues[<k, psi>] := val;
+    CC<I> := ComplexField(Precision(Parent(Lvalue)));
+    zCC := Exp(2*Pi(CC)*I/CyclotomicOrder(CoefficientField));
+    v0, p0 := Minimum([Abs(Evaluate(z, pl : Precision := Precision(CC)) - zCC) : pl in places]);
+    v1, p1 := Minimum([Abs(ComplexConjugate(Evaluate(z, pl : Precision := Precision(CC))) - zCC) : pl in places]);
+    conjugate := v1 lt v0;
+    if conjugate then
+      pl := places[p1];
+    else
+      pl := places[p0];
+    end if;
+    val := RecognizeOverK(CC!Lvalue, CoefficientField, pl, conjugate);
+    M`LValues[Parent(psi)][<k, psi>] := val;
   end if;
   return val;
 end intrinsic;
