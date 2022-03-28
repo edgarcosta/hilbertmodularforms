@@ -15,6 +15,9 @@ intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
   return &+[g * I : g in Generators(a)];
 end intrinsic;
 
+// This one appears further down
+// DiamondOperator(M::ModFrmHil, J::RngOrdIdl) -> AlgMatElt
+
 /********************************************************/
 
 // originally from hecke.m

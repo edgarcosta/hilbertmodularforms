@@ -8,3 +8,6 @@ ModFrmHilD/.#Space.m
 ModFrmHilD/.magma-scan/Space.m.el
 *.auto*
 ModFrmHil/spec~
+*.el
+*.el
+ModFrmHil/.magma-scan/diamond.m.el
