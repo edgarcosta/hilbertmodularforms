@@ -2,14 +2,7 @@
 ModFrmHilD
 *****/
 
-//FIXME
-//import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
-function HeckeCharacterSubspace(M, chi)
-  //FIXME
-  // while this is broken
-  return M;
-end function;
-
+import "../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
 
 ////////// ModFrmHilD attributes //////////
 
