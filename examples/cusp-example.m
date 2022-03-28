@@ -6,11 +6,13 @@ F<nu> := QuadraticField(5);
 ZF := Integers(F);
 bb := 1*ZF;
 NN := 21*ZF;
+P1 := Gamma1Quadruples(NN, bb);
+//NN := 21*ZF;
 eps := FundamentalUnitTotPos(F);
 //eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
-bb := 1*ZF;
-ss := (1/nu)*ZF;
-MM := 7*ZF;
+//bb := 1*ZF;
+//ss := (1/nu)*ZF;
+//MM := 7*ZF;
 //GeneratorOfQuotientModuleCRT(ss,MM);
 /*
   ss_mod := Module([ss]);
@@ -45,8 +47,6 @@ a_bar, c_bar := Explode(quad[3]);
 a_bar, c_bar;
 c := CuspLiftSecondCoordinate(c_bar, quad[1], quad[2], NN, bb);
 a := CuspLiftFirstCoordinate(a_bar, c, quad[1], quad[2], NN, bb);
-
-//cusps := Gamma1Cusps(NN, bb);
 
 X := CartesianProduct(RssMM, RssMM_comp);
 Q, mpQ := quo< ZF | NN>;

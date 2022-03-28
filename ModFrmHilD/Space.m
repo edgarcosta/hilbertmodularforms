@@ -343,7 +343,7 @@ intrinsic ReduceModuloIdeal(a::RngElt, I::RngOrdFracIdl, J::RngOrdFracIdl) -> Fl
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
+intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> RngElt 
   {}
   ZF := Order(ss);
   if ss*MM eq ss then
@@ -514,6 +514,47 @@ intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl
   return [ReduceModuloIdeal(el, ss, ss*MM) : el in reps];
 end intrinsic;
 
+intrinsic ReducePairModuloUnits(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl, MM::RngOrdIdl, a::RngElt, c::RngElt) -> SeqEnum
+  {}
+
+  F := Parent(a);
+  F := NumberField(F);
+  ZF := Integers(F);
+  eps_p := FundamentalUnitTotPos(F);
+  eps := FundamentalUnit(F);
+
+  ZFMM, mpMM := quo<ZF |MM>;
+  ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;
+  UQMM, mpQMM := UnitGroup(ZFMM);
+  UQNNMM, mpQNNMM := UnitGroup(ZFNNMM);
+
+  eps_barMM := mpMM(eps) @@ mpQMM;
+  eps_barNNMM := mpNNMM(eps) @@ mpQNNMM;
+
+  D, i1, i2, p1, p2 := DirectSum(UQMM, UQNNMM);
+  print D;
+  eps_gp := sub< D | [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM), i1(eps_barMM), i2(eps_barNNMM)] >;
+  T := [];
+  for el in Transversal(D, eps_gp) do
+    Append(~T, [* mpQMM(p1(el)) @@ mpMM, mpQNNMM(p2(el)) @@ mpNNMM *]);
+  end for;
+  reps := [ [* a*(el[1] @@ mpMM), c*(el[2] @@ mpNNMM) *] : el in T];
+  for i := 1 to #reps do
+    rep := reps[i];
+    if rep[2] eq 0 then
+      print Transversal(D, eps_gp)[i];
+    end if;
+  end for;
+  final := [];
+  for el in reps do
+    a0, c0 := Explode(el);
+    a_new := ReduceModuloIdeal(a0, ss, ss*MM);
+    c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
+    Append(~final, [a_new, c_new]);
+  end for;
+  return final;
+end intrinsic;
+
 // P_1(NN)_bb in eqn 5.1.6 in paper, or Lemma 3.6 of Dasgupta-Kakde
 intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde, which is in bijection with cusps of Gamma1(NN)_bb.}
@@ -525,12 +566,13 @@ intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   quads := [];
   for ss in Cl_seq do
     for MM in Divisors(NN) do
-      RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
-      RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
-      for a in RssMM do
-        for c in RssMM_comp do
-          Append(~quads, [* ss, MM, [a,c] *]);
-        end for;
+      a := GeneratorOfQuotientModuleCRT(ss,MM);
+      c := GeneratorOfQuotientModuleCRT(ss*bb*MM,(NN/MM));
+      //RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
+      //RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
+      pairs := ReducePairModuloUnits(NN, bb, ss, MM, a, c);
+      for el in pairs do
+        Append(~quads, [* ss, MM, el *]);
       end for;
     end for;
   end for;
@@ -709,7 +751,6 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
 end intrinsic;
 */
 
-
 // Need to lift the [a,c] in the quadruples in a special way that respects certain congruences
 intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   {}
@@ -717,7 +758,10 @@ intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   F := NumberField(ZF);
   quads := Gamma1Quadruples(NN, bb);
   cusps_seq := [];
-  for quad in quads do
+  for i := 1 to #quads do
+    printf "i = %o\n", i;
+    quad := quads[i];
+    printf "quad = %o\n", quad;
     ss, MM, ac_bar := Explode(quad);
     a_bar, c_bar := Explode(ac_bar);
     c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
