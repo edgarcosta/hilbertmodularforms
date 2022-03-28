@@ -12,10 +12,10 @@ forward RealValuations, junk_for_IsIsomorphic, Jprime,
 forward convert_rids, RightIdealClassesAndOrders;
 forward get_tps_for_rids, convert_tps;
 
-import "diamond.m" : BasisMatrixDefinite,
-                     HeckeOperatorDefiniteBig,
-		     HilbertModularSpaceDirectFactors,
-		     DegeneracyDown1DefiniteBig;
+import "copypaste/definite.m" : BasisMatrixDefinite,
+                                HeckeOperatorDefiniteBig,
+		                HilbertModularSpaceDirectFactors,
+		                DegeneracyDown1DefiniteBig;
 
 import "finitefield.m" : reduction_mod_random_large_split_prime;
 /********************   from hecke.m    *********************/
