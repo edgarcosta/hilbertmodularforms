@@ -763,16 +763,42 @@ procedure testHeckeCharacterSubspace(d,n,dim_list : k := [2,2])
     prec := 1;
     R := GradedRingOfHMFs(K, prec);
     hmf := HMFSpace(R, N, k);
-    // !! TODO - we should implement a new-subspace intrinsic for HMFSpaces
-    // That would make the following easier.
-    // dim_hmf := Dimension(hmf);
-    // dim_cusp := CuspDimension(hmf);
+    
     hcf := NewSubspace(hmf, new_level * Z_K);
     dim_cusp := Dimension(hcf);
 
-    // This is not true, since Eisenstein series do not surject in JL
-    // assert dim_hmf eq dim_list[D][n][1];
+    // we only compare cusp forms, since Eisenstein series do not surject in JL
     assert dim_cusp eq dim_list[<D,k>][n];
+end procedure;
+
+// This test is not usually run, as computing the Hecke operators on
+// spaces with large weights is lengthy.
+// But we record it here for use when needed
+// It verifies that the diamond operators commute with the Hecke operators
+// up to a given bound, and among themselves.
+// It also verifies that they only depend on a class group representative
+// !! TODO : can add such a test for small values of d,n,k
+
+procedure testDiamondOperator(d,n,k : HeckeBound := 10, IdealBound := 10)
+    if IsSquare(d) then
+	K := QNF();
+    else
+	K := QuadraticField(d);
+    end if;
+    
+    Z_K := Integers(K);
+    N := ideal<Z_K|n>;
+    M := HilbertCuspForms(K, N, k);
+    cl_K, cl_map := ClassGroup(K);
+    // Js := [cl_map(cl_K.i) : i in [1..Ngens(cl_K)]];
+    Js := IdealsUpTo(IdealBound, K);
+    dJs := [DiamondOperator(M,J) : J in Js];
+    hecke := [HeckeOperator(M,p) : p in PrimesUpTo(HeckeBound, K)];
+    assert &and[dJ*T eq T*dJ : T in hecke, dJ in dJs];
+    assert &and[dJ1*dJ2 eq dJ2*dJ1 : dJ1, dJ2 in dJs];
+    dJs_by_class := [{dJs[i] : i in [1..#Js] | Js[i] @@ cl_map eq x}
+		     : x in cl_K];
+    assert &and [#s eq 1 : s in dJs_by_class];
 end procedure;
 
 // we run tests for 5 of the keys
@@ -782,7 +808,9 @@ fund_discs := {x[1] : x in Keys(dim_list)};
 B := Maximum(fund_discs);
 ds := [Random(fund_discs) : i in [1..num_tests]];
 ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d in ds];
-weights := [[k,k] : k in [2..10 by 2]];
+// Weight 10 already takes too long
+// weights := [[k,k] : k in [2..10 by 2]];
+weights := [[k,k] : k in [2..8 by 2]];
 ks := [ [Random(weights)] : d in ds];
 
 printf "Checking dimensions at ";
