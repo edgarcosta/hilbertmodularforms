@@ -345,6 +345,9 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
     c_den := CRT(residues_den, moduli_den);
   end if;
   c := c_num/c_den;
+  if c eq 0 then
+    c +:= Generators(&*moduli_num)[1];
+  end if;
   assert GCD(c*(bb^-1),NN) eq MM;
   assert c - c_bar in ss*bb*NN;
   return c;
@@ -356,16 +359,22 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
   ZF := Order(ss);
   //facts := Factorization(ss*MM);
   // if c=0, then ss should be principal
-  if c eq 0 then
+  if c eq 0 then // we've excluded this from happening in CuspLiftSecondCoordinate; can probably delete
     pbool, a := IsPrincipal(ss);
     assert pbool;
-    facts := Factorization(ss*MM);
-    Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
-    //mults_num := [fact[2] : fact in facts | fact[2] gt 0];
-    mults_num := [Valuation((ss*MM), P) : P in Ps_num];
-    Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
-    //mults_den := [fact[2] : fact in facts | fact[2] lt 0];
-    mults_den := [Valuation((ss*MM), P) : P in Ps_den];
+    //facts := Factorization(ss*MM);
+    //Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
+    ////mults_num := [fact[2] : fact in facts | fact[2] gt 0];
+    //mults_num := [Valuation((ss*MM), P) : P in Ps_num];
+    //Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
+    ////mults_den := [fact[2] : fact in facts | fact[2] lt 0];
+    //mults_den := [Valuation((ss*MM), P) : P in Ps_den];
+    Q, mp := quo< ZF | ss*MM>;
+    UQ, mpUQ := UnitGroup(Q);
+    U, mpU := UnitGroup(ZF);
+    Qunits := sub< UQ | [(mp(mpU(el))) @@ mpUQ : el in Generators(U)]>;
+    u := (mp(a)^-1*a_bar) @@ (mpU*mpUQ);
+    return u*a;
   else
     facts := Factorization(c*(bb^-1));
     Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
@@ -373,6 +382,9 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
     mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
   end if;
+
+  print "Ps_num = ", Ps_num;
+  print "c = ", c;
 
   residues_num := [];
   residues_den := [];
@@ -389,8 +401,14 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
       residues_num cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
       moduli_num cat:= [P^v, P^(v+1)];
     else
-      residues_num cat:= [(a_bar mod P^mults_num[i])]; // might be a problem if v=0
-      moduli_num cat:= [P^mults_num[i]];
+      vMM := Valuation(MM,P);
+      if vMM gt 0 then
+        residues_num cat:= [(a_bar mod P^mults_num[i])]; // might be a problem if v=0
+        moduli_num cat:= [P^mults_num[i]];
+      else
+        residues_num cat:= [(ZF!1 mod P^mults_num[i])]; // might be a problem if v=0
+        moduli_num cat:= [P^mults_num[i]];
+      end if;
     end if;
   end for;
   // denominator residues and moduli
