@@ -75,12 +75,12 @@ intrinsic ElementToSequence(I::RngOrdIdl) -> SeqEnum[RngIntElt]
     return [ElementToSequence(g) : g in Generators(I)];
 end intrinsic;
 
-intrinsic ElementToSequence(SI::SetIdx[RngOrdIdl]) -> SeqEnum[SeqEnum[RngIntElt]]
+intrinsic ElementToSequence(SI::SetIndx[RngOrdIdl]) -> SeqEnum[SeqEnum[RngIntElt]]
   {return the sequence associated to the defining polynomial}
     return [ElementToSequence(elt) : elt in SI];
 end intrinsic;
 
-intrinsic ElementToSequence(Se::SetIdx[FldNumElt]) -> SeqEnum[SeqEnum[RngIntElt]]
+intrinsic ElementToSequence(SI::SetIndx[FldNumElt]) -> SeqEnum[SeqEnum[RngIntElt]]
   {return the sequence associated to the defining polynomial}
     return [ElementToSequence(elt) : elt in SI];
 end intrinsic;
