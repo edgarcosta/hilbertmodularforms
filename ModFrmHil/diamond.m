@@ -174,22 +174,6 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
 	    Append(~rids, IJa);
 	end for;
-	// debugging
-	/*
-	IJas := [];
-	for a in HMDF[1]`PLD`P1List do
-	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
-	    Append(~IJas, IJa);
-	end for;
-	for idx->IJa in IJas do
-	    a := HMDF[1]`PLD`P1List[idx];
-	    for u in HMDF[rid_idx]`max_order_units do
-		target := Index(IJas, u*IJa);
-		_, p1rep := p1reps[rid_idx](sm(u)*a, true, false);
-		assert p1rep eq HMDF[rid_idx]`PLD`P1List[target];
-	    end for;
-	end for;
-       */
     end for;
     h := #rids;
     F_weight := getWeightBaseField(M);
