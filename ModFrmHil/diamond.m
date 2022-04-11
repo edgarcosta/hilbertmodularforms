@@ -206,18 +206,15 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    alpha_rep := IdentityMatrix(F_weight, 1);
 	else
 	    alpha_rep := M`weight_rep(alpha);
-	    // alpha_rep *:= Norm(Norm(alpha))^(-CentralCharacter(M) div 2);
-//	    alpha_rep *:= Norm(Norm(alpha))^(-CentralCharacter(M));
 	end if;
-	// blocks[rid_idx][target_idx] := alpha_rep;
 	blocks[target_idx][rid_idx] := alpha_rep;
     end for;
     dJ := BlockMatrix(blocks);
-    // d := Integers()!(1/Determinant(dJ));
-    d := Integers()!(Determinant(dJ));
-    scale := &*([1] cat [pa[1]^(pa[2] div Nrows(dJ)) :
-			 pa in Factorization(d)]);
-    //    dJ *:= scale;
+    // d := Integers()!(Determinant(dJ));
+    // scale := &*([1] cat [pa[1]^(pa[2] div Nrows(dJ)) :
+    //			 pa in Factorization(d)]);
+    // assert scale eq Norm(J)^CentralCharacter(M);
+    scale := Norm(J)^CentralCharacter(M);
     dJ /:= scale;
     return dJ;
 end function;
