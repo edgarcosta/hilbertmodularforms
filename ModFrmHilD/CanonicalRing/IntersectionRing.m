@@ -317,7 +317,7 @@ intrinsic Print(y::ChowRngHMSElt)
     print GradedComponents(y);
 end intrinsic;
 
-intrinsic BaseRing(y::ChowRngElt) -> Rng
+intrinsic BaseRing(y::ChowRngHMSElt) -> Rng
 {}
     return BaseRing(Parent(y));
 end intrinsic;
@@ -909,7 +909,7 @@ intrinsic IntersectionRingOfCuspidalResolution(F::FldNum, N::RngOrdIdl) -> ChowR
     return IntersectionRingOfCuspidalResolution(Gamma);
 end intrinsic;
 
-intrinsic IntersectionRingOfMinimalResolution(F::FldNum, N::RngOrdIdeal) -> ChowRngHMS
+intrinsic IntersectionRingOfMinimalResolution(F::FldNum, N::RngOrdIdl) -> ChowRngHMS
 {Computes the Chow ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
     Gamma := CongruenceSubgroup(F, N);
     return IntersectionRingOfMinimalResolution(Gamma);
@@ -969,7 +969,7 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////
 
-intrinsic ChernNumbersOfMinimalResolution(F::FldNum, N::RngOrdIdeal) -> SeqEnum
+intrinsic ChernNumbersOfMinimalResolution(F::FldNum, N::RngOrdIdl) -> SeqEnum
 {Returns a tuple <c1^2, c2> corresponding to the Chern numbers of the 
 minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
     Gamma := CongruenceSubgroup(F, N);
@@ -1121,7 +1121,7 @@ intrinsic Covolume(Gamma::StupidCongruenceSubgroup) -> FldRatElt
 end intrinsic;
 
 
-intrinsic LocalChernCycle(R::ChowRngHMS, P::StupidSingularPointHMS) -> HMSChowRngElt
+intrinsic LocalChernCycle(R::ChowRngHMS, P::StupidSingularPointHMS) -> ChowRngHMSElt
 {Given a singular point on a Hilbert Modular Surface, return the local Chern cycle of
 resolution curves over `P`. If the coefficients of the local Chern cycle are coercible
 into the base ring of `R`, then the result is returned as an element of `R`. Otherwise,
