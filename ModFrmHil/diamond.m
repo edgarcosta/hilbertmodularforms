@@ -164,15 +164,17 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     lookups := [hmdf`PLD`Lookuptable : hmdf in HMDF];
     fds := [hmdf`PLD`FD : hmdf in HMDF];
     I := M`rids;
-    rids := [ ];
+    rids := [];
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
+    debug_info := [];
     for rid_idx in [1..#HMDF] do
 	Ii := I[rid_idx];
 	N := HMDF[rid_idx]`PLD`Level;
 	for a in fds[rid_idx] do
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
 	    Append(~rids, IJa);
+	    Append(~debug_info, <rid_idx, a>);
 	end for;
     end for;
     h := #rids;
@@ -186,10 +188,31 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 				  | IsIsomorphic(rids[rid_idx], J*rids[i])};
 	_, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
 	assert J*rids[target_idx] eq alpha*rids[rid_idx];
+	// Would like to make use of the existing P1 structure
+	// but still failing to do so
+	// debug for P1 rep action
+	I_src_idx := debug_info[rid_idx][1];
+	I_src := I[I_src_idx];
+	I_dest_idx := debug_info[target_idx][1];
+	I_dest := I[I_dest_idx];
+	_, alpha_I := IsIsomorphic(I_src, J*I_dest);
+	a_src := debug_info[rid_idx][2];
+	a_dest := debug_info[target_idx][2];
+	left_aI := lideal<LeftOrder(alpha_I*I_dest) |
+			 Generators(alpha_I*I_dest)>;
+	left_JI := lideal<LeftOrder(J*I_src) |
+			 Generators(J*I_src)>;
+	_, s := IsIsomorphic(left_JI, left_aI);
+	//	_, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
+	_, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
+	elt_data := lookups[I_dest_idx][Ja];
+	u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
+	// assert alpha eq alpha_I*u^(-1);
 	if weight2 then
 	    alpha_rep := IdentityMatrix(F_weight, 1);
 	else
 	    alpha_rep := M`weight_rep(alpha);
+	    assert alpha_rep eq M`weight_rep(alpha_I*s*u^(-1));
 	end if;
 	blocks[target_idx][rid_idx] := alpha_rep;
     end for;
