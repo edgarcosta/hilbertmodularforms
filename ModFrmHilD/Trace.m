@@ -14,6 +14,8 @@
 in magma this yields 0 for ideals that are not coprime to the level and we need this to be 1. */
 // Returns the constant term for the trace formula
 // Notes: None
+//
+// TODO: Replace DedekindZetatwo call with DedekindZetaExact(K, -1);
 intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   {Constant term for Summation}
   // Preliminaries
@@ -34,13 +36,22 @@ intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
     n := Degree(F);
     Disc := Discriminant(ZF);
     h := ClassNumber(F); // This needs to be stored
-    DedekindZetatwo := DedekindZetatwo(M); // Fixed Precision (Look in GradedRing.m)
+
+    ///////////////
+    // Do something which looks like computing the exact value of Zeta(K, -1).
+    
+    DedekindZetatwo := DedekindZetatwo(M); // Fixed Precision (Look in DedekindZetaExact.m)
     prec := 100; // Fixed Precision — should match precision of DedekindZetatwo.
     R := RealField(prec);
 
     C0 := 2*DedekindZetatwo/(2*Pi(R))^(2*n); // Product is broken up into several steps
     C0 *:= h*(R!Disc)^(3/2)*Norm(NN);
     C0 := BestApproximation(C0,prec-10); // **** IMPORTANT **** Convert to rational number
+
+    
+    ///////////////
+    // Conclude the computation.
+    
     C0 *:= &*[i-1 : i in k];
     C0 *:= &*([1] cat [1+Norm(p[1])^(-1) : p in Factorization(NN)]);
     C0 *:= Norm(mm)^(Integers()!(k[1]/2-1));
@@ -1060,10 +1071,3 @@ intrinsic TwoLinearDependence(List::SeqEnum[ModFrmHilDElt]) -> SeqEnum[RngIntElt
   return LinearDependence(CoeffLists);
 end intrinsic;
 */
-
-
-
-
-
-
-
