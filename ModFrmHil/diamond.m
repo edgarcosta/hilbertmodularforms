@@ -138,6 +138,8 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     F_weight := getWeightBaseField(M);
     ideal_classes := M`rids;
     h := #ideal_classes;
+    vprintf HilbertModularForms, 1 :
+	"There are %o O(1)-right ideal classes.\n", h;
     
     // J acts by left multiplication on the classes of right ideals.
     JIs := [J*I : I in ideal_classes];
@@ -168,10 +170,11 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     lookups := [hmdf`PLD`Lookuptable : hmdf in HMDF];
     fds := [hmdf`PLD`FD : hmdf in HMDF];
     I := M`rids;
+    all_rids := [];
     rids := [];
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
-    debug_info := [];
+    // debug_info := [];
     vprintf HilbertModularForms, 1:
 	"Computing the right ideals for the eichler order.\n";
     for rid_idx in [1..#HMDF] do
@@ -180,56 +183,86 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	rids_i := [];
 	for a in fds[rid_idx] do
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
-	    // Append(~rids, IJa);
+	    Append(~rids, IJa);
 	    Append(~rids_i, IJa);
-	    Append(~debug_info, <rid_idx, a>);
+	    // Append(~debug_info, <rid_idx, a>);
 	end for;
-	Append(~rids, rids_i);
+	Append(~all_rids, rids_i);
     end for;
-    hh := #rids;
-    h := &+[#rids_i : rids_i in rids];
+    hh := #all_rids;
+    h := &+[#rids_i : rids_i in all_rids];
+    assert h eq #rids;
     F_weight := getWeightBaseField(M);
     wd := M`weight_dimension;
     zero := MatrixAlgebra(F_weight, wd)!0;
     blocks := [[zero : j in [1..h]] : i in [1..h]];
     weight2 := Seqset(Weight(M)) eq {2};
     vprintf HilbertModularForms, 1 : "Computing isomorphism between representatives, this might take a while. There are %o...\n", h;
-    for rid_idx in [1..hh] do
-	I_dest_idx := perm[rid_idx];
-	assert exists(target_idx){i : i in [1..h]
-				  | IsIsomorphic(rids[rid_idx], J*rids[i])};
-	_, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
-	assert J*rids[target_idx] eq alpha*rids[rid_idx];
-	// Would like to make use of the existing P1 structure
-	// but still failing to do so
-	// debug for P1 rep action
-
-	I_src_idx := debug_info[rid_idx][1];
+    for I_src_idx in [1..hh] do
+	vprintf HilbertModularForms, 1 :
+	    "Working on O(1)-right ideal class representative no. %o.\n", I_src_idx;
+	I_dest_idx := perm[I_src_idx];
+	vprintf HilbertModularForms, 1 :
+	    "It is isomorphic to J*I[%o].\n", I_dest_idx;
 	I_src := I[I_src_idx];
-	I_dest_idx := debug_info[target_idx][1];
 	I_dest := I[I_dest_idx];
 	_, alpha_I := IsIsomorphic(I_src, J*I_dest);
-	assert perm[I_src_idx] eq I_dest_idx;
-	a_src := debug_info[rid_idx][2];
-	a_dest := debug_info[target_idx][2];
-	left_aI := lideal<LeftOrder(alpha_I*I_dest) |
-			 Generators(alpha_I*I_dest)>;
-	left_JI := lideal<LeftOrder(J*I_src) |
-			 Generators(J*I_src)>;
-	_, s := IsIsomorphic(left_JI, left_aI);
-	//	_, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
-	_, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
-	elt_data := lookups[I_dest_idx][Ja];
-	u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
-       
-	// assert alpha eq alpha_I*u^(-1);
-	if weight2 then
-	    alpha_rep := IdentityMatrix(F_weight, 1);
-	else
-	    alpha_rep := M`weight_rep(alpha);
-	    // assert alpha_rep eq M`weight_rep(alpha_I*s*u^(-1));
-	end if;
-	blocks[target_idx][rid_idx] := alpha_rep;
+	vprintf HilbertModularForms, 1:
+	    "Isomorphism for O(1)-right ideals is given by %o.\n", alpha_I;
+	for idx in [1..#all_rids[I_src_idx]] do
+	    rid_idx := &+[Integers() | #rids_i : rids_i in all_rids[1..I_src_idx-1]];
+	    rid_idx +:= idx;
+	    /*
+	    assert exists(target_idx2){i : i in [1..h]
+				      | IsIsomorphic(rids[rid_idx], J*rids[i])};
+	   */
+	    t0 := Cputime();
+	    assert exists(tgt_idx){i : i in [1..#all_rids[I_dest_idx]]
+				   | IsIsomorphic(all_rids[I_src_idx][idx],
+						  J*all_rids[I_dest_idx][i])};
+	    vprintf HilbertModularForms, 1 :
+		"Finding an isomorphism took %o.\n", Cputime() - t0;
+	    target_idx := &+[Integers() | #rids_i :
+					   rids_i in all_rids[1..I_dest_idx-1]];
+	    target_idx +:= tgt_idx;
+	    // assert target_idx2 eq target_idx;
+	    _, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
+	    vprintf HilbertModularForms, 1 :
+		"Isomorphism for Eichler representatives is given by %o.\n", alpha;
+	    vprintf HilbertModularForms, 1:
+		"The quotient is the unit %o.\n", alpha^(-1) * alpha_I;
+	    // assert J*rids[target_idx] eq alpha*rids[rid_idx];
+	    // Would like to make use of the existing P1 structure
+	    // but still failing to do so
+	    // debug for P1 rep action
+	    /*
+	    assert I_src_idx eq debug_info[rid_idx][1];
+	    I_src := I[I_src_idx];
+	    assert I_dest_idx eq debug_info[target_idx][1];
+	    I_dest := I[I_dest_idx];
+	    _, alpha_I := IsIsomorphic(I_src, J*I_dest);
+	    assert perm[I_src_idx] eq I_dest_idx;
+	    a_src := debug_info[rid_idx][2];
+	    a_dest := debug_info[target_idx][2];
+	    left_aI := lideal<LeftOrder(alpha_I*I_dest) |
+			     Generators(alpha_I*I_dest)>;
+	    left_JI := lideal<LeftOrder(J*I_src) |
+			     Generators(J*I_src)>;
+	    _, s := IsIsomorphic(left_JI, left_aI);
+	    //	_, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
+	    _, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
+	    elt_data := lookups[I_dest_idx][Ja];
+	    u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
+	   */
+	    // assert alpha eq alpha_I*u^(-1);
+	    if weight2 then
+		alpha_rep := IdentityMatrix(F_weight, 1);
+	    else
+		alpha_rep := M`weight_rep(alpha);
+		// assert alpha_rep eq M`weight_rep(alpha_I*s*u^(-1));
+	    end if;
+	    blocks[target_idx][rid_idx] := alpha_rep;
+	end for;
     end for;
     dJ := BlockMatrix(blocks);
     // d := Integers()!(Determinant(dJ));
