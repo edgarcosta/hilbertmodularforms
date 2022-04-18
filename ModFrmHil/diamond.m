@@ -115,6 +115,8 @@ function getEichlerOrderIdeal(M, OLI, a, O, N)
 end function;
 
 function DiamondOperatorIdealsDefiniteBig(M, J)
+    vprintf HilbertModularForms, 1 :
+	"Computing diamond operator for ideal J = %o\n", J; 
     assert IsDefinite(M);
     
     // Form here on we assume this is an ambient space
@@ -126,6 +128,8 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     // easy = basis of big space is given by the rids
     
     if (not assigned M`rids) then
+	vprintf HilbertModularForms, 1 :
+	    "Right ideal classes were not computed, forcing them to be computed.\n";
 	forceSpaceComputation(M);
     end if;
 
@@ -168,6 +172,8 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
     debug_info := [];
+    vprintf HilbertModularForms, 1:
+	"Computing the right ideals for the eichler order.\n";
     for rid_idx in [1..#HMDF] do
 	Ii := I[rid_idx];
 	N := HMDF[rid_idx]`PLD`Level;
@@ -183,6 +189,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     zero := MatrixAlgebra(F_weight, wd)!0;
     blocks := [[zero : j in [1..h]] : i in [1..h]];
     weight2 := Seqset(Weight(M)) eq {2};
+    vprintf HilbertModularForms, 1 : "Computing isomorphism between representatives, this might take a while. There are %o...\n", h;
     for rid_idx in [1..h] do	
 	assert exists(target_idx){i : i in [1..h]
 				  | IsIsomorphic(rids[rid_idx], J*rids[i])};
@@ -484,10 +491,10 @@ function HeckeCharacterSubspace(M, chi)
     
     K := BaseRing(M);
     Z_K := Integers(K);
-    cl_K, cl_map := RayClassGroup(Level(M), [1..Degree(K)]);
+    // cl_K, cl_map := RayClassGroup(Level(M), [1..Degree(K)]);
     // This should be enough since the restriction of the character to
-    // a Dirichlet character is always trivial, but meanwhile we are on the safe side
-    // cl_K, cl_map := NarrowClassGroup(Z_K);
+    // a Dirichlet character is always trivial, but the above is for debugging
+    cl_K, cl_map := ClassGroup(Z_K);
     if IsTrivial(cl_K) then
 	return M;
     end if;
@@ -495,11 +502,13 @@ function HeckeCharacterSubspace(M, chi)
     dJs := [<J, DiamondOperator(M,J)> : J in Js];
 
     // checking that the operators commute with the other Hecke operators
+    /*
     check_bound := 10;
     hecke := [HeckeOperator(M, PrimeIdealsOverPrime(K,p)[1])
 	      : p in PrimesUpTo(check_bound)];
     assert &and[dJ[2]*T eq T*dJ[2] : T in hecke, dJ in dJs];
-    
+   */    
+
     F_weight := getWeightBaseField(M);
     Id_M := IdentityMatrix(F_weight, Dimension(M));
     
