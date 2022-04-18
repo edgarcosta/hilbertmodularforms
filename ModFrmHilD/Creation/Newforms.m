@@ -1,4 +1,5 @@
 import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
+import "../../ModFrmHil/copypaste/hecke.m" : hecke_algebra;
 
 ////////// Creation of CuspForms from ModFrmHilDElt //////////
 
@@ -230,21 +231,7 @@ intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[M
   vprintf HilbertModularForms: "Computing rational basis for %o...", S;
   M := Parent(Mk);
   // find a single generator
-  p := PreviousPrime(Random(B,2*B) : Proof:=false) where B is Round(2^22.5);
-  vprintf HilbertModularForms: "Finding single generator for Hecke algebra  ...";
-  vtime HilbertModularForms:
-  for pp in PrimeIdeals(M) do
-      Tpp := HeckeOperator(S, pp);
-      if Degree(MinimalPolynomial(ChangeRing(Tpp, GF(p)))) eq Dimension(S) then
-          zeta_p := pp;
-          Tzeta := Tpp;
-          break;
-      end if;
-  end for;
-  // _, gens := Explode(hecke_algebra(S));
-  // assert #gens eq 1;
-  // zeta_p := gens[1];
-  Tzeta := HeckeOperator(S, zeta_p);
+  _ , primes_used, _, _, _, Tzeta, linear_combination := Explode(hecke_algebra(S : generator:=true));
   Tzeta_powers := [Tzeta^i : i in [0..Dimension(S) - 1]];
 
   M := Parent(Mk);
