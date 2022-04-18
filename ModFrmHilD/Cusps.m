@@ -211,8 +211,11 @@ intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl
   return [ReduceModuloIdeal(el, ss, ss*MM) : el in reps];
 end intrinsic;
 
-intrinsic ReducePairModuloUnits(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl, MM::RngOrdIdl, a::RngElt, c::RngElt) -> SeqEnum
+intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl, MM::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
+
+  a := GeneratorOfQuotientModuleCRT(ss,MM);
+  c := GeneratorOfQuotientModuleCRT(ss*bb*MM,(NN/MM));
 
   F := Parent(a);
   F := NumberField(F);
@@ -232,7 +235,20 @@ intrinsic ReducePairModuloUnits(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
 
   D, i1, i2, p1, p2 := DirectSum(UQMM, UQNNMM);
   //printf "direct sum = %o\n", D;
-  gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM), i1(eps_p_barMM), i2(eps_p_barNNMM)];
+  if GammaType eq "Gamma1" then
+    gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM), i1(eps_p_barMM), i2(eps_p_barNNMM)];
+  elif GammaType eq "Gamma0" then
+    // mod out by (R/NN)^\times, as in eqn 5.1.7
+    ZFNN, mpNN := quo<ZF |NN>;
+    UQNN, mpQNN:= UnitGroup(ZFNN);
+    UQNN_gens := [mpQNN(el) : el in Generators(UQNN)];
+    gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM), i1(eps_p_barMM), i2(eps_p_barNNMM)];
+    gens cat:= [i1(mpMM(el) @@ mpQMM) + i2(mpNNMM(-el) @@ mpQNNMM) : el in UQNN_gens];
+  elif GammaType eq "Gamma" then
+    error "not yet implemented :(";
+  else
+    error "GammaType not recognized";
+  end if;
   eps_gp := sub< D | gens >;
   //printf "eps_gp = %o\n", eps_gp;
   //printf "gens = %o\n", gens;
@@ -258,7 +274,7 @@ intrinsic ReducePairModuloUnits(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
 end intrinsic;
 
 // P_1(NN)_bb in eqn 5.1.6 in paper, or Lemma 3.6 of Dasgupta-Kakde
-intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
+intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde, which is in bijection with cusps of Gamma1(NN)_bb.}
   ZF := Order(NN);
   F := NumberField(ZF);
@@ -269,11 +285,9 @@ intrinsic Gamma1Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
   for ss in Cl_seq do
     for MM in Divisors(NN) do
       printf "MM = %o\n", MM;
-      a := GeneratorOfQuotientModuleCRT(ss,MM);
-      c := GeneratorOfQuotientModuleCRT(ss*bb*MM,(NN/MM));
       //RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
       //RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
-      pairs := ReducePairModuloUnits(NN, bb, ss, MM, a, c);
+      pairs := MakePairsForQuadruple(NN, bb, ss, MM : GammaType := GammaType);
       for el in pairs do
         Append(~quads, [* ss, MM, el *]);
       end for;
@@ -473,11 +487,11 @@ end intrinsic;
 */
 
 // Need to lift the [a,c] in the quadruples in a special way that respects certain congruences
-intrinsic Gamma1Cusps(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
+intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
   ZF := Order(NN);
   F := NumberField(ZF);
-  quads := Gamma1Quadruples(NN, bb);
+  quads := CuspQuadruples(NN, bb : GammaType := GammaType);
   cusps_seq := [];
   for i := 1 to #quads do
     printf "i = %o\n", i;
@@ -552,14 +566,22 @@ intrinsic GaloisConjugacyRepresentatives(S::[GrpHeckeElt]) -> SeqEnum
    return S;
 end intrinsic;
 
-intrinsic Gamma1CuspSanityCheck(NN::RngOrdIdl) -> BoolElt
+intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
   {}
   ZF := Order(NN);
   F := NumberField(ZF);
   Cl, mp := ClassGroup(ZF);
   H := HeckeCharacterGroup(ideal<ZF|NN>, [1,2]);
   R := GradedRingOfHMFs(F, 1);
-  chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
+  if GammaType eq "Gamma0" then
+    chis := [H!1];
+  elif GammaType eq "Gamma1" then
+    chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
+  elif GammaType eq "Gamma" then
+    error "not implemented yet :(";
+  else
+    error "GammaType not recognized";
+  end if;
   chis := GaloisConjugacyRepresentatives(chis);
   d := 0;
   for chi in chis do
@@ -569,7 +591,7 @@ intrinsic Gamma1CuspSanityCheck(NN::RngOrdIdl) -> BoolElt
   end for;
   quad_cnt := 0;
   for bb in Cl do
-    quads := Gamma1Quadruples(NN,mp(bb));
+    quads := CuspQuadruples(NN,mp(bb) : GammaType := GammaType);
     quad_cnt +:= #quads;
   end for;
   printf "eis dim = %o\n", d;
