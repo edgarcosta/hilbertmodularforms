@@ -535,6 +535,24 @@ intrinsic GaloisConjugacyRepresentatives(S::[GrpHeckeElt]) -> SeqEnum
    return S;
 end intrinsic;
 
+// see Lemma 5.2, p. 78 of van der Geer
+intrinsic GammaCuspCount(NN::RngOrdIdl) -> RngIntElt 
+  {}
+  ZF := Order(NN);
+  F := NumberField(ZF);
+  U, mpU := UnitGroup(ZF);
+  Q, pi := quo< ZF | NN >;
+  UQ, mpUQ := UnitGroup(Q);
+  mp_unit := hom< U -> UQ | x :-> (pi(mpU(x)) @@ mpUQ) >;
+  img_unit := Image(mp_unit);
+  cnt := Norm(NN)^2/#img_unit;
+  for pair in Factorization(NN) do
+    PP := pair[1];
+    cnt *:= (1 - Norm(PP)^-2);
+  end for;
+  return ClassNumber(ZF)*cnt;
+end intrinsic;
+
 intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
   {}
   ZF := Order(NN);
@@ -542,26 +560,28 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
   Cl, mp := ClassGroup(ZF);
   H := HeckeCharacterGroup(ideal<ZF|NN>, [1,2]);
   R := GradedRingOfHMFs(F, 1);
-  if GammaType eq "Gamma0" then
+  quad_cnt := 0;
+  for bb in Cl do
+    quads := CuspQuadruples(NN,mp(bb) : GammaType := GammaType);
+    quad_cnt +:= #quads;
+  end for;
+  if GammaType eq "Gamma" then
+    printf "#quads = %o\n", quad_cnt;
+    printf "formula = %o\n", GammaCuspCount(NN);
+    return quad_cnt eq GammaCuspCount(NN);
+  elif GammaType eq "Gamma0" then
     chis := [H!1];
   elif GammaType eq "Gamma1" then
     chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
-  elif GammaType eq "Gamma" then
-    error "not implemented yet :(";
-  else
+    else
     error "GammaType not recognized";
   end if;
   chis := GaloisConjugacyRepresentatives(chis);
   d := 0;
   for chi in chis do
-    print "chi = ", Eltseq(chi);
+    //print "chi = ", Eltseq(chi);
     Mk_chi := HMFSpace(R, NN, [2,2], chi);
     d +:= EisensteinDimension(Mk_chi);
-  end for;
-  quad_cnt := 0;
-  for bb in Cl do
-    quads := CuspQuadruples(NN,mp(bb) : GammaType := GammaType);
-    quad_cnt +:= #quads;
   end for;
   printf "Eisenstein dim = %o\n", d;
   printf "quadruple count = %o\n", quad_cnt;
