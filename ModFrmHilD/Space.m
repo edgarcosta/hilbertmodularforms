@@ -2,7 +2,6 @@
 ModFrmHilD
 *****/
 
-import "../ModFrmHil/copypastefunctions.m" : TopAmbient;
 import "../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
 
 ////////// ModFrmHilD attributes //////////
@@ -22,7 +21,7 @@ declare attributes ModFrmHilD:
   Dimension, // RngIntElt
   CuspDimension, //RngIntElt
   EisensteinDimension, //RngIntElt
-  EisensteinAdmissableCharacterPairs, // List of pairs of primitive characters
+  EisensteinAdmissibleCharacterPairs, // List of pairs of primitive characters
   MagmaSpace, //ModFrmHil
   MagmaNewCuspForms; // SeqEnum[ModFrmHilElt]
 
@@ -37,11 +36,12 @@ intrinsic Print(Mk::ModFrmHilD, level::MonStgElt)
     printf "Precision: %o\n", Precision(M);
     printf "Weight: %o\n", Weight(Mk);
     printf "Character: %o\n", Character(Mk);
-    printf "Level: %o", IdealOneLine(Level(Mk));
+    printf "Level: %o\n", IdealOneLine(Level(Mk));
+    printf "UnitCharacters: %o", JoinString([Sprint(ValuesOnGens(UnitCharacters(Mk)[bb])) : bb in NarrowClassGroupReps(M)], ", ");
   elif level eq "Magma" then
     error "not implemented!";
   else
-    error "not a valid printing level.";
+      error "not a valid printing level.";
   end if;
 end intrinsic;
 
@@ -56,11 +56,11 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-return Parent(M1) eq Parent(M2) and
-Weight(M1) eq Weight(M2) and
-Level(M1) eq Level(M2) and
-Character(M1) eq Character(M2) and
-UnitCharacters(M1) eq UnitCharacters(M2);
+  return Parent(M1) eq Parent(M2) and
+  Weight(M1) eq Weight(M2) and
+  Level(M1) eq Level(M2) and
+  Character(M1) eq Character(M2) and
+  UnitCharacters(M1) eq UnitCharacters(M2);
 end intrinsic;
 
 ////////// ModFrmHilD access to attributes //////////
@@ -145,10 +145,21 @@ end intrinsic;
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt : unitcharacters:=false) -> ModFrmHilD
   {}
   spaces := Spaces(M);
-  if N in Keys(spaces) then
-    if <k, chi> in Keys(spaces[N]) then
-      return spaces[N][<k, chi>];
+  if unitcharacters cmpeq false then
+    unitcharacters := AssociativeArray();
+    for bb in NarrowClassGroupReps(M) do
+      unitcharacters[bb] := TrivialUnitCharacter(BaseField(M));
+    end for;
+  end if;
+
+  uc_values := &cat[ValuesOnGens(unitcharacters[bb]) : bb in NarrowClassGroupReps(M)];
+
+  if IsDefined(spaces, N) then
+    if IsDefined(spaces[N], <k, chi, uc_values>) then
+      return spaces[N][<k, chi, uc_values>];
     end if;
+  else
+    M`Spaces[N] := AssociativeArray();
   end if;
   Mk := ModFrmHilDInitialize();
   Mk`Parent := M;
@@ -156,27 +167,20 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Level := N;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
   is_compat, i := IsCompatibleWeight(chi, k);
-  require is_compat : Sprintf("The parity of the character at the infinite place %o doesn not match the parity of the weight", i);
+  require is_compat : Sprintf("The parity of the character at the infinite place %o does not match the parity of the weight", i);
   Mk`Character := chi;
-  if unitcharacters cmpeq false then
-    Mk`UnitCharacters := AssociativeArray();
-    for bb in NarrowClassGroupReps(Parent(Mk)) do
-      Mk`UnitCharacters[bb] := TrivialUnitCharacter(BaseField(Mk));
-    end for;
-  else
-    Mk`UnitCharacters := unitcharacters;
-    require Type(unitcharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
-    require Keys(unitcharacters) eq SequenceToSet(NarrowClassGroupReps(Parent(Mk))) :"we expect the keys of the associative array to be narrow class group reprsentatives";
-    require {Type(v): v in unitcharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
-    require &and[BaseField(v) eq BaseField(M): v in unitcharacters]: "we expect all the unit characters to have the same base field";
-  end if;
-  AddToSpaces(M, Mk, N, k, chi);
+  Mk`UnitCharacters := unitcharacters;
+  require Type(Mk`UnitCharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
+  require Keys(Mk`UnitCharacters) eq SequenceToSet(NarrowClassGroupReps(M)) :"we expect the keys of the associative array to be narrow class group reprsentatives";
+  require {Type(v): v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
+  require &and[BaseField(v) eq BaseField(M): v in Mk`UnitCharacters]: "we expect all the unit characters to have the same base field";
+  M`Spaces[N][<k, chi, uc_values>] := Mk;
   return Mk;
 end intrinsic;
 
 
 // overloaded for trivial level and character
-intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]: unitcharacters:=false) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
@@ -184,18 +188,18 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
   N := ideal<ZF|1>;
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
-  return HMFSpace(M, N, k, chi);
+  return HMFSpace(M, N, k, chi: unitcharacters:=unitcharacters);
 end intrinsic;
 
 // overloaded for trivial character
-intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]: unitcharacters:=false) -> ModFrmHilD
   {}
   Mk := ModFrmHilDInitialize();
   Mk`Weight := k;
   ZF := Integers(M);
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
-  return HMFSpace(M, N, k, chi);
+  return HMFSpace(M, N, k, chi: unitcharacters:=unitcharacters);
 end intrinsic;
 
 intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
@@ -225,7 +229,6 @@ intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
   Mk`EisensteinDimension := 0;
   return Mk;
 end intrinsic;
-
 
 intrinsic '*'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
   {return M1*M2 with the same level}
@@ -293,24 +296,6 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
-// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
-  {}
-  F := Ring(Parent(ss));
-  ZF := Integers(F);
-  Q, mp := quo< ZF | (ss^-1)*MM >;
-  UQ, mpUQ := UnitGroup(Q);
-  UQ_seq := [ZF!mpUQ(el) : el in UQ];
-  // quotient by action of totally positive units by computing Shintani reduced elts
-  UQ_mod := SetToSequence(SequenceToSet([ReduceShintaniMinimizeDistance(el) : el in UQ_seq]));
-  // Finally, go back to (ss/(ss*MM))^* by dividing by denominator
-  d := Denominator(ss);
-  if d le 0 then
-    d := -d;
-  end if;
-  return [el/d : el in UQ_mod];
-end intrinsic;
-
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
@@ -359,30 +344,34 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
   return Mk`CuspDimension;
 end intrinsic;
 
-
-
 intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   {return the dimension of E(Mk)}
   if not assigned Mk`EisensteinDimension then
     N := Level(Mk);
-    newforms_levels := {* Conductor(pair[1]) * Conductor(pair[2]) : pair in EisensteinAdmissableCharacterPairs(Mk) *};
-    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*mult : mm->mult in newforms_levels];
+    newforms_levels := AssociativeArray();
+    for pair in EisensteinAdmissibleCharacterPairs(Mk) do
+      lvl := Conductor(pair[1]) * Conductor(pair[2]);
+      if not IsDefined(newforms_levels, lvl) then
+        newforms_levels[lvl] := 0;
+      end if;
+      newforms_levels[lvl] +:= EulerPhi(LCM([Order(e) : e in pair]));
+    end for;
+    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*rel_dim : mm->rel_dim in newforms_levels];
   end if;
   return Mk`EisensteinDimension;
 end intrinsic;
 
-
-intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
+intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   {returns a list of all the primitive pairs <chi1, chi2> such that
   chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk)
   If the weight is 1, we only return pairs up to permutation}
-  if not assigned Mk`EisensteinAdmissableCharacterPairs then
+  if not assigned Mk`EisensteinAdmissibleCharacterPairs then
     N := Level(Mk);
     k := Weight(Mk);
     if #SequenceToSet(k) ne 1 then
       // there are no Eisenstein series in nonparallel weight
-      Mk`EisensteinAdmissableCharacterPairs := [* *];
-      return Mk`EisensteinAdmissableCharacterPairs;
+      Mk`EisensteinAdmissibleCharacterPairs := [* *];
+      return Mk`EisensteinAdmissibleCharacterPairs;
     end if;
     k := k[1];
     chi := Character(Mk);
@@ -417,7 +406,7 @@ intrinsic EisensteinAdmissableCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
     for i in SequenceToSet(&cat pairs) do
       prims[i] := AssociatedPrimitiveCharacter(chis[i]);
     end for;
-    Mk`EisensteinAdmissableCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
+    Mk`EisensteinAdmissibleCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
   end if;
-  return Mk`EisensteinAdmissableCharacterPairs;
+  return Mk`EisensteinAdmissibleCharacterPairs;
 end intrinsic;

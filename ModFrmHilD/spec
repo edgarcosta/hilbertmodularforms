@@ -5,8 +5,11 @@
   Formatting.m
   GradedRing.m
   HJ-CFrac.m
+  CuspResolution.m
+  Cusps.m
   Hecke.m
   LinearAlgebra.m
+  Restriction.m
   Space.m
   Trace.m
   UnitChar.m
@@ -23,6 +26,7 @@ Multiplication
 
 Creation
 {
+   DedekindZetaExact.m
    Newforms.m
    EisensteinSeries.m
    ThetaSeries.m
@@ -31,10 +35,13 @@ Creation
    Siegel.m
    EllipticCurve.m
    TraceForm.m
+   Weight1.m
 }
 
 CanonicalRing
 {
   CanonicalRing.m
   HilbertSeries.m
+  IntersectionRing.m
+  StupidCongruenceSubgroup.m
 }

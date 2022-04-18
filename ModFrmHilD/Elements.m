@@ -5,7 +5,7 @@ declare type ModFrmHilDEltComp [ModFrmHilDElt];
 declare attributes ModFrmHilDEltComp:
   Parent, // ModFrmHilD
   Precision, // RngIntElt
-  Coefficients, // Assoc:  coeffs_bb[nu] = a_(bb,nu) = a_(nu bb'^-1), 
+  Coefficients, // Assoc:  coeffs_bb[nu] = a_(bb,nu) = a_(nu bb'^-1),
                 // where nu in Shintani cone with Tr(nu) <= Precision
   CoefficientRing, // Rng: where the coefficients live (does this depend on bb?)
   ComponentIdeal; // RngOrdIdl, representative of the narrow class element
@@ -41,6 +41,12 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
       t := Trace(nu);
       printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs[nu];
       count +:= 1;
+
+      if t ge working_prec then
+        printf "\n \t Cannot print more coefficients; precision is too small", num_coeffs;
+        break;
+      end if;
+
       if count ge num_coeffs then
         printf "\n...";
         break;
@@ -221,7 +227,14 @@ intrinsic CoefficientRing(f::ModFrmHilDElt) -> Any
   ZF := Integers(GradedRing(f));
   R := CoefficientRing(Components(f)[1*ZF]);
   for bb -> fbb in Components(f) do
-    require CoefficientRing(fbb) eq R : "Need all base rings of all components to be equal";
+    if CoefficientRing(fbb) ne R then
+      // check that not a subset
+      if R subset CoefficientRing(fbb) then
+        R := CoefficientRing(fbb);
+      else
+        require CoefficientRing(fbb) subset R : "Need all base rings of all components to be equal";
+      end if;
+    end if;
   end for;
   return R;
 end intrinsic;
@@ -468,9 +481,14 @@ intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
-  {create one ModHilFrmDElt of weight zero.}
-  M := Parent(Mk); chi := Character(Mk); N := Level(Mk); k := [0 : i in Weight(Mk)];
-  M0 := HMFSpace(M, N, k, chi);
+  {create one ModHilFrmDElt of weight zero and trivial character}
+  M := Parent(Mk);
+  N := Level(Mk);
+  X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
+  chi := X!1;
+  k := [0 : i in Weight(Mk)];
+  uc := UnitCharacters(Mk);
+  M0 := HMFSpace(M, N, k, chi: unitcharacters:=uc);
   coeffs := AssociativeArray();
   for nu in ShintaniReps(M)[bb] do
     if IsZero(nu) then
@@ -483,7 +501,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
-  {create one ModHilFrmDElt of weight zero.}
+  {create one ModHilFrmDElt of weight zero and trivial character}
   M := Parent(Mk);
   C := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
@@ -545,7 +563,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       if test1 and test2 and test3 and test4 then // all tests must be true to coerce
         if Type(f) eq ModFrmHilDEltComp then
           A := TotallyPositiveUnits(M);
-          return true, HMFComp(Mk, Coefficients(f): prec:=Precision(f));
+          return true, HMFComp(Mk, ComponentIdeal(f), Coefficients(f): prec:=Precision(f));
         end if;
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
@@ -667,7 +685,7 @@ intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
 end intrinsic;
 
 intrinsic 'eq'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> BoolElt
-{compares Parent and Components.}	   
+{compares Parent and Components.}
   return &and[a(f) eq a(g): a in [Parent, Components]];
 end intrinsic;
 

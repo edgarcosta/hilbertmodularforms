@@ -22,7 +22,7 @@ intrinsic Evaluate(omega::GrpCharUnitTotElt, x::RngElt) -> RngElt
     if not b then
       U, mU := TotallyPositiveUnits(F);
       vals := omega`vals;
-      c := &*[vals[i]^a[i] : i in [1..#vals]] where a := Eltseq(x@@mU);
+      c := &*[vals[i]^a[i] : i in [1..#vals]] where a := Eltseq(U!(x@@mU));
       omega`cachedvalues[F!x] := c;
     end if;
     return c;
