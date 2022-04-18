@@ -171,7 +171,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     rids := [];
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
-    debug_info := [];
+    // debug_info := [];
     vprintf HilbertModularForms, 1:
 	"Computing the right ideals for the eichler order.\n";
     for rid_idx in [1..#HMDF] do
@@ -180,7 +180,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	for a in fds[rid_idx] do
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
 	    Append(~rids, IJa);
-	    Append(~debug_info, <rid_idx, a>);
+	    // Append(~debug_info, <rid_idx, a>);
 	end for;
     end for;
     h := #rids;
@@ -194,10 +194,11 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	assert exists(target_idx){i : i in [1..h]
 				  | IsIsomorphic(rids[rid_idx], J*rids[i])};
 	_, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
-	assert J*rids[target_idx] eq alpha*rids[rid_idx];
+	// assert J*rids[target_idx] eq alpha*rids[rid_idx];
 	// Would like to make use of the existing P1 structure
 	// but still failing to do so
 	// debug for P1 rep action
+	/*
 	I_src_idx := debug_info[rid_idx][1];
 	I_src := I[I_src_idx];
 	I_dest_idx := debug_info[target_idx][1];
@@ -214,12 +215,13 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	_, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
 	elt_data := lookups[I_dest_idx][Ja];
 	u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
+       */
 	// assert alpha eq alpha_I*u^(-1);
 	if weight2 then
 	    alpha_rep := IdentityMatrix(F_weight, 1);
 	else
 	    alpha_rep := M`weight_rep(alpha);
-	    assert alpha_rep eq M`weight_rep(alpha_I*s*u^(-1));
+	    // assert alpha_rep eq M`weight_rep(alpha_I*s*u^(-1));
 	end if;
 	blocks[target_idx][rid_idx] := alpha_rep;
     end for;
