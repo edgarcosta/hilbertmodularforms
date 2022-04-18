@@ -7,7 +7,7 @@ ZF := Integers(F);
 bb := 1*ZF;
 NN := 7*ZF;
 //NN := 21*ZF;
-P1 := CuspQuadruples(NN, bb);
+P1 := CuspQuadruples(NN, bb : GammaType := "Gamma1");
 eps := FundamentalUnitTotPos(F);
 //eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
 //bb := 1*ZF;
