@@ -171,39 +171,45 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     rids := [];
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
-    // debug_info := [];
+    debug_info := [];
     vprintf HilbertModularForms, 1:
 	"Computing the right ideals for the eichler order.\n";
     for rid_idx in [1..#HMDF] do
 	Ii := I[rid_idx];
 	N := HMDF[rid_idx]`PLD`Level;
+	rids_i := [];
 	for a in fds[rid_idx] do
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
-	    Append(~rids, IJa);
-	    // Append(~debug_info, <rid_idx, a>);
+	    // Append(~rids, IJa);
+	    Append(~rids_i, IJa);
+	    Append(~debug_info, <rid_idx, a>);
 	end for;
+	Append(~rids, rids_i);
     end for;
-    h := #rids;
+    hh := #rids;
+    h := &+[#rids_i : rids_i in rids];
     F_weight := getWeightBaseField(M);
     wd := M`weight_dimension;
     zero := MatrixAlgebra(F_weight, wd)!0;
     blocks := [[zero : j in [1..h]] : i in [1..h]];
     weight2 := Seqset(Weight(M)) eq {2};
     vprintf HilbertModularForms, 1 : "Computing isomorphism between representatives, this might take a while. There are %o...\n", h;
-    for rid_idx in [1..h] do	
+    for rid_idx in [1..hh] do
+	I_dest_idx := perm[rid_idx];
 	assert exists(target_idx){i : i in [1..h]
 				  | IsIsomorphic(rids[rid_idx], J*rids[i])};
 	_, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
-	// assert J*rids[target_idx] eq alpha*rids[rid_idx];
+	assert J*rids[target_idx] eq alpha*rids[rid_idx];
 	// Would like to make use of the existing P1 structure
 	// but still failing to do so
 	// debug for P1 rep action
-	/*
+
 	I_src_idx := debug_info[rid_idx][1];
 	I_src := I[I_src_idx];
 	I_dest_idx := debug_info[target_idx][1];
 	I_dest := I[I_dest_idx];
 	_, alpha_I := IsIsomorphic(I_src, J*I_dest);
+	assert perm[I_src_idx] eq I_dest_idx;
 	a_src := debug_info[rid_idx][2];
 	a_dest := debug_info[target_idx][2];
 	left_aI := lideal<LeftOrder(alpha_I*I_dest) |
@@ -215,7 +221,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	_, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
 	elt_data := lookups[I_dest_idx][Ja];
 	u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
-       */
+       
 	// assert alpha eq alpha_I*u^(-1);
 	if weight2 then
 	    alpha_rep := IdentityMatrix(F_weight, 1);
