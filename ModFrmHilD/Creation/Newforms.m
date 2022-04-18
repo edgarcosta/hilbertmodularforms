@@ -3,6 +3,7 @@ import "../../ModFrmHil/copypaste/hecke.m" : hecke_algebra;
 
 ////////// Creation of CuspForms from ModFrmHilDElt //////////
 
+//TODO force ExtendMultiplicatively with character!!!!
 
 
 intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
@@ -11,8 +12,6 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, pri
   if factorization cmpeq false then
     factorization := Factorization;
   end if;
-
-  //TODO: take ideals[n] = Factorization(n), and make use of M`IdealsFactorization
 
   // set recursion
   // ideals must be sorted by Norm
@@ -71,6 +70,7 @@ intrinsic Eigenform(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
   function factorization(n)
     return Factorization(M, n);
   end function;
+  //FIXME
   ExtendMultiplicatively(~coeffs, N, k, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
 
   // coefficients by bb
@@ -136,6 +136,7 @@ intrinsic OldEigenformInclusions(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDE
     return Factorization(M, nn);
   end function;
 
+  //FIXME
   ExtendMultiplicatively(~coeffs, N1, k, primes, ideals : factorization:=factorization);
 
   res := [];
@@ -259,6 +260,7 @@ intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[M
   end function;
   vprintf HilbertModularForms: "Extending Hecke operators multiplicatevely...";
   vtime HilbertModularForms:
+  //FIXME
   ExtendMultiplicatively(~coeffs, N1, k, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
 
 
