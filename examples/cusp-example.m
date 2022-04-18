@@ -8,7 +8,8 @@ bb := 1*ZF;
 NN := 7*ZF;
 //NN := 21*ZF;
 P1 := CuspQuadruples(NN, bb : GammaType := "Gamma1");
-eps := FundamentalUnitTotPos(F);
+C1 := Cusps(NN, bb : GammaType := "Gamma1");
+//eps := FundamentalUnitTotPos(F);
 //eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
 //bb := 1*ZF;
 //ss := (1/nu)*ZF;
@@ -39,7 +40,7 @@ eps := FundamentalUnitTotPos(F);
 
 RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
 RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
-P1 := Gamma1Quadruples(NN, bb);
+//P1 := Gamma1Quadruples(NN, bb);
 //cusps := Gamma1Cusps(NN, bb);
 
 quad := P1[5];
