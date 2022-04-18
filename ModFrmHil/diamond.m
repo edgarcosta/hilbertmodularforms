@@ -115,6 +115,8 @@ function getEichlerOrderIdeal(M, OLI, a, O, N)
 end function;
 
 function DiamondOperatorIdealsDefiniteBig(M, J)
+    vprintf HilbertModularForms, 1 :
+	"Computing diamond operator for ideal J = %o\n", J; 
     assert IsDefinite(M);
     
     // Form here on we assume this is an ambient space
@@ -126,6 +128,8 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     // easy = basis of big space is given by the rids
     
     if (not assigned M`rids) then
+	vprintf HilbertModularForms, 1 :
+	    "Right ideal classes were not computed, forcing them to be computed.\n";
 	forceSpaceComputation(M);
     end if;
 
@@ -164,32 +168,20 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     lookups := [hmdf`PLD`Lookuptable : hmdf in HMDF];
     fds := [hmdf`PLD`FD : hmdf in HMDF];
     I := M`rids;
-    rids := [ ];
+    rids := [];
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
+    // debug_info := [];
+    vprintf HilbertModularForms, 1:
+	"Computing the right ideals for the eichler order.\n";
     for rid_idx in [1..#HMDF] do
 	Ii := I[rid_idx];
 	N := HMDF[rid_idx]`PLD`Level;
 	for a in fds[rid_idx] do
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
 	    Append(~rids, IJa);
+	    // Append(~debug_info, <rid_idx, a>);
 	end for;
-	// debugging
-	/*
-	IJas := [];
-	for a in HMDF[1]`PLD`P1List do
-	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
-	    Append(~IJas, IJa);
-	end for;
-	for idx->IJa in IJas do
-	    a := HMDF[1]`PLD`P1List[idx];
-	    for u in HMDF[rid_idx]`max_order_units do
-		target := Index(IJas, u*IJa);
-		_, p1rep := p1reps[rid_idx](sm(u)*a, true, false);
-		assert p1rep eq HMDF[rid_idx]`PLD`P1List[target];
-	    end for;
-	end for;
-       */
     end for;
     h := #rids;
     F_weight := getWeightBaseField(M);
@@ -197,27 +189,48 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     zero := MatrixAlgebra(F_weight, wd)!0;
     blocks := [[zero : j in [1..h]] : i in [1..h]];
     weight2 := Seqset(Weight(M)) eq {2};
+    vprintf HilbertModularForms, 1 : "Computing isomorphism between representatives, this might take a while. There are %o...\n", h;
     for rid_idx in [1..h] do	
 	assert exists(target_idx){i : i in [1..h]
 				  | IsIsomorphic(rids[rid_idx], J*rids[i])};
 	_, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
-	assert J*rids[target_idx] eq alpha*rids[rid_idx];
+	// assert J*rids[target_idx] eq alpha*rids[rid_idx];
+	// Would like to make use of the existing P1 structure
+	// but still failing to do so
+	// debug for P1 rep action
+	/*
+	I_src_idx := debug_info[rid_idx][1];
+	I_src := I[I_src_idx];
+	I_dest_idx := debug_info[target_idx][1];
+	I_dest := I[I_dest_idx];
+	_, alpha_I := IsIsomorphic(I_src, J*I_dest);
+	a_src := debug_info[rid_idx][2];
+	a_dest := debug_info[target_idx][2];
+	left_aI := lideal<LeftOrder(alpha_I*I_dest) |
+			 Generators(alpha_I*I_dest)>;
+	left_JI := lideal<LeftOrder(J*I_src) |
+			 Generators(J*I_src)>;
+	_, s := IsIsomorphic(left_JI, left_aI);
+	//	_, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
+	_, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
+	elt_data := lookups[I_dest_idx][Ja];
+	u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
+       */
+	// assert alpha eq alpha_I*u^(-1);
 	if weight2 then
 	    alpha_rep := IdentityMatrix(F_weight, 1);
 	else
 	    alpha_rep := M`weight_rep(alpha);
-	    // alpha_rep *:= Norm(Norm(alpha))^(-CentralCharacter(M) div 2);
-//	    alpha_rep *:= Norm(Norm(alpha))^(-CentralCharacter(M));
+	    // assert alpha_rep eq M`weight_rep(alpha_I*s*u^(-1));
 	end if;
-	// blocks[rid_idx][target_idx] := alpha_rep;
 	blocks[target_idx][rid_idx] := alpha_rep;
     end for;
     dJ := BlockMatrix(blocks);
-    // d := Integers()!(1/Determinant(dJ));
-    d := Integers()!(Determinant(dJ));
-    scale := &*([1] cat [pa[1]^(pa[2] div Nrows(dJ)) :
-			 pa in Factorization(d)]);
-    //    dJ *:= scale;
+    // d := Integers()!(Determinant(dJ));
+    // scale := &*([1] cat [pa[1]^(pa[2] div Nrows(dJ)) :
+    //			 pa in Factorization(d)]);
+    // assert scale eq Norm(J)^CentralCharacter(M);
+    scale := Norm(J)^CentralCharacter(M);
     dJ /:= scale;
     return dJ;
 end function;
@@ -480,10 +493,10 @@ function HeckeCharacterSubspace(M, chi)
     
     K := BaseRing(M);
     Z_K := Integers(K);
-    cl_K, cl_map := RayClassGroup(Level(M), [1..Degree(K)]);
+    // cl_K, cl_map := RayClassGroup(Level(M), [1..Degree(K)]);
     // This should be enough since the restriction of the character to
-    // a Dirichlet character is always trivial, but meanwhile we are on the safe side
-    // cl_K, cl_map := NarrowClassGroup(Z_K);
+    // a Dirichlet character is always trivial, but the above is for debugging
+    cl_K, cl_map := ClassGroup(Z_K);
     if IsTrivial(cl_K) then
 	return M;
     end if;
@@ -491,11 +504,13 @@ function HeckeCharacterSubspace(M, chi)
     dJs := [<J, DiamondOperator(M,J)> : J in Js];
 
     // checking that the operators commute with the other Hecke operators
+    /*
     check_bound := 10;
     hecke := [HeckeOperator(M, PrimeIdealsOverPrime(K,p)[1])
 	      : p in PrimesUpTo(check_bound)];
     assert &and[dJ[2]*T eq T*dJ[2] : T in hecke, dJ in dJs];
-    
+   */    
+
     F_weight := getWeightBaseField(M);
     Id_M := IdentityMatrix(F_weight, Dimension(M));
     
