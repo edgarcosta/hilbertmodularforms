@@ -174,7 +174,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     rids := [];
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
-    // debug_info := [];
+    debug_info := [];
     vprintf HilbertModularForms, 1:
 	"Computing the right ideals for the eichler order.\n";
     for rid_idx in [1..#HMDF] do
@@ -185,7 +185,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
 	    Append(~rids, IJa);
 	    Append(~rids_i, IJa);
-	    // Append(~debug_info, <rid_idx, a>);
+	    Append(~debug_info, <rid_idx, a>);
 	end for;
 	Append(~all_rids, rids_i);
     end for;
