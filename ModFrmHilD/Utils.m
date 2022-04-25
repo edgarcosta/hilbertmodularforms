@@ -51,6 +51,8 @@ intrinsic 'eq'(a::Assoc, b::Assoc) -> BoolElt
 end intrinsic;
 
 
+
+
 intrinsic IsEvenAtoo(chi:GrpHeckeElt) -> BoolElt
 {return if the components of the Dirichlet restriction at the infinity places are all even}
   F := NumberField(Ring(Domain(Parent(chi))));
@@ -63,6 +65,89 @@ intrinsic IsOddAtoo(chi:GrpHeckeElt) -> BoolElt
   return &and[IsOdd(c[v]) : v in InfinitePlaces(F)] where c:=Components(chi);
 end intrinsic;
 
+intrinsic ElementToSequence(F::FldNum) -> SeqEnum[RngIntElt]
+  {return the sequence associated to the defining polynomial}
+    return ElementToSequence(DefiningPolynomial(F));
+end intrinsic;
+
+intrinsic ElementToSequence(I::RngOrdIdl) -> SeqEnum[RngIntElt]
+  {return the sequence associated to the defining polynomial}
+    return [ElementToSequence(g) : g in Generators(I)];
+end intrinsic;
+
+intrinsic ElementToSequence(SI::SetIndx[RngOrdIdl]) -> SeqEnum[SeqEnum[RngIntElt]]
+  {return the sequence associated to the defining polynomial}
+    return [ElementToSequence(elt) : elt in SI];
+end intrinsic;
+
+intrinsic ElementToSequence(SI::SetIndx[FldNumElt]) -> SeqEnum[SeqEnum[RngIntElt]]
+  {return the sequence associated to the defining polynomial}
+    return [ElementToSequence(elt) : elt in SI];
+end intrinsic;
+
+intrinsic ChangeRing(I::RngOrdIdl, m::Map) -> RngOrdIdl
+  {return the ideal over the codomain}
+  return ideal<Integers(Codomain(m)) | [m(g): g in Generators(I)]>;
+end intrinsic;
+
+
+
+
+
+
+// IO
+
+
+intrinsic ReadRecords(filename::MonStgElt : Delimiter:=":") -> SeqEnum
+{Read a delimited file, return list of lists of strings (one list per line). }
+    return [Split(r,Delimiter):r in Split(Read(filename))];
+end intrinsic;
+
+
+intrinsic WriteRecords(filename::MonStgElt, S::SeqEnum[SeqEnum[MonStgElt]]) -> RngIntElt
+{Given a list of lists of strings, create a colon delimited file with one list per line, return number of records written. }
+    fp := Open(filename,"w");
+    n := 0;
+    for r in S do Puts(fp,Join(r,":")); n+:=1; end for;
+    Flush(fp);
+    return n;
+end intrinsic;
+
+
+intrinsic Strip(X::MonStgElt) -> MonStgElt
+{ Strip spaces and carraige returns from string; much faster than StripWhiteSpace. }
+    return Join(Split(Join(Split(X," "),""),"\n"),"");
+end intrinsic;
+
+
+intrinsic StringToArrayOfIntegers(s::MonStgElt) -> SeqEnum[RngIntElt]
+{ Given string representing a sequence of integers, returns the sequence (faster and safer than eval). }
+    t := Strip(s);
+    if t eq "[]" then return [Integers()|]; end if;
+    assert #t ge 2 and t[1] eq "[" and t[#t] eq "]";
+    return [Integers()|StringToInteger(n):n in Split(t[2..#t-1],",")];
+end intrinsic;
+
+
+intrinsic StringToArrayOfArraysOfIntegers(s::MonStgElt) -> SeqEnum[RngIntElt]
+{ Converts a string to a sequence of sequences of integers. }
+    t := Strip(s);
+    if t eq "[]" then return []; end if;
+    if t eq "[[]]" then return [[Integers()|]]; end if;
+    assert #t gt 4 and t[1..2] eq "[[" and t[#t-1..#t] eq "]]";
+    r := Split(t[2..#t-1],"[");
+    return [[Integers()|StringToInteger(n):n in Split(a[1] eq "]" select "" else Split(a,"]")[1],",")]:a in r];
+end intrinsic;
+
+intrinsic StringToArrayOfArraysOfRationals(s::MonStgElt) -> SeqEnum[RngIntElt]
+{ Converts a string to a sequence of sequences of integers. }
+    t := Strip(s);
+    if t eq "[]" then return []; end if;
+    if t eq "[[]]" then return [[Integers()|]]; end if;
+    assert #t gt 4 and t[1..2] eq "[[" and t[#t-1..#t] eq "]]";
+    r := Split(t[2..#t-1],"[");
+    return [[Rationals()|StringToRational(n): n in Split(a[1] eq "]" select "" else Split(a,"]")[1],",")]:a in r];
+end intrinsic;
 
 intrinsic JoinString(list::SeqEnum[MonStgElt], sep::MonStgElt) -> MonStgElt
   {The concatenation of the strings of list with seperator sep.}

@@ -137,3 +137,16 @@ intrinsic ComplementBasis(
   return [ &+[elt[i]*Vbasis[i] : i in [1..#Vbasis]] : elt in sol];
 end intrinsic;
 
+intrinsic ComplementBasis(Wbasis::SeqEnum[ModFrmHilDElt] : Alg := "WeightedLLL"
+  )-> SeqEnum[ModFrmHilDElt]
+  {Given bases for a space W contained within a space `V` of Hilbert Modular Surfaces, 
+  (i.e., `V := Parent(Wbasis[1])`), return a basis for the complement of W in V}
+  return ComplementBasis(Wbasis, Parent(Wbasis[1]) : Alg:=Alg);
+end intrinsic;
+
+intrinsic ComplementBasis(Wbasis::SeqEnum[ModFrmHilDElt], V::ModFrmHilD : Alg := "WeightedLLL"
+  )-> SeqEnum[ModFrmHilDElt]
+  {Given bases for a space W contained within a space `V` of Hilbert Modular Surfaces, 
+  return a basis for the complement of W in V}
+  return ComplementBasis(Wbasis, Basis(V) : Alg:=Alg);
+end intrinsic;

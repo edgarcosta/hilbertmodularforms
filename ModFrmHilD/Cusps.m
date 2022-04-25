@@ -238,14 +238,14 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   if GammaType eq "Gamma1" then
     gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM), i1(eps_p_barMM), i2(eps_p_barNNMM)];
   elif GammaType eq "Gamma0" then
+    gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM), i1(eps_p_barMM), i2(eps_p_barNNMM)];
     // mod out by (R/NN)^\times, as in eqn 5.1.7
     ZFNN, mpNN := quo<ZF |NN>;
     UQNN, mpQNN:= UnitGroup(ZFNN);
     UQNN_gens := [mpQNN(el) : el in Generators(UQNN)];
-    gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM), i1(eps_p_barMM), i2(eps_p_barNNMM)];
     gens cat:= [i1(mpMM(el) @@ mpQMM) + i2(mpNNMM(-el) @@ mpQNNMM) : el in UQNN_gens];
   elif GammaType eq "Gamma" then
-    error "not yet implemented :(";
+    gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM)];
   else
     error "GammaType not recognized";
   end if;
@@ -257,12 +257,6 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
     Append(~T, [* mpQMM(p1(el)) @@ mpMM, mpQNNMM(p2(el)) @@ mpNNMM *]);
   end for;
   reps := [ [* a*(el[1] @@ mpMM), c*(el[2] @@ mpNNMM) *] : el in T];
-  for i := 1 to #reps do
-    rep := reps[i];
-    if rep[2] eq 0 then
-      print Transversal(D, eps_gp)[i];
-    end if;
-  end for;
   final := [];
   for el in reps do
     a0, c0 := Explode(el);
@@ -274,6 +268,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
 end intrinsic;
 
 // P_1(NN)_bb in eqn 5.1.6 in paper, or Lemma 3.6 of Dasgupta-Kakde
+// P_0(NN)_bb in eqn 5.1.9 in paper
 intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde, which is in bijection with cusps of Gamma1(NN)_bb.}
   ZF := Order(NN);
@@ -284,7 +279,7 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
   quads := [];
   for ss in Cl_seq do
     for MM in Divisors(NN) do
-      printf "MM = %o\n", MM;
+      //printf "MM = %o\n", MM;
       //RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
       //RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
       pairs := MakePairsForQuadruple(NN, bb, ss, MM : GammaType := GammaType);
@@ -313,13 +308,13 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
   moduli_num := [];
   moduli_den := [];
   // numerator residues and moduli
-  print "making numerator";
+  //print "making numerator";
   for i := 1 to #Ps_num do
     P := Ps_num[i];
     //v := mults_num[i];
     v := Valuation(ss*bb*MM,P);
     if v gt 0 then
-      printf "nonzero valuation; P = %o, v = %o\n", P, v;
+      //printf "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_num cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
       moduli_num cat:= [P^v, P^(v+1)];
     else
@@ -328,13 +323,13 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
     end if;
   end for;
   // denominator residues and moduli
-  print "making denominator";
+  //print "making denominator";
   for i := 1 to #Ps_den do
     P := Ps_den[i];
     //v := -mults_den[i];
     v := -Valuation(ss*bb*MM,P);
     if v gt 0 then
-      print "nonzero valuation; P = %o, v = %o\n", P, v;
+      //print "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_den cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
       moduli_den cat:= [P^v, P^(v+1)];
     else
@@ -343,10 +338,10 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
     end if;
   end for;
 
-  printf "residues for num = %o\n", residues_num;
-  printf "moduli for num = %o\n", moduli_num;
-  printf "residues for den = %o\n", residues_den;
-  printf "moduli for den = %o\n", moduli_den;
+  //printf "residues for num = %o\n", residues_num;
+  //printf "moduli for num = %o\n", moduli_num;
+  //printf "residues for den = %o\n", residues_den;
+  //printf "moduli for den = %o\n", moduli_den;
 
   if #moduli_num eq 0 then // if list of moduli is empty
     c_num := ZF!1;
@@ -397,15 +392,15 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
   end if;
 
-  print "Ps_num = ", Ps_num;
-  print "c = ", c;
+  //print "Ps_num = ", Ps_num;
+  //print "c = ", c;
 
   residues_num := [];
   residues_den := [];
   moduli_num := [];
   moduli_den := [];
   // numerator residues and moduli
-  print "making numerator";
+  //print "making numerator";
   for i := 1 to #Ps_num do
     P := Ps_num[i];
     //v := mults_num[i];
@@ -426,7 +421,7 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     end if;
   end for;
   // denominator residues and moduli
-  print "making denominator";
+  //print "making denominator";
   for i := 1 to #Ps_den do
     P := Ps_den[i];
     //v := -mults_den[i];
@@ -441,10 +436,10 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     end if;
   end for;
 
-  printf "residues for num = %o\n", residues_num;
-  printf "moduli for num = %o\n", moduli_num;
-  printf "residues for den = %o\n", residues_den;
-  printf "moduli for den = %o\n", moduli_den;
+  //printf "residues for num = %o\n", residues_num;
+  //printf "moduli for num = %o\n", moduli_num;
+  //printf "residues for den = %o\n", residues_den;
+  //printf "moduli for den = %o\n", moduli_den;
 
   if #moduli_num eq 0 then // if list of moduli is empty
     a_num := ZF!1;
@@ -486,7 +481,6 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
 end intrinsic;
 */
 
-// Need to lift the [a,c] in the quadruples in a special way that respects certain congruences
 intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
   ZF := Order(NN);
@@ -494,9 +488,9 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   quads := CuspQuadruples(NN, bb : GammaType := GammaType);
   cusps_seq := [];
   for i := 1 to #quads do
-    printf "i = %o\n", i;
+    //printf "i = %o\n", i;
     quad := quads[i];
-    printf "quad = %o\n", quad;
+    //printf "quad = %o\n", quad;
     ss, MM, ac_bar := Explode(quad);
     a_bar, c_bar := Explode(ac_bar);
     c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
@@ -506,31 +500,6 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   PP1 := ProjectiveSpace(F,1);
   cusps := [PP1!el : el in cusps_seq];
   return cusps;
-end intrinsic;
-
-// P_0(NN)_bb in eqn 5.1.9 in paper
-// TODO: figure out how to mod out by (ZF/NN)^*
-intrinsic Gamma0Quadruples(NN::RngOrdIdl, bb::RngOrdIdl) -> SeqEnum
-  {}
-  ZF := Ring(Parent(NN));
-  F := NumberField(ZF);
-  Cl, mpCl := ClassGroup(ZF);
-  Cl_seq := [mpCl(el) : el in Cl];
- 
-  quads := [];
-  for ss in Cl_seq do
-    for MM in Divisors(NN) do
-      RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
-      RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
-      // TODO: mod out by (ZF/NN)^*
-      for a in RssMM do
-        for c in RssMM_comp do
-          Append(~quads, [* ss, MM, a, c*]);
-        end for;
-      end for;
-    end for;
-  end for;
-  return quads;
 end intrinsic;
 
 // copy-pasta-ed from ModSym/Dirichlet.m and adapted for Hecke
@@ -566,6 +535,24 @@ intrinsic GaloisConjugacyRepresentatives(S::[GrpHeckeElt]) -> SeqEnum
    return S;
 end intrinsic;
 
+// see Lemma 5.2, p. 78 of van der Geer
+intrinsic GammaCuspCount(NN::RngOrdIdl) -> RngIntElt 
+  {}
+  ZF := Order(NN);
+  F := NumberField(ZF);
+  U, mpU := UnitGroup(ZF);
+  Q, pi := quo< ZF | NN >;
+  UQ, mpUQ := UnitGroup(Q);
+  mp_unit := hom< U -> UQ | x :-> (pi(mpU(x)) @@ mpUQ) >;
+  img_unit := Image(mp_unit);
+  cnt := Norm(NN)^2/#img_unit;
+  for pair in Factorization(NN) do
+    PP := pair[1];
+    cnt *:= (1 - Norm(PP)^-2);
+  end for;
+  return ClassNumber(ZF)*cnt;
+end intrinsic;
+
 intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
   {}
   ZF := Order(NN);
@@ -573,29 +560,31 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
   Cl, mp := ClassGroup(ZF);
   H := HeckeCharacterGroup(ideal<ZF|NN>, [1,2]);
   R := GradedRingOfHMFs(F, 1);
-  if GammaType eq "Gamma0" then
-    chis := [H!1];
-  elif GammaType eq "Gamma1" then
-    chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
-  elif GammaType eq "Gamma" then
-    error "not implemented yet :(";
-  else
-    error "GammaType not recognized";
-  end if;
-  chis := GaloisConjugacyRepresentatives(chis);
-  d := 0;
-  for chi in chis do
-    print "chi = ", Eltseq(chi);
-    Mk_chi := HMFSpace(R, NN, [2,2], chi);
-    d +:= EisensteinDimension(Mk_chi);
-  end for;
   quad_cnt := 0;
   for bb in Cl do
     quads := CuspQuadruples(NN,mp(bb) : GammaType := GammaType);
     quad_cnt +:= #quads;
   end for;
-  printf "eis dim = %o\n", d;
-  printf "quad count = %o\n", quad_cnt;
+  if GammaType eq "Gamma" then
+    printf "#quads = %o\n", quad_cnt;
+    printf "formula = %o\n", GammaCuspCount(NN);
+    return quad_cnt eq GammaCuspCount(NN);
+  elif GammaType eq "Gamma0" then
+    chis := [H!1];
+  elif GammaType eq "Gamma1" then
+    chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
+    else
+    error "GammaType not recognized";
+  end if;
+  chis := GaloisConjugacyRepresentatives(chis);
+  d := 0;
+  for chi in chis do
+    //print "chi = ", Eltseq(chi);
+    Mk_chi := HMFSpace(R, NN, [2,2], chi);
+    d +:= EisensteinDimension(Mk_chi);
+  end for;
+  printf "Eisenstein dim = %o\n", d;
+  printf "quadruple count = %o\n", quad_cnt;
   return quad_cnt eq d;
 end intrinsic;
 
