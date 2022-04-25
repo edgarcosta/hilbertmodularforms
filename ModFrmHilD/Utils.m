@@ -147,6 +147,7 @@ intrinsic StringToArrayOfArraysOfRationals(s::MonStgElt) -> SeqEnum[RngIntElt]
     assert #t gt 4 and t[1..2] eq "[[" and t[#t-1..#t] eq "]]";
     r := Split(t[2..#t-1],"[");
     return [[Rationals()|StringToRational(n): n in Split(a[1] eq "]" select "" else Split(a,"]")[1],",")]:a in r];
+end intrinsic;
 
 intrinsic JoinString(list::SeqEnum[MonStgElt], sep::MonStgElt) -> MonStgElt
   {The concatenation of the strings of list with seperator sep.}
