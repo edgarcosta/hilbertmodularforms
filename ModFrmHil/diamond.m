@@ -217,19 +217,13 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    _, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
 	    elt_data := lookups[I_dest_idx][Ja];
 	    tgt_idx := Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
-	    /*
-	    assert exists(tgt_idx){i : i in [1..#all_rids[I_dest_idx]]
-				   | IsIsomorphic(all_rids[I_src_idx][idx],
-						  J*all_rids[I_dest_idx][i])};
-	   */
-	    // assert IsIsomorphic(all_rids[I_src_idx][idx], J*all_rids[I_dest_idx][tgt_idx]);
+	    
 	    vprintf HilbertModularForms, 1 :
 		"Finding an isomorphism took %o.\n", Cputime() - t0;
 	    target_idx := &+[Integers() | #rids_i :
 					   rids_i in all_rids[1..I_dest_idx-1]];
 	    target_idx +:= tgt_idx;
-	    // a_dest := debug_info[target_idx][2];
-	    // assert a_dest eq fds[I_dest_idx][tgt_idx];
+	    
 	    _, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
 	    vprintf HilbertModularForms, 1 :
 		"Isomorphism for Eichler representatives is given by %o.\n", alpha;
@@ -238,26 +232,32 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    // Would like to make use of the existing P1 structure
 	    // but still failing to do so
 	    // debug for P1 rep action
+	   	    
+	    left_aI := lideal<LeftOrder(alpha_I*I_src) |
+			     Generators(alpha_I*I_src)>;
+	    left_JI := lideal<LeftOrder(J*I_dest) |
+			     Generators(J*I_dest)>;
+	    _, s := IsIsomorphic(left_JI, left_aI);
 	   
-	    
-	    // left_aI := lideal<LeftOrder(alpha_I*I_dest) |
-		//	     Generators(alpha_I*I_dest)>;
-	    // left_JI := lideal<LeftOrder(J*I_src) |
-		//	     Generators(J*I_src)>;
-	    // _, s := IsIsomorphic(left_JI, left_aI);
-	   
-	    // _, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
-	   
-	    // assert tgt_idx eq Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
-	    // assert a_dest eq fds[I_dest_idx][Index(HMDF[I_dest_idx]`CFD, elt_data[1])];
+	    _, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
+	    elt_data_s := lookups[I_dest_idx][Ja];
 	    u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
+	    u_s := HMDF[I_dest_idx]`max_order_units[elt_data_s[2]];
 	   
 	    // assert alpha eq alpha_I*u^(-1);
 	    if weight2 then
 		alpha_rep := IdentityMatrix(F_weight, 1);
 	    else
 		alpha_rep := M`weight_rep(alpha);
+		dim := M`weight_dimension;
 		// assert alpha_rep eq M`weight_rep(alpha_I*s*u^(-1));
+		// basis := HMDF[I_src_idx]`basis_matrix;
+		// cols := [(tgt_idx-1)*dim+1..tgt_idx*dim];
+		basis := HMDF[I_dest_idx]`basis_matrix;
+		cols := [(idx-1)*dim+1..idx*dim];
+		basis := Submatrix(basis, [1..Nrows(basis)], cols);
+		assert (basis*alpha_rep eq basis*M`weight_rep(alpha_I*u)) or
+		       (basis*alpha_rep eq basis*M`weight_rep(alpha_I*u^(-1)));
 	    end if;
 	    blocks[target_idx][rid_idx] := alpha_rep;
 	end for;
