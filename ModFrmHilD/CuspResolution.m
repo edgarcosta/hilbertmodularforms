@@ -142,27 +142,7 @@ intrinsic IsNormalizedCuspChangeMatrix(F::FldQuad, b :: RngQuadFracIdl,
     I := alpha*ZF + beta*b^-1;
     return (lambda in I^-1) and (mu in I^-1*b^-1) and (Determinant(g) eq 1);    
 end intrinsic;
-										
-/* intrinsic CuspCRT(F :: FldQuad, a :: RngQuadFracIdl, n :: RngQuadIdl, y :: FldQuadElt) */
-/* 	  -> FldQuadElt */
-
-/* {Assuming a and the denominator of y are coprime to n, compute x in a such that x=y mod n} */
-/*     require IsCoprimeFracIdl(a, n): "a and n must be coprime"; */
-/*     ZF := Integers(F); */
-/*     denom := Gcd(y*ZF, 1*ZF)^-1; */
-/*     require IsCoprimeFracIdl(denom, n): "n and denominator of y must be coprime"; */
-    
-/*     a := Lcm(a, 1*Integers(F)); //Now an integral ideal */
-/*     a, da := IntegralSplit(a); assert da eq 1 or da eq -1; */
-/*     denom, dd := IntegralSplit(denom); assert dd eq 1 or dd eq -1; */
-/*     //Find a multiple of denominator of y which is 1 mod n */
-/*     d := CRT(denom, n, ZF!0, ZF!1); */
-/*     x := CRT(a, n, ZF!0, ZF!(d*y)); */
-
-/*     assert x in a; */
-/*     assert x-d*y in n;     */
-/*     return x; */
-/* end intrinsic; */
+			
 		     
 intrinsic IsCoprimeFracIdl(a :: RngOrdFracIdl, b :: RngOrdFracIdl) -> Bool
 {Decide if fractional ideals a and b are coprime}
@@ -214,13 +194,13 @@ just an integer divided by beta)}
     
     if GammaType eq "Gamma0" then
 	if f eq 0 then
-	    if alpha eq 0 then x0 := -lambda;
-	    else x0 := -2*lambda*alpha;
+	    if alpha eq 0 then x0 := lambda;
+	    else x0 := 2*lambda*alpha;
 	    end if;
 	    return [0, 0, e, e], ZF!x0;
 	elif 2*f lt e then
-	    if alpha eq 0 then x0 := -lambda;
-	    else x0 := -2*lambda*alpha;
+	    if alpha eq 0 then x0 := lambda;
+	    else x0 := 2*lambda*alpha;
 	    end if;
 	    return [0, f, e-2*f, e-f], ZF!x0;
 	else
@@ -233,7 +213,7 @@ just an integer divided by beta)}
 	elif f eq e then
 	    return [e, e, 0, 0], ZF!0;
 	else
-	    x0 := -(1-2*beta*mu);
+	    x0 := (1-2*beta*mu);
 	    return [Max(f, e-f), Max(f, e-f), e-f, e], ZF!x0;
 	end if;
 
@@ -281,7 +261,7 @@ ideals W, W2 respectively.}
     for p in plist do
 	L, x0 := CuspResolutionCongruences(F, b, n, g, p: GammaType:=GammaType);
 	ev, ev2, em, ex := Explode(L);
-	print "Congruence results:", ev, ev2, em, ex;
+	//print "Congruences of cusp coordinates:", ev, ev2, em, ex;
 	M *:= p^em;
 	W *:= p^ev;
 	W2 *:= p^ev2;
@@ -289,12 +269,18 @@ ideals W, W2 respectively.}
 	x := CRT(X, p^ex, x, x0);
 	X *:= p^ex;
     end for;
-    if alpha*beta ne 0 then
-	g := Matrix(F, 2, 2, [F!1, x/(2*alpha*beta), 0, F!1]) * g;
-    else
-	g := Matrix(F, 2, 2, [F!1, x, 0, F!1]) *g;
+    if alpha*beta ne 0 and x ne 0 then
+	//Clear out any denominator coprime to n
+	x := x/(2*alpha*beta);
+	qlist := [f[1]: f in Factorization(2*alpha*beta*ZF)];
+	for q in qlist do
+	    v := Valuation(x, q);
+	    if v lt 0 and Valuation(n, q) eq 0 then
+		x *:= CRT(n, q^(-v), ZF!1, ZF!0);
+	    end if;
+	end for;
     end if;
-    print "Final shift", x;
+    g := Matrix(F, 2, 2, [F!1, x, 0, F!1]) * g;
     return [M, W, W2], g;
 end intrinsic;
     
@@ -416,7 +402,17 @@ in the correct level subgroup}
 	else
 	    error "GammaType not recognized";
 	end if;
-	if not valid then error "Invalid matrices", U, V; end if;
+	if not valid then
+	    ZF := Integers(F);
+	    plist := [f[1]: f in Factorization(n)];
+	    for p in plist do
+		print "Debug info:";
+		print p;
+		print Valuation(U[1,1]-U[2,2], p);
+		print Valuation(V[2,1], p);
+		print Valuation(V[1,1]-1, p);
+	    end for;
+	    error "Invalid matrices", U, V, g; end if;
     end for;
 end intrinsic;
 
