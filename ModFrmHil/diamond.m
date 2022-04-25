@@ -174,7 +174,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     rids := [];
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
-    debug_info := [];
+    // debug_info := [];
     vprintf HilbertModularForms, 1:
 	"Computing the right ideals for the eichler order.\n";
     for rid_idx in [1..#HMDF] do
@@ -185,7 +185,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
 	    Append(~rids, IJa);
 	    Append(~rids_i, IJa);
-	    Append(~debug_info, <rid_idx, a>);
+	    // Append(~debug_info, <rid_idx, a>);
 	end for;
 	Append(~all_rids, rids_i);
     end for;
@@ -212,20 +212,23 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	for idx in [1..#all_rids[I_src_idx]] do
 	    rid_idx := &+[Integers() | #rids_i : rids_i in all_rids[1..I_src_idx-1]];
 	    rid_idx +:= idx;
-	    /*
-	    assert exists(target_idx2){i : i in [1..h]
+	    
+	    assert exists(target_idx){i : i in [1..h]
 				      | IsIsomorphic(rids[rid_idx], J*rids[i])};
-	   */
+	   
 	    t0 := Cputime();
+	    // this fails for d = 321, k = [4,4], n = 1. Figure out why
+	    /*
 	    assert exists(tgt_idx){i : i in [1..#all_rids[I_dest_idx]]
 				   | IsIsomorphic(all_rids[I_src_idx][idx],
 						  J*all_rids[I_dest_idx][i])};
 	    vprintf HilbertModularForms, 1 :
 		"Finding an isomorphism took %o.\n", Cputime() - t0;
-	    target_idx := &+[Integers() | #rids_i :
+	    target_idx2 := &+[Integers() | #rids_i :
 					   rids_i in all_rids[1..I_dest_idx-1]];
-	    target_idx +:= tgt_idx;
-	    // assert target_idx2 eq target_idx;
+	    target_idx2 +:= tgt_idx;
+	    assert target_idx2 eq target_idx;
+	   */
 	    _, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
 	    vprintf HilbertModularForms, 1 :
 		"Isomorphism for Eichler representatives is given by %o.\n", alpha;
