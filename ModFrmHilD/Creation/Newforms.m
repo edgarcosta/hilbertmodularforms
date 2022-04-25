@@ -1,7 +1,9 @@
 import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
+import "../../ModFrmHil/copypaste/hecke.m" : hecke_algebra;
 
 ////////// Creation of CuspForms from ModFrmHilDElt //////////
 
+//TODO force ExtendMultiplicatively with character!!!!
 
 
 intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
@@ -10,8 +12,6 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, pri
   if factorization cmpeq false then
     factorization := Factorization;
   end if;
-
-  //TODO: take ideals[n] = Factorization(n), and make use of M`IdealsFactorization
 
   // set recursion
   // ideals must be sorted by Norm
@@ -70,6 +70,7 @@ intrinsic Eigenform(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
   function factorization(n)
     return Factorization(M, n);
   end function;
+  //FIXME
   ExtendMultiplicatively(~coeffs, N, k, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
 
   // coefficients by bb
@@ -93,13 +94,15 @@ intrinsic Eigenform(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDElt
 
   vprintf HilbertModularForms: "Computing eigenvalues for %o...\n", f;
   ev := AssociativeArray();
+  vtime HilbertModularForms:
   for pp in PrimeIdeals(M) do
    ev[pp] := HeckeEigenvalue(f, pp);
   end for;
-  vprintf HilbertModularForms: "Done\n";
 
   return Eigenform(Mk, ev);
 end intrinsic;
+
+
 
 // By doing all inclusions at once, we s that we only need to compute the
 intrinsic OldEigenformInclusions(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDElt
@@ -133,6 +136,7 @@ intrinsic OldEigenformInclusions(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDE
     return Factorization(M, nn);
   end function;
 
+  //FIXME
   ExtendMultiplicatively(~coeffs, N1, k, primes, ideals : factorization:=factorization);
 
   res := [];
@@ -172,10 +176,10 @@ intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD) -> SeqEnum[ModFrmHilD
   return &cat[OldEigenformInclusions(MkN2, f) : f in MagmaNewCuspForms(MkN1)];
 end intrinsic;
 
-intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
-  {return the eigenforms in magma type}
+intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
+  {return the NewformDecomposition in magma type}
   require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
-  if not assigned Mk`MagmaNewCuspForms then
+  if not assigned Mk`MagmaNewformDecomposition then
     N := Level(Mk);
     k := Weight(Mk);
     vprintf HilbertModularForms: "Decomposing HilbertCuspForms for N=%o and weight=%o...", IdealOneLine(N), k;
@@ -188,16 +192,89 @@ intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
     vprintf HilbertModularForms: "hecke character subspace ";
     S := HeckeCharacterSubspace(New, Character(Mk));
     vprintf HilbertModularForms: "decomposition...";
-    NewDecomp := NewformDecomposition(S);
-    vprintf HilbertModularForms: "eigenforms...";
-    Mk`MagmaNewCuspForms := [* Eigenform(U) :  U in NewDecomp *];
-    vprintf HilbertModularForms: "Done\n", IdealOneLine(N), k;
+    vtime HilbertModularForms:
+    Mk`MagmaNewformDecomposition := NewformDecomposition(S);
+    vprintf HilbertModularForms: "Done\n";
+  end if;
+  return Mk`MagmaNewformDecomposition;
+end intrinsic;
+
+intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
+  {return the eigenforms in magma type}
+  require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
+  if not assigned Mk`MagmaNewCuspForms then
+    N := Level(Mk);
+    k := Weight(Mk);
+    vprintf HilbertModularForms: "Computing eigenforms for N=%o and weight=%o...", IdealOneLine(N), k;
+    vtime HilbertModularForms:
+    Mk`MagmaNewCuspForms := [* Eigenform(U) :  U in MagmaNewformDecomposition(Mk) *];
   end if;
   return Mk`MagmaNewCuspForms;
 end intrinsic;
 
 
+
+
 intrinsic NewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {returns Hilbert newforms}
   return [Eigenform(Mk, f) : f in MagmaNewCuspForms(Mk)];
+end intrinsic;
+
+
+intrinsic GaloisOrbitDescentNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {return Galois descent of Hilbert newforms}
+  return &cat[GaloisOrbitDescentEigenForm(Mk, d) : d in MagmaNewformDecomposition(Mk)];
+end intrinsic;
+
+
+intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[ModFrmHilDElt]
+  {return Galois descent of a Hilbert newform}
+  vprintf HilbertModularForms: "Computing rational basis for %o...", S;
+  M := Parent(Mk);
+  // find a single generator
+  _ , primes_used, _, _, _, Tzeta, linear_combination := Explode(hecke_algebra(S : generator:=true));
+  Tzeta_powers := [Tzeta^i : i in [0..Dimension(S) - 1]];
+
+  M := Parent(Mk);
+  N2 := Level(Mk);
+  N1 := Level(S);
+  require N2 eq N1: "The level of f must match the level of the target ambient space";
+  k := Weight(Mk);
+  require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
+  k := k[1];
+
+  vprintf HilbertModularForms: "Computing HeckeOperators ...";
+  HeckeOperators := AssociativeArray();
+  vtime HilbertModularForms:
+  for pp in PrimeIdeals(M) do
+   HeckeOperators[pp] := Matrix(HeckeOperator(S, pp));
+  end for;
+  ZF := Integers(Mk);
+  // a_0 and a_1
+  M := Parent(Mk);
+  coeffs := HeckeOperators;
+  coeffs[0*ZF] := 0;
+  coeffs[1*ZF] := 1;
+  function factorization(n)
+    return Factorization(M, n);
+  end function;
+  vprintf HilbertModularForms: "Extending Hecke operators multiplicatevely...";
+  vtime HilbertModularForms:
+  //FIXME
+  ExtendMultiplicatively(~coeffs, N1, k, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
+
+
+  res := [];
+  for i in [1..Dimension(S)] do
+    // coefficients by bb
+    CoeffsArray := AssociativeArray();
+    for bb in NarrowClassGroupReps(M) do
+      CoeffsArray[bb] := AssociativeArray();
+      for nu->nn in ShintaniRepsIdeal(M)[bb] do
+        CoeffsArray[bb][nu] := Trace(Tzeta_powers[i]*coeffs[nn]);
+      end for;
+    end for;
+    Append(~res, HMF(Mk, CoeffsArray));
+  end for;
+  return res;
 end intrinsic;
