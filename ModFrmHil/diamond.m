@@ -222,14 +222,14 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 				   | IsIsomorphic(all_rids[I_src_idx][idx],
 						  J*all_rids[I_dest_idx][i])};
 	   */
-	    assert IsIsomorphic(all_rids[I_src_idx][idx], J*all_rids[I_dest_idx][tgt_idx]);
+	    // assert IsIsomorphic(all_rids[I_src_idx][idx], J*all_rids[I_dest_idx][tgt_idx]);
 	    vprintf HilbertModularForms, 1 :
 		"Finding an isomorphism took %o.\n", Cputime() - t0;
 	    target_idx := &+[Integers() | #rids_i :
 					   rids_i in all_rids[1..I_dest_idx-1]];
 	    target_idx +:= tgt_idx;
-	    a_dest := debug_info[target_idx][2];
-	    assert a_dest eq fds[I_dest_idx][tgt_idx];
+	    // a_dest := debug_info[target_idx][2];
+	    // assert a_dest eq fds[I_dest_idx][tgt_idx];
 	    _, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
 	    vprintf HilbertModularForms, 1 :
 		"Isomorphism for Eichler representatives is given by %o.\n", alpha;
@@ -248,8 +248,8 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	   
 	    // _, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
 	   
-	    assert tgt_idx eq Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
-	    assert a_dest eq fds[I_dest_idx][Index(HMDF[I_dest_idx]`CFD, elt_data[1])];
+	    // assert tgt_idx eq Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
+	    // assert a_dest eq fds[I_dest_idx][Index(HMDF[I_dest_idx]`CFD, elt_data[1])];
 	    u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
 	   
 	    // assert alpha eq alpha_I*u^(-1);
@@ -263,10 +263,6 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	end for;
     end for;
     dJ := BlockMatrix(blocks);
-    // d := Integers()!(Determinant(dJ));
-    // scale := &*([1] cat [pa[1]^(pa[2] div Nrows(dJ)) :
-    //			 pa in Factorization(d)]);
-    // assert scale eq Norm(J)^CentralCharacter(M);
     scale := Norm(J)^CentralCharacter(M);
     dJ /:= scale;
     return dJ;
