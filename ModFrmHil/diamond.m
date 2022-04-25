@@ -213,15 +213,23 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    rid_idx := &+[Integers() | #rids_i : rids_i in all_rids[1..I_src_idx-1]];
 	    rid_idx +:= idx;
 	    t0 := Cputime();
+	    a_src := debug_info[rid_idx][2];
+	    _, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
+	    elt_data := lookups[I_dest_idx][Ja];
+	    tgt_idx := Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
+	    /*
 	    assert exists(tgt_idx){i : i in [1..#all_rids[I_dest_idx]]
 				   | IsIsomorphic(all_rids[I_src_idx][idx],
 						  J*all_rids[I_dest_idx][i])};
+	   */
+	    assert IsIsomorphic(all_rids[I_src_idx][idx], J*all_rids[I_dest_idx][tgt_idx]);
 	    vprintf HilbertModularForms, 1 :
 		"Finding an isomorphism took %o.\n", Cputime() - t0;
 	    target_idx := &+[Integers() | #rids_i :
 					   rids_i in all_rids[1..I_dest_idx-1]];
 	    target_idx +:= tgt_idx;
-	    
+	    a_dest := debug_info[target_idx][2];
+	    assert a_dest eq fds[I_dest_idx][tgt_idx];
 	    _, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
 	    vprintf HilbertModularForms, 1 :
 		"Isomorphism for Eichler representatives is given by %o.\n", alpha;
@@ -231,16 +239,15 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    // but still failing to do so
 	    // debug for P1 rep action
 	   
-	    a_src := debug_info[rid_idx][2];
-	    a_dest := debug_info[target_idx][2];
+	    
 	    // left_aI := lideal<LeftOrder(alpha_I*I_dest) |
 		//	     Generators(alpha_I*I_dest)>;
 	    // left_JI := lideal<LeftOrder(J*I_src) |
 		//	     Generators(J*I_src)>;
 	    // _, s := IsIsomorphic(left_JI, left_aI);
-	    _, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
+	   
 	    // _, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
-	    elt_data := lookups[I_dest_idx][Ja];
+	   
 	    assert tgt_idx eq Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
 	    assert a_dest eq fds[I_dest_idx][Index(HMDF[I_dest_idx]`CFD, elt_data[1])];
 	    u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
