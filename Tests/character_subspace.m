@@ -813,6 +813,14 @@ ns := [[n : n in [1..Floor(Sqrt(B/d))] | GCD(d,n) eq 1 and IsSquarefree(n)] : d 
 weights := [[k,k] : k in [2..8 by 2]];
 ks := [ [Random(weights)] : d in ds];
 
+// We add this specific test to test for recurring bugs.
+Append(~ds, 40); // Q(sqrt(10)) is the first field with non trivial class group.
+Append(~ns, 3); // forcing the use of projective line representatives
+Append(~ks, [4,4]); // forcing non-trivial weight
+Append(~ds, 321); // Q(sqrt321) is the a field with class group which is of order 3. This is important to distinguish between an action and its inverse.
+Append(~ns, 1);
+Append(~ks, [4,4]);
+
 printf "Checking dimensions at ";
 for i->d in ds do
     printf "d=%o ", d;
