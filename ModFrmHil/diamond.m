@@ -174,7 +174,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     rids := [];
     // we get the Eichler order
     O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
-    // debug_info := [];
+    debug_info := [];
     vprintf HilbertModularForms, 1:
 	"Computing the right ideals for the eichler order.\n";
     for rid_idx in [1..#HMDF] do
@@ -185,7 +185,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
 	    Append(~rids, IJa);
 	    Append(~rids_i, IJa);
-	    // Append(~debug_info, <rid_idx, a>);
+	    Append(~debug_info, <rid_idx, a>);
 	end for;
 	Append(~all_rids, rids_i);
     end for;
@@ -201,7 +201,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     for I_src_idx in [1..hh] do
 	vprintf HilbertModularForms, 1 :
 	    "Working on O(1)-right ideal class representative no. %o.\n", I_src_idx;
-	I_dest_idx := perm[I_src_idx];
+	I_dest_idx := Index(perm, I_src_idx);
 	vprintf HilbertModularForms, 1 :
 	    "It is isomorphic to J*I[%o].\n", I_dest_idx;
 	I_src := I[I_src_idx];
@@ -212,48 +212,46 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	for idx in [1..#all_rids[I_src_idx]] do
 	    rid_idx := &+[Integers() | #rids_i : rids_i in all_rids[1..I_src_idx-1]];
 	    rid_idx +:= idx;
-	    /*
-	    assert exists(target_idx2){i : i in [1..h]
-				      | IsIsomorphic(rids[rid_idx], J*rids[i])};
-	   */
 	    t0 := Cputime();
+	    a_src := debug_info[rid_idx][2];
+	    _, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
+	    elt_data := lookups[I_dest_idx][Ja];
+	    tgt_idx := Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
+	    /*
 	    assert exists(tgt_idx){i : i in [1..#all_rids[I_dest_idx]]
 				   | IsIsomorphic(all_rids[I_src_idx][idx],
 						  J*all_rids[I_dest_idx][i])};
+	   */
+	    // assert IsIsomorphic(all_rids[I_src_idx][idx], J*all_rids[I_dest_idx][tgt_idx]);
 	    vprintf HilbertModularForms, 1 :
 		"Finding an isomorphism took %o.\n", Cputime() - t0;
 	    target_idx := &+[Integers() | #rids_i :
 					   rids_i in all_rids[1..I_dest_idx-1]];
 	    target_idx +:= tgt_idx;
-	    // assert target_idx2 eq target_idx;
+	    // a_dest := debug_info[target_idx][2];
+	    // assert a_dest eq fds[I_dest_idx][tgt_idx];
 	    _, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
 	    vprintf HilbertModularForms, 1 :
 		"Isomorphism for Eichler representatives is given by %o.\n", alpha;
 	    vprintf HilbertModularForms, 1:
 		"The quotient is the unit %o.\n", alpha^(-1) * alpha_I;
-	    // assert J*rids[target_idx] eq alpha*rids[rid_idx];
 	    // Would like to make use of the existing P1 structure
 	    // but still failing to do so
 	    // debug for P1 rep action
-	    /*
-	    assert I_src_idx eq debug_info[rid_idx][1];
-	    I_src := I[I_src_idx];
-	    assert I_dest_idx eq debug_info[target_idx][1];
-	    I_dest := I[I_dest_idx];
-	    _, alpha_I := IsIsomorphic(I_src, J*I_dest);
-	    assert perm[I_src_idx] eq I_dest_idx;
-	    a_src := debug_info[rid_idx][2];
-	    a_dest := debug_info[target_idx][2];
-	    left_aI := lideal<LeftOrder(alpha_I*I_dest) |
-			     Generators(alpha_I*I_dest)>;
-	    left_JI := lideal<LeftOrder(J*I_src) |
-			     Generators(J*I_src)>;
-	    _, s := IsIsomorphic(left_JI, left_aI);
-	    //	_, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
-	    _, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
-	    elt_data := lookups[I_dest_idx][Ja];
+	   
+	    
+	    // left_aI := lideal<LeftOrder(alpha_I*I_dest) |
+		//	     Generators(alpha_I*I_dest)>;
+	    // left_JI := lideal<LeftOrder(J*I_src) |
+		//	     Generators(J*I_src)>;
+	    // _, s := IsIsomorphic(left_JI, left_aI);
+	   
+	    // _, Ja := p1reps[I_dest_idx](sm(alpha_I*s)*a_src, true, false);
+	   
+	    // assert tgt_idx eq Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
+	    // assert a_dest eq fds[I_dest_idx][Index(HMDF[I_dest_idx]`CFD, elt_data[1])];
 	    u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
-	   */
+	   
 	    // assert alpha eq alpha_I*u^(-1);
 	    if weight2 then
 		alpha_rep := IdentityMatrix(F_weight, 1);
@@ -265,10 +263,6 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	end for;
     end for;
     dJ := BlockMatrix(blocks);
-    // d := Integers()!(Determinant(dJ));
-    // scale := &*([1] cat [pa[1]^(pa[2] div Nrows(dJ)) :
-    //			 pa in Factorization(d)]);
-    // assert scale eq Norm(J)^CentralCharacter(M);
     scale := Norm(J)^CentralCharacter(M);
     dJ /:= scale;
     return dJ;
