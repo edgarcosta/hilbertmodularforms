@@ -214,17 +214,24 @@ end intrinsic;
 intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl, MM::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
 
-  a := GeneratorOfQuotientModuleCRT(ss,MM);
-  c := GeneratorOfQuotientModuleCRT(ss*bb*MM,(NN/MM));
-
-  F := Parent(a);
-  F := NumberField(F);
-  ZF := Integers(F);
+  ZF := Order(NN);
+  F := NumberField(ZF);
   eps_p := FundamentalUnitTotPos(F);
   eps := FundamentalUnit(F);
 
-  ZFMM, mpMM := quo<ZF |MM>;
-  ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;
+  if GammaType in ["Gamma0", "Gamma1"] then
+    a := GeneratorOfQuotientModuleCRT(ss,MM);
+    c := GeneratorOfQuotientModuleCRT(ss*bb*MM,(NN/MM));
+    ZFMM, mpMM := quo<ZF | MM>;
+    ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;
+  elif GammaType eq "Gamma" then
+    a := GeneratorOfQuotientModuleCRT(ss,NN);
+    c := GeneratorOfQuotientModuleCRT(ss*bb,NN);
+    ZFMM, mpMM := quo<ZF | NN>;
+    ZFNNMM, mpNNMM := quo<ZF | NN >;
+  else
+    error "GammaType not recognized";
+  end if;
   UQMM, mpQMM := UnitGroup(ZFMM);
   UQNNMM, mpQNNMM := UnitGroup(ZFNNMM);
 
@@ -260,9 +267,17 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   final := [];
   for el in reps do
     a0, c0 := Explode(el);
-    a_new := ReduceModuloIdeal(a0, ss, ss*MM);
-    c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
-    Append(~final, [a_new, c_new]);
+    if GammaType in ["Gamma0", "Gamma1"] then
+      a_new := ReduceModuloIdeal(a0, ss, ss*MM);
+      c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
+      Append(~final, [a_new, c_new]);
+    elif GammaType eq "Gamma" then
+      a_new := ReduceModuloIdeal(a0, ss, ss*NN);
+      c_new := ReduceModuloIdeal(c0, ss*bb, ss*bb*NN);
+      Append(~final, [a_new, c_new]);
+    else
+      error "GammaType not recognized";
+    end if;
   end for;
   return final;
 end intrinsic;
@@ -292,11 +307,17 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
 end intrinsic;
 
 // see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
-intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
+intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> RngElt 
   {With the notation as in section 5 of the paper, given c_bar in P_1(NN)_bb, lift c_bar to a c satisfying GCD(c*bb^-1,NN) = MM.}
 
   ZF := Order(ss);
-  facts := Factorization(ss*bb*NN);
+  if GammaType in ["Gamma0", "Gamma1"] then
+    facts := Factorization(ss*bb*NN);
+  elif GammaType eq "Gamma" then
+    facts := Factorization(ss*bb);
+  else
+    error "GammaType not recognized";
+  end if;
   //printf "factors of ss*bb*NN: %o\n", facts;
   Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
   mults_num := [fact[2] : fact in facts | fact[2] gt 0];
@@ -312,7 +333,13 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
   for i := 1 to #Ps_num do
     P := Ps_num[i];
     //v := mults_num[i];
-    v := Valuation(ss*bb*MM,P);
+    if GammaType in ["Gamma0", "Gamma1"] then
+      v := Valuation(ss*bb*MM,P);
+    elif GammaType eq "Gamma" then
+      v := Valuation(ss*bb*NN,P);
+    else
+      error "GammaType not recognized";
+    end if;
     if v gt 0 then
       //printf "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_num cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
@@ -327,7 +354,14 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
   for i := 1 to #Ps_den do
     P := Ps_den[i];
     //v := -mults_den[i];
-    v := -Valuation(ss*bb*MM,P);
+    if GammaType in ["Gamma0", "Gamma1"] then
+      v := -Valuation(ss*bb*MM,P);
+    elif GammaType eq "Gamma" then
+      v := -Valuation(ss*bb,P);
+    else
+      error "GammaType not recognized";
+    end if;
+
     if v gt 0 then
       //print "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_den cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
@@ -338,10 +372,10 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
     end if;
   end for;
 
-  //printf "residues for num = %o\n", residues_num;
-  //printf "moduli for num = %o\n", moduli_num;
-  //printf "residues for den = %o\n", residues_den;
-  //printf "moduli for den = %o\n", moduli_den;
+  printf "residues for num = %o\n", residues_num;
+  printf "moduli for num = %o\n", moduli_num;
+  printf "residues for den = %o\n", residues_den;
+  printf "moduli for den = %o\n", moduli_den;
 
   if #moduli_num eq 0 then // if list of moduli is empty
     c_num := ZF!1;
@@ -436,10 +470,10 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     end if;
   end for;
 
-  //printf "residues for num = %o\n", residues_num;
-  //printf "moduli for num = %o\n", moduli_num;
-  //printf "residues for den = %o\n", residues_den;
-  //printf "moduli for den = %o\n", moduli_den;
+  printf "residues for num = %o\n", residues_num;
+  printf "moduli for num = %o\n", moduli_num;
+  printf "residues for den = %o\n", residues_den;
+  printf "moduli for den = %o\n", moduli_den;
 
   if #moduli_num eq 0 then // if list of moduli is empty
     a_num := ZF!1;
@@ -566,8 +600,8 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
     quad_cnt +:= #quads;
   end for;
   if GammaType eq "Gamma" then
-    printf "#quads = %o\n", quad_cnt;
     printf "formula = %o\n", GammaCuspCount(NN);
+    printf "#quads = %o\n", quad_cnt;
     return quad_cnt eq GammaCuspCount(NN);
   elif GammaType eq "Gamma0" then
     chis := [H!1];
