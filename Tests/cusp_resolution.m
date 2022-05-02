@@ -134,14 +134,14 @@ L := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma1"); L
 
 //Try a higher, composite level
 q := PrimeIdealsOverPrime(K, 5)[1];
-n := p^2*q^2;
+n := p^4;
 for T in ["Gamma0", "Gamma1"] do
     cusps := Cusps(n, 1*ZK: GammaType := T);
     for c in cusps do
 	print "Cusp number", Index(cusps, c);
 	alpha, beta := Explode(Coordinates(c));
 	alpha, beta := NormalizeCusp(K, alpha, beta, n);
-	//alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q);
+	alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q);
 	TestCuspChangeMatrix(K, b, n, alpha, beta: GammaType:=T);
 	L := CuspResolutionIntersections(K, b, n, alpha, beta: GammaType:=T);
     end for;
