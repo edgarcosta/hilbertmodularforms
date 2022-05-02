@@ -17,6 +17,20 @@ end intrinsic;
 
 
 
+intrinsic Columns(X::Mtrx, Q::[RngIntElt]) -> []
+  {The columns given by Q of X as a sequence};
+    return Transpose(X)[Q];
+end intrinsic;
+
+intrinsic Columns(X::Mtrx) -> []
+  {The columns of matrix X as a sequence}
+    return Columns(X, [1..Ncols(X)]);
+end intrinsic;
+
+
+
+
+
 ////////// ModFrmHilDElt: Linear Algebra  //////////
 
 intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, prec:=false ) -> AlgMatElt
