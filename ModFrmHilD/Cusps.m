@@ -314,8 +314,8 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, 
 
   // fulfill congruence condition
   // TODO: still okay for GammaType := Gamma?
-  residues := [ss*bb*NN];
-  moduli := [c_bar];
+  residues := [c_bar];
+  moduli := [ss*bb*NN];
 
   // fulfill GCD condition
   if GammaType in ["Gamma0", "Gamma1"] then
@@ -354,6 +354,7 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, 
   end for;
 
   printf "residues = %o\n", residues;
+  printf "moduli = %o\n", moduli;
 
   if #moduli eq 0 then // if list of moduli is empty
     c := ZF!1;
@@ -498,9 +499,13 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     quad := quads[i];
     //printf "quad = %o\n", quad;
     ss, MM, ac_bar := Explode(quad);
+    printf "quadruple = %o\n", quad;
     a_bar, c_bar := Explode(ac_bar);
+    printf "Lifting second coordinate. c_bar = %o\n", c_bar;
     c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
+    printf "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
+    printf "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
     Append(~cusps_seq, [a,c]);
   end for;
   PP1 := ProjectiveSpace(F,1);
