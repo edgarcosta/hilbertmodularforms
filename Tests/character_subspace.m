@@ -792,6 +792,7 @@ procedure testDiamondOperator(d,n,k : HeckeBound := 10, IdealBound := 10)
     cl_K, cl_map := ClassGroup(K);
     // Js := [cl_map(cl_K.i) : i in [1..Ngens(cl_K)]];
     Js := IdealsUpTo(IdealBound, K);
+    Js := [CoprimeRepresentative(J, Level(M))*J : J in Js];
     dJs := [DiamondOperator(M,J) : J in Js];
     hecke := [HeckeOperator(M,p) : p in PrimesUpTo(HeckeBound, K)];
     assert &and[dJ*T eq T*dJ : T in hecke, dJ in dJs];
