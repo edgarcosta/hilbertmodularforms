@@ -372,11 +372,13 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdFracIdl, MM::RngOrdI
     end if;
   end for;
 
-  printf "residues for num = %o\n", residues_num;
-  printf "moduli for num = %o\n", moduli_num;
-  printf "residues for den = %o\n", residues_den;
-  printf "moduli for den = %o\n", moduli_den;
-
+  if GetVerbose("HilbertModularForms") gt 0 then
+    printf "residues for num = %o\n", residues_num;
+    printf "moduli for num = %o\n", moduli_num;
+    printf "residues for den = %o\n", residues_den;
+    printf "moduli for den = %o\n", moduli_den;
+  end if;
+  
   if #moduli_num eq 0 then // if list of moduli is empty
     c_num := ZF!1;
   else
