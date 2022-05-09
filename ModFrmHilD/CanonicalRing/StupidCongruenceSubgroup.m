@@ -144,7 +144,7 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-intrinsic EllipticPointData(Gamma::StupidCongruenceSubgroup) -> SeqEnum
+intrinsic EllipticPointData(Gamma::StupidCongruenceSubgroup) -> Assoc
 {Given a congruence subgroup, return an associative array  A := (<r, a, b> => RngIntElt).
 The keys of this associative array are tuples <r; a, b> describing the local type of
 the elliptic point. By this, we mean an elliptic point with a stabilizer locally generated
@@ -190,7 +190,7 @@ elliptic points of this type up to congugacy in Gamma.
     // The next thing to check is if we are in one of the special discriminant cases.
     // The special discriminants vis a vis torsion are D = 5, 8, 12.
     if D in [5,8,12] then
-	error "Not implemented in special discriminant cases (D = 5, 8, 12).";
+	return _EllipticPointDataSpecialCases(Gamma);
     end if;
 
     if Index(Gamma) eq 1 then
@@ -294,11 +294,48 @@ elliptic points of this type up to congugacy in Gamma.
     return ellipticData;
 end intrinsic;
 
-intrinsic _EllipticPointsSpecialCases(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+intrinsic _EllipticPointDataSpecialCases(Gamma::StupidCongruenceSubgroup) -> Assoc
 {Deal with the specific cases of discriminant 5, 8, 12.}
 
+    D := Discriminant(Field(Gamma));
+    ellipticData := AssociativeArray();
+    require Index(Gamma) eq 1 : "Only implemented for level 1 for special discrminants.";
     
-    return 0;
+    if D eq 5 then
+	ellipticData[<2, 1, 1>] := 2;
+	ellipticData[<3, 1, 1>] := 1;
+	ellipticData[<3, 1,-1>] := 1;
+	ellipticData[<5, 1, 3>] := 1; // Type <5, 2, 1>
+	ellipticData[<5, 1, 2>] := 1; // Type <5, 3, 1>
+
+    elif D eq 8 then
+	ellipticData[<2, 1, 1>] := 2;
+	ellipticData[<3, 1, 1>] := 1;
+	ellipticData[<3, 1,-1>] := 1;
+	ellipticData[<4, 1, 1>] := 1;
+	ellipticData[<4, 1,-1>] := 1;
+	    
+    elif D eq 12 then
+
+	B := Component(Gamma);
+
+	if HasTotallyPositiveGenerator(B) then
+	    ellipticData[<2, 1, 1>] := 3;
+	    ellipticData[<3, 1, 1>] := 2;
+	    ellipticData[<3, 1,-1>] := 0;
+	    ellipticData[<6, 1,-1>] := 1;
+
+	else
+	    ellipticData[<2, 1, 1>] := 3;
+	    ellipticData[<3, 1, 1>] := 0;
+	    ellipticData[<3, 1,-1>] := 2;
+	    ellipticData[<6, 1, 1>] := 1;
+
+	end if;
+    end if;
+
+    Gamma`EllipticPointData := ellipticData;
+    return ellipticData;
 end intrinsic;
 
 intrinsic NumberOfEllipticPoints(Gamma::StupidCongruenceSubgroup) -> RngIntElt

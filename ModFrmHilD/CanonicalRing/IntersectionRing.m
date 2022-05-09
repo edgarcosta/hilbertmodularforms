@@ -821,9 +821,7 @@ well as the (possibly rational) coefficients of the local Chern cycle of a quoti
     stdForm := <type[1], 1, (type[3] + (1 - type[2])) mod type[1]>;
 
     // Compute the HJContinuedFraction
-    head, tail, isPeriodicOrFinite := HJContinuedFraction(RR ! (stdForm[1]/stdForm[3]));
-    assert isPeriodicOrFinite;
-    selfIntersectionNumbers := head cat tail;
+    selfIntersectionNumbers := HJContinuedFraction(stdForm[1]/stdForm[3]);
     
     n := type[1];
     assert type[2] eq 1;
