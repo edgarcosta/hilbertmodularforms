@@ -256,8 +256,7 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 		basis := HMDF[I_dest_idx]`basis_matrix;
 		cols := [(idx-1)*dim+1..idx*dim];
 		basis := Submatrix(basis, [1..Nrows(basis)], cols);
-		assert (basis*alpha_rep eq basis*M`weight_rep(alpha_I*u)) or
-		       (basis*alpha_rep eq basis*M`weight_rep(alpha_I*u^(-1)));
+		assert (basis*alpha_rep eq basis*M`weight_rep(u^(-1)*alpha_I));
 	    end if;
 	    blocks[target_idx][rid_idx] := alpha_rep;
 	end for;
