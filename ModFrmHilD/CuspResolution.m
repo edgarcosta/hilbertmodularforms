@@ -246,7 +246,7 @@ ideals W, W2 respectively.}
     
     require IsNormalizedCusp(F, alpha, beta, n): "Cusp (alpha:beta) must be normalized";
 
-    print "Computing cusp change matrix...";
+    //print "Computing cusp change matrix...";
     g := CuspChangeMatrix(F, b, alpha, beta);
     plist := [f[1]: f in Factorization(n)];
 
@@ -260,7 +260,7 @@ ideals W, W2 respectively.}
     x := ZF!0;
     
     for p in plist do
-	print "Computing congruence conditions...";
+	//print "Computing congruence conditions...";
 	L, x0 := CuspResolutionCongruences(F, b, n, g, p: GammaType:=GammaType);
 	ev, ev2, em, ex := Explode(L);
 	//print "Congruences of cusp coordinates:", ev, ev2, em, ex;

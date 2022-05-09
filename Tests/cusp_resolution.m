@@ -134,17 +134,31 @@ L := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma1"); L
 
 //Try a higher, composite level
 q := PrimeIdealsOverPrime(K, 5)[1];
-n := p^4;
+n := p^2*q^2;
 for T in ["Gamma0", "Gamma1"] do
     cusps := Cusps(n, 1*ZK: GammaType := T);
     for c in cusps do
 	print "Cusp number", Index(cusps, c);
 	alpha, beta := Explode(Coordinates(c));
 	alpha, beta := NormalizeCusp(K, alpha, beta, n);
-	alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q);
+	print alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q);
 	TestCuspChangeMatrix(K, b, n, alpha, beta: GammaType:=T);
 	L := CuspResolutionIntersections(K, b, n, alpha, beta: GammaType:=T);
     end for;
+end for;
+
+//A final test in the case Gamma0: Van der Geer, Zagier, "The Hilbert
+//modular group for the field QQ(sqrt(13)), p.121
+K<sqrt13> := QuadraticField(13);
+ZK := Integers(K);
+p := 2*ZK;
+cc := Cusps(p, 1*ZK: GammaType:="Gamma0");
+assert #cc eq 2;
+for i in [1..#cc] do
+    alpha, beta := Explode(Coordinates(cc[i]));
+    alpha, beta := NormalizeCusp(K, alpha, beta, p);
+    L := CuspResolutionIntersections(K, 1*ZK, p, alpha, beta: GammaType:="Gamma0");
+    assert EqUpToCyclicPermutation(L, [-2,-5,-2]);
 end for;
     
 
