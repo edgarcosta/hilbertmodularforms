@@ -171,8 +171,12 @@ elliptic points of this type up to congugacy in Gamma.
     ZK := RingOfIntegers(K);
     D := Discriminant(K);
     N := Level(Gamma);
-    B := Norm(ComponentIdeal(Gamma));
+    B := ComponentIdeal(Gamma);
 
+    // Ensure that B and the level are coprime before doing any computations.
+    q := CoprimeRepresentative(B, N);
+    B := Integers() ! (Norm(q) * Norm(B));
+    
     ellipticData := AssociativeArray();
     if IsPrincipalCongruenceSubgroup(Gamma) and N^2 notin [1*ZK, 2*ZK, 3*ZK] then
 	return ellipticData;
@@ -244,10 +248,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    end case;
 	end if;
 	
-    elif GCD(B, Norm(N)) eq 1 then
- 	// TODO: Side remark: I assume (A, N) means GCD, but it could mean Hilbert Symbol.
-	//                    I'm really not sure.
-	//
+    elif IsPrincipalCongruenceSubgroup(Gamma) then
 	// Let A := Norm(\frak{b}), where \frak{b} := ComponentIdeal(Gamma). We use the following
 	// remark of [vdG, p. 110]
 	//
@@ -286,9 +287,6 @@ elliptic points of this type up to congugacy in Gamma.
 	end if;
 	//
 	// (End of Theorem)
-
-    else
-	error "Not implemented in the case that GCD(B, N) is not 1.";
     end if;
 
     // Assign into Gamma and return
