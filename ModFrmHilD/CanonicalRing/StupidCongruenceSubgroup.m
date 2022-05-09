@@ -294,6 +294,12 @@ elliptic points of this type up to congugacy in Gamma.
     return ellipticData;
 end intrinsic;
 
+intrinsic _EllipticPointsSpecialCases(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+{Deal with the specific cases of discriminant 5, 8, 12.}
+
+    
+    return 0;
+end intrinsic;
 
 intrinsic NumberOfEllipticPoints(Gamma::StupidCongruenceSubgroup) -> RngIntElt
 {}
