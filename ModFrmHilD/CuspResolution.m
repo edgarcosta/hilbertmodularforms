@@ -19,7 +19,7 @@ intrinsic OneAsLinearCombination(F :: FldQuad, a :: FldQuadElt, Ia :: RngQuadFra
     for j := 1 to 4 do
 	S := ElementToSequence(latticegens[j]);
 	for i := 1 to 2 do M[i, j] := D*S[i]; end for;
-    end for;    
+    end for;
     target := Vector(Integers(), 2, [D,0]);
     sol, N := Solution(Transpose(M), target); //Runtime error if fails
 
