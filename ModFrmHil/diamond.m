@@ -142,23 +142,28 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
 	"There are %o O(1)-right ideal classes.\n", h;
     
     // J acts by left multiplication on the classes of right ideals.
-    JIs := [J*I : I in ideal_classes];
+    // JIs := [J*I : I in ideal_classes];
     // This creates a permutation of the ideal classes, which we now construct
-    perm := &cat[[j : j in [1..h] | IsIsomorphic(JI, ideal_classes[j])] : JI in JIs];
+    // perm := &cat[[j : j in [1..h] | IsIsomorphic(JI, ideal_classes[j])] : JI in JIs];
+
+    alphas := [];
+    perm_inv := [];
+    // saving the alphas on the way
+    for rid_idx->I in ideal_classes do
+	for j in [1..h] do
+	    is_isom, alpha := IsIsomorphic(I, J*ideal_classes[j]);
+	    if is_isom then
+		Append(~perm_inv, j);
+		Append(~alphas, alpha);
+		break;
+	    end if;
+	end for;
+    end for;
+
+    // assert perm eq [Index(perm_inv, i) : i in [1..#perm_inv]];
     
-    // TODO - there are more cases to distinguish here.
-    // I am not completely sure when and if the direct factors are actually called
-    // However, if they are not needed for computing the Hecke operator above,
-    // the basis matrix describes the embedding of M into the space of modular forms.
-    
-    // This is an artifact of the implementation -
-    // When the weight is trivial, the basis_matrix describes the cuspidal space inside
-    // the entire space of modular forms. We have to dig it out.
-    // In the general case, the matrix describes the embedding into the h copies of W.
-    // This makes sense since the entire space is cuspidal, but requires different handling.
-    
-    // if not assigned M`ModFrmHilDirFacts then
-    if easy then 
+    if easy then
+	perm := [Index(perm_inv, i) : i in [1..#perm_inv]];
 	d_J := PermutationMatrix(F_weight,perm);
 	return d_J;
     end if;
@@ -170,30 +175,6 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     lookups := [hmdf`PLD`Lookuptable : hmdf in HMDF];
     fds := [hmdf`PLD`FD : hmdf in HMDF];
     I := M`rids;
-    // all_rids := [];
-    // rids := [];
-    // we get the Eichler order
-    // O := getEichlerOrder(M, QuaternionOrder(M), Level(M));
-    /*
-    debug_info := [];
-    vprintf HilbertModularForms, 1:
-	"Computing the right ideals for the eichler order.\n";
-    for rid_idx in [1..#HMDF] do
-	Ii := I[rid_idx];
-	N := HMDF[rid_idx]`PLD`Level;
-	rids_i := [];
-	for a in fds[rid_idx] do
-	    IJa := getEichlerOrderIdeal(M, Ii, a, O, N);
-	    Append(~rids, IJa);
-	    Append(~rids_i, IJa);
-	    Append(~debug_info, <rid_idx, a>);
-	end for;
-	Append(~all_rids, rids_i);
-    end for;
-    hh := #all_rids;
-    h := &+[#rids_i : rids_i in all_rids];
-    assert h eq #rids;
-   */
     hh := #I;
     h := &+nCFD;
     F_weight := getWeightBaseField(M);
@@ -205,53 +186,38 @@ function DiamondOperatorIdealsDefiniteBig(M, J)
     for I_src_idx in [1..hh] do
 	vprintf HilbertModularForms, 1 :
 	    "Working on O(1)-right ideal class representative no. %o.\n", I_src_idx;
-	I_dest_idx := Index(perm, I_src_idx);
+	I_dest_idx := perm_inv[I_src_idx];
+	// I_dest_idx := Index(perm, I_src_idx);
+	// assert I_dest_idx eq Index(perm, I_src_idx);
 	vprintf HilbertModularForms, 1 :
 	    "It is isomorphic to J*I[%o].\n", I_dest_idx;
 	I_src := I[I_src_idx];
 	I_dest := I[I_dest_idx];
-	_, alpha_I := IsIsomorphic(I_src, J*I_dest);
-	vprintf HilbertModularForms, 1:
-	    "Isomorphism for O(1)-right ideals is given by %o.\n", alpha_I;
+	alpha_I := alphas[I_src_idx];
+	// _, alpha_I := IsIsomorphic(I_src, J*I_dest);
+	// assert alphas[I_src_idx] * I_src eq alpha_I*I_src;
+	// vprintf HilbertModularForms, 1:
+	//     "Isomorphism for O(1)-right ideals is given by %o.\n", alpha_I;
 	for idx->a_src in fds[I_src_idx] do
-//	for idx in [1..#all_rids[I_src_idx]] do
-	    // rid_idx := &+[Integers() | #rids_i : rids_i in all_rids[1..I_src_idx-1]];
 	    rid_idx := &+nCFD[1..I_src_idx-1];
 	    rid_idx +:= idx;
 	    t0 := Cputime();
-	    // a_src := debug_info[rid_idx][2];
 	    _, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
 	    elt_data := lookups[I_dest_idx][Ja];
 	    tgt_idx := Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
 	    
 	    vprintf HilbertModularForms, 1 :
 		"Finding an isomorphism took %o.\n", Cputime() - t0;
-	    // target_idx := &+[Integers() | #rids_i :
-	    //				   rids_i in all_rids[1..I_dest_idx-1]];
+
 	    target_idx := &+nCFD[1..I_dest_idx-1];
 	    target_idx +:= tgt_idx;
-	    
-//	    _, alpha := IsIsomorphic(rids[rid_idx],J*rids[target_idx]);
-//	    vprintf HilbertModularForms, 1 :
-//		"Isomorphism for Eichler representatives is given by %o.\n", alpha;
-//	    vprintf HilbertModularForms, 1:
-//		"The quotient is the unit %o.\n", alpha^(-1) * alpha_I;
-	    // Would like to make use of the existing P1 structure
-	    // but still failing to do so
-	    // debug for P1 rep action
 
 	    u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
 	   
 	    if weight2 then
 		alpha_rep := IdentityMatrix(F_weight, 1);
 	    else
-		// alpha_rep := M`weight_rep(alpha);
 		alpha_rep := M`weight_rep(u^(-1)*alpha_I);
-		// dim := M`weight_dimension;
-		// basis := HMDF[I_dest_idx]`basis_matrix;
-		// cols := [(idx-1)*dim+1..idx*dim];
-		// basis := Submatrix(basis, [1..Nrows(basis)], cols);
-		// assert basis*alpha_rep eq basis*u_alpha_rep;
 	    end if;
 	    blocks[target_idx][rid_idx] := alpha_rep;
 	end for;
