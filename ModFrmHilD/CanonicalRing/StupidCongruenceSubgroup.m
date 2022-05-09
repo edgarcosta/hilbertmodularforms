@@ -51,7 +51,7 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     Gamma`ComponentIdeal := B;
     Gamma`Level := N;
     Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
-    Gamma`GammaType := "Principal";
+    Gamma`GammaType := "Gamma";
     return Gamma;
 end intrinsic;
 
@@ -88,7 +88,7 @@ intrinsic Print(Gamma::StupidCongruenceSubgroup)
     printf "Level: (%o)\n", IdealOneLine(Level(Gamma));
     printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
-    print "Gamma Type:", Gamma`GammaType;
+    print "Gamma Type:", GammaType(Gamma);
     return;
 end intrinsic;
 
@@ -121,6 +121,12 @@ intrinsic Component(Gamma::StupidCongruenceSubgroup) -> RngIntElt
 component of the Hilbert Modular Surface}
     return ComponentIdeal(Gamma);
 end intrinsic;
+
+intrinsic GammaType(Gamma::StupidCongruenceSubgroup) -> MonStgElt
+{}
+    return Gamma`GammaType;
+end intrinsic;
+          
 
 ////////// Basic functionality //////////
 
@@ -368,4 +374,9 @@ end intrinsic;
 intrinsic NumberOfParabolicPoints(Gamma::StupidCongruenceSubgroup) -> RngIntElt
 {Return the number of cusps of the Hilbert modular surface associated to Gamma.}
     return NumberOfCusps(Gamma);
+end intrinsic;
+
+intrinsic Cusps(Gamma::StupidCongruenceSubgroup) -> SeqEnum
+{Return the cusps of X_Gamma as a sequence of points in a projective space.}
+    return Cusps(Level(Gamma), Component(Gamma) : GammaType := GammaType(Gamma));
 end intrinsic;

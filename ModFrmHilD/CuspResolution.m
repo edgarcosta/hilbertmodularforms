@@ -252,6 +252,8 @@ ideals W, W2 respectively.}
     ZF := Integers(F);
     I := alpha*ZF + beta*b^-1;
     M0 := I^-2 * b^-1;
+
+    print M0;
     M := M0;
     W := 1*ZF; //Congruence conditions on v-1
     W2 := 1*ZF; //Congruence conditions on v^2-1
@@ -281,6 +283,8 @@ ideals W, W2 respectively.}
 	end for;
     end if;
     g := Matrix(F, 2, 2, [F!1, x, 0, F!1]) * g;
+
+    print M;
     return [M, W, W2], g;
 end intrinsic;
     
@@ -288,11 +292,33 @@ end intrinsic;
 intrinsic CuspResolutionMinimalSequence(F :: FldQuad, M :: RngQuadFracIdl) -> SeqEnum[RngIntElt]
 {Compute the periodic part of the HJ continued fraction, as in Van der Geer p.38}
     require M ne 0*M: "Module M must not be zero";
-    a, b := Explode(Basis(M));
+
+    a,b := OrientedBasis(M);
+    
     head, periodic := HJContinuedFraction(F ! (a/b));
     return periodic;
 end intrinsic;
 
+intrinsic OrientedBasis(M :: RngQuadFracIdl) -> Any
+{}
+    print Basis(M);
+    a, b := Explode(Basis(M));
+
+    F := Order(M);
+    fa := F ! a;
+    fb := F ! b;
+
+    _, ori := Explode(Eltseq(fa * Conjugate(fb) - fb * Conjugate(fa)));
+
+    if ori lt 0 then
+        return b, a;
+    else
+        return a, b;
+    end if;
+    error "Basis returned for module M invalid.";
+    
+end intrinsic;
+                                        
 
 intrinsic CuspResolutionMinimalUnit(F :: FldQuad, per :: SeqEnum[RngIntElt]) -> FldQuadElt
 {Compute a generator of U_M+ in Van der Geer's notation}
@@ -307,6 +333,16 @@ end intrinsic;
 intrinsic RepeatSequence(l :: SeqEnum, n :: RngIntElt) -> SeqEnum
 {Output l repeated n times}
     return &cat[l : x in [1..n]];
+end intrinsic;
+
+
+intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt) -> SeqEnum
+{}
+    K := Field(G);
+    N := Level(G);
+    x, y := Explode(Coordinates(p));
+    x, y := NormalizeCusp(K, x, y, N);
+    return CuspResolutionIntersections(K, Component(G), N, x, y : GammaType:=GammaType(G));
 end intrinsic;
 
 intrinsic CuspResolutionIntersections(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
