@@ -299,22 +299,18 @@ end intrinsic;
 
 intrinsic OrientedBasis(M :: RngQuadFracIdl) -> Any
 {}
-    print Basis(M);
     a, b := Explode(Basis(M));
-
     F := Order(M);
     fa := F ! a;
     fb := F ! b;
 
     _, ori := Explode(Eltseq(fa * Conjugate(fb) - fb * Conjugate(fa)));
-
     if ori lt 0 then
         return b, a;
     else
         return a, b;
     end if;
     error "Basis returned for module M invalid.";
-    
 end intrinsic;
                                         
 
