@@ -253,7 +253,6 @@ ideals W, W2 respectively.}
     I := alpha*ZF + beta*b^-1;
     M0 := I^-2 * b^-1;
 
-    print M0;
     M := M0;
     W := 1*ZF; //Congruence conditions on v-1
     W2 := 1*ZF; //Congruence conditions on v^2-1
@@ -284,7 +283,6 @@ ideals W, W2 respectively.}
     end if;
     g := Matrix(F, 2, 2, [F!1, x, 0, F!1]) * g;
 
-    print M;
     return [M, W, W2], g;
 end intrinsic;
     
