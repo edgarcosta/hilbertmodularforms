@@ -84,7 +84,7 @@ intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt]) -> S
 end intrinsic;
 
 intrinsic EvaluateMonomials(GenList::List, MonomialGens::SeqEnum[RngMPolElt]) -> SeqEnum
-  {For a given set of HMF this produces all multiples with weight k}
+{For a given set of HMF this produces all multiples with weight k}
 
   return [Product([* GenList[k]^exp[k] : k in [1..#GenList] *]) where exp := Exponents(mon) : mon in MonomialGens];
   /*

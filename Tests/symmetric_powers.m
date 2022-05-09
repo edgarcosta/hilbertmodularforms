@@ -18,3 +18,4 @@ assert #sym2new6 eq Binomial(#new6 + 1, 2); // SymmetricPower returns a basis.
 
 // Alternatively,
 assert #Generators(Syzygies(new6, 12)) eq 0;
+return true;
