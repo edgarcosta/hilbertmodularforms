@@ -22,4 +22,3 @@ delta:= RestrictionToDiagonal(f,M6:Precision:=prec);
 modForms := ModularForms(Gamma0(1),12);
 R<q> := PowerSeriesRing(Rationals());
 assert 2*modForms.2 eq delta;
-return true;
