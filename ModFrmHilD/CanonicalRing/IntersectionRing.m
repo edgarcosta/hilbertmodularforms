@@ -628,9 +628,14 @@ of the Hilbert Modular Surface with coefficients in BR.}
     //////////////
     // Parabolic Points
 
-    // TODO: Hook in Sam's functionality.
-    rawParabolicResolutionData := [<[9,9,9], [1,1,1]>, <[9,9,9], [1,1,1]>];
-
+    cusps := Cusps(Gamma);
+    rawParabolicResolutionData := [];
+    for c in cusps do
+        positiveSelfIntersectionNumbers := [-x : x in CuspResolutionIntersections(Gamma, c)];
+        localChernCoeffs := [1 : i in [1..#positiveSelfIntersectionNumbers]];
+        Append(~rawParabolicResolutionData, <positiveSelfIntersectionNumbers, localChernCoeffs>);
+    end for;
+    
     for par in rawParabolicResolutionData do
 	P := SingularPointHMS("Cuspidal", <"Fake">);
 	R`ResolutionCycles[P] := [(shift - 1) + 1 .. (shift - 1) + #par[2]];
