@@ -839,5 +839,3 @@ for i->d in ds do
         printf "...";
     end if;
 end for;
-return true;
-

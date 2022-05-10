@@ -14,6 +14,4 @@ Mchi := HMFSpace(M, N, [1,1], chi);
 
 B :=  EisensteinBasis(Mchi);
 
-return true;
-
 //In the future, add further check of coefficients

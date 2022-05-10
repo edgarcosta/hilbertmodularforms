@@ -23,4 +23,3 @@ assert #B4 eq 4;
 
 assert LinearDependence([f1*f1] cat B4) eq [[ 23, -46, 46, -1728, 0 ]];
 assert LinearDependence([f2*f2] cat B4) eq [[ 23, -46, -46, 0, -192 ]];
-return true;

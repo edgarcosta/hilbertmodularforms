@@ -160,6 +160,3 @@ for i in [1..#cc] do
     L := CuspResolutionIntersections(K, 1*ZK, p, alpha, beta: GammaType:="Gamma0");
     assert EqUpToCyclicPermutation(L, [-2,-5,-2]);
 end for;
-    
-
-return true;
