@@ -41,4 +41,3 @@ assert {[Coefficients(b)[1*ZF][elt] : elt in ShintaniRepsUpToTrace(M, 1*ZF, 2)]:
 [ 0, 1, -1, -1, 7, -26, -7, 52, -7, -26 ]
 };
 assert LinearDependence([E2pow2] cat B4) eq [ [ 29, -29, -1152 ] ];
-return true;
