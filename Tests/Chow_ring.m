@@ -30,6 +30,3 @@ reso := ResolutionCycles(R);
 resokeys := Keys(reso);
 
 assert #[p : p in resokeys | p`SingularityType eq "Quotient"] eq 0;
-
-// All tests passed.
-return true;

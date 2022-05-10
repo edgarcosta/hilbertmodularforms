@@ -284,4 +284,3 @@ for counter in [1..5] do
     Append(~ds, d);
     _ := check(d);
 end for;
-return true;

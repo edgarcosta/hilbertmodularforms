@@ -23,5 +23,3 @@ storedEquations := [
 storedS := Scheme(StoredAmbient, storedEquations);
 comparisonHom := map<S->storedS | x>;
 assert comparisonHom(S) eq storedS;
-return true;
-
