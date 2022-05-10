@@ -19,7 +19,7 @@ intrinsic OneAsLinearCombination(F :: FldQuad, a :: FldQuadElt, Ia :: RngQuadFra
     for j := 1 to 4 do
 	S := ElementToSequence(latticegens[j]);
 	for i := 1 to 2 do M[i, j] := D*S[i]; end for;
-    end for;    
+    end for;
     target := Vector(Integers(), 2, [D,0]);
     sol, N := Solution(Transpose(M), target); //Runtime error if fails
 
@@ -254,7 +254,6 @@ ideals W, W2 respectively.}
     I := alpha*ZF + beta*b^-1;
     M0 := I^-2 * b^-1;
 
-    print M0;
     M := M0;
     W := 1*ZF; //Congruence conditions on v-1
     W2 := 1*ZF; //Congruence conditions on v^2-1
@@ -286,7 +285,6 @@ ideals W, W2 respectively.}
     end if;
     g := Matrix(F, 2, 2, [F!1, x, 0, F!1]) * g;
 
-    print M;
     return [M, W, W2], g;
 end intrinsic;
     
@@ -303,22 +301,18 @@ end intrinsic;
 
 intrinsic OrientedBasis(M :: RngQuadFracIdl) -> Any
 {}
-    print Basis(M);
     a, b := Explode(Basis(M));
-
     F := Order(M);
     fa := F ! a;
     fb := F ! b;
 
     _, ori := Explode(Eltseq(fa * Conjugate(fb) - fb * Conjugate(fa)));
-
     if ori lt 0 then
         return b, a;
     else
         return a, b;
     end if;
     error "Basis returned for module M invalid.";
-    
 end intrinsic;
                                         
 
