@@ -90,7 +90,6 @@ for K in quadraticFields do
 
 	try
 	    a, c := ChernNumbers(ChowRing(G));
-
 	    boo := a eq c1 and c eq c2; 
 	    if boo then print true; else print "Values not equal:", disc, signs,  [c1, c2], [a, c]; end if;
 	    

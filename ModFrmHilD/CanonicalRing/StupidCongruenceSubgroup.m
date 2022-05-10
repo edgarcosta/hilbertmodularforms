@@ -174,7 +174,7 @@ elliptic points of this type up to congugacy in Gamma.
     B := ComponentIdeal(Gamma);
 
     // Ensure that B and the level are coprime before doing any computations.
-    q := CoprimeRepresentative(B, N);
+    q := CoprimeNarrowRepresentative(B, 6*N);
     B := Integers() ! (Norm(q) * Norm(B));
     
     ellipticData := AssociativeArray();
