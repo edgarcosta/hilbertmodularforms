@@ -494,18 +494,15 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   F := NumberField(ZF);
   quads := CuspQuadruples(NN, bb : GammaType := GammaType);
   cusps_seq := [];
-  for i := 1 to #quads do
-    //printf "i = %o\n", i;
-    quad := quads[i];
-    //printf "quad = %o\n", quad;
+  for quad in quads do
     ss, MM, ac_bar := Explode(quad);
-    printf "quadruple = %o\n", quad;
+    vprintf HilbertModularForms: "quadruple = %o\n", quad;
     a_bar, c_bar := Explode(ac_bar);
-    printf "Lifting second coordinate. c_bar = %o\n", c_bar;
+    vprintf HilbertModularForms: "Lifting second coordinate. c_bar = %o\n", c_bar;
     c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
-    printf "Lifting first coordinate. a_bar = %o\n", a_bar;
+    vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
-    printf "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
+    vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
     Append(~cusps_seq, [a,c]);
   end for;
   PP1 := ProjectiveSpace(F,1);
@@ -594,7 +591,7 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
     Mk_chi := HMFSpace(R, NN, [2,2], chi);
     d +:= EisensteinDimension(Mk_chi);
   end for;
-  printf "Eisenstein dim = %o\n", d;
+  printf "Eisenstein dimension = %o\n", d;
   printf "quadruple count = %o\n", quad_cnt;
   return quad_cnt eq d;
 end intrinsic;
