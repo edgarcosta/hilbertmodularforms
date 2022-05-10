@@ -302,7 +302,7 @@ end intrinsic;
 intrinsic OrientedBasis(M :: RngQuadFracIdl) -> Any
 {}
     a, b := Explode(Basis(M));
-    F := Order(M);
+    F := NumberField(Order(M));
     fa := F ! a;
     fb := F ! b;
 
