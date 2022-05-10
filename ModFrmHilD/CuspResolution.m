@@ -246,6 +246,7 @@ ideals W, W2 respectively.}
     
     require IsNormalizedCusp(F, alpha, beta, n): "Cusp (alpha:beta) must be normalized";
 
+    //print "Computing cusp change matrix...";
     g := CuspChangeMatrix(F, b, alpha, beta);
     plist := [f[1]: f in Factorization(n)];
 
@@ -260,6 +261,7 @@ ideals W, W2 respectively.}
     x := ZF!0;
     
     for p in plist do
+	//print "Computing congruence conditions...";
 	L, x0 := CuspResolutionCongruences(F, b, n, g, p: GammaType:=GammaType);
 	ev, ev2, em, ex := Explode(L);
 	//print "Congruences of cusp coordinates:", ev, ev2, em, ex;
@@ -391,13 +393,17 @@ intrinsic GeneratorsOfGMV(F::FldQuad, b::RngQuadIdl, alpha::FldQuadElt,
     //Get generator of V_M+
     M, W, W2 := Explode(S);
     periodic := CuspResolutionMinimalSequence(F, M);
-    w := CuspResolutionMinimalUnit(F, periodic);    
+    w := CuspResolutionMinimalUnit(F, periodic);
+    assert IsUnit(w);
     issqr, t := IsSquare(w);
     //print w; print "IsSquare?", issqr;
     n := 1;
+    //print w, W2, W, t, Norm(W), Norm(W2);
     if issqr then
 	//V is gen'd by w^n, where n minimal s.t. w^n-1 = 0 mod W2 and t^n +/- 1 = 0 mod W
-	while not (w^n-1 in W2 and (t^n-1 in W or t^n + 1 in W)) do n +:= 1; end while;
+	while not (w^n-1 in W2 and (t^n-1 in W or t^n + 1 in W)) do
+	    //print n;
+	    n +:= 1; end while;
 	if t^n-1 in W then u := t^n; else u := -t^n; end if;
     else
 	//V is gen'd by w^(2n), where n minimal s.t. w^(2n)-1 = 0 mod W2 and w^n +/- 1 = 0 mod W

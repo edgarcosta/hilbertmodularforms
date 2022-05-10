@@ -10,4 +10,3 @@ B2theta:=Basis(M2theta);
 Mat := Matrix(ZF,[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]);
 g := ThetaSeries(M, Mat);
 assert #LinearDependence([g] cat B2theta) gt 0;
-return true;

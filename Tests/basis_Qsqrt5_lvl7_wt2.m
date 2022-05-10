@@ -14,6 +14,4 @@ B2 := CuspFormBasis(M2);
 
 assert #(B2) eq 1;
 
-return true;
-
 //In the future, add further check of coefficients

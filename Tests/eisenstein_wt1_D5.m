@@ -12,4 +12,3 @@ M1 := HMFSpace(M, N, [1,1], chi^(-1));
 AdmChars := EisensteinAdmissibleCharacterPairs(M1);
 pair := AdmChars[1];
 E1 := EisensteinSeries(M1, pair[1], pair[2]);
-return true;
