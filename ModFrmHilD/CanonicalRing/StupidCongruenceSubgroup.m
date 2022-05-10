@@ -207,7 +207,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    Dby4 := ExactQuotient(D, 4);
 	    h := ClassNumber(-Dby4);
 
-	    case [Dby4 mod 4, B mod 4]:
+	    case [Dby4 mod 8, B mod 4]:
 	    when [3,1]:
 		ellipticData[<2,1,1>] := 10*h;
 	    when [3,3]:

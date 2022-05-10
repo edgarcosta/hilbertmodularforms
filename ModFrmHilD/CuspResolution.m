@@ -299,6 +299,7 @@ end intrinsic;
 
 intrinsic OrientedBasis(M :: RngQuadFracIdl) -> Any
 {}
+    //print Basis(M);
     a, b := Explode(Basis(M));
     F := Order(M);
     fa := F ! a;
