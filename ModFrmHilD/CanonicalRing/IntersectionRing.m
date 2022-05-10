@@ -783,16 +783,19 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 	// Update the coefficients of the first Chern cycle using the local Chern
 	// cycle data.
 	// NOTE: Canonical is -c1(TX). Thus, we reverse our sign here.
+
+        // Correction term when there is a single resolution cycle.
+        correctionTerm := i eq 1 select 2 else 0;
+        
 	for i in [1..#resolutionCycle] do
-	    M[2, shift+i] := resolutionCycle[i] - 2;
-	    M[shift+i, 2] := resolutionCycle[i] - 2;
+            localTerm := resolutionCycle[i] - 2 + correctionTerm;
+	    M[2, shift+i] := localTerm;
+	    M[shift+i, 2] := localTerm;
+
+            // UpdlocalTermte first Chern Number with loclocalTerml term
+            firstChernNumber +:= -localTerm;
 	end for;
 
-	// Update first Chern Number with local term
-	for i in [1..#resolutionCycle] do
-	    firstChernNumber +:= 2 - resolutionCycle[i];
-	end for;
-	
 	// Update the shift.
 	shift +:= #resolutionCycle;
     end for;
