@@ -346,7 +346,6 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, 
 
     if v gt 0 then
       //printf "nonzero valuation; P = %o, v = %o\n", P, v;
-<<<<<<< HEAD
       residues cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
       moduli cat:= [P^v, P^(v+1)];
     //else
