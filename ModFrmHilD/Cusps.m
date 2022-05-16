@@ -354,8 +354,8 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, 
     end if;
   end for;
 
-  printf "residues = %o\n", residues;
-  printf "moduli = %o\n", moduli;
+  //printf "residues = %o\n", residues;
+  //printf "moduli = %o\n", moduli;
 
   if #moduli eq 0 then // if list of moduli is empty
     c := ZF!1;

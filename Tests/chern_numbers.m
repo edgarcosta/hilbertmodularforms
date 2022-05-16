@@ -88,16 +88,11 @@ for K in quadraticFields do
 	B := mp(b);
 	G := CongruenceSubgroup(K, 1*ZK, B);
 
-	try
-	    a, c := ChernNumbers(ChowRing(G));
-	    boo := a eq c1 and c eq c2; 
-	    if boo then print true; else print "Values not equal:", disc, signs,  [c1, c2], [a, c]; end if;
-	    
-	catch e
-	    print e;
-	end try;
-	
-	print "-----";
+	a, c := ChernNumbers(ChowRing(G));
+	boo := a eq c1 and c eq c2; 
+	if not boo then
+	    error "Values not equal:", disc, signs,  [c1, c2], [a, c];
+	end if;
     end for;
     
 end for;
