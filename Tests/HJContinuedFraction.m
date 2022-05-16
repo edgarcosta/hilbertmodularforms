@@ -14,7 +14,3 @@ L1, L2 := HJContinuedFraction(w);
 
 assert L1 eq [];
 assert L2 eq [18,9];
-
-
-return true;
-

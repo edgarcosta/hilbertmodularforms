@@ -59,6 +59,3 @@ mon := MonomialsOfWeightedDegree([[2,6,10]],[20]);
 Epowers := [ Product([* Es[i]^(Integers() ! m[i]) : i in [1..#Es] *]) : m in mon ];
 //the cusp forms can be written with E2, E6 and E10
 assert not IsNull(LinearDependence(E20 cat Epowers));
-return true;
-
-

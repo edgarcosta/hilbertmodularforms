@@ -10,4 +10,3 @@ Mchi := HMFSpace(M, N, [1,1], chi);
 B := Weight1CuspBasis(Mchi : prove := false);
 f := B[1];
 g := f^2;
-return true;

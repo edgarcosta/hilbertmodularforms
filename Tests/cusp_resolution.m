@@ -84,10 +84,17 @@ test := [-2,-3,-5,-3,-2];
 assert EqUpToCyclicPermutation(L, test);
 
 //p.199: Discriminant 24, level Gamma(3+sqrt(6))
+//
+// Note: We  want the action of SL_2(ZF) on H x H-, or equivalently (p. 165/166),
+// we want to take the component to represent the non-trivial element of the narrow
+// class group.
 F := QuadraticField(24);
 ZF := Integers(F);
+b := (1 + ZF.2) * ZF; // Component ideal.
+assert not HasTotallyPositiveGenerator(b);
 p := (3 + SquareRoot(ZF!6))*ZF;
-L := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="Gamma");
+assert IsCoprime(b, p);
+L := CuspResolutionIntersections(F, b, p, F!1, F!0: GammaType:="Gamma");
 test := RepeatSequence([-2,-2,-2,-4], 2);
 assert EqUpToCyclicPermutation(L, test);
 
@@ -160,6 +167,3 @@ for i in [1..#cc] do
     L := CuspResolutionIntersections(K, 1*ZK, p, alpha, beta: GammaType:="Gamma0");
     assert EqUpToCyclicPermutation(L, [-2,-5,-2]);
 end for;
-    
-
-return true;

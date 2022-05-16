@@ -343,8 +343,10 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, 
     else
       error "GammaType not recognized";
     end if;
+
     if v gt 0 then
       //printf "nonzero valuation; P = %o, v = %o\n", P, v;
+<<<<<<< HEAD
       residues cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
       moduli cat:= [P^v, P^(v+1)];
     //else
@@ -391,14 +393,15 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     Qunits := sub< UQ | [(mp(mpU(el))) @@ mpUQ : el in Generators(U)]>;
     u := (mp(a)^-1*a_bar) @@ (mpU*mpUQ);
     return u*a;
-  else
-    facts := Factorization(c*(bb^-1));
-    Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
-    mults_num := [Valuation((c*bb^-1), P) : P in Ps_num];
-    Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
-    mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
   end if;
 
+  
+  facts := Factorization(c*(bb^-1));
+  Ps_num    := [fact[1] : fact in facts | fact[2] gt 0];
+  mults_num := [Valuation((c*bb^-1), P) : P in Ps_num];
+  Ps_den    := [fact[1] : fact in facts | fact[2] lt 0];
+  mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
+  
   //print "Ps_num = ", Ps_num;
   //print "c = ", c;
 
@@ -406,6 +409,7 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
   residues_den := [];
   moduli_num := [];
   moduli_den := [];
+
   // numerator residues and moduli
   //print "making numerator";
   for i := 1 to #Ps_num do
@@ -420,13 +424,14 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
       vMM := Valuation(MM,P);
       if vMM gt 0 then
         residues_num cat:= [(a_bar mod P^mults_num[i])]; // might be a problem if v=0
-        moduli_num cat:= [P^mults_num[i]];
+        moduli_num   cat:= [P^mults_num[i]];
       else
         residues_num cat:= [(ZF!1 mod P^mults_num[i])]; // might be a problem if v=0
-        moduli_num cat:= [P^mults_num[i]];
+        moduli_num   cat:= [P^mults_num[i]];
       end if;
     end if;
   end for;
+
   // denominator residues and moduli
   //print "making denominator";
   for i := 1 to #Ps_den do
@@ -443,10 +448,12 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     end if;
   end for;
 
-  printf "residues for num = %o\n", residues_num;
-  printf "moduli for num = %o\n", moduli_num;
-  printf "residues for den = %o\n", residues_den;
-  printf "moduli for den = %o\n", moduli_den;
+  if GetVerbose("HilbertModularForms") gt 0 then
+    printf "residues for num = %o\n", residues_num;
+    printf "moduli for num = %o\n", moduli_num;
+    printf "residues for den = %o\n", residues_den;
+    printf "moduli for den = %o\n", moduli_den;
+  end if;
 
   if #moduli_num eq 0 then // if list of moduli is empty
     a_num := ZF!1;
