@@ -375,6 +375,9 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
   {}
   ZF := Order(ss);
   //facts := Factorization(ss*MM);
+  if a_bar eq 0 then
+    return ZF!1;
+  end if;
   // if c=0, then ss should be principal
   if c eq 0 then // we've excluded this from happening in CuspLiftSecondCoordinate; can probably delete
     pbool, a := IsPrincipal(ss);
