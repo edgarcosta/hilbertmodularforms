@@ -13,7 +13,7 @@ end for;
 K<sqrt5> := QuadraticField(5);
 PP := PrimeIdealsOverPrime(K, 31)[1];
 QQ := PrimeIdealsOverPrime(K, 5)[1];
-NN := PP^3*QQ;
+NN := PP*QQ;
 CuspSanityCheck(n : GammaType := "Gamma0");
 for type in GammaTypes do
   assert CuspSanityCheck(NN : GammaType := type);
