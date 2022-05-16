@@ -53,7 +53,7 @@ end intrinsic;
 
 intrinsic Eigenform(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
   {given a_p constructs the modular form}
-  require IsTrivial(DirichletRestriction(Character(Mk))) : "Only implemented for character whose Dirichlet restriction is trivial";
+// require IsTrivial(DirichletRestriction(Character(Mk))) : "Only implemented for character whose Dirichlet restriction is trivial";
   k := Weight(Mk);
   require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
   k := k[1];
@@ -178,7 +178,7 @@ end intrinsic;
 
 intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
   {return the NewformDecomposition in magma type}
-  require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
+// require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
   if not assigned Mk`MagmaNewformDecomposition then
     N := Level(Mk);
     k := Weight(Mk);
@@ -201,7 +201,7 @@ end intrinsic;
 
 intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
   {return the eigenforms in magma type}
-  require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
+//  require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
   if not assigned Mk`MagmaNewCuspForms then
     N := Level(Mk);
     k := Weight(Mk);
