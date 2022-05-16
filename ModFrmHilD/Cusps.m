@@ -567,7 +567,7 @@ intrinsic GammaCuspCount(NN::RngOrdIdl) -> RngIntElt
     PP := pair[1];
     cnt *:= (1 - Norm(PP)^-2);
   end for;
-  return ClassNumber(ZF)*cnt;
+  return NarrowClassNumber(F)*ClassNumber(ZF)*cnt;
 end intrinsic;
 
 intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
@@ -587,7 +587,8 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
     printf "#quads = %o\n", quad_cnt;
     return quad_cnt eq GammaCuspCount(NN);
   elif GammaType eq "Gamma0" then
-    chis := [H!1];
+    //chis := [H!1];
+    chis := [chi : chi in Elements(H) | IsEvenAtoo(chi) and IsTrivial(DirichletRestriction(chi))];
   elif GammaType eq "Gamma1" then
     chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
     else
