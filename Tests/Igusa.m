@@ -15,4 +15,3 @@ for D in [5, 12] do
   assert #LinearDependence([S4plus*S6plus] cat B10) eq 1;
   assert #LinearDependence([S4minus*S6minus] cat B10) eq 1;
 end for;
-return true;

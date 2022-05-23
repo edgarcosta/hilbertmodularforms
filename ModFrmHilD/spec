@@ -6,6 +6,7 @@
   GradedRing.m
   HJ-CFrac.m
   CuspResolution.m
+  Cusps.m
   Hecke.m
   LinearAlgebra.m
   Restriction.m
