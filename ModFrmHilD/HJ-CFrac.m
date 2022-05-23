@@ -164,6 +164,30 @@ intrinsic HJContinuedFraction(w:: FldQuadElt) -> SeqEnum[RngIntElt], SeqEnum[Rng
     return head, periodic;
 end intrinsic;
 
+intrinsic HJContinuedFraction(w::FldRatElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt]
+{Compute the (finite) Hirzebruch--Jung continued fraction expansion of a rational number w}
+    steps := [];
+    coefficients := [];
+    head := [];
+    periodic := [];
+    while true do
+	a := Ceiling(w);
+	Append(~steps, w);
+	Append(~coefficients, a);
+	if (w eq a) then
+	    // w is an integer; stop
+	    head := coefficients;
+	    return head, periodic;
+	end if;
+	w := -1/(w - a);
+    end while;
+end intrinsic;
+
+intrinsic HJContinuedFraction(w::RngIntElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt]
+{Compute the (finite) Hirzebruch--Jung continued fraction expansion of an integer w}
+    return [w], [];
+end intrinsic;
+
 intrinsic HJReconstructPeriodic(F :: FldQuad,periodic :: SeqEnum[RngIntElt]) -> FldQuadElt
 {Reconstruct an element of F given its HJ periodic expansion}
     require #periodic ge 1: "periodic must not be empty";
