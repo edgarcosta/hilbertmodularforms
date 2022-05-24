@@ -293,13 +293,13 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
  
   quads := [];
   for ss in Cl_seq do
-    printf "ss = %o\n", ss;
+    //printf "ss = %o\n", ss;
     for MM in Divisors(NN) do
-      printf "MM = %o\n", MM;
+      //printf "MM = %o\n", MM;
       //RssMM := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss,MM);
       //RssMM_comp := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss*bb*MM,(NN/MM));
       pairs := MakePairsForQuadruple(NN, bb, ss, MM : GammaType := GammaType);
-      printf "pairs = %o\n", pairs;
+      //printf "pairs = %o\n", pairs;
       for el in pairs do
         Append(~quads, [* ss, MM, el *]);
       end for;
@@ -577,7 +577,7 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
   ZF := Order(NN);
   F := NumberField(ZF);
   NCl, mp := NarrowClassGroup(ZF);
-  H := HeckeCharacterGroup(ideal<ZF|NN>, [1,2]);
+  H := HeckeCharacterGroup(ideal<ZF|NN>, [1..#RealPlaces(F)]);
   R := GradedRingOfHMFs(F, 1);
   quad_cnt := 0;
   for bb in NCl do

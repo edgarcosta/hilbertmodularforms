@@ -286,6 +286,8 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   // This is from corollary 5.1.27 in our paper
   // phi is the size of (Z_F / aa)^{\times} modded out by the totally
   // positive units.
+  // see also eqn (22) in proof of Cor 3.12 in Dasgupta-Kakde
+  // also Theorem 7 in Aranes-Cremona
   phi_u := function(aa)
     Q, mQ := quo<ZF | aa>;
     U1,mU1 := UnitGroup(Q);
