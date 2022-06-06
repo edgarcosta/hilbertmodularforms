@@ -217,7 +217,11 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   ZF := Order(NN);
   F := NumberField(ZF);
   eps_p := FundamentalUnitTotPos(F);
-  eps := FundamentalUnit(F);
+  if Degree(F) eq 1 then
+    eps := ZF!1;
+  else
+    eps := FundamentalUnit(F);
+  end if;
 
   if GammaType in ["Gamma0", "Gamma1"] then
     a := GeneratorOfQuotientModuleCRT(ss,MM);
@@ -498,6 +502,13 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
   return a;
 end intrinsic;
 */
+
+intrinsic IntegralCoordinates(x::Pt) -> SeqEnum
+  {}
+  x_seq := Eltseq(x);
+  d := &*[Denominator(el) : el in x_seq];
+  return [Integers()!(d*el) : el in x_seq];
+end intrinsic;
 
 intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}

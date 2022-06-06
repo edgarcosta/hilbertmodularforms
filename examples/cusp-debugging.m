@@ -5,7 +5,7 @@ for d in discs do
   print "============================";
   printf "testing disc = %o\n", d;
   K<nu> := QuadraticField(d);
-  primes := PrimesUpTo(20,K);
+  primes := PrimesUpTo(10,K);
   for P,Q in primes do
     NNs := [P, P*Q, P^2, P^2*Q];
     printf "testing conductors %o\n", NNs;
