@@ -652,7 +652,7 @@ end function;
 //
 /////////////////////////////////////////////////////
 
-intrinsic HilbertModularVariety(F::FldNum, N::RngNumIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
+intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
 				: Precision := 100,
 				  LowestWeight:=2,
 				  Alg:="Standard",
@@ -671,7 +671,7 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngNumIdl, MaxGeneratorWeight::Rng
   Use the optional parameters 'PrecomputedGens' as an AssociativeArray to provide precomputed generators.
   Use the optional parameters 'ComputeNewGenerators' to determine if new generators will be computed.}
   R := GradedRingOfHMFs(F, Precision);
-  dict := ConstructGeneratorsAndRelations(R,N,MaxGeneratorWeight,MaxRelationWeight:
+  dict := ConstructGeneratorsAndRelations(R, N, MaxGeneratorWeight, MaxRelationWeight:
 					  LowestWeight:=LowestWeight,
 					  Alg:=Alg,
 					  IdealClassesSupport:=IdealClassesSupport,
@@ -708,7 +708,8 @@ intrinsic HilbertModularSurface(F::FldQuad, N::RngOrdIdl, MaxGeneratorWeight::Rn
   Use the optional parameters 'PrecomputedGens' as an AssociativeArray to provide precomputed generators.
   Use the optional parameters 'ComputeNewGenerators' to determine if new generators will be computed.}
   return HilbertModularVariety(F, N, MaxGeneratorWeight, MaxRelationWeight
-			       : LowestWeight:=LowestWeight,
+			       : Precision:=Precision,
+				 LowestWeight:=LowestWeight,
 				 Alg:=Alg,
 				 IdealClassesSupport:=IdealClassesSupport,
 				 GaloisInvariant:=GaloisInvariant,
