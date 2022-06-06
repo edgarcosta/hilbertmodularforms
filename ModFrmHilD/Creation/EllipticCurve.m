@@ -29,7 +29,7 @@ intrinsic EllipticCurveToHMF(M::ModFrmHilDGRng, E::CrvEll) -> ModFrmHilElt
   for p in PrimeIdeals(M) do
     ev[p] := -Integers()!Coefficient(EulerFactor(L, p),1);
   end for;
-  return EigenformFromEigenValues(Mk, coeffs);
+  return Eigenform(Mk, ev);
 end intrinsic;
 
 
