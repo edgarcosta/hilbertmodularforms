@@ -1,6 +1,8 @@
 discs := [d : d in [1..100] | IsFundamental(d)];
 bad := [];
 for d in discs do
+  print "============================";
+  print "============================";
   printf "testing disc = %o\n", d;
   K<nu> := QuadraticField(d);
   primes := PrimesUpTo(20,K);
@@ -14,4 +16,6 @@ for d in discs do
       end if;
     end for;
   end for;
+  print "============================";
+  print "============================";
 end for;
