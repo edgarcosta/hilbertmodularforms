@@ -8,7 +8,7 @@ P  := Factorization(31*ZK)[1][1];
 prec := 10;
 R := GradedRingOfHMFs(K, prec);
 
-// Compute the space of 2-forms and a singular 4-form.
+// Compute the space of 2-forms and pick a single 4-form.
 W2 := HMFSpace(R, P, [2,2]);
 W4 := HMFSpace(R, P, [4,4]);
 f := Basis(W4)[1];
@@ -18,5 +18,5 @@ forms := [* g : g in Basis(W2) *] cat [* f *];
 // The user needs to tell it the degrees to look for Syzygies. We don't have a degree bound for the
 // degree of the relations of a projection, not to mention precision issues, so we insist that the user
 // chooses a degree bound explicitly.
-X := HilbertModularImage(forms : MaxRelationDegree := 10);
+X := HilbertModularImage(forms, 10);
 assert Dimension(X) eq 2;

@@ -403,6 +403,7 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////////////////////////////////////
 
+// Might be better to rename this "SyzygiesOfDegree"
 intrinsic Syzygies(forms, degree::RngIntElt : KnownRelations:=false) -> RngMPol
 {}
     return Syzygies(forms, [degree] : KnownRelations:=KnownRelations);
@@ -719,12 +720,12 @@ intrinsic HilbertModularSurface(F::FldQuad, N::RngOrdIdl, MaxGeneratorWeight::Rn
     // return Surface(P, eqns_S);
 end intrinsic;
 
-intrinsic HilbertModularImage(forms::List : MaxRelationDegree := MAX_RELATION_DEGREE_DEFAULT) -> Sch
+intrinsic HilbertModularImage(forms::List, maxRelationDegree::RngIntElt) -> Sch
 {Given a list (of type List) of Hilbert modular forms, compute the Zariski closure of the image of the rational map
 defined by these forms into a weighted projective space (with weights the weight of the forms).
-Use the optional parameter 'MaxRelationWeight' to constrain the search for Syzygies. The default value is -999 for no good reason.}
+The second argument determines the maximum degree in which Syzygies are searched for.}
 
-    syz := Syzygies(forms : MaxRelationDegree := MaxRelationDegree);
+    syz := Syzygies(forms : MaxRelationDegree := maxRelationDegree);
     R   := Generic(syz);
     Amb := Proj(R);
     return Scheme(Amb, syz);
