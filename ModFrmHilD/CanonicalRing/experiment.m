@@ -1,5 +1,4 @@
-
-// Make sure to attach the spec file.
+// Random file for Hilbert Series investigations.
 
 function EvenCoefficients(X)
     coeffs := Coefficients(X);

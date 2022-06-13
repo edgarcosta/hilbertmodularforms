@@ -39,8 +39,12 @@ intrinsic TotallyPositiveUnits(F::FldAlg) -> GrpAb, Map
 end intrinsic;
 
 
-intrinsic FundamentalUnitTotPos(F::FldQuad) -> RngQuadElt
+intrinsic FundamentalUnitTotPos(F::FldNum) -> RngQuadElt
   {return the fundamental unit totally positive}
+  assert Degree(F) le 2;
+  if Degree(F) eq 1 then
+    return Integers(F)!1;
+  end if;
   if not assigned F`FundamentalUnitTotPos then
     eps := FundamentalUnit(F);
     places := InfinitePlaces(F);
