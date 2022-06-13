@@ -19,7 +19,7 @@ intrinsic Weight1CuspBasis(
   chiinv := chi^(-1);
   ZF := Integers(M);
 
-  assert IsCompatibleWeight(chi, k);
+  // assert IsCompatibleWeight(chi, k);
 
   //Load space of Cusp forms of weight [2,2] and level N.
   vprintf HilbertModularForms: "Computing basis of cusp forms of weight [2,2] and level \n %o\n", N;
