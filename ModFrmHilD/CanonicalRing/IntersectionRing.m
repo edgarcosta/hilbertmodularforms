@@ -806,7 +806,7 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 end intrinsic;
 
 
-intrinsic EllipticLocalChernData(type::Tup) -> SeqEnum, SeqEnum
+intrinsic EllipticLocalChernData(type::Tup : PrintCs:=false) -> SeqEnum, SeqEnum
 {Return the self intersection numbers of the resolution cycles over an elliptic point, as 
 well as the (possibly rational) coefficients of the local Chern cycle of a quotient singularity.}
 
@@ -856,6 +856,11 @@ well as the (possibly rational) coefficients of the local Chern cycle of a quoti
     lst := [c[1] + c[2] - 1 : c in C];
     assert lst[1] eq 0 and lst[#lst] eq 0;
     assert #lst ge 3; //i.e., check the resolution cycle has at least one curve.
+
+    if PrintCs then
+	print C;
+    end if;
+
     return selfIntersectionNumbers, lst[2..#lst-1];
 end intrinsic;
 
