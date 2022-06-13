@@ -88,6 +88,9 @@ intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> RngE
   if #moduli_num eq 0 then // if list of moduli is empty
     a_num := ZF!1;
   else
+    // ensure no cross-cancelation between num and den
+    moduli_num cat:= [el[1] : el in facts_den];
+    residues_num cat:= [1 : el in facts_den];
     //printf "residues for num = %o\n", residues_num;
     //printf "moduli for num = %o\n", moduli_num;
     a_num := CRT(residues_num, moduli_num);
@@ -95,6 +98,9 @@ intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> RngE
   if #moduli_den eq 0 then
     a_den := ZF!1;
   else
+    // ensure no cross-cancelation between num and den
+    moduli_den cat:= [el[1] : el in facts_num];
+    residues_den cat:= [1 : el in facts_num];
     //printf "residues for den = %o\n", residues_den;
     //printf "moduli for den = %o\n", moduli_den;
     a_den := CRT(residues_den, moduli_den);
