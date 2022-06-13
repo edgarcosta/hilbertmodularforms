@@ -114,27 +114,27 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
 end intrinsic;
 
 intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
-{Check if the character chi is compatible with the weight k, i.e. the parity
-is the same at all infinite places. If it fails, returns the index of the first infinite
-place where they do not match.}
+{Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
   comps := Components(chi);
   level, places := Modulus(chi);
   F := NumberField(Order(level));
   require places eq [1..Degree(F)] : "Chi is not a narrow class group character.";
   require (Degree(F) eq #InfinitePlaces(F)) : "The field is not totally real.";
-  for i->v in InfinitePlaces(F) do
-    chiv := comps[v];
-    if (chiv(-1) ne (-1)^k[i]) then
-	return false, i;
-    end if;
+  U, mU := UnitGroup(F);
+  for eps in Generators(U) do
+      sign_eps := 1;
+      for i->v in InfinitePlaces(F) do
+	  sign_eps *:= Sign(Evaluate(mU(eps),v))^k[i];
+      end for;
+      if (chi(mU(eps)) ne sign_eps) then
+	  return false, mU(eps);
+      end if;
   end for;
   return true, _;
 end intrinsic;
 
 intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngIntElt
-{Check if the character chi is compatible with the weight k, i.e. the parity
-is the same at all infinite places. If it fails, returns the index of the first infinite
-place where they do not match.}
+{Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
   F := NumberField(Order(Modulus(chi)));
   weight := [k : v in InfinitePlaces(F)];
   is_compat, idx := IsCompatibleWeight(chi, weight);
