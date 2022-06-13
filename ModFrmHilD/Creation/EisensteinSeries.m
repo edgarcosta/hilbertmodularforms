@@ -184,16 +184,17 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
     Lf := LSeries(psi : Precision:=prec);
     if IsTrivial(psi) then LSetPrecision(Lf, prec); end if;// Waiting for magma to fix
     Lvalue := Evaluate(Lf, 1-k);
-    // figure out the right place to recognize
+    // figure out the right place (with conjugation) to recognize
     // i.e., figure out what complex embedding magma used to embed the L-function into CC
-    places := InfinitePlaces(CoefficientField);
+    embeddings := [<v, false> : v in RealPlaces(CoefficientField)] cat
+                  [<v, bl> : v in InfinitePlaces(CoefficientField), bl in [true,false] | IsComplex(v)];
     for p in PrimesUpTo(1000) do
       if Conductor(Lf) mod p eq 0 then continue; end if;
-      if #places eq 1 then
-        // there is only one place left, so that must be the one
+      if #embeddings eq 1 then
+        // there is only one embedding left, so that must be the one
         break;
       end if;
-      assert #places ge 1;
+      assert #embeddings ge 1;
       ap_K := psi(p); // in CoefficientField
       // Over degree 2
       // EulerFactor = 1 - psi(p) T^2 if p inert
@@ -202,13 +203,24 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
       sign := (-1)^(&+[elt[2] : elt in pfactor]);
       ap_CC := sign*Coefficient(EulerFactor(Lf, p), Degree(Lf));
       // print Evaluate(ap_K, places[1]), ap_CC, EulerFactor(Lf, p);
-      // restrict to the places where pl(ap_K) = ap_CC
-      places := [pl : pl in places | IsWeaklyZero(Evaluate(ap_K, pl) - ap_CC) ];
+      // restrict to the embeddings iota where iota(ap_K) = ap_CC
+      goodembeddings := [];
+      for iota in embeddings do
+        v, bl := Explode(iota);
+        iotaapK := Evaluate(ap_K, v);
+        if bl then iotaapK := ComplexConjugate(iotaapK); end if;
+        if IsWeaklyZero(iotaapK-ap_CC) then 
+          Append(~goodembeddings, iota);
+        end if;
+      end for;
+      print embeddings;
+      embeddings := goodembeddings;
     end for;
     // we did our best, if #places > 1, then any embedding should work, e.g, the Image is smaller than the Codomain
-    pl := places[1];
+    iota := embeddings[1];
+    v, bl := Explode(iota);
     CC<I> := ComplexField(Precision(Lvalue));
-    val := RecognizeOverK(CC!Lvalue, CoefficientField, pl, false);
+    val := RecognizeOverK(CC!Lvalue, CoefficientField, v, bl);
     M`LValues[Parent(psi)][<k, psi>] := val;
   end if;
   return val;
