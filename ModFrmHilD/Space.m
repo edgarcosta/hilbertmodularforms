@@ -114,27 +114,27 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
 end intrinsic;
 
 intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
-{Check if the character chi is compatible with the weight k, i.e. the parity
-is the same at all infinite places. If it fails, returns the index of the first infinite
-place where they do not match.}
+{Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
   comps := Components(chi);
   level, places := Modulus(chi);
   F := NumberField(Order(level));
   require places eq [1..Degree(F)] : "Chi is not a narrow class group character.";
   require (Degree(F) eq #InfinitePlaces(F)) : "The field is not totally real.";
-  for i->v in InfinitePlaces(F) do
-    chiv := comps[v];
-    if (chiv(-1) ne (-1)^k[i]) then
-	return false, i;
-    end if;
+  U, mU := UnitGroup(F);
+  for eps in Generators(U) do
+      sign_eps := 1;
+      for i->v in InfinitePlaces(F) do
+	  sign_eps *:= Sign(Evaluate(mU(eps),v))^k[i];
+      end for;
+      if (chi(mU(eps)) ne sign_eps) then
+	  return false, mU(eps);
+      end if;
   end for;
   return true, _;
 end intrinsic;
 
 intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngIntElt
-{Check if the character chi is compatible with the weight k, i.e. the parity
-is the same at all infinite places. If it fails, returns the index of the first infinite
-place where they do not match.}
+{Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
   F := NumberField(Order(Modulus(chi)));
   weight := [k : v in InfinitePlaces(F)];
   is_compat, idx := IsCompatibleWeight(chi, weight);
@@ -167,8 +167,12 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Weight := k;
   Mk`Level := N;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
-  is_compat, i := IsCompatibleWeight(chi, k);
-  require is_compat : Sprintf("The parity of the character at the infinite place %o does not match the parity of the weight", i);
+  // Right now when k[i] = 1, we don't want to restrict to compatible weights.
+  if 1 notin k then
+      is_compat, i := IsCompatibleWeight(chi, k);
+      // require is_compat : Sprintf("The parity of the character at the infinite place %o does not match the parity of the weight", i);
+      require is_compat : Sprintf("The parity of the character at the infinite places does not match the parity of the weight at the unit %o", i);
+  end if;
   Mk`Character := chi;
   Mk`UnitCharacters := unitcharacters;
   require Type(Mk`UnitCharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
@@ -302,7 +306,7 @@ end intrinsic;
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
-    require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
+	 //    require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
     Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Weight(Mk));
     Mk`MagmaSpace := HeckeCharacterSubspace(Mk`MagmaSpace, Character(Mk));
   end if;
@@ -335,7 +339,7 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
     end if;
 
     if version eq "builtin" then
-      require IsTrivial(DirichletRestriction(Character(Mk))): "we rely on magma built-in functions, which only works for characters whose associated Dirichlet character is trivial";
+	       //      require IsTrivial(DirichletRestriction(Character(Mk))): "we rely on magma built-in functions, which only works for characters whose associated Dirichlet character is trivial";
       Mk`CuspDimension := Dimension(HilbertCuspForms(Mk));
     else
       M := Parent(Mk);

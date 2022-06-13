@@ -1,8 +1,7 @@
 import "copypaste/definite.m" : HilbertModularSpaceDirectFactors,
                                 WeightRepresentation;
 
-import "copypaste/hackobj.m" : IsBianchi, TopAmbient;
-import "hackobj.m" : HMF0;
+import "copypaste/hackobj.m" : HMF0, IsBianchi, TopAmbient;
 
 /**************** New Attributes **********************/
 
