@@ -113,7 +113,25 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   return M;
 end intrinsic;
 
-intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
+intrinsic IsGamma1EisensteinWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
+{Check if the character chi is compatible with the weight k, i.e. the parity
+is the same at all infinite places. If it fails, returns the index of the first infinite
+place where they do not match.}
+  comps := Components(chi);
+  level, places := Modulus(chi);
+  F := NumberField(Order(level));
+  require places eq [1..Degree(F)] : "Chi is not a narrow class group character.";
+  require (Degree(F) eq #InfinitePlaces(F)) : "The field is not totally real.";
+  for i->v in InfinitePlaces(F) do
+    chiv := comps[v];
+    if (chiv(-1) ne (-1)^k[i]) then
+	return false, i;
+    end if;
+  end for;
+  return true, _;
+end intrinsic;
+
+intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngQuadElt
 {Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
   comps := Components(chi);
   level, places := Modulus(chi);
@@ -133,11 +151,22 @@ intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt
   return true, _;
 end intrinsic;
 
-intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngIntElt
+intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngQuadElt
 {Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
   F := NumberField(Order(Modulus(chi)));
   weight := [k : v in InfinitePlaces(F)];
   is_compat, idx := IsCompatibleWeight(chi, weight);
+  if is_compat then return true, _; end if;
+  return is_compat, idx;
+end intrinsic;
+
+intrinsic IsGamma1EisensteinWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngIntElt
+{Check if the character chi is compatible with the weight k, i.e. the parity
+is the same at all infinite places. If it fails, returns the index of the first infinite
+place where they do not match.}
+  F := NumberField(Order(Modulus(chi)));
+  weight := [k : v in InfinitePlaces(F)];
+  is_compat, idx := IsGamma1EisensteinWeight(chi, weight);
   if is_compat then return true, _; end if;
   return is_compat, idx;
 end intrinsic;
@@ -368,6 +397,39 @@ intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   return Mk`EisensteinDimension;
 end intrinsic;
 
+// copy pasted from ModSym/dirichlet.m
+intrinsic GaloisConjugacyRepresentatives(S::[GrpHeckeElt]) -> SeqEnum
+{Representatives for the Gal(Qbar/Q)-conjugacy classes of Dirichlet characters 
+ contained in the given sequence S}  
+   
+   G := Universe(S);
+
+if #S eq 0 then
+//   or Type(BaseRing(G)) eq FldRat then 
+     return S;
+   end if;
+
+  // require ISA(Type(BaseRing(G)), FldAlg) :
+    //      "The base ring of argument 1 must be a number field.";
+
+   n := Exponent(AbelianGroup(G));     
+if n eq 1 then return S; end if;
+   i := 1;
+   U := [k : k in [1..n-1] | GCD(k,n) eq 1]; // Steve changed this, was [2..n-1]
+   while i lt #S do
+      x := S[i];
+      for m in U do
+         y := x^m;
+         R := [j : j in [i+1..#S] | S[j]`Element eq y`Element];
+         for j in Reverse(R) do    // important to reverse.
+            Remove(~S,j);
+         end for;
+      end for;
+      i +:= 1;
+   end while;
+   return S;
+end intrinsic;
+
 intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   {returns a list of all the primitive pairs <chi1, chi2> such that
   chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk)
@@ -386,13 +448,15 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
     X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
     assert X eq Parent(chi);
     chis := Elements(X);
+    chis_reps := Set(GaloisConjugacyRepresentatives(chis));
+    chis_reps_index := {i : i->c in chis | c in chis_reps};
     chiscond := [Conductor(c) : c in chis];
     chisdict := AssociativeArray();
     for i->c in chis do
       chisdict[c] := i;
     end for;
     // [i, j] pairs st chis[i]*chis[j] = chi
-    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis ];
+    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis | i in chis_reps_index ];
     // filter based on conductor
     pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];
     if k eq 1 then
@@ -400,10 +464,10 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
       // we E(chi, psi) = E(psi, chi)
       newpairs := [];
       for k0->p in pairs do
-        i, j := Explode(p);
+	i, j := Explode(p);
+	// this might be zero, as we forced i to be galois representative 
         k1 := Index(pairs, [j, i]);
-        assert k1 gt 0;
-        if k1 ge k0 then
+        if k1 le k0 then // nonetheless, k0 > 0
           Append(~newpairs, p);
         end if;
       end for;
