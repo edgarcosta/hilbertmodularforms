@@ -166,7 +166,7 @@ procedure TestGeneratorsOfQuotientModuleModuloTotallyPositiveUnits()
         end for;
     end for;
     //Get order n of totally positive unit
-    eps := FundamentalUnitTotPos(F);
+    eps := TotallyPositiveUnitsGenerators(F)[1];
     u := eps;
     n:= 1;
     while not u-1 in MM do

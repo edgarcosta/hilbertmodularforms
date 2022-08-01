@@ -46,7 +46,7 @@ end function;
 procedure TestGeneratorsOfGMV()
     F := RandomField();
     M := RandomFracIdl(F);
-    w := FundamentalUnitTotPos(F);
+    w := TotallyPositiveUnitsGenerators(F)[1];
     V := w^(Random([1..10]));
     gs := GeneratorsOfGMV(M, V);
     for i:=1 to 3 do

@@ -90,7 +90,7 @@ intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss::RngOrdFracIdl
   F := Parent(a);
   F := NumberField(F);
   ZF := Integers(F);
-  eps := FundamentalUnitTotPos(F);
+  eps := TotallyPositiveUnitsGenerators(F)[1];
 
   ZFMM, mp := quo<ZF |MM>;
   UQ, mpQ := UnitGroup(ZFMM);
@@ -108,7 +108,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
       
     ZF := Order(NN);
     F := NumberField(ZF);
-    eps_p := FundamentalUnitTotPos(F);
+    eps_p := TotallyPositiveUnitsGenerators(F)[1];
     if Degree(F) eq 1 then
         eps := ZF!1;
     else
