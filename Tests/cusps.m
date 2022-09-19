@@ -46,3 +46,8 @@ ZF := Integers(F);
 P13 := PrimeIdealsOverPrime(F,13)[1];
 //NNs := [1*ZF, 22*ZF, P13, P13^2]; // last one breaks
 NNs := [1*ZF, 22*ZF, P13];
+for type in GammaTypes do
+  for NN in NNs do
+    assert CuspSanityCheck(NN : GammaType := type);
+  end for;
+end for;
