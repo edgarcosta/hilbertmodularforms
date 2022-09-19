@@ -260,7 +260,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
     ZFNN, mpNN := quo<ZF |NN>;
     UQNN, mpQNN:= UnitGroup(ZFNN);
     UQNN_gens := [mpQNN(el) : el in Generators(UQNN)];
-    gens cat:= [i1(mpMM(el) @@ mpQMM) + i2(mpNNMM(-el) @@ mpQNNMM) : el in UQNN_gens];
+    gens cat:= [i1(mpMM(el) @@ mpQMM) + i2(mpNNMM(el) @@ mpQNNMM) : el in UQNN_gens]; // in i2 el or -el???
   elif GammaType eq "Gamma" then
     gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM)];
   else
