@@ -3,6 +3,7 @@
   Elements.m
   FldExt.m
   Formatting.m
+  GradedPoly.m
   GradedRing.m
   HJ-CFrac.m
   CuspResolution.m

@@ -51,7 +51,7 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     Gamma`ComponentIdeal := B;
     Gamma`Level := N;
     Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
-    Gamma`GammaType := "Principal";
+    Gamma`GammaType := "Gamma";
     return Gamma;
 end intrinsic;
 
@@ -88,7 +88,7 @@ intrinsic Print(Gamma::StupidCongruenceSubgroup)
     printf "Level: (%o)\n", IdealOneLine(Level(Gamma));
     printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
-    print "Gamma Type:", Gamma`GammaType;
+    print "Gamma Type:", GammaType(Gamma);
     return;
 end intrinsic;
 
@@ -122,6 +122,12 @@ component of the Hilbert Modular Surface}
     return ComponentIdeal(Gamma);
 end intrinsic;
 
+intrinsic GammaType(Gamma::StupidCongruenceSubgroup) -> MonStgElt
+{}
+    return Gamma`GammaType;
+end intrinsic;
+          
+
 ////////// Basic functionality //////////
 
 intrinsic 'eq'(Gamma1::StupidCongruenceSubgroup, Gamma2::StupidCongruenceSubgroup) -> BoolElt
@@ -138,7 +144,7 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-intrinsic EllipticPointData(Gamma::StupidCongruenceSubgroup) -> SeqEnum
+intrinsic EllipticPointData(Gamma::StupidCongruenceSubgroup) -> Assoc
 {Given a congruence subgroup, return an associative array  A := (<r, a, b> => RngIntElt).
 The keys of this associative array are tuples <r; a, b> describing the local type of
 the elliptic point. By this, we mean an elliptic point with a stabilizer locally generated
@@ -165,8 +171,12 @@ elliptic points of this type up to congugacy in Gamma.
     ZK := RingOfIntegers(K);
     D := Discriminant(K);
     N := Level(Gamma);
-    B := Norm(ComponentIdeal(Gamma));
+    B := ComponentIdeal(Gamma);
 
+    // Ensure that B and the level are coprime before doing any computations.
+    q := CoprimeNarrowRepresentative(B, 6*N);
+    B := Integers() ! (Norm(q) * Norm(B));
+    
     ellipticData := AssociativeArray();
     if IsPrincipalCongruenceSubgroup(Gamma) and N^2 notin [1*ZK, 2*ZK, 3*ZK] then
 	return ellipticData;
@@ -180,7 +190,7 @@ elliptic points of this type up to congugacy in Gamma.
     // The next thing to check is if we are in one of the special discriminant cases.
     // The special discriminants vis a vis torsion are D = 5, 8, 12.
     if D in [5,8,12] then
-	error "Not implemented in special discriminant cases (D = 5, 8, 12).";
+	return _EllipticPointDataSpecialCases(Gamma);
     end if;
 
     if Index(Gamma) eq 1 then
@@ -197,7 +207,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    Dby4 := ExactQuotient(D, 4);
 	    h := ClassNumber(-Dby4);
 
-	    case [Dby4 mod 4, B mod 4]:
+	    case [Dby4 mod 8, B mod 4]:
 	    when [3,1]:
 		ellipticData[<2,1,1>] := 10*h;
 	    when [3,3]:
@@ -238,10 +248,7 @@ elliptic points of this type up to congugacy in Gamma.
 	    end case;
 	end if;
 	
-    elif GCD(B, Norm(N)) eq 1 then
- 	// TODO: Side remark: I assume (A, N) means GCD, but it could mean Hilbert Symbol.
-	//                    I'm really not sure.
-	//
+    elif IsPrincipalCongruenceSubgroup(Gamma) then
 	// Let A := Norm(\frak{b}), where \frak{b} := ComponentIdeal(Gamma). We use the following
 	// remark of [vdG, p. 110]
 	//
@@ -280,9 +287,6 @@ elliptic points of this type up to congugacy in Gamma.
 	end if;
 	//
 	// (End of Theorem)
-
-    else
-	error "Not implemented in the case that GCD(B, N) is not 1.";
     end if;
 
     // Assign into Gamma and return
@@ -290,6 +294,49 @@ elliptic points of this type up to congugacy in Gamma.
     return ellipticData;
 end intrinsic;
 
+intrinsic _EllipticPointDataSpecialCases(Gamma::StupidCongruenceSubgroup) -> Assoc
+{Deal with the specific cases of discriminant 5, 8, 12.}
+
+    D := Discriminant(Field(Gamma));
+    ellipticData := AssociativeArray();
+    require Index(Gamma) eq 1 : "Only implemented for level 1 for special discrminants.";
+    
+    if D eq 5 then
+	ellipticData[<2, 1, 1>] := 2;
+	ellipticData[<3, 1, 1>] := 1;
+	ellipticData[<3, 1,-1>] := 1;
+	ellipticData[<5, 1, 3>] := 1; // Type <5, 2, 1>
+	ellipticData[<5, 1, 2>] := 1; // Type <5, 3, 1>
+
+    elif D eq 8 then
+	ellipticData[<2, 1, 1>] := 2;
+	ellipticData[<3, 1, 1>] := 1;
+	ellipticData[<3, 1,-1>] := 1;
+	ellipticData[<4, 1, 1>] := 1;
+	ellipticData[<4, 1,-1>] := 1;
+	    
+    elif D eq 12 then
+
+	B := Component(Gamma);
+
+	if HasTotallyPositiveGenerator(B) then
+	    ellipticData[<2, 1, 1>] := 3;
+	    ellipticData[<3, 1, 1>] := 2;
+	    ellipticData[<3, 1,-1>] := 0;
+	    ellipticData[<6, 1,-1>] := 1;
+
+	else
+	    ellipticData[<2, 1, 1>] := 3;
+	    ellipticData[<3, 1, 1>] := 0;
+	    ellipticData[<3, 1,-1>] := 2;
+	    ellipticData[<6, 1, 1>] := 1;
+
+	end if;
+    end if;
+
+    Gamma`EllipticPointData := ellipticData;
+    return ellipticData;
+end intrinsic;
 
 intrinsic NumberOfEllipticPoints(Gamma::StupidCongruenceSubgroup) -> RngIntElt
 {}
@@ -368,4 +415,9 @@ end intrinsic;
 intrinsic NumberOfParabolicPoints(Gamma::StupidCongruenceSubgroup) -> RngIntElt
 {Return the number of cusps of the Hilbert modular surface associated to Gamma.}
     return NumberOfCusps(Gamma);
+end intrinsic;
+
+intrinsic Cusps(Gamma::StupidCongruenceSubgroup) -> SeqEnum
+{Return the cusps of X_Gamma as a sequence of points in a projective space.}
+    return Cusps(Level(Gamma), Component(Gamma) : GammaType := GammaType(Gamma));
 end intrinsic;

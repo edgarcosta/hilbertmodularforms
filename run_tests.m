@@ -16,7 +16,7 @@ for filename in tests do
     timestamp := Time();
     try
       printf "%o: ", filename;
-      assert eval Read(fullPath);
+      assert eval (Read(fullPath) cat  "return true;");
       printf "Success! %o s\n", Time(timestamp);
     catch e
       Append(~failed, filename);

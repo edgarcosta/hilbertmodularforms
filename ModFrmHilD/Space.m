@@ -113,7 +113,7 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   return M;
 end intrinsic;
 
-intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
+intrinsic IsGamma1EisensteinWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
 {Check if the character chi is compatible with the weight k, i.e. the parity
 is the same at all infinite places. If it fails, returns the index of the first infinite
 place where they do not match.}
@@ -131,13 +131,42 @@ place where they do not match.}
   return true, _;
 end intrinsic;
 
-intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngIntElt
+intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngQuadElt
+{Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
+  comps := Components(chi);
+  level, places := Modulus(chi);
+  F := NumberField(Order(level));
+  require places eq [1..Degree(F)] : "Chi is not a narrow class group character.";
+  require (Degree(F) eq #InfinitePlaces(F)) : "The field is not totally real.";
+  U, mU := UnitGroup(F);
+  for eps in Generators(U) do
+      sign_eps := 1;
+      for i->v in InfinitePlaces(F) do
+	  sign_eps *:= Sign(Evaluate(mU(eps),v))^k[i];
+      end for;
+      if (chi(mU(eps)) ne sign_eps) then
+	  return false, mU(eps);
+      end if;
+  end for;
+  return true, _;
+end intrinsic;
+
+intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngQuadElt
+{Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
+  F := NumberField(Order(Modulus(chi)));
+  weight := [k : v in InfinitePlaces(F)];
+  is_compat, idx := IsCompatibleWeight(chi, weight);
+  if is_compat then return true, _; end if;
+  return is_compat, idx;
+end intrinsic;
+
+intrinsic IsGamma1EisensteinWeight(chi::GrpHeckeElt, k::RngIntElt) -> BoolElt, RngIntElt
 {Check if the character chi is compatible with the weight k, i.e. the parity
 is the same at all infinite places. If it fails, returns the index of the first infinite
 place where they do not match.}
   F := NumberField(Order(Modulus(chi)));
   weight := [k : v in InfinitePlaces(F)];
-  is_compat, idx := IsCompatibleWeight(chi, weight);
+  is_compat, idx := IsGamma1EisensteinWeight(chi, weight);
   if is_compat then return true, _; end if;
   return is_compat, idx;
 end intrinsic;
@@ -167,8 +196,12 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Weight := k;
   Mk`Level := N;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
-  is_compat, i := IsCompatibleWeight(chi, k);
-  require is_compat : Sprintf("The parity of the character at the infinite place %o does not match the parity of the weight", i);
+  // Right now when k[i] = 1, we don't want to restrict to compatible weights.
+  if 1 notin k then
+      is_compat, i := IsCompatibleWeight(chi, k);
+      // require is_compat : Sprintf("The parity of the character at the infinite place %o does not match the parity of the weight", i);
+      require is_compat : Sprintf("The parity of the character at the infinite places does not match the parity of the weight at the unit %o", i);
+  end if;
   Mk`Character := chi;
   Mk`UnitCharacters := unitcharacters;
   require Type(Mk`UnitCharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
@@ -286,6 +319,8 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   // This is from corollary 5.1.27 in our paper
   // phi is the size of (Z_F / aa)^{\times} modded out by the totally
   // positive units.
+  // see also eqn (22) in proof of Cor 3.12 in Dasgupta-Kakde
+  // also Theorem 7 in Aranes-Cremona
   phi_u := function(aa)
     Q, mQ := quo<ZF | aa>;
     U1,mU1 := UnitGroup(Q);
@@ -300,7 +335,7 @@ end intrinsic;
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
-    require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
+	 //    require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
     Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Weight(Mk));
     Mk`MagmaSpace := HeckeCharacterSubspace(Mk`MagmaSpace, Character(Mk));
   end if;
@@ -333,7 +368,7 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
     end if;
 
     if version eq "builtin" then
-      require IsTrivial(DirichletRestriction(Character(Mk))): "we rely on magma built-in functions, which only works for characters whose associated Dirichlet character is trivial";
+	       //      require IsTrivial(DirichletRestriction(Character(Mk))): "we rely on magma built-in functions, which only works for characters whose associated Dirichlet character is trivial";
       Mk`CuspDimension := Dimension(HilbertCuspForms(Mk));
     else
       M := Parent(Mk);
@@ -362,6 +397,39 @@ intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   return Mk`EisensteinDimension;
 end intrinsic;
 
+// copy pasted from ModSym/dirichlet.m
+intrinsic GaloisConjugacyRepresentatives(S::[GrpHeckeElt]) -> SeqEnum
+{Representatives for the Gal(Qbar/Q)-conjugacy classes of Dirichlet characters 
+ contained in the given sequence S}  
+   
+   G := Universe(S);
+
+if #S eq 0 then
+//   or Type(BaseRing(G)) eq FldRat then 
+     return S;
+   end if;
+
+  // require ISA(Type(BaseRing(G)), FldAlg) :
+    //      "The base ring of argument 1 must be a number field.";
+
+   n := Exponent(AbelianGroup(G));     
+if n eq 1 then return S; end if;
+   i := 1;
+   U := [k : k in [1..n-1] | GCD(k,n) eq 1]; // Steve changed this, was [2..n-1]
+   while i lt #S do
+      x := S[i];
+      for m in U do
+         y := x^m;
+         R := [j : j in [i+1..#S] | S[j]`Element eq y`Element];
+         for j in Reverse(R) do    // important to reverse.
+            Remove(~S,j);
+         end for;
+      end for;
+      i +:= 1;
+   end while;
+   return S;
+end intrinsic;
+
 intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   {returns a list of all the primitive pairs <chi1, chi2> such that
   chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk)
@@ -380,13 +448,15 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
     X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
     assert X eq Parent(chi);
     chis := Elements(X);
+    chis_reps := Set(GaloisConjugacyRepresentatives(chis));
+    chis_reps_index := {i : i->c in chis | c in chis_reps};
     chiscond := [Conductor(c) : c in chis];
     chisdict := AssociativeArray();
     for i->c in chis do
       chisdict[c] := i;
     end for;
     // [i, j] pairs st chis[i]*chis[j] = chi
-    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis ];
+    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis | i in chis_reps_index ];
     // filter based on conductor
     pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];
     if k eq 1 then
@@ -394,10 +464,10 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
       // we E(chi, psi) = E(psi, chi)
       newpairs := [];
       for k0->p in pairs do
-        i, j := Explode(p);
+	i, j := Explode(p);
+	// this might be zero, as we forced i to be galois representative 
         k1 := Index(pairs, [j, i]);
-        assert k1 gt 0;
-        if k1 ge k0 then
+        if k1 le k0 then // nonetheless, k0 > 0
           Append(~newpairs, p);
         end if;
       end for;

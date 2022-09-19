@@ -628,9 +628,14 @@ of the Hilbert Modular Surface with coefficients in BR.}
     //////////////
     // Parabolic Points
 
-    // TODO: Hook in Sam's functionality.
-    rawParabolicResolutionData := [<[9,9,9], [1,1,1]>, <[9,9,9], [1,1,1]>];
-
+    cusps := Cusps(Gamma);
+    rawParabolicResolutionData := [];
+    for c in cusps do
+        positiveSelfIntersectionNumbers := [-x : x in CuspResolutionIntersections(Gamma, c)];
+        localChernCoeffs := [1 : i in [1..#positiveSelfIntersectionNumbers]];
+        Append(~rawParabolicResolutionData, <positiveSelfIntersectionNumbers, localChernCoeffs>);
+    end for;
+    
     for par in rawParabolicResolutionData do
 	P := SingularPointHMS("Cuspidal", <"Fake">);
 	R`ResolutionCycles[P] := [(shift - 1) + 1 .. (shift - 1) + #par[2]];
@@ -733,10 +738,10 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 	// NOTE: These local Chern coefficients are often rational numbers!
 
 	for i in [1..#resolutionCycle] do
+	    
 	    nrc := #resolutionCycle;
 	    // NOTE: Canonical is -c1(TX). Thus, we reverse our sign here.
-	    kappa_dot_localChern := &+[chernCoeffs[i] * M[shift+i, shift+j] : j in [1..nrc]];
-	    
+	    kappa_dot_localChern := &+[chernCoeffs[j] * M[shift+i, shift+j] : j in [1..nrc]];
 	    M[2, shift+i] := kappa_dot_localChern;
 	    M[shift+i, 2] := kappa_dot_localChern;
 	end for;
@@ -778,16 +783,19 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 	// Update the coefficients of the first Chern cycle using the local Chern
 	// cycle data.
 	// NOTE: Canonical is -c1(TX). Thus, we reverse our sign here.
+
+        // Correction term when there is a single resolution cycle.
+        correctionTerm := i eq 1 select 2 else 0;
+        
 	for i in [1..#resolutionCycle] do
-	    M[2, shift+i] := resolutionCycle[i] - 2;
-	    M[shift+i, 2] := resolutionCycle[i] - 2;
+            localTerm := resolutionCycle[i] - 2 + correctionTerm;
+	    M[2, shift+i] := localTerm;
+	    M[shift+i, 2] := localTerm;
+
+            // UpdlocalTermte first Chern Number with loclocalTerml term
+            firstChernNumber +:= -localTerm;
 	end for;
 
-	// Update first Chern Number with local term
-	for i in [1..#resolutionCycle] do
-	    firstChernNumber +:= 2 - resolutionCycle[i];
-	end for;
-	
 	// Update the shift.
 	shift +:= #resolutionCycle;
     end for;
@@ -798,7 +806,7 @@ intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipti
 end intrinsic;
 
 
-intrinsic EllipticLocalChernData(type::Tup) -> SeqEnum, SeqEnum
+intrinsic EllipticLocalChernData(type::Tup : PrintCs:=false) -> SeqEnum, SeqEnum
 {Return the self intersection numbers of the resolution cycles over an elliptic point, as 
 well as the (possibly rational) coefficients of the local Chern cycle of a quotient singularity.}
 
@@ -809,38 +817,33 @@ well as the (possibly rational) coefficients of the local Chern cycle of a quoti
     // In order to compute the local Chern cycle, we need the coordinates of the points
     // on the lower convex hull associated to the (positive) exponents.
 
-    // For elliptic points, the precision should be irrelevant.
-    RR := RealField(20);
-
     // Massage the type so that <a,b> = <1, positive>
     stdForm := <type[1], 1, (type[3] + (1 - type[2])) mod type[1]>;
 
-    // Compute the HJContinuedFraction
-    head, tail, isPeriodicOrFinite := HJContinuedFraction(RR ! (stdForm[1]/stdForm[3]));
-    assert isPeriodicOrFinite;
-    selfIntersectionNumbers := head cat tail;
-    
     n := type[1];
     assert type[2] eq 1;
     q := type[3] mod n;
 
     _, _, qpr := XGCD(n, q);
-    qpr := qpr mod n;
-    
+    qpr := qpr mod n;    
     assert (qpr*q) mod n eq 1;
+
+    // Compute the HJContinuedFraction of n/qpr. See [p.43, vdG].
+    selfIntersectionNumbers := HJContinuedFraction(stdForm[1]/qpr);
     
     RM := VectorSpace(Rationals(), 2);
     C0 := RM ! [1,0];
     C1 := RM ! [qpr/n, 1/n];
 
-    c := selfIntersectionNumbers cat selfIntersectionNumbers;
+    c := [0] cat selfIntersectionNumbers;
     C := [C0, C1] cat [Zero(RM) : i in [2..#c-2]];
 
     // Choose `d` as in [vdG]. That is, the length of the continued fraction
     // expansion (plus one).
     d := #selfIntersectionNumbers;
     
-    // Use the equation C[i] * ci = C[i+1] + C[i-1].
+    // Use the equation C[i] * ci = C[i+1] + C[i-1]. Note the indices are off
+    // by one from [vdG].
     for i in [1..d] do
 	C[i+2] := c[i+1] * C[i+1] - C[i];
     end for;
@@ -853,7 +856,12 @@ well as the (possibly rational) coefficients of the local Chern cycle of a quoti
     lst := [c[1] + c[2] - 1 : c in C];
     assert lst[1] eq 0 and lst[#lst] eq 0;
     assert #lst ge 3; //i.e., check the resolution cycle has at least one curve.
-    return selfIntersectionNumbers, lst[2..#lst-1];    
+
+    if PrintCs then
+	print C;
+    end if;
+
+    return selfIntersectionNumbers, lst[2..#lst-1];
 end intrinsic;
 
 /////////////////////////////////////////////////////

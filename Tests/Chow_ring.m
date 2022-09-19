@@ -20,6 +20,7 @@ for g in gens do
     info_list := GeneratorInfo(g);
 end for;
 
+/*
 // Test level.
 K := QuadraticField(13);
 ZK := MaximalOrder(K);
@@ -30,6 +31,4 @@ reso := ResolutionCycles(R);
 resokeys := Keys(reso);
 
 assert #[p : p in resokeys | p`SingularityType eq "Quotient"] eq 0;
-
-// All tests passed.
-return true;
+*/

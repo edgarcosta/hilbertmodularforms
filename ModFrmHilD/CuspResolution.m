@@ -19,7 +19,7 @@ intrinsic OneAsLinearCombination(F :: FldQuad, a :: FldQuadElt, Ia :: RngQuadFra
     for j := 1 to 4 do
 	S := ElementToSequence(latticegens[j]);
 	for i := 1 to 2 do M[i, j] := D*S[i]; end for;
-    end for;    
+    end for;
     target := Vector(Integers(), 2, [D,0]);
     sol, N := Solution(Transpose(M), target); //Runtime error if fails
 
@@ -246,12 +246,14 @@ ideals W, W2 respectively.}
     
     require IsNormalizedCusp(F, alpha, beta, n): "Cusp (alpha:beta) must be normalized";
 
+    //print "Computing cusp change matrix...";
     g := CuspChangeMatrix(F, b, alpha, beta);
     plist := [f[1]: f in Factorization(n)];
 
     ZF := Integers(F);
     I := alpha*ZF + beta*b^-1;
     M0 := I^-2 * b^-1;
+
     M := M0;
     W := 1*ZF; //Congruence conditions on v-1
     W2 := 1*ZF; //Congruence conditions on v^2-1
@@ -259,6 +261,7 @@ ideals W, W2 respectively.}
     x := ZF!0;
     
     for p in plist do
+	//print "Computing congruence conditions...";
 	L, x0 := CuspResolutionCongruences(F, b, n, g, p: GammaType:=GammaType);
 	ev, ev2, em, ex := Explode(L);
 	//print "Congruences of cusp coordinates:", ev, ev2, em, ex;
@@ -281,6 +284,7 @@ ideals W, W2 respectively.}
 	end for;
     end if;
     g := Matrix(F, 2, 2, [F!1, x, 0, F!1]) * g;
+
     return [M, W, W2], g;
 end intrinsic;
     
@@ -288,11 +292,30 @@ end intrinsic;
 intrinsic CuspResolutionMinimalSequence(F :: FldQuad, M :: RngQuadFracIdl) -> SeqEnum[RngIntElt]
 {Compute the periodic part of the HJ continued fraction, as in Van der Geer p.38}
     require M ne 0*M: "Module M must not be zero";
-    a, b := Explode(Basis(M));
+
+    a,b := OrientedBasis(M);
+    
     head, periodic := HJContinuedFraction(F ! (a/b));
     return periodic;
 end intrinsic;
 
+intrinsic OrientedBasis(M :: RngQuadFracIdl) -> Any
+{}
+    //print Basis(M);
+    a, b := Explode(Basis(M));
+    F := NumberField(Order(M));
+    fa := F ! a;
+    fb := F ! b;
+
+    _, ori := Explode(Eltseq(fa * Conjugate(fb) - fb * Conjugate(fa)));
+    if ori lt 0 then
+        return b, a;
+    else
+        return a, b;
+    end if;
+    error "Basis returned for module M invalid.";
+end intrinsic;
+                                        
 
 intrinsic CuspResolutionMinimalUnit(F :: FldQuad, per :: SeqEnum[RngIntElt]) -> FldQuadElt
 {Compute a generator of U_M+ in Van der Geer's notation}
@@ -307,6 +330,16 @@ end intrinsic;
 intrinsic RepeatSequence(l :: SeqEnum, n :: RngIntElt) -> SeqEnum
 {Output l repeated n times}
     return &cat[l : x in [1..n]];
+end intrinsic;
+
+
+intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt) -> SeqEnum
+{}
+    K := Field(G);
+    N := Level(G);
+    x, y := Explode(Coordinates(p));
+    x, y := NormalizeCusp(K, x, y, N);
+    return CuspResolutionIntersections(K, Component(G), N, x, y : GammaType:=GammaType(G));
 end intrinsic;
 
 intrinsic CuspResolutionIntersections(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
@@ -361,13 +394,17 @@ intrinsic GeneratorsOfGMV(F::FldQuad, b::RngQuadIdl, alpha::FldQuadElt,
     //Get generator of V_M+
     M, W, W2 := Explode(S);
     periodic := CuspResolutionMinimalSequence(F, M);
-    w := CuspResolutionMinimalUnit(F, periodic);    
+    w := CuspResolutionMinimalUnit(F, periodic);
+    assert IsUnit(w);
     issqr, t := IsSquare(w);
     //print w; print "IsSquare?", issqr;
     n := 1;
+    //print w, W2, W, t, Norm(W), Norm(W2);
     if issqr then
 	//V is gen'd by w^n, where n minimal s.t. w^n-1 = 0 mod W2 and t^n +/- 1 = 0 mod W
-	while not (w^n-1 in W2 and (t^n-1 in W or t^n + 1 in W)) do n +:= 1; end while;
+	while not (w^n-1 in W2 and (t^n-1 in W or t^n + 1 in W)) do
+	    //print n;
+	    n +:= 1; end while;
 	if t^n-1 in W then u := t^n; else u := -t^n; end if;
     else
 	//V is gen'd by w^(2n), where n minimal s.t. w^(2n)-1 = 0 mod W2 and w^n +/- 1 = 0 mod W
