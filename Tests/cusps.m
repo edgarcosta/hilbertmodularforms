@@ -1,6 +1,7 @@
 printf "Testing creation of cusps...\n";
 //GammaTypes := ["Gamma", "Gamma1", "Gamma0"];
-GammaTypes := ["Gamma1"]; // Gamma and Gamma0 currently broken; just testing Gamma1
+GammaTypes := ["Gamma1", "Gamma0"];
+//GammaTypes := ["Gamma1"]; // Gamma and Gamma0 currently broken; just testing Gamma1
 
 print "Computing cusps for QQ(sqrt(5))";
 F<nu> := QuadraticField(5);
