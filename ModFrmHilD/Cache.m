@@ -1,41 +1,192 @@
-declare type EigenvaluesCache;
 
-declare attributesEigenvaluesCache:
+import "ModFrmHil/copypaste/hecke.m" : hecke_algebra;
+
+declare type HMFCache;
+declare type EigenformCache;
+
+
+// TODO:
+// - EigenformCache to string
+// - read EigenformCache from string
+
+declare attributes EigenformCache:
+  Parent, // HMFCache
+  Origin, // MdmFrm
+  Weight, // Eltseq
+  Character, // ?
+  Level, // RngOrdIdl
+  LinearCombination, // Assoc(), primes -> coefficients
+  // where Tzeta == &+[Tp(f)*c where p := primes[i]] : i->c in coefficients];
+  RationalForm, // _, S, _ := RationalForm(Tzeta),
+  HeckeOperators; // Assoc(), p -> S*HeckeOperator(f, p)*S^-1
+
+
+declare attributes HMFCache:
   BaseField, // FldNum, the internal basefield
   ToBaseField, // Map, from InputBasefield to BaseField
   Primes, // SeqEnum[RngOrdIdl] primes up to some bound, expandable when necessary
+  PrimesDict, // Assoc, Primes[i] -> i
   CharacterCoordinates, // Assoc, N -> [i] such that characters psi(p_i) determines psi
-  Eigenforms, // Assoc, <k, N, chi> -> [ <primes_used, coefficients, p -> T_p(f) > : f in NewformDecomposition ]
-  // where Tzeta = is the single generator the Hecke algebra
-  // and Tzeta == &+[Tp(f)*c where p := Primes[primes_used[i]]) : i->c in coefficients];
-  // and Tp(f) = S*HeckeOperator(M)*S^-1 where _, S, _ := RationalForm(Tzeta)
+  Eigenforms, // Assoc
+  // <k, N, chi> -> [ EigenformCache(f) : f in NewformDecomposition ]
   filename; // MonStgElt
 
+
+function NormPrimesBound(C)
+  return Norm(C`Primes[#C`Primes]);
+end function;
+
+function IncreasePrimes(~C : up_to:=false)
+  current := NormPrimesBound(C);
+  if up_to cmpeq false then
+    // not the best, but should work for our purposes
+    up_to +:= NormPrimesBound(C) + 100*Degree(BaseField(C))*Floor(Log(100*Degree(Basefield(C))));
+  end if;
+  if up_to gt current then
+    new_primes := PrimesUpTo(up_to, BaseField(C);
+    old_count := #C`primes;
+    assert Set(new_primes[old_count]) eq Set(C`primes);
+    C`Primes cat := new_primes[old_count + 1 .. #new_primes];
+    for i->p in [old_count..#C`Primes] do
+      C`PrimesDict[p] := i;
+    end for;
+  end if;
+end funcion;
+
+function EltseqRows(M)
+  return [Eltseq(r) : r in Rows(M)];
+end function;
+
+
+intrinsic EigenformCacheInitialize() -> HMFCache
+{ Create an empty EigenformCache object }
+  C := New(HMFCache);
+  return C;
+end intrinsic;
+
+intrinsic Parent(C:EigenformCache) -> HMFCache
+{ return the parent of the eigenform cache structure }
+  return C`Parent;
+end intrinsic;
+
+intrinsic Origin(C:EigenformCache) -> HMFCache
+{ return the original eigenform for the eigenform cache structure }
+  return C`Origin;
+end intrinsic;
+
+intrinsic Weight(C:EigenformCache) -> HMFCache
+{ return the weight of the eigenform in the cache structure }
+  return C`Weight;
+end intrinsic;
+
+intrinsic Character(C:EigenformCache) -> HMFCache
+{ return the character of the eigenform in the cache structure }
+  return C`Character;
+end intrinsic;
+
+intrinsic Level(C:EigenformCache) -> HMFCache
+{ return the level of the eigenform in the cache structure }
+  return C`Level;
+end intrinsic;
+
+
+intrinsic LinearCombination(C:EigenformCache) -> Assoc
+{ return the LinearCombination for the eigenform cache structure }
+  return C`LinearCombination;
+end intrinsic;
+
+intrinsic HeckeOperators(C:EigenformCache) -> Assoc
+{ return the HeckeOperators associative array }
+  return C`HeckeOperators;
+end intrinsic;
+
+intrinsic UpdateHeckeOperators(~C:EigenformCache)
+{ update the cached table from the magma form }
+  if Origin(C) not cmpeq false then
+  if assigned Origin(C)`Hecke then
+    S := RationalForm(C);
+    f := Origin(C);
+    for p in Keys(HeckeOperators(C)`Hecke) diff Keys(HeckeOperators(C)) do
+      C`HeckeOperators[p] := S*HeckeOperator(
+    end for;
+  end if;
+  end if;
+end intrinsic;
+
+
+intrinsic Tuple(C:EigenformCache) -> Tup
+{ return the tuple with all the stored data ready to be machine printed }
+  // this is non-empty due to LinearCombination being a non-emtpy assoc
+  max_norm := Max([Norm(elt) : elt in Keys(Origin(C)`Hecke) join Keys(LinearCombination(C))]);
+  P := Parent(C);
+  IncreasePrimes(~C : up_to:=max_norm);
+  primes := Primes(P);
+  primes_dict := PrimesDict(P);
+  lc := LinearCombination(C);
+  primes_coordinates := [primes_dict[p] : p in Keys(lc)];
+  coeffs := [lc[primes[i]] : i in primes_coordinates];
+  rational_form := EltseqRows(RationalForm(C));
+  ho := HeckeOperators(C);
+  primes_hecke := [primes_dict[i] : i in Keys(ho)];
+  hecke_operators := [EltseqRows(ho[primes[i]]) : i in primes_hecke];
+  return <primes_coordinates, coeffs, rational_form, primes_hecke, hecke_operators>;
+end intrinsic;
+
+intrinsic EigenformCache(~P::HMFCache, f:ModFrmHil) ->EigenformCache
+  {  }
+  C := EigenformCacheInitialize();
+  C`Parent := P;
+  C`Origin := f;
+  C`Level := Level(f);
+  C`Weight := Weight(f);
+  C`Character := Character(f);
+  _ := hecke_algebra(f: generator:=true);
+  _ , primes_used, _, _, _, Tzeta, linear_combination := Explode(f`hecke_algebra);
+  C`LinearCombination := AssociativeArray();
+  for i->p in primes_used do
+    C`LinearCombination[p] := linear_combination[i];
+  end for;
+  _, C`RationalForm, _ := RationalForm(Tzeta);
+  C`HeckeOperators := AssociativeArray();
+  t := <Weight(C), Weight(C), Character(C)>;
+  if not IsDefined(P`Eigenforms, t) then
+    P`Eigenforms[t] := [];
+  end if;
+  // we don't make any check if the form is already there!
+  Append(~P`Eigenforms[t], C);
+end intrinsic;
 
 /*
  * TODO:
  * - convert from magma gen to stored gen
  * - save hecke_gen_*
  */
-intrinsic BaseField(C::EigenvaluesCache) -> FldNum
+intrinsic BaseField(C::HMFCache) -> FldNum
 { return the internal BaseField for the cache structure}
   return C`BaseField;
 end intrinsic;
 
 
-intrinsic Primes(C::EigenvaluesCache) -> SeqEnum[RngOrdIdl]
+intrinsic Primes(C::HMFCache) -> SeqEnum[RngOrdIdl]
 { return the current list of primes for the cache structure}
   return C`Primes;
 end intrinsic;
 
+intrinsic PrimesDict(C::HMFCache) -> SeqEnum[RngOrdIdl]
+{ return the current list of primes for the cache structure}
+  return C`PrimesDict;
+end intrinsic;
 
-intrinsic EigenvaluesCacheInitialize() -> EigenvaluesCache;
-  {Create an empty EigenvaluesCache object}
-  C := New(EigenvaluesCache);
+
+
+
+intrinsic HMFCacheInitialize() -> HMFCache;
+  {Create an empty HMFCache object}
+  C := New(HMFCache);
   return C;
 end intrinsic;
 
-intrinsic ToBaseField(C::EigenvaluesCache, I::RngOrdIdl) -> RngOrdIdl
+intrinsic ToBaseField(C::HMFCache, I::RngOrdIdl) -> RngOrdIdl
   if not assigned C`ToBaseField then
     b, C`ToBaseField := IsIsomorphic(NumberField(Order(I)));
     require b : "The stored base field is not isomorphic to the input base field.";
@@ -43,9 +194,13 @@ intrinsic ToBaseField(C::EigenvaluesCache, I::RngOrdIdl) -> RngOrdIdl
   return ChangeRing(I, C`ToBaseField);
 end intrinsic;
 
-intrinsic EigenvaluesCache(filename::MonStgElt) -> EigenvaluesCache
-  {Load EigenvaluesCache from a file}
-  C := EigenvaluesCacheInitialize();
+
+
+
+
+intrinsic HMFCache(filename::MonStgElt) -> HMFCache
+  {Load HMFCache from a file}
+  C := HMFCacheInitialize();
   C`filename := filename;
   C`InputBasefield := false;
   records := ReadRecords(filename);
@@ -74,7 +229,7 @@ intrinsic EigenvaluesCache(filename::MonStgElt) -> EigenvaluesCache
   F<a> := NumberField(R!StringToArrayOfIntegers(records[1][1]));
   ZF := Integers(F);
   C`Primes := [ ideal<ZF! [F!elt : elt in gens]> : gens in StringToArrayOfArraysOfIntegers(records[1][2]) ];
-  C`EigenForms := AssociativeArray();
+  C`Eigenforms := AssociativeArray();
   for rec in records[2..#records] do
     k, N, L, ind, ap := Explode(rec);
     k := StringToInteger(k);
@@ -88,23 +243,16 @@ intrinsic EigenvaluesCache(filename::MonStgElt) -> EigenvaluesCache
     for i in [1..#ind] do
       ap_map[primes[ind[i]]] := ap[i];
     end for;
-    if not IsDefined(C`EigenForms, pair) then
-      C`EigenForms[pair] := []
+    if not IsDefined(C`Eigenforms, pair) then
+      C`Eigenforms[pair] := []
     end if;
-    Append(~C`EigenForms[pair], <L, ap_map>);
+    Append(~C`Eigenforms[pair], <L, ap_map>);
   end for;
   C`Primes := SetToIndexedSet(SequenceToSet(C`Primes));
   return C;
 end intrinsic;
 
 
-function IncreasePrimes(C : increase_bound := 100)
-  current_bound := C`Primes[#C`Primes];
-  new_primes := PrimesUpTo(current_bound + increase_bound, BaseField(C);
-  assert Set(new_primes[#C`primes]) eq Set(C`primes);
-  C`Primes cat := new_primes[#C`Primes + 1 .. #new_primes];
-  return C`Primes;
-end funcion;
 
 
 function IsFaithful(characters, values, indices)
@@ -112,7 +260,7 @@ function IsFaithful(characters, values, indices)
 end function;
 
 
-intrinsic CharacterCoordinates(C::EigenvaluesCache, psi::GrpHeckeElt) -> SeqEnum[RngIntElt]
+intrinsic CharacterCoordinates(C::HMFCache, psi::GrpHeckeElt) -> SeqEnum[RngIntElt]
 { returns the index of the primes that we can use to distinguish characters with the same modulus }
   modulus := Modulus(psi);
   b, val := IsDefined(CharacterCoordinates, modulus);
@@ -125,7 +273,8 @@ intrinsic CharacterCoordinates(C::EigenvaluesCache, psi::GrpHeckeElt) -> SeqEnum
     ind := PivotColumns(Matrix(values));
     i := 1;
     while not IsFaithful(characters, values, ind) do
-      primes := IncreasePrimes(C);
+      IncreasePrimes(~C);
+      primes := Primes(C);
       values := Matrix([['@'(p, psi : Raw := true) : p in primes] : psi in characters]);
       ind := PivotColumns(Matrix(values));
       i +:= 1;
@@ -138,7 +287,7 @@ intrinsic CharacterCoordinates(C::EigenvaluesCache, psi::GrpHeckeElt) -> SeqEnum
 end intrinsic;
 
 
-intrinsic ValuesOnCoordinates(C::EigenvaluesCache, psi::GrpHeckeElt) -> SeqEnum[RngIntElt]
+intrinsic ValuesOnCoordinates(C::HMFCache, psi::GrpHeckeElt) -> SeqEnum[RngIntElt]
 { return the [Log(psi(p), zeta) : p in Primes(C)[CharacterCoordinates(level, order)]] }
   return [Integers()!'@'(p, psi : Raw := true) : p in primes] where primes := CharacterCoordinates(psi);
 end intrinsic;
@@ -146,7 +295,7 @@ end intrinsic;
 
 
 
-intrinsic Save(C::EigenvaluesCache, filename::MonStgElt) -> RngIntElt
+intrinsic Save(C::HMFCache, filename::MonStgElt) -> RngIntElt
   {Save the given object to a file}
 
   // field:primes
@@ -156,7 +305,7 @@ intrinsic Save(C::EigenvaluesCache, filename::MonStgElt) -> RngIntElt
   ]];
 
   ef := [];
-  for kNchi->efs in C`EigenForms do
+  for kNchi->efs in C`Eigenforms do
   // k:N:chi_coord:chi_values:coeff field:prime indexes:eigenvalues
     k, N, chi := Explode(kNchi);
     k := Sprint(k);
@@ -185,29 +334,31 @@ intrinsic Save(C::EigenvaluesCache, filename::MonStgElt) -> RngIntElt
 end intrinsic;
 
 
-intrinsic MatchEigenforms(C::EigenvaluesCache, list::List) -> SeqEnum[RngIntElt]
-  {TODO}
+intrinsic MatchEigenforms(C::HMFCache, list::List) -> SeqEnum[RngIntElt]
+  { return the permutation matching the eigenvalues cached and list of eigenforms }
   if #list eq 0 then
     return [];
   end for;
   origLevel := Level(Parent(list[1]));
   N := ToBaseField(C, origLevel);
   k := Weight(Parent(list[1]));
-  require #SequenceToSet(k) eq 1: "What? Now we can handle non parallel weight?";
+  require #SequenceToSet(k) eq 1: "What? Now we can handle non parallel weight? ＼(＾O＾)／";
   k := k[1];
   pair := <k, N>;
   // the easy case
-  if not IsDefined(C`EigenForms, <k, N>) then
-    C`EigenForms[<k, N>] := [<BaseField(elt), AssociativeArray()> : elt in list];
+  if not IsDefined(C`Eigenforms, <k, N>) then
+    C`Eigenforms[<k, N>] := [<BaseField(elt), AssociativeArray()> : elt in list];
     return [1..#list];
   end if;
-  require #C`EigenForms[<k, N>] eq #list : "the number of stored eigenforms doesn't match";
+  cached_eigenforms := C`Eigenforms[<k, N>];
+  require #cached_eigenforms eq #list : "the number of stored eigenforms doesn't match";
   res := [];
   left := [i : in [1..#list]];
-  for f in list do
-    for elt in  do
-    end for;
-    candidates := [i : i in [1
+  for i->f in list do
+    // first filter by degree
+    candidates := [i : i in left | Degree(BaseField(elt)) eq Degree(cached_eigenforms[i][1]) ];
+    // then by isomorphism
+candidates := 
   end for;
 end intrinsic;
 
