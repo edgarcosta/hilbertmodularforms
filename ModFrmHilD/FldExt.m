@@ -80,14 +80,14 @@ intrinsic CoprimeNarrowRepresentative(I::RngQuadIdl, J::RngQuadIdl) -> FldOrdIdl
     if Norm(q) gt 0 or Discriminant(K) lt 0 then return q; end if;
 
     // Otherwise, we have chosen a bad element, so must correct the signs.
-    z := K.1;    
+    z := K.1;
     require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
-    assert IsIntegral(z); 
+    assert IsIntegral(z);
 
     NJ := Norm(J);
     d := GCD(Integers() ! Norm(z), NJ);
-    
+
     if d eq 1 then return z*q; end if;
-    b := ExactQuotient(NJ, d);    
-    return (1 + b * z)*q;    
+    b := ExactQuotient(NJ, d);
+    return (1 + b * z)*q;
 end intrinsic;
