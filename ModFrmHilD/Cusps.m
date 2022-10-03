@@ -260,7 +260,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
     ZFNN, mpNN := quo<ZF |NN>;
     UQNN, mpQNN:= UnitGroup(ZFNN);
     UQNN_gens := [mpQNN(el) : el in Generators(UQNN)];
-    gens cat:= [i1(mpMM(el) @@ mpQMM) + i2(mpNNMM(-el) @@ mpQNNMM) : el in UQNN_gens];
+    gens cat:= [i1(mpMM(el) @@ mpQMM) - i2(mpNNMM(el) @@ mpQNNMM) : el in UQNN_gens]; // in i2 el or -el???
   elif GammaType eq "Gamma" then
     gens := [i1(mpMM(eps) @@ mpQMM) + i2(mpNNMM(eps) @@ mpQNNMM), i1(mpMM(-1) @@ mpQMM) + i2(mpNNMM(-1) @@ mpQNNMM)];
   else
@@ -278,6 +278,8 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   for el in reps do
     a0, c0 := Explode(el);
     if GammaType in ["Gamma0", "Gamma1"] then
+      // new Gamma0 approach: take output of Gamma1 cusps, then mod out by following relation. Rescale so that first components match, then see if second components differ multiplicatively by a unit of ZF/NN
+      // see also p. 100 of Diamond and Shurman
       a_new := ReduceModuloIdeal(a0, ss, ss*MM);
       c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
       Append(~final, [a_new, c_new]);
@@ -295,7 +297,7 @@ end intrinsic;
 // P_1(NN)_bb in eqn 5.1.6 in paper, or Lemma 3.6 of Dasgupta-Kakde
 // P_0(NN)_bb in eqn 5.1.9 in paper
 intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
-  {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde, which is in bijection with cusps of Gamma1(NN)_bb.}
+  {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde (resp., eqn 5.1.9 in paper), which is in bijection with cusps of Gamma_1(NN)_bb (resp., of Gamma_0(NN)_bb).}
   ZF := Order(NN);
   F := NumberField(ZF);
   Cl, mpCl := ClassGroup(ZF);
