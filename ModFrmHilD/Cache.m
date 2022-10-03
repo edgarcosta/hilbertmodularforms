@@ -103,13 +103,13 @@ end intrinsic;
 intrinsic UpdateHeckeOperators(~C:EigenformCache)
 { update the cached table from the magma form }
   if Origin(C) not cmpeq false then
-  if assigned Origin(C)`Hecke then
-    S := RationalForm(C);
-    f := Origin(C);
-    for p in Keys(HeckeOperators(C)`Hecke) diff Keys(HeckeOperators(C)) do
-      C`HeckeOperators[p] := S*HeckeOperator(
-    end for;
-  end if;
+    if assigned Origin(C)`Hecke then
+      S := RationalForm(C);
+      f := Origin(C);
+      for p in Keys(HeckeOperators(C)`Hecke) diff Keys(HeckeOperators(C)) do
+        C`HeckeOperators[p] := S*HeckeOperator(p)*S^-1;
+      end for;
+    end if;
   end if;
 end intrinsic;
 
