@@ -581,7 +581,7 @@ intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
   return H;
 end intrinsic;
 
-intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc, f::ModFrmHilDElt) -> any
+intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc, f::ModFrmHilDElt) -> Any
 {return a basis for the space of modular forms in weight n, in terms of
         monomials of the "canonical" generators}
 
