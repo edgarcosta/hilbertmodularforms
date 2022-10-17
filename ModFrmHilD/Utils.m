@@ -115,7 +115,7 @@ end intrinsic;
 
 
 intrinsic Strip(X::MonStgElt) -> MonStgElt
-{ Strip spaces and carraige returns from string; much faster than StripWhiteSpace. }
+{ Strip spaces and carriage returns from string; much faster than StripWhiteSpace. }
     return Join(Split(Join(Split(X," "),""),"\n"),"");
 end intrinsic;
 
@@ -157,4 +157,15 @@ intrinsic JoinString(list::SeqEnum[MonStgElt], sep::MonStgElt) -> MonStgElt
     s *:=sep*i;
   end for;
   return s;
+end intrinsic;
+
+
+intrinsic MachinePrint(list::SeqEnum) -> MonStgElt
+  { }
+  return StripWhiteSpace(Sprint(list));
+end intrinsic;
+
+intrinsic MachinePrint(I::RngOrdIdl) -> MonStgElt
+  { }
+  return MachinePrint(Basis(I));
 end intrinsic;

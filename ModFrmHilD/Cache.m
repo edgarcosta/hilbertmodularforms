@@ -4,7 +4,6 @@ import "ModFrmHil/copypaste/hecke.m" : hecke_algebra;
 declare type HMFCache;
 declare type EigenformCache;
 
-
 // TODO:
 // - EigenformCache to string
 // - read EigenformCache from string
@@ -43,15 +42,15 @@ function IncreasePrimes(~C : up_to:=false)
     up_to +:= NormPrimesBound(C) + 100*Degree(BaseField(C))*Floor(Log(100*Degree(Basefield(C))));
   end if;
   if up_to gt current then
-    new_primes := PrimesUpTo(up_to, BaseField(C);
+    new_primes := PrimesUpTo(up_to, BaseField(C));
     old_count := #C`primes;
     assert Set(new_primes[old_count]) eq Set(C`primes);
-    C`Primes cat := new_primes[old_count + 1 .. #new_primes];
+    C`Primes cat:= new_primes[old_count + 1 .. #new_primes];
     for i->p in [old_count..#C`Primes] do
       C`PrimesDict[p] := i;
     end for;
   end if;
-end funcion;
+end function;
 
 function EltseqRows(M)
   return [Eltseq(r) : r in Rows(M)];
@@ -102,43 +101,67 @@ end intrinsic;
 
 intrinsic UpdateHeckeOperators(~C:EigenformCache)
 { update the cached table from the magma form }
-  if Origin(C) not cmpeq false then
+  if not Origin(C) cmpeq false then
     if assigned Origin(C)`Hecke then
       S := RationalForm(C);
       f := Origin(C);
       for p in Keys(HeckeOperators(C)`Hecke) diff Keys(HeckeOperators(C)) do
         C`HeckeOperators[p] := S*HeckeOperator(p)*S^-1;
       end for;
+      // this is non-empty due to LinearCombination being a non-emtpy assoc
+      max_norm := Max([Norm(elt) : elt Keys(HeckeOperators(C)) join Keys(LinearCombination(C))]);
+      P := Parent(C);
+      IncreasePrimes(~C : up_to:=max_norm);
     end if;
   end if;
 end intrinsic;
 
 
-intrinsic Tuple(C:EigenformCache) -> Tup
-{ return the tuple with all the stored data ready to be machine printed }
-  // this is non-empty due to LinearCombination being a non-emtpy assoc
-  max_norm := Max([Norm(elt) : elt in Keys(Origin(C)`Hecke) join Keys(LinearCombination(C))]);
+
+
+intrinsic Record(C:EigenformCache) -> SeqEnum[MonStgElt]
+  { return string represeting MachinePrint }
+  /*
+  - Weight
+  - Level
+  - Character
+  - primitive generator
+  - rational form // do we really need this?
+  - hecke with respect to zeta
+  */
   P := Parent(C);
-  IncreasePrimes(~C : up_to:=max_norm);
+
+  res := [
+    MachinePrint(Weight(C)),
+    MachinePrint(Level(C)),
+    MachinePrint([CharacterCoordinates(P, psi), ValuesOnCoordinates(P, psi)]) where psi := Character(C),
+  ];
+
+
   primes := Primes(P);
   primes_dict := PrimesDict(P);
+
   lc := LinearCombination(C);
-  primes_coordinates := [primes_dict[p] : p in Keys(lc)];
-  coeffs := [lc[primes[i]] : i in primes_coordinates];
-  rational_form := EltseqRows(RationalForm(C));
+  prime_coordinates := [primes_dict[p] : p in Keys(lc)];
+  zeta_coeffs := [lc[primes[i]] : i in prime_coordinates];
+  Append(~res, MachinePrint([prime_coordinates, zeta_coeffs]));
+
+  Append(~res, MachinePrint(EltseqRows(RationalForm(C))));
+
   ho := HeckeOperators(C);
   primes_hecke := [primes_dict[i] : i in Keys(ho)];
   hecke_operators := [EltseqRows(ho[primes[i]]) : i in primes_hecke];
-  return <primes_coordinates, coeffs, rational_form, primes_hecke, hecke_operators>;
+  Append(~res, MachinePrint([primes_hecke, hecke_operators]));
+  return res;
 end intrinsic;
 
-intrinsic EigenformCache(~P::HMFCache, f:ModFrmHil) ->EigenformCache
+intrinsic CacheEigenform(~P::HMFCache, f:ModFrmHil)
   {  }
   C := EigenformCacheInitialize();
   C`Parent := P;
   C`Origin := f;
-  C`Level := Level(f);
   C`Weight := Weight(f);
+  C`Level := Level(f);
   C`Character := Character(f);
   _ := hecke_algebra(f: generator:=true);
   _ , primes_used, _, _, _, Tzeta, linear_combination := Explode(f`hecke_algebra);
@@ -154,6 +177,17 @@ intrinsic EigenformCache(~P::HMFCache, f:ModFrmHil) ->EigenformCache
   end if;
   // we don't make any check if the form is already there!
   Append(~P`Eigenforms[t], C);
+end intrinsic;
+
+intrinsic ReadEigenformCache(~P::HMFCache, s::SeqEnum[MonStgElt])
+  { }
+  assert #s eq 6
+  C := EigenformCacheInitialize();
+  C`Parent := P;
+  C`Origin := false;
+  C`Weight := StringToArrayOfArraysOfIntegers(s[1]);
+  C`LeveL := ideal< Integers(BaseField(P)) | StringToArrayOfArraysOfIntegers(s[2]) >;
+  // TODO
 end intrinsic;
 
 /*
@@ -289,7 +323,7 @@ end intrinsic;
 
 intrinsic ValuesOnCoordinates(C::HMFCache, psi::GrpHeckeElt) -> SeqEnum[RngIntElt]
 { return the [Log(psi(p), zeta) : p in Primes(C)[CharacterCoordinates(level, order)]] }
-  return [Integers()!'@'(p, psi : Raw := true) : p in primes] where primes := CharacterCoordinates(psi);
+  return [Integers()!'@'(p, psi : Raw := true) : p in primes] where primes := CharacterCoordinates(C, psi);
 end intrinsic;
 
 

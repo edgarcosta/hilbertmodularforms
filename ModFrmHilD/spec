@@ -1,5 +1,6 @@
 {
   Basis.m
+  Cache.m
   Elements.m
   FldExt.m
   Formatting.m
