@@ -63,43 +63,43 @@ intrinsic EigenformCacheInitialize() -> HMFCache
   return C;
 end intrinsic;
 
-intrinsic Parent(C:EigenformCache) -> HMFCache
+intrinsic Parent(C::EigenformCache) -> HMFCache
 { return the parent of the eigenform cache structure }
   return C`Parent;
 end intrinsic;
 
-intrinsic Origin(C:EigenformCache) -> HMFCache
+intrinsic Origin(C::EigenformCache) -> HMFCache
 { return the original eigenform for the eigenform cache structure }
   return C`Origin;
 end intrinsic;
 
-intrinsic Weight(C:EigenformCache) -> HMFCache
+intrinsic Weight(C::EigenformCache) -> HMFCache
 { return the weight of the eigenform in the cache structure }
   return C`Weight;
 end intrinsic;
 
-intrinsic Character(C:EigenformCache) -> HMFCache
+intrinsic Character(C::EigenformCache) -> HMFCache
 { return the character of the eigenform in the cache structure }
   return C`Character;
 end intrinsic;
 
-intrinsic Level(C:EigenformCache) -> HMFCache
+intrinsic Level(C::EigenformCache) -> HMFCache
 { return the level of the eigenform in the cache structure }
   return C`Level;
 end intrinsic;
 
 
-intrinsic LinearCombination(C:EigenformCache) -> Assoc
+intrinsic LinearCombination(C::EigenformCache) -> Assoc
 { return the LinearCombination for the eigenform cache structure }
   return C`LinearCombination;
 end intrinsic;
 
-intrinsic HeckeOperators(C:EigenformCache) -> Assoc
+intrinsic HeckeOperators(C::EigenformCache) -> Assoc
 { return the HeckeOperators associative array }
   return C`HeckeOperators;
 end intrinsic;
 
-intrinsic UpdateHeckeOperators(~C:EigenformCache)
+intrinsic UpdateHeckeOperators(~C::EigenformCache)
 { update the cached table from the magma form }
   if not Origin(C) cmpeq false then
     if assigned Origin(C)`Hecke then
@@ -109,7 +109,7 @@ intrinsic UpdateHeckeOperators(~C:EigenformCache)
         C`HeckeOperators[p] := S*HeckeOperator(p)*S^-1;
       end for;
       // this is non-empty due to LinearCombination being a non-emtpy assoc
-      max_norm := Max([Norm(elt) : elt Keys(HeckeOperators(C)) join Keys(LinearCombination(C))]);
+      max_norm := Max([Norm(elt) : elt in Keys(HeckeOperators(C)) join Keys(LinearCombination(C))]);
       P := Parent(C);
       IncreasePrimes(~C : up_to:=max_norm);
     end if;
@@ -119,7 +119,7 @@ end intrinsic;
 
 
 
-intrinsic Record(C:EigenformCache) -> SeqEnum[MonStgElt]
+intrinsic Record(C::EigenformCache) -> SeqEnum[MonStgElt]
   { return string represeting MachinePrint }
   /*
   - Weight
@@ -134,7 +134,7 @@ intrinsic Record(C:EigenformCache) -> SeqEnum[MonStgElt]
   res := [
     MachinePrint(Weight(C)),
     MachinePrint(Level(C)),
-    MachinePrint([CharacterCoordinates(P, psi), ValuesOnCoordinates(P, psi)]) where psi := Character(C),
+    MachinePrint([CharacterCoordinates(P, psi), ValuesOnCoordinates(P, psi)]) where psi := Character(C)
   ];
 
 
@@ -155,7 +155,7 @@ intrinsic Record(C:EigenformCache) -> SeqEnum[MonStgElt]
   return res;
 end intrinsic;
 
-intrinsic CacheEigenform(~P::HMFCache, f:ModFrmHil)
+intrinsic CacheEigenform(~P::HMFCache, f::ModFrmHil)
   {  }
   C := EigenformCacheInitialize();
   C`Parent := P;
