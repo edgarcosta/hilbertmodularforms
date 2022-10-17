@@ -235,6 +235,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
     ZFMM, mpMM := quo<ZF | MM>;
     ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;
   elif GammaType eq "Gamma" then
+    // TODO: is this right?
     a := GeneratorOfQuotientModuleCRT(ss,NN);
     c := GeneratorOfQuotientModuleCRT(ss*bb,NN);
     ZFMM, mpMM := quo<ZF | NN>;
@@ -278,7 +279,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   for el in reps do
     a0, c0 := Explode(el);
     if GammaType in ["Gamma0", "Gamma1"] then
-      // new Gamma0 approach: take output of Gamma1 cusps, then mod out by following relation. Rescale so that first components match, then see if second components differ multiplicatively by a unit of ZF/NN
+      // alternative Gamma0 approach: take output of Gamma1 cusps, then mod out by following relation. Rescale so that first components match, then see if second components differ multiplicatively by a unit of ZF/NN
       // see also p. 100 of Diamond and Shurman
       a_new := ReduceModuloIdeal(a0, ss, ss*MM);
       c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
