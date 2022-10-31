@@ -27,10 +27,13 @@ M := Module(ZF,1);
 mpM := hom< ZF -> M | x :-> x*M.1>;
 QM, mpQM := quo< M | 2*M >; // I don't think this is what I want...
 mpQtoQM := hom< Q -> QM | x :-> mpQM(mpM(x @@ mpQ))>;
-D, i1, i2, p1, p2 := DirectSum(QM,QM);
+D, i1, i2, p1, p2 := DirectSum(QM,QM); //Magma is too dumb for this to work
+//D, i1, i2, p1, p2 := DirectSum(M,M);
+//DQ, mpDQ := quo< D | [i1(2*M.1), i2(2*M.1)] >;
 //units := [mpQM(mpM(mpU(el))) : el in Generators(U)];
-//D_seq := [(a @@ mpQ)*D.1+(b @@ mpQ)*D.2 : a,b in Q];
-D_seq := [i1(mpQtoQM(a)) + i2(mpQtoQM(b)) : a,b in Q];
+D_seq := [(a @@ mpQ)*D.1+(b @@ mpQ)*D.2 : a,b in Q];
+//D_seq := [mpDQ(i1(mpQtoQM(a)) + i2(mpQtoQM(b))) : a,b in Q];
+D_seq0 := D_seq;
 Remove(~D_seq,1);
 orbits := [];
 while #D_seq ne 0 do
@@ -39,11 +42,16 @@ while #D_seq ne 0 do
   //Remove(~D_seq,#D_seq);
   orb_d := [d];
   for u in UQ do
-    printf "u = %o\n", u;
+    printf "u = %o\n", mpUQ(u);
     new := (mpUQ(u) @@ mpQ)*d;
-    printf "new = %o, in position %o\n", new, Index(D_seq,new);
+    //new := mpUQ(u)*d;
+    new := i1(p1(new)) + i2(p2(new)); // this is really dumb
+    printf "new = %o\n", new;
+    printf "in position %o\n", Index(D_seq0,new);
     Append(~orb_d, new);
-    Remove(~D_seq, Index(D_seq,new));
+    if new in D_seq then
+      Remove(~D_seq, Index(D_seq,new));
+    end if;
   end for;
   Append(~orbits, orb_d);
 end while;
