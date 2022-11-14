@@ -53,13 +53,13 @@ end intrinsic;
 
 
 
-intrinsic IsEvenAtoo(chi:GrpHeckeElt) -> BoolElt
+intrinsic IsEvenAtoo(chi::GrpHeckeElt) -> BoolElt
 {return if the components of the Dirichlet restriction at the infinity places are all even}
   F := NumberField(Ring(Domain(Parent(chi))));
   return &and[IsEven(c[v]) : v in InfinitePlaces(F)] where c:=Components(chi);
 end intrinsic;
 
-intrinsic IsOddAtoo(chi:GrpHeckeElt) -> BoolElt
+intrinsic IsOddAtoo(chi::GrpHeckeElt) -> BoolElt
 {return if the components of the Dirichlet restriction at the infinity places are all odd}
   F := NumberField(Ring(Domain(Parent(chi))));
   return &and[IsOdd(c[v]) : v in InfinitePlaces(F)] where c:=Components(chi);
