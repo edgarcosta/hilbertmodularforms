@@ -603,15 +603,16 @@ intrinsic PolynomialMaximalOrder(n::RngOrdElt, m::RngOrdElt, ZF::RngOrd, pp::Rng
   if IsSplit(qq) then
     // qq is even
     if Norm(pp) mod 2 eq 0 then
-      // Case 1.1.1: Local algebra F_2 is split or inert. Return x^2 + x + 1
+      // Case 1: Local algebra F_2 is split. Return x^2 - x - 4
       if IsSplit(pp) then
         n0 := ZF ! -1;
         m0 := ZF ! -4;
+      // Case 2: Local algebra F_2 is inert. Return x^2 + x - 1
       elif IsInert(pp) then
         n0 := ZF ! 1;
         m0 := ZF ! -1;
-      /* Case 1.1.2: Local algebra F_2 is inert or ramified (extension of Q2)
-      Find an equivalent quadratic extension of Q2 and use minimal polynomial for ring of integers. */
+      /* Case 3: Local algebra F_2 is ramified. Find an equivalent quadratic extension of Q2. 
+      Construct biquadratic field and use minimal polynomial for ring of integers of the 3rd quadratic field. */
       else
         for d in { 1, 2, 5, 6, 10, 14 } do
           L := ext< F | x^2 + d >;
@@ -620,7 +621,6 @@ intrinsic PolynomialMaximalOrder(n::RngOrdElt, m::RngOrdElt, ZF::RngOrd, pp::Rng
           if #Factorization(ppl) eq 2 then
             Q := QuadraticField( -Discriminant(F) * d );
             poly := MinimalPolynomial(Integers(Q).2);
-            // print poly, d, -Discriminant(F);
             coef := Coefficients(poly);
             n0 := ZF ! coef[2];
             m0 := ZF ! coef[1];
