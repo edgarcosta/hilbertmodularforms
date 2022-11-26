@@ -582,34 +582,56 @@ end intrinsic;
 //////////////////////////// Polynomial of a maximal order in a Local Algebra ///////////////////////////////
 
 /* Let K/F be a quadratic algebra over F (not necessarily a field, possibly F+F).
-This computes a minimal polynomial of the form x^2+nx+m for the maximal oder in F. Returns just n,m
+This computes a minimal polynomial of the form x^2+nx+m for the maximal order in F. Returns just n,m
 This is used for the conductor sum, as once we have the minimal polynomial it is easy
 to produce polynomials for other orders of higher level.*/
 intrinsic PolynomialMaximalOrder(n::RngOrdElt, m::RngOrdElt, ZF::RngOrd, pp::RngOrdIdl) -> Any
-  {Returns n,m for polynomial x^2+nx+m which generates the maximal order}
+  {Returns n,m for polynomial x^2 + nx + m which generates the maximal order}
   // Preliminaries
-  D := n^2-4*m;
+  D := n^2 - 4 * m;
   F := FieldOfFractions(ZF);
   _<x> := PolynomialRing(ZF);
-  K := ext< F | x^2-D >;
+  K := ext< F | x^2 - D >;
   ZK := Integers(K);
-  qq := Factorization(pp*(1*ZK))[1][1]; // qq is the prime above pp
+  qq := Factorization(pp * ( 1 * ZK ))[1][1]; // qq is the prime above pp
   /* Check if Split
-    Yes: return x^2 - 1. not 2
-         return use minimal polynomial of generator for ring of integers
-    No -> Check if x^2-D is ramified.
+    Yes: return x^2 - 1 if pp odd
+         return seperate algorithm if pp even
+    No -> Check if x^2 - D is ramified.
       Yes: return unformizer. // Ramified
-      No: return generator for ZF/pi. // Inert */
+      No: return generator for ZF / pi. // Inert */
   if IsSplit(qq) then
+    // qq is even
     if Norm(pp) mod 2 eq 0 then
-      w := ZF.2; // This minimal polynomial of this element splits over F and it is maximal
-      minpoly := MinimalPolynomial(w);
-      coef := Coefficients(minpoly);
-      n0 := coef[2];
-      m0 := coef[1];
-    else // Otherwise use
-      n0 := ZF!0;
-      m0 := ZF!-1;
+      // Case 1.1.1: Local algebra F_2 is split or inert. Return x^2 + x + 1
+      if IsSplit(pp) then
+        n0 := ZF ! -1;
+        m0 := ZF ! -4;
+      elif IsInert(pp) then
+        n0 := ZF ! 1;
+        m0 := ZF ! -1;
+      /* Case 1.1.2: Local algebra F_2 is inert or ramified (extension of Q2)
+      Find an equivalent quadratic extension of Q2 and use minimal polynomial for ring of integers. */
+      else
+        for d in { 1, 2, 5, 6, 10, 14 } do
+          L := ext< F | x^2 + d >;
+          ZL := Integers(L);
+          ppl := pp * ( 1 * ZL );
+          if #Factorization(ppl) eq 2 then
+            Q := QuadraticField( -Discriminant(F) * d );
+            poly := MinimalPolynomial(Integers(Q).2);
+            // print poly, d, -Discriminant(F);
+            coef := Coefficients(poly);
+            n0 := ZF ! coef[2];
+            m0 := ZF ! coef[1];
+            break;
+          end if;
+        end for;
+      end if;
+    // qq is odd
+    else 
+      n0 := ZF ! 0;
+      m0 := ZF ! -1;
     end if;
   elif IsRamified(qq) then
     pi := UniformizingElement(qq);
