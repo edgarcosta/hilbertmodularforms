@@ -126,7 +126,7 @@ intrinsic Record(C::EigenformCache) -> SeqEnum[MonStgElt]
   - Level
   - Character
   - primitive generator
-  - rational form // do we really need this?
+  - rational form // we need this to avoid generating the hecke_algebra again
   - hecke with respect to zeta
   */
   P := Parent(C);
@@ -181,12 +181,26 @@ end intrinsic;
 
 intrinsic ReadEigenformCache(~P::HMFCache, s::SeqEnum[MonStgElt])
   { }
-  assert #s eq 6
+  assert #s eq 6;
   C := EigenformCacheInitialize();
   C`Parent := P;
   C`Origin := false;
-  C`Weight := StringToArrayOfArraysOfIntegers(s[1]);
+  // Weight
+  C`Weight := StringToArrayOfIntegers(s[1]);
+  // Level
   C`LeveL := ideal< Integers(BaseField(P)) | StringToArrayOfArraysOfIntegers(s[2]) >;
+  // Character
+  values := StringToArrayOfIntegers(s[3]);
+  psi := Character(C, C`Level, values);
+  // primitive generator
+  prime_coordinates, zeta_coeffs := Explode(StringToArrayOfArraysOfIntegers(s[4]));
+  C`LinearCombination := AssociativeArray();
+  for i->z in zeta_coeffs do
+    C`LinearCombination[C`Primes[i]] := z;
+  end for;
+  // rational form
+  // HERE
+  // hecke with respect to zeta
   // TODO
 end intrinsic;
 
@@ -214,13 +228,14 @@ end intrinsic;
 
 
 
-intrinsic HMFCacheInitialize() -> HMFCache;
+intrinsic HMFCacheInitialize() -> HMFCache
   {Create an empty HMFCache object}
   C := New(HMFCache);
   return C;
 end intrinsic;
 
 intrinsic ToBaseField(C::HMFCache, I::RngOrdIdl) -> RngOrdIdl
+  { TODO }
   if not assigned C`ToBaseField then
     b, C`ToBaseField := IsIsomorphic(NumberField(Order(I)));
     require b : "The stored base field is not isomorphic to the input base field.";
@@ -294,10 +309,9 @@ function IsFaithful(characters, values, indices)
 end function;
 
 
-intrinsic CharacterCoordinates(C::HMFCache, psi::GrpHeckeElt) -> SeqEnum[RngIntElt]
+intrinsic CharacterCoordinates(C::HMFCache, modulus::RngOrdIdl) -> SeqEnum[RngIntElt]
 { returns the index of the primes that we can use to distinguish characters with the same modulus }
-  modulus := Modulus(psi);
-  b, val := IsDefined(CharacterCoordinates, modulus);
+  b, val := IsDefined(C`CharacterCoordinates, modulus);
   if not b then
     F := BaseField(C);
     H := HeckeCharacterGroup(modulus, [1..#Degree(F)]);
@@ -314,16 +328,32 @@ intrinsic CharacterCoordinates(C::HMFCache, psi::GrpHeckeElt) -> SeqEnum[RngIntE
       i +:= 1;
       assert i lt 100;
     end while;
-    CharacterCoordinates[modulus] := ind;
+    C`CharacterCoordinates[modulus] := ind;
+    C`CharacterCoordinatesMap[modulus] := AssociativeArray();
+    for i->psi in characters do
+      C`CharacterCoordinatesMap[modulus][[values[i][j] : j in ind]] := psi;
+    end for;
     val := ind;
   end if;
   return val;
 end intrinsic;
 
+intrinsic CharacterCoordinates(C::HMFCache, psi::GrpHeckeElt) -> SeqEnum[RngIntElt]
+{ returns the index of the primes that we can use to distinguish characters with the same modulus }
+  return CharacterCoordinates(C, Modulus(psi));
+end intrinsic;
+
+
 
 intrinsic ValuesOnCoordinates(C::HMFCache, psi::GrpHeckeElt) -> SeqEnum[RngIntElt]
 { return the [Log(psi(p), zeta) : p in Primes(C)[CharacterCoordinates(level, order)]] }
-  return [Integers()!'@'(p, psi : Raw := true) : p in primes] where primes := CharacterCoordinates(C, psi);
+  return [Integers()!'@'(p, psi : Raw := true) where p:=C`Primes[j] : j in CharacterCoordinates(C, psi)];
+end intrinsic;
+
+intrinsic Character(C::HMFCache, modulus::RngOrdIdl, values::SeqEnum[RngIntElt]) -> GrpHeckeElt
+  { TODO }
+  _ := CharacterCoordinates(C, modulus); // creates CharacterCoordinatesMap
+  return C`CharacterCoordinatesMap[modulus][values];
 end intrinsic;
 
 
@@ -392,7 +422,8 @@ intrinsic MatchEigenforms(C::HMFCache, list::List) -> SeqEnum[RngIntElt]
     // first filter by degree
     candidates := [i : i in left | Degree(BaseField(elt)) eq Degree(cached_eigenforms[i][1]) ];
     // then by isomorphism
-candidates := 
+    // TODO
+    //candidates := 
   end for;
 end intrinsic;
 
