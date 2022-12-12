@@ -379,10 +379,9 @@ Ker(Gamma(1)->PSL(ZF/n)).}
 	n := 2*n;
     end if;
 
-    L := RepeatSequence(periodic, n);
-    L := [-b: b in L];
-    if #L eq 1 then L := [L[1]+2]; end if;
-    return L;
+    L := [-b: b in periodic];
+    if #L eq 1 and n eq 1 then L := [L[1]+2]; end if;
+    return L, n;
 end intrinsic;
 
 intrinsic GeneratorsOfGMV(F::FldQuad, b::RngQuadIdl, alpha::FldQuadElt,
