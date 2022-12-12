@@ -818,7 +818,6 @@ weights := [4..12 by 2];
 heckes := [1..5];
 Discs := [d : d in [1..100] | IsFundamentalDiscriminant(d) and ClassNumber(d) eq 1 ];
 
-load "config.m";
 printf "Checking Trace at 1*ZF...d=";
 function check(d)
     printf "%o ", d;
