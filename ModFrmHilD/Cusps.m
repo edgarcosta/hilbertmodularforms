@@ -540,10 +540,10 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   return cusps_seq;
 end intrinsic;
 
-intrinsic WriteCuspDataToRow(pt::Pt, bb::RngOrdIdl, MM::RngOrdIdl, min_period::SeqEnum, rep::RngIntElt) -> MonStgElt
+intrinsic WriteCuspDataToRow(surface_label::MonStgElt, pt::Pt, bb::RngOrdIdl, MM::RngOrdIdl, min_period::SeqEnum, rep::RngIntElt) -> MonStgElt
   {Script for writing cusp data to data table row}
 
-  return Sprintf("%o|%o|%o|%o|%o", Eltseq(pt), LMFDBLabel(bb), LMFDBLabel(MM), min_period, rep);
+  return Sprintf("%o|%o|%o|%o|%o|%o", surface_label, Eltseq(pt), LMFDBLabel(bb), LMFDBLabel(MM), min_period, rep);
 end intrinsic;
 
 // copy-pasta-ed from ModSym/Dirichlet.m and adapted for Hecke
