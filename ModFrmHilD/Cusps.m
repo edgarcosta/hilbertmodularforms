@@ -301,7 +301,8 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde (resp., eqn 5.1.9 in paper), which is in bijection with cusps of Gamma_1(NN)_bb (resp., of Gamma_0(NN)_bb).}
   ZF := Order(NN);
   F := NumberField(ZF);
-  Cl, mpCl := ClassGroup(ZF);
+  mpCl := ClassGroupPrimeRepresentatives(ZF,NN);
+  Cl := Domain(mpCl);
   Cl_seq := [mpCl(el) : el in Cl];
  
   quads := [];
@@ -359,18 +360,16 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, 
       error "GammaType not recognized";
     end if;
 
-    if v gt 0 then
-      //printf "nonzero valuation; P = %o, v = %o\n", P, v;
-      residues cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
-      moduli cat:= [P^v, P^(v+1)];
+    //printf "nonzero valuation; P = %o, v = %o\n", P, v;
+    residues cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
+    moduli cat:= [P^v, P^(v+1)];
     //else
     //  residues cat:= [(c_bar mod P^vN)]; // might be a problem if v=0
     //  moduli cat:= [P^vN];
-    end if;
   end for;
 
-  //printf "residues = %o\n", residues;
-  //printf "moduli = %o\n", moduli;
+  vprintf HilbertModularForms: "residues = %o\n", residues;
+  vprintf HilbertModularForms: "moduli = %o\n", moduli;
 
   if #moduli eq 0 then // if list of moduli is empty
     c := ZF!1;
