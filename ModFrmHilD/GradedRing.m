@@ -291,7 +291,21 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`NarrowClassGroup := Cl;
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
-  M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
+
+  // Deterministically finding representatives for Cl
+  // undeterministic: M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
+  bound := 1;
+  ClElts := [g : g in Cl];
+  repsindex := [0 : _ in ClElts];
+  while 0 in repsindex do
+      ideals := Sort([<StringToInteger(k) : k in Split(l, ".")> cat <elt> where l := LMFDBLabel(elt) : elt in IdealsUpTo(bound, F)]);
+      idealsmp := [ elt[3] @@ mp : elt in ideals];
+      repsindex := [Index(idealsmp, g) : g in ClElts];
+      bound *:= 2;
+  end while;
+  M`NarrowClassGroupReps := [ideals[i][3] : i in repsindex];
+
+
   M`IdealDualNarrowClassGroupReps := [ bb*diffinv : bb in M`NarrowClassGroupReps];
   M`NarrowClassGroupRepsToIdealDual := AssociativeArray();
   for i in [1..#Cl] do
