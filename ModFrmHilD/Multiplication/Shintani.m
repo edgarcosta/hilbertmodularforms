@@ -332,7 +332,7 @@ intrinsic IsShintaniReduced(nu::RngElt) -> BoolElt
   end if;
 
   // wall1 < wall2
-  wall1, wall2 := ShintaniWalls(Parent(nu));
+  wall1, wall2 := ShintaniWalls(NumberField(Parent(nu)));
   assert wall1 lt wall2;
   slope := Slope(nu);
   prec := Precision(Parent(slope));
