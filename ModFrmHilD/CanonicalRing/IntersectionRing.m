@@ -631,7 +631,8 @@ of the Hilbert Modular Surface with coefficients in BR.}
     cusps := Cusps(Gamma);
     rawParabolicResolutionData := [];
     for c in cusps do
-        positiveSelfIntersectionNumbers := [-x : x in CuspResolutionIntersections(Gamma, c)];
+		minimalSequence, nb := CuspResolutionIntersections(Gamma, c[3]);		
+        positiveSelfIntersectionNumbers := [-x : x in RepeatSequence(minimalSequence, nb)];
         localChernCoeffs := [1 : i in [1..#positiveSelfIntersectionNumbers]];
         Append(~rawParabolicResolutionData, <positiveSelfIntersectionNumbers, localChernCoeffs>);
     end for;
