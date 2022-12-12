@@ -9,24 +9,25 @@ intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
     for nu->nn in ShintaniRepsIdeal(M)[bb] do
-      coeffs[bb][nu] := Q!Trace(Mk, nn);
+      coeffs[bb][nu] := Q!Trace(Mk, nn : precomp := true);
     end for;
   end for;
   return HMF(Mk, coeffs);
 end intrinsic;
 
-//////////////////// Main function: Speed Trace Form /////////////////////////
 
-intrinsic STraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
+intrinsic TraceForm(Mk::ModFrmHilD, mm::RngOrdIdl) -> ModFrmHilDElt
   {Creates the trace form in the space Mk}
   M := Parent(Mk);
+  ZF := Integers(M);
   Q := Rationals();
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
     for nu->nn in ShintaniRepsIdeal(M)[bb] do
-      coeffs[bb][nu] := Q!STrace(Mk, nn);
+      coeffs[bb][nu] := TraceRecurse(Mk, nn, mm);
     end for;
   end for;
   return HMF(Mk, coeffs);
 end intrinsic;
+
