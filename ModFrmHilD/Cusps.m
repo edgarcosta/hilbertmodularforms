@@ -523,6 +523,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
   ZF := Order(NN);
   F := NumberField(ZF);
+  PP1 := ProjectiveSpace(F,1);
   quads := CuspQuadruples(NN, bb : GammaType := GammaType);
   cusps_seq := [];
   for quad in quads do
@@ -534,11 +535,9 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
     vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
-    Append(~cusps_seq, [a,c]);
+    Append(~cusps_seq, [* bb, MM, PP1![a,c] *]);
   end for;
-  PP1 := ProjectiveSpace(F,1);
-  cusps := [PP1!el : el in cusps_seq];
-  return cusps;
+  return cusps_seq;
 end intrinsic;
 
 // copy-pasta-ed from ModSym/Dirichlet.m and adapted for Hecke
