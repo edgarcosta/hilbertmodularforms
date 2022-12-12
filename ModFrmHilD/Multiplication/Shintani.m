@@ -143,17 +143,20 @@ end intrinsic;
 
 // Helper Functions
 // Returns the slopes of the upper and lower walls for the Shintani Domain
-intrinsic ShintaniWalls(ZF::RngOrd) -> Any
+intrinsic ShintaniWalls(F::FldQuad) -> Any
   {returns lower and upper walls of the Shintani domain}
-  require Degree(ZF) eq 2: "only implemented for quadratic fields";
-  D := Discriminant(ZF);
-  F := NumberField(ZF);
+  require Degree(F) eq 2: "only implemented for quadratic fields";
   places := InfinitePlaces(F);
   eps := FundamentalUnitTotPos(F);
   eps1 := Evaluate(eps, places[1]);
   eps2 := Evaluate(eps, places[2]);
-
   return Sqrt(eps1/eps2), Sqrt(eps2/eps1);
+end intrinsic;
+
+intrinsic ShintaniWalls(F::FldNum) -> Any
+  {returns lower and upper walls of the Shintani domain}
+  require Degree(F) eq 2: "only implemented for quadratic fields";
+  return ShintaniWalls(QuadraticField(Discriminant(Integers(F))));
 end intrinsic;
 
 
@@ -187,7 +190,8 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
     T := [];
     if t mod smallestTrace eq 0 then
       x := t div smallestTrace;
-      C1,C2 := ShintaniWalls(ZF);
+      C1,C2 := ShintaniWalls(F);
+      assert C1 lt C2;
       a1 := Evaluate(basis[1], places[1]);
       b1 := Evaluate(basis[2], places[1]);
       a2 := Evaluate(basis[1], places[2]);
@@ -328,7 +332,8 @@ intrinsic IsShintaniReduced(nu::RngElt) -> BoolElt
   end if;
 
   // wall1 < wall2
-  wall1, wall2 := ShintaniWalls(Integers(Parent(nu)));
+  wall1, wall2 := ShintaniWalls(NumberField(Parent(nu)));
+  assert wall1 lt wall2;
   slope := Slope(nu);
   prec := Precision(Parent(slope));
 
