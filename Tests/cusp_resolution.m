@@ -116,11 +116,11 @@ ZK<phi> := Integers(K);
 p := PrimeIdealsOverPrime(K, 31)[1];
 cusps := Cusps(p, 1*ZK : GammaType := "Gamma1");
 cusps0 := Cusps(p, 1*ZK: GammaType := "Gamma0");
-assert [Eltseq(v): v in cusps] eq [Eltseq(v): v in cusps0];
+assert [Eltseq(v[3]): v in cusps] eq [Eltseq(v[3]): v in cusps0];
 
 //Get coordinates of cusps
-alpha1, beta1 := Explode(Coordinates(cusps[1]));
-alpha2, beta2 := Explode(Coordinates(cusps[2]));
+alpha1, beta1 := Explode(Coordinates(cusps[1][3]));
+alpha2, beta2 := Explode(Coordinates(cusps[2][3]));
 
 //Normalize
 alpha1, beta1 := NormalizeCusp(K, alpha1, beta1, p);
@@ -146,7 +146,7 @@ for T in ["Gamma0", "Gamma1"] do
     cusps := Cusps(n, 1*ZK: GammaType := T);
     for c in cusps do
 	print "Cusp number", Index(cusps, c);
-	alpha, beta := Explode(Coordinates(c));
+	alpha, beta := Explode(Coordinates(c[3]));
 	alpha, beta := NormalizeCusp(K, alpha, beta, n);
 	print alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q);
 	TestCuspChangeMatrix(K, b, n, alpha, beta: GammaType:=T);
@@ -162,7 +162,7 @@ p := 2*ZK;
 cc := Cusps(p, 1*ZK: GammaType:="Gamma0");
 assert #cc eq 2;
 for i in [1..#cc] do
-    alpha, beta := Explode(Coordinates(cc[i]));
+    alpha, beta := Explode(Coordinates(cc[i][3]));
     alpha, beta := NormalizeCusp(K, alpha, beta, p);
     L := CuspResolutionIntersections(K, 1*ZK, p, alpha, beta: GammaType:="Gamma0");
     assert EqUpToCyclicPermutation(L, [-2,-5,-2]);

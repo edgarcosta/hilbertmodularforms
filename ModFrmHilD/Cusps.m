@@ -235,6 +235,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
     ZFMM, mpMM := quo<ZF | MM>;
     ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;
   elif GammaType eq "Gamma" then
+    // TODO: is this right?
     a := GeneratorOfQuotientModuleCRT(ss,NN);
     c := GeneratorOfQuotientModuleCRT(ss*bb,NN);
     ZFMM, mpMM := quo<ZF | NN>;
@@ -278,7 +279,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   for el in reps do
     a0, c0 := Explode(el);
     if GammaType in ["Gamma0", "Gamma1"] then
-      // new Gamma0 approach: take output of Gamma1 cusps, then mod out by following relation. Rescale so that first components match, then see if second components differ multiplicatively by a unit of ZF/NN
+      // alternative Gamma0 approach: take output of Gamma1 cusps, then mod out by following relation. Rescale so that first components match, then see if second components differ multiplicatively by a unit of ZF/NN
       // see also p. 100 of Diamond and Shurman
       a_new := ReduceModuloIdeal(a0, ss, ss*MM);
       c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
@@ -522,6 +523,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
   ZF := Order(NN);
   F := NumberField(ZF);
+  PP1 := ProjectiveSpace(F,1);
   quads := CuspQuadruples(NN, bb : GammaType := GammaType);
   cusps_seq := [];
   for quad in quads do
@@ -533,11 +535,9 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
     vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
-    Append(~cusps_seq, [a,c]);
+    Append(~cusps_seq, [* bb, MM, PP1![a,c] *]);
   end for;
-  PP1 := ProjectiveSpace(F,1);
-  cusps := [PP1!el : el in cusps_seq];
-  return cusps;
+  return cusps_seq;
 end intrinsic;
 
 // copy-pasta-ed from ModSym/Dirichlet.m and adapted for Hecke
