@@ -79,16 +79,13 @@ integers and one of them is coprime to n}
     fac := [f[1] : f in Factorization(n)];
     
     for p in fac do
-	v := Min(Valuation(alpha, p), Valuation(beta, p));
+	v := Max(Valuation(alpha, p), Valuation(beta, p));
 	c := IdealClassPrimeRepresentative(primelift, p^v);
 	t, gen := IsPrincipal(c*p^(-v));
 	assert t;
 	alpha := gen*alpha;
 	beta := gen*beta;
     end for;
-    //Now alpha, beta should be coprime to n
-    assert IsCoprimeFracIdl(alpha*ZF, n) or IsCoprimeFracIdl(beta*ZF, n);
-    //alpha, beta;
 
     //Convert to integers
     denom := Gcd(alpha*ZF, beta*ZF);
@@ -113,8 +110,9 @@ integers and one of them is coprime to n}
 	g := Gcd(alpha*ZF, beta*ZF);
 	prdivs := [p : p in Divisors(g) | IsPrincipal(p) and p ne 1*ZF];
     end while;
-    
-    return alpha, beta;    
+
+    assert IsCoprimeFracIdl(alpha*ZF, n) or IsCoprimeFracIdl(beta*ZF, n);    
+    return alpha, beta;
 end intrinsic;
 
 intrinsic IsNormalizedCusp(F :: FldQuad, alpha :: FldQuadElt, beta :: FldQuadElt,
