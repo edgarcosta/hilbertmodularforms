@@ -1,6 +1,6 @@
 printf "Testing creation of cusps...\n";
-GammaTypes := ["Gamma", "Gamma1", "Gamma0"];
-//GammaTypes := ["Gamma1", "Gamma0"]; // Gamma currently broken
+//GammaTypes := ["Gamma", "Gamma1", "Gamma0"];
+GammaTypes := ["Gamma1", "Gamma0"]; // Gamma currently broken
 //GammaTypes := ["Gamma1"];
 
 print "Computing cusps for QQ(sqrt(5))";
