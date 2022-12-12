@@ -36,6 +36,7 @@ declare attributes ModFrmHilDGRng:
   // where nu is Shintani reduced, i.e., s(nu) = s(nu')
   // M stands for monoid, multiplication, and mangling
   PrecomputationforTrace, // Precomputed quantities for the Trace formula
+  ClassNumbersPrecomputation, // Precomputed class numbers for Trace formula
   // HMFPrecomputation, // Precomputed quantities for the Trace formula (Old)
   // Book keeping
   // Caching the computation of EigenForms, see Workspace
@@ -250,10 +251,12 @@ end intrinsic;
 
 intrinsic TracePrecomputation(M::ModFrmHilDGRng) -> Assoc
   {}
-  if not assigned M`PrecomputationforTrace then
-    M`PrecomputationforTrace := HMFTracePrecomputation(M);
-  end if;
   return M`PrecomputationforTrace;
+end intrinsic;
+
+intrinsic ClassNumbersPrecomputation(M::ModFrmHilDGRng) -> Assoc
+  {}
+  return M`ClassNumbersPrecomputation;
 end intrinsic;
 
 
@@ -329,6 +332,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`ShintaniRepsByTrace := AssociativeArray();
   M`ReduceIdealToShintaniRep := AssociativeArray();
   M`IdealsByNarrowClassGroup := AssociativeArray();
+  M`PrecomputationforTrace := AssociativeArray();
+  M`ClassNumbersPrecomputation := AssociativeArray();
   // Elements and Shintani domains
   // instanciate all associative arrays
   for bb in M`NarrowClassGroupReps do
@@ -412,44 +417,67 @@ end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
-//         Precomputations: Speed Trace          //
+//         Precomputations: Trace                //
 //                                               //
 ///////////////////////////////////////////////////
 
+
+
 /////////////// ModFrmHilD: Trace Precomputation ////////////////
 
-intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng) -> Assoc
-  {Fills in the CM-extensions}
+// FIXME: HMFTracePrecomputation - Pass tracebasis to IdealCMextensions instead of computing each time 
+
+
+intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
+  {Precomputes class number and unit indices for a list of ideals L}
+
+  // initialize
   F := BaseField(M); // Base Field
   ZF := Integers(F); // Ring of Integers
   _<x> := PolynomialRing(F); // Polynomial ring over F
   UF := UnitGroup(M); // Unit Group of F
   mUF := UnitGroupMap(M); // Unit Group of F map
+  C,mC := ClassGroup(F); // class group  
+  classreps := [ mC(i) : i in C ]; // class group representatives
+  
 
-  // Storage
+  // Temp Storage
   AllDiscriminants := []; // Minimal set of discriminants
   ReducedDiscriminants := []; // Reduced Discriminants
-  A := AssociativeArray(); // Storage for precomputations
 
+  // Precomputations
+  A := TracePrecomputation(M); // current precomputations
+  ideals := [i : i in L | not IsDefined(A,i) ]; // ideals to precompute
 
-  ideals := IdealsByNarrowClassGroup(M)[1*ZF];
-  Include(~ideals, 1*ZF); // assure that 1*ZF is always there
+  // verbose prints
+  vprintf HilbertModularForms, 1 :
+    "start %o. \n", Cputime();
 
   // First pass. A[a] := List of [b,a,D];
   for mm in ideals do
-    A[mm] := [];
-    Points := SIndexOfSummation(M, mm);
-    for i in Points do
-      b := i[1]; // Trace
-      a := i[2]; // Norm
-      D := b^2-4*a; // Discriminant
-      A[mm] cat:= [[* b, a, D*]];
-      AllDiscriminants cat:= [D];
+    A[mm] := AssociativeArray();
+    for aa in classreps do
+      A[mm][aa] := [];
+      if IsNarrowlyPrincipal(mm * aa^2) then
+        Points := PrecompIndexOfSummation(M, mm, aa);
+        for i in Points do
+          b := i[1]; // Trace
+          a := i[2]; // Norm
+          D := b^2-4*a; // Discriminant
+          A[mm][aa] cat:= [[* b, a, D*]];
+          AllDiscriminants cat:= [D];
+        end for;
+      end if;
     end for;
   end for;
 
+  // verbose printing
+  vprintf HilbertModularForms, 1 :
+    "Pass 1 finished at %o. Now computing rings of integers, discriminants, and conductors for %o orders. \n", Cputime(), #AllDiscriminants;
+
 
   // Second pass. Compute reduced discriminants, ZK ring of intgers, and conductor ff.
+  // FIXME: I thinks we can find a set of reduced discriminants first, then compute and then check D0 be computed after checking if we have seen the discriminant before
   CMDisc := Set(AllDiscriminants);
   S := AssociativeArray();
   for D in CMDisc do
@@ -457,10 +485,10 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng) -> Assoc
     ZK := Integers(K); // Ring of Integers
     DD := Discriminant(ZK); // Discriminant
     ff := Sqrt((D*ZF)/DD); // Conductor
-    D0 := D; // Unique indentifying discriminant
+    D0 := D; // Unique reduced discriminant
     t := 0; // Counter
     for d in ReducedDiscriminants do
-      if IsSquare(D/d[1]) then
+      if IsSquare(D / d[1]) then
         t := 1;
         D0 := d[1];
         break;
@@ -472,33 +500,217 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng) -> Assoc
     S[D] := [*D0, ZK, ff*]; // TODO: storing ring of integers doubles time why?
   end for;
 
-
   // Third Pass. Append [D0, ZK, ff] to [b,a,D].
+  // ****** IMPORTANT ******  In the third pass, we remove pairs where ff/aa is not integral 
   for mm in ideals do
-    A[mm] := [ i cat S[i[3]] : i in A[mm]];
+    for aa in classreps do
+      A[mm][aa] := [ i cat S[i[3]] : i in A[mm][aa] | IsIntegral( S[i[3]][3] * aa^(-1) )]; // i[3] = D and  S[i[3]][3] = ff
+    end for;
   end for;
+
+  // verbose printing
+  vprintf HilbertModularForms, 1 : 
+    "Pass 2 finished at %o. Now computing class numbers and unit indices for %o fields. \n", Cputime(), #ReducedDiscriminants;
 
 
   // Fourth pass. Compute class number and unit index [h,w].
   T := AssociativeArray();
   SetClassGroupBounds("GRH"); // No Proof!
   for pair in ReducedDiscriminants do
-    D0 := pair[1]; // Indentifying Discriminant
+    D0 := pair[1]; // Unique Discriminant
     K := pair[2]; // Field
     Kabs := AbsoluteField(K); // Class groups computations only for absolute extensions?
     ZKabs := Integers(Kabs); // Ring of integers
     hplus := NarrowClassNumber(M); // Narrow class number
-    h,w := ClassGroupandUnitIndex(M, K, D0, ZF, hplus); // Class group of K and Hasse Unit index
+    h,w := ClassNumberandUnitIndex(M, K, D0, ZF, hplus); // Class group of K and Hasse Unit index
     T[D0] := [*h,w*];
   end for;
 
+  // verbose printing
+  vprintf HilbertModularForms, 1 : 
+    "Pass 3 finished at %o. \n", Cputime();
 
   // Fifth Pass. Append [h,w] to [b, a, D, D0, ZK, ff].
   for mm in ideals do
-    A[mm] := [ i cat T[i[4]] : i in A[mm]];
+    for aa in classreps do 
+      A[mm][aa] := [ i cat T[i[4]] : i in A[mm][aa] ];
+    end for;
   end for;
-  return A;
+
+  // Assign
+  M`PrecomputationforTrace := A;
+  
 end intrinsic;
+
+/*
+
+intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
+  {Precomputes class number and unit indices for a list of ideals L}
+
+  // initialize
+  F := BaseField(M); // Base Field
+  ZF := Integers(F); // Ring of Integers
+  w := FundamentalUnit(F); // Fundamental Unit
+  if Norm(w) eq 1 and not IsTotallyPositive(w) then w := -w; end if;
+  _<x> := PolynomialRing(F); // Polynomial ring over F
+  UF := UnitGroup(M); // Unit Group of F
+  mUF := UnitGroupMap(M); // Unit Group of F map
+  C,mC := ClassGroup(F); // class group  
+  Creps := [ mC(i) : i in C ]; // class group representatives
+  NCreps := NarrowClassGroupReps(M);
+
+  /////////// Helper function //////////
+  // Write each discriminant as d * ZF = mm * aa^2 with mm squarefree. Let bb = [ aa ] be the ideal representing the class of aa in CL^+(F). 
+  // Then [aa * bb^(-1)] = (x) for some x in ZF_>0 so d * ZF = mm * bb^2 * (x)^2. Thus a unique representative for 
+  // the square class of -d can be picked as the reduced shintani generator for mm * bb^2 with respect fundamental unit squared.
+  
+  function UniqueDiscriminant(d)
+    mm := d * ZF;
+    aa := &*( [1*ZF] cat [ pp[1] ^ (pp[2] div 2) : pp in Factorization(mm)] ); // Note pp[2] div 2 = Floor(pp[2]/2)
+    for bb in NCreps do
+      boo, x := IsNarrowlyPrincipal( aa * bb^(-1) );
+      if boo then
+        pair := ReduceShintaniMinimizeTrace( -d / x^2 );
+        D := -pair[1]; eps := pair[2];
+        if not IsSquare(D/d) then
+          D *:= w;
+        end if;
+        break;
+      end if;
+    end for;
+    assert IsSquare(D/d);
+    return ZF!D;
+  end function;
+
+  
+  // Precomputations
+  A := TracePrecomputation(M); 
+  B := ClassNumbersPrecomputation(M); 
+
+  // First pass. A[mm][aa] := List of [b,a,D] 
+  vprintf HilbertModularForms, 1 : "start %o. \n", Cputime();
+  
+  Discs := {};
+  ideals := Set(L) diff Keys(A); // ideals to precompute
+  for mm in ideals do
+    A[mm] := AssociativeArray();
+    for aa in Creps do
+      A[mm][aa] := [];
+      if IsNarrowlyPrincipal(mm * aa^2) then
+        Points := PrecompIndexOfSummation(M, mm, aa);
+        for i in Points do
+          b := i[1]; // Trace
+          a := i[2]; // Norm
+          D := b^2-4*a; // Discriminant
+          A[mm][aa] cat:= [[b,a,D]];
+          Include(~Discs, D);
+        end for;
+      end if;
+    end for;
+  end for;
+
+
+  // Second pass. Compute a hash with unique discriminants up to squares. 
+  vprintf HilbertModularForms, 1 : "Pass 1 finished at %o. Now computing reduced discriminants for %o orders. \n", Cputime(), #Discs;
+  
+  Hash := AssociativeArray();
+  RDiscs := {};
+  for d in Discs do
+    D := UniqueDiscriminant(d);
+    Include(~RDiscs, D);
+    Hash[d] := D; 
+  end for;
+
+
+
+  // Third pass. Compute ring of integers, class numbers, and unit index for new keys 
+  vprintf HilbertModularForms, 1 : "Pass 2 finished at %o. Now computing class numbers and unit indices for %o fields. \n", Cputime(), #RDiscs;
+  
+  SetClassGroupBounds("GRH"); // Bounds
+  NK := RDiscs diff Keys(B);
+  for D in NK do
+    K := ext<F | x^2 - D >; // Field K/F
+    ZK := Integers(K); // Ring of Integers
+    DD := Discriminant(ZK); // Discriminant
+    Kabs := AbsoluteField(K); // Class groups computations only for absolute extensions?
+    hplus := NarrowClassNumber(M); // Narrow class number
+    h,w := ClassNumberandUnitIndex(M, K, D, ZF, hplus); // Class group of K and Hasse Unit index
+    B[D] := [* h, w, ZK, DD *];
+  end for;
+
+
+  // Fourth Pass. Removing pairs where ff/aa is not integral 
+  vprintf HilbertModularForms, 1 : "Pass 3 finished at %o. Now removing pairs where ff/aa is not integral. \n", Cputime();
+  for mm in ideals do
+    for aa in Creps do
+      A[mm][aa] := [ [i[1], i[2], Hash[i[3]]] : i in A[mm][aa] | IsIntegral( (i[3]*ZF) * (B[Hash[i[3]]][4] * aa)^(-1) ) ]; // i[3] = D and  B[Hash[i[3]]][4] = DD
+    end for;
+  end for;
+
+  // verbose printing
+  vprintf HilbertModularForms, 1 : "Pass 4 finished at %o. \n", Cputime();
+
+  // Assign
+  M`PrecomputationforTrace := A;
+  M`ClassNumbersPrecomputation := B;
+  
+end intrinsic;
+
+*/
+
+
+/////////////// ModFrmHilD: Precompuations for trace forms ////////////////
+
+
+
+intrinsic PrecomputeTraceForm(M::ModFrmHilDGRng)
+  { Precomputes values to generate traceforms tr }
+
+  // runs for all ideals of M
+  HMFTracePrecomputation(M, Ideals(M));
+
+end intrinsic;
+
+
+intrinsic PrecomputeTraceForms(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
+  {Given a list of ideals L = [aa,bb, ...], precomputes values to generate traceforms t_aa, t_bb, ... }
+
+  // Set of ideals
+  A := SetToSequence({ ii * aa : ii in Ideals(M), aa in L });
+
+  // runs for all ideals of M
+  HMFTracePrecomputation(M,A);
+
+end intrinsic;
+
+
+
+
+
+
+
+
+/*
+
+Coming soon!
+
+/////////////// ModFrmHilD: Precomputations for dimensions ////////////////
+
+intrinsic PrecomputeDimensions(M::ModFrmHilDGRng)
+  { Precomputes traces in order to run the dimension formula }
+
+    // initialize
+    F := BaseField(M); // Base Field
+    ZF := Integers(F); // Ring of Integers
+
+
+    HMFTracePrecomputation(M,[1*ZF])
+
+end intrinsic;
+
+*/
+
+
 
 
 
