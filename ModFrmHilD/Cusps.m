@@ -610,8 +610,8 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
     quad_cnt +:= #quads;
   end for;
   if GammaType eq "Gamma" then
-    printf "formula = %o\n", GammaCuspCount(NN);
-    printf "#quads = %o\n", quad_cnt;
+    vprintf HilbertModularForms: "formula = %o\n", GammaCuspCount(NN);
+    vprintf HilbertModularForms: "#quads = %o\n", quad_cnt;
     return quad_cnt eq GammaCuspCount(NN);
   elif GammaType eq "Gamma0" then
     //chis := [H!1];
@@ -628,8 +628,8 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
     Mk_chi := HMFSpace(R, NN, [2,2], chi);
     d +:= EisensteinDimension(Mk_chi);
   end for;
-  printf "Eisenstein dimension = %o\n", d;
-  printf "quadruple count = %o\n", quad_cnt;
+  vprintf HilbertModularForms: "Eisenstein dimension = %o\n", d;
+  vprintf HilbertModularForms: "quadruple count = %o\n", quad_cnt;
   return quad_cnt eq d;
 end intrinsic;
 
