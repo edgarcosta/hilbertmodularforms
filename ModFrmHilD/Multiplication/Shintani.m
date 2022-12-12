@@ -191,7 +191,7 @@ intrinsic ShintaniRepsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrd
     if t mod smallestTrace eq 0 then
       x := t div smallestTrace;
       C1,C2 := ShintaniWalls(F);
-      assert C1 le C2;
+      assert C1 lt C2;
       a1 := Evaluate(basis[1], places[1]);
       b1 := Evaluate(basis[2], places[1]);
       a2 := Evaluate(basis[1], places[2]);
@@ -332,7 +332,8 @@ intrinsic IsShintaniReduced(nu::RngElt) -> BoolElt
   end if;
 
   // wall1 < wall2
-  wall1, wall2 := ShintaniWalls(Integers(Parent(nu)));
+  wall1, wall2 := ShintaniWalls(Parent(nu));
+  assert wall1 lt wall2;
   slope := Slope(nu);
   prec := Precision(Parent(slope));
 
