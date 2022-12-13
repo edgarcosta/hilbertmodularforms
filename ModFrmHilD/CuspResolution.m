@@ -342,6 +342,7 @@ intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt) -> Seq
     return CuspResolutionIntersections(K, Component(G), N, x, y : GammaType:=GammaType(G));
 end intrinsic;
 
+// this is the top-level function
 intrinsic CuspResolutionIntersections(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
 				      alpha :: FldQuadElt, beta::FldQuadElt
 				      : GammaType := "Gamma0") -> SeqEnum[RngIntElt]
