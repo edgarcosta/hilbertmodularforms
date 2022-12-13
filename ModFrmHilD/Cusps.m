@@ -39,115 +39,130 @@ intrinsic ReduceModuloIdeal(a::RngElt, I::RngOrdFracIdl, J::RngOrdFracIdl) -> Fl
   return ModuleToIdeal(a_modJ @@ mp);
 end intrinsic;
 
-// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> RngElt 
-  {}
-  ZF := Order(ss);
-  if ss*MM eq ss then
-    return ZF!1;
-  end if;
-  facts := Factorization(ss*MM);
-  //printf "factors of ss*MM: %o\n", facts;
-  facts_num := [];
-  facts_den := [];
-  ss_vals_num := [];
-  ss_vals_den := [];
-  for fact in facts do
-    if fact[2] gt 0 then // primes with positive valuation
-      Append(~facts_num, fact);
-      Append(~ss_vals_num, Valuation(ss,fact[1]));
-    else // primes with negative valuation
-      Append(~facts_den, fact);
-      Append(~ss_vals_den, Valuation(ss,fact[1]));
-    end if;
-  end for;
-  //printf "ss_vals num = %o\n", ss_vals_num;
-  //printf "ss_vals den = %o\n", ss_vals_den;
-  residues_num := [];
-  residues_den := [];
-  moduli_num := [];
-  moduli_den := [];
-  for i := 1 to #facts_num do
-    fact := facts_num[i];
-    P := fact[1];
-    //v := fact[2];
-    v := ss_vals_num[i];
-    t := UniformizingElement(P);
-    residues_num cat:= [0, (t^v mod P^(v+1))]; // might be a problem if v=0
-    moduli_num cat:= [P^v, P^(v+1)];
-  end for;
-  for i := 1 to #facts_den do
-    fact := facts_den[i];
-    P := fact[1];
-    //v := -fact[2]; // want positive valuation
-    v := -ss_vals_den[i]; // want positive valuation
-    t := UniformizingElement(P);
-    residues_den cat:= [0, (t^v mod P^(v+1))];
-    moduli_den cat:= [P^v, P^(v+1)];
-  end for;
-  if #moduli_num eq 0 then // if list of moduli is empty
-    a_num := ZF!1;
-  else
-    // ensure no cross-cancelation between num and den
-    moduli_num cat:= [el[1] : el in facts_den];
-    residues_num cat:= [1 : el in facts_den];
-    //printf "residues for num = %o\n", residues_num;
-    //printf "moduli for num = %o\n", moduli_num;
-    a_num := CRT(residues_num, moduli_num);
-  end if;
-  if #moduli_den eq 0 then
-    a_den := ZF!1;
-  else
-    // ensure no cross-cancelation between num and den
-    moduli_den cat:= [el[1] : el in facts_num];
-    residues_den cat:= [1 : el in facts_num];
-    //printf "residues for den = %o\n", residues_den;
-    //printf "moduli for den = %o\n", moduli_den;
-    a_den := CRT(residues_den, moduli_den);
-  end if;
-  //printf "a_num = %o\n", a_num;
-  //printf "a_den = %o\n", a_den;
-  // verify it generates
-  a := a_num/a_den;
-  assert a*ZF + ss*MM eq ss;
-  return a;
+intrinsic FindEltWithValuations(F::Fld, ps::SeqEnum[RngOrdIdl], vs::SeqEnum[RngIntElt])
+        -> FldElt
+{Find an element of F that has exactly the required valuations at a finite number of primes,
+and nonnegative valuations at other primes}
+    ss := 1*Integers(F);
+    MM := 1*Integers(F);
+    for i:=1 to #ps do
+        ss *:= ps[i] ^ vs[i];
+        MM *:= ps[i];
+    end for;
+    
+    m := ClassGroupPrimeRepresentatives(Integers(F), MM);
+    for c in Domain(m) do
+        b, x := IsPrincipal(m(c)*ss);
+        if b then
+            return x;
+        end if;
+    end for;
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorsOfQuotientModuleBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
-  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module by looping over all elements of ss/(ss*MM).}
-  ZF := Order(ss);
-  F := NumberField(ZF);
-  ZFMM, mpMM := quo< ZF | MM>;
-  // loop over all elts of ss/(ss*MM)
-  ss_gens := Generators(ss);
-  ss_ngens := #ss_gens;
-  quotient_gens := [];
-  for el in CartesianPower(ZFMM, ss_ngens) do
-    t := ZF!0;
-    for i := 1 to ss_ngens do
-      t +:= (el[i] @@ mpMM)*ss_gens[i];
-    end for;
-    // check if new mod ss*MM
-    /*
-      new_bool := true;
-      for q in quotient_gens do
-        if (t - q) in ss*MM then
-          new_bool := false;
-        end if;
-      end for;
-    */
-    //if (t*ZF + ss*MM eq ss) and new_bool then
-    if (t*ZF + ss*MM eq ss) then
-      Append(~quotient_gens, ReduceModuloIdeal(t, ss, ss*MM));
-    end if;
-  end for;
-  quotient_gens := SetToSequence(SequenceToSet(quotient_gens));
-  //printf "# of quotient gens = %o\n", #quotient_gens;
-  //printf "number of units in ZF/ideal = %o\n", #UnitGroup(ZFMM);
-  assert #quotient_gens eq #UnitGroup(ZFMM);
-  return quotient_gens;
+intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> RngElt 
+{Find a generator of ss/ss*MM as a ZF/MM-module}
+    primes_ss := SequenceToSet([p[1]: p in Factorization(ss)]);
+    primes_MM := SequenceToSet([p[1]: p in Factorization(MM)]);
+    primes := SetToSequence(primes_ss join primes_MM);
+    vals := [Valuation(ss, p): p in primes];
+    return FindEltWithValuations(FieldOfFractions(Order(ss)), primes, vals);
 end intrinsic;
+    
+/*   ZF := Order(ss); */
+/*   if ss*MM eq ss then */
+/*     return ZF!1; */
+/*   end if; */
+/*   facts_num, facts_den := NumDenFactorization(ss*MM); */
+/*   ss_vals_num := []; */
+/*   ss_vals_den := []; */
+/*   //printf "ss_vals num = %o\n", ss_vals_num; */
+/*   //printf "ss_vals den = %o\n", ss_vals_den; */
+/*   residues_num := []; */
+/*   residues_den := []; */
+/*   moduli_num := []; */
+/*   moduli_den := []; */
+/*   for i := 1 to #facts_num do */
+/*     fact := facts_num[i]; */
+/*     P := fact[1]; */
+/*     //v := fact[2]; */
+/*     v := ss_vals_num[i]; */
+/*     t := UniformizingElement(P); */
+/*     residues_num cat:= [0, (t^v mod P^(v+1))]; // might be a problem if v=0 */
+/*     moduli_num cat:= [P^v, P^(v+1)]; */
+/*   end for; */
+/*   for i := 1 to #facts_den do */
+/*     fact := facts_den[i]; */
+/*     P := fact[1]; */
+/*     //v := -fact[2]; // want positive valuation */
+/*     v := -ss_vals_den[i]; // want positive valuation */
+/*     t := UniformizingElement(P); */
+/*     residues_den cat:= [0, (t^v mod P^(v+1))]; */
+/*     moduli_den cat:= [P^v, P^(v+1)]; */
+/*   end for; */
+/*   if #moduli_num eq 0 then // if list of moduli is empty */
+/*     a_num := ZF!1; */
+/*   else */
+/*     // ensure no cross-cancelation between num and den */
+/*     moduli_num cat:= [el[1] : el in facts_den]; */
+/*     residues_num cat:= [1 : el in facts_den]; */
+/*     //printf "residues for num = %o\n", residues_num; */
+/*     //printf "moduli for num = %o\n", moduli_num; */
+/*     a_num := CRT(residues_num, moduli_num); */
+/*   end if; */
+/*   if #moduli_den eq 0 then */
+/*     a_den := ZF!1; */
+/*   else */
+/*     // ensure no cross-cancelation between num and den */
+/*     moduli_den cat:= [el[1] : el in facts_num]; */
+/*     residues_den cat:= [1 : el in facts_num]; */
+/*     //printf "residues for den = %o\n", residues_den; */
+/*     //printf "moduli for den = %o\n", moduli_den; */
+/*     a_den := CRT(residues_den, moduli_den); */
+/*   end if; */
+/*   //printf "a_num = %o\n", a_num; */
+/*   //printf "a_den = %o\n", a_den; */
+/*   // verify it generates */
+/*   a := a_num/a_den; */
+/*   assert a*ZF + ss*MM eq ss; */
+/*   return a; */
+/* end intrinsic; */
+
+/* // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4 */
+/* intrinsic GeneratorsOfQuotientModuleBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum */
+/*   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module by looping over all elements of ss/(ss*MM).} */
+/*   ZF := Order(ss); */
+/*   F := NumberField(ZF); */
+/*   ZFMM, mpMM := quo< ZF | MM>; */
+/*   // loop over all elts of ss/(ss*MM) */
+/*   ss_gens := Generators(ss); */
+/*   ss_ngens := #ss_gens; */
+/*   quotient_gens := []; */
+/*   for el in CartesianPower(ZFMM, ss_ngens) do */
+/*     t := ZF!0; */
+/*     for i := 1 to ss_ngens do */
+/*       t +:= (el[i] @@ mpMM)*ss_gens[i]; */
+/*     end for; */
+/*     // check if new mod ss*MM */
+/*     /\* */
+/*       new_bool := true; */
+/*       for q in quotient_gens do */
+/*         if (t - q) in ss*MM then */
+/*           new_bool := false; */
+/*         end if; */
+/*       end for; */
+/*     *\/ */
+/*     //if (t*ZF + ss*MM eq ss) and new_bool then */
+/*     if (t*ZF + ss*MM eq ss) then */
+/*       Append(~quotient_gens, ReduceModuloIdeal(t, ss, ss*MM)); */
+/*     end if; */
+/*   end for; */
+/*   quotient_gens := SetToSequence(SequenceToSet(quotient_gens)); */
+/*   //printf "# of quotient gens = %o\n", #quotient_gens; */
+/*   //printf "number of units in ZF/ideal = %o\n", #UnitGroup(ZFMM); */
+/*   assert #quotient_gens eq #UnitGroup(ZFMM); */
+/*   return quotient_gens; */
+/* end intrinsic; */
 
 intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module using CRT.}
