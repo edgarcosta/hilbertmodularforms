@@ -50,38 +50,38 @@ end function;
 //p.189: Discriminant 5, level Gamma(2)
 F := QuadraticField(5);
 ZF := Integers(F);
-L := CuspResolutionIntersections(F, 1*ZF, 2*ZF, F!1, F!0: GammaType:="Gamma");
-test := [-3,-3,-3];
-assert EqUpToCyclicPermutation(L, test);
+L, nb := CuspResolutionIntersections(F, 1*ZF, 2*ZF, F!1, F!0: GammaType:="Gamma");
+test := [-3];
+assert EqUpToCyclicPermutation(L, test) and nb eq 3;
 
 //p.193: Same field, Gamma(3)
-L := CuspResolutionIntersections(F, 1*ZF, 3*ZF, F!1, F!0: GammaType:="Gamma");
-test := [-3,-3,-3,-3];
-assert EqUpToCyclicPermutation(L, test);
+L, nb := CuspResolutionIntersections(F, 1*ZF, 3*ZF, F!1, F!0: GammaType:="Gamma");
+test := [-3];
+assert EqUpToCyclicPermutation(L, test) and nb eq 4;
 
 //p.195: Discriminant 8, Level Gamma(p7)
 F := QuadraticField(8);
 ZF := Integers(F);
 p7 := Decomposition(ZF, 7)[1][1];
-L := CuspResolutionIntersections(F, 1*ZF, p7, F!1, F!0: GammaType:="Gamma");
-test := [-2,-4,-2,-4,-2,-4];
-assert EqUpToCyclicPermutation(L, test);
+L, nb := CuspResolutionIntersections(F, 1*ZF, p7, F!1, F!0: GammaType:="Gamma");
+test := [-2,-4];
+assert EqUpToCyclicPermutation(L, test) and nb eq 3;
 
 //p.197: Discriminant 13, not quite Gamma(2) but close
 F := QuadraticField(13);
 ZF := Integers(F);
 p := 2*ZF;
-L := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="GammaP");
-test := RepeatSequence([-2,-5,-2], 3); //this is a typo in the book: quadratic number with periodic continued fraction [2,3,2] lies in field of discriminant 21, not 13
-assert EqUpToCyclicPermutation(L, test);
+L, nb := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="GammaP");
+test := [-2,-5,-2]; //this is a typo in the book: quadratic number with periodic continued fraction [2,3,2] lies in field of discriminant 21, not 13
+assert EqUpToCyclicPermutation(L, test) and nb eq 3;
 
 //p.198: Discriminant 17, level Gamma(2)
 F := QuadraticField(17);
 ZF := Integers(F);
 p := 2*ZF;
-L := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="Gamma");
+L, nb := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="Gamma");
 test := [-2,-3,-5,-3,-2];
-assert EqUpToCyclicPermutation(L, test);
+assert EqUpToCyclicPermutation(L, test) and nb eq 1;
 
 //p.199: Discriminant 24, level Gamma(3+sqrt(6))
 //
@@ -94,17 +94,17 @@ b := (1 + ZF.2) * ZF; // Component ideal.
 assert not HasTotallyPositiveGenerator(b);
 p := (3 + SquareRoot(ZF!6))*ZF;
 assert IsCoprime(b, p);
-L := CuspResolutionIntersections(F, b, p, F!1, F!0: GammaType:="Gamma");
-test := RepeatSequence([-2,-2,-2,-4], 2);
-assert EqUpToCyclicPermutation(L, test);
+L, nb := CuspResolutionIntersections(F, b, p, F!1, F!0: GammaType:="Gamma");
+test := [-2,-2,-2,-4];
+assert EqUpToCyclicPermutation(L, test) and nb eq 2;
 
 //p.201: Discriminant 40, level Gamma(p2)
 F := QuadraticField(40);
 ZF := Integers(F);
 p := Factorization(2*ZF)[1][1];
-L := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="Gamma");
+L, nb := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="Gamma");
 test := [-2,-3,-4,-3];
-assert EqUpToCyclicPermutation(L, test);
+assert EqUpToCyclicPermutation(L, test) and nb eq 1;
 
 //-----------------------------------------------//
 
@@ -116,11 +116,11 @@ ZK<phi> := Integers(K);
 p := PrimeIdealsOverPrime(K, 31)[1];
 cusps := Cusps(p, 1*ZK : GammaType := "Gamma1");
 cusps0 := Cusps(p, 1*ZK: GammaType := "Gamma0");
-assert [Eltseq(v): v in cusps] eq [Eltseq(v): v in cusps0];
+assert [Eltseq(v[3]): v in cusps] eq [Eltseq(v[3]): v in cusps0];
 
 //Get coordinates of cusps
-alpha1, beta1 := Explode(Coordinates(cusps[1]));
-alpha2, beta2 := Explode(Coordinates(cusps[2]));
+alpha1, beta1 := Explode(Coordinates(cusps[1][3]));
+alpha2, beta2 := Explode(Coordinates(cusps[2][3]));
 
 //Normalize
 alpha1, beta1 := NormalizeCusp(K, alpha1, beta1, p);
@@ -131,13 +131,13 @@ g2 := CuspChangeMatrix(K, 1*ZK, alpha2, beta2);
 
 b := 1*ZK;
 TestCuspChangeMatrix(K, b, p, alpha1, beta1: GammaType:="Gamma0");
-L := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma0"); L;
+L, nb := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma0"); L;
 TestCuspChangeMatrix(K, b, p, alpha2, beta2: GammaType:="Gamma0");
-L := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma0"); L;
+L, nb := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma0"); L;
 TestCuspChangeMatrix(K, b, p, alpha1, beta1: GammaType:="Gamma1");
-L := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma1"); L;
+L, nb := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma1"); L;
 TestCuspChangeMatrix(K, b, p, alpha2, beta2: GammaType:="Gamma1");
-L := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma1"); L;
+L, nb := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma1"); L;
 
 //Try a higher, composite level
 q := PrimeIdealsOverPrime(K, 5)[1];
@@ -146,7 +146,7 @@ for T in ["Gamma0", "Gamma1"] do
     cusps := Cusps(n, 1*ZK: GammaType := T);
     for c in cusps do
 	print "Cusp number", Index(cusps, c);
-	alpha, beta := Explode(Coordinates(c));
+	alpha, beta := Explode(Coordinates(c[3]));
 	alpha, beta := NormalizeCusp(K, alpha, beta, n);
 	print alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q);
 	TestCuspChangeMatrix(K, b, n, alpha, beta: GammaType:=T);
@@ -162,8 +162,8 @@ p := 2*ZK;
 cc := Cusps(p, 1*ZK: GammaType:="Gamma0");
 assert #cc eq 2;
 for i in [1..#cc] do
-    alpha, beta := Explode(Coordinates(cc[i]));
+    alpha, beta := Explode(Coordinates(cc[i][3]));
     alpha, beta := NormalizeCusp(K, alpha, beta, p);
-    L := CuspResolutionIntersections(K, 1*ZK, p, alpha, beta: GammaType:="Gamma0");
-    assert EqUpToCyclicPermutation(L, [-2,-5,-2]);
+    L, nb := CuspResolutionIntersections(K, 1*ZK, p, alpha, beta: GammaType:="Gamma0");
+    assert EqUpToCyclicPermutation(L, [-2,-5,-2]) and nb eq 1;
 end for;

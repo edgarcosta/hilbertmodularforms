@@ -235,6 +235,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
     ZFMM, mpMM := quo<ZF | MM>;
     ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;
   elif GammaType eq "Gamma" then
+    // TODO: is this right?
     a := GeneratorOfQuotientModuleCRT(ss,NN);
     c := GeneratorOfQuotientModuleCRT(ss*bb,NN);
     ZFMM, mpMM := quo<ZF | NN>;
@@ -278,7 +279,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   for el in reps do
     a0, c0 := Explode(el);
     if GammaType in ["Gamma0", "Gamma1"] then
-      // new Gamma0 approach: take output of Gamma1 cusps, then mod out by following relation. Rescale so that first components match, then see if second components differ multiplicatively by a unit of ZF/NN
+      // alternative Gamma0 approach: take output of Gamma1 cusps, then mod out by following relation. Rescale so that first components match, then see if second components differ multiplicatively by a unit of ZF/NN
       // see also p. 100 of Diamond and Shurman
       a_new := ReduceModuloIdeal(a0, ss, ss*MM);
       c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
@@ -300,7 +301,8 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde (resp., eqn 5.1.9 in paper), which is in bijection with cusps of Gamma_1(NN)_bb (resp., of Gamma_0(NN)_bb).}
   ZF := Order(NN);
   F := NumberField(ZF);
-  Cl, mpCl := ClassGroup(ZF);
+  mpCl := ClassGroupPrimeRepresentatives(ZF,NN);
+  Cl := Domain(mpCl);
   Cl_seq := [mpCl(el) : el in Cl];
  
   quads := [];
@@ -358,18 +360,16 @@ intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, 
       error "GammaType not recognized";
     end if;
 
-    if v gt 0 then
-      //printf "nonzero valuation; P = %o, v = %o\n", P, v;
-      residues cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
-      moduli cat:= [P^v, P^(v+1)];
+    //printf "nonzero valuation; P = %o, v = %o\n", P, v;
+    residues cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
+    moduli cat:= [P^v, P^(v+1)];
     //else
     //  residues cat:= [(c_bar mod P^vN)]; // might be a problem if v=0
     //  moduli cat:= [P^vN];
-    end if;
   end for;
 
-  //printf "residues = %o\n", residues;
-  //printf "moduli = %o\n", moduli;
+  vprintf HilbertModularForms: "residues = %o\n", residues;
+  vprintf HilbertModularForms: "moduli = %o\n", moduli;
 
   if #moduli eq 0 then // if list of moduli is empty
     c := ZF!1;
@@ -522,6 +522,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
   ZF := Order(NN);
   F := NumberField(ZF);
+  PP1 := ProjectiveSpace(F,1);
   quads := CuspQuadruples(NN, bb : GammaType := GammaType);
   cusps_seq := [];
   for quad in quads do
@@ -533,11 +534,15 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
     vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
-    Append(~cusps_seq, [a,c]);
+    Append(~cusps_seq, [* bb, MM, PP1![a,c] *]);
   end for;
-  PP1 := ProjectiveSpace(F,1);
-  cusps := [PP1!el : el in cusps_seq];
-  return cusps;
+  return cusps_seq;
+end intrinsic;
+
+intrinsic WriteCuspDataToRow(surface_label::MonStgElt, pt::Pt, bb::RngOrdIdl, MM::RngOrdIdl, min_period::SeqEnum, rep::RngIntElt) -> MonStgElt
+  {Script for writing cusp data to data table row}
+
+  return Sprintf("%o|%o|%o|%o|%o|%o", surface_label, Eltseq(pt), LMFDBLabel(bb), LMFDBLabel(MM), min_period, rep);
 end intrinsic;
 
 // copy-pasta-ed from ModSym/Dirichlet.m and adapted for Hecke
@@ -604,8 +609,8 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
     quad_cnt +:= #quads;
   end for;
   if GammaType eq "Gamma" then
-    printf "formula = %o\n", GammaCuspCount(NN);
-    printf "#quads = %o\n", quad_cnt;
+    vprintf HilbertModularForms: "formula = %o\n", GammaCuspCount(NN);
+    vprintf HilbertModularForms: "#quads = %o\n", quad_cnt;
     return quad_cnt eq GammaCuspCount(NN);
   elif GammaType eq "Gamma0" then
     //chis := [H!1];
@@ -622,8 +627,8 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
     Mk_chi := HMFSpace(R, NN, [2,2], chi);
     d +:= EisensteinDimension(Mk_chi);
   end for;
-  printf "Eisenstein dimension = %o\n", d;
-  printf "quadruple count = %o\n", quad_cnt;
+  vprintf HilbertModularForms: "Eisenstein dimension = %o\n", d;
+  vprintf HilbertModularForms: "quadruple count = %o\n", quad_cnt;
   return quad_cnt eq d;
 end intrinsic;
 

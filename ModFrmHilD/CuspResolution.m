@@ -72,12 +72,13 @@ intrinsic NormalizeCusp(F :: FldQuad, alpha :: FldQuadElt,
 
 {Given alpha, beta not both zero, compute another representation
 (alpha', beta') of (alpha:beta) in P^1(F) such that alpha, beta are
-integers and one of them is coprime to n}
+integers, and alpha, beta, n are globally coprime}
     
     ZF := Integers(F);
     primelift := ClassGroupPrimeRepresentatives(ZF, n);
     fac := [f[1] : f in Factorization(n)];
-    
+
+	//Enforce coprimality condition
     for p in fac do
 	v := Min(Valuation(alpha, p), Valuation(beta, p));
 	c := IdealClassPrimeRepresentative(primelift, p^v);
@@ -85,10 +86,8 @@ integers and one of them is coprime to n}
 	assert t;
 	alpha := gen*alpha;
 	beta := gen*beta;
-    end for;
-    //Now alpha, beta should be coprime to n
-    assert IsCoprimeFracIdl(alpha*ZF, n) or IsCoprimeFracIdl(beta*ZF, n);
-    //alpha, beta;
+    end for;	
+    assert IsCoprimeFracIdl(alpha*ZF, Gcd(beta*ZF, n));
 
     //Convert to integers
     denom := Gcd(alpha*ZF, beta*ZF);
@@ -113,16 +112,16 @@ integers and one of them is coprime to n}
 	g := Gcd(alpha*ZF, beta*ZF);
 	prdivs := [p : p in Divisors(g) | IsPrincipal(p) and p ne 1*ZF];
     end while;
-    
-    return alpha, beta;    
+
+    return alpha, beta;
 end intrinsic;
 
 intrinsic IsNormalizedCusp(F :: FldQuad, alpha :: FldQuadElt, beta :: FldQuadElt,
 			   n :: RngQuadIdl) -> Bool
-{True iff alpha, beta are both integral and one of them is prime to n}
+{True iff alpha, beta are both integral alpha, beta, n are coprime}
     ZF := Integers(F);
     ints := alpha in 1*ZF and beta in 1*ZF;
-    coprime := IsCoprimeFracIdl(alpha*ZF, n) or IsCoprimeFracIdl(beta*ZF, n);
+    coprime := IsCoprimeFracIdl(alpha*ZF, Gcd(beta*ZF, n));
     return ints and coprime;
 end intrinsic;
 
@@ -189,42 +188,43 @@ just an integer divided by beta)}
     if not IsNormalizedCusp(F, alpha, beta, n) then
 	error "Not a cusp change matrix attached to a normalized cusp";
     end if;
-    assert IsCoprimeFracIdl(p, I); //One of alpha and beta is therefore coprime to n.
+    assert IsCoprimeFracIdl(p, I); //Enforced by normalized cusp
     N := I^(-2)*b^(-1);
     
-    if GammaType eq "Gamma0" then
-	if f eq 0 then
-	    if alpha eq 0 then x0 := lambda;
-	    else x0 := 2*lambda*alpha;
-	    end if;
-	    return [0, 0, e, e], ZF!x0;
-	elif 2*f lt e then
-	    if alpha eq 0 then x0 := lambda;
-	    else x0 := 2*lambda*alpha;
-	    end if;
-	    return [0, f, e-2*f, e-f], ZF!x0;
-	else
-	    return [0, e-f, 0, 0], ZF!0;
-	end if;
+    if GammaType eq "Gamma0" or GammaType eq "Gamma01" then
+		if f eq 0 then
+			if alpha eq 0 then x0 := lambda;
+			else x0 := 2*lambda*alpha;
+			end if;
+			exps := [0, 0, e, e];
+		elif 2*f lt e then
+			if alpha eq 0 then x0 := lambda;
+			else x0 := 2*lambda*alpha;
+			end if;
+			exps := [0, f, e-2*f, e-f];
+		else
+			exps := [0, e-f, 0, 0];
+			x0 := ZF!0;
+		end if;
+		if GammaType eq "Gamma01" then
+			exps[2] := e;
+		end if;
 	
-    elif GammaType eq "Gamma1" then
-	if f eq 0 then
-	    return [e, e, e, 0], ZF!0;
-	elif f eq e then
-	    return [e, e, 0, 0], ZF!0;
-	else
-	    x0 := (1-2*beta*mu);
-	    return [Max(f, e-f), Max(f, e-f), e-f, e], ZF!x0;
-	end if;
+    elif GammaType eq "Gamma1" or GammaType eq "Gamma11" then
+		exps := [e, e, e-f, 0];
+		x0 := (1-2*beta*mu);
 
-    elif GammaType eq "GammaP" then
-	return [0, e, e, 0], ZF!0;
+	elif GammaType eq "GammaP" then
+		exps := [0, e, e, 0];
+		x0 := ZF!0;
 	
     elif GammaType eq "Gamma" then
-	return [e, e, e, 0], ZF!0;
+		exps := [e, e, e, 0];
+		x0 := ZF!0;
     else error "GammaType not recognized";
     end if;
-    
+
+	return exps, ZF!x0;
 end intrinsic;
 		    
 
@@ -342,6 +342,7 @@ intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt) -> Seq
     return CuspResolutionIntersections(K, Component(G), N, x, y : GammaType:=GammaType(G));
 end intrinsic;
 
+// this is the top-level function
 intrinsic CuspResolutionIntersections(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
 				      alpha :: FldQuadElt, beta::FldQuadElt
 				      : GammaType := "Gamma0") -> SeqEnum[RngIntElt]
@@ -379,10 +380,9 @@ Ker(Gamma(1)->PSL(ZF/n)).}
 	n := 2*n;
     end if;
 
-    L := RepeatSequence(periodic, n);
-    L := [-b: b in L];
-    if #L eq 1 then L := [L[1]+2]; end if;
-    return L;
+    L := [-b: b in periodic];
+    if #L eq 1 and n eq 1 then L := [L[1]+2]; end if;
+    return L, n;
 end intrinsic;
 
 intrinsic GeneratorsOfGMV(F::FldQuad, b::RngQuadIdl, alpha::FldQuadElt,
