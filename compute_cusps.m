@@ -2,8 +2,8 @@
 load "config.m";
 
 SetDebugOnError(true);
-MaxDiscr := 1000;
-MaxLevelNorm := 1000;
+MaxDiscr := 10;
+MaxLevelNorm := 10;
 
 count := 0;
 
@@ -37,4 +37,4 @@ for D:=1 to MaxDiscr do
 	end for;
 end for;
 				
-print "Total count %o\n";
+printf "Total count %o\n", count;
