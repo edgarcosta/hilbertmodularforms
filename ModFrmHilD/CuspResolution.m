@@ -107,8 +107,8 @@ integers, and alpha, beta, n are globally coprime}
     while prdivs ne [] do
 	p := prdivs[1];
 	c := Generators(p)[1];
-	alpha := alpha/gen;
-	beta := beta/gen;
+	alpha := alpha/c;
+	beta := beta/c;
 	g := Gcd(alpha*ZF, beta*ZF);
 	prdivs := [p : p in Divisors(g) | IsPrincipal(p) and p ne 1*ZF];
     end while;
