@@ -37,4 +37,4 @@ for D:=1 to MaxDiscr do
 	end for;
 end for;
 				
-print "Total count %o\n";
+printf "Total count %o\n", count;
