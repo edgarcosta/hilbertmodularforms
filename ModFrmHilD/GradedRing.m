@@ -11,8 +11,9 @@ declare attributes ModFrmHilDGRng:
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
-  NarrowClassGroupReps, // SeqEnum[RngOrdIdl] := [bb]
-  IdealDualNarrowClassGroupReps, // SeqEnum[RngFracIdl] := [bbp], where bbp := bb*Difference(Integers)^-1]
+  NarrowClassGroupRepsMap, // Assoc: g::GrpElt -> bb::RngFracIdl
+  NarrowClassGroupReps, // Values(NarrowClassGroupRepsMap)
+  IdealDualNarrowClassGroupReps, //  Assoc: g::GrpElt -> bbp::RngFracIdl, where bbp := bb*Difference(Integers)^-1]
   NarrowClassGroupRepsToIdealDual, // Assoc, bb -> bbp
   UnitGroup, // GrpAb
   UnitGroupMap, // Map : GrpAb -> Units of ZF
@@ -48,6 +49,28 @@ declare attributes ModFrmHilDGRng:
   LValues
   ;
 
+
+function NarrowClassGroupRepsMapDeterministic(F, Cl, mp, diffinv)
+  bound := 1;
+  ClElts := [g : g in Cl];
+  repsindex := [0 : _ in ClElts];
+  while 0 in repsindex do
+      ideals := Sort([<StringToInteger(k) : k in Split(l, ".")> cat <elt> where l := LMFDBLabel(elt) : elt in IdealsUpTo(bound, F)]);
+      idealsmp := [ elt[3] @@ mp : elt in ideals];
+      idealsdualmp := [ (elt[3]*diffinv) @@ mp : elt in ideals];
+      repsindex := [Index(idealsmp, g) : g in ClElts];
+      bound *:= 2;
+  end while;
+  NarrowClassGroupRepsMap := AssociativeArray();
+  for i->g in ClElts do
+    NarrowClassGroupRepsMap[g] := ideals[repsindex[i]][3];
+  end for;
+
+
+
+  return NarrowClassGroupRepsMap;
+
+end function;
 
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
@@ -127,9 +150,9 @@ intrinsic NarrowClassGroupReps(M::ModFrmHilDGRng) -> SeqEnum[RngOrdIdl]
   return M`NarrowClassGroupReps;
 end intrinsic;
 
-intrinsic IdealDualNarrowClassGroupReps(M::ModFrmHilDGRng) -> SeqEnum[RngFracIdl]
+intrinsic NarrowClassGroupRepsMap(M::ModFrmHilDGRng) -> Assoc
   {}
-  return M`IdealDualNarrowClassGroupReps;
+  return M`NarrowClassGroupRepsMap;
 end intrinsic;
 
 intrinsic NarrowClassGroupRepsToIdealDual(M::ModFrmHilDGRng) -> Assoc
@@ -294,7 +317,10 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`NarrowClassGroup := Cl;
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
-  M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
+
+  // Deterministically finding representatives for Cl
+  M`NarrowClassGroupRepsMap := NarrowClassGroupRepsMapDeterministic(F, Cl, mp, diffinv);
+  M`NarrowClassGroupReps := [M`NarrowClassGroupRepsMap[g] : g in Cl];
   M`IdealDualNarrowClassGroupReps := [ bb*diffinv : bb in M`NarrowClassGroupReps];
   M`NarrowClassGroupRepsToIdealDual := AssociativeArray();
   for i in [1..#Cl] do
@@ -302,6 +328,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
     bbp := M`IdealDualNarrowClassGroupReps[i];
     M`NarrowClassGroupRepsToIdealDual[bb] := bbp;
   end for;
+
+
   M`UnitGroup := U;
   M`UnitGroupMap := mU;
   _, _ := TotallyPositiveUnits(F); // it caches it
