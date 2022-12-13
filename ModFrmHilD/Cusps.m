@@ -41,8 +41,8 @@ end intrinsic;
 
 intrinsic FindEltWithValuations(F::Fld, ps::SeqEnum[RngOrdIdl], vs::SeqEnum[RngIntElt])
         -> FldElt
-{Find an element of F that has exactly the required valuations at a finite number of primes,
-and nonnegative valuations at other primes}
+  {Find an element of F that has exactly the required valuations at a finite number of primes,
+  and nonnegative valuations at other primes}
     ss := 1*Integers(F);
     MM := 1*Integers(F);
     for i:=1 to #ps do
@@ -61,7 +61,7 @@ end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
 intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> RngElt 
-{Find a generator of ss/ss*MM as a ZF/MM-module}
+  {Find a generator of ss/ss*MM as a ZF/MM-module}
     primes_ss := SequenceToSet([p[1]: p in Factorization(ss)]);
     primes_MM := SequenceToSet([p[1]: p in Factorization(MM)]);
     primes := SetToSequence(primes_ss join primes_MM);
@@ -298,6 +298,9 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
       // see also p. 100 of Diamond and Shurman
       a_new := ReduceModuloIdeal(a0, ss, ss*MM);
       c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
+      if c_new eq 0 then
+        c_new := Generators(ss*bb*MM)[1];
+      end if;
       Append(~final, [a_new, c_new]);
     elif GammaType eq "Gamma" then
       a_new := ReduceModuloIdeal(a0, ss, ss*NN);
@@ -403,7 +406,19 @@ end intrinsic;
 intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
   {}
 
+  ZF := Order(NN);
+  F := NumberField(ZF);
   bad_primes := [el[1] : el in Factorization(c*(bb^-1)) | Valuation(MM, el[1]) eq 0];
+  vs := [];
+  for p in bad_primes do
+    if Valuation(a_bar, p) gt 0 then
+      Append(~vs, Valuation(ss, p));
+    else
+      Append(~vs, Valuation(ss,p)+1);
+    end if;
+  end for;
+  x := FindEltWithValuations(F, bad_primes, vs);
+  return a_bar + x;
 end intrinsic;
 
 /*
