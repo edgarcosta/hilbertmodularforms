@@ -22,6 +22,7 @@ declare attributes ModFrmHilD:
   CuspDimension, //RngIntElt
   EisensteinDimension, //RngIntElt
   EisensteinAdmissibleCharacterPairs, // List of pairs of primitive characters
+  Ambient, // BoolElt
   MagmaSpace, //ModFrmHil
   MagmaNewformDecomposition, // List
   MagmaNewCuspForms; // SeqEnum[ModFrmHilElt]
@@ -195,6 +196,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Parent := M;
   Mk`Weight := k;
   Mk`Level := N;
+  Mk`Ambient := true;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
   // Right now when k[i] = 1, we don't want to restrict to compatible weights.
   if 1 notin k then
@@ -216,8 +218,6 @@ end intrinsic;
 // overloaded for trivial level and character
 intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]: unitcharacters:=false) -> ModFrmHilD
   {}
-  Mk := ModFrmHilDInitialize();
-  Mk`Weight := k;
   ZF := Integers(M);
   N := ideal<ZF|1>;
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
@@ -228,9 +228,6 @@ end intrinsic;
 // overloaded for trivial character
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]: unitcharacters:=false) -> ModFrmHilD
   {}
-  Mk := ModFrmHilDInitialize();
-  Mk`Weight := k;
-  ZF := Integers(M);
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
   return HMFSpace(M, N, k, chi: unitcharacters:=unitcharacters);
@@ -261,6 +258,7 @@ intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
   Mk`Character := M`Character;
   Mk`MagmaSpace := HeckeCharacterSubspace(NewSubspace(HilbertCuspForms(M), N), M`Character);
   Mk`EisensteinDimension := 0;
+  Mk`Ambient := false;
   return Mk;
 end intrinsic;
 
@@ -357,16 +355,18 @@ intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 // TODO swap the default
-intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
+intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
   {return dimension of S(Mk)}
   require version in ["builtin", "trace"] : "the options for trace are either \"builtin\" or \"trace formula\"";
+  // FIXME: Ben will fix this eventually...
+  if not Mk`Ambient then
+    version := "builtin";
+  end if;
+  if NarrowClassNumber(Parent(Mk)) ne 1 and not IsTrivial(Character(Mk)) then
+    version := "builtin";
+  end if;
   if not assigned Mk`CuspDimension then
     k := Weight(Mk);
-    if SequenceToSet(k) eq Set([2]) and version eq "trace" then
-      print "Juanita: Not using trace formula, might be slow (parallel weight 2). Talk to Ben";
-      version := "builtin";
-    end if;
-
     if version eq "builtin" then
 	       //      require IsTrivial(DirichletRestriction(Character(Mk))): "we rely on magma built-in functions, which only works for characters whose associated Dirichlet character is trivial";
       Mk`CuspDimension := Dimension(HilbertCuspForms(Mk));
@@ -374,7 +374,10 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
       M := Parent(Mk);
       ZF := Integers(M);
       // Edgar: Ben, should one use Strace?
-      Mk`CuspDimension := Trace(Mk,1*ZF);
+      Mk`CuspDimension := Integers()!Trace(Mk,1*ZF);
+      if SequenceToSet(k) eq Set([2]) then
+        Mk`CuspDimension -:= NarrowClassNumber(M);
+      end if;
     end if;
   end if;
   return Mk`CuspDimension;

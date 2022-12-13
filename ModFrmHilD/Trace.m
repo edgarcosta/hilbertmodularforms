@@ -5,9 +5,9 @@
 //                                               //
 ///////////////////////////////////////////////////
 
-/* 
+/*
 Trace (Main function): Computes Tr T(mm) on an HMFspace Mk
-  * TraceProduct (Subroutine): Computes trace of T(mm) * P(aa) on the full space with all characters. 
+  * TraceProduct (Subroutine): Computes trace of T(mm) * P(aa) on the full space with all characters.
   * PrecompTraceProduct (Subroutine): Computes trace of T(mm) * P(aa) on the full space with all characters using precomputations.
 
 TODOS
@@ -33,15 +33,16 @@ I have some code to quickly compute the Hasse unit index without doing the class
 
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
+  // This is wrong at 1*Zf and k = 2, see CuspDimension for the fix
 
   // Initialize
   k := Weight(Mk);
   F := BaseField(Mk);
   ZF := Integers(F);
-  C,mC := ClassGroup(F);   
-  CReps := [ mC(i) : i in C ]; 
-  chi := Character(Mk)^(-1); 
-  m,p := Conductor(chi); 
+  C,mC := ClassGroup(F);
+  CReps := [ mC(i) : i in C ];
+  chi := Character(Mk)^(-1);
+  m,p := Conductor(chi);
   ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
 
   // requirements
@@ -63,7 +64,7 @@ end intrinsic;
 
 intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
   {Computes Trace[ T(mm) * P(aa) ] where T(mm) is the mth hecke operator and P(aa) is the diamond operator}
-  
+
   // If mm * aa^2 = 0 or is not narrowly principal then return 0
   mmaa := mm * aa^2;
   if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
@@ -83,7 +84,7 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
   Indexforsum := IndexOfSummation(M, mm, aa);
 
   // Set class group bound for faster computations
-  SetClassGroupBounds("GRH"); 
+  SetClassGroupBounds("GRH");
 
   // Summation
   Sumterm := 0;
@@ -93,10 +94,10 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
     b := pair[1];
     a := pair[2];
     D := b^2-4*a;
-    K := ext<F | x^2 - D >; 
-    ZK := Integers(K); 
-    DD := Discriminant(ZK); 
-    ff := Sqrt((D*ZF)/DD); // Conductor   
+    K := ext<F | x^2 - D >;
+    ZK := Integers(K);
+    DD := Discriminant(ZK);
+    ff := Sqrt((D*ZF)/DD); // Conductor
     Kabs := AbsoluteField(K);
     ZKabs := Integers(Kabs);
     UK,mUK := UnitGroup(ZKabs);
@@ -108,8 +109,8 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
     require IsTotallyPositive(-D): "Non CM-extension in summation";
 
     ///////////////////  Helper Functions //////////////////////
-    
-    // Weightfactor 
+
+    // Weightfactor
     Weightfactor := function(b,a,l)
       _<x> := PowerSeriesRing(RealField(k[1]+20),k[1]+20); // extend with weight
       P := 1/(1 + b*x + a*x^2);
@@ -126,21 +127,21 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
     /////////////////// Conductor sum //////////////////////
 
     // Constant — FIXME: Remove Round? (see Weightfactor)
-    C := (h/w) * Round( &*[ Weightfactor( Evaluate(b,places[i]), Evaluate(a,places[i]), k[i]-2 ) : i in [1..n]] ); 
+    C := (h/w) * Round( &*[ Weightfactor( Evaluate(b,places[i]), Evaluate(a,places[i]), k[i]-2 ) : i in [1..n]] );
 
     // Conductor Sum
     conductorsum := 0;
-    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do    
+    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
       // term from converting class number of order to class number of maximal order
-      term := Norm(bb) * (&*([1] cat [1 - ArtinSymbol(pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb)])); 
+      term := Norm(bb) * (&*([1] cat [1 - ArtinSymbol(pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
       // Embedding numbers
-      for pp in Factorization(NN) do  
-        // Create a polynomial x^2 + b1x + a1 with conductor bb 
+      for pp in Factorization(NN) do
+        // Create a polynomial x^2 + b1x + a1 with conductor bb
         b0, a0 := PolynomialMaximalOrder(b,a,ZF,pp[1]);
         pi := UniformizingElement(pp[1]);
         vbb := Valuation(bb,pp[1]);
         b1 := b0 * pi^(vbb);
-        a1 := a0 * pi^(2 * vbb); 
+        a1 := a0 * pi^(2 * vbb);
         term *:= EmbeddingNumbers(b1,a1,pp[1],pp[2]);
       end for;
       conductorsum +:= term;
@@ -161,7 +162,7 @@ end intrinsic;
 
 intrinsic PrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
   {Computes trace of T(mm) * P(aa) for Hecke operator T(mm) and Diamond operator P(aa) using precomputations.}
-  
+
   // If mm * aa^2 = 0 or is not narrowly principal then return 0
   mmaa := mm * aa^2;
   if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
@@ -195,7 +196,7 @@ intrinsic PrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> R
     /*
     // Preliminaries
     b := StoredData[1];
-    a := StoredData[2]; 
+    a := StoredData[2];
     D := b^2 - 4*a;
 
     // Classgroup values
@@ -217,8 +218,8 @@ intrinsic PrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> R
     w := StoredData[8]; // Unit index of quadratic extension K/F
 
     ///////////////////  Helper Functions //////////////////////
-   
-    // Weightfactor 
+
+    // Weightfactor
     Weightfactor := function(b,a,l)
       _<x> := PowerSeriesRing( RealField(k[1] + 20), k[1] + 20); // extend with weight
       P := 1/(1 + b*x + a*x^2);
@@ -233,25 +234,25 @@ intrinsic PrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> R
     end function;
 
     // Constant — FIXME: Remove Round?
-    C := (h/w) * Round( &*[ Weightfactor( Evaluate(b,places[i]), Evaluate(a,places[i]), k[i]-2 ) : i in [1..n]] ); 
-    
+    C := (h/w) * Round( &*[ Weightfactor( Evaluate(b,places[i]), Evaluate(a,places[i]), k[i]-2 ) : i in [1..n]] );
+
     // Factor of 2 since computation is the same for x^2 +/- bx + a.
-    if b ne 0 then 
-      C *:= 2; 
+    if b ne 0 then
+      C *:= 2;
     end if;
 
     // Conductor Sum
     conductorsum := 0;
-    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do 
+    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
       // Term from class number of order -> class number of maximal order
       term := Norm(bb) * (&*([1] cat [1 - ArtinSymbol(pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
       // Embedding numbers
       for pair in NNfact do
-        pp := pair[1]; 
-        e := pair[2]; 
+        pp := pair[1];
+        e := pair[2];
         f := Valuation(bb,pp); // Conductor
         g := Valuation(Discriminant(ZK),pp); // Valuation of discriminant // Change to DD eventually
-        term *:= OptimalEmbeddings(e, 2*f, g, pp, ZK); 
+        term *:= OptimalEmbeddings(e, 2*f, g, pp, ZK);
       end for;
       conductorsum +:= term;
     end for;
@@ -274,20 +275,20 @@ end intrinsic;
 
 /*
 
-Helper functions 
-  
-  * ConstantTerm (TraceProduct and PrecompTraceProduct) 
-    - Computes a constant term for Tr T(mm) where mm is a square. 
+Helper functions
+
+  * ConstantTerm (TraceProduct and PrecompTraceProduct)
+    - Computes a constant term for Tr T(mm) where mm is a square.
 
   * CorrectionFactor (TraceProduct and PrecompTraceProduct)
-    - **** Not Implemented yet  ***** 
-    - Correction factor for spaces with k = (2,..,2) and chi = 1. I think the formula computes the trace on M_k(NN) as opposed to S_k(NN) - Talks to JV about Eisenstein series. 
+    - **** Not Implemented yet  *****
+    - Correction factor for spaces with k = (2,..,2) and chi = 1. I think the formula computes the trace on M_k(NN) as opposed to S_k(NN) - Talks to JV about Eisenstein series.
 
 
 Index of Summation
 
   * IndexOfSummation (TraceProduct)
-    - Computes all extensions of the forms x^2 (+/-) bx + a where (a) = mm * aa^2, b in aa, and the conductor ff is divisible by aa where aa is a representative from the class group. 
+    - Computes all extensions of the forms x^2 (+/-) bx + a where (a) = mm * aa^2, b in aa, and the conductor ff is divisible by aa where aa is a representative from the class group.
 
   * IndexOfSummation (PrecompTraceProduct)
     - Computes all extensions of the forms x^2 + bx + a where (a) = mm * aa^2, b in aa where aa is a representative from the class group.
@@ -300,10 +301,10 @@ Embedding Numbers
   * EmbeddingNumbers (TraceProduct)
     - Computes embedding number for an order x^2 + bx + a.
 
-  * PolynomialMaximalOrder (TraceProduct) 
+  * PolynomialMaximalOrder (TraceProduct)
     - Computes a polynomial for the local max order of in the extension (ZK)_pp / ZF_pp above a prime pp
 
-  * OptimalEmbeddingNumbers (PrecompTraceProduct) 
+  * OptimalEmbeddingNumbers (PrecompTraceProduct)
     - Computes embedding number for an order x^2 + bx + a using a formula.
     - Subroutine: OptimalEmbeddingsOdd
     - Subroutine: OptimalEmbeddingsEven
@@ -325,18 +326,18 @@ Class Group and Unit Index
 
 // Constant Term
 intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
-  {Constant term for Summation}    
-  
-  // check mm = aa^2 where aa is principal 
-  boo, aa := IsSquare(mm); 
-  if boo then 
+  {Constant term for Summation}
+
+  // check mm = aa^2 where aa is principal
+  boo, aa := IsSquare(mm);
+  if boo then
     boo := IsPrincipal(aa);
   end if;
   // If checks fail - return 0
   if not boo then
     return 0;
   end if;
-  
+
   // Preliminaries
   M := Parent(Mk);
   NN := Level(Mk);
@@ -345,8 +346,8 @@ intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   ZF := Integers(Mk);
   n := Degree(F);
   Disc := Discriminant(ZF);
-  h := ClassNumber(F); // This needs to be stored    
-  
+  h := ClassNumber(F); // This needs to be stored
+
   // Constant term
   C0 := h * Norm(NN) * Abs(DedekindZetaExact(F,-1)) / 2^(n-1); // Thanks for Zeta(F,-1)!
   C0 *:= &*[ i-1 : i in k ];
@@ -411,19 +412,19 @@ intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl) -> S
 
   // Looping over all totally positive generators of the form au for u a totally positive unit mod squares
   Indexforsum := [ [b,a*u] : b in IdealCMExtensions(M, a*u, 1*ZF), u in TotallyPositiveUnits];
-  Indexforsum cat:= [ [-i[1], i[2]] : i in Indexforsum  | i[1] ne 0 ];  // Add x^2 +/- bx + au 
+  Indexforsum cat:= [ [-i[1], i[2]] : i in Indexforsum  | i[1] ne 0 ];  // Add x^2 +/- bx + au
 
   // Remove all orders x^2 + bx + a where 1) aa does not divide conductor ff or 2) b is not aa
   L := [];
-  for pair in Indexforsum do    
+  for pair in Indexforsum do
     b := pair[1];
     a := pair[2];
     D := b^2-4*a;
     K := ext<F | x^2 - D >;
     ZK := Integers(K);
-    DD := Discriminant(ZK); 
+    DD := Discriminant(ZK);
     ff := Sqrt((D*ZF)/DD); // Conductor
-    if IsIntegral( ff * aa^(-1) ) and b in aa then 
+    if IsIntegral( ff * aa^(-1) ) and b in aa then
       L cat:= [pair];
     end if;
   end for;
@@ -434,7 +435,7 @@ end intrinsic;
 
 intrinsic PrecompIndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl) -> SeqEnum
   {Computes the a,b for which x^2 + bx + a is used in the summation}
-  
+
   // Preliminaries
   F := BaseField(M);
   ZF := Integers(M);
@@ -456,7 +457,7 @@ intrinsic PrecompIndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdId
   a := ReduceShintaniMinimizeTrace(a)[1];
 
   // Index for summation
-  return [[b,a*u] : b in IdealCMExtensions(M,a*u,aa), u in TotallyPositiveUnits]; 
+  return [[b,a*u] : b in IdealCMExtensions(M,a*u,aa), u in TotallyPositiveUnits];
 end intrinsic;
 
 
@@ -467,7 +468,7 @@ intrinsic IdealCMExtensions(M::ModFrmHilDGRng, a::RngElt, aa::RngOrdIdl) -> SeqE
   ZF := Integers(M);
   places := Places(M);
   // half of square with sides 2sqrt(a).
-  XLB := -2*Sqrt(Evaluate(a,places[1])); 
+  XLB := -2*Sqrt(Evaluate(a,places[1]));
   YLB := 0;
   XUB := 2*Sqrt(Evaluate(a,places[1]));
   YUB := 2*Sqrt(Evaluate(a,places[2]));
@@ -537,7 +538,7 @@ intrinsic PolynomialMaximalOrder(n::RngOrdElt, m::RngOrdElt, ZF::RngOrd, pp::Rng
       elif IsInert(pp) then
         n0 := ZF ! 1;
         m0 := ZF ! -1;
-      /* Case 3: Local algebra F_2 is ramified. Find an equivalent quadratic extension of Q2. 
+      /* Case 3: Local algebra F_2 is ramified. Find an equivalent quadratic extension of Q2.
       Construct biquadratic field and use minimal polynomial for ring of integers of the 3rd quadratic field. */
       else
         for d in { 1, 2, 5, 6, 10, 14 } do
@@ -555,7 +556,7 @@ intrinsic PolynomialMaximalOrder(n::RngOrdElt, m::RngOrdElt, ZF::RngOrd, pp::Rng
         end for;
       end if;
     // qq is odd
-    else 
+    else
       n0 := ZF ! 0;
       m0 := ZF ! -1;
     end if;
@@ -589,9 +590,9 @@ intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::RngOrd
 
   // Case 1 : p is odd
   if IsOdd(q) then
-    if f eq 0 then 
+    if f eq 0 then
       return OptimalEmbeddingsOdd(e,f,g,pp,ZK);
-    else 
+    else
       return OptimalEmbeddingsOdd(e,f,g,pp,ZK) + Z!OptimalEmbeddingsOdd(e+1,f,g,pp,ZK)/q;
     end if;
   // Case 2 : p is even
@@ -743,11 +744,11 @@ intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   // Initialize
   k := Weight(Mk);
   NN := Level(Mk);
-  chi := Character(Mk)^(-1); // CHECKME: I think we want inverse here 
+  chi := Character(Mk)^(-1); // CHECKME: I think we want inverse here
   OK := Parent(chi)`TargetRing; // CHECKME: This is weird, but should produce coefficient ring for Hecke Character
   F := BaseField(Mk);
   ZF := Integers(F);
-  C,mC := ClassGroup(F); // class group  
+  C,mC := ClassGroup(F); // class group
   reps := [ mC(i) : i in C ]; // class group representatives
   MJV := HilbertCuspForms(F, NN, k);
   Tmm := HeckeOp(Mk,mm);
@@ -770,8 +771,8 @@ end intrinsic;
 intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
   {Computes the trace of T(pp)^r * T(pp)^s on the space Mk}
 
-  // mm = 0 or nn = 0 return 0 
-  if IsZero(mm) or IsZero(nn) then 
+  // mm = 0 or nn = 0 return 0
+  if IsZero(mm) or IsZero(nn) then
     return 0;
   end if;
 
@@ -780,9 +781,9 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
   NN := Level(Mk);
   F := BaseField(Mk);
   ZF := Integers(F);
-  C,mC := ClassGroup(F); // class group 
+  C,mC := ClassGroup(F); // class group
   Creps := [ mC(i) : i in C ]; // class group representatives
-  chi := Character(Mk)^(-1); 
+  chi := Character(Mk)^(-1);
   ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
 
   // requirements
@@ -820,8 +821,8 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
 
   // take product
   ans := 0;
-  for aa in Creps do 
-    for t in tuples do 
+  for aa in Creps do
+    for t in tuples do
       qq := Classrep(t[3] * aa);
       ans +:= (1 / Norm(qq)) ^ (k[1]-2) * chi(aa) * t[1] * PrecompTraceProduct(Mk, t[2], qq);
     end for;
@@ -838,7 +839,7 @@ end intrinsic;
 
 intrinsic HeckeOp(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   {Produces the Hecke operator mm on the space Mk}
-  
+
   // initialize
   k := Weight(Mk);
   NN := Level(Mk);
@@ -855,7 +856,7 @@ intrinsic HeckeOp(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   // loop
   L := [];
   for pair in Factmm do
-    
+
     // initialize
     pp := pair[1];
     e := pair[2];
@@ -880,7 +881,7 @@ intrinsic HeckeOp(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
     Tprev2 := T1;
     while t lt e do
       Tfut := Tprev * T1 - Norm(pp)^(k[1] - 1) * D * Tprev2;
-      // update 
+      // update
       Tprev2 := Tprev;
       Tprev := Tfut;
       t +:= 1;
@@ -907,7 +908,7 @@ intrinsic HeckeTraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
     for nu->nn in ShintaniRepsIdeal(M)[bb] do
-      if not IsZero(nn) then 
+      if not IsZero(nn) then
         print Norm(nn), Trace( HeckeOp(Mk,nn) );
         coeffs[bb][nu] := Q ! Trace( HeckeOp(Mk,nn) );
       else
@@ -921,7 +922,7 @@ end intrinsic;
 
 intrinsic BadPrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> Any
   {Computes trace of T(mm) * P(aa) for Hecke operator T(mm) and Diamond operator P(aa) using precomputations.}
-  
+
   // If mm * aa^2 = 0 or is not narrowly principal then return 0
   mmaa := mm * aa^2;
   if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
@@ -959,8 +960,8 @@ intrinsic BadPrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -
     w := StoredData[8]; // Unit index of quadratic extension K/F
 
     ///////////////////  Helper Functions //////////////////////
-   
-    // Weightfactor 
+
+    // Weightfactor
     Weightfactor := function(b,a,l)
       _<x> := PowerSeriesRing(RealField(k[1]+20),k[1]+20); // extend with weight
       P := 1/(1 + b*x + a*x^2);
@@ -974,24 +975,24 @@ intrinsic BadPrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -
       else return -1; end if;
     end function;
 
-    // Constant 
+    // Constant
     C := (h/w) * (&*[ Weightfactor( Evaluate(b,places[i]), Evaluate(a,places[i]), k[i]-2 ) : i in [1..n]]);
     // We do one computation for x^2 - bx + a and x^2 + bx + a since the embedding numbers are the same
     if b ne 0 then C *:= 2; end if;
 
     // Conductor Sum
     conductorsum := 0;
-    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do 
+    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
       // Term from class number of order -> class number of maximal order
       term := 1;
       term *:= Norm(bb) * (&*([1] cat [1 - ArtinSymbol(pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
       // Embedding numbers
       for pair in NNfact do
-        pp := pair[1]; 
-        e := pair[2]; 
+        pp := pair[1];
+        e := pair[2];
         f := Valuation(bb,pp); // Conductor
         g := Valuation(Discriminant(ZK),pp); // Valuation of discriminant
-        term *:= OptimalEmbeddings(e, 2*f, g, pp, ZK); 
+        term *:= OptimalEmbeddings(e, 2*f, g, pp, ZK);
       end for;
       conductorsum +:= term;
     end for;
@@ -1005,16 +1006,16 @@ intrinsic BadPrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -
 
   // adjust for bad primes ( This can be toggled on / off still produces a trace )
   cc := GCD(NN,mm);
-  if cc ne 1*ZF then 
+  if cc ne 1*ZF then
     Badness := [ dd : dd in Divisors(ideal< ZF | NN * cc^(-1) >) | dd ne NN ];
     for dd in Badness do
         // including space
         Mdd := HMFSpace(M,dd,k);
-        // "index" of Mk(dd) in Mk(NN) 
-        ii := ideal< ZF | NN * dd^(-1) >; 
+        // "index" of Mk(dd) in Mk(NN)
+        ii := ideal< ZF | NN * dd^(-1) >;
         // include new traceform at level dd into level NN
         L := [];
-        for ee in Divisors(GCD(mm,ii)) do 
+        for ee in Divisors(GCD(mm,ii)) do
           if ee ne 1*ZF then
             mee := ideal< ZF | mm * ee^(-1) >;
             print Norm(dd), Norm(ii), Norm(ee), Norm(mee), TraceRecurse(Mdd,ee,mee), #Divisors(ideal< ZF | ii * ee^(-1) >);
@@ -1033,7 +1034,7 @@ end intrinsic;
 
 intrinsic PrecompTraceProductNew(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> Any
   {Computes trace of T(mm) * P(aa) for Hecke operator T(mm) and Diamond operator P(aa) using precomputations.}
-  
+
   // If mm * aa^2 = 0 or is not narrowly principal then return 0
   mmaa := mm * aa^2;
   if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
@@ -1048,7 +1049,7 @@ intrinsic PrecompTraceProductNew(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -
   ZF := Integers(Mk);
 
   ///////////////////  Helper Functions //////////////////////
-   
+
   // sign of (p1^e1) * (p2^e2) * ... * (pn^en) = (-1) ^ (e1 + e2 + ... + en)
   sgn := function(aa)
     if aa eq 1*ZF then

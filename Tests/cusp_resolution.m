@@ -131,24 +131,25 @@ g2 := CuspChangeMatrix(K, 1*ZK, alpha2, beta2);
 
 b := 1*ZK;
 TestCuspChangeMatrix(K, b, p, alpha1, beta1: GammaType:="Gamma0");
-L, nb := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma0"); L;
+L, nb := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma0");
 TestCuspChangeMatrix(K, b, p, alpha2, beta2: GammaType:="Gamma0");
-L, nb := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma0"); L;
+L, nb := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma0");
 TestCuspChangeMatrix(K, b, p, alpha1, beta1: GammaType:="Gamma1");
-L, nb := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma1"); L;
+L, nb := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma1");
 TestCuspChangeMatrix(K, b, p, alpha2, beta2: GammaType:="Gamma1");
-L, nb := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma1"); L;
+L, nb := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma1");
 
+v := false;
 //Try a higher, composite level
 q := PrimeIdealsOverPrime(K, 5)[1];
 n := p^2*q^2;
 for T in ["Gamma0", "Gamma1"] do
     cusps := Cusps(n, 1*ZK: GammaType := T);
     for c in cusps do
-	print "Cusp number", Index(cusps, c);
+	if v then print "Cusp number", Index(cusps, c); end if;
 	alpha, beta := Explode(Coordinates(c[3]));
 	alpha, beta := NormalizeCusp(K, alpha, beta, n);
-	print alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q);
+	if v then print alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q); end if;
 	TestCuspChangeMatrix(K, b, n, alpha, beta: GammaType:=T);
 	L := CuspResolutionIntersections(K, b, n, alpha, beta: GammaType:=T);
     end for;

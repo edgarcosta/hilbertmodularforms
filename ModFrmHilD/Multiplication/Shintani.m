@@ -143,20 +143,14 @@ end intrinsic;
 
 // Helper Functions
 // Returns the slopes of the upper and lower walls for the Shintani Domain
-intrinsic ShintaniWalls(F::FldQuad) -> Any
+intrinsic ShintaniWalls(F::FldNum) -> Any
   {returns lower and upper walls of the Shintani domain}
   require Degree(F) eq 2: "only implemented for quadratic fields";
   places := InfinitePlaces(F);
   eps := FundamentalUnitTotPos(F);
   eps1 := Evaluate(eps, places[1]);
   eps2 := Evaluate(eps, places[2]);
-  return Sqrt(eps1/eps2), Sqrt(eps2/eps1);
-end intrinsic;
-
-intrinsic ShintaniWalls(F::FldNum) -> Any
-  {returns lower and upper walls of the Shintani domain}
-  require Degree(F) eq 2: "only implemented for quadratic fields";
-  return ShintaniWalls(QuadraticField(Discriminant(Integers(F))));
+  return Explode(Sort([Sqrt(eps1/eps2), Sqrt(eps2/eps1)]));
 end intrinsic;
 
 
