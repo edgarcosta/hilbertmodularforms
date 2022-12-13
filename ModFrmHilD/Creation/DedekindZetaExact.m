@@ -7,6 +7,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+declare attributes FldNum:
+  DedekindZetaOne; //
 
 // Working with ideal class groups
 intrinsic CGPrimes(I, S, Generators, CoprimeTo, Minimal, Quotient) -> Any
@@ -213,7 +215,14 @@ intrinsic DedekindZetaExact(K::FldNum, z::RngIntElt : Relative := false) -> Any
 {Return the exact value of `DedekindZeta(K)` at the negative integer `z`.
 The keyword `Relative` can be set to true. I have no idea what this does.}
     require ((Relative and z eq 0) or z lt 0): "The argument must be a negative integer";
-    return myEval(K, z, Relative);
+    if z eq -1 and assigned K`DedekindZetaOne then
+      return K`DedekindZetaOne;
+    end if;
+    val := myEval(K, z, Relative);
+    if z eq -1 then
+      K`DedekindZetaOne := val;
+    end if;
+    return val;
 end intrinsic;
 
 
