@@ -301,7 +301,7 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde (resp., eqn 5.1.9 in paper), which is in bijection with cusps of Gamma_1(NN)_bb (resp., of Gamma_0(NN)_bb).}
   ZF := Order(NN);
   F := NumberField(ZF);
-  mpCl := ClassGroupPrimeRepresentatives(ZF,NN*bb);
+  mpCl := ClassGroupPrimeRepresentatives(ZF,NN);
   Cl := Domain(mpCl);
   Cl_seq := [mpCl(el) : el in Cl];
  
@@ -387,105 +387,113 @@ end intrinsic;
 // see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
 intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
   {}
-  ZF := Order(ss);
-  //facts := Factorization(ss*MM);
-  if a_bar eq 0 then
-    return ZF!1;
-  end if;
-  // if c=0, then ss should be principal
-  if c eq 0 then // we've excluded this from happening in CuspLiftSecondCoordinate; can probably delete
-    pbool, a := IsPrincipal(ss);
-    assert pbool;
-    //facts := Factorization(ss*MM);
-    //Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
-    ////mults_num := [fact[2] : fact in facts | fact[2] gt 0];
-    //mults_num := [Valuation((ss*MM), P) : P in Ps_num];
-    //Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
-    ////mults_den := [fact[2] : fact in facts | fact[2] lt 0];
-    //mults_den := [Valuation((ss*MM), P) : P in Ps_den];
-    Q, mp := quo< ZF | ss*MM>;
-    UQ, mpUQ := UnitGroup(Q);
-    U, mpU := UnitGroup(ZF);
-    Qunits := sub< UQ | [(mp(mpU(el))) @@ mpUQ : el in Generators(U)]>;
-    u := (mp(a)^-1*a_bar) @@ (mpU*mpUQ);
-    return u*a;
-  end if;
 
-  
-  facts := Factorization(c*(bb^-1));
-  Ps_num    := [fact[1] : fact in facts | fact[2] gt 0];
-  mults_num := [Valuation((c*bb^-1), P) : P in Ps_num];
-  Ps_den    := [fact[1] : fact in facts | fact[2] lt 0];
-  mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
-  
-  //print "Ps_num = ", Ps_num;
-  //print "c = ", c;
-
-  residues_num := [];
-  residues_den := [];
-  moduli_num := [];
-  moduli_den := [];
-
-  // numerator residues and moduli
-  //print "making numerator";
-  for i := 1 to #Ps_num do
-    P := Ps_num[i];
-    //v := mults_num[i];
-    v := Valuation(ss,P);
-    if v gt 0 then
-      vprintf HilbertModularForms: "nonzero valuation; P = %o, v = %o\n", P, v;
-      residues_num cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
-      moduli_num cat:= [P^v, P^(v+1)];
-    else
-      vMM := Valuation(MM,P);
-      if vMM gt 0 then
-        residues_num cat:= [(a_bar mod P^mults_num[i])]; // might be a problem if v=0
-        moduli_num   cat:= [P^mults_num[i]];
-      else
-        residues_num cat:= [(ZF!1 mod P^mults_num[i])]; // might be a problem if v=0
-        moduli_num   cat:= [P^mults_num[i]];
-      end if;
-    end if;
-  end for;
-
-  // denominator residues and moduli
-  //print "making denominator";
-  for i := 1 to #Ps_den do
-    P := Ps_den[i];
-    //v := -mults_den[i];
-    v := -Valuation(ss,P);
-    if v gt 0 then
-    vprintf HilbertModularForms: "nonzero valuation; P = %o, v = %o\n", P, v;
-      residues_den cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
-      moduli_den cat:= [P^v, P^(v+1)];
-    else
-      residues_den cat:= [(a_bar mod P^mults_den[i])]; // might be a problem if v=0
-      moduli_den cat:= [P^mults_den[i]];
-    end if;
-  end for;
-
-  if GetVerbose("HilbertModularForms") gt 0 then
-    printf "residues for num = %o\n", residues_num;
-    printf "moduli for num = %o\n", moduli_num;
-    printf "residues for den = %o\n", residues_den;
-    printf "moduli for den = %o\n", moduli_den;
-  end if;
-
-  if #moduli_num eq 0 then // if list of moduli is empty
-    a_num := ZF!1;
-  else
-    a_num := CRT(residues_num, moduli_num);
-  end if;
-  if #moduli_den eq 0 then
-    a_den := ZF!1;
-  else
-    a_den := CRT(residues_den, moduli_den);
-  end if;
-  a := a_num/a_den;
-  assert GCD(a*ZF,c*(bb^-1)) eq ss;
-  assert a - a_bar in ss*MM;
-  return a;
+  bad_primes := [el[1] : el in Factorization(c*(bb^-1)) | Valuation(MM, el[1]) eq 0];
 end intrinsic;
+
+/*
+  intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
+    {}
+    ZF := Order(ss);
+    //facts := Factorization(ss*MM);
+    if a_bar eq 0 then
+      return ZF!1;
+    end if;
+    // if c=0, then ss should be principal
+    if c eq 0 then // we've excluded this from happening in CuspLiftSecondCoordinate; can probably delete
+      pbool, a := IsPrincipal(ss);
+      assert pbool;
+      //facts := Factorization(ss*MM);
+      //Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
+      ////mults_num := [fact[2] : fact in facts | fact[2] gt 0];
+      //mults_num := [Valuation((ss*MM), P) : P in Ps_num];
+      //Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
+      ////mults_den := [fact[2] : fact in facts | fact[2] lt 0];
+      //mults_den := [Valuation((ss*MM), P) : P in Ps_den];
+      Q, mp := quo< ZF | ss*MM>;
+      UQ, mpUQ := UnitGroup(Q);
+      U, mpU := UnitGroup(ZF);
+      Qunits := sub< UQ | [(mp(mpU(el))) @@ mpUQ : el in Generators(U)]>;
+      u := (mp(a)^-1*a_bar) @@ (mpU*mpUQ);
+      return u*a;
+    end if;
+
+    
+    facts := Factorization(c*(bb^-1));
+    Ps_num    := [fact[1] : fact in facts | fact[2] gt 0];
+    mults_num := [Valuation((c*bb^-1), P) : P in Ps_num];
+    Ps_den    := [fact[1] : fact in facts | fact[2] lt 0];
+    mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
+    
+    //print "Ps_num = ", Ps_num;
+    //print "c = ", c;
+
+    residues_num := [a_bar];
+    moduli_num := [ss*MM];
+    residues_den := [];
+    moduli_den := [];
+
+    // numerator residues and moduli
+    //print "making numerator";
+    for i := 1 to #Ps_num do
+      P := Ps_num[i];
+      //v := mults_num[i];
+      v := Valuation(ss,P);
+      if v gt 0 then
+        vprintf HilbertModularForms: "nonzero valuation; P = %o, v = %o\n", P, v;
+        residues_num cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
+        moduli_num cat:= [P^v, P^(v+1)];
+      else
+        vMM := Valuation(MM,P);
+        if vMM gt 0 then
+          residues_num cat:= [(a_bar mod P^mults_num[i])]; // might be a problem if v=0
+          moduli_num   cat:= [P^mults_num[i]];
+        else
+          residues_num cat:= [(ZF!1 mod P^mults_num[i])]; // might be a problem if v=0
+          moduli_num   cat:= [P^mults_num[i]];
+        end if;
+      end if;
+    end for;
+
+    // denominator residues and moduli
+    //print "making denominator";
+    for i := 1 to #Ps_den do
+      P := Ps_den[i];
+      //v := -mults_den[i];
+      v := -Valuation(ss,P);
+      if v gt 0 then
+      vprintf HilbertModularForms: "nonzero valuation; P = %o, v = %o\n", P, v;
+        residues_den cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
+        moduli_den cat:= [P^v, P^(v+1)];
+      else
+        residues_den cat:= [(a_bar mod P^mults_den[i])]; // might be a problem if v=0
+        moduli_den cat:= [P^mults_den[i]];
+      end if;
+    end for;
+
+    if GetVerbose("HilbertModularForms") gt 0 then
+      printf "residues for num = %o\n", residues_num;
+      printf "moduli for num = %o\n", moduli_num;
+      printf "residues for den = %o\n", residues_den;
+      printf "moduli for den = %o\n", moduli_den;
+    end if;
+
+    if #moduli_num eq 0 then // if list of moduli is empty
+      a_num := ZF!1;
+    else
+      a_num := CRT(residues_num, moduli_num);
+    end if;
+    if #moduli_den eq 0 then
+      a_den := ZF!1;
+    else
+      a_den := CRT(residues_den, moduli_den);
+    end if;
+    a := a_num/a_den;
+    assert GCD(a*ZF,c*(bb^-1)) eq ss;
+    assert a - a_bar in ss*MM;
+    return a;
+  end intrinsic;
+*/
 
 // see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
 /*
@@ -530,7 +538,8 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     vprintf HilbertModularForms: "quadruple = %o\n", quad;
     a_bar, c_bar := Explode(ac_bar);
     vprintf HilbertModularForms: "Lifting second coordinate. c_bar = %o\n", c_bar;
-    c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
+    //c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
+    c := c_bar;
     vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
     vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
