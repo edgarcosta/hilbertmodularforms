@@ -38,6 +38,12 @@ intrinsic TotallyPositiveUnits(F::FldAlg) -> GrpAb, Map
   return F`TotallyPositiveUnits, F`TotallyPositiveUnitsMap;
 end intrinsic;
 
+intrinsic FundamentalUnit(F::FldNum) -> FldElt
+  {The fundamental unit of F}
+  K := QuadraticField(Discriminant(Integers(F)));
+  b, phi := IsIsomorphic(K, F);
+  return phi(FundamentalUnit(K));
+end intrinsic;
 
 intrinsic FundamentalUnitTotPos(F::FldNum) -> RngQuadElt
   {return the fundamental unit totally positive}
