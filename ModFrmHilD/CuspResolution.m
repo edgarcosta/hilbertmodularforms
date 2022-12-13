@@ -1,12 +1,12 @@
 
 intrinsic OneAsLinearCombination(F :: FldQuad, a :: FldQuadElt, Ia :: RngQuadFracIdl,
                                  b :: FldQuadElt, Ib :: RngQuadFracIdl) -> FldQuadElt, FldQuadElt
-                                                                                           
+
 {Compute lambda in Ia, mu in Ib such that lambda*a + mu*b = 1, assuming they exist}
     xa, ya := Explode(Basis(Ia));
     xb, yb := Explode(Basis(Ib));
     latticegens := [a*x: x in [xa,ya]] cat [b*x: x in [xb,yb]];
-    
+
     //Get a common denominator D for all coefficients
     D := 1;
     for j:=1 to 4 do
@@ -16,7 +16,7 @@ intrinsic OneAsLinearCombination(F :: FldQuad, a :: FldQuadElt, Ia :: RngQuadFra
 
     //Construct linear algebra problem over ZZ
     M := ZeroMatrix(Integers(), 2, 4);
-    for j := 1 to 4 do        
+    for j := 1 to 4 do
         S := ElementToSequence(latticegens[j]);
         for i := 1 to 2 do M[i, j] := D*S[i]; end for;
     end for;
@@ -50,7 +50,7 @@ beta*b^-1, then g has the shape [I^-1, I^-1*b^-1; -beta, alpha]}
 end intrinsic;
 
 intrinsic IdealClassPrimeRepresentative(m :: Map, p :: RngQuadFracIdl) -> RngQuadIdl
-                                                                              
+
 {Given a map m computed via ClassGroupPrimeRepresentatives, find an
 element in the image of m that belongs to the class of p. This solves
 a Magma issue that reduction map from ClassGroup and lift map from
@@ -73,7 +73,7 @@ intrinsic NormalizeCusp(F :: FldQuad, alpha :: FldQuadElt,
 {Given alpha, beta not both zero, compute another representation
 (alpha', beta') of (alpha:beta) in P^1(F) such that alpha, beta are
 integers, and alpha, beta, n are globally coprime}
-    
+
     ZF := Integers(F);
     primelift := ClassGroupPrimeRepresentatives(ZF, n);
     fac := [f[1] : f in Factorization(n)];
@@ -86,7 +86,7 @@ integers, and alpha, beta, n are globally coprime}
         assert t;
         alpha := gen*alpha;
         beta := gen*beta;
-    end for;    
+    end for;
     assert IsCoprimeFracIdl(alpha*ZF, Gcd(beta*ZF, n));
 
     //Convert to integers
@@ -139,7 +139,7 @@ intrinsic IsNormalizedCuspChangeMatrix(F::FldQuad, b :: RngQuadFracIdl,
     if not IsNormalizedCusp(F, alpha, beta, n) then return false; end if;
     ZF := Integers(F);
     I := alpha*ZF + beta*b^-1;
-    return (lambda in I^-1) and (mu in I^-1*b^-1) and (Determinant(g) eq 1);    
+    return (lambda in I^-1) and (mu in I^-1*b^-1) and (Determinant(g) eq 1);
 end intrinsic;
 
 
@@ -152,14 +152,14 @@ intrinsic IsCoprimeFracIdl(a :: RngOrdFracIdl, b :: RngOrdFracIdl) -> Bool
     a, da := IntegralSplit(a); assert da eq 1 or da eq -1;
     b, db := IntegralSplit(b); assert db eq 1 or db eq -1;
     return IsCoprime(a, b);
-end intrinsic;       
+end intrinsic;
 
 
 intrinsic CuspResolutionCongruences(F::FldQuad, b :: RngQuadFracIdl,
                                     n::RngQuadIdl, g::AlgMatElt, p::RngQuadIdl
                                     : GammaType := "Gamma0")
           -> SeqEnum[RngIntElt], RngQuadElt
-                                     
+
 {Given a cusp change matrix g computed from a normalized cusp for
 level n, and given a prime divisor p of n, compute a suitable change
 of the form [1,x;0,1] such that g^-1 [v,m;0,v^-1] g gives congruence
@@ -169,7 +169,7 @@ integer divided by 2*alpha*beta, if alpha*beta is not zero, otherwise
 just an integer divided by beta)}
 
     require IsCoprimeFracIdl(p, b): "p and b must be coprime";
-    
+
     require IsNormalizedCuspChangeMatrix(F, b, n, g): "g must be a
     normalized cusp change matrix";
 
@@ -178,7 +178,7 @@ just an integer divided by beta)}
     mu := g[1,2];
     beta := -g[2,1];
     alpha := g[2,2];
-    
+
     e := Valuation(n, p);
     f := Valuation(beta, p); //Infinity if beta=0
     f := Min(e, f);
@@ -190,7 +190,7 @@ just an integer divided by beta)}
     end if;
     assert IsCoprimeFracIdl(p, I); //Enforced by normalized cusp
     N := I^(-2)*b^(-1);
-    
+
     if GammaType eq "Gamma0" or GammaType eq "Gamma01" then
         if f eq 0 then
             if alpha eq 0 then x0 := lambda;
@@ -209,7 +209,7 @@ just an integer divided by beta)}
         if GammaType eq "Gamma01" then
             exps[2] := e;
         end if;
-        
+
     elif GammaType eq "Gamma1" or GammaType eq "Gamma11" then
         exps := [e, e, e-f, 0];
         x0 := (1-2*beta*mu);
@@ -217,7 +217,7 @@ just an integer divided by beta)}
     elif GammaType eq "GammaP" then
         exps := [0, e, e, 0];
         x0 := ZF!0;
-        
+
     elif GammaType eq "Gamma" then
         exps := [e, e, e, 0];
         x0 := ZF!0;
@@ -231,7 +231,7 @@ end intrinsic;
 intrinsic CuspResolutionMV(F::FldQuad, b::RngQuadFracIdl, n::RngQuadIdl,
                            alpha::FldQuadElt, beta::FldQuadElt: GammaType := "Gamma0")
           -> SeqEnum[RngQuadIdl], AlgMatElt
-                                      
+
 {Given a normalized cusp (alpha:beta), compute ideals M, W, W2 and a
 change-of-cusp matrix g sending (alpha:beta) to infinity such that:
 
@@ -243,7 +243,7 @@ change-of-cusp matrix g sending (alpha:beta) to infinity such that:
 
 V is encoded as congruence conditions on v-1 and v^2-1, given by
 ideals W, W2 respectively.}
-    
+
     require IsNormalizedCusp(F, alpha, beta, n): "Cusp (alpha:beta) must be normalized";
 
     //print "Computing cusp change matrix...";
@@ -259,7 +259,7 @@ ideals W, W2 respectively.}
     W2 := 1*ZF; //Congruence conditions on v^2-1
     X := 1*ZF; //Congruence conditions on x-x0;
     x := ZF!0;
-    
+
     for p in plist do
         //print "Computing congruence conditions...";
         L, x0 := CuspResolutionCongruences(F, b, n, g, p: GammaType:=GammaType);
@@ -294,7 +294,7 @@ intrinsic CuspResolutionMinimalSequence(F :: FldQuad, M :: RngQuadFracIdl) -> Se
     require M ne 0*M: "Module M must not be zero";
 
     a,b := OrientedBasis(M);
-    
+
     head, periodic := HJContinuedFraction(F ! (a/b));
     return periodic;
 end intrinsic;
@@ -346,12 +346,12 @@ end intrinsic;
 intrinsic CuspResolutionIntersections(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
                                       alpha :: FldQuadElt, beta::FldQuadElt
                                       : GammaType := "Gamma0") -> SeqEnum[RngIntElt]
-                                                                         
+
 {Compute the cyclic sequence of self-intersection numbers for the
 cycle of P1's appearing in the appearing in the resolution of the cusp
 (alpha:beta) in P^1(F) for the modular group SL(ZF+b) and congruence
 subgroup of level n (prime to b).
-                                                                                                   
+
 Accepted values for the parameter GammaType are: "Gamma0" (default);
 "Gamma1"; "Gamma" (full level); "GammaP" for
 Ker(Gamma(1)->PSL(ZF/n)).}
@@ -361,13 +361,12 @@ Ker(Gamma(1)->PSL(ZF/n)).}
     ZF := Integers(F);
     L, g := CuspResolutionMV(F, b, n, alpha, beta: GammaType := GammaType);
     M, W, W2 := Explode(L);
-    
     //print "Ideals M, W, W2:", M, W, W2;
 
     //Compute minimal totally positive unit stabilizing M.
     periodic := CuspResolutionMinimalSequence(F, M);
     w := CuspResolutionMinimalUnit(F, periodic);
-    
+
     issqr, t := IsSquare(w);
     //print w; print "IsSquare?", issqr;
     n := 1;
@@ -416,7 +415,7 @@ intrinsic GeneratorsOfGMV(F::FldQuad, b::RngQuadIdl, alpha::FldQuadElt,
     x, y := Explode(Basis(M));
     U2 := Matrix(F, 2, 2, [F!1, x, F!0, F!1]);
     U3 := Matrix(F, 2, 2, [F!1, y, F!0, F!1]);
-    return [U1, U2, U3];    
+    return [U1, U2, U3];
 end intrinsic;
 
 intrinsic TestCuspChangeMatrix(F::FldQuad, b::RngQuadIdl, n::RngQuadIdl,
