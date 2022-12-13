@@ -243,6 +243,8 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
       end if;
   end for;
   x := FindEltWithValuations(F, bad_primes cat ssMM_primes, vs);
+  assert a*ZF + c*(bb^-1) eq ss;
+  assert a - a_bar in ss*MM;
   return a_bar + x;
 end intrinsic;
 
