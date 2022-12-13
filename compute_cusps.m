@@ -2,8 +2,8 @@
 load "config.m";
 
 SetDebugOnError(true);
-MaxDiscr := 1000;
-MaxLevelNorm := 1000;
+MaxDiscr := 10;
+MaxLevelNorm := 10;
 
 count := 0;
 
