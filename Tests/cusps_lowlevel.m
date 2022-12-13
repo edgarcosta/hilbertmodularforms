@@ -5,7 +5,7 @@ SetDebugOnError(true);
 MaxD := 100;
 MaxNorm := 100;
 MaxCoefs := 100;
-NbTests := 100;
+NbTests := 50;
 Print := true;
 
 function RandomField()
@@ -163,12 +163,12 @@ end procedure;
 /*****************************************************************************/
 /* Testing GeneratorsOfQuotientModuleModuloTotallyPositiveUnits */
 
-procedure TestGeneratorsOfQuotientModule()
+procedure TestGeneratorsOfQuotientModuleModuloTotallyPositiveUnits()
     F := RandomField();    
     ss := RandomFracIdl(F);
-    MM := RandomIntegralIdl(F);
-    
+    MM := RandomIntegralIdl(F);    
     list := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss, MM);
+    //Check they are indeed generators of module
     primes := [p[1]: p in Factorization(MM)];
     for x in list do    
         assert x in ss;
@@ -176,16 +176,24 @@ procedure TestGeneratorsOfQuotientModule()
             assert not x in ss*p;
         end for;
     end for;
-
-    all
+    //Get order n of totally positive unit
     eps := FundamentalUnitTotPos(F);
     u := eps;
     n:= 1;
     while not u-1 in MM do
-        
-    
-    assert #list eq #UnitGroup(quo<Integers(F)|MM>);
-    
+        u *:= eps;
+        n +:= 1;
+    end while;
+    //Check size of list + action of epsilon indeed gets everything
+    assert #list eq #UnitGroup(quo<Integers(F)|MM>)/n;
+    all := SequenceToSet(list);
+    for i:=1 to n-1 do
+        new := SequenceToSet([eps^i * x: x in list]);
+        assert new meet all eq {};
+        all := all join new;
+    end for;
+    assert #all eq #UnitGroup(quo<Integers(F)|MM>);
+    MaybePrint(list);
 end procedure;
 
 /*****************************************************************************/
@@ -198,6 +206,7 @@ for i:=1 to NbTests do
     TestFindEltWithValuations();
     TestGeneratorOfQuotientModuleCRT();
     TestGeneratorsOfQuotientModule();
+    TestGeneratorsOfQuotientModuleModuloTotallyPositiveUnits();
 end for;
 
 printf "Done\n";
