@@ -301,7 +301,7 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde (resp., eqn 5.1.9 in paper), which is in bijection with cusps of Gamma_1(NN)_bb (resp., of Gamma_0(NN)_bb).}
   ZF := Order(NN);
   F := NumberField(ZF);
-  mpCl := ClassGroupPrimeRepresentatives(ZF,NN);
+  mpCl := ClassGroupPrimeRepresentatives(ZF,NN*bb);
   Cl := Domain(mpCl);
   Cl_seq := [mpCl(el) : el in Cl];
  
