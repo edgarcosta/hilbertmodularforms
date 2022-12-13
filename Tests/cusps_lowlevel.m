@@ -53,10 +53,6 @@ function RandomElt(id)
     return Random(id, MaxCoefs);
 end function;
 
-procedure MaybePrint(x)
-    if Print then print x; end if;
-end procedure;
-
 /*****************************************************************************/
 /* Testing IdealToModule */
 
@@ -66,7 +62,6 @@ procedure TestIdealToModule()
     a := RandomElt(ss);
     r := IdealToModule(a, ss);
     assert Eltseq(r) eq [a];
-    MaybePrint(a);
     //This tests both RngOrdElt and FldElt version depending on whether ss is integral or not  
 end procedure;
 
@@ -80,7 +75,6 @@ procedure TestModuleToIdeal()
     r := IdealToModule(a, ss);
     a2 := ModuleToIdeal(r);
     assert a2 eq a;
-    MaybePrint(a);
 end procedure;
 
 /*****************************************************************************/
@@ -97,7 +91,6 @@ procedure TestReduceModuloIdeal()
     assert r in I;
     assert s in I;
     assert r eq s;
-    MaybePrint([a,b]);
 end procedure;
 
 /*****************************************************************************/
@@ -120,7 +113,6 @@ procedure TestFindEltWithValuations()
     for p in ps do
         assert Gcd(x * ss^(-1), p) eq 1*ZF;
     end for;
-    MaybePrint(x);
 end procedure;
 
 /*****************************************************************************/
@@ -137,7 +129,6 @@ procedure TestGeneratorOfQuotientModuleCRT()
     for p in primes do
         assert not x in ss*p;
     end for;
-    MaybePrint(x);
 end procedure;
 
 /*****************************************************************************/
@@ -193,7 +184,109 @@ procedure TestGeneratorsOfQuotientModuleModuloTotallyPositiveUnits()
         all := all join new;
     end for;
     assert #all eq #UnitGroup(quo<Integers(F)|MM>);
-    MaybePrint(list);
+end procedure;
+
+/*****************************************************************************/
+/* Testing MakePairsForQuadruple */
+
+procedure TestMakePairsForQuadruple()
+    F := RandomField();    
+    ss := RandomFracIdl(F);
+    NN := RandomIntegralIdl(F);
+    MM := Random(Divisors(NN));
+    GammaType := Random(["Gamma0", "Gamma1"]);
+    bb := RandomIntegralIdl(F);
+    pairs := MakePairsForQuadruple(NN, bb, ss, MM: GammaType := GammaType);
+    primes_check_a := [p[1]: p in Factorization(MM)];
+    primes_check_c := [p[1]: p in Factorization(NN/MM)];
+    
+    //Check a,c land in correct ideals
+    for i:=1 to #pairs do
+        a, c := Explode(pairs[i]);
+        assert a in ss;
+        for p in primes_check_a do
+            assert not a in ss*p;
+        end for;
+        assert c in ss*bb*MM;
+        for p in primes_check_c do
+            assert not c in ss*bb*MM*p;
+        end for;
+    end for;
+    
+    //Check cardinality according to Dasgupta--Kakde
+    if Degree(F) eq 1 then infty:=[1]; else infty:=[1,2]; end if;
+    ZF := Integers(F);
+    Gm, m1 := RayClassGroup(MM, infty);
+    Gnm, m2 := RayClassGroup(NN/MM, infty);
+    Gn, m := RayClassGroup(NN, infty);
+    Cln, mm := RayClassGroup(NN);
+    G, i1, i2, p1, p2 := DirectSum(Gm, Gnm);
+    gens := [];
+    for idl in Gn do
+        x := m(idl);
+        if IsId(x@@mm) then            
+            Append(~gens, i1(x@@m1) + i2(x@@m2));
+        end if;
+    end for;
+    Q := quo<G|gens>;
+    //print #pairs, #Q;
+    //assert #pairs * #ClassGroup(F) * #NarrowClassGroup(F) eq #Q;
+end procedure;
+
+/*****************************************************************************/
+/* Testing CuspQuadruples */
+
+procedure TestCuspQuadruples()
+    F := RandomField();
+    NN := RandomIntegralIdl(F);
+    bb := RandomIntegralIdl(F);
+    GammaType := Random(["Gamma0", "Gamma1"]);
+    quads := CuspQuadruples(NN, bb: GammaType := GammaType);
+    ZF := Integers(F);
+    
+    // Check each quadruple is well-formed
+    for q in quads do
+        ss := q[1];
+        MM := q[2];
+        a, c := Explode(q[3]);
+        assert NN subset MM; //MM divides NN
+        primes_check_a := [p[1]: p in Factorization(MM)];
+        primes_check_c := [p[1]: p in Factorization(NN/MM)];
+        assert a in ss;
+        for p in primes_check_a do
+            assert not a in ss*p;
+        end for;
+        assert c in ss*bb*MM;
+        for p in primes_check_c do
+            assert not c in ss*bb*MM*p;
+        end for;
+    end for;
+    //This tests the number of quadruples using Eisenstein dimensions
+    if Degree(F) gt 1 then CuspSanityCheck(NN: GammaType := GammaType); end if;
+end procedure;
+
+/*****************************************************************************/
+/* Testing CuspLiftFirstCoordinate */
+
+procedure TestCuspLiftFirstCoordinate()
+    F := RandomField();
+    NN := RandomIntegralIdl(F);
+    bb := RandomIntegralIdl(F);
+    GammaType := Random(["Gamma0", "Gamma1"]);
+    quads := CuspQuadruples(NN, bb: GammaType := GammaType);
+    ZF := Integers(F);
+
+    for q in quads do
+        print q;
+        ss := q[1];
+        MM := q[2];
+        a_bar, c := Explode(q[3]);
+        a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
+        assert a in ss;
+        assert c in ss*bb*MM;        
+        assert Gcd(c*ZF, ss*bb*NN) eq ss*bb*MM;
+        assert a*ZF + c*bb^(-1) eq ss;
+    end for;
 end procedure;
 
 /*****************************************************************************/
@@ -207,6 +300,9 @@ for i:=1 to NbTests do
     TestGeneratorOfQuotientModuleCRT();
     TestGeneratorsOfQuotientModule();
     TestGeneratorsOfQuotientModuleModuloTotallyPositiveUnits();
+    TestMakePairsForQuadruple();
+    TestCuspQuadruples();
+    TestCuspLiftFirstCoordinate();
 end for;
 
 printf "Done\n";

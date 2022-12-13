@@ -175,42 +175,42 @@ intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnu
   return [a*(el @@ mpMM) : el in U_seq];
 end intrinsic;
 
-// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnitsBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
-  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.}
+/* // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4 */
+/* intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnitsBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum */
+/*   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.} */
 
-  quotient_gens := GeneratorsOfQuotientModule(ss,MM);
-  F := Parent(quotient_gens[1]);
-  F := NumberField(F);
-  eps := FundamentalUnitTotPos(F);
+/*   quotient_gens := GeneratorsOfQuotientModule(ss,MM); */
+/*   F := Parent(quotient_gens[1]); */
+/*   F := NumberField(F); */
+/*   eps := FundamentalUnitTotPos(F); */
 
-  // compute orbits of the elements of quotient_gens under totally positive units
-  // by repeatedly Shintani-reducing and reducing mod ss*MM (using ReduceModuloIdeal)
-  remaining := [1..#quotient_gens];
-  orbits := [];
-  while #remaining ne 0 do
-    ind0 := remaining[1];
-    a := quotient_gens[ind0];
-    orb := [ind0];
-    rep_bool := false;
-    while not rep_bool do
-      a := ReduceModuloIdeal(eps*a, ss, ss*MM);
-      ind := Index(quotient_gens, a);
-      if ind eq ind0 then
-        rep_bool := true;
-        break;
-      end if;
-      Append(~orb, ind);
-    end while;
-    Append(~orbits, orb);
-    vprintf HilbertModularForms: "orbit found = %o\n", orb;
-    remaining := [el : el in remaining | not el in orb];
-    vprintf HilbertModularForms: "remaining indices = %o\n", remaining;
-  end while;
-  vprintf HilbertModularForms: "orbits = %o\n", orbits;
-  // return one element from each orbit
-  return [orb[1] : orb in orbits];
-end intrinsic;
+/*   // compute orbits of the elements of quotient_gens under totally positive units */
+/*   // by repeatedly Shintani-reducing and reducing mod ss*MM (using ReduceModuloIdeal) */
+/*   remaining := [1..#quotient_gens]; */
+/*   orbits := []; */
+/*   while #remaining ne 0 do */
+/*     ind0 := remaining[1]; */
+/*     a := quotient_gens[ind0]; */
+/*     orb := [ind0]; */
+/*     rep_bool := false; */
+/*     while not rep_bool do */
+/*       a := ReduceModuloIdeal(eps*a, ss, ss*MM); */
+/*       ind := Index(quotient_gens, a); */
+/*       if ind eq ind0 then */
+/*         rep_bool := true; */
+/*         break; */
+/*       end if; */
+/*       Append(~orb, ind); */
+/*     end while; */
+/*     Append(~orbits, orb); */
+/*     vprintf HilbertModularForms: "orbit found = %o\n", orb; */
+/*     remaining := [el : el in remaining | not el in orb]; */
+/*     vprintf HilbertModularForms: "remaining indices = %o\n", remaining; */
+/*   end while; */
+/*   vprintf HilbertModularForms: "orbits = %o\n", orbits; */
+/*   // return one element from each orbit */
+/*   return [orb[1] : orb in orbits]; */
+/* end intrinsic; */
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
 // Use transversal for <eps> < (ZF/MM)^* to get one representative from each of the orbits of (ss/(ss*MM))^* under the action of epsilon
@@ -258,6 +258,8 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   else
     error "GammaType not recognized";
   end if;
+
+  
   UQMM, mpQMM := UnitGroup(ZFMM);
   UQNNMM, mpQNNMM := UnitGroup(ZFNNMM);
 
