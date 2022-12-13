@@ -306,6 +306,9 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
     elif GammaType eq "Gamma" then
       a_new := ReduceModuloIdeal(a0, ss, ss*NN);
       c_new := ReduceModuloIdeal(c0, ss*bb, ss*bb*NN);
+      if c_new eq 0 then
+        c_new := Generators(ss*bb*MM)[1];
+      end if;
       Append(~final, [a_new, c_new]);
     else
       error "GammaType not recognized";
