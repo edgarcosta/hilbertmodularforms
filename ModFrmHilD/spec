@@ -9,6 +9,7 @@
   CuspResolution.m
   Cusps.m
   Hecke.m
+  HZCuspIntersection.m
   LinearAlgebra.m
   Restriction.m
   Space.m
