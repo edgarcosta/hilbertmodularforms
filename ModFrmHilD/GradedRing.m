@@ -50,6 +50,28 @@ declare attributes ModFrmHilDGRng:
   ;
 
 
+function NarrowClassGroupRepsMapDeterministic(F, Cl, mp, diffinv)
+  bound := 1;
+  ClElts := [g : g in Cl];
+  repsindex := [0 : _ in ClElts];
+  while 0 in repsindex do
+      ideals := Sort([<StringToInteger(k) : k in Split(l, ".")> cat <elt> where l := LMFDBLabel(elt) : elt in IdealsUpTo(bound, F)]);
+      idealsmp := [ elt[3] @@ mp : elt in ideals];
+      idealsdualmp := [ (elt[3]*diffinv) @@ mp : elt in ideals];
+      repsindex := [Index(idealsmp, g) : g in ClElts];
+      bound *:= 2;
+  end while;
+  NarrowClassGroupRepsMap := AssociativeArray();
+  for i->g in ClElts do
+    NarrowClassGroupRepsMap[g] := ideals[repsindex[i]][3];
+  end for;
+
+
+
+  return NarrowClassGroupRepsMap;
+
+end function;
+
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
 
@@ -297,28 +319,15 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`NarrowClassGroupMap := mp;
 
   // Deterministically finding representatives for Cl
-  // undeterministic:
-  // M`NarrowClassGroupReps := [ mp(g) : g in Cl ];
-  // M`IdealDualNarrowClassGroupReps := [ bb*diffinv : bb in M`NarrowClassGroupReps];
-  bound := 1;
-  ClElts := [g : g in Cl];
-  repsindex := [0 : _ in ClElts];
-  repsdualindex := [0 : _ in ClElts];
-  while 0 in repsindex or 0 in repsdualindex do
-      ideals := Sort([<StringToInteger(k) : k in Split(l, ".")> cat <elt> where l := LMFDBLabel(elt) : elt in IdealsUpTo(bound, F)]);
-      idealsmp := [ elt[3] @@ mp : elt in ideals];
-      idealsdualmp := [ (elt[3]*diffinv) @@ mp : elt in ideals];
-      repsindex := [Index(idealsmp, g) : g in ClElts];
-      repsdualindex := [Index(idealsdualmp, g) : g in ClElts];
-      bound *:= 2;
-  end while;
-  M`NarrowClassGroupRepsMap := AssociativeArray();
+  M`NarrowClassGroupRepsMap := NarrowClassGroupRepsMapDeterministic(F, Cl, mp, diffinv);
+  M`NarrowClassGroupReps := [M`NarrowClassGroupRepsMap[g] : g in Cl];
+  M`IdealDualNarrowClassGroupReps := [ bb*diffinv : bb in M`NarrowClassGroupReps];
   M`NarrowClassGroupRepsToIdealDual := AssociativeArray();
-  for i->g in ClElts do
-    M`NarrowClassGroupRepsMap[g] := ideals[repsindex[i]][3];
-    M`NarrowClassGroupRepsToIdealDual[M`NarrowClassGroupRepsMap[g]] := ideals[repsdualindex[i]][3];
+  for i in [1..#Cl] do
+    bb := M`NarrowClassGroupReps[i];
+    bbp := M`IdealDualNarrowClassGroupReps[i];
+    M`NarrowClassGroupRepsToIdealDual[bb] := bbp;
   end for;
-  M`NarrowClassGroupReps := [M`NarrowClassGroupRepsMap[g] : g in ClElts];
 
 
   M`UnitGroup := U;
