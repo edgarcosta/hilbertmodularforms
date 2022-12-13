@@ -19,22 +19,22 @@ for D:=1 to MaxDiscr do
 	Ns := IdealsUpTo(MaxLevelNorm, F);
 	
 	printf "%o levels, %o components\n", #Ns, #NCl;
-	count +:= #Ns * #NCl;
-	/* for N in Ns do */
-	/* 	printf "Trying level %o\n", N; */
-	/* 	m := ClassGroupPrimeRepresentatives(ZF, N, Pl); */
-	/* 	for x in Domain(m) do */
-	/* 		bb := m(x); */
-	/* 		cs := Cusps(N, bb); //Gamma0 */
-	/* 		//print cs; */
-	/* 		for c in cs do */
-	/* 			a, b := Explode(Eltseq(c[3])); */
-	/* 			a, b := NormalizeCusp(F, a, b, N); */
-	/* 			L, n := CuspResolutionIntersections(F, bb, N, a, b); //Gamma0; */
-	/* 			//printf "Cusp %o: %o x %o\n", c, L, n; */
-	/* 		end for; */
-	/* 	end for; */
-	/* end for; */
+	count := #Ns * #NCl;
+	for N in Ns do
+		printf "Trying level %o\n", N;
+		m := ClassGroupPrimeRepresentatives(ZF, N, Pl);
+		for x in Domain(m) do
+			bb := m(x);
+			cs := Cusps(N, bb); //Gamma0
+			//print cs;
+			for c in cs do
+				a, b := Explode(Eltseq(c[3]));
+				a, b := NormalizeCusp(F, a, b, N);
+				L, n := CuspResolutionIntersections(F, bb, N, a, b); //Gamma0;
+				//printf "Cusp %o: %o x %o\n", c, L, n;
+			end for;
+		end for;
+	end for;
 end for;
 				
-printf "Total count %o\n", count;
+print "Total count %o\n";
