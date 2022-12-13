@@ -8,15 +8,28 @@ intrinsic HZCuspIntersection(F::FldQuad, t::RngIntElt,
    for cusp in cusps do
        alpha := cusp[3][1];
        beta := cusp[3][2];
-       self_intersections := CuspResolutionIntersections(F, b, N, alpha, beta);
+       alpha, beta := NormalizeCusp(F, alpha, beta, N);
+       L, n := CuspResolutionIntersections(F, b, N, alpha, beta);
+       self_intersections := L;
        // !! TODO : That only works if the intersection cycle is of 
        // length at least 3
        s := [-x : x in self_intersections];
+       // Lemma II.3.2 in [vdG]
+       if #s eq 1 and n eq 1 then
+	   s[1] +:= 2;
+       end if;
        ws := [HJReconstructPeriodic(F,[s[(i+j) mod #s + 1] : j in [1..#s]]) 
 	      : i in [1..#s]];
        Qs := [Matrix([[Norm(x+y)-Norm(x)-Norm(y) : y in [1,w]] : x in [1,w]]) 
 	      : w in ws];
-       QFs := [* QuadraticForm(Denominator(Q)*Q/2) : Q in Qs *];
+       Ds := [Denominator(Q) : Q in Qs];
+       for i in [1..#Qs] do
+	   if IsOdd(Integers()!(Ds[i]*Qs[i][1,1])) or 
+	      IsOdd(Integers()!(Ds[i]*Qs[i][2,2])) then
+	       Ds[i] *:= 2;
+	   end if;
+       end for;
+       QFs := [* QuadraticForm(Ds[i]*Qs[i]/2) : i in [1..#Qs] *];
        all_pqs := [];
        // all_mults := [];
        for QF in QFs do
