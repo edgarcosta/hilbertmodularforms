@@ -344,68 +344,6 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
 end intrinsic;
 
 // see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
-intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> RngElt 
-  {With the notation as in section 5 of the paper, given c_bar in P_1(NN)_bb, lift c_bar to a c satisfying GCD(c*bb^-1,NN) = MM.}
-
-  ZF := Order(ss);
-
-  // fulfill congruence condition
-  // TODO: still okay for GammaType := Gamma?
-  residues := [c_bar];
-  moduli := [ss*bb*NN];
-
-  // fulfill GCD condition
-  if GammaType in ["Gamma0", "Gamma1"] then
-    //facts := Factorization(ss*bb*NN);
-    facts := Factorization(bb*NN);
-  elif GammaType eq "Gamma" then
-    //facts := Factorization(ss*bb);
-    facts := Factorization(bb);
-  else
-    error "GammaType not recognized";
-  end if;
-  //printf "factors of ss*bb*NN: %o\n", facts;
-  
-  //Ps := [fact[1] : fact in facts];
-  //mults := [fact[2] : fact in facts];
-  for fact in facts do
-    P := fact[1];
-    vN := fact[2];
-    //v := mults_num[i];
-    if GammaType in ["Gamma0", "Gamma1"] then
-      v := Valuation(bb*MM,P);
-    elif GammaType eq "Gamma" then
-      // TODO: double check this
-      v := Valuation(bb*NN,P);
-    else
-      error "GammaType not recognized";
-    end if;
-
-    //printf "nonzero valuation; P = %o, v = %o\n", P, v;
-    residues cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
-    moduli cat:= [P^v, P^(v+1)];
-    //else
-    //  residues cat:= [(c_bar mod P^vN)]; // might be a problem if v=0
-    //  moduli cat:= [P^vN];
-  end for;
-
-  vprintf HilbertModularForms: "residues = %o\n", residues;
-  vprintf HilbertModularForms: "moduli = %o\n", moduli;
-
-  if #moduli eq 0 then // if list of moduli is empty
-    c := ZF!1;
-  else
-    c := CRT(residues, moduli);
-  end if;
-  if c eq 0 then
-    c +:= Generators(&*moduli)[1];
-  end if;
-  assert GCD(c*(bb^-1),NN) eq MM;
-  assert c - c_bar in ss*bb*NN;
-  return c;
-end intrinsic;
-
-// see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
 intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
   {}
 
@@ -421,7 +359,10 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     end if;
   end for;
   x := FindEltWithValuations(F, bad_primes, vs);
-  return a_bar + x;
+  a := a_bar + x;
+  assert a*ZF + c*(bb^-1) eq ss;
+  assert a - a_bar in ss*MM;
+  return a;
 end intrinsic;
 
 /*
