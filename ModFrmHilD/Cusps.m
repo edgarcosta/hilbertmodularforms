@@ -188,11 +188,11 @@ intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnitsBruteForce(ss::Rng
       Append(~orb, ind);
     end while;
     Append(~orbits, orb);
-    printf "orbit found = %o\n", orb;
+    vprintf HilbertModularForms: "orbit found = %o\n", orb;
     remaining := [el : el in remaining | not el in orb];
-    printf "remaining indices = %o\n", remaining;
+    vprintf HilbertModularForms: "remaining indices = %o\n", remaining;
   end while;
-  printf "orbits = %o\n", orbits;
+  vprintf HilbertModularForms: "orbits = %o\n", orbits;
   // return one element from each orbit
   return [orb[1] : orb in orbits];
 end intrinsic;
@@ -301,7 +301,7 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde (resp., eqn 5.1.9 in paper), which is in bijection with cusps of Gamma_1(NN)_bb (resp., of Gamma_0(NN)_bb).}
   ZF := Order(NN);
   F := NumberField(ZF);
-  mpCl := ClassGroupPrimeRepresentatives(ZF,NN);
+  mpCl := ClassGroupPrimeRepresentatives(ZF,NN*bb);
   Cl := Domain(mpCl);
   Cl_seq := [mpCl(el) : el in Cl];
  
@@ -433,7 +433,7 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     //v := mults_num[i];
     v := Valuation(ss,P);
     if v gt 0 then
-      printf "nonzero valuation; P = %o, v = %o\n", P, v;
+      vprintf HilbertModularForms: "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_num cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
       moduli_num cat:= [P^v, P^(v+1)];
     else
@@ -455,7 +455,7 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
     //v := -mults_den[i];
     v := -Valuation(ss,P);
     if v gt 0 then
-      print "nonzero valuation; P = %o, v = %o\n", P, v;
+    vprintf HilbertModularForms: "nonzero valuation; P = %o, v = %o\n", P, v;
       residues_den cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
       moduli_den cat:= [P^v, P^(v+1)];
     else

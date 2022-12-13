@@ -2,14 +2,15 @@
 load "config.m";
 
 SetDebugOnError(true);
-MaxDiscr := 1000;
-MaxLevelNorm := 1000;
+MaxDiscr := 100;
+MaxLevelNorm := 100;
 
 count := 0;
-
+fld_count := 0;
 for D:=1 to MaxDiscr do
 	F := QuadraticField(D);
 	if Degree(F) eq 1 then continue; end if;
+    fld_count +:= 1;
 	
 	printf "Now trying %o\n", F;
 	ZF := Integers(F);
@@ -19,7 +20,7 @@ for D:=1 to MaxDiscr do
 	Ns := IdealsUpTo(MaxLevelNorm, F);
 	
 	printf "%o levels, %o components\n", #Ns, #NCl;
-	count := #Ns * #NCl;
+	count +:= #Ns * #NCl;
 	for N in Ns do
 		printf "Trying level %o\n", N;
 		m := ClassGroupPrimeRepresentatives(ZF, N, Pl);
@@ -37,4 +38,5 @@ for D:=1 to MaxDiscr do
 	end for;
 end for;
 				
-print "Total count %o\n";
+printf "Number of fields = %o\n", fld_count;
+printf "Total count %o\n", count;
