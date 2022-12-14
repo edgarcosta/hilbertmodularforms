@@ -8,6 +8,7 @@
   HJ-CFrac.m
   CuspResolution.m
   Cusps.m
+  EllipticPoints.m
   Hecke.m
   HZCuspIntersection.m
   LinearAlgebra.m

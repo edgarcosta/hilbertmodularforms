@@ -236,7 +236,9 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
     UK,mUK := UnitGroup(ZKabs);
     _, mKabstoK := IsIsomorphic(Kabs,K);
     h := ClassNumber(Kabs); // h = Class number
-    w := 2 * #quo< UK | [ (mKabstoK(mUF(u)))@@mUK : u in Generators(UF) ] >; // Unit index w = 2 * [ZK : ZF]
+
+    // Unit index w = 2 * [ZK : ZF]
+    w := 2 * #quo< UK | [ (mKabstoK(mUF(u)))@@mUK : u in Generators(UF) ] >;
     vprintf HMFTrace : "ClassNumberOverUnitIndex: <%o, %o> %o\n", a, b, h/w;
 
     // Requirements
