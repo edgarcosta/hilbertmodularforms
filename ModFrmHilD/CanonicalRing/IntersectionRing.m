@@ -961,10 +961,25 @@ minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.
     return ChernNumbersOfMinimalResolution(F, 1*RingOfIntegers(F));
 end intrinsic;
 
-intrinsic ChernNumber(F::FldNum, n::RngIntElt) -> RngIntElt
+
+
+
+intrinsic ChernNumber(F::FldNum, level::RngOrdIdl) -> RngIntElt
 {Returns the ith Chern number of the
 minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
-    return ChernNumbersOfMinimalResolution(F, 1*RingOfIntegers(F));
+    return ChernNumbersOfMinimalResolution(F, level);
+end intrinsic;
+
+
+intrinsic ArithmeticGenus(F::FldNum, level::RngOrdIdl) -> RngIntElt
+{returns chi the arithmetic genus}
+    c12, c2 := ChernNumbersOfMinimalResolution(F, level);
+    return (c12 + c2)/12;
+end intrinsic;
+
+intrinsic ArithmeticGenus(F::FldNum) -> RngIntElt
+{returns chi the arithmetic genus}
+    return ArithmeticGenus(F, 1*Integers(F));
 end intrinsic;
 
 intrinsic VolumeOfFundamentalDomain(F::FldNum) -> FldRatElt
