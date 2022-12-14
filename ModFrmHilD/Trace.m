@@ -64,15 +64,14 @@ end intrinsic;
 
 ///////////////////////////////// ModFrmHilD: TraceProduct ////////////////////////////////////////////
 
-// FIXME maybe do -t to match paper
 function WeightFactor(u, t, prec)
-  // \sum D_k T^k = 1/(1 + t*T + u*T^2)
+  // \sum D_k T^k = 1/(1 - t*T + u*T^2)
   // returns \sum_{k <= prec} Norm(D_{k-2}) T^{k}
-  res := [1/u, -t/u^2] cat [Parent(t) | 0 : _ in [0..prec-2 + 1]];
+  res := [1, t] cat [Parent(t) | 0 : _ in [0..prec-2 + 1]];
   rm2 := res[1];
   rm1 := res[2];
   for k in [3..prec-1] do
-    rm2, rm1 := Explode([rm1, -(t*rm1 + u*rm2)]);
+    rm2, rm1 := Explode([rm1, t*rm1 - u*rm2]);
     res[k] := rm1;
   end for;
   R<T> := PowerSeriesRing(Rationals());
@@ -172,9 +171,14 @@ intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowEl
   res +:= O(T^(prec + 1));
 
 
+  done := Set([]);
   for pair in pairs do
   //for pair in IndexOfSummation(M, mm, aa) do
     t, u := Explode(pair);
+    if [-t, u] in done then continue; end if;
+    // account for (u, t) and (u, -t)
+    Include(~done, pair);
+    mult := t ne 0 select 2 else 1;
     D := t^2 - 4*u;
     // Requirements
     require IsTotallyPositive(-D): "Non CM-extension in summation";
@@ -188,7 +192,7 @@ intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowEl
     // C(u,t)
     C := ClassNumberOverUnitIndex(K, UF, mUF) * ConductorSum(ZF, NN, aa, u, t, ZK, ff);
     vprintf HMFTrace : "WeightFactor: <%o, %o> %o\n", u, t, WeightFactor(u, t, prec);
-    res +:= C*WeightFactor(u, t, prec);
+    res +:= mult*C*WeightFactor(u, t, prec);
   end for;
   R<X> := PolynomialRing(Rationals());
   b, num, den := RationalReconstruction(R!AbsEltseq(res), X^(prec + 1), prec div 2, prec div 2);
