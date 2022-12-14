@@ -1,10 +1,33 @@
 
 // Artin Symbol
 function ArtinSymbol(ZK, pp)
-    print ZK, pp, BaseRing(ZK);
     if IsSplit(pp,ZK) then return 1;
     elif IsRamified(pp,ZK) then return 0;
     else return -1; end if;
+end function;
+
+function HasseUnitIndex(ZF, pair)
+    // Compute the Hasse unit index of the order associated to the monogenic order.
+
+    // First create the monogenic order
+    F := NumberField(ZF);
+    _<x> := PolynomialRing(ZF);
+    K := ext<NumberField(ZF) | x^2 + pair[1] * x + pair[2]>;
+    ZK := MaximalOrder(K);
+    S := Order([K.1]);
+
+    // Get the image of the norm from units of S in F^x.
+    US, mUS := UnitGroup(AbsoluteOrder(S));
+    UF, mUF := UnitGroup(ZF);
+
+    UQ := sub<UF | [Norm(ZK ! mUS(u)) @@ mUF : u in Generators(US)]>;
+    
+    // Now we need to compute ZF^(x2). Observe that
+    //
+    //  2^(r1+r2 - 1) * |<-1>| = [ZF^x : ZF^(x2)] = [ZF^x : UQ] [UQ : ZF^(x2)];
+    //
+    // because F is totally real and due to the Dirichlet unit theorem.    
+    return ExactQuotient(2^Degree(F), Index(UF, UQ));
 end function;
 
 function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
@@ -16,6 +39,7 @@ end function;
 function ClassNumberOfOrderWithConductor(ZK, bb)
     // Class number of the order with conductor bb.
     factsbb := Factorization(bb);
+    // NOTE: Replace ArtinSymbol with UnramifiedSquareSymbol
     artinFactors := [1 - ArtinSymbol(ZK, pp[1]) * Norm(pp[1])^(-1) : pp in factsbb];
     term := IsEmpty(factsbb) select Norm(bb) else Norm(bb) * (&* artinFactors);
 
@@ -84,7 +108,7 @@ function PossibleIsotropyOrders(F, level)
     M := GradedRingOfHMFs(F, 1);
 
     // Possible characteristic polynomials for elliptic automorphisms.
-    possibleCharPolys := IndexOfSummation(M, level, 1*MaximalOrder(F));
+    possibleCharPolys := IndexOfSummation(M, 1*MaximalOrder(F), 1*MaximalOrder(F));
     print possibleCharPolys;
 
     // The order ZF[zetaq] has two associated cyclotomic polynomials. Thus, we
@@ -99,8 +123,194 @@ function PossibleIsotropyOrders(F, level)
     return ret;
 end function;
 
+intrinsic ActualCorrectOrders(F::FldNum, rho : Bound := 0) -> Tup
+{For a totally real field F, computes and stores the class numbers 
+ and associated data for all cyclotomic quadratic extensions of F.}
 
-intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup :  prec:=5) -> Any
+  ZF := MaximalOrder(F);
+  UF, mUF := UnitGroup(ZF);
+
+  hKs := [];
+  Rs := [];
+  ZKs := [];
+
+  // Order of the torsion element.
+  s := rho;
+  
+  // vprintf Shimura : "Computing class number for %o\n", s;
+  fs := Factorization(CyclotomicPolynomial(s), F)[1][1];
+  K := ext<F | fs>;
+  ZK := MaximalOrder(K);
+  // ZKs[i] := ZK;
+
+  Kabs := AbsoluteField(K);
+
+  // This is the hugely expensive step.
+  if Bound cmpeq 0 then
+      hK := ClassNumber(Kabs);
+  elif Bound cmpeq "BachBound" then
+      hK := ClassNumber(Kabs : Bound := Floor(BachBound(Kabs)/40));
+  else
+      hK := ClassNumber(Kabs : Bound := Bound);
+  end if;
+  // hKs[i] := hK;
+
+  // Compute the order Oq = ZF[zeta_2s] and its conductor.
+  Oq := Order([K.1]);
+  Dq := Discriminant(MinimalPolynomial(K.1));
+  ff := SquareRoot(ZF!!Discriminant(Oq)/Discriminant(ZK));
+
+  UK, mUK := UnitGroup(AbsoluteOrder(ZK));
+  wK := #TorsionSubgroup(UK);
+
+  Rdata := [];
+
+  // Loop over orders by their conductor dff.
+  for jf := 1 to #Divisors(ff) do
+      dff := Divisors(ff)[jf];
+
+      // if ZK is maximal, we have Cl(O_dff)/Cl(K) = 1.
+      if dff eq ideal<ZF | 1> then
+          Oq := ZK;
+          UOq := UK;
+          mUOq := mUK;
+          wOq := wK;
+          hOq := hK; // Different than John's function.
+          // Otherwise, use the classic formula to compute the relative class number.
+      else
+          Oq := sub<ZK | [K!g*zki*ZK.2 : g in Generators(dff),
+                                         zki in Generators(PseudoBasis(Module(ZK))[2][1])]>;
+          UOq, mUOq := UnitGroup(AbsoluteOrder(Oq));
+          wOq := #TorsionSubgroup(UOq);
+          /* hOq := 1/#quo<UK | [mUOq(u)@@mUK : u in Generators(UOq)]> * AbsoluteNorm(dff) * */
+          /*          &*[1-UnramifiedSquareSymbol(Dq,pp[1])/ */
+          /*               AbsoluteNorm(pp[1]) : pp in Factorization(dff)]; */
+
+          // print hOq, #PicardGroup(AbsoluteOrder(Oq));
+          // assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
+          hOq := #PicardGroup(AbsoluteOrder(Oq));
+      end if;
+
+      // We only take orders where Oq has exact torsion unit group of order s.
+      if wOq ne s*2/Gcd(2,s) then
+          hQOq := 0;
+      else
+          // The local unit adjustment. (Hasse unit index)
+          UQ := sub<UF | [Norm(ZK ! mUOq(u)) @@ mUF : u in Generators(UOq)]>;
+          QOq := #quo<UQ | [2*u : u in Generators(UF)]>;
+          //hQOq := hOq/QOq;
+      end if;
+
+      // dff  -- divisor of conductor of R[i].
+      // hOq -- ????  Class number of the order S.
+      // QOq  -- ????  Hasse Unit index of the order S.
+
+      Append(~Rdata, <dff, hOq, Rationals() ! QOq>);
+  end for;
+
+  //Rs cat:= [Rdata];
+
+
+  //tup := <Sdiv, ZKs, hKs, Rs>;
+  //F`CyclotomicClassNumbers := tup;
+  return Rdata;
+end intrinsic;
+
+
+/*
+intrinsic ActualCorrectOrders(ZF, order) -> Any
+{}
+    // Given the extension K/F generated by joining zeta, compute the orders S such that
+    // F[zeta] <= S <= K(i).
+
+    // order is the order of the isotropy group we are after.
+    s := order;
+
+    F := NumberField(ZF);
+    UF, mUF := UnitGroup(F);
+
+    // Create the correct CM extension K.
+    fs := Factorization(CyclotomicPolynomial(s), F)[1][1];
+    K := ext<F | fs>;
+
+    
+    ZK := MaximalOrder(K);
+    Kabs  := AbsoluteField(K);
+    ZKabs := MaximalOrder(Kabs);
+
+    // It is assumed that `K.1` is zeta, the torsion element. 
+    
+    // Compute the order Oq = ZF[zeta_2s] and its conductor.
+    Oq := Order([K.1]);
+    Dq := Discriminant(MinimalPolynomial(K.1));
+    ff := SquareRoot(ZF !! Discriminant(Oq)/Discriminant(ZK));
+
+    // QUESTION: What does this do?
+    _ := IndependentUnits(ZKabs);
+    SetOrderUnitsAreFundamental(ZKabs);
+    UK, mUK := UnitGroup(ZKabs);
+    // This is necessary so that the UnitGroup(s) below are done
+    // with the same level of rigour as the ClassGroup above.
+    // Without this, the UnitGroup would be done with full rigour,
+    // But that is pointless: if hK was heuristic and incorrect,
+    // then our answer will be wrong even if we get the units right.
+    // (Oct 2010, SRD)
+
+    wK := #TorsionSubgroup(UK);
+    
+    Rdata := [];
+
+    // Loop over orders by their conductor dff.
+    for jf := 1 to #Divisors(ff) do
+        dff := Divisors(ff)[jf];
+
+        // if ZK is maximal, we have Cl(O_dff)/Cl(K) = 1.
+        if dff eq ideal<ZF | 1> then
+            Oq := ZKabs; // not used
+            UOq := UK;
+            mUOq := map< UK -> UK | u :-> u, u :-> u >;
+            wOq := wK;
+            hOq := 1;
+            // Otherwise, use the classic formula to compute the relative class number.
+        else
+            assert ZK.1 eq 1;
+            CI := CoefficientIdeals(ZK);
+            Oqbas := Basis(CI[1]) cat [z*ZK.2 : z in Basis(dff*CI[2])];
+            Oqbas := ChangeUniverse(Oqbas, ZKabs);
+            Oq := sub< ZKabs | Oqbas >;
+            assert Index(ZKabs, Oq) eq Norm(dff);
+            
+            //UOq, mUOq := UnitGroupAsSubgroup(Oq, ZKabs : UG := <UK, mUK>);
+            wOq := #TorsionSubgroup(UOq);
+            hOq := 1/#quo<UK | [UK| mUOq(u) : u in Generators(UOq)]> * AbsoluteNorm(dff) *
+                     &*[1-UnramifiedSquareSymbol(Dq, pp[1])/
+                          AbsoluteNorm(pp[1]) : pp in Factorization(dff)];
+        end if;
+
+        // We only take orders where Oq has exact torsion unit group of order s.
+        if wOq ne s*2/Gcd(2,s) then
+            hQOq := 0;
+        else
+            // The local unit adjustment.
+            UQ := sub<UF | [Norm(ZK ! mUOq(u)) @@ mUF : u in Generators(UOq)]>;
+            QOq := #quo<UQ | [2*u : u in Generators(UF)]>;
+            hQOq := hOq/QOq;
+        end if;
+
+        QOq := #quo<UOq | [(ZKabs ! mUF(u)) @@mUK @@mUOq : u in Generators(UF)] cat [UOq.1]>;
+
+        // dff  -- divisor of conductor of R[i].
+        // hQOq -- ????  Class number of the order S.
+        // QOq  -- ????  Hasse Unit index of the order S. ()
+        Append(~Rdata, <dff, hQOq, QOq>);
+    end for;
+
+    return Rdata;
+end intrinsic;
+*/
+
+
+intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup : Group:="SL") -> Any
 {Given a congruence subgroup `Gamma` (level, field, decoration data), return
 }
     // The algorithm is based on page 739 of "Quaternion Algebra, Voight".
@@ -114,22 +324,15 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup :  prec:=5) -> Any
 
     F := Field(Gamma);
     ZF := MaximalOrder(F);
+    hF := ClassNumber(ZF);
     hFplus := NarrowClassNumber(F);
     dim := Degree(F); // Dimension of Hilbert modular variety.
     assert dim eq 2;
-    
-    UF, mUF := UnitGroup(F);
+
+    // TODO: Level data might be important in order selection.
     level := Level(Gamma);
-    aa := 1*MaximalOrder(F);
-
-    possibleMonogenicOrders := PossibleIsotropyOrders(F, level);
+    assert Norm(level) eq 1;
     
-    // Create the associated S's, then adding up their contribution.
-
-    // 1. First compute the number of embeddings m(hatS, hatO; hatOx) adelically.
-    Sumterm := 0;
-    _<x> := PolynomialRing(F);
-
     // The forumla in Proposition 4.2.3 says that the number of elliptic points
     // is
     //
@@ -138,80 +341,80 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup :  prec:=5) -> Any
     // We loop over the terms S (valid monogenic orders that could be isotropy orders).
 
     ellipticCounts := AssociativeArray();
-    for pair in possibleMonogenicOrders do // NOTE: Divides things up wrong.
-        hS := PicardNumberOfMonogenicOrder(ZF, pair);
-        localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, pair);
+    ellipticCountsByOrder := AssociativeArray();
 
-        print localCount, hS;
+    // Loop over these values for some reason.
+    S := LCM(CyclotomicQuadraticExtensions(F));
+    // S = all prime powers m such that [F(zeta_m):F] = 2
+    // Now get all possible m such that [F(zeta_m):F] = 2
+    Sdiv := [m : m in Divisors(S) | m ne 1 and Valuation(m,2) ne 1]; // avoid repetition
+    Sdiv := [m : m in Sdiv | 
+             forall{ f : f in Factorization(CyclotomicPolynomial(m), F)
+                     | Degree(f[1]) eq 2} ];
+    Sdiv := [IsEven(m) select m else 2*m : m in Sdiv];
+
+    for rho in Sdiv do
+        listOfOrders := ActualCorrectOrders(F, rho);
+        count := 0;
         
-        // This particular term depends on the particular group of interest.
-        if true then
-            // The case of van der Geer -- PGL_2^+ acting on upper-half-plane-squared HH^2.
-            groupCorrectionFactor := 2^(dim-1);
-        elif false then
-            // The case of SL.
-            // TODO: Add in the unit index term.
-        end if;
+        for Stuple in listOfOrders do
+            //hS := PicardNumberOfMonogenicOrder(ZF, Stuple);
+            hS := Stuple[2];
+            localCount := 1; // TODO: Generalize to other levels.
+            // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
 
-        // Record the data into the table.
-        a, b := Explode(pair);
-        ellipticCounts[<a, b>] := (hS/hFplus) * groupCorrectionFactor * localCount;        
+            
+            // This particular term depends on the particular group of interest.
+            if Group eq "SL" then
+                // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
+                // The forumla in Proposition 4.2.3 says that the number of elliptic points
+                // is
+                //
+                //     mq^1 = 2^(n-1)/h(R) * Sum(S; h(S)/Q(S) * m(hatS, hatO; hatOtimes)).
+                //
+                // Where Q(S) is the Hasse Unit Index. We loop over the terms S.
+
+                //hasseUnitIndex := HasseUnitIndex(ZF, Stuple);
+                hasseUnitIndex := Stuple[3];
+                // print "Hasse:", hasseUnitIndex, rho;
+                
+                // NOTE: Factor of 2 in the paper, not in John's book.
+                groupCorrectionFactor := 2^(dim-1) / hF / hasseUnitIndex;
+                
+                // print "Stuple:", Stuple[1], hS, localCount, hF, hasseUnitIndex;
+                // print "Factor:", groupCorrectionFactor;
+                
+            elif Group eq "GL"  then
+                groupCorrectionFactor := 2^(dim-1) / hFplus;
+
+            else
+                error "Case for group not implemented. Group := ", Group;
+            end if;
+
+            // Record the data into the table.
+            ellipticCountsByOrder[Stuple[1]] := hS * groupCorrectionFactor * localCount;
+            count +:= hS * groupCorrectionFactor * localCount;
+        end for;
+
+        ellipticCounts[ExactQuotient(rho, 2)] := count;
+        
     end for;
-        
-    return ellipticCounts;
+
+    return ellipticCounts, ellipticCountsByOrder;    
 end intrinsic;
 
-/*
-    // 1b. Unit index w = 2 * [ZK : ZF]
-    w := 2 * #quo< UK | [ (mKabstoK(mUF(u))) @@ mUK : u in Generators(UF) ] >; 
+intrinsic Foo(n) -> Any
+{}
+    F := QuadraticField(n);
+    G := CongruenceSubgroup(F);
+    return F, G;
+end intrinsic;
 
-    print "Unit index", w;
-    w := 1;
-    
-    // Class number over unit index.
-    C := h/w;
-
-    // Conductor Sum
-    // Instead of computing all embedding for S, instead we loop over all optimal orders
-    // ff <= O <= MaximalOrder(K), where K is the imaginary quadratic field and ff is the
-    // conductor of S/F, (where S is the quadratic order associated to the isotropy group).
-    conductorsum := 0;
-
-    // Determine the adelic optimal embeddings.
-    // TODO: XXX: This is missing a term.
-    term := ClassNumberOfOrderWithConductor(ZK, ff); // TODO: Missing term.
-    term *:= 
-    conductorsum +:= term;
-
-    // Add to Sumterm
-
-
-    /*
-    for bb in Divisors(ff) do    
-        // term from converting class number of order to class number of maximal order
-        term := ClassNumberOfOrderWithConductor(ZK, bb);
-
-
-        // Embedding numbers
-        adelicOEN := 1;
-        for pp in Factorization(mm) do
-            adelicOEN *:= LocalOptimalEmbeddingNumbers(b,a,pp[1],pp[2]);
-        end for;
-
-
-        for pp in Factorization(mm) do  
-            // Create a polynomial (aka, a monogenic order) x^2 + b1x + a1 with conductor bb.
-
-            b0, a0 := PolynomialMaximalOrder(b,a,ZF,pp[1]);
-            pi := UniformizingElement(pp[1]);
-            vbb := Valuation(bb,pp[1]);
-            b1 := b0 * pi^(vbb);
-            a1 := a0 * pi^(2 * vbb); // The polynomial encoded as (b1, a1);
-            term *:= LocalOptimalEmbeddingNumbers(b1,a1,pp[1],pp[2]);
-        end for;
-        print term, C;
-        conductorsum +:= term;
-    end for;
-
-*/        
-
+intrinsic TestEC(n)
+{}
+    F, G := Foo(n);
+    A, B := CountEllipticPoints(G);
+    print "Results:";
+    print Eltseq(A);
+    // print Eltseq(B);
+end intrinsic;
