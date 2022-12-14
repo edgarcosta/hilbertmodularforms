@@ -135,7 +135,7 @@ function ClassNumberOverUnitIndex(K, UF, mUF)
   return hK / UnitIndex;
 end function;
 
-intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
+intrinsic HilberSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
   { Ben will write this }
 
   R<T> := PowerSeriesRing(Rationals());
