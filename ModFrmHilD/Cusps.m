@@ -267,8 +267,6 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     ss, MM, ac_bar := Explode(quad);
     vprintf HilbertModularForms: "quadruple = %o\n", quad;
     a_bar, c_bar := Explode(ac_bar);
-    vprintf HilbertModularForms: "Lifting second coordinate. c_bar = %o\n", c_bar;
-    //c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
     c := c_bar;
     vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
@@ -387,14 +385,68 @@ intrinsic CuspCheckEisensteinDim(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolE
     else
         error "GammaType not recognized";
     end if;
-    chis := GaloisConjugacyRepresentatives(chis);
+    // There are issues about Galois conjugacy classes (Issue #241), so we keep all characters here in this test
     d := 0;
     for chi in chis do
         //print "chi = ", Eltseq(chi);
         Mk_chi := HMFSpace(R, NN, [2,2], chi);
-        d +:= EisensteinDimension(Mk_chi);
+        a := CuspGetEisensteinDimension(Mk_chi);
+        //print "other dimension = ", a;
+        d +:= a;
+        //a := EisensteinDimension(Mk_chi);        
+        //print "dimension from EisensteinDimension = ", a;
     end for;
     vprintf HilbertModularForms: "Eisenstein dimension = %o\n", d;
     vprintf HilbertModularForms: "quadruple count = %o\n", quad_cnt;
     return quad_cnt eq d;
 end intrinsic;
+
+intrinsic CuspGetEisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
+{return the dimension of E(Mk)}
+    N := Level(Mk);
+    newforms_levels := AssociativeArray();
+    for pair in CuspEisensteinAdmissibleCharacterPairs(Mk) do
+        lvl := Conductor(pair[1]) * Conductor(pair[2]);
+        if not IsDefined(newforms_levels, lvl) then
+            newforms_levels[lvl] := 0;
+        end if;
+        //print [Order(e) : e in pair];
+        newforms_levels[lvl] +:= 1; //EulerPhi(LCM([Order(e) : e in pair]));
+    end for;
+    partial_dims := [Integers()| #Divisors(N/mm)*rel_dim : mm->rel_dim in newforms_levels];
+    //print partial_dims;
+    return &+partial_dims;
+end intrinsic;
+
+intrinsic CuspEisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
+{returns a list of all the primitive pairs <chi1, chi2> such that chi1*chi2 =
+Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk) If the weight is
+1, we only return pairs up to permutation}
+    N := Level(Mk);
+    k := Weight(Mk);
+    assert k eq [2,2];
+    k := k[1];
+    chi := Character(Mk);
+    M := Parent(Mk);
+    X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
+    assert X eq Parent(chi);
+    chis := Elements(X);
+    chis_reps := Set(chis); //Set(GaloisConjugacyRepresentatives(chis));
+    chis_reps_index := {i : i->c in chis | c in chis_reps};
+    chiscond := [Conductor(c) : c in chis];
+    chisdict := AssociativeArray();
+    for i->c in chis do
+        chisdict[c] := i;
+    end for;
+    // [i, j] pairs st chis[i]*chis[j] = chi
+    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis | i in chis_reps_index ];
+    // filter based on conductor
+    pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];
+    // k=2, so ignore special weight 1 case
+    prims := AssociativeArray();
+    for i in SequenceToSet(&cat pairs) do
+        prims[i] := AssociatedPrimitiveCharacter(chis[i]);
+    end for;
+    return [* <prims[p[1]], prims[p[2]]> : p in pairs *];
+end intrinsic;
+
