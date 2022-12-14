@@ -259,11 +259,12 @@ end procedure;
 /* Testing CuspQuadruples */
 
 procedure TestCuspQuadruples()
-    F := RandomField();
+    //F := RandomField();
+    F := QuadraticField(79);
     NN := RandomIntegralIdl(F);
     if not IsPrime(NN) then return; end if;
     bb := RandomIntegralIdl(F);
-    GammaType := "Gamma1"; //Random(["Gamma0", "Gamma1"]);
+    GammaType := "Gamma0"; //Random(["Gamma0", "Gamma1"]);
     quads := CuspQuadruples(NN, bb: GammaType := GammaType);
     ZF := Integers(F);
     
@@ -286,7 +287,12 @@ procedure TestCuspQuadruples()
     end for;
     //This tests the number of quadruples using Eisenstein dimensions
     print F, NN, Factorization(NN), GammaType, #NarrowClassGroup(F);
-    //if Degree(F) gt 1 then assert CuspSanityCheck(NN: GammaType := GammaType); end if;
+    if Degree(F) gt 1 then
+        assert CuspSanityCheck(NN: GammaType := GammaType);
+        b := CuspCheckEisensteinDim(NN: GammaType := GammaType);
+        if b then print "Test passes!"; end if;
+        assert b;
+    end if;
 end procedure;
 
 /*****************************************************************************/

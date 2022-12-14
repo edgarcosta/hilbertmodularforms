@@ -335,39 +335,66 @@ intrinsic GammaCuspCount(NN::RngOrdIdl) -> RngIntElt
   return NarrowClassNumber(F)*ClassNumber(ZF)*cnt;
 end intrinsic;
 
+intrinsic TotalNumberOfCusps(NN::RngOrdIdl : GammaType := "Gamma0") -> RngIntElt
+{Return total number of cusps}
+    ZF := Order(NN);
+    F := NumberField(ZF);
+    NCl, mp := NarrowClassGroup(ZF);
+    quad_cnt := 0;
+    for bb in NCl do
+        quads := CuspQuadruples(NN,mp(bb) : GammaType := GammaType);
+        quad_cnt +:= #quads;
+    end for;
+    return quad_cnt;
+end intrinsic;
+
 intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
-  {}
+{Test total number of cusps using sum of phi's}
+
   ZF := Order(NN);
   F := NumberField(ZF);
-  NCl, mp := NarrowClassGroup(ZF);
-  H := HeckeCharacterGroup(ideal<ZF|NN>, [1..#RealPlaces(F)]);
   R := GradedRingOfHMFs(F, 1);
-  quad_cnt := 0;
-  for bb in NCl do
-    quads := CuspQuadruples(NN,mp(bb) : GammaType := GammaType);
-    quad_cnt +:= #quads;
-  end for;
-  if GammaType eq "Gamma" then
-    vprintf HilbertModularForms: "formula = %o\n", GammaCuspCount(NN);
-    vprintf HilbertModularForms: "#quads = %o\n", quad_cnt;
-    return quad_cnt eq GammaCuspCount(NN);
-  elif GammaType eq "Gamma0" then
-    //chis := [H!1];
-    chis := [chi : chi in Elements(H) | IsEvenAtoo(chi) and IsTrivial(DirichletRestriction(chi))];
+  quad_cnt := TotalNumberOfCusps(NN: GammaType:=GammaType);
+  
+  if GammaType eq "Gamma0" then
+      Mk := HMFSpace(R, NN, [2,2]);
+      d := NumberOfCusps(Mk); //Computed using \sum_M \phi(...)    
   elif GammaType eq "Gamma1" then
-    chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
-    else
-    error "GammaType not recognized";
+      d := quad_cnt; //Replace with some other test
+  else
+      error "GammaType not recognized";
   end if;
-  chis := GaloisConjugacyRepresentatives(chis);
-  d := 0;
-  for chi in chis do
-    //print "chi = ", Eltseq(chi);
-    Mk_chi := HMFSpace(R, NN, [2,2], chi);
-    d +:= EisensteinDimension(Mk_chi);
-  end for;
-  vprintf HilbertModularForms: "Eisenstein dimension = %o\n", d;
-  vprintf HilbertModularForms: "quadruple count = %o\n", quad_cnt;
+  
   return quad_cnt eq d;
 end intrinsic;
 
+intrinsic CuspCheckEisensteinDim(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
+{}
+    ZF := Order(NN);
+    F := NumberField(ZF);
+    H := HeckeCharacterGroup(ideal<ZF|NN>, [1..#RealPlaces(F)]);
+    R := GradedRingOfHMFs(F, 1);
+    quad_cnt := TotalNumberOfCusps(NN: GammaType:=GammaType);
+    
+    if GammaType eq "Gamma" then
+        vprintf HilbertModularForms: "formula = %o\n", GammaCuspCount(NN);
+        vprintf HilbertModularForms: "#quads = %o\n", quad_cnt;
+        return quad_cnt eq GammaCuspCount(NN);
+    elif GammaType eq "Gamma0" then
+        chis := [chi : chi in Elements(H) | IsEvenAtoo(chi) and IsTrivial(DirichletRestriction(chi))];
+    elif GammaType eq "Gamma1" then
+        chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
+    else
+        error "GammaType not recognized";
+    end if;
+    chis := GaloisConjugacyRepresentatives(chis);
+    d := 0;
+    for chi in chis do
+        //print "chi = ", Eltseq(chi);
+        Mk_chi := HMFSpace(R, NN, [2,2], chi);
+        d +:= EisensteinDimension(Mk_chi);
+    end for;
+    vprintf HilbertModularForms: "Eisenstein dimension = %o\n", d;
+    vprintf HilbertModularForms: "quadruple count = %o\n", quad_cnt;
+    return quad_cnt eq d;
+end intrinsic;
