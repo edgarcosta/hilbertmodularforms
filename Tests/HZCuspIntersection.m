@@ -55,11 +55,11 @@ mults[60][b][3] := [[0,1,0],[0,1,0]];
 mults[60][b][7] := [[1,0,1],[1,0,1]];
 mults[60][b][22] := [[1,2,1],[1,2,1]];
 mults[60][b][30] := [[1,0,1],[1,0,1]];
-		       
+
 printf "Testing Example 1 in [vdG] p. 92...";
 testHZ(13, bs[13], mults[13]);
-    
-printf "Tesing Example 2 in [vdG] p.93...";
+
+printf "Testing Example 2 in [vdG] p.93...";
 // Note that vdG is doing the Hurwitz-Maass extension,
 // which is a Z/2-extension of our group
 
