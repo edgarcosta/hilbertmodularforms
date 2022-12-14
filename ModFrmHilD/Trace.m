@@ -64,8 +64,9 @@ end intrinsic;
 
 ///////////////////////////////// ModFrmHilD: TraceProduct ////////////////////////////////////////////
 
+// FIXME maybe do -t to match paper
 function WeightFactor(u, t, prec)
-  // \sum D_k T^k = 1/(T^2 + T*t + u)^2
+  // \sum D_k T^k = 1/(1 + t*T + u*T^2)
   // returns \sum_{k <= prec} Norm(D_{k-2}) T^{k}
   res := [1/u, -t/u^2] cat [Parent(t) | 0 : _ in [0..prec-2 + 1]];
   rm2 := res[1];
@@ -155,9 +156,8 @@ intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowEl
   // FIXME maybe do (u,t) and (u,-t) in one go
   pairs := IndexOfSummation(M, mm, aa);
 
-  // FIXME something is off
-  degree := 2 + (4*n - 1) + 2*#pairs;
-  prec := 8*degree;
+  degree := 2 + (4*n + 1) + (2*n + 2*n - 1)*#pairs;
+  prec := 2*degree + 1 + 20;
 
   // Correction term for weight 2
   res := (-1)^(n+1) * NarrowClassNumber(M)*T^2;
@@ -191,6 +191,7 @@ intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowEl
   R<X> := PolynomialRing(Rationals());
   b, num, den := RationalReconstruction(R!AbsEltseq(res), X^(prec + 1), prec div 2, prec div 2);
   assert b;
+  assert Degree(num) + Degree(den) le degree;
   return num/den;
 end intrinsic;
 
