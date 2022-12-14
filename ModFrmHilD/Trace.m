@@ -30,6 +30,8 @@ I have some code to quickly compute the Hasse unit index without doing the class
  */
 
 ///////////////////////////////// ModFrmHilD: Trace //////////////////////////////////////////////
+//
+declare verbose HMFTrace, 3;
 
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
@@ -61,6 +63,137 @@ end intrinsic;
 
 
 ///////////////////////////////// ModFrmHilD: TraceProduct ////////////////////////////////////////////
+
+function WeightFactor(u, t, prec)
+  // \sum D_k T^k = 1/(T^2 + T*t + u)^2
+  // returns \sum_{k <= prec} Norm(D_{k-2}) T^{k}
+  res := [1/u, -t/u^2] cat [Parent(t) | 0 : _ in [0..prec-2 + 1]];
+  rm2 := res[1];
+  rm1 := res[2];
+  for k in [3..prec-1] do
+    rm2, rm1 := Explode([rm1, -(t*rm1 + u*rm2)]);
+    res[k] := rm1;
+  end for;
+  R<T> := PowerSeriesRing(Rationals());
+  return T^2*R![i mod 2 eq 1 select Norm(elt) else 0: i->elt in res] + O(T^(prec + 1));
+end function;
+
+
+
+// Artin Symbol
+function ArtinSymbol(pp, ZK)
+  if IsSplit(pp, ZK) then
+    return 1;
+  elif IsRamified(pp, ZK) then
+    return 0;
+  else
+    return -1;
+  end if;
+end function;
+
+
+function ConductorSum(ZF, NN, aa, u, t, ZK, ff)
+  // F is the base field of HMFs
+  // NN level
+  // aa ideal for the diamond operator
+  // ff is the conductor associated to the pair (u, t) = x^2 - t*x + u
+  //
+  //
+  // conductorsum := Sum_{bb | f}  A_bb * B_bb // Sum over suborders S_bb containing S_ff with conductors bb
+  // A_bb := Norm(bb) * prod_{pp | bb} ( 1-  ArtinSymbol( K | pp ) Norm(pp) )  -- Term for converting class number h(S_bb) to class number of  maximal order h_k.
+  // B_bb :=  Embedding numbers for the order S_bb
+  conductorsum := 0;
+  for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
+    // term from converting class number of order to class number of maximal order
+    term := Norm(bb) * (&*([1] cat [1 - ArtinSymbol(pp[1], ZK) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
+    // Embedding numbers
+    for pp in Factorization(NN) do
+      // Create a polynomial x^2 + b1x + a1 with conductor bb
+      t0, u0 := PolynomialMaximalOrder(t, u, ZF, pp[1]);
+      pi := UniformizingElement(pp[1]);
+      vbb := Valuation(bb, pp[1]);
+      t1 := t0 * pi^(vbb);
+      u1 := u0 * pi^(2 * vbb);
+      term *:= EmbeddingNumbers(t1, u1, pp[1], pp[2]);
+    end for;
+    conductorsum +:= term;
+  end for;
+  return conductorsum;
+end function;
+
+function ClassNumberOverUnitIndex(K, UF, mUF)
+  // K CM quadratic extension of F
+  // UF unit group of F
+  // mUF the map from the group to F
+  Kabs := AbsoluteField(K);
+  ZKabs := Integers(Kabs);
+  UK, mUK := UnitGroup(ZKabs);
+  _, mKabstoK := IsIsomorphic(Kabs,K);
+  hK := ClassNumber(Kabs); // h = Class number
+  // Unit index w = 2 * [ZK : ZF]
+  UnitIndex := 2 * #quo< UK | [ (mKabstoK(mUF(u)))@@mUK : u in Generators(UF) ] >;
+  return hK / UnitIndex;
+end function;
+
+intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
+  { Ben will write this }
+
+  R<T> := PowerSeriesRing(Rationals());
+  F := BaseField(M);
+  ZF := Integers(F);
+  _<x> := PolynomialRing(ZF);
+  n := Degree(F);
+  Disc := Discriminant(ZF);
+  h := ClassNumber(F);
+  UF, mUF := UnitGroup(ZF);
+
+  // for consistency with the rest of the code for trace formulas
+  mm := 1*ZF; // hecke operator
+  aa := 1*ZF; // diamond operator
+
+  // list of pairs (u,t) that we will sum over
+  // FIXME maybe do (u,t) and (u,-t) in one go
+  pairs := IndexOfSummation(M, mm, aa);
+
+  // FIXME something is off
+  degree := 2 + (4*n - 1) + 2*#pairs;
+  prec := 8*degree;
+
+  // Correction term for weight 2
+  res := (-1)^(n+1) * NarrowClassNumber(M)*T^2;
+
+  // Constant term
+  B := h * Norm(NN) * Abs(DedekindZetaExact(F,-1)) / 2^(n-1);
+  B *:= &*( [1] cat [1 + Norm(p[1])^(-1) : p in Factorization(NN)] );
+
+  res +:= B*R!([(k mod 2 eq 0 and k gt 0) select (k-1)^(n) else 0 : k in [0..prec]]);
+  res +:= O(T^(prec + 1));
+
+
+  for pair in pairs do
+  //for pair in IndexOfSummation(M, mm, aa) do
+    t, u := Explode(pair);
+    D := t^2 - 4*u;
+    // Requirements
+    require IsTotallyPositive(-D): "Non CM-extension in summation";
+    K := ext<F | x^2 - D >;
+    ZK := Integers(K);
+    DD := Discriminant(ZK);
+    ff := Sqrt((D*ZF)/DD); // Conductor
+
+    vprintf HMFTrace : "ClassNumberOverUnitIndex: <%o, %o> %o\n", u, t, ClassNumberOverUnitIndex(K, UF, mUF);
+    vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", u, t, ConductorSum(ZF, NN, aa, u, t, ZK, ff);
+    // C(u,t)
+    C := ClassNumberOverUnitIndex(K, UF, mUF) * ConductorSum(ZF, NN, aa, u, t, ZK, ff);
+    vprintf HMFTrace : "WeightFactor: <%o, %o> %o\n", u, t, WeightFactor(u, t, prec);
+    res +:= C*WeightFactor(u, t, prec);
+  end for;
+  R<X> := PolynomialRing(Rationals());
+  b, num, den := RationalReconstruction(R!AbsEltseq(res), X^(prec + 1), prec div 2, prec div 2);
+  assert b;
+  return num/den;
+end intrinsic;
+
 
 intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
   {Computes Trace[ T(mm) * P(aa) ] where T(mm) is the mth hecke operator and P(aa) is the diamond operator}
@@ -105,7 +238,8 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
     h := ClassNumber(Kabs); // h = Class number
 
     // Unit index w = 2 * [ZK : ZF]
-    w := 2 * #quo< UK | [ (mKabstoK(mUF(u)))@@mUK : u in Generators(UF) ] >; 
+    w := 2 * #quo< UK | [ (mKabstoK(mUF(u)))@@mUK : u in Generators(UF) ] >;
+    vprintf HMFTrace : "ClassNumberOverUnitIndex: <%o, %o> %o\n", a, b, h/w;
 
     // Requirements
     require IsTotallyPositive(-D): "Non CM-extension in summation";
@@ -148,6 +282,9 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
       end for;
       conductorsum +:= term;
     end for;
+    vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", a, b, conductorsum;
+    vprintf HMFTrace : "WeightFactor: <%o, %o> %o\n", a, b, Round(&*[ Weightfactor( Evaluate(b,places[i]), Evaluate(a,places[i]), k[i]-2 ) : i in [1..n]]);
+    vprintf HMFTrace : "%o\n", &*["#" : _ in [1..30]];
 
     // Add to Sumterm
     Sumterm +:= C * conductorsum;
@@ -157,6 +294,9 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
   tr := ConstantTerm(Mk,mmaa) + Sumterm;
   return tr;
 end intrinsic;
+
+
+
 
 
 
@@ -388,7 +528,7 @@ end intrinsic;
 is totally positive generator for the fractional ideal representing the Hecke operator and
 u comes form a set of representative for the totally positive units modulo squares. */
 
-
+//FIXME: Refactor IndexOfSummation and PrecompIndexOfSummation so that they have a common core
 intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl) -> SeqEnum
   {Computes all a,b for which x^2 + bx + a is used in the summation for T(mm) and P(aa)}
   // Preliminaries
