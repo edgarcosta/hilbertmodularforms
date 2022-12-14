@@ -190,26 +190,39 @@ end procedure;
 /* Testing MakePairsForQuadruple */
 
 procedure TestMakePairsForQuadruple()
-    F := RandomField();    
-    ss := RandomFracIdl(F);
+    F := RandomField();
+    if not Degree(F) eq 2 then return; end if;
+    //if not #NarrowClassGroup(F) eq 1 then return; end if;
     NN := RandomIntegralIdl(F);
+    //if not #Factorization(NN) eq 1 then return; end if;
     MM := Random(Divisors(NN));
     GammaType := Random(["Gamma0", "Gamma1"]);
-    bb := RandomIntegralIdl(F);
-    pairs := MakePairsForQuadruple(NN, bb, ss, MM: GammaType := GammaType);
-    primes_check_a := [p[1]: p in Factorization(MM)];
-    primes_check_c := [p[1]: p in Factorization(NN/MM)];
-    
-    //Check a,c land in correct ideals
-    for i:=1 to #pairs do
-        a, c := Explode(pairs[i]);
-        assert a in ss;
-        for p in primes_check_a do
-            assert not a in ss*p;
-        end for;
-        assert c in ss*bb*MM;
-        for p in primes_check_c do
-            assert not c in ss*bb*MM*p;
+
+    count := 0;
+    NCl, mNCl := NarrowClassGroup(F);
+    Cl, mCl := ClassGroup(F);
+    for bbb in NCl do
+        for sss in Cl do
+            ss := mCl(sss);
+            bb := mNCl(bbb);
+            pairs := MakePairsForQuadruple(NN, bb, ss, MM: GammaType := GammaType);
+            primes_check_a := [p[1]: p in Factorization(MM)];
+            primes_check_c := [p[1]: p in Factorization(NN/MM)];
+            
+            //Check a,c land in correct ideals
+            for i:=1 to #pairs do
+                a, c := Explode(pairs[i]);
+                assert a in ss;
+                for p in primes_check_a do
+                    assert not a in ss*p;
+                end for;
+                assert c in ss*bb*MM;
+                for p in primes_check_c do
+                assert not c in ss*bb*MM*p;
+                end for;
+            end for;
+            printf "Adding %o\n", #pairs;
+            count +:= #pairs;
         end for;
     end for;
     
@@ -222,15 +235,24 @@ procedure TestMakePairsForQuadruple()
     Cln, mm := RayClassGroup(NN);
     G, i1, i2, p1, p2 := DirectSum(Gm, Gnm);
     gens := [];
-    for idl in Gn do
-        x := m(idl);
-        if IsId(x@@mm) then            
-            Append(~gens, i1(x@@m1) + i2(x@@m2));
-        end if;
-    end for;
+    if GammaType eq "Gamma1" then
+        for idl in Gn do
+            x := m(idl);
+            if IsId(x@@mm) then            
+                Append(~gens, i1(x@@m1) - i2(x@@m2));
+            end if;
+        end for;
+    else
+        for idl in Gn do
+            x := m(idl);
+            if IsId(x@@mCl) then
+                Append(~gens, i1(x@@m1) - i2(x@@m2));
+            end if;
+        end for;
+    end if;
     Q := quo<G|gens>;
-    //print #pairs, #Q;
-    //assert #pairs * #ClassGroup(F) * #NarrowClassGroup(F) eq #Q;
+    print count, #Q, #ClassGroup(F), #NarrowClassGroup(F), F, NN, MM, GammaType, Factorization(NN);
+    assert count eq #Q;
 end procedure;
 
 /*****************************************************************************/
@@ -239,8 +261,9 @@ end procedure;
 procedure TestCuspQuadruples()
     F := RandomField();
     NN := RandomIntegralIdl(F);
+    if not IsPrime(NN) then return; end if;
     bb := RandomIntegralIdl(F);
-    GammaType := Random(["Gamma0", "Gamma1"]);
+    GammaType := "Gamma1"; //Random(["Gamma0", "Gamma1"]);
     quads := CuspQuadruples(NN, bb: GammaType := GammaType);
     ZF := Integers(F);
     
@@ -262,6 +285,7 @@ procedure TestCuspQuadruples()
         end for;
     end for;
     //This tests the number of quadruples using Eisenstein dimensions
+    print F, NN, Factorization(NN), GammaType, #NarrowClassGroup(F);
     //if Degree(F) gt 1 then assert CuspSanityCheck(NN: GammaType := GammaType); end if;
 end procedure;
 

@@ -180,7 +180,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
     else
       error "GammaType not recognized";
     end if;
-    vprintf HilbertModularForms: "final a = %o, c = %o\n", a_new, c_new;
+    //vprintf HilbertModularForms: "final a = %o, c = %o\n", a_new, c_new;
     Append(~final, [F|a_new, c_new]);
   end for;
   return final;
@@ -243,9 +243,10 @@ intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::R
       end if;
   end for;
   x := FindEltWithValuations(F, bad_primes cat ssMM_primes, vs);
+  a := a_bar+x;
   assert a*ZF + c*(bb^-1) eq ss;
   assert a - a_bar in ss*MM;
-  return a_bar + x;
+  return a;
 end intrinsic;
 
 intrinsic IntegralCoordinates(x::Pt) -> SeqEnum
