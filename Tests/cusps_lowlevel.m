@@ -6,7 +6,6 @@ MaxD := 100;
 MaxNorm := 100;
 MaxCoefs := 100;
 NbTests := 50;
-Print := true;
 
 function RandomField()
     D := Random(MaxD);
@@ -221,7 +220,7 @@ procedure TestMakePairsForQuadruple()
                 assert not c in ss*bb*MM*p;
                 end for;
             end for;
-            printf "Adding %o\n", #pairs;
+            //printf "Adding %o\n", #pairs;
             count +:= #pairs;
         end for;
     end for;
@@ -251,7 +250,7 @@ procedure TestMakePairsForQuadruple()
         end for;
     end if;
     Q := quo<G|gens>;
-    print count, #Q, #ClassGroup(F), #NarrowClassGroup(F), F, NN, MM, GammaType, Factorization(NN);
+    //print count, #Q, #ClassGroup(F), #NarrowClassGroup(F), F, NN, MM, GammaType, Factorization(NN);
     assert count eq #Q;
 end procedure;
 
@@ -259,12 +258,13 @@ end procedure;
 /* Testing CuspQuadruples */
 
 procedure TestCuspQuadruples()
-    //F := RandomField();
-    F := QuadraticField(79);
+    F := RandomField();
     NN := RandomIntegralIdl(F);
-    if not IsPrime(NN) then return; end if;
+    //if not IsPrime(NN) then return; end if;
+    //F := QuadraticField(79);
+    //NN := PrimeIdealsOverPrime(F, 7)[1];
     bb := RandomIntegralIdl(F);
-    GammaType := "Gamma0"; //Random(["Gamma0", "Gamma1"]);
+    GammaType := Random(["Gamma0", "Gamma1"]);
     quads := CuspQuadruples(NN, bb: GammaType := GammaType);
     ZF := Integers(F);
     
@@ -286,12 +286,10 @@ procedure TestCuspQuadruples()
         end for;
     end for;
     //This tests the number of quadruples using Eisenstein dimensions
-    print F, NN, Factorization(NN), GammaType, #NarrowClassGroup(F);
+    //print F, NN, Factorization(NN), GammaType, #NarrowClassGroup(F);
     if Degree(F) gt 1 then
         assert CuspSanityCheck(NN: GammaType := GammaType);
-        b := CuspCheckEisensteinDim(NN: GammaType := GammaType);
-        if b then print "Test passes!"; end if;
-        assert b;
+        assert CuspCheckEisensteinDim(NN: GammaType := GammaType);
     end if;
 end procedure;
 
