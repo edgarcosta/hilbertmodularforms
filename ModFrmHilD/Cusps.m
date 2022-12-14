@@ -41,8 +41,8 @@ end intrinsic;
 
 intrinsic FindEltWithValuations(F::Fld, ps::SeqEnum[RngOrdIdl], vs::SeqEnum[RngIntElt])
         -> FldElt
-{Find an element of F that has exactly the required valuations at a finite number of primes,
-and nonnegative valuations at other primes}
+  {Find an element of F that has exactly the required valuations at a finite number of primes,
+  and nonnegative valuations at other primes}
     ss := 1*Integers(F);
     MM := 1*Integers(F);
     for i:=1 to #ps do
@@ -61,108 +61,13 @@ end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
 intrinsic GeneratorOfQuotientModuleCRT(ss::RngOrdFracIdl, MM::RngOrdIdl) -> RngElt 
-{Find a generator of ss/ss*MM as a ZF/MM-module}
+  {Find a generator of ss/ss*MM as a ZF/MM-module}
     primes_ss := SequenceToSet([p[1]: p in Factorization(ss)]);
     primes_MM := SequenceToSet([p[1]: p in Factorization(MM)]);
     primes := SetToSequence(primes_ss join primes_MM);
     vals := [Valuation(ss, p): p in primes];
     return FindEltWithValuations(FieldOfFractions(Order(ss)), primes, vals);
 end intrinsic;
-    
-/*   ZF := Order(ss); */
-/*   if ss*MM eq ss then */
-/*     return ZF!1; */
-/*   end if; */
-/*   facts_num, facts_den := NumDenFactorization(ss*MM); */
-/*   ss_vals_num := []; */
-/*   ss_vals_den := []; */
-/*   //printf "ss_vals num = %o\n", ss_vals_num; */
-/*   //printf "ss_vals den = %o\n", ss_vals_den; */
-/*   residues_num := []; */
-/*   residues_den := []; */
-/*   moduli_num := []; */
-/*   moduli_den := []; */
-/*   for i := 1 to #facts_num do */
-/*     fact := facts_num[i]; */
-/*     P := fact[1]; */
-/*     //v := fact[2]; */
-/*     v := ss_vals_num[i]; */
-/*     t := UniformizingElement(P); */
-/*     residues_num cat:= [0, (t^v mod P^(v+1))]; // might be a problem if v=0 */
-/*     moduli_num cat:= [P^v, P^(v+1)]; */
-/*   end for; */
-/*   for i := 1 to #facts_den do */
-/*     fact := facts_den[i]; */
-/*     P := fact[1]; */
-/*     //v := -fact[2]; // want positive valuation */
-/*     v := -ss_vals_den[i]; // want positive valuation */
-/*     t := UniformizingElement(P); */
-/*     residues_den cat:= [0, (t^v mod P^(v+1))]; */
-/*     moduli_den cat:= [P^v, P^(v+1)]; */
-/*   end for; */
-/*   if #moduli_num eq 0 then // if list of moduli is empty */
-/*     a_num := ZF!1; */
-/*   else */
-/*     // ensure no cross-cancelation between num and den */
-/*     moduli_num cat:= [el[1] : el in facts_den]; */
-/*     residues_num cat:= [1 : el in facts_den]; */
-/*     //printf "residues for num = %o\n", residues_num; */
-/*     //printf "moduli for num = %o\n", moduli_num; */
-/*     a_num := CRT(residues_num, moduli_num); */
-/*   end if; */
-/*   if #moduli_den eq 0 then */
-/*     a_den := ZF!1; */
-/*   else */
-/*     // ensure no cross-cancelation between num and den */
-/*     moduli_den cat:= [el[1] : el in facts_num]; */
-/*     residues_den cat:= [1 : el in facts_num]; */
-/*     //printf "residues for den = %o\n", residues_den; */
-/*     //printf "moduli for den = %o\n", moduli_den; */
-/*     a_den := CRT(residues_den, moduli_den); */
-/*   end if; */
-/*   //printf "a_num = %o\n", a_num; */
-/*   //printf "a_den = %o\n", a_den; */
-/*   // verify it generates */
-/*   a := a_num/a_den; */
-/*   assert a*ZF + ss*MM eq ss; */
-/*   return a; */
-/* end intrinsic; */
-
-/* // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4 */
-/* intrinsic GeneratorsOfQuotientModuleBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum */
-/*   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module by looping over all elements of ss/(ss*MM).} */
-/*   ZF := Order(ss); */
-/*   F := NumberField(ZF); */
-/*   ZFMM, mpMM := quo< ZF | MM>; */
-/*   // loop over all elts of ss/(ss*MM) */
-/*   ss_gens := Generators(ss); */
-/*   ss_ngens := #ss_gens; */
-/*   quotient_gens := []; */
-/*   for el in CartesianPower(ZFMM, ss_ngens) do */
-/*     t := ZF!0; */
-/*     for i := 1 to ss_ngens do */
-/*       t +:= (el[i] @@ mpMM)*ss_gens[i]; */
-/*     end for; */
-/*     // check if new mod ss*MM */
-/*     /\* */
-/*       new_bool := true; */
-/*       for q in quotient_gens do */
-/*         if (t - q) in ss*MM then */
-/*           new_bool := false; */
-/*         end if; */
-/*       end for; */
-/*     *\/ */
-/*     //if (t*ZF + ss*MM eq ss) and new_bool then */
-/*     if (t*ZF + ss*MM eq ss) then */
-/*       Append(~quotient_gens, ReduceModuloIdeal(t, ss, ss*MM)); */
-/*     end if; */
-/*   end for; */
-/*   quotient_gens := SetToSequence(SequenceToSet(quotient_gens)); */
-/*   //printf "# of quotient gens = %o\n", #quotient_gens; */
-/*   //printf "number of units in ZF/ideal = %o\n", #UnitGroup(ZFMM); */
-/*   assert #quotient_gens eq #UnitGroup(ZFMM); */
-/*   return quotient_gens; */
-/* end intrinsic; */
 
 intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
   {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module using CRT.}
@@ -173,43 +78,6 @@ intrinsic GeneratorsOfQuotientModule(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnu
   U_seq := [mpU(el) : el in U];
   a := GeneratorOfQuotientModuleCRT(ss,MM);
   return [a*(el @@ mpMM) : el in U_seq];
-end intrinsic;
-
-// see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
-intrinsic GeneratorsOfQuotientModuleModuloTotallyPositiveUnitsBruteForce(ss::RngOrdFracIdl, MM::RngOrdIdl) -> SeqEnum
-  {Return the sequence of generators of ss/(ss*MM) as a ZF/MM-module modulo totally positive units in ZF.}
-
-  quotient_gens := GeneratorsOfQuotientModule(ss,MM);
-  F := Parent(quotient_gens[1]);
-  F := NumberField(F);
-  eps := FundamentalUnitTotPos(F);
-
-  // compute orbits of the elements of quotient_gens under totally positive units
-  // by repeatedly Shintani-reducing and reducing mod ss*MM (using ReduceModuloIdeal)
-  remaining := [1..#quotient_gens];
-  orbits := [];
-  while #remaining ne 0 do
-    ind0 := remaining[1];
-    a := quotient_gens[ind0];
-    orb := [ind0];
-    rep_bool := false;
-    while not rep_bool do
-      a := ReduceModuloIdeal(eps*a, ss, ss*MM);
-      ind := Index(quotient_gens, a);
-      if ind eq ind0 then
-        rep_bool := true;
-        break;
-      end if;
-      Append(~orb, ind);
-    end while;
-    Append(~orbits, orb);
-    vprintf HilbertModularForms: "orbit found = %o\n", orb;
-    remaining := [el : el in remaining | not el in orb];
-    vprintf HilbertModularForms: "remaining indices = %o\n", remaining;
-  end while;
-  vprintf HilbertModularForms: "orbits = %o\n", orbits;
-  // return one element from each orbit
-  return [orb[1] : orb in orbits];
 end intrinsic;
 
 // see section 5 of paper (eqn 5.1.5) or Dasgupta-Kakde Def 3.4
@@ -258,6 +126,8 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
   else
     error "GammaType not recognized";
   end if;
+
+  
   UQMM, mpQMM := UnitGroup(ZFMM);
   UQNNMM, mpQNNMM := UnitGroup(ZFNNMM);
 
@@ -298,14 +168,20 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
       // see also p. 100 of Diamond and Shurman
       a_new := ReduceModuloIdeal(a0, ss, ss*MM);
       c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
-      Append(~final, [a_new, c_new]);
+      if c_new eq 0 then
+        c_new := Generators(ss*bb*MM)[1];
+      end if;
     elif GammaType eq "Gamma" then
       a_new := ReduceModuloIdeal(a0, ss, ss*NN);
       c_new := ReduceModuloIdeal(c0, ss*bb, ss*bb*NN);
-      Append(~final, [a_new, c_new]);
+      if c_new eq 0 then
+        c_new := Generators(ss*bb*MM)[1];
+      end if;
     else
       error "GammaType not recognized";
     end if;
+    //vprintf HilbertModularForms: "final a = %o, c = %o\n", a_new, c_new;
+    Append(~final, [F|a_new, c_new]);
   end for;
   return final;
 end intrinsic;
@@ -316,7 +192,7 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
   {Return list of quadruples given in Lemma 3.6 of Dasgupta-Kakde (resp., eqn 5.1.9 in paper), which is in bijection with cusps of Gamma_1(NN)_bb (resp., of Gamma_0(NN)_bb).}
   ZF := Order(NN);
   F := NumberField(ZF);
-  mpCl := ClassGroupPrimeRepresentatives(ZF,NN*bb);
+  mpCl := ClassGroupPrimeRepresentatives(ZF,NN);
   Cl := Domain(mpCl);
   Cl_seq := [mpCl(el) : el in Cl];
  
@@ -338,193 +214,40 @@ intrinsic CuspQuadruples(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -
 end intrinsic;
 
 // see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
-intrinsic CuspLiftSecondCoordinate(c_bar::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> RngElt 
-  {With the notation as in section 5 of the paper, given c_bar in P_1(NN)_bb, lift c_bar to a c satisfying GCD(c*bb^-1,NN) = MM.}
-
-  ZF := Order(ss);
-
-  // fulfill congruence condition
-  // TODO: still okay for GammaType := Gamma?
-  residues := [c_bar];
-  moduli := [ss*bb*NN];
-
-  // fulfill GCD condition
-  if GammaType in ["Gamma0", "Gamma1"] then
-    //facts := Factorization(ss*bb*NN);
-    facts := Factorization(bb*NN);
-  elif GammaType eq "Gamma" then
-    //facts := Factorization(ss*bb);
-    facts := Factorization(bb);
-  else
-    error "GammaType not recognized";
-  end if;
-  //printf "factors of ss*bb*NN: %o\n", facts;
-  
-  //Ps := [fact[1] : fact in facts];
-  //mults := [fact[2] : fact in facts];
-  for fact in facts do
-    P := fact[1];
-    vN := fact[2];
-    //v := mults_num[i];
-    if GammaType in ["Gamma0", "Gamma1"] then
-      v := Valuation(bb*MM,P);
-    elif GammaType eq "Gamma" then
-      // TODO: double check this
-      v := Valuation(bb*NN,P);
-    else
-      error "GammaType not recognized";
-    end if;
-
-    //printf "nonzero valuation; P = %o, v = %o\n", P, v;
-    residues cat:= [0, (c_bar mod P^(v+1))]; // might be a problem if v=0
-    moduli cat:= [P^v, P^(v+1)];
-    //else
-    //  residues cat:= [(c_bar mod P^vN)]; // might be a problem if v=0
-    //  moduli cat:= [P^vN];
-  end for;
-
-  vprintf HilbertModularForms: "residues = %o\n", residues;
-  vprintf HilbertModularForms: "moduli = %o\n", moduli;
-
-  if #moduli eq 0 then // if list of moduli is empty
-    c := ZF!1;
-  else
-    c := CRT(residues, moduli);
-  end if;
-  if c eq 0 then
-    c +:= Generators(&*moduli)[1];
-  end if;
-  assert GCD(c*(bb^-1),NN) eq MM;
-  assert c - c_bar in ss*bb*NN;
-  return c;
-end intrinsic;
-
-// see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
 intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
   {}
-  ZF := Order(ss);
-  //facts := Factorization(ss*MM);
-  if a_bar eq 0 then
-    return ZF!1;
-  end if;
-  // if c=0, then ss should be principal
-  if c eq 0 then // we've excluded this from happening in CuspLiftSecondCoordinate; can probably delete
-    pbool, a := IsPrincipal(ss);
-    assert pbool;
-    //facts := Factorization(ss*MM);
-    //Ps_num := [fact[1] : fact in facts | fact[2] gt 0];
-    ////mults_num := [fact[2] : fact in facts | fact[2] gt 0];
-    //mults_num := [Valuation((ss*MM), P) : P in Ps_num];
-    //Ps_den := [fact[1] : fact in facts | fact[2] lt 0];
-    ////mults_den := [fact[2] : fact in facts | fact[2] lt 0];
-    //mults_den := [Valuation((ss*MM), P) : P in Ps_den];
-    Q, mp := quo< ZF | ss*MM>;
-    UQ, mpUQ := UnitGroup(Q);
-    U, mpU := UnitGroup(ZF);
-    Qunits := sub< UQ | [(mp(mpU(el))) @@ mpUQ : el in Generators(U)]>;
-    u := (mp(a)^-1*a_bar) @@ (mpU*mpUQ);
-    return u*a;
-  end if;
-
-  
-  facts := Factorization(c*(bb^-1));
-  Ps_num    := [fact[1] : fact in facts | fact[2] gt 0];
-  mults_num := [Valuation((c*bb^-1), P) : P in Ps_num];
-  Ps_den    := [fact[1] : fact in facts | fact[2] lt 0];
-  mults_den := [Valuation((c*bb^-1), P) : P in Ps_den];
-  
-  //print "Ps_num = ", Ps_num;
-  //print "c = ", c;
-
-  residues_num := [];
-  residues_den := [];
-  moduli_num := [];
-  moduli_den := [];
-
-  // numerator residues and moduli
-  //print "making numerator";
-  for i := 1 to #Ps_num do
-    P := Ps_num[i];
-    //v := mults_num[i];
-    v := Valuation(ss,P);
-    if v gt 0 then
-      vprintf HilbertModularForms: "nonzero valuation; P = %o, v = %o\n", P, v;
-      residues_num cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
-      moduli_num cat:= [P^v, P^(v+1)];
+  ZF := Order(NN);
+  F := NumberField(ZF);
+  fac_ss := Factorization(ss);
+  fac_MM := Factorization(MM);
+  ssMM_primes := [el[1]: el in fac_ss] cat [el[1]: el in fac_MM];
+  ssMM_primes := SetToSequence(SequenceToSet(ssMM_primes));
+  bad_primes := [el[1] : el in Factorization(c*(bb^-1)) | not el[1] in ssMM_primes];
+  vs := [];
+  for p in bad_primes do
+    if Valuation(a_bar, p) gt 0 then
+      Append(~vs, Valuation(ss, p));
     else
-      vMM := Valuation(MM,P);
-      if vMM gt 0 then
-        residues_num cat:= [(a_bar mod P^mults_num[i])]; // might be a problem if v=0
-        moduli_num   cat:= [P^mults_num[i]];
+      Append(~vs, Valuation(ss,p)+1);
+    end if;
+  end for;
+  for p in ssMM_primes do
+      if Valuation(a_bar, p) gt Valuation(ss, p) then
+          //p is necessarily prime to MM
+          Append(~vs, Valuation(ss, p));
+      elif Valuation(a_bar, p) eq Valuation(ss*MM, p) then
+          //p is necessarily prime to MM
+          Append(~vs, Valuation(ss*MM,p)+1);
       else
-        residues_num cat:= [(ZF!1 mod P^mults_num[i])]; // might be a problem if v=0
-        moduli_num   cat:= [P^mults_num[i]];
+          Append(~vs, Valuation(ss*MM, p));
       end if;
-    end if;
   end for;
-
-  // denominator residues and moduli
-  //print "making denominator";
-  for i := 1 to #Ps_den do
-    P := Ps_den[i];
-    //v := -mults_den[i];
-    v := -Valuation(ss,P);
-    if v gt 0 then
-    vprintf HilbertModularForms: "nonzero valuation; P = %o, v = %o\n", P, v;
-      residues_den cat:= [0, (a_bar mod P^(v+1))]; // might be a problem if v=0
-      moduli_den cat:= [P^v, P^(v+1)];
-    else
-      residues_den cat:= [(a_bar mod P^mults_den[i])]; // might be a problem if v=0
-      moduli_den cat:= [P^mults_den[i]];
-    end if;
-  end for;
-
-  if GetVerbose("HilbertModularForms") gt 0 then
-    printf "residues for num = %o\n", residues_num;
-    printf "moduli for num = %o\n", moduli_num;
-    printf "residues for den = %o\n", residues_den;
-    printf "moduli for den = %o\n", moduli_den;
-  end if;
-
-  if #moduli_num eq 0 then // if list of moduli is empty
-    a_num := ZF!1;
-  else
-    a_num := CRT(residues_num, moduli_num);
-  end if;
-  if #moduli_den eq 0 then
-    a_den := ZF!1;
-  else
-    a_den := CRT(residues_den, moduli_den);
-  end if;
-  a := a_num/a_den;
-  assert GCD(a*ZF,c*(bb^-1)) eq ss;
-  assert a - a_bar in ss*MM;
-  return a;
-end intrinsic;
-
-// see Lemma 5.1.10 in paper, or Lemma 3.6 of Dasgupta-Kakde
-/*
-intrinsic CuspLiftFirstCoordinate(a_bar::RngElt, c::RngElt, ss::RngOrdIdl, MM::RngOrdIdl, NN::RngOrdIdl, bb::RngOrdIdl) -> RngElt 
-  {}
-  ZF := Order(ss);
-  if c eq 0 then
-    pbool, a := IsPrincipal(ss);
-    assert pbool;
-  else
-    a := ZF!GeneratorOfQuotientModuleCRT(ss, ideal< ZF | c*(bb^-1) >);
-  end if;
-  printf "generator for ss/(c*(bb^-1)) = %o\n", a;
-  if not (a-a_bar) in ss*MM then
-    Q, mpQ := quo< ZF | c*(bb^-1) >; // breaks if c=0
-    lambda_bar := mpQ(a)^-1*mpQ(a_bar);
-    printf "lambda_bar = %o\n", lambda_bar;
-    a *:= (lambda_bar @@ mpQ);
-  end if;
+  x := FindEltWithValuations(F, bad_primes cat ssMM_primes, vs);
+  a := a_bar+x;
   assert a*ZF + c*(bb^-1) eq ss;
   assert a - a_bar in ss*MM;
   return a;
 end intrinsic;
-*/
 
 intrinsic IntegralCoordinates(x::Pt) -> SeqEnum
   {}
@@ -544,8 +267,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     ss, MM, ac_bar := Explode(quad);
     vprintf HilbertModularForms: "quadruple = %o\n", quad;
     a_bar, c_bar := Explode(ac_bar);
-    vprintf HilbertModularForms: "Lifting second coordinate. c_bar = %o\n", c_bar;
-    c := CuspLiftSecondCoordinate(c_bar, ss, MM, NN, bb);
+    c := c_bar;
     vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
     vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
@@ -611,39 +333,120 @@ intrinsic GammaCuspCount(NN::RngOrdIdl) -> RngIntElt
   return NarrowClassNumber(F)*ClassNumber(ZF)*cnt;
 end intrinsic;
 
+intrinsic TotalNumberOfCusps(NN::RngOrdIdl : GammaType := "Gamma0") -> RngIntElt
+{Return total number of cusps}
+    ZF := Order(NN);
+    F := NumberField(ZF);
+    NCl, mp := NarrowClassGroup(ZF);
+    quad_cnt := 0;
+    for bb in NCl do
+        quads := CuspQuadruples(NN,mp(bb) : GammaType := GammaType);
+        quad_cnt +:= #quads;
+    end for;
+    return quad_cnt;
+end intrinsic;
+
 intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
-  {}
+{Test total number of cusps using sum of phi's}
+
   ZF := Order(NN);
   F := NumberField(ZF);
-  NCl, mp := NarrowClassGroup(ZF);
-  H := HeckeCharacterGroup(ideal<ZF|NN>, [1..#RealPlaces(F)]);
   R := GradedRingOfHMFs(F, 1);
-  quad_cnt := 0;
-  for bb in NCl do
-    quads := CuspQuadruples(NN,mp(bb) : GammaType := GammaType);
-    quad_cnt +:= #quads;
-  end for;
-  if GammaType eq "Gamma" then
-    vprintf HilbertModularForms: "formula = %o\n", GammaCuspCount(NN);
-    vprintf HilbertModularForms: "#quads = %o\n", quad_cnt;
-    return quad_cnt eq GammaCuspCount(NN);
-  elif GammaType eq "Gamma0" then
-    //chis := [H!1];
-    chis := [chi : chi in Elements(H) | IsEvenAtoo(chi) and IsTrivial(DirichletRestriction(chi))];
+  quad_cnt := TotalNumberOfCusps(NN: GammaType:=GammaType);
+  
+  if GammaType eq "Gamma0" then
+      Mk := HMFSpace(R, NN, [2,2]);
+      d := NumberOfCusps(Mk); //Computed using \sum_M \phi(...)    
   elif GammaType eq "Gamma1" then
-    chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
-    else
-    error "GammaType not recognized";
+      d := quad_cnt; //Replace with some other test
+  else
+      error "GammaType not recognized";
   end if;
-  chis := GaloisConjugacyRepresentatives(chis);
-  d := 0;
-  for chi in chis do
-    //print "chi = ", Eltseq(chi);
-    Mk_chi := HMFSpace(R, NN, [2,2], chi);
-    d +:= EisensteinDimension(Mk_chi);
-  end for;
-  vprintf HilbertModularForms: "Eisenstein dimension = %o\n", d;
-  vprintf HilbertModularForms: "quadruple count = %o\n", quad_cnt;
+  
   return quad_cnt eq d;
+end intrinsic;
+
+intrinsic CuspCheckEisensteinDim(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
+{}
+    ZF := Order(NN);
+    F := NumberField(ZF);
+    H := HeckeCharacterGroup(ideal<ZF|NN>, [1..#RealPlaces(F)]);
+    R := GradedRingOfHMFs(F, 1);
+    quad_cnt := TotalNumberOfCusps(NN: GammaType:=GammaType);
+    
+    if GammaType eq "Gamma" then
+        vprintf HilbertModularForms: "formula = %o\n", GammaCuspCount(NN);
+        vprintf HilbertModularForms: "#quads = %o\n", quad_cnt;
+        return quad_cnt eq GammaCuspCount(NN);
+    elif GammaType eq "Gamma0" then
+        chis := [chi : chi in Elements(H) | IsEvenAtoo(chi) and IsTrivial(DirichletRestriction(chi))];
+    elif GammaType eq "Gamma1" then
+        chis := [chi : chi in Elements(H) | IsEvenAtoo(chi)];
+    else
+        error "GammaType not recognized";
+    end if;
+    // There are issues about Galois conjugacy classes (Issue #241), so we keep all characters here in this test
+    d := 0;
+    for chi in chis do
+        //print "chi = ", Eltseq(chi);
+        Mk_chi := HMFSpace(R, NN, [2,2], chi);
+        a := CuspGetEisensteinDimension(Mk_chi);
+        //print "other dimension = ", a;
+        d +:= a;
+        //a := EisensteinDimension(Mk_chi);        
+        //print "dimension from EisensteinDimension = ", a;
+    end for;
+    vprintf HilbertModularForms: "Eisenstein dimension = %o\n", d;
+    vprintf HilbertModularForms: "quadruple count = %o\n", quad_cnt;
+    return quad_cnt eq d;
+end intrinsic;
+
+intrinsic CuspGetEisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
+{return the dimension of E(Mk)}
+    N := Level(Mk);
+    newforms_levels := AssociativeArray();
+    for pair in CuspEisensteinAdmissibleCharacterPairs(Mk) do
+        lvl := Conductor(pair[1]) * Conductor(pair[2]);
+        if not IsDefined(newforms_levels, lvl) then
+            newforms_levels[lvl] := 0;
+        end if;
+        //print [Order(e) : e in pair];
+        newforms_levels[lvl] +:= 1; //EulerPhi(LCM([Order(e) : e in pair]));
+    end for;
+    partial_dims := [Integers()| #Divisors(N/mm)*rel_dim : mm->rel_dim in newforms_levels];
+    //print partial_dims;
+    return &+partial_dims;
+end intrinsic;
+
+intrinsic CuspEisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
+{returns a list of all the primitive pairs <chi1, chi2> such that chi1*chi2 =
+Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk) If the weight is
+1, we only return pairs up to permutation}
+    N := Level(Mk);
+    k := Weight(Mk);
+    assert k eq [2,2];
+    k := k[1];
+    chi := Character(Mk);
+    M := Parent(Mk);
+    X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
+    assert X eq Parent(chi);
+    chis := Elements(X);
+    chis_reps := Set(chis); //Set(GaloisConjugacyRepresentatives(chis));
+    chis_reps_index := {i : i->c in chis | c in chis_reps};
+    chiscond := [Conductor(c) : c in chis];
+    chisdict := AssociativeArray();
+    for i->c in chis do
+        chisdict[c] := i;
+    end for;
+    // [i, j] pairs st chis[i]*chis[j] = chi
+    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis | i in chis_reps_index ];
+    // filter based on conductor
+    pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];
+    // k=2, so ignore special weight 1 case
+    prims := AssociativeArray();
+    for i in SequenceToSet(&cat pairs) do
+        prims[i] := AssociatedPrimitiveCharacter(chis[i]);
+    end for;
+    return [* <prims[p[1]], prims[p[2]]> : p in pairs *];
 end intrinsic;
 

@@ -333,7 +333,7 @@ intrinsic RepeatSequence(l :: SeqEnum, n :: RngIntElt) -> SeqEnum
 end intrinsic;
 
 
-intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt) -> SeqEnum
+intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt) -> SeqEnum, RngIntElt
 {}
     K := Field(G);
     N := Level(G);
@@ -345,7 +345,7 @@ end intrinsic;
 // this is the top-level function
 intrinsic CuspResolutionIntersections(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
                                       alpha :: FldQuadElt, beta::FldQuadElt
-                                      : GammaType := "Gamma0") -> SeqEnum[RngIntElt]
+                                      : GammaType := "Gamma0") -> SeqEnum[RngIntElt], RngIntElt
 
 {Compute the cyclic sequence of self-intersection numbers for the
 cycle of P1's appearing in the appearing in the resolution of the cusp
