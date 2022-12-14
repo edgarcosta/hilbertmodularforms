@@ -1,19 +1,38 @@
 procedure testHZ(D, bs, mults)
     F := QuadraticField(D);
-    ZF := Integers(F);
+    ZF<z> := Integers(F);
     N := 1*ZF;
     for b in bs do
-	assert &and[HZCuspIntersection(F,t,N,b) eq mults[b][t] 
-		    : t in Keys(mults[b])];
+        for t in Keys(mults[b]) do
+            results:= HZCuspIntersection(F, t, N, b);
+            for i->res in results do
+                pass := false;
+                for k in [1..#res] do
+                    if mults[b][t][i] eq res[k+1..#res] cat res[1..k] then
+                        pass := true;
+                        break k;
+                    end if;
+                end for;
+                if not pass then
+                    print &*["#": _ in [1..80]];
+                    printf "\nFails for\nD=%o\nb=%o\nt=%o\n", D, IdealOneLine(b), t;
+                    print HZCuspIntersection(F, t, N, b), "=!=", mults[b][t];
+                    print &*["#": _ in [1..80]];
+                    assert false;
+                end if;
+            end for;
+        end for;
     end for;
 end procedure;
 
-Ds := [13,60];
+Ds := [13, 60];
 bs := AssociativeArray(Ds);
-bs[13] := [1*Integers(QuadraticField(13))];
-F := QuadraticField(60);
-cl_plus_F, cl_plus_map := NarrowClassGroup(F);
-bs[60] := [cl_plus_map(x) : x in cl_plus_F];
+for d in Ds do
+    ZF<z> := Integers(QuadraticField(d));
+    cl_plus_F, cl_plus_map := NarrowClassGroup(ZF);
+    bs[d] := [cl_plus_map(x) : x in cl_plus_F];
+end for;
+
 
 mults := AssociativeArray(Ds);
 for D in Ds do
@@ -56,14 +75,16 @@ mults[60][b][7] := [[1,0,1],[1,0,1]];
 mults[60][b][22] := [[1,2,1],[1,2,1]];
 mults[60][b][30] := [[1,0,1],[1,0,1]];
 
-printf "Testing Example 1 in [vdG] p. 92...";
+printf "\n\tTesting Example 1 in [vdG] p. 92...";
 testHZ(13, bs[13], mults[13]);
+print "Success!";
 
-printf "Testing Example 2 in [vdG] p.93...";
+printf "\tTesting Example 2 in [vdG] p.93...";
 // Note that vdG is doing the Hurwitz-Maass extension,
 // which is a Z/2-extension of our group
 
 testHZ(60, bs[60], mults[60]);
+print "Success!";
 
 
 
