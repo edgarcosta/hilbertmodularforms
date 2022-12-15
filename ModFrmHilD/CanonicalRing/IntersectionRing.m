@@ -132,7 +132,7 @@ intrinsic GradedComponents(R::ChowRngHMS) -> Tup
     return R`GradedComponents;
 end intrinsic;
 
-intrinsic CongruenceSubgroup(R::ChowRngHMS) -> StupidCongruenceSubgroup
+intrinsic CongruenceSubgroup(R::ChowRngHMS) -> GrpHilbert
 {}
     return R`CongruenceSubgroup;
 end intrinsic;
@@ -569,7 +569,7 @@ end intrinsic;
 //       and cusps to resolve. It may be a good idea to implement a "Diagonal" option
 //       to compress all the singularities of the same type into a single intersection class.
 //
-intrinsic IntersectionRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
+intrinsic IntersectionRing(Gamma::GrpHilbert, BR::Rng) -> ChowRngHMS
 {Computes the Chow ring of the minimal desingularization of the Bailey-Borel compactification
 of the Hilbert Modular Surface with coefficients in BR.}
 
@@ -682,7 +682,7 @@ end intrinsic;
 
 ///////// Hilferfunktionen ///////////
 
-intrinsic _RawToIntersectionMatrix(G::StupidCongruenceSubgroup, BR::Rng, ellipticData, parabolicData) -> MtrxSprs
+intrinsic _RawToIntersectionMatrix(G::GrpHilbert, BR::Rng, ellipticData, parabolicData) -> MtrxSprs
 {}
 
     if #ellipticData gt 0 then
@@ -871,7 +871,7 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////
 
-intrinsic IntersectionRing(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+intrinsic IntersectionRing(Gamma::GrpHilbert) -> ChowRngHMS
 {Equivalent to IntersectionRing(Gamma, Integers()).}
     return IntersectionRing(Gamma, Integers());
 end intrinsic;
@@ -924,12 +924,12 @@ intrinsic IntersectionRingOfMinimalResolution(F::FldNum, N::RngOrdIdl) -> ChowRn
     return IntersectionRingOfMinimalResolution(Gamma);
 end intrinsic;
 
-intrinsic IntersectionRingOfCuspidalResolution(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+intrinsic IntersectionRingOfCuspidalResolution(Gamma::GrpHilbert) -> ChowRngHMS
 {Computes the Chow ring of the surface resolving the cusp singularities of the Hilbert Modular Surface.}
     error "Not Implemented.";
 end intrinsic;
 
-intrinsic IntersectionRingOfMinimalResolution(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+intrinsic IntersectionRingOfMinimalResolution(Gamma::GrpHilbert) -> ChowRngHMS
 {Computes the Chow ring of the minimal resolution of the singularities of the Hilbert Modular Surface.}
     error "Not Implemented.";
 end intrinsic;
@@ -1037,7 +1037,7 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////
 
-intrinsic ChernNumbersOfMinimalResolution(Gamma::StupidCongruenceSubgroup) -> SeqEnum
+intrinsic ChernNumbersOfMinimalResolution(Gamma::GrpHilbert) -> SeqEnum
 {Returns `c1^2, c2`,  corresponding to the Chern numbers of the
 minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
     return ChernNumbers(IntersectionRing(Gamma));
@@ -1111,18 +1111,18 @@ cycle of curves in the resolution together with the intersection matrix.}
 end intrinsic;
 
 
-intrinsic VolumeOfFundamentalDomain(Gamma::StupidCongruenceSubgroup) -> FldRatElt
+intrinsic VolumeOfFundamentalDomain(Gamma::GrpHilbert) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);
 end intrinsic;
 
-intrinsic ChernNumbersOfLogCanonical(Gamma::StupidCongruenceSubgroup) -> FldRatElt, FldRatElt
+intrinsic ChernNumbersOfLogCanonical(Gamma::GrpHilbert) -> FldRatElt, FldRatElt
 {Return the Chern numbers of the log-canonical sheaf.}
     vol := VolumeOfFundamentalDomain(Gamma);
     return 2 * vol, vol;
 end intrinsic;
 
-intrinsic ChernNumberOfLogCanonical(Gamma::StupidCongruenceSubgroup, i::RngIntElt) -> FldRatElt
+intrinsic ChernNumberOfLogCanonical(Gamma::GrpHilbert, i::RngIntElt) -> FldRatElt
 {Return the i-th Chern number of the log-canonical sheaf.}
     a, b := ChernNumbersOfLogCanonical(Gamma);
     return [a, b][i];
@@ -1139,7 +1139,7 @@ intrinsic ChernNumberOfLogCanonical(R::ChowRngHMS, i::RngIntElt) -> FldRatElt
 end intrinsic;
 
 
-intrinsic Covolume(Gamma::StupidCongruenceSubgroup) -> FldRatElt
+intrinsic Covolume(Gamma::GrpHilbert) -> FldRatElt
 {Alias for VolumeOfFundamentalDomain.}
     return VolumeOfFundamentalDomain(Gamma);
 end intrinsic;
@@ -1174,12 +1174,12 @@ end intrinsic;
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-intrinsic ChowRing(Gamma::StupidCongruenceSubgroup) -> ChowRngHMS
+intrinsic ChowRing(Gamma::GrpHilbert) -> ChowRngHMS
 {}
     return IntersectionRing(Gamma);
 end intrinsic;
 
-intrinsic ChowRing(Gamma::StupidCongruenceSubgroup, BR::Rng) -> ChowRngHMS
+intrinsic ChowRing(Gamma::GrpHilbert, BR::Rng) -> ChowRngHMS
 {}
     return IntersectionRing(Gamma, BR);
 end intrinsic;

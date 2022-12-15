@@ -333,7 +333,7 @@ intrinsic RepeatSequence(l :: SeqEnum, n :: RngIntElt) -> SeqEnum
 end intrinsic;
 
 
-intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt) -> SeqEnum, RngIntElt
+intrinsic CuspResolutionIntersections(G::GrpHilbert, p::Pt) -> SeqEnum, RngIntElt
 {}
     K := Field(G);
     N := Level(G);

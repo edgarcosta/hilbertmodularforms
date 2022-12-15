@@ -1,16 +1,17 @@
 {
   Basis.m
+  CuspResolution.m
+  Cusps.m
   Elements.m
+  EllipticPoints.m
   FldExt.m
   Formatting.m
   GradedPoly.m
   GradedRing.m
   HJ-CFrac.m
-  CuspResolution.m
-  Cusps.m
-  EllipticPoints.m
-  Hecke.m
   HZCuspIntersection.m
+  Hecke.m
+  Labels.m
   LinearAlgebra.m
   Restriction.m
   Space.m
@@ -31,13 +32,13 @@ Multiplication
 Creation
 {
    DedekindZetaExact.m
-   Newforms.m
    EisensteinSeries.m
-   ThetaSeries.m
-   Recognize.m
-   Igusa.m
-   Siegel.m
    EllipticCurve.m
+   Igusa.m
+   Newforms.m
+   Recognize.m
+   Siegel.m
+   ThetaSeries.m
    TraceForm.m
    Weight1.m
 }
@@ -47,5 +48,5 @@ CanonicalRing
   CanonicalRing.m
   HilbertSeries.m
   IntersectionRing.m
-  StupidCongruenceSubgroup.m
+  CongruenceSubgroup.m
 }
