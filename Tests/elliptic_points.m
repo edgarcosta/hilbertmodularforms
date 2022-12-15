@@ -89,12 +89,15 @@ for K in quadraticFields do
 	B := mp(b);
 	G := CongruenceSubgroup(K, 1*ZK, B);
 
-	A := CountEllipticPoints(G);        
-
+	A := CountEllipticPoints(G);
         boo := (A[2] eq a2) and (A[3] eq a3p + a3m);
 	if not boo then
 	    error "Values not equal:", disc, signs;
 	end if;
+
+        // Also check if the number of elliptic points are integers in the GL+ case.
+        B := CountEllipticPoints(G : Group:="GL+");
+        assert &and [count in Integers() : count in B];
     end for;
     
 end for;
