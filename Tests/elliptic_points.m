@@ -83,8 +83,7 @@ for K in quadraticFields do
 
         // Compute the numbers of elliptic points in the table.
 	a2, a3p, a3m := CorrectEllipticPointCounts(entry);
-
-        
+                
 	// Now compute the HMS
 	ZK := MaximalOrder(K);
 	B := mp(b);
