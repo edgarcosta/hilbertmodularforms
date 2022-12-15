@@ -45,109 +45,51 @@ intrinsic ArtinSymbol(ZK::RngOrd, pp::RngOrdIdl) -> RngIntElt
     else return -1; end if;
 end intrinsic;
 
-//******************************************************************
-//This is what I am adding from Shimura
-//******************************************************************
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Local optimal embedding numbers.
+//
+////////////////////////////////////////////////////////////////////////////////
 
 function OddLocalEmbeddingNumber(d, e, f, pp)
-  // Returns the number of embeddings of the order of conductor pp^f in
-  // a local quadratic order of discriminant d into an Eichler order of level pp^e.
+    // Returns the number of embeddings of the order of conductor pp^f in
+    // a local quadratic order of discriminant d into an Eichler order of level pp^e.
 
-  k, mk := ResidueClassField(pp);
-  kappa := #k;
-  pi := SafeUniformiser(pp);
-  r := Valuation(d,pp);
-  if IsSquare(mk(d/pi^r)) then
-    issq := 2;
-  else
-    issq := 0;
-  end if;
-
-  if r eq 0 then
-    return issq;
-  elif e lt r then
-    if e mod 2 eq 1 then
-      return 2*kappa^((e-1) div 2);
-    else
-      return kappa^((e div 2)-1)*(kappa+1);
-    end if;
-  elif e eq r then
-    if r mod 2 eq 1 then
-      return kappa^((r-1) div 2);
-    else
-      return kappa^(r div 2) + kappa^((r div 2)-1)*issq;
-    end if;
-  elif e gt r then
-    if r mod 2 eq 1 then
-      return 0;
-    else
-      return kappa^((r div 2)-1)*(kappa+1)*issq;
-    end if;
-  end if;
-/*
-  if Valuation(d,pp) eq 0 then
-    if f eq 0 then
-      if IsSquare(mk(d)) then
-        return 2;
-      else
-        return 0;
-      end if;
-    else
-      if e le f then
-        return 1;
-      elif e le 2*f then
-        return 2;
-      else
-        if IsSquare(mk(d)) then
-          return 2;
-        else
-          return 0;
-        end if;
-      end if;
-    end if;
-  else
+    k, mk := ResidueClassField(pp);
+    kappa := #k;
+    pi := SafeUniformiser(pp);
     r := Valuation(d,pp);
-    if e lt r then
-      if e eq 1 then
-        return 2;
-      elif e eq 2 then
-        return 1+#k;
-      elif e mod 2 eq 0 then
-        return e-1;
-      else
-        return e;
-      end if;
+    if IsSquare(mk(d/pi^r)) then
+        issq := 2;
     else
-      if r mod 2 eq 1 then
-        if e eq r then
-          return #k^Floor(r/2);
-        else
-          return 0;
-        end if;
-      else
-        vprint Shimura: "HEY!", r, e;
-        pi := SafeUniformiser(pp);
-        issq := IsSquare(mk(d/pi^r));
-        if e eq r then
-          if issq then
-            return #k^(r div 2) + 2*#k^(r div 2-1);
-          else
-            return #k^(r div 2);
-          end if;
-        else
-          if issq then
-            return 2*#k^(r div 2) + 2*(#k)^(r div 2-1);
-          else
-            return 0;
-          end if;
-        end if;
-      end if;
+        issq := 0;
     end if;
-  end if;
-*/
+
+    if r eq 0 then
+        return issq;
+    elif e lt r then
+        if e mod 2 eq 1 then
+            return 2*kappa^((e-1) div 2);
+        else
+            return kappa^((e div 2)-1)*(kappa+1);
+        end if;
+    elif e eq r then
+        if r mod 2 eq 1 then
+            return kappa^((r-1) div 2);
+        else
+            return kappa^(r div 2) + kappa^((r div 2)-1)*issq;
+        end if;
+    elif e gt r then
+        if r mod 2 eq 1 then
+            return 0;
+        else
+            return kappa^((r div 2)-1)*(kappa+1)*issq;
+        end if;
+    end if;
 end function;
 
-function EvenQuadraticHenselLift(t,n,pp,m : Al := "Brutal")
+function EvenQuadraticHenselLift(t, n, pp, m : Al := "Brutal")
   // Returns all solutions to x^2 - t*x + n = 0 (mod pp^m)
 
   Z_F := Order(pp);
@@ -236,89 +178,59 @@ function EvenQuadraticHenselLift(t,n,pp,m : Al := "Brutal")
   return N4;
 end function;
 
-EvenLocalEmbeddingNumber := function(t,n,e,pp);
-  if Valuation(t^2-4*n,pp) eq 0 then
-    emb := #[x : x in EvenQuadraticHenselLift(t,n,pp,e) | Valuation(2*x-t,pp) ge 0];
-  else
-    q, mq := quo<Order(pp) | pp^(e)>;
-    emb := #[x : x in EvenQuadraticHenselLift(t,n,pp,e) | Valuation(2*x-t,pp) ge 0] +
-           #{mq(x) : x in EvenQuadraticHenselLift(t,n,pp,e+1) | Valuation(2*x-t,pp) ge 0};
-  end if;
-  return emb;
+function EvenLocalEmbeddingNumber(t, n, e, pp)
+    if Valuation(t^2-4*n,pp) eq 0 then
+        emb := #[x : x in EvenQuadraticHenselLift(t,n,pp,e) | Valuation(2*x-t,pp) ge 0];
+    else
+        q, mq := quo<Order(pp) | pp^(e)>;
+        emb := #[x : x in EvenQuadraticHenselLift(t,n,pp,e) | Valuation(2*x-t,pp) ge 0] +
+               #{mq(x) : x in EvenQuadraticHenselLift(t,n,pp,e+1) | Valuation(2*x-t,pp) ge 0};
+    end if;
+    return emb;
 end function;
 
-function ActualLocalOptimalEmbeddingNumbers(F,level,OrderS,dff)
-    ZK := BaseRing(OrderS);
-    if Type(F) eq FldOrd then
-      F := NumberField(F);
-    end if;
-    ZF := MaximalOrder(F);
-    if Type(OrderS) eq AlgQuat then
-      A := BaseRing(OrderS);
-    else
-      A := Algebra(BaseRing(OrderS));
-    end if;
-    if Type(F) eq FldRat then
-      D := RamifiedPrimes(A);
-    else
-      D, Foos := RamifiedPlaces(A);
-    end if;
-    if #D eq 0 then
-      Dprod := ideal<ZF | 1>;
-    else
-      Dprod := &*D;
-    end if;
-
-    sig := [];
-    N := Factorization(level);
-
-    if dff + Dprod ne ideal<ZF | 1> then
-      return 0;
-    end if;
-
-    es0 := 1;
-
-    // The local embedding numbers are easy for primes dividing the discriminant of B.
-    if #D gt 0 then
-      for p in D do
-        pKfact := Factorization(ZK!!p);
-        if #pKfact eq 2 then
-          es0 *:= 0;
-        elif pKfact[1][2] eq 1 then
-          es0 *:= 2;
-        end if;
-      end for;
-    end if;
-
+// Main thing we call.
+function ActualLocalOptimalEmbeddingNumbers(F, level, OrderS, dff)
+    // This function is based off of the function EllipticInvariants
+    // within "Magma/package/Geometry/GrpPSL2/GrpPSL2Shim/shimura.m".
+    //
+    // NOTE: In our case, the discriminant of the quaternion algebra is 1, because
+    // for a HMS the relevant quaternion algebra is M2(ZF).
+    
+    ZK := MaximalOrder(OrderS);
+    ZF := MaximalOrder(F);    
+    
     // Embedding numbers for primes dividing N are complicated!
-    if #N gt 0 then
-      for qq in N do
-        dffzk := dff*PseudoBasis(Module(ZK))[2][1];
-        e := Valuation(dffzk,qq[1]);
+    embeddingCount := 1;
+    for qq in Factorization(level) do
+        dffzk := dff * PseudoBasis(Module(ZK))[2][1];
+        e := Valuation(dffzk, qq[1]);
         if dffzk eq qq[1]^e then
-          dffzkpF := [];
+            dffzkpF := [];
         else
-          dffzkpF := Factorization(dffzk/qq[1]^e);
+            dffzkpF := Factorization(dffzk/qq[1]^e);
         end if;
         u := WeakApproximation([pp[1] : pp in dffzkpF] cat [qq[1]],
                                [pp[2] : pp in dffzkpF] cat [0]);
         pi := SafeUniformiser(qq[1]);
-        alpha := u*ZK.2*pi^e;
+        alpha := u * ZK.2 * pi^e;
         f := Eltseq(MinimalPolynomial(alpha));
 
         if Norm(qq[1]) mod 2 eq 0 then
-          es0 *:= EvenLocalEmbeddingNumber(-f[2],f[1], qq[2], qq[1]);
+            embeddingCount *:= EvenLocalEmbeddingNumber(-f[2],f[1], qq[2], qq[1]);
         else
-          es0 *:= OddLocalEmbeddingNumber(f[2]^2-4*f[1], qq[2], Valuation(dff,qq[1]), qq[1]);
+            embeddingCount *:= OddLocalEmbeddingNumber(f[2]^2-4*f[1], qq[2],
+                                                       Valuation(dff, qq[1]), qq[1]);
         end if;
-      end for;
-    end if;
-    return es0;
+    end for;
+    return embeddingCount;
 end function;
 
-//****************************************************************************
-// End of Shimura code
-//****************************************************************************
+////////////////////////////////////////////////////////////////////////////////
+//
+// Old optimal embedding numbers.
+//
+////////////////////////////////////////////////////////////////////////////////
 
 function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
     // Compute the number of local embeddings of the monogenic order
@@ -512,10 +424,8 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup : Group:="SL") -> 
 
     dim := Degree(F); // Dimension of Hilbert modular variety.
     assert dim eq 2;
-
-    // TODO: Level data might be important later.
     level := Level(Gamma);
-    assert Norm(level) eq 1;
+
 
     ellipticCounts := AssociativeArray();
     ellipticCountsByOrder := AssociativeArray();
@@ -527,13 +437,14 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup : Group:="SL") -> 
 
         for Srec in listOfOrders do
             // Extract Record data
-            S  := Srec`Order;
-            hS := Srec`PicardNumber;
-            QS := Srec`HasseUnitIndex;
+            S   := Srec`Order;
+            dff := Srec`Conductor;
+            hS  := Srec`PicardNumber;
+            QS  := Srec`HasseUnitIndex;
             
             // localCount := 1; // TODO: Generalize to other levels.
             // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
-	    localCount := ActualLocalOptimalEmbeddingNumbers(ZF, level, S, dff);
+	    localCount := ActualLocalOptimalEmbeddingNumbers(F, level, S, dff);
 
             if Group eq "SL" then
                 // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
