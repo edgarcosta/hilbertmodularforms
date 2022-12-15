@@ -1,11 +1,16 @@
 
 // Artin Symbol
-function ArtinSymbol(ZK, pp)
-    print ZK, pp, BaseRing(ZK);
+intrinsic ArtinSymbol(ZK::RngOrd, pp::RngOrdIdl) -> RngIntElt
+{.}
+    vprintf HilbertModularForms,1: "%o,%o,%o", ZK, pp, BaseRing(ZK);
+    if not IsPrime(pp) then
+	fac := Factorization(pp);
+	return &*([1] cat [ArtinSymbol(fac, p[1]) : p in fac | IsOdd(p[2])]);
+    end if;
     if IsSplit(pp,ZK) then return 1;
     elif IsRamified(pp,ZK) then return 0;
     else return -1; end if;
-end function;
+end intrinsic;
 
 function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
     // Compute the number of local embeddings of the monogenic order
@@ -79,13 +84,13 @@ function PicardNumberOfMonogenicOrder(ZF, pair)
     return ClassNumberOfOrderWithConductor(ZK, ff);
 end function;
 
-function PossibleIsotropyOrders(F, level)
+function PossibleIsotropyOrders(F)
     // Create the Graded ring.
     M := GradedRingOfHMFs(F, 1);
 
     // Possible characteristic polynomials for elliptic automorphisms.
-    possibleCharPolys := IndexOfSummation(M, level, 1*MaximalOrder(F));
-    print possibleCharPolys;
+    possibleCharPolys := IndexOfSummation(M, 1*Integers(F), 1*Integers(F));
+    vprintf HilbertModularForms,1: "%o", possibleCharPolys;
 
     // The order ZF[zetaq] has two associated cyclotomic polynomials. Thus, we
     // need to fix one choice of these.
@@ -122,7 +127,7 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup :  prec:=5) -> Any
     level := Level(Gamma);
     aa := 1*MaximalOrder(F);
 
-    possibleMonogenicOrders := PossibleIsotropyOrders(F, level);
+    possibleMonogenicOrders := PossibleIsotropyOrders(F);
     
     // Create the associated S's, then adding up their contribution.
 
@@ -142,7 +147,7 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup :  prec:=5) -> Any
         hS := PicardNumberOfMonogenicOrder(ZF, pair);
         localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, pair);
 
-        print localCount, hS;
+        vprintf HilbertModularForms,1: "%o,%o", localCount, hS;
         
         // This particular term depends on the particular group of interest.
         if true then
