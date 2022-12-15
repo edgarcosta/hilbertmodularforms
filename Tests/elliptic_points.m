@@ -71,7 +71,7 @@ for K in quadraticFields do
 
     for b in cg do
 	disc := Discriminant(K);
-	if disc in [5, 8, 12] then continue; end if;
+	if disc in [12] then continue; end if;
 	
 	if b eq Identity(cg) then
 	    signs := [1 : i in [1..#cg]];
@@ -96,13 +96,13 @@ for K in quadraticFields do
 	end if;
 
         // Also check if the number of elliptic points are integers in the GL+ case.
-        A := CountEllipticPoints(G : Group:="GL+");
+        A := CountEllipticPoints(G);
         assert &and [count in Integers() : count in A];
 
         // Also do an integrality check for levels.
         for N in [1..13] do
             G0N := CongruenceSubgroup(K, N*ZK, B);
-            A := CountEllipticPoints(G : Group:="GL+");
+            A := CountEllipticPoints(G);
             assert &and [count in Integers() : count in A];
         end for;
         
