@@ -35,12 +35,12 @@ end intrinsic;
 
 // Main constructor from which all else is derivedn
 intrinsic CongruenceSubgroup(Gtype, F::FldNum, N::RngOrdIdl, B::RngOrdIdl)
-          -> StupidCongruenceSubgroup
+          -> GrpHilbert
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
 The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
 
     require IsRealQuadraticField(F): "Number field must be Real Quadratic Field.";
-    Gamma := New(StupidCongruenceSubgroup);
+    Gamma := New(GrpHilbert);
     Gamma`Field := F;
     Gamma`ComponentIdeal := B;
     Gamma`Level := N;
@@ -109,12 +109,12 @@ intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> GrpHilbert
     return Gamma0(F, N, 1*MaximalOrder(F));
 end intrinsic;
 
-intrinsic Gamma0(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+intrinsic Gamma0(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {}
     return Gamma0("SL", F, N, B);
 end intrinsic;
 
-intrinsic Gamma0(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+intrinsic Gamma0(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
     G := CongruenceSubgroup(F, N, B);
     if N ne 1*MaximalOrder(F) then
@@ -126,22 +126,22 @@ intrinsic Gamma0(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSu
 end intrinsic;
 
 
-intrinsic Gamma1(F::FldNum) -> StupidCongruenceSubgroup
+intrinsic Gamma1(F::FldNum) -> GrpHilbert
 {Return the Hilbert Modular group over `F`.}
     return Gamma1(F, 1*MaximalOrder(F));
 end intrinsic;
 
-intrinsic Gamma1(F::FldNum, N::RngOrdIdl) -> StupidCongruenceSubgroup
+intrinsic Gamma1(F::FldNum, N::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_1(N) over the number field `F`.}
     return Gamma1(F, N, 1*MaximalOrder(F));
 end intrinsic;
 
-intrinsic Gamma1(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+intrinsic Gamma1(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {}
     return Gamma1("SL", F, N, B);
 end intrinsic;
 
-intrinsic Gamma1(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+intrinsic Gamma1(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
     G := CongruenceSubgroup(F, N, B);
     if N ne 1*MaximalOrder(F) then
