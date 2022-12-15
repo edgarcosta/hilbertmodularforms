@@ -332,7 +332,7 @@ intrinsic RepeatSequence(l :: SeqEnum, n :: RngIntElt) -> SeqEnum
     return &cat[l : x in [1..n]];
 end intrinsic;
 
-
+// this is the top-level function
 intrinsic CuspResolutionIntersections(G::GrpHilbert, p::Pt) -> SeqEnum, RngIntElt
 {}
     K := Field(G);
@@ -342,7 +342,6 @@ intrinsic CuspResolutionIntersections(G::GrpHilbert, p::Pt) -> SeqEnum, RngIntEl
     return CuspResolutionIntersections(K, Component(G), N, x, y : GammaType:=GammaType(G));
 end intrinsic;
 
-// this is the top-level function
 intrinsic CuspResolutionIntersections(F :: FldQuad, b :: RngQuadFracIdl, n :: RngQuadIdl,
                                       alpha :: FldQuadElt, beta::FldQuadElt
                                       : GammaType := "Gamma0") -> SeqEnum[RngIntElt], RngIntElt
