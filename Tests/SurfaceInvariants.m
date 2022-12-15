@@ -6,9 +6,9 @@ for i in [1..#ds] do
     es[ds[i]] := e_vals[i];
 end for;
 
-print "Testing Euler number of level 1, discriminant ";
+printf "Testing Euler number of level 1, discriminant... D=";
 for d in ds do
-    printf "%o,", d;
+    printf "%o ", d;
     // at the moment the code still fails when the class group is
     // not a 2-group
     F := QuadraticField(d);
