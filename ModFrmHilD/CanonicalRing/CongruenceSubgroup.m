@@ -38,7 +38,7 @@ intrinsic CongruenceSubgroup(Gtype, F::FldNum, N::RngOrdIdl, B::RngOrdIdl)
           -> StupidCongruenceSubgroup
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
 The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
-    
+
     require IsRealQuadraticField(F): "Number field must be Real Quadratic Field.";
     Gamma := New(StupidCongruenceSubgroup);
     Gamma`Field := F;
@@ -53,7 +53,7 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     else
         error "Ambient type not supported.";
     end case;
-    
+
     return Gamma;
 end intrinsic;
 
@@ -81,7 +81,7 @@ intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilber
 {}
     return CongruenceSubgroup("SL", F, N, B);
 end intrinsic;
-                                                                       
+
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
 The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
@@ -140,7 +140,7 @@ intrinsic Gamma1(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgr
 {}
     return Gamma1("SL", F, N, B);
 end intrinsic;
-                                                               
+
 intrinsic Gamma1(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
 {Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
     G := CongruenceSubgroup(F, N, B);
@@ -460,7 +460,7 @@ full Hilbert modular group.}
     for ff in Factorization(n) do
         q := ff[1]^ff[2];
         index *:= (q + 1);
-    end for;    
+    end for;
     return index;
 end intrinsic;
 
@@ -469,12 +469,12 @@ intrinsic IndexOfGamma1(F::FldNum, N::RngOrdIdl) -> RngIntElt
 full Hilbert modular group.}
     n := Norm(N);
     if n eq 1 then return 1; end if;
-    
+
     index := 1;
     for ff in Factorization(n) do
         q := ff[1]^ff[2];
         index *:= q * (q + 1);
-    end for;    
+    end for;
     return index;
 end intrinsic;
 
