@@ -747,7 +747,7 @@ intrinsic GeneratorWeightBound(F::FldNum, N::RngOrdIdl) -> RngIntElt
     return GeneratorWeightBound(CongruenceSubgroup(F, N));
 end intrinsic;
 
-intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup) -> RngIntElt
+intrinsic GeneratorWeightBound(G::GrpHilbert) -> RngIntElt
 {Determine a bound for the maximum weight of a generator in the graded ring of modular forms.}
     error "Not Implemented.";
     return -9999;
@@ -755,7 +755,7 @@ end intrinsic;
 
 
 // TODO: Eventually, this will be converted into the correct function.
-intrinsic GeneratorWeightBound(G::StupidCongruenceSubgroup : experiment:=false) -> Any
+intrinsic GeneratorWeightBound(G::GrpHilbert : experiment:=false) -> Any
 {Experiment with the Neves style argument.}
 
     // The algorithm to compute a degree bound on the generator can be found in the Overleaf

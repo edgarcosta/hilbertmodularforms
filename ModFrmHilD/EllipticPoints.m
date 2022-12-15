@@ -407,7 +407,7 @@ end function;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup : Group:="SL") -> Any
+intrinsic CountEllipticPoints(Gamma::GrpHilbert : Group:="SL") -> Any
 {Given a congruence subgroup `Gamma` (level, field, decoration data), return
 }
     // The algorithm is based on page 739 of "Quaternion Algebra, Voight".
