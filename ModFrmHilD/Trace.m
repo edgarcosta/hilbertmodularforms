@@ -223,8 +223,6 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
   UF, mUF := UnitGroup(ZF);
   Indexforsum := IndexOfSummation(M, mm, aa);
 
-  // Set class group bound for faster computations
-  SetClassGroupBounds("GRH");
 
   // Summation
   Sumterm := 0;

@@ -1,3 +1,4 @@
+/*
 intrinsic EllipticPointCounts(Gamma::StupidCongruenceSubgroup) -> Assoc
 {Returns an associative array a such that a[<n,e1,e2>] is the number of points of order n and rotation type <e1,e2>.}
     assert Discriminant(Integers(Field(Gamma))) notin [5,8,12];
@@ -8,17 +9,7 @@ intrinsic EllipticPointCounts(Gamma::StupidCongruenceSubgroup) -> Assoc
     // sig := Automorphisms(F)[2];
     for t_n in Keys(cnt) do
 	t, n := Explode(t_n);
-	/*
-	p := x^2+t*x+n;
-	if (sig(t) ne t) or (sig(n) ne n) then
-	    p *:= x^2+sig(t)*x+sig(n);
-	end if;
-	is_cyc, ell_order := IsCyclotomicPolynomial(ChangeRing(p, Rationals()));
-	assert is_cyc;
-	if IsEven(ell_order) then
-	    ell_order div:= 2;
-	end if;
-       */
+
 	K<zeta> := ext<F|x^2+t*x+n>;
 	// very inefficient, but at least works
 	ell_order := 1;
@@ -68,6 +59,7 @@ intrinsic EllipticPointCounts(Gamma::StupidCongruenceSubgroup) -> Assoc
     
     return a;
 end intrinsic;
+*/
 
 intrinsic EulerNumber(Gamma::StupidCongruenceSubgroup) -> RngIntElt
 {}
@@ -88,26 +80,27 @@ intrinsic EulerNumber(Gamma::StupidCongruenceSubgroup) -> RngIntElt
   
   // get elliptic points contribution
   // a2, a3_plus, a3_minus := get_elliptic_counts(Gamma);
-  a := EllipticPointCounts(Gamma);
+  a := CountEllipticPoints(Gamma);
   // a2 := a[<2,1,1>];
   // a3_plus := a[<3,1,1>];
   // a3_minus := a[<3,2,1>];
   elliptic := 0;
-  for ell_type in Keys(a) do 
-      n := ell_type[1];
-      // This is ad-hoc for surfaces
-      if ell_type[2] eq 1 then
-	  len := 1;  
-      elif ell_type[2] eq n-1 then
-	  len := n-1;
-      elif n eq 5 then
-	  assert ell_type[2] in [2,3];
-	  len := 2;
-      elif n eq 12 then
-	  assert ell_type[2] eq 5;
-	  len := 3;
-      end if;
-      elliptic +:= a[ell_type] * (len + (n-1)/n);
+  for n in Keys(a) do 
+      for rot_factor in Keys(a[n]) do
+	  // This is ad-hoc for surfaces
+	  if rot_factor[1] eq 1 then
+	      len := 1;  
+	  elif rot_factor[1] eq n-1 then
+	      len := n-1;
+	  elif n eq 5 then
+	      assert rot_factor[1] in [2,3];
+	      len := 2;
+	  elif n eq 12 then
+	      assert rot_factor[1] eq 5;
+	      len := 3;
+	  end if;
+	  elliptic +:= a[n][rot_factor] * (len + (n-1)/n);
+      end for;
   end for;
   // elliptic := a2 * (1 + 1/2) + a3_plus * (1 + 2/3) + a3_minus * (2 + 2/3);
   e := vol + l + elliptic;
@@ -133,11 +126,15 @@ intrinsic K2(Gamma::StupidCongruenceSubgroup) -> RngIntElt
       cusp_chern +:= n*(&+[2+b : b in L]);
   end for;
   // get elliptic points contribution
-  a := EllipticPointCounts(Gamma);
-  a2 := a[<2,1,1>];
-  a3_plus := a[<3,1,1>];
-  a3_minus := a[<3,2,1>];
+  // a := EllipticPointCounts(Gamma);
+  // a2 := a[<2,1,1>];
+  // a3_plus := a[<3,1,1>];
+  // a3_minus := a[<3,2,1>];
   // a2, a3_plus, a3_minus := get_elliptic_counts(Gamma);
+  a := CountEllipticPoints(Gamma);
+  a2 := a[2][[1,1]];
+  a3_plus := a[3][[1,1]];
+  a3_minus := a[3][[2,1]];
   
   elliptic := a3_plus * (-1/3);
   k2 := 2*vol + cusp_chern + elliptic;
