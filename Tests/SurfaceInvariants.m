@@ -35,9 +35,9 @@ function getHZExceptionalNum(Gamma)
     return s;
 end function;
 
-print "Testing Euler number of level 1, discriminant ";
+printf "Testing Euler number of level 1, discriminant... D=";
 for d in ds do
-    printf "%o,", d;
+    printf "%o ", d;
     // at the moment the code still fails when the class group is
     // not trivial
     F := QuadraticField(d);
