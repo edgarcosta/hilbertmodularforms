@@ -71,7 +71,7 @@ for K in quadraticFields do
 
     for b in cg do
 	disc := Discriminant(K);
-	if disc in [5, 8, 12] then continue; end if;
+	if disc in [12] then continue; end if;
 	
 	if b eq Identity(cg) then
 	    signs := [1 : i in [1..#cg]];
