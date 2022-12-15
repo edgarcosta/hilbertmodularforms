@@ -33,11 +33,17 @@ intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> Any
 end intrinsic;
 
 // Artin Symbol
-function ArtinSymbol(ZK, pp)
+intrinsic ArtinSymbol(ZK::RngOrd, pp::RngOrdIdl) -> RngIntElt
+{.}
+    vprintf HilbertModularForms,1: "%o,%o,%o", ZK, pp, BaseRing(ZK);
+    if not IsPrime(pp) then
+	fac := Factorization(pp);
+	return &*([1] cat [ArtinSymbol(fac, p[1]) : p in fac | IsOdd(p[2])]);
+    end if;
     if IsSplit(pp,ZK) then return 1;
     elif IsRamified(pp,ZK) then return 0;
     else return -1; end if;
-end function;
+end intrinsic;
 
 
 function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
@@ -242,7 +248,6 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup : Group:="SL") -> 
 
     isoOrds := PossibleIsotropyOrders(F);
     for rho in isoOrds do
-        
         listOfOrders := OrderTermData(F, Group, rho);
         count := 0;
 

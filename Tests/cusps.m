@@ -1,9 +1,9 @@
-printf "Testing creation of cusps...\n";
+printf "Testing creation of cusps... D=";
 //GammaTypes := ["Gamma", "Gamma1", "Gamma0"];
 GammaTypes := ["Gamma1", "Gamma0"]; // Gamma currently broken
 //GammaTypes := ["Gamma1"];
 
-print "Computing cusps for QQ(sqrt(5))";
+printf "5 ";
 F<nu> := QuadraticField(5);
 PP := PrimeIdealsOverPrime(F, 31)[1];
 QQ := PrimeIdealsOverPrime(F, 5)[1];
@@ -14,7 +14,7 @@ for type in GammaTypes do
   end for;
 end for;
 
-print "Computing cusps for QQ(sqrt(12))";
+printf "12 ";
 F<nu> := QuadraticField(12);
 ZF := Integers(F);
 P11 := PrimeIdealsOverPrime(F,11)[1];
@@ -25,7 +25,7 @@ for type in GammaTypes do
   end for;
 end for;
 
-print "Computing cusps for QQ(sqrt(40))";
+printf "40 ";
 F<nu> := QuadraticField(40);
 ZF := Integers(F);
 NNs := [1*ZF, 2*ZF, 3*ZF];
@@ -41,7 +41,7 @@ B := mp(cg.1); // The component with nontrivial signs.
 cusps := Cusps(1*ZF, B);
 assert #cusps eq 2;
 
-print "Computing cusps for QQ(sqrt(69))";
+printf "69 ";
 F<nu> := QuadraticField(69);
 ZF := Integers(F);
 P13 := PrimeIdealsOverPrime(F,13)[1];

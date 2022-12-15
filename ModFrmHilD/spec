@@ -10,9 +10,11 @@
   Cusps.m
   EllipticPoints.m
   Hecke.m
+  HZCuspIntersection.m
   LinearAlgebra.m
   Restriction.m
   Space.m
+  SurfaceInvariants.m
   Trace.m
   UnitChar.m
   Utils.m
