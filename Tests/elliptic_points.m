@@ -90,20 +90,25 @@ for K in quadraticFields do
 	G := CongruenceSubgroup(K, 1*ZK, B);
 
 	A := CountEllipticPoints(G);
-        boo := (A[2] eq a2) and (A[3] eq a3p + a3m);
+        boo := (A[2][[1,1]] eq a2) and (A[3][[1,1]] eq a3p) and 
+	       (A[3][[2,1]] eq a3m);
 	if not boo then
 	    error "Values not equal:", disc, signs;
 	end if;
 
         // Also check if the number of elliptic points are integers in the GL+ case.
-        A := CountEllipticPoints(G);
-        assert &and [count in Integers() : count in A];
+        A := CountEllipticPoints(G : Group:="GL+");
+        assert &and [&and[count in Integers() : count in counts] : counts in A];
 
         // Also do an integrality check for levels.
         for N in [1..13] do
             G0N := CongruenceSubgroup(K, N*ZK, B);
+            A := CountEllipticPoints(G : Group:="GL+");
+	    assert &and [&and[count in Integers() : count in counts] : 
+			 counts in A];
             A := CountEllipticPoints(G);
-            assert &and [count in Integers() : count in A];
+            assert &and [&and[count in Integers() : count in counts] : 
+			 counts in A];
         end for;
         
     end for;    

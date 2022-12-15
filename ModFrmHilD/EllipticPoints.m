@@ -503,7 +503,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 		else
 		    num_minus := total_num;
 		    num_plus := 0;
-	    end if;
+		end if;
 	    else
 		assert IsEven(total_num);
 		num_plus := total_num div 2;

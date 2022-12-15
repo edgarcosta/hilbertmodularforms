@@ -1,66 +1,3 @@
-/*
-intrinsic EllipticPointCounts(Gamma::GrpHilbert) -> Assoc
-{Returns an associative array a such that a[<n,e1,e2>] is the number of points of order n and rotation type <e1,e2>.}
-    assert Discriminant(Integers(Field(Gamma))) notin [5,8,12];
-    cnt := CountEllipticPoints(Gamma);
-    F := Field(Gamma);
-    _<x> := PolynomialRing(F);
-    a := AssociativeArray();
-    // sig := Automorphisms(F)[2];
-    for t_n in Keys(cnt) do
-	t, n := Explode(t_n);
-
-	K<zeta> := ext<F|x^2+t*x+n>;
-	// very inefficient, but at least works
-	ell_order := 1;
-	while (zeta^ell_order notin F) do
-	    ell_order +:= 1;
-	end while;
-	
-	// get options for the rotation factors
-	U, mU := UnitGroup(Integers(ell_order));
-	qU, pi := quo<U | (-1)@@mU>;
-	// !! TODO : needs to sort them according to the 
-	// order of the real embeddings of F
-	rot_factor := Reverse(Sort([mU(g@@pi) : g in qU]));
-	// for now we are only doing surfaces
-	assert #rot_factor le 2;
-	if rot_factor eq [1] then
-	    rot_factor := [1,1];
-	end if;
-	// check which signs occur (CM types)
-	is_unr := IsUnramified(K);
-	if is_unr then
-	    sign := ArtinSymbol(Integers(K), Component(Gamma));
-	    if (sign eq 1) then 
-		if not IsDefined(a, <ell_order, rot_factor[1], rot_factor[2]>) then
-		    a[<ell_order, rot_factor[1], rot_factor[2]>] := 0;
-		end if;
-		a[<ell_order, rot_factor[1], rot_factor[2]>] +:= cnt[t_n];
-	    else
-		if not IsDefined(a, <ell_order, ell_order-rot_factor[1], rot_factor[2]>) then
-		    a[<ell_order, ell_order-rot_factor[1], rot_factor[2]>] := 0;
-		end if;
-		a[<ell_order, ell_order-rot_factor[1], rot_factor[2]>] +:= cnt[t_n];
-	    end if;
-	else
-	    num := Integers()!cnt[t_n];
-	    assert IsEven(num);
-	    if not IsDefined(a, <ell_order, rot_factor[1], rot_factor[2]>) then
-		a[<ell_order, rot_factor[1], rot_factor[2]>] := 0;
-	    end if;
-	    if not IsDefined(a, <ell_order, ell_order-rot_factor[1], rot_factor[2]>) then
-		a[<ell_order, ell_order-rot_factor[1], rot_factor[2]>] := 0;
-	    end if;
-	    a[<ell_order, rot_factor[1], rot_factor[2]>] +:= num div 2;
-	    a[<ell_order, ell_order-rot_factor[1], rot_factor[2]>] +:= num div 2;
-	end if;
-    end for;
-    
-    return a;
-end intrinsic;
-*/
-
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
@@ -79,11 +16,8 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   end for;
   
   // get elliptic points contribution
-  // a2, a3_plus, a3_minus := get_elliptic_counts(Gamma);
   a := CountEllipticPoints(Gamma);
-  // a2 := a[<2,1,1>];
-  // a3_plus := a[<3,1,1>];
-  // a3_minus := a[<3,2,1>];
+  
   elliptic := 0;
   for n in Keys(a) do 
       for rot_factor in Keys(a[n]) do
