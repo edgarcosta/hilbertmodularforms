@@ -49,7 +49,7 @@ end intrinsic;
 //This is what I am adding from Shimura
 //******************************************************************
 
-OddLocalEmbeddingNumber := function(d,e,f,pp);
+function OddLocalEmbeddingNumber(d, e, f, pp)
   // Returns the number of embeddings of the order of conductor pp^f in
   // a local quadratic order of discriminant d into an Eichler order of level pp^e.
 
@@ -147,7 +147,7 @@ OddLocalEmbeddingNumber := function(d,e,f,pp);
 */
 end function;
 
-EvenQuadraticHenselLift := function(t,n,pp,m : Al := "Brutal");
+function EvenQuadraticHenselLift(t,n,pp,m : Al := "Brutal")
   // Returns all solutions to x^2 - t*x + n = 0 (mod pp^m)
 
   Z_F := Order(pp);
