@@ -11,7 +11,6 @@
 
 declare type GrpHilbert;
 declare attributes GrpHilbert : Field,
-	PrintString,
 	Level,
 	Index,
 	EllipticPointData,
@@ -42,7 +41,7 @@ end intrinsic;
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
 The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
-    
+
     isRealQuadraticField := Degree(F) eq 2 and BaseRing(F) eq Rationals() and Discriminant(F) gt 0;
     require isRealQuadraticField: "Number field must be Real Quadratic Field.";
 
@@ -111,13 +110,13 @@ intrinsic Index(Gamma::GrpHilbert) -> RngIntElt
 end intrinsic;
 
 intrinsic ComponentIdeal(Gamma::GrpHilbert) -> RngOrdIdl
-{Return the ComponentIdeal Attribute. That is, \frak(b), the ideal indexing the 
+{Return the ComponentIdeal Attribute. That is, \frak(b), the ideal indexing the
 component of the Hilbert Modular Surface}
     return Gamma`ComponentIdeal;
 end intrinsic;
 
 intrinsic Component(Gamma::GrpHilbert) -> RngIntElt
-{Return the ComponentIdeal Attribute. That is, \frak(b), the ideal indexing the 
+{Return the ComponentIdeal Attribute. That is, \frak(b), the ideal indexing the
 component of the Hilbert Modular Surface}
     return ComponentIdeal(Gamma);
 end intrinsic;
@@ -126,7 +125,7 @@ intrinsic GammaType(Gamma::GrpHilbert) -> MonStgElt
 {}
     return Gamma`GammaType;
 end intrinsic;
-          
+
 
 ////////// Basic functionality //////////
 
@@ -176,7 +175,7 @@ elliptic points of this type up to congugacy in Gamma.
     // Ensure that B and the level are coprime before doing any computations.
     q := CoprimeNarrowRepresentative(B, 6*N);
     B := Integers() ! (Norm(q) * Norm(B));
-    
+
     ellipticData := AssociativeArray();
     if IsPrincipalCongruenceSubgroup(Gamma) and N^2 notin [1*ZK, 2*ZK, 3*ZK] then
 	return ellipticData;
@@ -186,7 +185,7 @@ elliptic points of this type up to congugacy in Gamma.
     if not IsPrincipalCongruenceSubgroup(Gamma) then
 	error "Not implemented for non-principal congruence subgroups.";
     end if;
-    
+
     // The next thing to check is if we are in one of the special discriminant cases.
     // The special discriminants vis a vis torsion are D = 5, 8, 12.
     if D in [5,8,12] then
@@ -228,7 +227,7 @@ elliptic points of this type up to congugacy in Gamma.
 	else
 	    Dby3 := ExactQuotient(D, 3);
 	    h := ClassNumber(-Dby3);
-	    
+
 	    case [Dby3 mod 3, B mod 3]:
 	    when [1,1]:
 		ellipticData[<3,1,1>] := 4*h;
@@ -247,7 +246,7 @@ elliptic points of this type up to congugacy in Gamma.
 		ellipticData[<3,1,-1>] := 3*h;
 	    end case;
 	end if;
-	
+
     elif IsPrincipalCongruenceSubgroup(Gamma) then
 	// Let A := Norm(\frak{b}), where \frak{b} := ComponentIdeal(Gamma). We use the following
 	// remark of [vdG, p. 110]
@@ -269,7 +268,7 @@ elliptic points of this type up to congugacy in Gamma.
 		     ellipticData[<2, 1, 1>] := 24 * h;
 		end case;
 	    end if;
-	    
+
 	elif N^2 eq 3*ZK then
 	    if D mod 3 eq 0 then
 		Dby3 := ExactQuotient(D, 3);
@@ -300,7 +299,7 @@ intrinsic _EllipticPointDataSpecialCases(Gamma::GrpHilbert) -> Assoc
     D := Discriminant(Field(Gamma));
     ellipticData := AssociativeArray();
     require Index(Gamma) eq 1 : "Only implemented for level 1 for special discrminants.";
-    
+
     if D eq 5 then
 	ellipticData[<2, 1, 1>] := 2;
 	ellipticData[<3, 1, 1>] := 1;
@@ -314,7 +313,7 @@ intrinsic _EllipticPointDataSpecialCases(Gamma::GrpHilbert) -> Assoc
 	ellipticData[<3, 1,-1>] := 1;
 	ellipticData[<4, 1, 1>] := 1;
 	ellipticData[<4, 1,-1>] := 1;
-	    
+
     elif D eq 12 then
 
 	B := Component(Gamma);
@@ -375,13 +374,13 @@ intrinsic IndexOfGamma0(F::FldNum, N::RngOrdIdl) -> RngIntElt
 full Hilbert modular group.}
     n := Norm(N);
     if n eq 1 then return 1; end if;
-    
+
     index := 1;
     for ff in Factorization(n) do
         q := ff[1]^ff[2];
         n *:= (q + 1);
     end for;
-    
+
     return n;
 end intrinsic;
 
@@ -409,7 +408,7 @@ intrinsic NumberOfCusps(Gamma::GrpHilbert) -> RngIntElt
 {Computes the number of cusps of Gamma_0(N).}
 
     error "Congruence Subgroup of the form Gamma_0(N) not implemented.";
-    
+
     // Create the HMF ring.
     F := Field(Gamma);
     N := Level(Gamma);
@@ -418,7 +417,7 @@ intrinsic NumberOfCusps(Gamma::GrpHilbert) -> RngIntElt
     Mn := HMFSpace(M, N, [k : k in [1..Degree(F)]]);
 
     // Return the number of cusps.
-    return NumberOfCusps(Mn); // TODO: XXX: 
+    return NumberOfCusps(Mn); // TODO: XXX:
 end intrinsic;
 
 intrinsic NumberOfParabolicPoints(Gamma::GrpHilbert) -> RngIntElt
