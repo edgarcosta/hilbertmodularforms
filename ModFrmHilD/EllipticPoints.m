@@ -45,6 +45,280 @@ intrinsic ArtinSymbol(ZK::RngOrd, pp::RngOrdIdl) -> RngIntElt
     else return -1; end if;
 end intrinsic;
 
+//******************************************************************
+//This is what I am adding from Shimura
+//******************************************************************
+
+OddLocalEmbeddingNumber := function(d,e,f,pp);
+  // Returns the number of embeddings of the order of conductor pp^f in
+  // a local quadratic order of discriminant d into an Eichler order of level pp^e.
+
+  k, mk := ResidueClassField(pp);
+  kappa := #k;
+  pi := SafeUniformiser(pp);
+  r := Valuation(d,pp);
+  if IsSquare(mk(d/pi^r)) then
+    issq := 2;
+  else
+    issq := 0;
+  end if;
+
+  if r eq 0 then
+    return issq;
+  elif e lt r then
+    if e mod 2 eq 1 then
+      return 2*kappa^((e-1) div 2);
+    else
+      return kappa^((e div 2)-1)*(kappa+1);
+    end if;
+  elif e eq r then
+    if r mod 2 eq 1 then
+      return kappa^((r-1) div 2);
+    else
+      return kappa^(r div 2) + kappa^((r div 2)-1)*issq;
+    end if;
+  elif e gt r then
+    if r mod 2 eq 1 then
+      return 0;
+    else
+      return kappa^((r div 2)-1)*(kappa+1)*issq;
+    end if;
+  end if;
+/*
+  if Valuation(d,pp) eq 0 then
+    if f eq 0 then
+      if IsSquare(mk(d)) then
+        return 2;
+      else
+        return 0;
+      end if;
+    else
+      if e le f then
+        return 1;
+      elif e le 2*f then
+        return 2;
+      else
+        if IsSquare(mk(d)) then
+          return 2;
+        else
+          return 0;
+        end if;
+      end if;
+    end if;
+  else
+    r := Valuation(d,pp);
+    if e lt r then
+      if e eq 1 then
+        return 2;
+      elif e eq 2 then
+        return 1+#k;
+      elif e mod 2 eq 0 then
+        return e-1;
+      else
+        return e;
+      end if;
+    else
+      if r mod 2 eq 1 then
+        if e eq r then
+          return #k^Floor(r/2);
+        else
+          return 0;
+        end if;
+      else
+        vprint Shimura: "HEY!", r, e;
+        pi := SafeUniformiser(pp);
+        issq := IsSquare(mk(d/pi^r));
+        if e eq r then
+          if issq then
+            return #k^(r div 2) + 2*#k^(r div 2-1);
+          else
+            return #k^(r div 2);
+          end if;
+        else
+          if issq then
+            return 2*#k^(r div 2) + 2*(#k)^(r div 2-1);
+          else
+            return 0;
+          end if;
+        end if;
+      end if;
+    end if;
+  end if;
+*/
+end function;
+
+EvenQuadraticHenselLift := function(t,n,pp,m : Al := "Brutal");
+  // Returns all solutions to x^2 - t*x + n = 0 (mod pp^m)
+
+  Z_F := Order(pp);
+  e := Valuation(Z_F!2,pp);
+
+  pi := SafeUniformiser(pp);
+  k, mk := ResidueClassField(pp);
+
+  if Al eq "Brutal" then
+    // Brutal enumeration
+    sols := [];
+    for u in CartesianPower(k,m) do
+      x := &+[u[i]@@mk*pi^(i-1) : i in [1..m]];
+      if Valuation(x^2-t*x+n,pp) ge m then
+        Append(~sols, x);
+      end if;
+    end for;
+    return sols;
+  end if;
+
+  // Otherwise, use a Hensel lift, probably could use some debugging.
+  // For low-enough levels the algorithm is not really any faster.
+
+  PiEltSeq := function(u,m);
+    useq := [];
+    for i := 1 to m do
+      useq cat:= Eltseq(mk(u));
+      u := (u-mk(u)@@mk)/pi;
+    end for;
+    return useq;
+  end function;
+  if m lt e then
+    mm := m;
+  else
+    mm := e;
+  end if;
+  M := Matrix([ PiEltSeq(x^2-t*x,mm) : x in [u@@mk*pi^i : u in Basis(k), i in [0..mm-1]] ] cat
+                [PiEltSeq(-n,mm)] );
+  d := #Basis(k);
+  N := [v : v in Nullspace(M) | v[mm*d+1] ne 0];
+  N := [[ v[i]/v[mm*d+1] : i in [1..mm*d] ] : v in N];
+  Nscal := [ u@@mk*pi^i : u in Basis(k), i in [0..mm-1] ];
+  N := [&+[ v[i]@@mk*Nscal[i] : i in [1..mm*d]] : v in N];
+  if m le e then
+    return N;
+  end if;
+
+  if m lt 2*e then
+    mm := m;
+  else
+    mm := 2*e;
+  end if;
+  N4 := [];
+  for x in N do
+    if t eq 0 then
+      if Valuation(x^2-t*x+n,pp) ge mm then
+        Append(~N4, x);
+      end if;
+    else
+      fx := x^2-t*x+n;
+      vt := Valuation(t,pp);
+      if Valuation(fx/2,pp) ge Min(mm-e,vt) then
+        if Valuation(fx/2,pp) ge mm-e then
+          for u in CartesianPower(k,mm-e) do
+            Append(~N4, x+2*&+[u[i]@@mk*pi^(i-1) : i in [1..mm-e]]);
+          end for;
+        else
+          z := fx/pi^vt*(mk(pi^vt/t)@@mk);
+          for u in CartesianPower(k,vt) do
+            Append(~N4, x+z+pi^(mm-vt)*&+[u[i]@@mk*pi^(i-1) : i in [1..vt]]);
+          end for;
+        end if;
+      end if;
+    end if;
+  end for;
+  if m le 2*e then
+    return N4;
+  end if;
+
+  for x in N4 do
+    if Valuation(x^2-t*x+n,pp) lt 2*e then
+      error "Failed solution", x;
+    end if;
+  end for;
+
+  return N4;
+end function;
+
+EvenLocalEmbeddingNumber := function(t,n,e,pp);
+  if Valuation(t^2-4*n,pp) eq 0 then
+    emb := #[x : x in EvenQuadraticHenselLift(t,n,pp,e) | Valuation(2*x-t,pp) ge 0];
+  else
+    q, mq := quo<Order(pp) | pp^(e)>;
+    emb := #[x : x in EvenQuadraticHenselLift(t,n,pp,e) | Valuation(2*x-t,pp) ge 0] +
+           #{mq(x) : x in EvenQuadraticHenselLift(t,n,pp,e+1) | Valuation(2*x-t,pp) ge 0};
+  end if;
+  return emb;
+end function;
+
+function ActualLocalOptimalEmbeddingNumbers(F,level,OrderS,dff)
+    ZK := BaseRing(OrderS);
+    if Type(F) eq FldOrd then
+      F := NumberField(F);
+    end if;
+    ZF := MaximalOrder(F);
+    if Type(OrderS) eq AlgQuat then
+      A := BaseRing(OrderS);
+    else
+      A := Algebra(BaseRing(OrderS));
+    end if;
+    if Type(F) eq FldRat then
+      D := RamifiedPrimes(A);
+    else
+      D, Foos := RamifiedPlaces(A);
+    end if;
+    if #D eq 0 then
+      Dprod := ideal<ZF | 1>;
+    else
+      Dprod := &*D;
+    end if;
+
+    sig := [];
+    N := Factorization(level);
+
+    if dff + Dprod ne ideal<ZF | 1> then
+      return 0;
+    end if;
+
+    es0 := 1;
+
+    // The local embedding numbers are easy for primes dividing the discriminant of B.
+    if #D gt 0 then
+      for p in D do
+        pKfact := Factorization(ZK!!p);
+        if #pKfact eq 2 then
+          es0 *:= 0;
+        elif pKfact[1][2] eq 1 then
+          es0 *:= 2;
+        end if;
+      end for;
+    end if;
+
+    // Embedding numbers for primes dividing N are complicated!
+    if #N gt 0 then
+      for qq in N do
+        dffzk := dff*PseudoBasis(Module(ZK))[2][1];
+        e := Valuation(dffzk,qq[1]);
+        if dffzk eq qq[1]^e then
+          dffzkpF := [];
+        else
+          dffzkpF := Factorization(dffzk/qq[1]^e);
+        end if;
+        u := WeakApproximation([pp[1] : pp in dffzkpF] cat [qq[1]],
+                               [pp[2] : pp in dffzkpF] cat [0]);
+        pi := SafeUniformiser(qq[1]);
+        alpha := u*ZK.2*pi^e;
+        f := Eltseq(MinimalPolynomial(alpha));
+
+        if Norm(qq[1]) mod 2 eq 0 then
+          es0 *:= EvenLocalEmbeddingNumber(-f[2],f[1], qq[2], qq[1]);
+        else
+          es0 *:= OddLocalEmbeddingNumber(f[2]^2-4*f[1], qq[2], Valuation(dff,qq[1]), qq[1]);
+        end if;
+      end for;
+    end if;
+    return es0;
+end function;
+
+//****************************************************************************
+// End of Shimura code
+//****************************************************************************
 
 function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
     // Compute the number of local embeddings of the monogenic order
