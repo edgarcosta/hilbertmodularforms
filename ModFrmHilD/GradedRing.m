@@ -529,7 +529,6 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
 
   // Fourth pass. Compute class number and unit index [h,w].
   T := AssociativeArray();
-  SetClassGroupBounds("GRH"); // No Proof!
   for pair in ReducedDiscriminants do
     D0 := pair[1]; // Unique Discriminant
     K := pair[2]; // Field
