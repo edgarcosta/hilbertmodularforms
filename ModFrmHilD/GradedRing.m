@@ -50,7 +50,7 @@ declare attributes ModFrmHilDGRng:
   ;
 
 
-intrinsic NarrowClassGroupRepsMapDeterministic(F, Cl, mp)
+intrinsic NarrowClassGroupRepsMapDeterministic(F, Cl, mp) -> Assoc
 { Return an associative array where one chooses representatives with minimal label}
   bound := 1;
   ClElts := [g : g in Cl];
