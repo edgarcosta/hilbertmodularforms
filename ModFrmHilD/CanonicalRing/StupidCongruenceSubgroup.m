@@ -359,21 +359,30 @@ end intrinsic;
 intrinsic IndexOfPrincipalCongruenceSubgroup(F::FldNum, N::RngOrdIdl) -> RngIntElt
 {Return the index of the principal congruence subgroup of level `N` within the
 full Hilbert modular group.}
-    q := Norm(N);
-    if q eq 1 then return 1; end if;
-    
-    assert IsPrimePower(q);
-    return q * (q^2 - 1);
+    n := Norm(N);
+    if n eq 1 then return 1; end if;
+
+    index := 1;
+    for ff in Factorization(n) do
+        q := ff[1]^ff[2];
+        n *:= q * (q^2 - 1);
+    end for;
+    return n;
 end intrinsic;
 
 intrinsic IndexOfGamma0(F::FldNum, N::RngOrdIdl) -> RngIntElt
 {Return the index of the principal congruence subgroup of level `N` within the
 full Hilbert modular group.}
-    q := Norm(N);
-    if q eq 1 then return 1; end if;
+    n := Norm(N);
+    if n eq 1 then return 1; end if;
     
-    assert IsPrimePower(q);
-    return q + 1;
+    index := 1;
+    for ff in Factorization(n) do
+        q := ff[1]^ff[2];
+        n *:= (q + 1);
+    end for;
+    
+    return n;
 end intrinsic;
 
 
