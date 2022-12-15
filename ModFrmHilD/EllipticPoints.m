@@ -531,8 +531,9 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup : Group:="SL") -> 
             hS := Srec`PicardNumber;
             QS := Srec`HasseUnitIndex;
             
-            localCount := 1; // TODO: Generalize to other levels.
+            // localCount := 1; // TODO: Generalize to other levels.
             // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
+	    localCount := ActualLocalOptimalEmbeddingNumbers(ZF, level, S, dff);
 
             if Group eq "SL" then
                 // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
