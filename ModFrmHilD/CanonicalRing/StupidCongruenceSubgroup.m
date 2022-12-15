@@ -9,8 +9,16 @@
 // subgroups are implemented, the functionality can be
 // hooked in easily.
 
+declare type GLPlus_Type;
+declare type SL_Type;
+
+declare type GAMMA_Type;
+declare type GAMMA_0_Type;
+declare type GAMMA_1_Type; // Gamma types
+
 declare type StupidCongruenceSubgroup;
 declare attributes StupidCongruenceSubgroup : Field,
+        AmbientType,
 	PrintString,
 	Level,
 	Index,
@@ -19,6 +27,36 @@ declare attributes StupidCongruenceSubgroup : Field,
 	GammaType;
 
 /////////////////// Creation ///////////////////
+
+intrinsic IsRealQuadraticField(F::FldNum) -> BoolElt
+{}
+    return Degree(F) eq 2 and BaseRing(F) eq Rationals() and Discriminant(F) gt 0;
+end intrinsic;
+
+// Main constructor from which all else is derivedn
+intrinsic CongruenceSubgroup(Gtype, F::FldNum, N::RngOrdIdl, B::RngOrdIdl)
+          -> StupidCongruenceSubgroup
+{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
+The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
+    
+    require IsRealQuadraticField(F): "Number field must be Real Quadratic Field.";
+    Gamma := New(StupidCongruenceSubgroup);
+    Gamma`Field := F;
+    Gamma`ComponentIdeal := B;
+    Gamma`Level := N;
+    Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
+    Gamma`GammaType := GAMMA_Type;
+
+    case Gtype:
+    when "SL": Gamma`AmbientType := SL_Type;
+    when "GL+": Gamma`AmbientType := GLPlus_Type;
+    else
+        error "Ambient type not supported.";
+    end case;
+    
+    return Gamma;
+end intrinsic;
+
 
 intrinsic CongruenceSubgroup(F::FldNum) -> StupidCongruenceSubgroup
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.}
@@ -40,46 +78,66 @@ intrinsic CongruenceSubgroup(F::FldNum, N::RngQuad) -> StupidCongruenceSubgroup
 end intrinsic;
 
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
-{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
-The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
-    
-    isRealQuadraticField := Degree(F) eq 2 and BaseRing(F) eq Rationals() and Discriminant(F) gt 0;
-    require isRealQuadraticField: "Number field must be Real Quadratic Field.";
-
-    Gamma := New(StupidCongruenceSubgroup);
-    Gamma`Field := F;
-    Gamma`ComponentIdeal := B;
-    Gamma`Level := N;
-    Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
-    Gamma`GammaType := "Gamma";
-    return Gamma;
+{}
+    return CongruenceSubgroup("SL", F, N, B);
 end intrinsic;
-
 
 // At the moment, this is the only way to create a group of type Gamma_0(N).
 intrinsic Gamma0(F::FldNum) -> StupidCongruenceSubgroup
 {Return the Hilbert Modular group over `F`.}
-    return CongruenceSubgroup(F);
+    return Gamma0(F, 1*MaximalOrder(F));
 end intrinsic;
 
-// At the moment, this is the only way to create a group of type Gamma_0(N).
 intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> StupidCongruenceSubgroup
 {Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
-    if N eq 1*MaximalOrder(F) then
-	return CongruenceSubgroup(F);
-    else
-	G := CongruenceSubgroup(F, N);
-
-	// Reassign all the important information.
-	G`GammaType := "Gamma_0";
-	G`Index := IndexOfGamma0(F, N);
-	return G;
-    end if;
+    return Gamma0(F, N, 1*MaximalOrder(F));
 end intrinsic;
 
+intrinsic Gamma0(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+{}
+    return Gamma0("SL", F, N, B);
+end intrinsic;
+
+intrinsic Gamma0(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
+    G := CongruenceSubgroup(F, N, B);
+    if N ne 1*MaximalOrder(F) then
+	// Reassign all the important information.
+	G`GammaType := GAMMA_0_Type;
+	G`Index := IndexOfGamma0(F, N);
+    end if;
+    return G;
+end intrinsic;
+
+
+intrinsic Gamma1(F::FldNum) -> StupidCongruenceSubgroup
+{Return the Hilbert Modular group over `F`.}
+    return Gamma1(F, 1*MaximalOrder(F));
+end intrinsic;
+
+intrinsic Gamma1(F::FldNum, N::RngOrdIdl) -> StupidCongruenceSubgroup
+{Return the Congruence Subgroup Gamma_1(N) over the number field `F`.}
+    return Gamma1(F, N, 1*MaximalOrder(F));
+end intrinsic;
+
+intrinsic Gamma1(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+{}
+    return Gamma1("SL", F, N, B);
+end intrinsic;
+                                                               
+intrinsic Gamma1(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
+    G := CongruenceSubgroup(F, N, B);
+    if N ne 1*MaximalOrder(F) then
+	// Reassign all the important information.
+	G`GammaType := GAMMA_1_Type;
+	G`Index := IndexOfGamma1(F, N);
+    end if;
+    return G;
+end intrinsic;
+
+
 /////////////////// Printing ///////////////////
-
-
 
 intrinsic Print(Gamma::StupidCongruenceSubgroup)
 {Print.}
@@ -89,6 +147,7 @@ intrinsic Print(Gamma::StupidCongruenceSubgroup)
     printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
     print "Gamma Type:", GammaType(Gamma);
+    print "Supergroup:", GammaType(Gamma);
     return;
 end intrinsic;
 
@@ -122,11 +181,16 @@ component of the Hilbert Modular Surface}
     return ComponentIdeal(Gamma);
 end intrinsic;
 
-intrinsic GammaType(Gamma::StupidCongruenceSubgroup) -> MonStgElt
+intrinsic GammaType(Gamma::StupidCongruenceSubgroup) -> Any
 {}
     return Gamma`GammaType;
 end intrinsic;
-          
+
+intrinsic AmbientType(Gamma::StupidCongruenceSubgroup) -> Any
+{}
+    return Gamma`AmbientType;
+end intrinsic;
+
 
 ////////// Basic functionality //////////
 
@@ -365,7 +429,7 @@ full Hilbert modular group.}
     index := 1;
     for ff in Factorization(n) do
         q := ff[1]^ff[2];
-        n *:= q * (q^2 - 1);
+        index *:= q * (q^2 - 1);
     end for;
     return n;
 end intrinsic;
@@ -379,10 +443,23 @@ full Hilbert modular group.}
     index := 1;
     for ff in Factorization(n) do
         q := ff[1]^ff[2];
-        n *:= (q + 1);
-    end for;
+        index *:= (q + 1);
+    end for;    
+    return index;
+end intrinsic;
+
+intrinsic IndexOfGamma1(F::FldNum, N::RngOrdIdl) -> RngIntElt
+{Return the index of the principal congruence subgroup of level `N` within the
+full Hilbert modular group.}
+    n := Norm(N);
+    if n eq 1 then return 1; end if;
     
-    return n;
+    index := 1;
+    for ff in Factorization(n) do
+        q := ff[1]^ff[2];
+        index *:= q * (q + 1);
+    end for;    
+    return index;
 end intrinsic;
 
 
