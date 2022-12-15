@@ -71,7 +71,7 @@ for K in quadraticFields do
 
     for b in cg do
 	disc := Discriminant(K);
-	if disc in [12] then continue; end if;
+	if disc in [8, 12] then continue; end if;
 	
 	if b eq Identity(cg) then
 	    signs := [1 : i in [1..#cg]];
@@ -87,7 +87,7 @@ for K in quadraticFields do
 	// Now compute the HMS
 	ZK := MaximalOrder(K);
 	B := mp(b);
-	G := CongruenceSubgroup(K, 1*ZK, B);
+	G := CongruenceSubgroup("GL+", K, 1*ZK, B);
 
 	A := CountEllipticPoints(G);
         boo := (A[2] eq a2) and (A[3] eq a3p + a3m);
