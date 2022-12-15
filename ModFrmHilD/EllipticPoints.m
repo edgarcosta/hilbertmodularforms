@@ -432,8 +432,24 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup : Group:="SL") -> 
 
     isoOrds := PossibleIsotropyOrders(F);
     for rho in isoOrds do
+	ell_order := ExactQuotient(rho,2);
+	// get options for the rotation factors
+	U, mU := UnitGroup(Integers(ell_order));
+	qU, pi := quo<U | (-1)@@mU>;
+	// !! TODO : needs to sort them according to the 
+	// order of the real embeddings of F
+	rot_factor := Reverse(Sort([mU(g@@pi) : g in qU]));
+	// for now we are only doing surfaces
+	assert #rot_factor le 2;
+	if rot_factor eq [1] then
+	    rot_factor := [1,1];
+	end if;
+	rot_factor_minus := [ell_order-rot_factor[1], rot_factor[2]];
+	
         listOfOrders := OrderTermData(F, Group, rho);
-        count := 0;
+        count := AssociativeArray();
+	count[rot_factor] := 0;
+	count[rot_factor_minus] := 0;
 
         for Srec in listOfOrders do
             // Extract Record data
@@ -471,8 +487,30 @@ intrinsic CountEllipticPoints(Gamma::StupidCongruenceSubgroup : Group:="SL") -> 
             end if;
 
             // Record the data into the table.
-            ellipticCountsByOrder[S] := hS * groupCorrectionFactor * localCount;
-            count +:= hS * groupCorrectionFactor * localCount;
+	    total_num := Integers()!(hS * groupCorrectionFactor * localCount);
+	    K := NumberField(S);
+	    // check which signs occur (CM types)
+	    is_unr := IsUnramified(K);
+	    if is_unr then
+		sign := ArtinSymbol(Integers(K), Component(Gamma));
+		if (sign eq 1) then 
+		    num_plus := total_num;
+		    num_minus := 0;
+		else
+		    num_minus := total_num;
+		    num_plus := 0;
+	    end if;
+	    else
+		assert IsEven(total_num);
+		num_plus := total_num div 2;
+		num_minus := total_num div 2;
+	    end if;
+            // ellipticCountsByOrder[S] := hS * groupCorrectionFactor * localCount;
+	    ellipticCountsByOrder[S] := AssociativeArray();
+	    ellipticCountsByOrder[S][rot_factor] := num_plus;
+	    ellipticCountsByOrder[S][rot_factor_minus] := num_minus;
+            count[rot_factor] +:= num_plus;
+	    count[rot_factor_minus] +:= num_minus;
         end for;
 
         ellipticCounts[ExactQuotient(rho, 2)] := count;        
@@ -596,4 +634,5 @@ intrinsic ActualCorrectOrders(F::FldNum, rho : Bound := 0) -> Tup
 
   return Rdata;
 end intrinsic;
+
 
