@@ -441,6 +441,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	// !! TODO : needs to sort them according to the 
 	// order of the real embeddings of F
 	rot_factor := Reverse(Sort([mU(g @@ pi) : g in qU]));
+        print rot_factor;
 
 	// For now we are only doing surfaces
 	assert #rot_factor le 2;
@@ -523,15 +524,32 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
     return ellipticCounts, ellipticCountsByOrder;    
 end intrinsic;
 
-intrinsic NewEllipticPointData(G::StupidCongruenceSubgroup) -> Assoc
+
+function ConvertRotationLabel(order, rot_factor)
+    // Convert the rotation factor to the elliptic point type
+    // in Theorem~2.5 of van der Geer.
+    case rot_factor:
+    when [1,1]: return <order, 1, 1>;
+    when [2,1]: return <order, 1, -1>;
+    end case;
+    error "Not implemented for rotation factor:", rot_factor;
+end function;
+    
+intrinsic EllipticPointDataGamma0(G::StupidCongruenceSubgroup) -> Assoc
 {}
-    blah := CountEllipticPoints(G);
+    Counts := CountEllipticPoints(G);
 
     // Do some post processing.
-    return blah;
+    Data := AssociativeArray();
+    for order in Keys(Counts) do
+        for factor in Counts[order] do
+            Data[ConvertRotationLabel(order, factor)];
+        end for;
+    end for;
+
+    return Data;
 end intrinsic;
 
-                    
 
 ////////////////////////////////////////////////////////////////////////////////
 //

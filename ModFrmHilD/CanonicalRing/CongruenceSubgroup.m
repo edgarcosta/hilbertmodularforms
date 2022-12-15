@@ -25,12 +25,12 @@ GAMMA_1_Type := "Gamma1";
 declare type GrpHilbert;
 declare attributes GrpHilbert : Field,
         AmbientType,
-  PrintString,
-  Level,
-  Index,
-  EllipticPointData,
-  ComponentIdeal,
-  GammaType;
+        PrintString,
+        Level,
+        Index,
+        EllipticPointData,
+        ComponentIdeal,
+        GammaType;
 
 /////////////////// Creation ///////////////////
 
