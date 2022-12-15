@@ -96,9 +96,16 @@ for K in quadraticFields do
 	end if;
 
         // Also check if the number of elliptic points are integers in the GL+ case.
-        B := CountEllipticPoints(G : Group:="GL+");
-        assert &and [count in Integers() : count in B];
-    end for;
-    
+        A := CountEllipticPoints(G : Group:="GL+");
+        assert &and [count in Integers() : count in A];
+
+        // Also do an integrality check for levels.
+        for N in [1..13] do
+            G0N := CongruenceSubgroup(K, N*ZK, B);
+            A := CountEllipticPoints(G : Group:="GL+");
+            assert &and [count in Integers() : count in A];
+        end for;
+        
+    end for;    
 end for;
 
