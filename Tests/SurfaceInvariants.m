@@ -6,14 +6,45 @@ for i in [1..#ds] do
     es[ds[i]] := e_vals[i];
 end for;
 
-print "Testing Euler number of level 1, discriminant ";
+function PrimeDiscriminant(D,q)
+    assert D mod q eq 0;
+    assert IsFundamentalDiscriminant(D);
+    sign := (q mod 4 eq 1) select 1 else -1;
+    if (q eq 2) then
+	sign := &*[(-1) : p in PrimeDivisors(D) | p mod 4 eq 3];
+    end if;
+    return sign*q^Valuation(D,q);
+end function;
+
+// For K2, vdG only lists the value after blowing down succesively 
+// HZ execptional curves, we need to know how many there are to compare.
+function getHZExceptionalNum(Gamma)
+    assert Norm(Level(Gamma)) eq 1;
+    A := Norm(Component(Gamma));
+    D := Discriminant(Integers(Field(Gamma)));
+    qs := PrimeDivisors(D);
+    Dqs := [PrimeDiscriminant(D,q) : q in qs];
+    s := 2*&*[1 + KroneckerSymbol(Dq,A) : Dq in Dqs];
+    s +:= &*[1 + KroneckerSymbol(Dq, 2*A) : Dq in Dqs];
+    s +:= &*[1 + KroneckerSymbol(Dq, 3*A) : Dq in Dqs] div 2;
+    s +:= (1 - KroneckerSymbol(D,3)^2)* 
+	  &*[1 + KroneckerSymbol(Dq,9*A) : Dq in Dqs];
+    if D eq 105 then
+	s +:= 2;
+    end if;
+    return s;
+end function;
+
+printf "Testing Euler number of level 1, discriminant... D=";
 for d in ds do
-    printf "%o,", d;
+    printf "%o ", d;
     // at the moment the code still fails when the class group is
-    // not a 2-group
+    // not trivial
     F := QuadraticField(d);
-    if IsPowerOf(NarrowClassNumber(F),2) then
+    // these are just 229,257,401 in the above list
+    if NarrowClassNumber(F) eq 1 then
 	G := Gamma0(F, 1*Integers(F));
 	assert EulerNumber(G) eq es[d];
     end if;
 end for;
+

@@ -50,14 +50,14 @@ declare attributes ModFrmHilDGRng:
   ;
 
 
-function NarrowClassGroupRepsMapDeterministic(F, Cl, mp, diffinv)
+intrinsic NarrowClassGroupRepsMapDeterministic(F, Cl, mp) -> Assoc
+{ Return an associative array where one chooses representatives with minimal label}
   bound := 1;
   ClElts := [g : g in Cl];
   repsindex := [0 : _ in ClElts];
   while 0 in repsindex do
       ideals := Sort([<StringToInteger(k) : k in Split(l, ".")> cat <elt> where l := LMFDBLabel(elt) : elt in IdealsUpTo(bound, F)]);
       idealsmp := [ elt[3] @@ mp : elt in ideals];
-      idealsdualmp := [ (elt[3]*diffinv) @@ mp : elt in ideals];
       repsindex := [Index(idealsmp, g) : g in ClElts];
       bound *:= 2;
   end while;
@@ -65,12 +65,8 @@ function NarrowClassGroupRepsMapDeterministic(F, Cl, mp, diffinv)
   for i->g in ClElts do
     NarrowClassGroupRepsMap[g] := ideals[repsindex[i]][3];
   end for;
-
-
-
   return NarrowClassGroupRepsMap;
-
-end function;
+end intrinsic;
 
 
 ////////// ModFrmHilDGRng fundamental intrinsics //////////
@@ -319,7 +315,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`NarrowClassGroupMap := mp;
 
   // Deterministically finding representatives for Cl
-  M`NarrowClassGroupRepsMap := NarrowClassGroupRepsMapDeterministic(F, Cl, mp, diffinv);
+  M`NarrowClassGroupRepsMap := NarrowClassGroupRepsMapDeterministic(F, Cl, mp);
   M`NarrowClassGroupReps := [M`NarrowClassGroupRepsMap[g] : g in Cl];
   M`IdealDualNarrowClassGroupReps := [ bb*diffinv : bb in M`NarrowClassGroupReps];
   M`NarrowClassGroupRepsToIdealDual := AssociativeArray();

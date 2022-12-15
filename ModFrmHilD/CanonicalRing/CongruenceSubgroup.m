@@ -12,19 +12,25 @@
 declare type GLPlus_Type;
 declare type SL_Type;
 
+/*
 declare type GAMMA_Type;
 declare type GAMMA_0_Type;
 declare type GAMMA_1_Type; // Gamma types
+*/
+// strings for the time being
+GAMMA_Type := "Gamma";
+GAMMA_0_Type := "Gamma0";
+GAMMA_1_Type := "Gamma1";
 
 declare type GrpHilbert;
 declare attributes GrpHilbert : Field,
         AmbientType,
-	PrintString,
-	Level,
-	Index,
-	EllipticPointData,
-	ComponentIdeal,
-	GammaType;
+  PrintString,
+  Level,
+  Index,
+  EllipticPointData,
+  ComponentIdeal,
+  GammaType;
 
 /////////////////// Creation ///////////////////
 
@@ -34,33 +40,43 @@ intrinsic IsRealQuadraticField(F::FldNum) -> BoolElt
 end intrinsic;
 
 // Main constructor from which all else is derivedn
-intrinsic CongruenceSubgroup(Gtype, F::FldNum, N::RngOrdIdl, B::RngOrdIdl)
-          -> StupidCongruenceSubgroup
+intrinsic CongruenceSubgroup(
+AmbientType::MonStgElt,
+GammaType::MonStgElt,
+F::FldNum,
+N::RngOrdIdl,
+B::RngOrdIdl)
+          -> GrpHilbert
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
 The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
-    
+
     require IsRealQuadraticField(F): "Number field must be Real Quadratic Field.";
-    Gamma := New(StupidCongruenceSubgroup);
+    Gamma := New(GrpHilbert);
     Gamma`Field := F;
     Gamma`ComponentIdeal := B;
     Gamma`Level := N;
     Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
-    Gamma`GammaType := GAMMA_Type;
+    case GammaType:
+        when "Gamma" : Gamma`GammaType := GAMMA_Type;
+        when "Gamma0" : Gamma`GammaType := GAMMA_0_Type;
+        when "Gamma1" : Gamma`GammaType := GAMMA_1_Type;
+    else
+        error "Gamma type not supported.";
+    end case;
 
-    case Gtype:
-    when "SL": Gamma`AmbientType := SL_Type;
-    when "GL+": Gamma`AmbientType := GLPlus_Type;
+    case AmbientType:
+        when "SL": Gamma`AmbientType := SL_Type;
+        when "GL+": Gamma`AmbientType := GLPlus_Type;
     else
         error "Ambient type not supported.";
     end case;
-    
+
     return Gamma;
 end intrinsic;
 
-
-intrinsic CongruenceSubgroup(F::FldNum) -> GrpHilbert
-{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.}
-    return CongruenceSubgroup(F, 1*MaximalOrder(F));
+intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
+{}
+    return CongruenceSubgroup("SL", "Gamma", F, N, B);
 end intrinsic;
 
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl) -> GrpHilbert
@@ -68,34 +84,38 @@ intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl) -> GrpHilbert
     return CongruenceSubgroup(F, N, 1*MaximalOrder(F));
 end intrinsic;
 
-intrinsic CongruenceSubgroup(F::FldNum, N::RngQuad) -> GrpHilbert
+
+intrinsic CongruenceSubgroup(F::FldNum) -> GrpHilbert
+{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.}
+    return CongruenceSubgroup(F, 1*Integers(F));
+end intrinsic;
+
+
+// Gamma0
+
+intrinsic Gamma0(AmbientType::MonStgElt, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
+{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
+G := CongruenceSubgroup(AmbientType, "Gamma0", F, N, B);
+if N ne 1*MaximalOrder(F) then
+  // Reassign all the important information.
+  G`GammaType := GAMMA_0_Type;
+  G`Index := IndexOfGamma0(F, N);
+end if;
+return G;
+end intrinsic;
+
+intrinsic Gamma0(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {}
-    if N eq 1*MaximalOrder(F) then
-	return CongruenceSubgroup(F);
-    else
-	error "CongruenceSubgroup not implemented for arbitrary orders.";
-    end if;
+    return Gamma0("SL", F, N, B);
 end intrinsic;
 
-intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
-{}
-    return CongruenceSubgroup("SL", F, N, B);
-end intrinsic;
-                                                                       
-intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
-{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
-The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
 
-    require IsRealQuadraticField(F): "Number field must be Real Quadratic Field.";
 
-    Gamma := New(GrpHilbert);
-    Gamma`Field := F;
-    Gamma`ComponentIdeal := B;
-    Gamma`Level := N;
-    Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
-    Gamma`GammaType := "Gamma";
-    return Gamma;
+intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> GrpHilbert
+{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
+    return Gamma0(F, N, 1*Integers(F));
 end intrinsic;
+
 
 // At the moment, this is the only way to create a group of type Gamma_0(N).
 intrinsic Gamma0(F::FldNum) -> GrpHilbert
@@ -104,53 +124,39 @@ intrinsic Gamma0(F::FldNum) -> GrpHilbert
 end intrinsic;
 
 
-intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> GrpHilbert
-{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
-    return Gamma0(F, N, 1*MaximalOrder(F));
+
+
+intrinsic Gamma1(AmbientType::MonStgElt, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
+{Return the Congruence Subgroup Gamma_1(N) over the number field `F`.}
+G := CongruenceSubgroup(AmbientType, "Gamma0", F, N, B);
+if N ne 1*MaximalOrder(F) then
+  // Reassign all the important information.
+  G`GammaType := GAMMA_1_Type;
+  G`Index := IndexOfGamma1(F, N);
+end if;
+return G;
 end intrinsic;
 
-intrinsic Gamma0(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
+intrinsic Gamma1(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {}
-    return Gamma0("SL", F, N, B);
+    return Gamma1("SL", F, N, B);
 end intrinsic;
 
-intrinsic Gamma0(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
-{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
-    G := CongruenceSubgroup(F, N, B);
-    if N ne 1*MaximalOrder(F) then
-	// Reassign all the important information.
-	G`GammaType := GAMMA_0_Type;
-	G`Index := IndexOfGamma0(F, N);
-    end if;
-    return G;
-end intrinsic;
-
-
-intrinsic Gamma1(F::FldNum) -> StupidCongruenceSubgroup
-{Return the Hilbert Modular group over `F`.}
-    return Gamma1(F, 1*MaximalOrder(F));
-end intrinsic;
-
-intrinsic Gamma1(F::FldNum, N::RngOrdIdl) -> StupidCongruenceSubgroup
+intrinsic Gamma1(F::FldNum, N::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_1(N) over the number field `F`.}
     return Gamma1(F, N, 1*MaximalOrder(F));
 end intrinsic;
 
-intrinsic Gamma1(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
-{}
-    return Gamma1("SL", F, N, B);
+intrinsic Gamma1(F::FldNum) -> GrpHilbert
+{Return the Hilbert Modular group over `F`.}
+    return Gamma1(F, 1*MaximalOrder(F));
 end intrinsic;
-                                                               
-intrinsic Gamma1(G, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> StupidCongruenceSubgroup
-{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
-    G := CongruenceSubgroup(F, N, B);
-    if N ne 1*MaximalOrder(F) then
-	// Reassign all the important information.
-	G`GammaType := GAMMA_1_Type;
-	G`Index := IndexOfGamma1(F, N);
-    end if;
-    return G;
-end intrinsic;
+
+
+
+
+
+
 
 
 /////////////////// Printing ///////////////////
@@ -213,8 +219,8 @@ end intrinsic;
 intrinsic 'eq'(Gamma1::GrpHilbert, Gamma2::GrpHilbert) -> BoolElt
 {}
     return (Field(Gamma1) eq Field(Gamma2) and
-	    Level(Gamma1) eq Level(Gamma2) and
-	    Index(Gamma1) eq Index(Gamma2));
+      Level(Gamma1) eq Level(Gamma2) and
+      Index(Gamma1) eq Index(Gamma2));
 end intrinsic;
 
 
@@ -259,114 +265,114 @@ elliptic points of this type up to congugacy in Gamma.
 
     ellipticData := AssociativeArray();
     if IsPrincipalCongruenceSubgroup(Gamma) and N^2 notin [1*ZK, 2*ZK, 3*ZK] then
-	return ellipticData;
+  return ellipticData;
     end if;
 
     // TODO: XXX: Properly implement elliptic points for arbitrary congruence subgroups.
     if not IsPrincipalCongruenceSubgroup(Gamma) then
-	error "Not implemented for non-principal congruence subgroups.";
+  error "Not implemented for non-principal congruence subgroups.";
     end if;
 
     // The next thing to check is if we are in one of the special discriminant cases.
     // The special discriminants vis a vis torsion are D = 5, 8, 12.
     if D in [5,8,12] then
-	return _EllipticPointDataSpecialCases(Gamma);
+  return _EllipticPointDataSpecialCases(Gamma);
     end if;
 
     if Index(Gamma) eq 1 then
-	// If we are looking at the full Hilbert Modular Group with component \frak{b},
-	// then [vdG, p. 267] provides tables to compute the number and types of torsion points.
+  // If we are looking at the full Hilbert Modular Group with component \frak{b},
+  // then [vdG, p. 267] provides tables to compute the number and types of torsion points.
 
-	// Order 2 points.
-	//
-	if D mod 4 eq 1 then
-	    ellipticData[<2,1,1>] := ClassNumber(-4*D);
-	elif D mod 8 eq 0 then
-	    ellipticData[<2,1,1>] := 3*ClassNumber(-D);
-	else
-	    Dby4 := ExactQuotient(D, 4);
-	    h := ClassNumber(-Dby4);
+  // Order 2 points.
+  //
+  if D mod 4 eq 1 then
+      ellipticData[<2,1,1>] := ClassNumber(-4*D);
+  elif D mod 8 eq 0 then
+      ellipticData[<2,1,1>] := 3*ClassNumber(-D);
+  else
+      Dby4 := ExactQuotient(D, 4);
+      h := ClassNumber(-Dby4);
 
-	    case [Dby4 mod 8, B mod 4]:
-	    when [3,1]:
-		ellipticData[<2,1,1>] := 10*h;
-	    when [3,3]:
-		ellipticData[<2,1,1>] := 10*h;
-	    when [7,1]:
-		ellipticData[<2,1,1>] := 4*h;
-	    when [7,3]:
-		ellipticData[<2,1,1>] := 4*h;
-	    end case;
-	end if;
+      case [Dby4 mod 8, B mod 4]:
+      when [3,1]:
+    ellipticData[<2,1,1>] := 10*h;
+      when [3,3]:
+    ellipticData[<2,1,1>] := 10*h;
+      when [7,1]:
+    ellipticData[<2,1,1>] := 4*h;
+      when [7,3]:
+    ellipticData[<2,1,1>] := 4*h;
+      end case;
+  end if;
 
-	// Order 3 points
-	//
-	if D mod 3 ne 0 then
-	    h := ExactQuotient(ClassNumber(-3*D), 2);
-	    ellipticData[<3,1, 1>] := h;
-	    ellipticData[<3,1,-1>] := h;
-	else
-	    Dby3 := ExactQuotient(D, 3);
-	    h := ClassNumber(-Dby3);
+  // Order 3 points
+  //
+  if D mod 3 ne 0 then
+      h := ExactQuotient(ClassNumber(-3*D), 2);
+      ellipticData[<3,1, 1>] := h;
+      ellipticData[<3,1,-1>] := h;
+  else
+      Dby3 := ExactQuotient(D, 3);
+      h := ClassNumber(-Dby3);
 
-	    case [Dby3 mod 3, B mod 3]:
-	    when [1,1]:
-		ellipticData[<3,1,1>] := 4*h;
-		ellipticData[<3,1,-1>] := h;
+      case [Dby3 mod 3, B mod 3]:
+      when [1,1]:
+    ellipticData[<3,1,1>] := 4*h;
+    ellipticData[<3,1,-1>] := h;
 
-	    when [1,2]:
-		ellipticData[<3,1,1>] := h;
-		ellipticData[<3,1,-1>] := 4*h;
+      when [1,2]:
+    ellipticData[<3,1,1>] := h;
+    ellipticData[<3,1,-1>] := 4*h;
 
-	    when [2,1]:
-		ellipticData[<3,1,1>] := 3*h;
-		ellipticData[<3,1,-1>] := 0;
+      when [2,1]:
+    ellipticData[<3,1,1>] := 3*h;
+    ellipticData[<3,1,-1>] := 0;
 
-	    when [2,2]:
-		ellipticData[<3,1,1>] := 0;
-		ellipticData[<3,1,-1>] := 3*h;
-	    end case;
-	end if;
+      when [2,2]:
+    ellipticData[<3,1,1>] := 0;
+    ellipticData[<3,1,-1>] := 3*h;
+      end case;
+  end if;
 
     elif IsPrincipalCongruenceSubgroup(Gamma) then
-	// Let A := Norm(\frak{b}), where \frak{b} := ComponentIdeal(Gamma). We use the following
-	// remark of [vdG, p. 110]
-	//
-	// Proposition: If (A, N) = 1, then the number of elliptic points is given by...
-	//
-	if N^2 eq 2*ZK then
-	    if D mod 8 eq 0 then
-		ellipticData[<2, 1, 1>] := 6 * ClassNumber(-D);
-	    elif D mod 4 eq 0 then
-		Dby4 := ExactQuotient(D, 4);
-		h := ClassNumber(-Dby4);
+  // Let A := Norm(\frak{b}), where \frak{b} := ComponentIdeal(Gamma). We use the following
+  // remark of [vdG, p. 110]
+  //
+  // Proposition: If (A, N) = 1, then the number of elliptic points is given by...
+  //
+  if N^2 eq 2*ZK then
+      if D mod 8 eq 0 then
+    ellipticData[<2, 1, 1>] := 6 * ClassNumber(-D);
+      elif D mod 4 eq 0 then
+    Dby4 := ExactQuotient(D, 4);
+    h := ClassNumber(-Dby4);
 
-		case Dby4 mod 8:
-		when 7:
-		    ellipticData[<2, 1, 1>] := 12 * h;
+    case Dby4 mod 8:
+    when 7:
+        ellipticData[<2, 1, 1>] := 12 * h;
 
-		when 3:
-		     ellipticData[<2, 1, 1>] := 24 * h;
-		end case;
-	    end if;
+    when 3:
+         ellipticData[<2, 1, 1>] := 24 * h;
+    end case;
+      end if;
 
-	elif N^2 eq 3*ZK then
-	    if D mod 3 eq 0 then
-		Dby3 := ExactQuotient(D, 3);
-		h := ClassNumber(-Dby3);
+  elif N^2 eq 3*ZK then
+      if D mod 3 eq 0 then
+    Dby3 := ExactQuotient(D, 3);
+    h := ClassNumber(-Dby3);
 
-		// In each case, there are no points of the other type.
-		case (B*D) mod 9:
-		when 6:
-		    ellipticData[<3, 1, 1>] := 12 * h;
+    // In each case, there are no points of the other type.
+    case (B*D) mod 9:
+    when 6:
+        ellipticData[<3, 1, 1>] := 12 * h;
 
-		when 3:
-		    ellipticData[<3, 1, -1>] := 12 * h;
-		end case;
-	    end if;
-	end if;
-	//
-	// (End of Theorem)
+    when 3:
+        ellipticData[<3, 1, -1>] := 12 * h;
+    end case;
+      end if;
+  end if;
+  //
+  // (End of Theorem)
     end if;
 
     // Assign into Gamma and return
@@ -382,36 +388,36 @@ intrinsic _EllipticPointDataSpecialCases(Gamma::GrpHilbert) -> Assoc
     require Index(Gamma) eq 1 : "Only implemented for level 1 for special discrminants.";
 
     if D eq 5 then
-	ellipticData[<2, 1, 1>] := 2;
-	ellipticData[<3, 1, 1>] := 1;
-	ellipticData[<3, 1,-1>] := 1;
-	ellipticData[<5, 1, 3>] := 1; // Type <5, 2, 1>
-	ellipticData[<5, 1, 2>] := 1; // Type <5, 3, 1>
+  ellipticData[<2, 1, 1>] := 2;
+  ellipticData[<3, 1, 1>] := 1;
+  ellipticData[<3, 1,-1>] := 1;
+  ellipticData[<5, 1, 3>] := 1; // Type <5, 2, 1>
+  ellipticData[<5, 1, 2>] := 1; // Type <5, 3, 1>
 
     elif D eq 8 then
-	ellipticData[<2, 1, 1>] := 2;
-	ellipticData[<3, 1, 1>] := 1;
-	ellipticData[<3, 1,-1>] := 1;
-	ellipticData[<4, 1, 1>] := 1;
-	ellipticData[<4, 1,-1>] := 1;
+  ellipticData[<2, 1, 1>] := 2;
+  ellipticData[<3, 1, 1>] := 1;
+  ellipticData[<3, 1,-1>] := 1;
+  ellipticData[<4, 1, 1>] := 1;
+  ellipticData[<4, 1,-1>] := 1;
 
     elif D eq 12 then
 
-	B := Component(Gamma);
+  B := Component(Gamma);
 
-	if HasTotallyPositiveGenerator(B) then
-	    ellipticData[<2, 1, 1>] := 3;
-	    ellipticData[<3, 1, 1>] := 2;
-	    ellipticData[<3, 1,-1>] := 0;
-	    ellipticData[<6, 1,-1>] := 1;
+  if HasTotallyPositiveGenerator(B) then
+      ellipticData[<2, 1, 1>] := 3;
+      ellipticData[<3, 1, 1>] := 2;
+      ellipticData[<3, 1,-1>] := 0;
+      ellipticData[<6, 1,-1>] := 1;
 
-	else
-	    ellipticData[<2, 1, 1>] := 3;
-	    ellipticData[<3, 1, 1>] := 0;
-	    ellipticData[<3, 1,-1>] := 2;
-	    ellipticData[<6, 1, 1>] := 1;
+  else
+      ellipticData[<2, 1, 1>] := 3;
+      ellipticData[<3, 1, 1>] := 0;
+      ellipticData[<3, 1,-1>] := 2;
+      ellipticData[<6, 1, 1>] := 1;
 
-	end if;
+  end if;
     end if;
 
     Gamma`EllipticPointData := ellipticData;
@@ -460,7 +466,7 @@ full Hilbert modular group.}
     for ff in Factorization(n) do
         q := ff[1]^ff[2];
         index *:= (q + 1);
-    end for;    
+    end for;
     return index;
 end intrinsic;
 
@@ -469,12 +475,12 @@ intrinsic IndexOfGamma1(F::FldNum, N::RngOrdIdl) -> RngIntElt
 full Hilbert modular group.}
     n := Norm(N);
     if n eq 1 then return 1; end if;
-    
+
     index := 1;
     for ff in Factorization(n) do
         q := ff[1]^ff[2];
         index *:= q * (q + 1);
-    end for;    
+    end for;
     return index;
 end intrinsic;
 

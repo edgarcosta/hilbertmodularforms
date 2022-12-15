@@ -1,6 +1,5 @@
 
-printf "Testing low-level cusp code...\n";
-SetDebugOnError(true);
+printf "Testing low-level cusp code...";
 
 MaxD := 100;
 MaxNorm := 100;
@@ -61,7 +60,7 @@ procedure TestIdealToModule()
     a := RandomElt(ss);
     r := IdealToModule(a, ss);
     assert Eltseq(r) eq [a];
-    //This tests both RngOrdElt and FldElt version depending on whether ss is integral or not  
+    //This tests both RngOrdElt and FldElt version depending on whether ss is integral or not
 end procedure;
 
 /*****************************************************************************/
@@ -102,7 +101,7 @@ procedure TestFindEltWithValuations()
     ps := RandomPrimes(F, nb);
     vs := [Random(-5,5): i in [1..nb]];
     x := FindEltWithValuations(F, ps, vs);
-    
+
     ss := 1*ZF;
     for i:=1 to nb do
         ss *:= ps[i] ^ vs[i];
@@ -118,12 +117,12 @@ end procedure;
 /* Testing GeneratorOfQuotientModuleCRT */
 
 procedure TestGeneratorOfQuotientModuleCRT()
-    F := RandomField();    
+    F := RandomField();
     ss := RandomFracIdl(F);
     MM := RandomIntegralIdl(F);
     x := GeneratorOfQuotientModuleCRT(ss, MM);
     primes := [p[1]: p in Factorization(MM)];
-    
+
     assert x in ss;
     for p in primes do
         assert not x in ss*p;
@@ -134,15 +133,15 @@ end procedure;
 /* Testing GeneratorsOfQuotientModule */
 
 procedure TestGeneratorsOfQuotientModule()
-    F := RandomField();    
+    F := RandomField();
     ss := RandomFracIdl(F);
     MM := RandomIntegralIdl(F);
     list := GeneratorsOfQuotientModule(ss, MM);
     primes := [p[1]: p in Factorization(MM)];
 
     assert #list eq #UnitGroup(quo<Integers(F)|MM>);
-    
-    for x in list do    
+
+    for x in list do
         assert x in ss;
         for p in primes do
             assert not x in ss*p;
@@ -154,13 +153,13 @@ end procedure;
 /* Testing GeneratorsOfQuotientModuleModuloTotallyPositiveUnits */
 
 procedure TestGeneratorsOfQuotientModuleModuloTotallyPositiveUnits()
-    F := RandomField();    
+    F := RandomField();
     ss := RandomFracIdl(F);
-    MM := RandomIntegralIdl(F);    
+    MM := RandomIntegralIdl(F);
     list := GeneratorsOfQuotientModuleModuloTotallyPositiveUnits(ss, MM);
     //Check they are indeed generators of module
     primes := [p[1]: p in Factorization(MM)];
-    for x in list do    
+    for x in list do
         assert x in ss;
         for p in primes do
             assert not x in ss*p;
@@ -207,7 +206,7 @@ procedure TestMakePairsForQuadruple()
             pairs := MakePairsForQuadruple(NN, bb, ss, MM: GammaType := GammaType);
             primes_check_a := [p[1]: p in Factorization(MM)];
             primes_check_c := [p[1]: p in Factorization(NN/MM)];
-            
+
             //Check a,c land in correct ideals
             for i:=1 to #pairs do
                 a, c := Explode(pairs[i]);
@@ -224,7 +223,7 @@ procedure TestMakePairsForQuadruple()
             count +:= #pairs;
         end for;
     end for;
-    
+
     //Check cardinality according to Dasgupta--Kakde
     if Degree(F) eq 1 then infty:=[1]; else infty:=[1,2]; end if;
     ZF := Integers(F);
@@ -237,7 +236,7 @@ procedure TestMakePairsForQuadruple()
     if GammaType eq "Gamma1" then
         for idl in Gn do
             x := m(idl);
-            if IsId(x@@mm) then            
+            if IsId(x@@mm) then
                 Append(~gens, i1(x@@m1) - i2(x@@m2));
             end if;
         end for;
@@ -267,7 +266,7 @@ procedure TestCuspQuadruples()
     GammaType := Random(["Gamma0", "Gamma1"]);
     quads := CuspQuadruples(NN, bb: GammaType := GammaType);
     ZF := Integers(F);
-    
+
     // Check each quadruple is well-formed
     for q in quads do
         ss := q[1];
@@ -310,7 +309,7 @@ procedure TestCuspLiftFirstCoordinate()
         a_bar, c := Explode(q[3]);
         a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
         assert a in ss;
-        assert c in ss*bb*MM;        
+        assert c in ss*bb*MM;
         assert Gcd(c*ZF, ss*bb*NN) eq ss*bb*MM;
         assert a*ZF + c*bb^(-1) eq ss;
     end for;
@@ -332,4 +331,4 @@ for i:=1 to NbTests do
     TestCuspLiftFirstCoordinate();
 end for;
 
-printf "Done\n";
+printf "Done";
