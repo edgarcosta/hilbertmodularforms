@@ -157,7 +157,7 @@ intrinsic HilberSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
 
   // degree(1/T^2) + degree(\sum_{k \in 2Z_>0} (k-1)^n T^k) + #pairs*degree(sum D_k)
   // the denominator of sum D_k has degree 2n and numerator at most 2n-1
-  degree := 2 + (4*n + 1) + (2*n + 2*n - 1)*#pairs;
+  degree := 2 + (4*(n + 1)) + (2*n + 2*n - 1)*#pairs;
   prec := 2*degree + 1 + 20;
 
   // Correction term for weight 2
@@ -223,8 +223,6 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
   UF, mUF := UnitGroup(ZF);
   Indexforsum := IndexOfSummation(M, mm, aa);
 
-  // Set class group bound for faster computations
-  SetClassGroupBounds("GRH");
 
   // Summation
   Sumterm := 0;

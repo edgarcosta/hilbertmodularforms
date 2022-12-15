@@ -9,3 +9,5 @@
 AttachSpec("spec");
 // setting
 SetColumns(0);
+// Set class group bound for faster computations
+SetClassGroupBounds("GRH");

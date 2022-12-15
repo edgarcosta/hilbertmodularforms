@@ -1,5 +1,5 @@
 /*
-intrinsic EllipticPointCounts(Gamma::StupidCongruenceSubgroup) -> Assoc
+intrinsic EllipticPointCounts(Gamma::GrpHilbert) -> Assoc
 {Returns an associative array a such that a[<n,e1,e2>] is the number of points of order n and rotation type <e1,e2>.}
     assert Discriminant(Integers(Field(Gamma))) notin [5,8,12];
     cnt := CountEllipticPoints(Gamma);
@@ -61,7 +61,7 @@ intrinsic EllipticPointCounts(Gamma::StupidCongruenceSubgroup) -> Assoc
 end intrinsic;
 */
 
-intrinsic EulerNumber(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
@@ -109,7 +109,7 @@ intrinsic EulerNumber(Gamma::StupidCongruenceSubgroup) -> RngIntElt
   return e;
 end intrinsic;
 
-intrinsic K2(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
@@ -143,24 +143,24 @@ intrinsic K2(Gamma::StupidCongruenceSubgroup) -> RngIntElt
   return k2;
 end intrinsic;
 
-intrinsic ArithmeticGenus(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+intrinsic ArithmeticGenus(Gamma::GrpHilbert) -> RngIntElt
 {}
   chi := K2(Gamma) + EulerNumber(Gamma);
   assert chi mod 12 eq 0;
   return chi div 12;
 end intrinsic;
 
-intrinsic Irregularity(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+intrinsic Irregularity(Gamma::GrpHilbert) -> RngIntElt
 {}
   return 0;
 end intrinsic;
 
-intrinsic GeometricGenus(Gamma::StupidCongruenceSubgroup) -> RngIntElt
+intrinsic GeometricGenus(Gamma::GrpHilbert) -> RngIntElt
 {}
   return ArithmeticGenus(Gamma)-1;
 end intrinsic;
 
-intrinsic HodgeDiamond(Gamma::StupidCongruenceSubgroup) -> RngIntEltt
+intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
 {}
   h_0 := [1];
   q := Irregularity(Gamma);
