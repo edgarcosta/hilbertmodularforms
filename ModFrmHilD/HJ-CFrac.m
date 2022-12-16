@@ -123,19 +123,37 @@ intrinsic CeilingOfSquareRoot(n:: RngIntElt, b:: RngIntElt) -> RngIntElt
     return y;
 end intrinsic;
 
-intrinsic UpperIntegerPart(w:: FldQuadElt) -> RngIntElt
+intrinsic UpperIntegerPart(w:: FldNumElt) -> RngIntElt
 {Compute the ceiling of w seen as a real number, assuming F.1 is positive}
     F := Parent(w);
+    //if Type(F) ne RngQuad then
+    //  _, K := IsQuadratic(F);
+    //  _, iso := IsIsomorphic(F, K);
+    //  w := iso(w);
+    //  F := K;
+    //end if;
+    require Degree(F) eq 2: "we only support quadratic fields";
+    disc := Discriminant(Integers(F));
+    require F.1^2 in Integers() or Discriminant(F) eq disc: "we only support x^2 -D or the polynomial that gives a monogetic maximal order";
     den := Denominator(w);
     seq := ElementToSequence(den * w); //Coefficients of den*w in canonical basis
     a := seq[1];
     b := seq[2];
-    x := (b*F.1)^2;
+    if F.1^2 in Integers() then
+      x := (b*F.1)^2;
+    else
+      a := 2*a + b;
+      den *:=2;
+      x := b^2*disc;
+    end if;
     res := a + CeilingOfSquareRoot(Integers() ! x, Integers() ! b);
     return Ceiling(res/den);
 end intrinsic;
 
-intrinsic HJContinuedFraction(w:: FldQuadElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt]
+
+
+
+intrinsic HJContinuedFraction(w:: FldNumElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt]
 {Compute the head and periodic parts of the Hirzebruch--Jung continued fraction expansion of w}
     stop := false;
     steps := [];
@@ -188,7 +206,7 @@ intrinsic HJContinuedFraction(w::RngIntElt) -> SeqEnum[RngIntElt], SeqEnum[RngIn
     return [w], [];
 end intrinsic;
 
-intrinsic HJReconstructPeriodic(F :: FldQuad,periodic :: SeqEnum[RngIntElt]) -> FldQuadElt
+intrinsic HJReconstructPeriodic(F :: FldNum,periodic :: SeqEnum[RngIntElt]) -> FldNumElt
 {Reconstruct an element of F given its HJ periodic expansion}
     require #periodic ge 1: "periodic must not be empty";
     //Convert periodic expansion in degree 2 equation over QQ
@@ -219,8 +237,8 @@ intrinsic HJReconstructPeriodic(F :: FldQuad,periodic :: SeqEnum[RngIntElt]) -> 
     end if;
 end intrinsic;
 
-intrinsic HJReconstruct(F :: FldQuad, head :: SeqEnum[RngIntElt],
-			periodic :: SeqEnum[RngIntElt]) -> FldQuadElt
+intrinsic HJReconstruct(F :: FldNum, head :: SeqEnum[RngIntElt],
+			periodic :: SeqEnum[RngIntElt]) -> FldNumElt
 {Reconstruct an algebraic number given its HJ continued fraction expansion}
     //Look at periodic part; 0 if empty
     n := #head;
@@ -238,7 +256,7 @@ intrinsic HJReconstruct(F :: FldQuad, head :: SeqEnum[RngIntElt],
     return x;
 end intrinsic;
 
-intrinsic HJCyclicProductOfReconstructions(F :: FldQuad, periodic :: SeqEnum[RngIntElt]) -> FldQuadElt
+intrinsic HJCyclicProductOfReconstructions(F :: FldNum, periodic :: SeqEnum[RngIntElt]) -> FldNumElt
 {Given [b1,...,bk], compute the product of all elements of F of the form [bi,...,bn,b1,...bi-1]}
     require periodic ne []: "periodic must not be empty";
     n := #periodic;
