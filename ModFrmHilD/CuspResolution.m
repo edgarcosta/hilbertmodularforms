@@ -452,9 +452,8 @@ intrinsic RepeatSequence(l :: SeqEnum, n :: RngIntElt) -> SeqEnum
     return &cat[l : x in [1..n]];
 end intrinsic;
 
-
-intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt:
-    GroupType := "GL2+") -> SeqEnum, RngIntElt
+// this is the top-level function
+intrinsic CuspResolutionIntersections(G::GrpHilbert, p::Pt) -> SeqEnum, RngIntElt
 {}
     K := Field(G);
     N := Level(G);
@@ -462,7 +461,9 @@ intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt:
     x, y := Explode(Coordinates(p));
     x, y := NormalizeCusp(b, N, x, y);
     //We assume GL2+ here
-    return CuspResolutionIntersections(Component(G), N, x, y : GammaType:=GammaType(G));
+    return CuspResolutionIntersections(Component(G), N, x, y :
+                                       GammaType:=GammaType(G),
+                                       GroupType := AmbientType(G));
 end intrinsic;
 
 intrinsic CuspResolutionIntersections(b :: RngQuadFracIdl, n :: RngQuadIdl,

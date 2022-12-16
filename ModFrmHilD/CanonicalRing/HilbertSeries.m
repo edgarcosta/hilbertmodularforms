@@ -144,7 +144,7 @@ intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> FldFunRatUElt
     return HilbertSeriesVasquez(BaseField(M));
 end intrinsic;
 
-intrinsic HilbertSeries(G::StupidCongruenceSubgroup) -> FldFunRatUElt
+intrinsic HilbertSeries(G::GrpHilbert) -> FldFunRatUElt
 {Return the Hilbert series for the space of Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
     require Index(G) eq 1 : "Only implemented for level = (1).";

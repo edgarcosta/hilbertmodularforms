@@ -39,7 +39,7 @@ arithmetic_genus_table :=
 <124, 4>,
 <129, 6>,
 <133, 5>,
-<136, 2>,
+<136, 6>,
 <137, 6>,
 <140, 4>,
 <141, 4>,
@@ -62,12 +62,12 @@ arithmetic_genus_table :=
 <197, 9>,
 <201, 10>,
 <204, 8>,
-<205, 6>,
+<205, 10>,
 <209, 10>,
 <213, 6>,
 <217, 9>,
 <220, 7>,
-<221, 6>,
+<221, 10>,
 <229, 10>,
 <232, 11>,
 <233, 12>,
@@ -91,13 +91,13 @@ arithmetic_genus_table :=
 <293, 13>,
 <296, 16>,
 <301, 13>,
-<305, 13>,
+<305, 17>,
 <309, 13>,
 <312, 9>,
 <313, 19>,
-<316, 8>,
+<316, 16>,
 <317, 14>,
-<321, 11>,
+<321, 19>,
 <328, 17>,
 <329, 15>,
 <332, 15>,
@@ -113,7 +113,7 @@ arithmetic_genus_table :=
 <365, 18>,
 <373, 20>,
 <376, 17>,
-<377, 17>,
+<377, 21>,
 <380, 15>,
 <381, 17>,
 <385, 20>,
@@ -142,9 +142,9 @@ arithmetic_genus_table :=
 <460, 20>,
 <461, 22>,
 <465, 24>,
-<469, 17>,
+<469, 25>,
 <472, 25>,
-<473, 20>,
+<473, 28>,
 <476, 18>,
 <481, 37>,
 <485, 24>,
@@ -155,8 +155,12 @@ arithmetic_genus_table :=
 <497, 25> ];
 
 
-for _ in [1..10] do
-  D, chi := Explode(Random(arithmetic_genus_table));
-  printf "%o ", D;
-  assert chi eq ArithmeticGenus(QuadraticField(D));
+// We go over all of them because there are mistakes 
+// and it is quick
+// for _ in [1..10] do
+//  D, chi := Explode(Random(arithmetic_genus_table));
+for elt in arithmetic_genus_table do 
+    D, chi := Explode(elt);
+    printf "%o ", D;
+    assert chi eq ArithmeticGenus(QuadraticField(D));
 end for;

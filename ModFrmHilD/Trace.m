@@ -65,13 +65,13 @@ end intrinsic;
 ///////////////////////////////// ModFrmHilD: TraceProduct ////////////////////////////////////////////
 
 function WeightFactor(u, t, prec)
-  // \sum D_k T^k = 1/(T^2 + T*t + u)^2
+  // \sum D_k T^k = 1/(1 - t*T + u*T^2)
   // returns \sum_{k <= prec} Norm(D_{k-2}) T^{k}
-  res := [1/u, -t/u^2] cat [Parent(t) | 0 : _ in [0..prec-2 + 1]];
+  res := [1, t] cat [Parent(t) | 0 : _ in [0..prec-2 + 1]];
   rm2 := res[1];
   rm1 := res[2];
   for k in [3..prec-1] do
-    rm2, rm1 := Explode([rm1, -(t*rm1 + u*rm2)]);
+    rm2, rm1 := Explode([rm1, t*rm1 - u*rm2]);
     res[k] := rm1;
   end for;
   R<T> := PowerSeriesRing(Rationals());
@@ -135,7 +135,7 @@ function ClassNumberOverUnitIndex(K, UF, mUF)
   return hK / UnitIndex;
 end function;
 
-intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
+intrinsic HilberSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
   { Ben will write this }
 
   R<T> := PowerSeriesRing(Rationals());
@@ -155,9 +155,10 @@ intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowEl
   // FIXME maybe do (u,t) and (u,-t) in one go
   pairs := IndexOfSummation(M, mm, aa);
 
-  // FIXME something is off
-  degree := 2 + (4*n - 1) + 2*#pairs;
-  prec := 8*degree;
+  // degree(1/T^2) + degree(\sum_{k \in 2Z_>0} (k-1)^n T^k) + #pairs*degree(sum D_k)
+  // the denominator of sum D_k has degree 2n and numerator at most 2n-1
+  degree := 2 + (4*(n + 1)) + (2*n + 2*n - 1)*#pairs;
+  prec := 2*degree + 1 + 20;
 
   // Correction term for weight 2
   res := (-1)^(n+1) * NarrowClassNumber(M)*T^2;
@@ -170,9 +171,14 @@ intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowEl
   res +:= O(T^(prec + 1));
 
 
+  done := Set([]);
   for pair in pairs do
   //for pair in IndexOfSummation(M, mm, aa) do
     t, u := Explode(pair);
+    if [-t, u] in done then continue; end if;
+    // account for (u, t) and (u, -t)
+    Include(~done, pair);
+    mult := t ne 0 select 2 else 1;
     D := t^2 - 4*u;
     // Requirements
     require IsTotallyPositive(-D): "Non CM-extension in summation";
@@ -186,11 +192,12 @@ intrinsic HilberSeriesCuspSpace(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowEl
     // C(u,t)
     C := ClassNumberOverUnitIndex(K, UF, mUF) * ConductorSum(ZF, NN, aa, u, t, ZK, ff);
     vprintf HMFTrace : "WeightFactor: <%o, %o> %o\n", u, t, WeightFactor(u, t, prec);
-    res +:= C*WeightFactor(u, t, prec);
+    res +:= mult*C*WeightFactor(u, t, prec);
   end for;
   R<X> := PolynomialRing(Rationals());
   b, num, den := RationalReconstruction(R!AbsEltseq(res), X^(prec + 1), prec div 2, prec div 2);
   assert b;
+  assert Degree(num) + Degree(den) le degree;
   return num/den;
 end intrinsic;
 
@@ -216,8 +223,6 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> RngElt
   UF, mUF := UnitGroup(ZF);
   Indexforsum := IndexOfSummation(M, mm, aa);
 
-  // Set class group bound for faster computations
-  SetClassGroupBounds("GRH");
 
   // Summation
   Sumterm := 0;
