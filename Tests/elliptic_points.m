@@ -64,15 +64,17 @@ quadraticFields := Setseq({QuadraticField(D) : D in [2..53] | IsSquarefree(D)});
 Sort(~quadraticFields, func<x,y | Discriminant(x) - Discriminant(y)>);
 quadraticFields := [K : K in quadraticFields | Discriminant(K) le 53];
 
+print "Testing elliptic points data for disc=";
 for K in quadraticFields do
 
     // Extract components
     cg, mp := NarrowClassGroup(K);
 
+    disc := Discriminant(K);
+    if disc in [8, 12] then continue; end if;
+    printf "%o,", disc;
+    
     for b in cg do
-	disc := Discriminant(K);
-	if disc in [12] then continue; end if;
-	
 	if b eq Identity(cg) then
 	    signs := [1 : i in [1..#cg]];
 	else
@@ -87,9 +89,10 @@ for K in quadraticFields do
 	// Now compute the HMS
 	ZK := MaximalOrder(K);
 	B := mp(b);
-	G := CongruenceSubgroup(K, 1*ZK, B);
+	G_SL := CongruenceSubgroup("SL", "Gamma0", K, 1*ZK, B);
+	G_GL := CongruenceSubgroup("GL+", "Gamma0", K, 1*ZK, B);
 
-	A := CountEllipticPoints(G);
+	A := CountEllipticPoints(G_SL);
         boo := (A[2][[1,1]] eq a2) and (A[3][[1,1]] eq a3p) and 
 	       (A[3][[2,1]] eq a3m);
 	if not boo then
@@ -97,16 +100,17 @@ for K in quadraticFields do
 	end if;
 
         // Also check if the number of elliptic points are integers in the GL+ case.
-        A := CountEllipticPoints(G : Group:="GL+");
+        A := CountEllipticPoints(G_GL);
         assert &and [&and[count in Integers() : count in counts] : counts in A];
 
         // Also do an integrality check for levels.
         for N in [1..13] do
-            G0N := CongruenceSubgroup(K, N*ZK, B);
-            A := CountEllipticPoints(G : Group:="GL+");
+            G0N_SL := CongruenceSubgroup("SL", "Gamma0", K, N*ZK, B);
+	    G0N_GL := CongruenceSubgroup("GL+", "Gamma0", K, N*ZK, B);
+            A := CountEllipticPoints(G0N_SL);
 	    assert &and [&and[count in Integers() : count in counts] : 
 			 counts in A];
-            A := CountEllipticPoints(G);
+            A := CountEllipticPoints(G0N_GL);
             assert &and [&and[count in Integers() : count in counts] : 
 			 counts in A];
         end for;
