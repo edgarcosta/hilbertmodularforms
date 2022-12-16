@@ -6,7 +6,7 @@ SetDebugOnError(true);
 MaxD := 100;
 MaxNorm := 5;
 MaxCoefs := 5; //Beware of large fundamental units...
-NbTests := 50;
+NbTests := 100;
 
 function RandomField()
     D := Random(MaxD);
@@ -99,8 +99,8 @@ procedure TestCuspResolutionMV()
                                 GammaType := GammaType, GroupType := GroupType);
     GMV_gens := GeneratorsOfGMV(M, V);
     samples := SamplesOfLevelSubgroup(b, n: GammaType:=GammaType, GroupType:=GroupType);
-
-    if true then
+    //Do not use samples in check: we really need samples in stabilizer
+    if false then
         print "Entering new test";
         print GammaType;
         print GroupType;
@@ -113,24 +113,15 @@ procedure TestCuspResolutionMV()
     assert g[2,1]*alpha + g[2,2]*beta eq 0;
 
     test := [g^(-1)*y*g: y in GMV_gens];
-    print "Now testing:";
     for i:=1 to #GMV_gens do
-        print GMV_gens[i];
-        print test[i];
-        print "";
         if not IsInLevelSubgroup(b, n, test[i]: GammaType:=GammaType, GroupType:=GroupType) then
-            print "WRONG!";
-            error "";
+            error "WRONG!";
         end if;
     end for;
     test := [g*x*g^(-1): x in samples];
     for i:=1 to #samples do
-        print samples[i];
-        print test[i];
-        print "";
         if test[i][2,1] eq 0 and not IsInGMV(M, V, test[i]) then
-            print "WRONG!";
-            //error "";
+            //error "WRONG!";
         end if;
     end for;    
 end procedure;
@@ -272,52 +263,3 @@ for i in [1..#cc] do
                                          GammaType:="Gamma0", GroupType:="SL2");
     assert EqUpToCyclicPermutation(L, [-2,-5,-2]) and nb eq 1;
 end for;
-
-//-----------------------------------------------//
-
-/*
-//Example with two cusps for Gamma(1)
-K<sqrt5> := QuadraticField(5);
-ZK<phi> := Integers(K);
-p := PrimeIdealsOverPrime(K, 31)[1];
-cusps := Cusps(p, 1*ZK : GammaType := "Gamma1");
-cusps0 := Cusps(p, 1*ZK: GammaType := "Gamma0");
-assert [Eltseq(v[3]): v in cusps] eq [Eltseq(v[3]): v in cusps0];
-b := 1*ZK;
-
-//Get coordinates of cusps
-alpha1, beta1 := Explode(Coordinates(cusps[1][3]));
-alpha2, beta2 := Explode(Coordinates(cusps[2][3]));
-
-//Normalize
-alpha1, beta1 := NormalizeCusp(b, p, alpha1, beta1);
-alpha2, beta2 := NormalizeCusp(b, p, alpha2, beta2);
-
-g1 := CuspChangeMatrix(b, alpha1, beta1);
-g2 := CuspChangeMatrix(b, alpha2, beta2);
-
-TestCuspChangeMatrix(b, p, alpha1, beta1: GammaType:="Gamma0");
-L, nb := CuspResolutionIntersections(b, p, alpha1, beta1: GammaType:="Gamma0");
-TestCuspChangeMatrix(b, p, alpha2, beta2: GammaType:="Gamma0");
-L, nb := CuspResolutionIntersections(b, p, alpha2, beta2: GammaType:="Gamma0");
-TestCuspChangeMatrix(b, p, alpha1, beta1: GammaType:="Gamma1");
-L, nb := CuspResolutionIntersections(b, p, alpha1, beta1: GammaType:="Gamma1");
-TestCuspChangeMatrix(b, p, alpha2, beta2: GammaType:="Gamma1");
-L, nb := CuspResolutionIntersections(b, p, alpha2, beta2: GammaType:="Gamma1");
-
-v := false;
-//Try a higher, composite level
-q := PrimeIdealsOverPrime(K, 5)[1];
-n := p^2*q^2;
-for T in ["Gamma0", "Gamma1"] do
-    cusps := Cusps(n, 1*ZK: GammaType := T);
-    for c in cusps do
-	if v then print "Cusp number", Index(cusps, c); end if;
-	alpha, beta := Explode(Coordinates(c[3]));
-	alpha, beta := NormalizeCusp(b, n, alpha, bet);
-	if v then print alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q); end if;
-	TestCuspChangeMatrix(b, n, alpha, beta: GammaType:=T);
-	L := CuspResolutionIntersections(b, n, alpha, beta: GammaType:=T);
-    end for;
-end for;
-*/

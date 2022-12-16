@@ -8,11 +8,10 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
-  l := 0;
+  l := 0;  
   for cusp in cusps do
-      alpha, beta := NormalizeCusp(F, cusp[3][1], cusp[3][2], Level(Gamma));
-      L,n := CuspResolutionIntersections(F, cusp[1], Level(Gamma), alpha, beta
-					: GammaType := GammaType(Gamma));
+      alpha, beta := NormalizeCusp(cusp[1], Level(Gamma), cusp[3][1], cusp[3][2]);
+      L,n := CuspResolutionIntersections(Gamma, alpha, beta);
       l +:= #L * n;
   end for;
   
@@ -56,9 +55,8 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   // get cusp contribution
   cusp_chern := 0;
   for cusp in cusps do
-      alpha, beta := NormalizeCusp(F, cusp[3][1], cusp[3][2], Level(Gamma));
-      L,n := CuspResolutionIntersections(F, cusp[1], Level(Gamma), alpha, beta
-					: GammaType := GammaType(Gamma));
+      alpha, beta := NormalizeCusp(cusp[1], Level(Gamma), cusp[3][1], cusp[3][2]);
+      L,n := CuspResolutionIntersections(Gamma, alpha, beta);
       if (n eq 1) and (#L eq 1) then
 	  cusp_chern +:= L[1];
       else
