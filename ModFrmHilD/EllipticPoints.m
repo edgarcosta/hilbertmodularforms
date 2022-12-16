@@ -38,7 +38,7 @@ intrinsic ArtinSymbol(ZK::RngOrd, pp::RngOrdIdl) -> RngIntElt
     vprintf HilbertModularForms,1: "%o,%o,%o", ZK, pp, BaseRing(ZK);
     if not IsPrime(pp) then
 	fac := Factorization(pp);
-	return &*([1] cat [ArtinSymbol(fac, p[1]) : p in fac | IsOdd(p[2])]);
+	return &*([1] cat [ArtinSymbol(ZK, p[1]) : p in fac | IsOdd(p[2])]);
     end if;
     if IsSplit(pp,ZK) then return 1;
     elif IsRamified(pp,ZK) then return 0;
@@ -496,7 +496,8 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	    // Check which signs occur (CM types)
 	    is_unr := IsUnramified(K);
 	    if is_unr then
-		sign := ArtinSymbol(Integers(K), Component(Gamma));
+		a := SteinitzClass(Module(S));
+		sign := ArtinSymbol(Integers(K), a*Component(Gamma));
 		if (sign eq 1) then 
 		    num_plus := total_num;
 		    num_minus := 0;
