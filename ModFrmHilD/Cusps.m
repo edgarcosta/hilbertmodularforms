@@ -285,9 +285,14 @@ intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::List) -> MonStgElt
 
     bb, MM, pt := Explode(elt);
     alpha, beta := Explode(Eltseq(pt));
-    alpha, beta := NormalizeCusp(BaseField(G), alpha, beta, Level(G));
-    P1 := Parent(pt);
-    cf, p := CuspResolutionIntersections(G, P1![alpha, beta]);
+    // bb might diffger from Component(G)
+    alpha, beta := NormalizeCusp(bb, Level(G), alpha, beta);
+    if AmbientType(G) eq GLPlus_Type then
+      GroupType := "GL2+";
+    elif AmbientType(G) eq SL_Type then
+      GroupType := "SL2";
+    end if;
+    cf, p := CuspResolutionIntersections(bb, Level(G), alpha, beta: GroupType:=GroupType, GammaType:=GammaType(G));
     ptstr := StripWhiteSpace(Sprint([Eltseq(elt) : elt in [alpha, beta]]));
     return Join([LMFDBLabel(G), LMFDBLabel(bb), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
 end intrinsic;
