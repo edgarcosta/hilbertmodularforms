@@ -15,7 +15,7 @@ if not IsFundamentalDiscriminant(D) then
 end if;
 
 if not assigned MaxLevelNorm then
-  print "Missing argument MaxLevelNorm";
+  print "Missing argument MaxLevel";
   exit 1;
 end if;
 MaxLevelNorm := StringToInteger(MaxLevelNorm);
@@ -37,7 +37,10 @@ assert GammaType in ["Gamma", "Gamma0", "Gamma1"];
 F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
 _, mp := NarrowClassGroup(F);
 narrow_reps := IdealRepsMapDeterministic(F, mp);
-for NN in IdealsUpTo(MaxLevelNorm, F) do
+ideals := IdealsUpTo(MaxLevelNorm, F);
+labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in ideals];
+ParallelSort(~labels, ~ideals);
+for NN in ideals do
     for bb in narrow_reps do
         G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
         for c in Cusps(G) do
