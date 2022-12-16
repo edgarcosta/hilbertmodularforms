@@ -455,7 +455,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
     // In the notation of JV, the number of embeddings of S into O, up to conjugation
     // by Gamma is m(S, O; Gamma).
 
-    F  := Field(Gamma);
+    F  := BaseField(Gamma);
     ZF := MaximalOrder(F);
     hF := ClassNumber(ZF);
     hFplus := NarrowClassNumber(F);

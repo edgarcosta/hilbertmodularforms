@@ -2,7 +2,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
-  F := Field(Gamma);
+  F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [8,12];
  
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
@@ -47,7 +47,7 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
-  F := Field(Gamma);
+  F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [8,12];
   
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
@@ -108,6 +108,19 @@ intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
   h_3 := h_1;
   h_4 := h_0;
   return [h_0, h_1, h_2, h_3, h_4];
+end intrinsic;
+
+// TODO
+intrinsic KodairaDimension(Gamma::GrpHilbert) -> MonStgElt
+  {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma. Currently just returns -100}
+  return -100; // FIXME
+end intrinsic;
+
+// IO
+intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
+  {Script for writing geometric invariants to data table row. Format is label:Kodaira-dimension:[h^[2,0], h^[1,1]].}
+  h2 := HodgeDiamond(Gamma)[3];
+  return Join([Label(Gamma), KodairaDimension(Gamma), HodgeDiamond(Gamma)[3][1..2]], ":");
 end intrinsic;
 
 intrinsic vanderGeerTable( : Discriminants := []) -> List

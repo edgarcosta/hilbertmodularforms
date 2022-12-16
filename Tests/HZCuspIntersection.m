@@ -7,19 +7,7 @@ procedure testHZ(D, bs, mults)
             results:= HZCuspIntersection(F, t, N, b);
             for i->res in results do
                 pass := false;
-                for k in [1..#res] do
-                    if mults[b][t][i] eq res[k+1..#res] cat res[1..k] then
-                        pass := true;
-                        break k;
-                    end if;
-                end for;
-                if not pass then
-                    print &*["#": _ in [1..80]];
-                    printf "\nFails for\nD=%o\nb=%o\nt=%o\n", D, IdealOneLine(b), t;
-                    print HZCuspIntersection(F, t, N, b), "=!=", mults[b][t];
-                    print &*["#": _ in [1..80]];
-                    assert false;
-                end if;
+                assert CanonicalCyclicShift(res) eq CanonicalCyclicShift(mults[b][t][i]);
             end for;
         end for;
     end for;

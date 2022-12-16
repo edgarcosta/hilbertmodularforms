@@ -1023,14 +1023,14 @@ end intrinsic;
 intrinsic ChernNumbersOfMinimalResolution(M::ModFrmHilDGRng, N::RngOrdIdl) -> SeqEnum
 {Returns a tuple <c1^2, c2> corresponding to the Chern numbers of the
 minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
-    Gamma := CongruenceSubgroup(Field(M), N);
+    Gamma := CongruenceSubgroup(BaseField(M), N);
     return ChernNumbersOfMinimalResolution(Gamma);
 end intrinsic;
 
 
 intrinsic VolumeOfFundamentalDomain(M::ModFrmHilDGRng, N::RngOrdIdl) -> ChowRngHMS
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
-    Gamma := CongruenceSubgroup(Field(M), N);
+    Gamma := CongruenceSubgroup(BaseField(M), N);
     return VolumeOfFundamentalDomain(Gamma);
 end intrinsic;
 
@@ -1118,10 +1118,10 @@ end intrinsic;
 intrinsic VolumeOfFundamentalDomain(Gamma::GrpHilbert) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     case AmbientType(Gamma):
-    when GLPlus_Type: gfactor := 1/IndexOfTotallyPositiveUnitsModSquares(Field(Gamma));
-    when SL_Type: gfactor:=1;
+        when GLPlus_Type: gfactor := 1/IndexOfTotallyPositiveUnitsModSquares(BaseField(Gamma));
+        when SL_Type: gfactor:=1;
     end case;
-    return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1) * gfactor;
+    return 2 * Index(Gamma) * DedekindZetaExact(BaseField(Gamma), -1) * gfactor;
 end intrinsic;
 
 intrinsic ChernNumbersOfLogCanonical(Gamma::GrpHilbert) -> FldRatElt, FldRatElt
