@@ -44,21 +44,22 @@ for d in ds do
 end for;
 
 ds := [d : d in [2..500] | IsFundamentalDiscriminant(d)];
+ds := [d : d in ds | d notin [8,12]];
 DN_bound := 500;
 printf "Testing integrality of genus for some random (disc,level,comp)...";
 for _ in [1..10] do
     d := Random(ds);
     F := QuadraticField(d);
-    N := Random(IdealsUpTo(Floor(DN_bound/d),F));
+    N := Random(IdealsUpTo(Floor(DN_bound/d),F : CoprimeTo := 3*d*ZF));
     ZF := Integers(F);
     cg, cg_map := NarrowClassGroup(F);
     b := Random(cg);
     B := cg_map(b);
+    printf "(%o,%o,%o),", d,IdealOneLine(N),IdealOneLine(B);
     a := CoprimeNarrowRepresentative(B,N);
     assert IsTotallyPositive(a);
     assert a*B + N eq 1*Order(N);
-    B := a*B;
-    printf "(%o,%o,%o),", d,IdealOneLine(N),IdealOneLine(B);
+    B := a*B;    
     G_SL := CongruenceSubgroup("SL", "Gamma0", F, N, B);
     chi := ArithmeticGenus(G_SL);
     assert IsIntegral(chi);

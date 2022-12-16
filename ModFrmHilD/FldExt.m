@@ -83,12 +83,17 @@ intrinsic CoprimeNarrowRepresentative(I::RngQuadIdl, J::RngQuadIdl) -> RngOrdFra
     q := CoprimeRepresentative(I, J);
 
     // Nothing to do if K is imaginary or we already chose a good element.
-    if Norm(q) gt 0 or Discriminant(K) lt 0 then return q; end if;
+    if Signature(q) eq [1,1] or Discriminant(K) lt 0 then return q; end if;
+    if Signature(q) eq [-1,-1] then return -q; end if;
 
     // Otherwise, we have chosen a bad element, so must correct the signs.
-    z := K.1;
+    z := Sqrt(K!Discriminant(Integers(K)));
     require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
     assert IsIntegral(z);
+    
+    if Signature(z) ne Signature(q) then
+	z := -z;
+    end if;
 
     NJ := Norm(J);
     d := GCD(Integers() ! Norm(z), NJ);
