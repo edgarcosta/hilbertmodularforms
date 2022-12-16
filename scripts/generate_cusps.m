@@ -14,7 +14,7 @@ if not IsFundamentalDiscriminant(D) then
   exit 0;
 end if;
 
-MaxLevelNorm := Ceiling(500/D);
+MaxLevelNorm := Ceiling(1000/D);
 
 if not assigned AmbientType then
   print "Missing argument AmbientType";
