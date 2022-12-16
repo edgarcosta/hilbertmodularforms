@@ -177,3 +177,14 @@ intrinsic JoinString(list::SeqEnum[MonStgElt], sep::MonStgElt) -> MonStgElt
   end for;
   return s;
 end intrinsic;
+
+// General convenience.
+
+intrinsic QuadraticFields(low::RngIntElt, high::RngIntElt : ExcludeBad:=false) -> SeqEnum
+{List all quadratic fields of discriminants between low and high.}
+    quadraticFields := Setseq({QuadraticField(D) : D in [low..4*high] | IsSquarefree(D)});
+    Sort(~quadraticFields, func<x,y | Discriminant(x) - Discriminant(y)>);
+    quadraticFields := [K : K in quadraticFields |
+                        Discriminant(K) le high and Discriminant(K) ge low];
+    return quadraticFields;
+end intrinsic;

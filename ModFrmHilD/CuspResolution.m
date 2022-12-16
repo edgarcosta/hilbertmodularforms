@@ -331,7 +331,7 @@ intrinsic RepeatSequence(l :: SeqEnum, n :: RngIntElt) -> SeqEnum
     return &cat[l : x in [1..n]];
 end intrinsic;
 
-
+// this is the top-level function
 intrinsic CuspResolutionIntersections(G::GrpHilbert, p::Pt) -> SeqEnum, RngIntElt
 {}
     K := BaseField(G);

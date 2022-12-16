@@ -16,7 +16,7 @@ OrderTermRecordFormat := recformat<Order, Conductor, PicardNumber, HasseUnitInde
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> Any
+intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> SeqEnum
 {}
     // UF  -- Unit group of ground field F.
     // mUF -- The map.
@@ -32,13 +32,26 @@ intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> Any
     return TotallyPositiveUnits;
 end intrinsic;
 
+intrinsic TotallyPositiveUnitsModSquaresRepresentatives(F::FldNum) -> SeqEnum
+{}
+    ZF := MaximalOrder(F);
+    UF, mUF := UnitGroup(F);
+    return TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);    
+end intrinsic;
+
+intrinsic IndexOfTotallyPositiveUnitsModSquares(F::FldNum) -> RngIntElt
+{}
+    UF, mUF := UnitGroup(MaximalOrder(F));
+    return #TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);
+end intrinsic;
+
 // Artin Symbol
 intrinsic ArtinSymbol(ZK::RngOrd, pp::RngOrdIdl) -> RngIntElt
 {.}
     vprintf HilbertModularForms,1: "%o,%o,%o", ZK, pp, BaseRing(ZK);
     if not IsPrime(pp) then
 	fac := Factorization(pp);
-	return &*([1] cat [ArtinSymbol(fac, p[1]) : p in fac | IsOdd(p[2])]);
+	return &*([1] cat [ArtinSymbol(ZK, p[1]) : p in fac | IsOdd(p[2])]);
     end if;
     if IsSplit(pp,ZK) then return 1;
     elif IsRamified(pp,ZK) then return 0;
@@ -490,20 +503,21 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             end if;
 
             // Record the data into the table.
-	    total_num := Integers()!(hS * groupCorrectionFactor * localCount);
+	    total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
 	    K := NumberField(S);
 
 	    // Check which signs occur (CM types)
 	    is_unr := IsUnramified(K);
 	    if is_unr then
-		sign := ArtinSymbol(Integers(K), Component(Gamma));
+		a := SteinitzClass(Module(S));
+		sign := ArtinSymbol(Integers(K), a*Component(Gamma));
 		if (sign eq 1) then 
-		    num_plus := total_num;
+		    num_plus  := total_num;
 		    num_minus := 0;
 		else
-		    num_minus := total_num;
-		    num_plus := 0;
-	    end if;
+		    num_plus  := 0;
+		    num_minus := total_num;                    
+		end if;
 	    else
 		assert IsEven(total_num);
 		num_plus := total_num div 2;
@@ -523,15 +537,32 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
     return ellipticCounts, ellipticCountsByOrder;    
 end intrinsic;
 
-intrinsic NewEllipticPointData(G::StupidCongruenceSubgroup) -> Assoc
+
+function ConvertRotationLabel(order, rot_factor)
+    // Convert the rotation factor to the elliptic point type
+    // in Theorem~2.5 of van der Geer.
+    case rot_factor:
+    when [1,1]: return <order, 1, 1>;
+    when [2,1]: return <order, 1, -1>;
+    end case;
+    error "Not implemented for rotation factor:", rot_factor;
+end function;
+    
+intrinsic _EllipticPointData0(G::GrpHilbert) -> Assoc
 {}
-    blah := CountEllipticPoints(G);
+    Counts := CountEllipticPoints(G);
 
     // Do some post processing.
-    return blah;
+    Data := AssociativeArray();
+    for order in Keys(Counts) do
+        for factor in Keys(Counts[order]) do
+            Data[ConvertRotationLabel(order, factor)] := Counts[order][factor];
+        end for;
+    end for;
+
+    return Data;
 end intrinsic;
 
-                    
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -539,10 +570,10 @@ end intrinsic;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic _FieldAndGroup(n) -> Any
+intrinsic _FieldAndGroup(n : Group:="SL") -> Any
 {}
     F := QuadraticField(n);
-    G := CongruenceSubgroup(F);
+    G := CongruenceSubgroup(Group, F);
     return F, G;
 end intrinsic;
 
@@ -557,10 +588,12 @@ end intrinsic;
 
 intrinsic TestECGL(n)
 {}
-    F, G := _FieldAndGroup(n);
-    A, B := CountEllipticPoints(G : Group:="GL+");
-    print "Results:";
-    print Eltseq(A);
+    F, G := _FieldAndGroup(n : Group:="GL+");
+    A, B := CountEllipticPoints(G);
+    print "Numbers of elliptic points:";
+    print "a2", Eltseq(A[2]);
+    print "a3", Eltseq(A[3]);
+    print ArithmeticGenus(G);
     // print Eltseq(B);
 end intrinsic;
 

@@ -1,4 +1,3 @@
-
 /////////////////////////////////////////////////////
 //
 //    Type Hook
@@ -23,6 +22,7 @@ GAMMA_0_Type := "Gamma0";
 GAMMA_1_Type := "Gamma1";
 
 declare type GrpHilbert;
+
 declare attributes GrpHilbert :
   AmbientType,
   BaseField,
@@ -43,11 +43,11 @@ end intrinsic;
 
 // Main constructor from which all else is derivedn
 intrinsic CongruenceSubgroup(
-AmbientType::MonStgElt,
-GammaType::MonStgElt,
-F::FldNum,
-N::RngOrdIdl,
-B::RngOrdIdl)
+              AmbientType::MonStgElt,
+              GammaType::MonStgElt,
+              F::FldNum,
+              N::RngOrdIdl,
+              B::RngOrdIdl)
           -> GrpHilbert
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
 The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
@@ -59,15 +59,16 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     Gamma`Level := N;
     Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
     case GammaType:
-        when "Gamma" : Gamma`GammaType := GAMMA_Type;
+        when "Gamma"  : Gamma`GammaType := GAMMA_Type;
         when "Gamma0" : Gamma`GammaType := GAMMA_0_Type;
+                        Gamma`Index := #ProjectiveLine(quo<Integers(F) | N>);
         when "Gamma1" : Gamma`GammaType := GAMMA_1_Type;
     else
         error "Gamma type not supported.";
     end case;
 
     case AmbientType:
-        when "SL": Gamma`AmbientType := SL_Type;
+        when "SL" : Gamma`AmbientType := SL_Type;
         when "GL+": Gamma`AmbientType := GLPlus_Type;
     else
         error "Ambient type not supported.";
@@ -76,22 +77,32 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     return Gamma;
 end intrinsic;
 
+intrinsic CongruenceSubgroup(AmbType::MonStgElt, F::FldNum, N::RngOrdIdl, B::RngOrdIdl)
+          -> GrpHilbert
+{}
+    return CongruenceSubgroup(AmbType, "Gamma", F, N, B);
+end intrinsic;
+
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {}
     return CongruenceSubgroup("SL", "Gamma", F, N, B);
 end intrinsic;
 
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl) -> GrpHilbert
-{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.}
+{}
     return CongruenceSubgroup(F, N, 1*MaximalOrder(F));
 end intrinsic;
 
-
 intrinsic CongruenceSubgroup(F::FldNum) -> GrpHilbert
-{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.}
+{}
     return CongruenceSubgroup(F, 1*Integers(F));
 end intrinsic;
 
+intrinsic CongruenceSubgroup(AmbType::MonStgElt, F::FldNum) -> GrpHilbert
+{}
+    ZF := MaximalOrder(F);
+    return CongruenceSubgroup(AmbType, F, 1*ZF, 1*ZF);
+end intrinsic;
 
 // Gamma0
 
@@ -112,7 +123,6 @@ intrinsic Gamma0(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 end intrinsic;
 
 
-
 intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
     return Gamma0(F, N, 1*Integers(F));
@@ -124,8 +134,6 @@ intrinsic Gamma0(F::FldNum) -> GrpHilbert
 {Return the Hilbert Modular group over `F`.}
     return Gamma0(F, 1*MaximalOrder(F));
 end intrinsic;
-
-
 
 
 intrinsic Gamma1(AmbientType::MonStgElt, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
@@ -155,12 +163,6 @@ intrinsic Gamma1(F::FldNum) -> GrpHilbert
 end intrinsic;
 
 
-
-
-
-
-
-
 /////////////////// Printing ///////////////////
 
 intrinsic Print(Gamma::GrpHilbert)
@@ -171,7 +173,7 @@ intrinsic Print(Gamma::GrpHilbert)
     printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
     print "Gamma Type:", GammaType(Gamma);
-    print "Supergroup:", GammaType(Gamma);
+    print "Supergroup:", AmbientType(Gamma);
     return;
 end intrinsic;
 
@@ -223,7 +225,8 @@ intrinsic 'eq'(Gamma1::GrpHilbert, Gamma2::GrpHilbert) -> BoolElt
 {}
     return (BaseField(Gamma1) eq BaseField(Gamma2) and
       Level(Gamma1) eq Level(Gamma2) and
-      Index(Gamma1) eq Index(Gamma2));
+      Index(Gamma1) eq Index(Gamma2)) and
+      AmbientType(Gamma1) eq AmbientType(Gamma2);
 end intrinsic;
 
 
@@ -244,9 +247,22 @@ by
 where zeta_r is a primitive r-th root of unity. The quantity A[<r, a, b>] is the number of
 elliptic points of this type up to congugacy in Gamma.
 }
-
     if assigned Gamma`EllipticPointData then return Gamma`EllipticPointData; end if;
 
+    if GammaType(Gamma) eq GAMMA_Type and AmbientType(Gamma) eq SL_Type then
+        return _EllipticPointDataFullLevel(Gamma);
+    elif GammaType(Gamma) eq GAMMA_0_Type then
+        return _EllipticPointData0(Gamma);
+    elif GammaType(Gamma) eq GAMMA_Type and IsPrincipalCongruenceSubgroup(Gamma) then
+        return _EllipticPointData0(Gamma);
+    else
+        error "Function not implemented for Gamma type:", GammaType(Gamma);
+    end if;
+end intrinsic;
+
+intrinsic _EllipticPointDataFullLevel(Gamma::GrpHilbert) -> Assoc
+{Use the formulas in van der Geer's book to compute the number and types of the elliptic 
+points.}
     // This method relies on the tables of van der Geer for the most part. Given a level "N",
     // we first rely on the comment in [vdG, p. 109].
 
@@ -268,7 +284,7 @@ elliptic points of this type up to congugacy in Gamma.
 
     ellipticData := AssociativeArray();
     if IsPrincipalCongruenceSubgroup(Gamma) and N^2 notin [1*ZK, 2*ZK, 3*ZK] then
-  return ellipticData;
+        return ellipticData;
     end if;
 
     // TODO: XXX: Properly implement elliptic points for arbitrary congruence subgroups.
@@ -462,6 +478,8 @@ end intrinsic;
 intrinsic IndexOfGamma0(F::FldNum, N::RngOrdIdl) -> RngIntElt
 {Return the index of the principal congruence subgroup of level `N` within the
 full Hilbert modular group.}
+    return #ProjectiveLine(quo< Integers(F) | N>);
+/*
     n := Norm(N);
     if n eq 1 then return 1; end if;
 
@@ -471,6 +489,7 @@ full Hilbert modular group.}
         index *:= (q + 1);
     end for;
     return index;
+*/
 end intrinsic;
 
 intrinsic IndexOfGamma1(F::FldNum, N::RngOrdIdl) -> RngIntElt
