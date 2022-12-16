@@ -14,11 +14,7 @@ if not IsFundamentalDiscriminant(D) then
   exit 0;
 end if;
 
-if not assigned MaxLevelNorm then
-  print "Missing argument MaxLevel";
-  exit 1;
-end if;
-MaxLevelNorm := StringToInteger(MaxLevelNorm);
+MaxLevelNorm := Ceiling(500/D);
 
 if not assigned AmbientType then
   print "Missing argument AmbientType";
