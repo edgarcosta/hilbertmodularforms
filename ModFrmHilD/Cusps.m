@@ -260,6 +260,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
   ZF := Order(NN);
   F := NumberField(ZF);
+  require NN + bb eq 1*ZF : "Level and component must be coprime";
   PP1 := ProjectiveSpace(F,1);
   quads := CuspQuadruples(NN, bb : GammaType := GammaType);
   cusps_seq := [];
@@ -271,6 +272,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
     vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
+    //TODO: remove bb?
     Append(~cusps_seq, [* bb, MM, PP1![a,c] *]);
   end for;
   return cusps_seq;
