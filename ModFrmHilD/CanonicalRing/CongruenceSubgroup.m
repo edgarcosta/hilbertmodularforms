@@ -59,6 +59,7 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     case GammaType:
         when "Gamma"  : Gamma`GammaType := GAMMA_Type;
         when "Gamma0" : Gamma`GammaType := GAMMA_0_Type;
+			Gamma`Index := #ProjectiveLine(quo<Integers(F) | N>);
         when "Gamma1" : Gamma`GammaType := GAMMA_1_Type;
     else
         error "Gamma type not supported.";
@@ -464,6 +465,8 @@ end intrinsic;
 intrinsic IndexOfGamma0(F::FldNum, N::RngOrdIdl) -> RngIntElt
 {Return the index of the principal congruence subgroup of level `N` within the
 full Hilbert modular group.}
+    return #ProjectiveLine(quo< Integers(F) | N>);
+/*
     n := Norm(N);
     if n eq 1 then return 1; end if;
 
@@ -473,6 +476,7 @@ full Hilbert modular group.}
         index *:= (q + 1);
     end for;
     return index;
+*/
 end intrinsic;
 
 intrinsic IndexOfGamma1(F::FldNum, N::RngOrdIdl) -> RngIntElt

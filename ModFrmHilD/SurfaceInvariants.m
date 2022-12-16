@@ -3,7 +3,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
   F := Field(Gamma);
-  assert Discriminant(Integers(F)) notin [5,8,12];
+  assert Discriminant(Integers(F)) notin [8,12];
  
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -11,7 +11,8 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   l := 0;
   for cusp in cusps do
       alpha, beta := NormalizeCusp(F, cusp[3][1], cusp[3][2], Level(Gamma));
-      L,n := CuspResolutionIntersections(F, cusp[1], Level(Gamma), alpha, beta);
+      L,n := CuspResolutionIntersections(F, cusp[1], Level(Gamma), alpha, beta
+					: GammaType := GammaType(Gamma));
       l +:= #L * n;
   end for;
   
@@ -48,7 +49,7 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
   F := Field(Gamma);
-  assert Discriminant(Integers(F)) notin [5,8,12];
+  assert Discriminant(Integers(F)) notin [8,12];
   
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -56,21 +57,24 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   cusp_chern := 0;
   for cusp in cusps do
       alpha, beta := NormalizeCusp(F, cusp[3][1], cusp[3][2], Level(Gamma));
-      L,n := CuspResolutionIntersections(F, cusp[1], Level(Gamma), alpha, beta);
-      cusp_chern +:= n*(&+[2+b : b in L]);
+      L,n := CuspResolutionIntersections(F, cusp[1], Level(Gamma), alpha, beta
+					: GammaType := GammaType(Gamma));
+      if (n eq 1) and (#L eq 1) then
+	  cusp_chern +:= L[1];
+      else
+	  cusp_chern +:= n*(&+[2+b : b in L]);
+      end if;
   end for;
   // get elliptic points contribution
-  // a := EllipticPointCounts(Gamma);
-  // a2 := a[<2,1,1>];
-  // a3_plus := a[<3,1,1>];
-  // a3_minus := a[<3,2,1>];
-  // a2, a3_plus, a3_minus := get_elliptic_counts(Gamma);
   a := CountEllipticPoints(Gamma);
-  a2 := a[2][[1,1]];
   a3_plus := a[3][[1,1]];
-  a3_minus := a[3][[2,1]];
+  if IsDefined(a,5) then
+      a5 := a[5][[2,1]] + a[5][[3,1]];
+  else
+      a5 := 0;
+  end if;
   
-  elliptic := a3_plus * (-1/3);
+  elliptic := a3_plus * (-1/3) + a5 * (-2/5);
   k2 := 2*vol + cusp_chern + elliptic;
   assert IsIntegral(k2);
   k2 := Integers()!k2;
@@ -105,5 +109,5 @@ intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
   h_2 := [p_g, e - 2*chi, p_g];
   h_3 := h_1;
   h_4 := h_0;
-  return [h_1, h_2, h_3, h_4];
+  return [h_0, h_1, h_2, h_3, h_4];
 end intrinsic;
