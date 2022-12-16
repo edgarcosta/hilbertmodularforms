@@ -24,14 +24,15 @@ GAMMA_1_Type := "Gamma1";
 
 declare type GrpHilbert;
 declare attributes GrpHilbert :
-  BaseField,
   AmbientType,
-  PrintString,
-  Level,
-  Index,
-  EllipticPointData,
+  BaseField,
   ComponentIdeal,
-  GammaType;
+  EllipticPointData,
+  GammaType,
+  Index,
+  LMFDBlabel,
+  Level,
+  PrintString;
 
 /////////////////// Creation ///////////////////
 
@@ -531,11 +532,9 @@ intrinsic Cusps(Gamma::GrpHilbert) -> SeqEnum
 {Return the cusps of X_Gamma as a sequence of points in a projective space.}
   NN := Level(Gamma);
   bb := Component(Gamma);
-  //if bb + NN ne Order(NN) then
-  //  _, mp := NarrowClassGroup(Number
-  //  rbb := bb@@mp;
-  //  new_bb := [mp2(g)  : g in Domain(mp2) | mp2(g)@@Nmp eq rbb][1];
-  //  assert IsNarrowlyPrincipal(new_bb * bb^-1);
-  //end if;
+  if GCD(bb,NN) eq 1*Integers(BaseField(Gamma))  then
+    scalar := CoprimeNarrowRepresentative(bb, NN);
+    bb *:= scalar;
+  end if;
   return Cusps(NN, bb : GammaType := GammaType(Gamma));
 end intrinsic;

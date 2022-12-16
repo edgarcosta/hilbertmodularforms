@@ -38,14 +38,17 @@ end intrinsic;
 
 
 intrinsic LMFDBLabel(G::GrpHilbert) -> MonStgElt
- {LMFDB label for the congruence subgroups associated to Hilbert modular forms}
- F := BaseField(G);
- field_label := LMFDBLabel(F);
- level_label := LMFDBLabel(Level(G));
- Cl, mp := NarrowClassGroup(F);
- mpdet := IdealRepsMapDeterministic(F, mp);
- comp_label := LMFDBLabel(mpdet[ComponentIdeal(G) @@ mp]);
- ambient_label := AmbientTypeLabel(AmbientType(G));
- gamma_label := GammaTypeLabel(GammaType(G));
- return Join([field_label, level_label, comp_label, ambient_label, gamma_label], "-");
+  {LMFDB label for the congruence subgroups associated to Hilbert modular forms}
+  if not assigned G`LMFDBlabel then
+      F := BaseField(G);
+      field_label := LMFDBLabel(F);
+      level_label := LMFDBLabel(Level(G));
+      Cl, mp := NarrowClassGroup(F);
+      mpdet := IdealRepsMapDeterministic(F, mp);
+      comp_label := LMFDBLabel(mpdet[ComponentIdeal(G) @@ mp]);
+      ambient_label := AmbientTypeLabel(AmbientType(G));
+      gamma_label := GammaTypeLabel(GammaType(G));
+      G`LMFDBlabel := Join([field_label, level_label, comp_label, ambient_label, gamma_label], "-");
+  end if;
+  return G`LMFDBlabel;
 end intrinsic;
