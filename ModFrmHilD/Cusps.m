@@ -260,7 +260,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   {}
   ZF := Order(NN);
   F := NumberField(ZF);
-  require NN + bb eq 1*ZF : "Level and component must be coprime";
+  require GCD(NN,bb) eq 1*ZF : "Level and component must be coprime";
   PP1 := ProjectiveSpace(F,1);
   quads := CuspQuadruples(NN, bb : GammaType := GammaType);
   cusps_seq := [];
@@ -273,15 +273,23 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
     vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
     //FIXME: remove bb, as it is part of the input
+    //but Cusps(Gamma::GrpHilbert) might want to keep track of the choice of bb
+    // https://github.com/edgarcosta/hilbertmodularforms/issues/253
     Append(~cusps_seq, [* bb, MM, PP1![a,c] *]);
   end for;
   return cusps_seq;
 end intrinsic;
 
-intrinsic WriteCuspDataToRow(surface_label::MonStgElt, pt::Pt, bb::RngOrdIdl, MM::RngOrdIdl, min_period::SeqEnum, rep::RngIntElt) -> MonStgElt
+intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::List) -> MonStgElt
   {Script for writing cusp data to data table row}
 
-  return Sprintf("%o|%o|%o|%o|%o|%o", surface_label, Eltseq(pt), LMFDBLabel(bb), LMFDBLabel(MM), min_period, rep);
+    bb, MM, pt := Explode(elt);
+    alpha, beta := Explode(Eltseq(pt));
+    alpha, beta := NormalizeCusp(BaseField(G), alpha, beta, Level(G));
+    P1 := Parent(pt);
+    cf, p := CuspResolutionIntersections(G, P1![alpha, beta]);
+    ptstr := StripWhiteSpace(Sprint([Eltseq(elt) : elt in [alpha, beta]]));
+    return Join([LMFDBLabel(G), LMFDBLabel(bb), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
 end intrinsic;
 
 // copy-pasta-ed from ModSym/Dirichlet.m and adapted for Hecke

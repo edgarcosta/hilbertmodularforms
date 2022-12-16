@@ -12,8 +12,8 @@ end intrinsic;
 intrinsic AmbientTypeLabel(AmbientType::Cat) -> MonStgElt
 { TODO }
      case AmbientType:
-        when GLPlus_Type: return "sl";
-        when SL_Type: return "gl";
+        when GLPlus_Type: return "gl";
+        when SL_Type: return "sl";
     else
         error "Ambient type not supported.";
     end case;
@@ -52,3 +52,5 @@ intrinsic LMFDBLabel(G::GrpHilbert) -> MonStgElt
   end if;
   return G`LMFDBlabel;
 end intrinsic;
+
+
