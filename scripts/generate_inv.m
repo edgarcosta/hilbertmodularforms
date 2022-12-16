@@ -13,6 +13,9 @@ D := StringToInteger(D);
 if not IsFundamentalDiscriminant(D) then
   exit 0;
 end if;
+if D in [8,12] then
+  exit 0;
+end if;
 
 MaxLevelNorm := Ceiling(1000/D);
 
@@ -31,17 +34,19 @@ assert GammaType in ["Gamma", "Gamma0", "Gamma1"];
 
 
 F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
+ZF := Integers(F);
 _, mp := NarrowClassGroup(F);
 narrow_reps := IdealRepsMapDeterministic(F, mp);
 ideals := IdealsUpTo(MaxLevelNorm, F);
 labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in ideals];
 ParallelSort(~labels, ~ideals);
 for NN in ideals do
+  if GCD(NN, 3*D*ZF) ne 1*ZF then
+    continue;
+  end if;
   for bb in narrow_reps do
     G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
-    for c in Cusps(G) do
-      print WriteCuspDataToRow(G, c);
-    end for;
+    print WriteGeometricInvariantsToRow(G);
   end for;
 end for;
 exit;

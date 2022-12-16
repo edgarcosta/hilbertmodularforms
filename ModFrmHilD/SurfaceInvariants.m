@@ -120,7 +120,11 @@ end intrinsic;
 intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
   {Script for writing geometric invariants to data table row. Format is label:Kodaira-dimension:[h^[2,0], h^[1,1]].}
   h2 := HodgeDiamond(Gamma)[3];
-  return Join([Label(Gamma), KodairaDimension(Gamma), HodgeDiamond(Gamma)[3][1..2]], ":");
+  return StripWhiteSpace(Join([
+        LMFDBLabel(Gamma),
+        Sprint(KodairaDimension(Gamma)),
+        Sprint(HodgeDiamond(Gamma)[3][1..2])
+  ], ":"));
 end intrinsic;
 
 intrinsic vanderGeerTable( : Discriminants := []) -> List
