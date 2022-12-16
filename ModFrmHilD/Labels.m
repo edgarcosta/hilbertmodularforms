@@ -19,8 +19,12 @@ intrinsic AmbientTypeLabel(AmbientType::Cat) -> MonStgElt
     end case;
 end intrinsic;
 
-intrinsic GammaTypeLabel(GammaType::Cat) -> MonStgElt
+intrinsic GammaTypeLabel(GammaType::MonStgElt) -> MonStgElt
 { TODO }
+// strings for the time being
+GAMMA_Type := "Gamma";
+GAMMA_0_Type := "Gamma0";
+GAMMA_1_Type := "Gamma1";
     case GammaType:
         when GAMMA_Type: return "f";
         when GAMMA_0_Type: return "0";
@@ -39,9 +43,9 @@ intrinsic LMFDBLabel(G::GrpHilbert) -> MonStgElt
  field_label := LMFDBLabel(F);
  level_label := LMFDBLabel(Level(G));
  Cl, mp := NarrowClassGroup(F);
- mpdet := NarrowClassGroupRepsMapDeterministic(F, Cl, mp);
- comp_label := LMFDBLabel(mpdet[mp(comp)]);
+ mpdet := IdealRepsMapDeterministic(F, mp);
+ comp_label := LMFDBLabel(mpdet[ComponentIdeal(G) @@ mp]);
  ambient_label := AmbientTypeLabel(AmbientType(G));
  gamma_label := GammaTypeLabel(GammaType(G));
- return Join("[field_label, level_label, comp_label, ambient_label, gamma_label]", "-");
+ return Join([field_label, level_label, comp_label, ambient_label, gamma_label], "-");
 end intrinsic;

@@ -527,5 +527,12 @@ end intrinsic;
 
 intrinsic Cusps(Gamma::GrpHilbert) -> SeqEnum
 {Return the cusps of X_Gamma as a sequence of points in a projective space.}
-    return Cusps(Level(Gamma), Component(Gamma) : GammaType := GammaType(Gamma));
+  NN := Level(Gamma);
+  bb := Component(Gamma);
+  //if bb + NN ne Order(NN) then
+  //  rbb := bb@@mp;
+  //  new_bb := [mp2(g)  : g in Domain(mp2) | mp2(g)@@mp eq rbb][1];
+  //  assert IsNarrowlyPrincipal(new_bb * bb^-1);
+  //end if;
+  return Cusps(NN, bb : GammaType := GammaType(Gamma));
 end intrinsic;
