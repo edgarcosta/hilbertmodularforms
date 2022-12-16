@@ -1,29 +1,29 @@
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
-  // At the moment we do not handle them. 
+  // At the moment we do not handle them.
   F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [8,12];
- 
+
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
-  l := 0;  
+  l := 0;
   for cusp in cusps do
       alpha, beta := NormalizeCusp(cusp[1], Level(Gamma), cusp[3][1], cusp[3][2]);
       L,n := CuspResolutionIntersections(Gamma, alpha, beta);
       l +:= #L * n;
   end for;
-  
+
   // get elliptic points contribution
   a := CountEllipticPoints(Gamma);
-  
+
   elliptic := 0;
-  for n in Keys(a) do 
+  for n in Keys(a) do
       for rot_factor in Keys(a[n]) do
 	  // This is ad-hoc for surfaces
 	  if rot_factor[1] eq 1 then
-	      len := 1;  
+	      len := 1;
 	  elif rot_factor[1] eq n-1 then
 	      len := n-1;
 	  elif n eq 5 then
@@ -46,10 +46,10 @@ end intrinsic;
 intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
-  // At the moment we do not handle them. 
+  // At the moment we do not handle them.
   F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [8,12];
-  
+
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
@@ -71,7 +71,7 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   else
       a5 := 0;
   end if;
-  
+
   elliptic := a3_plus * (-1/3) + a5 * (-2/5);
   k2 := 2*vol + cusp_chern + elliptic;
   assert IsIntegral(k2);
@@ -127,7 +127,7 @@ intrinsic vanderGeerTable( : Discriminants := []) -> List
   {Return the table of invariants from pp. 269-276 of van der Geer. dot and unlisted values are returned as -100. If Discriminants is nonempty, return only those rows of the table with the corresponding discriminants.}
   dot := -100;
   unk := -100; // Unlisted value.
-  table := 
+  table :=
   [*
     [* 5, -1, [1], 2, 1, 1, 1, 14, 1, dot, 1, 12, 0 *],
     [* 8, -1, [1], 2, 1, 1, 2, 15, 1, dot, 1, 13, 0 *],
