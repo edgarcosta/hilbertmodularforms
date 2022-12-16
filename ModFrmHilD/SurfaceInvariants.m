@@ -2,7 +2,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
-  F := Field(Gamma);
+  F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [8,12];
  
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
@@ -47,7 +47,7 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
-  F := Field(Gamma);
+  F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [8,12];
   
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");

@@ -152,7 +152,7 @@ end intrinsic;
 intrinsic CanonicalRepresentation(f::ModFrmHilDElt) -> Any
 {gets this in terms of basis elements}
 Mk := Parent(f);
-F := Field(f);
+F := BaseField(f);
 M := GradedRing(f);
 N := Level(f);
 

@@ -130,14 +130,14 @@ end intrinsic;
 
 
 
-intrinsic Field(f::ModFrmHilDEltComp) -> FldNum
+intrinsic BaseField(f::ModFrmHilDEltComp) -> FldNum
   {return base field of parent of f.}
-  return GradedRing(f)`Field;
+  return BaseField(GradedRing(f));
 end intrinsic;
 
-intrinsic Field(f::ModFrmHilDElt) -> FldNum
+intrinsic BaseField(f::ModFrmHilDElt) -> FldNum
   {return base field of parent of f.}
-  return GradedRing(f)`Field;
+  return BaseField(GradedRing(f));
 end intrinsic;
 
 intrinsic Level(f::ModFrmHilDEltComp) -> RngOrdIdl

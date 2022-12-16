@@ -2,8 +2,8 @@ intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,Mk::ModFrmHilD:Precision:=15) -
   {Given an HMF f of parallel weight k, returns the classical modular curve of weight nk and level NNcapQQ obtained from restricting
   the HMF to the diagonal.}
   require #SequenceToSet(Weight(Mk)) eq 1: "Only defined for parallel weight.";
-  M := Mk`Parent;
-  F := M`Field;
+  M := Parent(Mk);
+  F := BaseField(M);
   ZF := Integers(F);
   C := BaseField(F);
   R<q> := PowerSeriesRing(C);

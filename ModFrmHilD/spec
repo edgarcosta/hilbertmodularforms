@@ -13,6 +13,7 @@
   Hecke.m
   Labels.m
   LinearAlgebra.m
+  RationalFunctionsTools.m
   Restriction.m
   Space.m
   SurfaceInvariants.m
