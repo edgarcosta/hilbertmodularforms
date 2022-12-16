@@ -463,7 +463,7 @@ end intrinsic;
 intrinsic CuspResolutionIntersections(G::GrpHilbert, alpha::FldNumElt, beta::FldNumElt)
           -> SeqEnum, RngIntElt
 {}
-    K := Field(G);
+    K := BaseField(G);
     P := ProjectiveSpace(K,1);
     return CuspResolutionIntersections(G, P![alpha,beta]);
 end intrinsic;
