@@ -241,7 +241,7 @@ end function;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Old optimal embedding numbers.
+// Orders
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -413,6 +413,30 @@ function PossibleIsotropyOrders(F)
 
     return Sdiv;    
 end function;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Experimental...
+//
+////////////////////////////////////////////////////////////////////////////////
+
+intrinsic IndexOfSummation(Gamma::GrpHilbert) -> Any
+{}
+    // This is the index of summation in the trace formula. However, this
+    // is probably not what we want.
+
+    // Nevertheless, it would seem that what we do want is to 
+
+    F := Field(Gamma);
+    N := Level(Gamma);
+    ZFI := 1*MaximalOrder(F);
+    
+    // Need a Mothership for some reason.
+    M := GradedRingOfHMFs(F, 1);
+
+    return IndexOfSummation(M, N, ZFI);
+    
+end intrinsic;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
