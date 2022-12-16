@@ -76,8 +76,9 @@ intrinsic FundamentalUnitTotPos(F::FldNum) -> RngQuadElt
   return F`FundamentalUnitTotPos;
 end intrinsic;
 
-intrinsic CoprimeNarrowRepresentative(I::RngQuadIdl, J::RngQuadIdl) -> RngOrdFracIdl
-{Find a totally positive field element a such that qI is an integral ideal coprime to J; I and J must be defined over the same maximal order.}
+intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
+{Find a totally positive field element a such that qI is an integral ideal coprime to J;
+ I and J must be defined over the same maximal order.}
 
     K := NumberField(Order(I));
     q := CoprimeRepresentative(I, J);

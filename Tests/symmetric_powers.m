@@ -1,4 +1,4 @@
-
+printf "Testing SymmetricPowers...k=";
 // Algebraic data.
 K  := QuadraticField(5);
 OK := Integers(K);
@@ -12,10 +12,11 @@ R := GradedRingOfHMFs(K, prec);
 W := HMFSpace(R, P, [2,2]);
 new6 := ComplementBasis(SymmetricPower(W, 3) : Alg:="Orthogonal");
 
+printf "2 ";
 // Now try to find quadric relations.
-time sym2new6 := SymmetricPower(new6, 2);
+sym2new6 := SymmetricPower(new6, 2);
 assert #sym2new6 eq Binomial(#new6 + 1, 2); // SymmetricPower returns a basis.
 
+printf "12 ";
 // Alternatively,
 assert #Generators(Syzygies(new6, 12)) eq 0;
-return true;

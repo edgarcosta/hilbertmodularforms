@@ -1,3 +1,14 @@
+intrinsic QuadraticConjugate(elt::FldNumElt) -> FldNumElt
+ {}
+  return Trace(elt) - elt;
+end intrinsic;
+
+intrinsic CanonicalCyclicShift(s::SeqEnum[RngIntElt]) -> SeqEnum[RngIntElt]
+ { return the minimal lexicographic cyclic shift }
+ if #s eq 0 then return s; end if;
+ return Sort([s[k+1..#s] cat s[1..k] : k in [1..#s]])[1];
+end intrinsic;
+
 intrinsic Values(a::Assoc) -> List
   {Return the values of an associative array}
   return [* a[k] : k in Keys(a) *];
