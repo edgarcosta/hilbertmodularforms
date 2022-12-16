@@ -77,16 +77,17 @@ intrinsic FundamentalUnitTotPos(F::FldNum) -> RngQuadElt
 end intrinsic;
 
 intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
-{Find a totally positive field element a such that qI is an integral ideal coprime to J; I and J must be defined over the same maximal order.}
+{Find a totally positive field element a such that qI is an integral ideal coprime to J;
+ I and J must be defined over the same maximal order.}
 
     K := NumberField(Order(I));
     q := CoprimeRepresentative(I, J);
 
     // Nothing to do if K is imaginary or we already chose a good element.
-    if Norm(q) gt 0 or Discriminant(K) lt 0 then return q; end if;
+    if Signature(q) eq [1,1] or Discriminant(K) lt 0 then return q; end if;
 
     // Otherwise, we have chosen a bad element, so must correct the signs.
-    z := K.1;
+    z := Sqrt(K!Discriminant(Integers(K)));
     require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
     assert IsIntegral(z);
 
