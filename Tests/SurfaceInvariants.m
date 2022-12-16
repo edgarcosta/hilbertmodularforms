@@ -54,6 +54,10 @@ for _ in [1..10] do
     cg, cg_map := NarrowClassGroup(F);
     b := Random(cg);
     B := cg_map(b);
+    a := CoprimeNarrowRepresentative(B,N);
+    assert IsTotallyPositive(a);
+    assert a*B + N eq 1*Order(N);
+    B := a*B;
     printf "(%o,%o,%o),", d,IdealOneLine(N),IdealOneLine(B);
     G_SL := CongruenceSubgroup("SL", "Gamma0", F, N, B);
     chi := ArithmeticGenus(G_SL);
