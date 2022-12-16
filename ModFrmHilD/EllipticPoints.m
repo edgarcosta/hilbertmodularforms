@@ -590,8 +590,10 @@ intrinsic TestECGL(n)
 {}
     F, G := _FieldAndGroup(n : Group:="GL+");
     A, B := CountEllipticPoints(G);
-    print "Results:";
-    print Eltseq(A);
+    print "Numbers of elliptic points:";
+    print "a2", Eltseq(A[2]);
+    print "a3", Eltseq(A[3]);
+    print ArithmeticGenus(G);
     // print Eltseq(B);
 end intrinsic;
 
