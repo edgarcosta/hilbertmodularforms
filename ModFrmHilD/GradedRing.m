@@ -50,9 +50,10 @@ declare attributes ModFrmHilDGRng:
   ;
 
 
-intrinsic NarrowClassGroupRepsMapDeterministic(F, Cl, mp) -> Assoc
+ intrinsic IdealRepsMapDeterministic(F::FldNum, mp::Map) -> Assoc
 { Return an associative array where one chooses representatives with minimal label}
   bound := 1;
+  Cl := Domain(mp);
   ClElts := [g : g in Cl];
   repsindex := [0 : _ in ClElts];
   while 0 in repsindex do
@@ -61,11 +62,11 @@ intrinsic NarrowClassGroupRepsMapDeterministic(F, Cl, mp) -> Assoc
       repsindex := [Index(idealsmp, g) : g in ClElts];
       bound *:= 2;
   end while;
-  NarrowClassGroupRepsMap := AssociativeArray();
+  M := AssociativeArray();
   for i->g in ClElts do
-    NarrowClassGroupRepsMap[g] := ideals[repsindex[i]][3];
+    M[g] := ideals[repsindex[i]][3];
   end for;
-  return NarrowClassGroupRepsMap;
+  return M;
 end intrinsic;
 
 
@@ -158,11 +159,7 @@ end intrinsic;
 
 intrinsic NarrowClassRepresentative(M::ModFrmHilDGRng, I::RngOrdFracIdl) -> RngOrdFracIdl
   {Returns the stored NarrowClassGroup representative for I}
-  bbs := NarrowClassGroupReps(M);
-  mp := NarrowClassGroupMap(M);
-  Rep := [bb : bb in bbs | (bb)@@mp eq (I)@@mp]; // Representative for class [ I ]
-  assert #Rep eq 1;
-  return Rep[1];
+  return NarrowClassGroupRepsMap(M)[I @@ NarrowClassGroupMap(M)];
 end intrinsic;
 
 intrinsic UnitGroup(M::ModFrmHilDGRng) -> Any
@@ -314,13 +311,14 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`NarrowClassNumber := #Cl;
   M`NarrowClassGroupMap := mp;
 
+
+
   // Deterministically finding representatives for Cl
-  M`NarrowClassGroupRepsMap := NarrowClassGroupRepsMapDeterministic(F, Cl, mp);
+  M`NarrowClassGroupRepsMap, _ := IdealRepsMapDeterministic(F, mp);
   M`NarrowClassGroupReps := [M`NarrowClassGroupRepsMap[g] : g in Cl];
   M`IdealDualNarrowClassGroupReps := [ bb*diffinv : bb in M`NarrowClassGroupReps];
   M`NarrowClassGroupRepsToIdealDual := AssociativeArray();
-  for i in [1..#Cl] do
-    bb := M`NarrowClassGroupReps[i];
+  for i->bb in M`NarrowClassGroupReps do
     bbp := M`IdealDualNarrowClassGroupReps[i];
     M`NarrowClassGroupRepsToIdealDual[bb] := bbp;
   end for;
