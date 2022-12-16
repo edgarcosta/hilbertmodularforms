@@ -159,12 +159,6 @@ intrinsic Gamma1(F::FldNum) -> GrpHilbert
 end intrinsic;
 
 
-
-
-
-
-
-
 /////////////////// Printing ///////////////////
 
 intrinsic Print(Gamma::GrpHilbert)
@@ -247,9 +241,20 @@ by
 where zeta_r is a primitive r-th root of unity. The quantity A[<r, a, b>] is the number of
 elliptic points of this type up to congugacy in Gamma.
 }
-
     if assigned Gamma`EllipticPointData then return Gamma`EllipticPointData; end if;
 
+    if GammaType(Gamma) eq GAMMA_Type then
+        return _EllipticPointDataFullLevel(Gamma);
+    elif GammaType(Gamma) eq GAMMA_0_Type then
+        return _EllipticPointData0(Gamma);
+    else
+        error "Function not implemented for Gamma type:", GammaType(Gamma);
+    end if;
+end intrinsic;
+
+intrinsic _EllipticPointDataFullLevel(Gamma::GrpHilbert) -> Assoc
+{Use the formulas in van der Geer's book to compute the number and types of the elliptic 
+points.}
     // This method relies on the tables of van der Geer for the most part. Given a level "N",
     // we first rely on the comment in [vdG, p. 109].
 

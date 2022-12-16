@@ -441,7 +441,6 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	// !! TODO : needs to sort them according to the 
 	// order of the real embeddings of F
 	rot_factor := Reverse(Sort([mU(g @@ pi) : g in qU]));
-        print rot_factor;
 
 	// For now we are only doing surfaces
 	assert #rot_factor le 2;
@@ -536,7 +535,7 @@ function ConvertRotationLabel(order, rot_factor)
     error "Not implemented for rotation factor:", rot_factor;
 end function;
     
-intrinsic EllipticPointDataGamma0(G::GrpHilbert) -> Assoc
+intrinsic _EllipticPointData0(G::GrpHilbert) -> Assoc
 {}
     Counts := CountEllipticPoints(G);
 

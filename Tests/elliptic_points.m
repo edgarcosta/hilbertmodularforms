@@ -64,7 +64,7 @@ quadraticFields := Setseq({QuadraticField(D) : D in [2..53] | IsSquarefree(D)});
 Sort(~quadraticFields, func<x,y | Discriminant(x) - Discriminant(y)>);
 quadraticFields := [K : K in quadraticFields | Discriminant(K) le 53];
 
-print "Testing elliptic points data for disc=";
+//print "Testing elliptic points data for disc=";
 for K in quadraticFields do
 
     // Extract components
