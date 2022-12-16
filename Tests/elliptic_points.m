@@ -16,6 +16,7 @@ A3PLUS_INDEX  := 5;
 A3MINUS_INDEX := 6;
 
 
+//FIXME use vanderGeerTable
 vdgTable := [*
     [* 5  , -1,     [1],  2, 1, 1,  1, 14, 1, dot,  12 *],
     [* 8  , -1,     [1],  2, 1, 1,  2, 15, 1, dot,  13 *],
@@ -66,7 +67,6 @@ quadraticFields := [K : K in quadraticFields | Discriminant(K) le 53];
 
 //print "Testing elliptic points data for disc=";
 for K in quadraticFields do
-
     // Extract components
     cg, mp := NarrowClassGroup(K);
 
