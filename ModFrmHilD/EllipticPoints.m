@@ -491,7 +491,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             end if;
 
             // Record the data into the table.
-	    total_num := Integers()!(hS * groupCorrectionFactor * localCount);
+	    total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
 	    K := NumberField(S);
 
 	    // Check which signs occur (CM types)
@@ -500,11 +500,11 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 		a := SteinitzClass(Module(S));
 		sign := ArtinSymbol(Integers(K), a*Component(Gamma));
 		if (sign eq 1) then 
-		    num_plus := total_num;
+		    num_plus  := total_num;
 		    num_minus := 0;
 		else
-		    num_minus := total_num;
-		    num_plus := 0;
+		    num_plus  := 0;
+		    num_minus := total_num;                    
 		end if;
 	    else
 		assert IsEven(total_num);
@@ -536,7 +536,7 @@ function ConvertRotationLabel(order, rot_factor)
     error "Not implemented for rotation factor:", rot_factor;
 end function;
     
-intrinsic EllipticPointDataGamma0(G::StupidCongruenceSubgroup) -> Assoc
+intrinsic EllipticPointDataGamma0(G::GrpHilbert) -> Assoc
 {}
     Counts := CountEllipticPoints(G);
 
