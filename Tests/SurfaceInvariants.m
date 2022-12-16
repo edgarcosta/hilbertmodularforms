@@ -38,13 +38,29 @@ end function;
 printf "Testing Euler number of level 1, discriminant... D=";
 for d in ds do
     printf "%o ", d;
-    // at the moment the code still fails when the class group is
-    // not trivial
     F := QuadraticField(d);
-    // these are just 229,257,401 in the above list
-    if NarrowClassNumber(F) eq 1 then
-	G := Gamma0(F, 1*Integers(F));
-	assert EulerNumber(G) eq es[d];
-    end if;
+    G := Gamma0(F, 1*Integers(F));
+    assert EulerNumber(G) eq es[d];
 end for;
 
+ds := [d : d in [2..500] | IsFundamentalDiscriminant(d)];
+DN_bound := 500;
+printf "Testing integrality of genus for some random (disc,level,comp)...";
+for _ in [1..10] do
+    d := Random(ds);
+    F := QuadraticField(d);
+    N := Random(IdealsUpTo(Floor(DN_bound/d),F));
+    ZF := Integers(F);
+    cg, cg_map := NarrowClassGroup(F);
+    b := Random(cg);
+    B := cg_map(b);
+    printf "(%o,%o,%o),", d,IdealOneLine(N),IdealOneLine(B);
+    G_SL := CongruenceSubgroup("SL", "Gamma0", F, N, B);
+    chi := ArithmeticGenus(G_SL);
+    assert IsIntegral(chi);
+    /*
+    G_GL := CongruenceSubgroup("GL+", "Gamma0", F, N, B);
+    chi := ArithmeticGenus(G_GL);
+    assert IsIntegral(chi);
+   */
+end for;
