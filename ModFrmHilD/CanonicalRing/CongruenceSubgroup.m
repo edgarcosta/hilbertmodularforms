@@ -41,11 +41,11 @@ end intrinsic;
 
 // Main constructor from which all else is derivedn
 intrinsic CongruenceSubgroup(
-AmbientType::MonStgElt,
-GammaType::MonStgElt,
-F::FldNum,
-N::RngOrdIdl,
-B::RngOrdIdl)
+              AmbientType::MonStgElt,
+              GammaType::MonStgElt,
+              F::FldNum,
+              N::RngOrdIdl,
+              B::RngOrdIdl)
           -> GrpHilbert
 {Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.
 The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B). }
@@ -57,7 +57,7 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     Gamma`Level := N;
     Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
     case GammaType:
-        when "Gamma" : Gamma`GammaType := GAMMA_Type;
+        when "Gamma"  : Gamma`GammaType := GAMMA_Type;
         when "Gamma0" : Gamma`GammaType := GAMMA_0_Type;
         when "Gamma1" : Gamma`GammaType := GAMMA_1_Type;
     else
@@ -65,7 +65,7 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     end case;
 
     case AmbientType:
-        when "SL": Gamma`AmbientType := SL_Type;
+        when "SL" : Gamma`AmbientType := SL_Type;
         when "GL+": Gamma`AmbientType := GLPlus_Type;
     else
         error "Ambient type not supported.";
@@ -74,19 +74,24 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     return Gamma;
 end intrinsic;
 
+intrinsic CongruenceSubgroup(AmbType::MonStgElt, F::FldNum, N::RngOrdIdl, B::RngOrdIdl)
+          -> GrpHilbert
+{}
+    return CongruenceSubgroup(AmbType, "Gamma", F, N, B);
+end intrinsic;
+
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {}
     return CongruenceSubgroup("SL", "Gamma", F, N, B);
 end intrinsic;
 
 intrinsic CongruenceSubgroup(F::FldNum, N::RngOrdIdl) -> GrpHilbert
-{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.}
+{}
     return CongruenceSubgroup(F, N, 1*MaximalOrder(F));
 end intrinsic;
 
-
 intrinsic CongruenceSubgroup(F::FldNum) -> GrpHilbert
-{Create a dummy type. This is a placeholder for a future CongruenceSubgroup type.}
+{}
     return CongruenceSubgroup(F, 1*Integers(F));
 end intrinsic;
 
