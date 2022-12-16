@@ -111,3 +111,16 @@ intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
   h_4 := h_0;
   return [h_0, h_1, h_2, h_3, h_4];
 end intrinsic;
+
+// TODO
+intrinsic KodairaDimension(Gamma::GrpHilbert) -> MonStgElt
+  {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma. Currently just returns 0}
+  return 0; // FIXME
+end intrinsic;
+
+// IO
+intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
+  {Script for writing geometric invariants to data table row. Format is label:Kodaira-dimension:[h^[2,0], h^[1,1]].}
+  h2 := HodgeDiamond(Gamma)[3];
+  return Join([Label(Gamma), KodairaDimension(Gamma), HodgeDiamond(Gamma)[3][1..2]], ":");
+end intrinsic;
