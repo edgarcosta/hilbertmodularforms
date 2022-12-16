@@ -113,7 +113,7 @@ intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
 end intrinsic;
 
 intrinsic vanderGeerTable( : Discriminants := []) -> List
-  {Return the table of invariants from pp. 269-276 of van der Geer. dot and unlisted values are returned as -100.}
+  {Return the table of invariants from pp. 269-276 of van der Geer. dot and unlisted values are returned as -100. If Discriminants is nonempty, return only those rows of the table with the corresponding discriminants.}
   dot := -100;
   unk := -100; // Unlisted value.
   table := 
@@ -443,6 +443,6 @@ intrinsic vanderGeerTable( : Discriminants := []) -> List
 end intrinsic;
 
 intrinsic vdGTable( : Discriminants := []) -> List
-  {}
+  {Same signatures as vanderGeerTable.}
   return vanderGeerTable( : Discriminants := Discriminants);
 end intrinsic;
