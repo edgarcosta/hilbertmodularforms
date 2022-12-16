@@ -507,8 +507,8 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	    K := NumberField(S);
 
 	    // Check which signs occur (CM types)
-	    is_unr := IsUnramified(K) and
-		      (GCD(Norm(level),Discriminant(F)) eq 1);
+	    is_unr := IsUnramified(K);
+	    // and (GCD(Norm(level),Discriminant(F)) eq 1);
 	    if is_unr then
 		a := SteinitzClass(Module(S));
 		sign := ArtinSymbol(Integers(K), a*Component(Gamma));

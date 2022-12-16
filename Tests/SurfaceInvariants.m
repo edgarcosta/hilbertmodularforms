@@ -50,8 +50,8 @@ printf "Testing integrality of genus for some random (disc,level,comp)...";
 for _ in [1..10] do
     d := Random(ds);
     F := QuadraticField(d);
-    N := Random(IdealsUpTo(Floor(DN_bound/d),F : CoprimeTo := 3*d*ZF));
     ZF := Integers(F);
+    N := Random(IdealsUpTo(Floor(DN_bound/d),F : CoprimeTo := 3*d*ZF));
     cg, cg_map := NarrowClassGroup(F);
     b := Random(cg);
     B := cg_map(b);

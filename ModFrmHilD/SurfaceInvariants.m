@@ -4,7 +4,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   // At the moment we do not handle them. 
   F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [8,12];
-  assert GCD(Level(Gamma), 3*Discriminant(Integers(F))*Integers(F)) eq 1;
+  // assert GCD(Level(Gamma), 3*Discriminant(Integers(F))*Integers(F)) eq 1;
   
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -50,7 +50,7 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   // At the moment we do not handle them. 
   F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [8,12];
-  assert GCD(Level(Gamma), 3*Discriminant(Integers(F))*Integers(F)) eq 1;
+  // assert GCD(Level(Gamma), 3*Discriminant(Integers(F))*Integers(F)) eq 1;
   
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
   vol := VolumeOfFundamentalDomain(Gamma);
