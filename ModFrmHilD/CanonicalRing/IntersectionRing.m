@@ -1118,10 +1118,10 @@ end intrinsic;
 intrinsic VolumeOfFundamentalDomain(Gamma::GrpHilbert) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
     case AmbientType(Gamma):
-    when GLPlus_Type: gfactor := 1/2^(IndexOfTotallyPositiveUnitsModSquares(Field(Gamma)));
+    when GLPlus_Type: gfactor := 1/IndexOfTotallyPositiveUnitsModSquares(Field(Gamma));
     when SL_Type: gfactor:=1;
     end case;
-    return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);
+    return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1) * gfactor;
 end intrinsic;
 
 intrinsic ChernNumbersOfLogCanonical(Gamma::GrpHilbert) -> FldRatElt, FldRatElt

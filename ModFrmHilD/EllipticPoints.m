@@ -32,6 +32,13 @@ intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> SeqEnum
     return TotallyPositiveUnits;
 end intrinsic;
 
+intrinsic TotallyPositiveUnitsModSquaresRepresentatives(F::FldNum) -> SeqEnum
+{}
+    ZF := MaximalOrder(F);
+    UF, mUF := UnitGroup(F);
+    return TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);    
+end intrinsic;
+
 intrinsic IndexOfTotallyPositiveUnitsModSquares(F::FldNum) -> RngIntElt
 {}
     UF, mUF := UnitGroup(MaximalOrder(F));
@@ -563,10 +570,10 @@ end intrinsic;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic _FieldAndGroup(n) -> Any
+intrinsic _FieldAndGroup(n : Group:="SL") -> Any
 {}
     F := QuadraticField(n);
-    G := CongruenceSubgroup(F);
+    G := CongruenceSubgroup(Group, F);
     return F, G;
 end intrinsic;
 
@@ -581,8 +588,8 @@ end intrinsic;
 
 intrinsic TestECGL(n)
 {}
-    F, G := _FieldAndGroup(n);
-    A, B := CountEllipticPoints(G : Group:="GL+");
+    F, G := _FieldAndGroup(n : Group:="GL+");
+    A, B := CountEllipticPoints(G);
     print "Results:";
     print Eltseq(A);
     // print Eltseq(B);
