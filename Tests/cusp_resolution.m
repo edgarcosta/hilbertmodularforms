@@ -1,26 +1,162 @@
 
-printf "Test computation of change-of-cusp matrices...\n";
+//Some randomized testing
+SetDebugOnError(true);
+//SetSeed(1);
+
+MaxD := 100;
+MaxNorm := 5;
+MaxCoefs := 5; //Beware of large fundamental units...
+NbTests := 100;
+
+function RandomField()
+    D := Random(MaxD);
+    F := QuadraticField(D);
+    if F eq Rationals() then
+        F := QuadraticField(79);
+    end if;
+    return F;
+end function;
+
+function RandomIntegralIdl(F)
+    ZF := Integers(F);
+    all_ideals := IdealsUpTo(MaxNorm, ZF);
+    n := Random(all_ideals);
+    return n;
+end function;
+
+function RandomFracIdl(F)
+    ZF := Integers(F);
+    all_ideals := IdealsUpTo(MaxNorm, ZF);
+    n := Random(all_ideals);
+    d := Random(all_ideals);
+    b := Random([true,false]);
+    if b then
+        return n; //Integral ideal
+    else
+        return n * d^(-1);
+    end if;
+end function;
+
+function RandomNonzero(F)
+    x := Random(F, MaxCoefs);
+    while x eq 0 do x := Random(F, MaxCoefs); end while;
+    return x;
+end function;    
+
+procedure TestGeneratorsOfGMV()
+    F := RandomField();
+    M := RandomFracIdl(F);
+    w := FundamentalUnitTotPos(F);
+    V := w^(Random([1..10]));
+    gs := GeneratorsOfGMV(M, V);
+    for i:=1 to 3 do
+        x := RandomNonzero(F);
+        assert IsInGMV(M, V, x*gs[i]);
+    end for;
+end procedure;
+
+procedure TestSamplesOfLevelSubgroup()
+    F := RandomField();
+    n := RandomIntegralIdl(F);
+    b := RandomFracIdl(F);
+    GammaType := Random(["Gamma0", "Gamma1", "Gamma"]);
+    GroupType := Random(["GL2+", "SL2"]);
+    gs := SamplesOfLevelSubgroup(b, n: GammaType := GammaType, GroupType := GroupType);
+    for i:=1 to #gs do
+        x := RandomNonzero(F);
+        assert IsInLevelSubgroup(b, n, x*gs[i]: GammaType := GammaType, GroupType := GroupType);
+    end for;
+end procedure;
+
+procedure TestCuspResolutionMV()
+    F := RandomField();
+    ZF := Integers(F);
+    n := RandomIntegralIdl(F);
+    //Sometimes pick n, beta not coprime
+    alpha := RandomNonzero(F);
+    beta := Random(F, 10);
+    if Random([true, false]) then
+        x := RandomNonzero(ZF);
+        n := x*n;
+        beta := x*beta;
+    end if;
+    //Make b, n coprime, normalize cusp
+    b := RandomIntegralIdl(F);
+    g := Gcd(b, n);
+    n := n/g;
+    b := b/g;
+    assert IsCoprimeFracIdl(n, b);    
+    alpha, beta := NormalizeCusp(b, n, alpha, beta);
+    g := CuspChangeMatrix(b, alpha, beta);
+    lambda := g[1,1];
+    mu := g[1,2];
+    I := alpha*ZF + beta*b^(-1);
+    assert IsNormalizedCuspChangeMatrix(b, n, g);
+    
+    GammaType := Random(["Gamma0", "Gamma1", "Gamma"]);
+    GroupType := Random(["GL2+", "SL2"]);
+    M, V, g := CuspResolutionMV(b, n, alpha, beta:
+                                GammaType := GammaType, GroupType := GroupType);
+    GMV_gens := GeneratorsOfGMV(M, V);
+    samples := SamplesOfLevelSubgroup(b, n: GammaType:=GammaType, GroupType:=GroupType);
+    //Do not use samples in check: we really need samples in stabilizer
+    if false then
+        print "Entering new test";
+        print GammaType;
+        print GroupType;
+        print M;
+        print V;
+        print g;
+        print GMV_gens;
+        print samples;
+    end if;
+    assert g[2,1]*alpha + g[2,2]*beta eq 0;
+
+    test := [g^(-1)*y*g: y in GMV_gens];
+    for i:=1 to #GMV_gens do
+        if not IsInLevelSubgroup(b, n, test[i]: GammaType:=GammaType, GroupType:=GroupType) then
+            error "WRONG!";
+        end if;
+    end for;
+    test := [g*x*g^(-1): x in samples];
+    for i:=1 to #samples do
+        if test[i][2,1] eq 0 and not IsInGMV(M, V, test[i]) then
+            //error "WRONG!";
+        end if;
+    end for;    
+end procedure;
+    
+for i:=1 to NbTests do
+    TestGeneratorsOfGMV();
+    TestSamplesOfLevelSubgroup();
+    TestCuspResolutionMV();
+end for;
+
+//---------------------------------------------//
+
 //Test change of cusp matrices: example where class group of F is nontrivial
 F := QuadraticField(79);
 ZF := Integers(F);
 G, lift := ClassGroup(ZF);
 idreps := [lift(x) : x in G];
 id := idreps[2];
-alpha, beta := Explode([F!x : x in Generators(id)]);
-//id is a prime above 3. Normalize that cusp for level 3
+
 n := 3*ZF;
-alpha1, beta1 := NormalizeCusp(F, F!alpha, F!beta, n);
 //Choose nonprincipal ideal b, prime to n
 b := Factorization(5*ZF)[1][1];
+
+alpha, beta := Explode([F!x : x in Generators(id)]);
+//id is a prime above 3. Normalize that cusp for level 3
+alpha1, beta1 := NormalizeCusp(b, n, alpha, beta);
 
 assert IsCoprimeFracIdl(b, n);
 assert not IsPrincipal(b);
 assert alpha1/beta1 eq alpha/beta;
-assert alpha1 in ZF and beta1 in ZF;
+assert alpha1 in ZF and beta1 in b;
 assert IsCoprimeFracIdl(alpha1*ZF, n) or IsCoprimeFracIdl(beta1*ZF, n);
-assert IsNormalizedCusp(F, alpha1, beta1, n);
+assert IsNormalizedCusp(b, n, alpha1, beta1);
 
-g := CuspChangeMatrix(F, b, alpha1, beta1);
+g := CuspChangeMatrix(b, alpha1, beta1);
 I := alpha1*ZF + beta1*b^-1;
 assert g[1,1] in I^-1;
 assert g[1,2] in I^-1*b^-1;
@@ -28,12 +164,11 @@ assert g[2,1] in I*b;
 assert g[2,2] in I;
 assert Determinant(g) eq 1;
 assert g[2,1]*alpha1 + g[2,2]*beta1 eq 0;
-assert IsNormalizedCuspChangeMatrix(F, b, n, g);
+assert IsNormalizedCuspChangeMatrix(b, n, g);
 
 
 //-----------------------------------------------//
 
-printf "Compute resolution of cusp at infinity following the examples in Van der Geer...";
 //Compute resolution of cusp at infinity following the examples in Van
 //der Geer, starting p.189
 
@@ -50,12 +185,14 @@ end function;
 //p.189: Discriminant 5, level Gamma(2)
 F := QuadraticField(5);
 ZF := Integers(F);
-L, nb := CuspResolutionIntersections(F, 1*ZF, 2*ZF, F!1, F!0: GammaType:="Gamma");
+L, nb := CuspResolutionIntersections(1*ZF, 2*ZF, F!1, F!0:
+                                     GammaType:="Gamma", GroupType:="SL2");
 test := [-3];
 assert EqUpToCyclicPermutation(L, test) and nb eq 3;
 
 //p.193: Same field, Gamma(3)
-L, nb := CuspResolutionIntersections(F, 1*ZF, 3*ZF, F!1, F!0: GammaType:="Gamma");
+L, nb := CuspResolutionIntersections(1*ZF, 3*ZF, F!1, F!0:
+                                     GammaType:="Gamma", GroupType:="SL2");
 test := [-3];
 assert EqUpToCyclicPermutation(L, test) and nb eq 4;
 
@@ -63,7 +200,8 @@ assert EqUpToCyclicPermutation(L, test) and nb eq 4;
 F := QuadraticField(8);
 ZF := Integers(F);
 p7 := Decomposition(ZF, 7)[1][1];
-L, nb := CuspResolutionIntersections(F, 1*ZF, p7, F!1, F!0: GammaType:="Gamma");
+L, nb := CuspResolutionIntersections(1*ZF, p7, F!1, F!0:
+                                     GammaType:="Gamma", GroupType:="SL2");
 test := [-2,-4];
 assert EqUpToCyclicPermutation(L, test) and nb eq 3;
 
@@ -71,7 +209,8 @@ assert EqUpToCyclicPermutation(L, test) and nb eq 3;
 F := QuadraticField(13);
 ZF := Integers(F);
 p := 2*ZF;
-L, nb := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="GammaP");
+L, nb := CuspResolutionIntersections(1*ZF, p, F!1, F!0:
+                                     GammaType:="GammaP", GroupType:="SL2");
 test := [-2,-5,-2]; //this is a typo in the book: quadratic number with periodic continued fraction [2,3,2] lies in field of discriminant 21, not 13
 assert EqUpToCyclicPermutation(L, test) and nb eq 3;
 
@@ -79,7 +218,8 @@ assert EqUpToCyclicPermutation(L, test) and nb eq 3;
 F := QuadraticField(17);
 ZF := Integers(F);
 p := 2*ZF;
-L, nb := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="Gamma");
+L, nb := CuspResolutionIntersections(1*ZF, p, F!1, F!0:
+                                     GammaType:="Gamma", GroupType:="SL2");
 test := [-2,-3,-5,-3,-2];
 assert EqUpToCyclicPermutation(L, test) and nb eq 1;
 
@@ -94,7 +234,8 @@ b := (1 + ZF.2) * ZF; // Component ideal.
 assert not HasTotallyPositiveGenerator(b);
 p := (3 + SquareRoot(ZF!6))*ZF;
 assert IsCoprime(b, p);
-L, nb := CuspResolutionIntersections(F, b, p, F!1, F!0: GammaType:="Gamma");
+L, nb := CuspResolutionIntersections(b, p, F!1, F!0:
+                                     GammaType:="Gamma", GroupType:="SL2");
 test := [-2,-2,-2,-4];
 assert EqUpToCyclicPermutation(L, test) and nb eq 2;
 
@@ -102,69 +243,23 @@ assert EqUpToCyclicPermutation(L, test) and nb eq 2;
 F := QuadraticField(40);
 ZF := Integers(F);
 p := Factorization(2*ZF)[1][1];
-L, nb := CuspResolutionIntersections(F, 1*ZF, p, F!1, F!0: GammaType:="Gamma");
+L, nb := CuspResolutionIntersections(1*ZF, p, F!1, F!0:
+                                     GammaType:="Gamma", GroupType:="SL2");
 test := [-2,-3,-4,-3];
 assert EqUpToCyclicPermutation(L, test) and nb eq 1;
 
-//-----------------------------------------------//
-
-printf "Compute resolution of cusps in the case of Gamma1";
-
-//Example with two cusps for Gamma(1)
-K<sqrt5> := QuadraticField(5);
-ZK<phi> := Integers(K);
-p := PrimeIdealsOverPrime(K, 31)[1];
-cusps := Cusps(p, 1*ZK : GammaType := "Gamma1");
-cusps0 := Cusps(p, 1*ZK: GammaType := "Gamma0");
-assert [Eltseq(v[3]): v in cusps] eq [Eltseq(v[3]): v in cusps0];
-
-//Get coordinates of cusps
-alpha1, beta1 := Explode(Coordinates(cusps[1][3]));
-alpha2, beta2 := Explode(Coordinates(cusps[2][3]));
-
-//Normalize
-alpha1, beta1 := NormalizeCusp(K, alpha1, beta1, p);
-alpha2, beta2 := NormalizeCusp(K, alpha2, beta2, p);
-
-g1 := CuspChangeMatrix(K, 1*ZK, alpha1, beta1);
-g2 := CuspChangeMatrix(K, 1*ZK, alpha2, beta2);
-
-b := 1*ZK;
-TestCuspChangeMatrix(K, b, p, alpha1, beta1: GammaType:="Gamma0");
-L, nb := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma0");
-TestCuspChangeMatrix(K, b, p, alpha2, beta2: GammaType:="Gamma0");
-L, nb := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma0");
-TestCuspChangeMatrix(K, b, p, alpha1, beta1: GammaType:="Gamma1");
-L, nb := CuspResolutionIntersections(K, b, p, alpha1, beta1: GammaType:="Gamma1");
-TestCuspChangeMatrix(K, b, p, alpha2, beta2: GammaType:="Gamma1");
-L, nb := CuspResolutionIntersections(K, b, p, alpha2, beta2: GammaType:="Gamma1");
-
-v := false;
-//Try a higher, composite level
-q := PrimeIdealsOverPrime(K, 5)[1];
-n := p^2*q^2;
-for T in ["Gamma0", "Gamma1"] do
-    cusps := Cusps(n, 1*ZK: GammaType := T);
-    for c in cusps do
-	if v then print "Cusp number", Index(cusps, c); end if;
-	alpha, beta := Explode(Coordinates(c[3]));
-	alpha, beta := NormalizeCusp(K, alpha, beta, n);
-	if v then print alpha, beta, Valuation(alpha,p), Valuation(beta,p), Valuation(alpha, q), Valuation(beta, q); end if;
-	TestCuspChangeMatrix(K, b, n, alpha, beta: GammaType:=T);
-	L := CuspResolutionIntersections(K, b, n, alpha, beta: GammaType:=T);
-    end for;
-end for;
 
 //A final test in the case Gamma0: Van der Geer, Zagier, "The Hilbert
 //modular group for the field QQ(sqrt(13)), p.121
 K<sqrt13> := QuadraticField(13);
 ZK := Integers(K);
 p := 2*ZK;
-cc := Cusps(p, 1*ZK: GammaType:="Gamma0");
+cc := Cusps(p, 1*ZK: GammaType:="Gamma0"); //This is the same for SL2 and GL2+?
 assert #cc eq 2;
 for i in [1..#cc] do
     alpha, beta := Explode(Coordinates(cc[i][3]));
-    alpha, beta := NormalizeCusp(K, alpha, beta, p);
-    L, nb := CuspResolutionIntersections(K, 1*ZK, p, alpha, beta: GammaType:="Gamma0");
+    alpha, beta := NormalizeCusp(1*ZK, p, alpha, beta);
+    L, nb := CuspResolutionIntersections(1*ZK, p, alpha, beta:
+                                         GammaType:="Gamma0", GroupType:="SL2");
     assert EqUpToCyclicPermutation(L, [-2,-5,-2]) and nb eq 1;
 end for;
