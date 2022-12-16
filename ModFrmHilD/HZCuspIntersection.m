@@ -8,8 +8,9 @@ intrinsic HZCuspIntersection(F::FldQuad, t::RngIntElt,
    for cusp in cusps do
        alpha := cusp[3][1];
        beta := cusp[3][2];
-       alpha, beta := NormalizeCusp(F, alpha, beta, N);
-       L, n := CuspResolutionIntersections(F, b, N, alpha, beta);
+       alpha, beta := NormalizeCusp(b, N, alpha, beta);
+       L, n := CuspResolutionIntersections(b, N, alpha, beta: GammaType:=GammaType,
+                                          GroupType:="SL2");
        self_intersections := L;
        // !! TODO : That only works if the intersection cycle is of 
        // length at least 3

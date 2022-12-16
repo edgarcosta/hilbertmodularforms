@@ -3,8 +3,12 @@ procedure testHZ(D, bs, mults)
     ZF := Integers(F);
     N := 1*ZF;
     for b in bs do
-	assert &and[HZCuspIntersection(F,t,N,b) eq mults[b][t] 
-		    : t in Keys(mults[b])];
+        print [HZCuspIntersection(F,t,N,b)
+		       : t in Keys(mults[b])];
+        print [mults[b][t] 
+		       : t in Keys(mults[b])];
+	    assert &and[HZCuspIntersection(F,t,N,b) eq mults[b][t] 
+		        : t in Keys(mults[b])];
     end for;
 end procedure;
 

@@ -297,11 +297,11 @@ just an integer divided by beta)}
     return exps, x0;
 end intrinsic;
 
-intrinsic NewCuspResolutionMV(b::RngQuadFracIdl, n::RngQuadIdl,
+intrinsic CuspResolutionMV(b::RngQuadFracIdl, n::RngQuadIdl,
                               alpha::FldQuadElt, beta::FldQuadElt:
                               GammaType := "Gamma0",
                               GroupType := "GL2+")
-          -> RngFracIdl, RngQuadElt, AlgMatElt, AlgMatElt
+          -> RngFracIdl, RngQuadElt, AlgMatElt
                                          
 {Given a normalized cusp (alpha:beta), compute M, V and a change-of-cusp matrix
 g sending (alpha:beta) to infinity such that g^-1 [v,m;0,1] lies in the given
@@ -349,7 +349,6 @@ positive unit that generates it.}
     
     //Make x belong to I^(-2)b^(-1) except for factors of n
     if not x in I^(-2)*b^(-1) then
-        //print Factorization(x*I^2*b);
         idl := 1*ZF;
         for fac in Factorization(x*ZF) do
             p := fac[1];
@@ -369,11 +368,9 @@ positive unit that generates it.}
         assert scal-1 in n;
         x *:= scal;
     end if;
-    //print x;
-    //assert x in I^(-2)*b^(-1)*n^(-1);
     
     V := CuspResolutionV(W, W2: GroupType:=GroupType);
-    return M, V, Matrix(F, [[1,x],[0,1]]), g;
+    return M, V, Matrix(F, [[1,x],[0,1]])*g;
 end intrinsic;
 
 intrinsic CuspResolutionV(W::RngOrdIdl, W2::RngOrdIdl: GroupType := "GL2+") -> RngOrdElt
@@ -412,63 +409,6 @@ intrinsic CuspResolutionV(W::RngOrdIdl, W2::RngOrdIdl: GroupType := "GL2+") -> R
     end if;
     return V;
 end intrinsic;
-
-intrinsic CuspResolutionMV(b::RngQuadFracIdl, n::RngQuadIdl,
-                           alpha::FldQuadElt, beta::FldQuadElt:
-                           GammaType := "Gamma0",
-                           GroupType := "GL2+")
-          -> SeqEnum[RngQuadIdl], AlgMatElt
-
-{Given a normalized cusp (alpha:beta), compute ideals M, W, W2 and a
-change-of-cusp matrix g sending (alpha:beta) to infinity such that g^-1
-[v,m;0,v^-1] lies in the given level subgroup precisely when m,v satisfy
-conditions of the form G(M,V). Here V is encoded as congruence conditions on
-v-1 and v^2-1, given by ideals W, W2 respectively.}
-
-    require IsNormalizedCusp(b, n, alpha, beta): "Cusp (alpha:beta) must be normalized";
-
-    g := CuspChangeMatrix(b, alpha, beta);
-    plist := [f[1]: f in Factorization(n)];
-
-    ZF := Order(b);
-    F := NumberField(ZF);
-    I := alpha*ZF + beta*b^-1; //Integral, coprime to n.
-    M0 := I^-2 * b^-1;
-
-    M := M0;
-    W := 1*ZF; //Congruence conditions on v-1
-    W2 := 1*ZF; //Congruence conditions on v^2-1
-    X := 1*ZF; //Congruence conditions on x-x0;
-    x := ZF!0;
-
-    for p in plist do
-        L, x0 := CuspResolutionCongruences(b, n, g, p:
-                                           GammaType:=GammaType, GroupType:=GroupType);
-        ev, ev2, em, ex := Explode(L);
-        //print "Congruences of cusp coordinates:", ev, ev2, em, ex;
-        M *:= p^em;
-        W *:= p^ev;
-        W2 *:= p^ev2;
-        //Update x0 by solving a Chinese remaindering problem in ZF
-        //x := CRT(X, p^ex, x, x0);
-        X *:= p^ex;
-    end for;
-    /* if alpha*beta ne 0 and x ne 0 then */
-    /*     //Clear out any denominator coprime to n */
-    /*     x := x/(2*alpha*beta); */
-    /*     qlist := [f[1]: f in Factorization(2*alpha*beta*ZF)]; */
-    /*     for q in qlist do */
-    /*         v := Valuation(x, q); */
-    /*         if v lt 0 and Valuation(n, q) eq 0 then */
-    /*             x *:= CRT(n, q^(-v), ZF!1, ZF!0); */
-    /*         end if; */
-    /*     end for; */
-    /* end if; */
-    g := Matrix(F, 2, 2, [F!1, x, 0, F!1]) * g;
-
-    return [M, W, W2], g;
-end intrinsic;
-
 
 intrinsic CuspResolutionMinimalSequence(M :: RngQuadFracIdl) -> SeqEnum[RngIntElt]
 {Compute the periodic part of the HJ continued fraction, as in Van der Geer p.38}
@@ -525,9 +465,9 @@ intrinsic CuspResolutionIntersections(G::StupidCongruenceSubgroup, p::Pt:
     return CuspResolutionIntersections(Component(G), N, x, y : GammaType:=GammaType(G));
 end intrinsic;
 
-intrinsic NewCuspResolutionIntersections(b :: RngQuadFracIdl, n :: RngQuadIdl,
-                                         alpha :: FldQuadElt, beta::FldQuadElt
-                                         : GammaType := "Gamma0", GroupType := "GL2+")
+intrinsic CuspResolutionIntersections(b :: RngQuadFracIdl, n :: RngQuadIdl,
+                                      alpha :: FldQuadElt, beta::FldQuadElt
+                                      : GammaType := "Gamma0", GroupType := "GL2+")
           -> SeqEnum[RngIntElt], RngIntElt
                                      
 {Compute the cyclic sequence of self-intersection numbers for the cycle of P1's
@@ -541,7 +481,7 @@ Ker(Gamma(1)->PSL(ZF/n)), in the case GroupType:="SL2", for testing purposes.}
     ZF := Order(b);
     F := NumberField(ZF);
     M, V, g := CuspResolutionMV(b, n, alpha, beta:
-                                GammaType := GammaType, GroupType:=GroupType);
+                                   GammaType := GammaType, GroupType:=GroupType);
     periodic := CuspResolutionMinimalSequence(M);
     w := CuspResolutionMinimalUnit(F, periodic);
     U, Umap := UnitGroup(ZF);
@@ -552,49 +492,6 @@ Ker(Gamma(1)->PSL(ZF/n)), in the case GroupType:="SL2", for testing purposes.}
     if #L eq 1 and k eq 1 then L := [L[1]+2]; end if;
     return L, k;
 end intrinsic;
-
-// this is the top-level function
-intrinsic CuspResolutionIntersections(b :: RngQuadFracIdl, n :: RngQuadIdl,
-                                      alpha :: FldQuadElt, beta::FldQuadElt
-                                      : GammaType := "Gamma0", GroupType := "GL2+")
-          -> SeqEnum[RngIntElt], RngIntElt
-
-{Compute the cyclic sequence of self-intersection numbers for the cycle of P1's
-appearing in the appearing in the resolution of the cusp (alpha:beta) in P^1(F)
-for the specified modular group. Accepted values for the parameter GammaType
-are: "Gamma0" (default); "Gamma1"; "Gamma" (full level); and "GammaP" for
-Ker(Gamma(1)->PSL(ZF/n)), in the case GroupType:="SL2", for testing purposes.}
-
-    require IsNormalizedCusp(b, n, alpha, beta): "Cusp (alpha,beta) must be normalized";
-
-    ZF := Order(b);
-    F := NumberField(ZF);
-    L, g := CuspResolutionMV(b, n, alpha, beta:
-                             GammaType := GammaType, GroupType:=GroupType);
-    M, W, W2 := Explode(L);
-    //print "Ideals M, W, W2:", M, W, W2;
-
-    //Compute minimal totally positive unit stabilizing M.
-    periodic := CuspResolutionMinimalSequence(M);
-    w := CuspResolutionMinimalUnit(F, periodic);
-
-    issqr, t := IsSquare(w);
-    //print w; print "IsSquare?", issqr;
-    n := 1;
-    if issqr then
-        //V is gen'd by w^n, where n minimal s.t. w^n-1 = 0 mod W2 and t^n +/- 1 = 0 mod W
-        while not (w^n-1 in W2 and (t^n-1 in W or t^n + 1 in W)) do n +:= 1; end while;
-    else
-        //V is gen'd by w^(2n), where n minimal s.t. w^(2n)-1 = 0 mod W2 and w^n +/- 1 = 0 mod W
-        while not (w^(2*n)-1 in W2 and (w^n-1 in W or w^n + 1 in W)) do n +:= 1; end while;
-        n := 2*n;
-    end if;
-
-    L := [-b: b in periodic];
-    if #L eq 1 and n eq 1 then L := [L[1]+2]; end if;
-    return L, n;
-end intrinsic;
-
 
 /* ------------------------------------------------------------------------- */
 /* Testing */
@@ -745,40 +642,7 @@ stabilize the given cusp in P^1(F)}
     
 end intrinsic;
 
-intrinsic GeneratorsOfGMV(S::SeqEnum[RngQuadFracIdl]) -> SeqEnum[AlgMatElt]
-{Return three matrices that generate G(M,V) as a group}
-
-    //Get generator of V_M+
-    M, W, W2 := Explode(S);
-    ZF := Order(M);
-    F := NumberField(ZF);
-    periodic := CuspResolutionMinimalSequence(M);
-    w := CuspResolutionMinimalUnit(F, periodic);
-    assert IsUnit(w);
-    issqr, t := IsSquare(w);
-    //print w; print "IsSquare?", issqr;
-    n := 1;
-    //print w, W2, W, t, Norm(W), Norm(W2);
-    if issqr then
-        //V is gen'd by w^n, where n minimal s.t. w^n-1 = 0 mod W2 and t^n +/- 1 = 0 mod W
-        while not (w^n-1 in W2 and (t^n-1 in W or t^n + 1 in W)) do
-            //print n;
-            n +:= 1; end while;
-        if t^n-1 in W then u := t^n; else u := -t^n; end if;
-    else
-        //V is gen'd by w^(2n), where n minimal s.t. w^(2n)-1 = 0 mod W2 and w^n +/- 1 = 0 mod W
-        while not (w^(2*n)-1 in W2 and (w^n-1 in W or w^n + 1 in W)) do n +:= 1; end while;
-        if w^n-1 in W then u := w^n; else u := -w^n; end if;
-    end if;
-    U1 := Matrix(F, 2, 2, [u, F!0, F!0, u^-1]);
-
-    x, y := Explode(Basis(M));
-    U2 := Matrix(F, 2, 2, [F!1, x, F!0, F!1]);
-    U3 := Matrix(F, 2, 2, [F!1, y, F!0, F!1]);
-    return [U1, U2, U3];
-end intrinsic;
-
-intrinsic NewGeneratorsOfGMV(M::RngOrdFracIdl, V::RngQuadElt) -> SeqEnum[AlgMatElt]
+intrinsic GeneratorsOfGMV(M::RngOrdFracIdl, V::RngQuadElt) -> SeqEnum[AlgMatElt]
 {Return three matrices that generate G(M,V) as a group}
     require IsUnit(V) and IsTotallyPositive(V): "V must be generated by a totally positive unit";
     ZF := Order(M);

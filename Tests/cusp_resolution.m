@@ -6,7 +6,7 @@ SetDebugOnError(true);
 MaxD := 100;
 MaxNorm := 5;
 MaxCoefs := 5; //Beware of large fundamental units...
-NbTests := 500;
+NbTests := 50;
 
 function RandomField()
     D := Random(MaxD);
@@ -48,7 +48,7 @@ procedure TestGeneratorsOfGMV()
     M := RandomFracIdl(F);
     w := FundamentalUnitTotPos(F);
     V := w^(Random([1..10]));
-    gs := NewGeneratorsOfGMV(M, V);
+    gs := GeneratorsOfGMV(M, V);
     for i:=1 to 3 do
         x := RandomNonzero(F);
         assert IsInGMV(M, V, x*gs[i]);
@@ -95,9 +95,9 @@ procedure TestCuspResolutionMV()
     
     GammaType := Random(["Gamma0", "Gamma1", "Gamma"]);
     GroupType := Random(["GL2+", "SL2"]);
-    M, V, mx, g := NewCuspResolutionMV(b, n, alpha, beta:
-                                       GammaType := GammaType, GroupType := GroupType);
-    GMV_gens := NewGeneratorsOfGMV(M, V);
+    M, V, g := CuspResolutionMV(b, n, alpha, beta:
+                                GammaType := GammaType, GroupType := GroupType);
+    GMV_gens := GeneratorsOfGMV(M, V);
     samples := SamplesOfLevelSubgroup(b, n: GammaType:=GammaType, GroupType:=GroupType);
 
     if true then
@@ -112,11 +112,10 @@ procedure TestCuspResolutionMV()
     end if;
     assert g[2,1]*alpha + g[2,2]*beta eq 0;
 
-    test := [g^(-1)*mx^(-1)*y*mx*g: y in GMV_gens];
+    test := [g^(-1)*y*g: y in GMV_gens];
     print "Now testing:";
     for i:=1 to #GMV_gens do
         print GMV_gens[i];
-        gen_mod := mx^(-1) * GMV_gens[i] * mx;
         print test[i];
         print "";
         if not IsInLevelSubgroup(b, n, test[i]: GammaType:=GammaType, GroupType:=GroupType) then
