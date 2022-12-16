@@ -3,9 +3,13 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
   F := BaseField(Gamma);
-  assert Discriminant(Integers(F)) notin [8,12];
-
-  cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
+  ZF := Integers(F);
+  D := Discriminant(ZF);
+  require D notin [8,12]: "Discriminant not supported";
+  require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
+		"Level is not supported";
+  
+  cusps := Cusps(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
   l := 0;
@@ -48,9 +52,13 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
   F := BaseField(Gamma);
-  assert Discriminant(Integers(F)) notin [8,12];
-
-  cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
+  ZF := Integers(F);
+  D := Discriminant(ZF);
+  require D notin [8,12]: "Discriminant not supported";
+  require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
+		"Level is not supported";
+  
+  cusps := Cusps(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
   cusp_chern := 0;
