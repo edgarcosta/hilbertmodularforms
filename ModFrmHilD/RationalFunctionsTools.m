@@ -17,7 +17,7 @@ end intrinsic;
 // If r1 = r, r2, ..., rk are the roots of the denominator of F, there are polynomials f1(x), ..., fk(x) such that for n large we may write alpha(n) = sum fj(n) rj^n
 // Given r = rj, we return fj(n)
 // If r =/= rj for all j, we return 0
-intrinsic CoefficientComponent(F::FldFunRatUElt : r := 1) -> RngUPolElt 
+intrinsic CoefficientComponent(F::FldFunRatUElt : r := 1) -> RngUPolElt
   {Given a rational function and a rational number r, returns the component of the nth coefficient that is the polynomial coefficient of r^n}
   //We expand F around 1/(1 - r*t) so that its principal part will give us the polynomial we want
   G := Evaluate(F, (1 - Parent(F).1)/r); //Evaluate(F, 1/(1 - r*Parent(F).1));
@@ -28,7 +28,7 @@ intrinsic CoefficientComponent(F::FldFunRatUElt : r := 1) -> RngUPolElt
   R<x> := PolynomialRing(Rationals());
   MonomialList := [Coefficient(LG, d)*BinomialPolynomial(x + 1 + d, 1 + d) : d in [v..-1]];
   if MonomialList ne [] then
-  return &+MonomialList;
+    return &+MonomialList;
   end if;
-  return [];
+  return R!0;
 end intrinsic;
