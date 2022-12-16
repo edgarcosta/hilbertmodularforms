@@ -276,7 +276,7 @@ points.}
 
     ellipticData := AssociativeArray();
     if IsPrincipalCongruenceSubgroup(Gamma) and N^2 notin [1*ZK, 2*ZK, 3*ZK] then
-  return ellipticData;
+        return ellipticData;
     end if;
 
     // TODO: XXX: Properly implement elliptic points for arbitrary congruence subgroups.

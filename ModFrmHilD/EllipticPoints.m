@@ -542,8 +542,8 @@ intrinsic _EllipticPointData0(G::GrpHilbert) -> Assoc
     // Do some post processing.
     Data := AssociativeArray();
     for order in Keys(Counts) do
-        for factor in Counts[order] do
-            Data[ConvertRotationLabel(order, factor)];
+        for factor in Keys(Counts[order]) do
+            Data[ConvertRotationLabel(order, factor)] := Counts[order][factor];
         end for;
     end for;
 
