@@ -1,12 +1,6 @@
 intrinsic QuadraticConjugate(elt::FldNumElt) -> FldNumElt
  {}
-  if Type(elt) eq FldQuadElt then
-    return Conjugate(elt);
-  end if;
-  F := Parent(elt);
-  require Degree(F) eq 2: "only supports quadratic fields";
-  G, _, mp := AutomorphismGroup(F);
-  return mp(G.1)(elt);
+  return Trace(elt) - elt;
 end intrinsic;
 
 intrinsic CanonicalCyclicShift(s::SeqEnum[RngIntElt]) -> SeqEnum[RngIntElt]

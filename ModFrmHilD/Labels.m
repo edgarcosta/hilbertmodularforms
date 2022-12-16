@@ -39,7 +39,7 @@ end intrinsic;
 
 intrinsic LMFDBLabel(G::GrpHilbert) -> MonStgElt
  {LMFDB label for the congruence subgroups associated to Hilbert modular forms}
- F := Field(G);
+ F := BaseField(G);
  field_label := LMFDBLabel(F);
  level_label := LMFDBLabel(Level(G));
  Cl, mp := NarrowClassGroup(F);

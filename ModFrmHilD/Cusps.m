@@ -272,7 +272,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
     vprintf HilbertModularForms: "Lifting first coordinate. a_bar = %o\n", a_bar;
     a := CuspLiftFirstCoordinate(a_bar, c, ss, MM, NN, bb);
     vprintf HilbertModularForms: "Lifted coordinates [a,c] = [%o,%o]\n", a, c;
-    //TODO: remove bb?
+    //FIXME: remove bb, as it is part of the input
     Append(~cusps_seq, [* bb, MM, PP1![a,c] *]);
   end for;
   return cusps_seq;

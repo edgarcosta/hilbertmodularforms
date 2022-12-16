@@ -768,7 +768,7 @@ intrinsic GeneratorWeightBound(G::GrpHilbert : experiment:=false) -> Any
     // 2. Compute the multiple of the log-canonical sheaf that's an actual line bundle.
     // TODO: Address the special cases after things have been worked out.
 
-    D := Discriminant(Field(G));
+    D := Discriminant(BaseField(G));
     if D eq 5 then
 	m := 15;
     elif D eq 8 then

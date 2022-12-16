@@ -23,8 +23,9 @@ GAMMA_0_Type := "Gamma0";
 GAMMA_1_Type := "Gamma1";
 
 declare type GrpHilbert;
-declare attributes GrpHilbert : Field,
-        AmbientType,
+declare attributes GrpHilbert :
+  BaseField,
+  AmbientType,
   PrintString,
   Level,
   Index,
@@ -52,7 +53,7 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
 
     require IsRealQuadraticField(F): "Number field must be Real Quadratic Field.";
     Gamma := New(GrpHilbert);
-    Gamma`Field := F;
+    Gamma`BaseField := F;
     Gamma`ComponentIdeal := B;
     Gamma`Level := N;
     Gamma`Index := IndexOfPrincipalCongruenceSubgroup(F, N);
@@ -164,7 +165,7 @@ end intrinsic;
 intrinsic Print(Gamma::GrpHilbert)
 {Print.}
     print "Congruence Subgroup of Hilbert Modular group.";
-    print "Field:", Field(Gamma);
+    print "Field:", BaseField(Gamma);
     printf "Level: (%o)\n", IdealOneLine(Level(Gamma));
     printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
@@ -181,9 +182,10 @@ intrinsic Level(Gamma::GrpHilbert) -> RngOrdIdl
     return Gamma`Level;
 end intrinsic;
 
-intrinsic Field(Gamma::GrpHilbert) -> FldNum
+
+intrinsic BaseField(Gamma::GrpHilbert) -> FldNum
 {Return the Level attribute}
-    return Gamma`Field;
+    return Gamma`BaseField;
 end intrinsic;
 
 intrinsic Index(Gamma::GrpHilbert) -> RngIntElt
@@ -218,7 +220,7 @@ end intrinsic;
 
 intrinsic 'eq'(Gamma1::GrpHilbert, Gamma2::GrpHilbert) -> BoolElt
 {}
-    return (Field(Gamma1) eq Field(Gamma2) and
+    return (BaseField(Gamma1) eq BaseField(Gamma2) and
       Level(Gamma1) eq Level(Gamma2) and
       Index(Gamma1) eq Index(Gamma2));
 end intrinsic;
@@ -253,7 +255,7 @@ elliptic points of this type up to congugacy in Gamma.
 
     // Thus, the first thing is the level and return an empty array in the trivial cases.
 
-    K := Field(Gamma);
+    K := BaseField(Gamma);
     ZK := RingOfIntegers(K);
     D := Discriminant(K);
     N := Level(Gamma);
@@ -383,7 +385,7 @@ end intrinsic;
 intrinsic _EllipticPointDataSpecialCases(Gamma::GrpHilbert) -> Assoc
 {Deal with the specific cases of discriminant 5, 8, 12.}
 
-    D := Discriminant(Field(Gamma));
+    D := Discriminant(BaseField(Gamma));
     ellipticData := AssociativeArray();
     require Index(Gamma) eq 1 : "Only implemented for level 1 for special discrminants.";
 
@@ -487,7 +489,7 @@ end intrinsic;
 
 intrinsic IsPrincipalCongruenceSubgroup(Gamma::GrpHilbert) -> BoolElt
 {}
-    return Index(Gamma) eq IndexOfPrincipalCongruenceSubgroup(Field(Gamma), Level(Gamma));
+    return Index(Gamma) eq IndexOfPrincipalCongruenceSubgroup(BaseField(Gamma), Level(Gamma));
 end intrinsic;
 
 intrinsic IsTorsionFree(Gamma::GrpHilbert) -> BoolElt
@@ -510,7 +512,7 @@ intrinsic NumberOfCusps(Gamma::GrpHilbert) -> RngIntElt
     error "Congruence Subgroup of the form Gamma_0(N) not implemented.";
 
     // Create the HMF ring.
-    F := Field(Gamma);
+    F := BaseField(Gamma);
     N := Level(Gamma);
     prec := 20; // This should be irrelevant.
     M := GradedRingOfHMFs(F, prec);
@@ -530,8 +532,9 @@ intrinsic Cusps(Gamma::GrpHilbert) -> SeqEnum
   NN := Level(Gamma);
   bb := Component(Gamma);
   //if bb + NN ne Order(NN) then
+  //  _, mp := NarrowClassGroup(Number
   //  rbb := bb@@mp;
-  //  new_bb := [mp2(g)  : g in Domain(mp2) | mp2(g)@@mp eq rbb][1];
+  //  new_bb := [mp2(g)  : g in Domain(mp2) | mp2(g)@@Nmp eq rbb][1];
   //  assert IsNarrowlyPrincipal(new_bb * bb^-1);
   //end if;
   return Cusps(NN, bb : GammaType := GammaType(Gamma));

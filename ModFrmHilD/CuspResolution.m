@@ -334,7 +334,7 @@ end intrinsic;
 
 intrinsic CuspResolutionIntersections(G::GrpHilbert, p::Pt) -> SeqEnum, RngIntElt
 {}
-    K := Field(G);
+    K := BaseField(G);
     N := Level(G);
     x, y := Explode(Coordinates(p));
     x, y := NormalizeCusp(K, x, y, N);

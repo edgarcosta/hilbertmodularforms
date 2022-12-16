@@ -1,9 +1,9 @@
 /*
 intrinsic EllipticPointCounts(Gamma::GrpHilbert) -> Assoc
 {Returns an associative array a such that a[<n,e1,e2>] is the number of points of order n and rotation type <e1,e2>.}
-    assert Discriminant(Integers(Field(Gamma))) notin [5,8,12];
+    assert Discriminant(Integers(BaseField(Gamma))) notin [5,8,12];
     cnt := CountEllipticPoints(Gamma);
-    F := Field(Gamma);
+    F := BaseField(Gamma);
     _<x> := PolynomialRing(F);
     a := AssociativeArray();
     // sig := Automorphisms(F)[2];
@@ -65,7 +65,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
-  F := Field(Gamma);
+  F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [5,8,12];
  
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
@@ -113,7 +113,7 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
   // At the moment we do not handle them. 
-  F := Field(Gamma);
+  F := BaseField(Gamma);
   assert Discriminant(Integers(F)) notin [5,8,12];
   
   cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");

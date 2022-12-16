@@ -6,7 +6,7 @@ ModFrmHilDGRng
 
 declare type ModFrmHilDGRng [ModFrmHilD]; // ModFrmHilDGRng contains a ModFrmHilD contains ModFrmHilDElt
 declare attributes ModFrmHilDGRng:
-  Field, // FldNum : totally real field
+  BaseField, // FldNum : totally real field
   //FIXME: Move this and everything else that depends on Field only into FldExt
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
@@ -80,7 +80,7 @@ end intrinsic;
 intrinsic Print(M::ModFrmHilDGRng, level::MonStgElt)
   {}
   if level in ["Default", "Minimal", "Maximal"] then
-    printf "Graded ring of Hilbert modular forms over %o", M`Field;
+    printf "Graded ring of Hilbert modular forms over %o", BaseField(M);
     printf " with precision %o", M`Precision;
   elif level eq "Magma" then
       printf "%o", PercentM(M);
@@ -94,7 +94,7 @@ intrinsic Print(M::ModFrmHilDGRng, level::MonStgElt)
       msg *:= "         ^  ^  ^     " * "\n";
 
       print msg;
-      printf "Mothership of Hilbert modular forms over %o", M`Field;
+      printf "Mothership of Hilbert modular forms over %o", BaseField(M);
       printf " with precision %o\n", M`Precision;
   else
     error "not a valid printing level.";
@@ -119,12 +119,12 @@ end intrinsic;
 
 intrinsic BaseField(M::ModFrmHilDGRng) -> FldAlg
   {The base field of the space M of Hilbert modular forms.}
-  return M`Field;
+  return M`BaseField;
 end intrinsic;
 
 intrinsic Integers(M::ModFrmHilDGRng) -> RngOrd
   {}
-  return Integers(M`Field);
+  return Integers(BaseField(M));
 end intrinsic;
 
 intrinsic NarrowClassGroup(M::ModFrmHilDGRng) -> GrpAb
@@ -301,7 +301,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   assert IsTotallyReal(F);
   M := ModFrmHilDGRngInitialize();
   // field
-  M`Field := F;
+  M`BaseField := F;
   R := Integers(F);
   diffinv := Different(R)^-1;
   // narrow class group
