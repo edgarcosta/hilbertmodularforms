@@ -1,4 +1,3 @@
-
 /////////////////////////////////////////////////////
 //
 //    Type Hook
@@ -59,7 +58,7 @@ The B refers to the component, i.e., whether it is a subgroup of Gamma(O_F + B).
     case GammaType:
         when "Gamma"  : Gamma`GammaType := GAMMA_Type;
         when "Gamma0" : Gamma`GammaType := GAMMA_0_Type;
-			Gamma`Index := #ProjectiveLine(quo<Integers(F) | N>);
+                        Gamma`Index := #ProjectiveLine(quo<Integers(F) | N>);
         when "Gamma1" : Gamma`GammaType := GAMMA_1_Type;
     else
         error "Gamma type not supported.";
@@ -96,6 +95,11 @@ intrinsic CongruenceSubgroup(F::FldNum) -> GrpHilbert
     return CongruenceSubgroup(F, 1*Integers(F));
 end intrinsic;
 
+intrinsic CongruenceSubgroup(AmbType::MonStgElt, F::FldNum) -> GrpHilbert
+{}
+    ZF := MaximalOrder(F);
+    return CongruenceSubgroup(AmbType, F, 1*ZF, 1*ZF);
+end intrinsic;
 
 // Gamma0
 
@@ -116,7 +120,6 @@ intrinsic Gamma0(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 end intrinsic;
 
 
-
 intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
     return Gamma0(F, N, 1*Integers(F));
@@ -128,8 +131,6 @@ intrinsic Gamma0(F::FldNum) -> GrpHilbert
 {Return the Hilbert Modular group over `F`.}
     return Gamma0(F, 1*MaximalOrder(F));
 end intrinsic;
-
-
 
 
 intrinsic Gamma1(AmbientType::MonStgElt, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
@@ -169,7 +170,7 @@ intrinsic Print(Gamma::GrpHilbert)
     printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
     print "Gamma Type:", GammaType(Gamma);
-    print "Supergroup:", GammaType(Gamma);
+    print "Supergroup:", AmbientType(Gamma);
     return;
 end intrinsic;
 
@@ -220,7 +221,8 @@ intrinsic 'eq'(Gamma1::GrpHilbert, Gamma2::GrpHilbert) -> BoolElt
 {}
     return (Field(Gamma1) eq Field(Gamma2) and
       Level(Gamma1) eq Level(Gamma2) and
-      Index(Gamma1) eq Index(Gamma2));
+      Index(Gamma1) eq Index(Gamma2)) and
+      AmbientType(Gamma1) eq AmbientType(Gamma2);
 end intrinsic;
 
 
@@ -243,9 +245,11 @@ elliptic points of this type up to congugacy in Gamma.
 }
     if assigned Gamma`EllipticPointData then return Gamma`EllipticPointData; end if;
 
-    if GammaType(Gamma) eq GAMMA_Type then
+    if GammaType(Gamma) eq GAMMA_Type and AmbientType(Gamma) eq SL_Type then
         return _EllipticPointDataFullLevel(Gamma);
     elif GammaType(Gamma) eq GAMMA_0_Type then
+        return _EllipticPointData0(Gamma);
+    elif GammaType(Gamma) eq GAMMA_Type and IsPrincipalCongruenceSubgroup(Gamma) then
         return _EllipticPointData0(Gamma);
     else
         error "Function not implemented for Gamma type:", GammaType(Gamma);

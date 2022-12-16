@@ -16,7 +16,7 @@ OrderTermRecordFormat := recformat<Order, Conductor, PicardNumber, HasseUnitInde
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> Any
+intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> SeqEnum
 {}
     // UF  -- Unit group of ground field F.
     // mUF -- The map.
@@ -30,6 +30,12 @@ intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> Any
         end if;
     end for;
     return TotallyPositiveUnits;
+end intrinsic;
+
+intrinsic IndexOfTotallyPositiveUnitsModSquares(F::FldNum) -> RngIntElt
+{}
+    UF, mUF := UnitGroup(MaximalOrder(F));
+    return #TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);
 end intrinsic;
 
 // Artin Symbol

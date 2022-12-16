@@ -94,7 +94,8 @@ end intrinsic;
 /////////////////////////////////////////////////////
 
 declare type ChowRngHMS[ChowRngHMSElt];
-declare attributes ChowRngHMS[ChowRngHMSElt] : CongruenceSubgroup, ResolutionCycles, MultiplicationTable, GradedComponents, Generators, GeneratorInfo;
+declare attributes ChowRngHMS[ChowRngHMSElt] : CongruenceSubgroup, ResolutionCycles,
+        MultiplicationTable, GradedComponents, Generators, GeneratorInfo;
 declare attributes ChowRngHMSElt : Parent, GradedComponents;
 
 // The Chow ring of a Hilbert Modular surface:
@@ -139,7 +140,8 @@ end intrinsic;
 
 intrinsic MultiplicationTable(R::ChowRngHMS) -> MtrxSprs
 {Return a table encoding multiplication in the Chow ring. The first row/column of the table
-corresponds to the trivial class, and the last row/column corresponds to the basis degree 2 class.}
+corresponds to the trivial class, and the last row/column corresponds to the basis degree 2 
+class.}
     return R`MultiplicationTable;
 end intrinsic;
 
@@ -147,8 +149,9 @@ intrinsic '.'(R::ChowRngHMS, i::RngIntElt) -> ChowRngHMSElt
 {}
     if i notin [1..Ngens(R)] then
 	n := Ngens(R);
-	msg := Sprintf("Runtime error in '.': Value for name index (%o) should be in the range [1..%o]", i, n);
-	error msg;
+	msg1 := Sprintf("Runtime error in '.': Value for name index (%o) ", i);
+        msg2 := Sprintf("should be in the range [1..%o]", n);
+	error msg1 * msg2;
     end if;
 
     return Generators(R)[i];
@@ -203,7 +206,8 @@ intrinsic TopForm(R::ChowRngHMS) -> ChowRngHMSElt
 end intrinsic;
 
 intrinsic Generators(R::ChowRngHMS) -> SeqEnum
-{Return the generators for the Chow ring as a polynomial ring over ZZ. We identify H^0(X, ZZ) with constants.}
+{Return the generators for the Chow ring as a polynomial ring over ZZ. We identify H^0(X, ZZ) 
+with constants.}
     return R`Generators;
 end intrinsic;
 
@@ -1113,6 +1117,10 @@ end intrinsic;
 
 intrinsic VolumeOfFundamentalDomain(Gamma::GrpHilbert) -> FldRatElt
 {Return the Volume of the fundamendal domain of the (non-compact) Hilbert Modular Surface.}
+    case AmbientType(Gamma):
+    when GLPlus_Type: gfactor := 1/2^(IndexOfTotallyPositiveUnitsModSquares(Field(Gamma)));
+    when SL_Type: gfactor:=1;
+    end case;
     return 2 * Index(Gamma) * DedekindZetaExact(Field(Gamma), -1);
 end intrinsic;
 
