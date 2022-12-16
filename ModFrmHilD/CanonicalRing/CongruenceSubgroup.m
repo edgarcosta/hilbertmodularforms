@@ -532,9 +532,11 @@ intrinsic Cusps(Gamma::GrpHilbert) -> SeqEnum
 {Return the cusps of X_Gamma as a sequence of points in a projective space.}
   NN := Level(Gamma);
   bb := Component(Gamma);
-  if GCD(bb,NN) eq 1*Integers(BaseField(Gamma))  then
+  ZF := Integers(BaseField(Gamma));
+  if GCD(bb, NN) ne 1*ZF  then
     scalar := CoprimeNarrowRepresentative(bb, NN);
-    bb *:= scalar;
+    bb := scalar*bb;
   end if;
+  assert GCD(bb, NN) eq 1*ZF;
   return Cusps(NN, bb : GammaType := GammaType(Gamma));
 end intrinsic;
