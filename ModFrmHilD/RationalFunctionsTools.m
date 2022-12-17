@@ -26,9 +26,21 @@ intrinsic CoefficientComponent(F::FldFunRatUElt : r := 1) -> RngUPolElt
   LG := L ! G;
   v := Valuation(LG);
   R<x> := PolynomialRing(Rationals());
-  MonomialList := [Coefficient(LG, d)*BinomialPolynomial(x + 1 + d, 1 + d) : d in [v..-1]];
+  MonomialList := [Coefficient(LG, d)*BinomialPolynomial(x + 1 - d, 1 - d) : d in [v..-1]];
   if MonomialList ne [] then
-    return &+MonomialList;
+  return &+MonomialList;
   end if;
   return R!0;
 end intrinsic;
+//UNFINISHED
+//Let F(t) be a rational function, and write F(t) = sum alpha(n) t^n
+// If r1 = r, r2, ..., rk are the roots of the denominator of F, there are polynomials f1(x), ..., fk(x) such that for n large we may write alpha(n) = sum fj(n) rj^n
+//Given F, we return the degree past which the above identity holds
+//intrinsic CoefficientComponentBound(F::FldFunRatUElt) -> RngIntElt
+//{Given F, we return the degree past which the coefficients of the Laurent series of F are of the form sum fj(n) r^n}
+//  PartialFractions := PartialFractionDecomposition(F);
+//  if PartialFractions[1][1] eq q then
+//    return Degree(PartialFractions[1][3]);
+//  end if;
+//  return -1;
+//end intrinsic;
