@@ -588,6 +588,7 @@ intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::Tup) -> MonStgElt
   bb := Component(G);
   MM, pt, cf, p := Explode(elt);
   // WARNING: alpha and beta are not normalized according to Level and Component
+  // and not canonical
   alpha, beta := Explode(Eltseq(pt));
   ptstr := StripWhiteSpace(Sprint([Eltseq(elt) : elt in [alpha, beta]]));
 
