@@ -39,7 +39,7 @@ ParallelSort(~labels, ~ideals);
 for NN in ideals do
   for bb in narrow_reps do
     G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
-    for c in Cusps(G) do
+    for c in CuspsWithResolution(G) do
       print WriteCuspDataToRow(G, c);
     end for;
   end for;

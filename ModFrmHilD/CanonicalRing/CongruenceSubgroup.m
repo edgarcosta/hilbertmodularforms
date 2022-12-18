@@ -547,15 +547,49 @@ intrinsic NumberOfParabolicPoints(Gamma::GrpHilbert) -> RngIntElt
     return NumberOfCusps(Gamma);
 end intrinsic;
 
-intrinsic Cusps(Gamma::GrpHilbert) -> SeqEnum
+intrinsic CuspsWithResolution(Gamma::GrpHilbert) -> SeqEnum
 {Return the cusps of X_Gamma as a sequence of points in a projective space.}
   NN := Level(Gamma);
   bb := Component(Gamma);
   ZF := Integers(BaseField(Gamma));
+  P1ZF := ProjectiveSpace(ZF, 1);
+  case AmbientType(Gamma):
+    when GLPlus_Type : GroupType := "GL2+";
+    when SL_Type : GroupType := "SL2";
+  else
+    error "Ambient type not supported.";
+  end case;
+  scalar := 1;
   if GCD(bb, NN) ne 1*ZF  then
     scalar := CoprimeNarrowRepresentative(bb, NN);
-    bb := scalar*bb;
   end if;
-  assert GCD(bb, NN) eq 1*ZF;
-  return Cusps(NN, bb : GammaType := GammaType(Gamma));
+  working_bb := scalar*bb;
+  assert GCD(working_bb, NN) eq 1*ZF;
+  cusps := Cusps(NN, working_bb : GammaType := GammaType(Gamma));
+  res := [];
+  for c in cusps do
+    _, MM, pt := Explode(c);
+    alpha, beta := Explode(Eltseq(pt));
+    alpha, beta := NormalizeCusp(working_bb, NN, alpha, beta);
+    assert alpha in ZF and beta in ZF;
+    continued_fraction, period := CuspResolutionIntersections(working_bb, NN, alpha, beta : GroupType:=GroupType);
+    // alpha, beta = scalar*alpha, beta
+    // this keeps them integral, but not normalized according to bb
+    // FIXME: alpha and beta are not canonical
+    pt := P1ZF![Numerator(scalar)*alpha, Denominator(scalar)*beta];
+    Append(~res, <MM, pt, continued_fraction, period>);
+  end for;
+  return res;
+end intrinsic;
+
+intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::Tup) -> MonStgElt
+  {Script for writing cusp data to data table row}
+
+  bb := Component(G);
+  MM, pt, cf, p := Explode(elt);
+  // WARNING: alpha and beta are not normalized according to Level and Component
+  alpha, beta := Explode(Eltseq(pt));
+  ptstr := StripWhiteSpace(Sprint([Eltseq(elt) : elt in [alpha, beta]]));
+
+  return Join([LMFDBLabel(G), LMFDBLabel(bb), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
 end intrinsic;
