@@ -440,6 +440,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
     assert dim eq 2;
     level := Level(Gamma);
 
+    // clF_plus, m_clF_plus := NarrowClassGroup(F);
 
     ellipticCounts := AssociativeArray();
     ellipticCountsByOrder := AssociativeArray();
@@ -478,6 +479,9 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
 	    localCount := ActualLocalOptimalEmbeddingNumbers(F, level, S, dff);
 
+	    // clS, m_clS := PicardGroup(AbsoluteOrder(S));
+	    // norm_im := sub<clF_plus | [Norm(S!!m_clS(g))@@m_clF_plus : g in Generators(clS)]>;	    
+	    
             if AmbientType(Gamma) eq SL_Type then
                 // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
                 // The forumla in Proposition 4.2.3 says that the number of elliptic points
@@ -506,10 +510,16 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	    total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
 	    K := NumberField(S);
 
+	    /*
+	    al_sign := false;
+	    if GCD(level, dff) ne 1*ZF then
+		al_sign := &or[Norm(x[1])^x[2] lt 0 : x in Factorization(level)];
+	    end if;
+	    */
+	    sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
 	    // Check which signs occur (CM types)
-	    is_unr := IsUnramified(K);
-	    // and (GCD(Norm(level),Discriminant(F)) eq 1);
-	    if is_unr then
+	    is_unr := IsUnramified(K) and /* (not al_sign); */ (GCD(sqfree_level, dff) eq 1*ZF);
+ 	    if is_unr then
 		a := SteinitzClass(Module(S));
 		sign := ArtinSymbol(Integers(K), a*Component(Gamma));
 		if (sign eq 1) then 
