@@ -8,7 +8,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   require D notin [8,12]: "Discriminant not supported";
   require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
 		"Level is not supported";
-  
+
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
@@ -56,7 +56,7 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   require D notin [8,12]: "Discriminant not supported";
   require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
 		"Level is not supported";
-  
+
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
