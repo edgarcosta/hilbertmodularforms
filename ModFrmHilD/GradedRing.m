@@ -467,7 +467,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
     for aa in classreps do
       A[mm][aa] := [];
       if IsNarrowlyPrincipal(mm * aa^2) then
-        Points := PrecompIndexOfSummation(M, mm, aa);
+        Points := IndexOfSummation(M, mm, aa : precomp := true);
         for i in Points do
           b := i[1]; // Trace
           a := i[2]; // Norm
@@ -505,10 +505,10 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
     if t eq 0 then  // Add to AllDiscriminants if it is new
       ReducedDiscriminants cat:= [[*D,K*]];
     end if;
-    S[D] := [*D0, ZK, ff*]; // TODO: storing ring of integers doubles time why?
+    S[D] := [*D0, DD, ff*]; // TODO: storing discriminant and conductor doubles time why?
   end for;
 
-  // Third Pass. Append [D0, ZK, ff] to [b,a,D].
+  // Third Pass. Append [D0, DD, ff] to [b,a,D].
   // ****** IMPORTANT ******  In the third pass, we remove pairs where ff/aa is not integral 
   for mm in ideals do
     for aa in classreps do
@@ -529,7 +529,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
     Kabs := AbsoluteField(K); // Class groups computations only for absolute extensions?
     ZKabs := Integers(Kabs); // Ring of integers
     hplus := NarrowClassNumber(M); // Narrow class number
-    h,w := ClassNumberandUnitIndex(M, K, D0, ZF, hplus); // Class group of K and Hasse Unit index
+    h,w := ClassNumberandUnitIndex(M, K, D0, ZF, hplus); // Class group of K and Unit Index
     T[D0] := [*h,w*];
   end for;
 

@@ -359,7 +359,8 @@ intrinsic PrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> R
     // Preliminaries
     b := StoredData[1];
     a := StoredData[2]; // x^2 + bx + a
-    ZK := StoredData[5]; // Used for Artin Symbol
+    D := StoredData[3]; // D = b^2 - 4a
+    DD := StoredData[5]; // Discriminant of integers of K
     ff := StoredData[6]; // Conductor
     h := StoredData[7]; // Class number of quadratic extension K/F
     w := StoredData[8]; // Unit index of quadratic extension K/F
@@ -371,13 +372,6 @@ intrinsic PrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> R
       _<x> := PowerSeriesRing( RealField(k[1] + 20), k[1] + 20); // extend with weight
       P := 1/(1 + b*x + a*x^2);
       return Coefficient(P,l);
-    end function;
-
-    // Artin Symbol
-    function ArtinSymbol(pp)
-      if IsSplit(pp,ZK) then return 1;
-      elif IsRamified(pp,ZK) then return 0;
-      else return -1; end if;
     end function;
 
     // Constant — FIXME: Remove Round?
@@ -392,14 +386,14 @@ intrinsic PrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> R
     conductorsum := 0;
     for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
       // Term from class number of order -> class number of maximal order
-      term := Norm(bb) * (&*([1] cat [1 - ArtinSymbol(pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
+      term := Norm(bb) * (&*([1] cat [1 - UnramifiedSquareSymbol(F!D, pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
       // Embedding numbers
       for pair in NNfact do
         pp := pair[1];
         e := pair[2];
         f := Valuation(bb,pp); // Conductor
-        g := Valuation(Discriminant(ZK),pp); // Valuation of discriminant // Change to DD eventually
-        term *:= OptimalEmbeddings(e, 2*f, g, pp, ZK);
+        g := Valuation(DD,pp); // Valuation of discriminant // Change to DD eventually
+        term *:= OptimalEmbeddings(e, 2*f, g, pp, F!D);
       end for;
       conductorsum +:= term;
     end for;
@@ -533,8 +527,7 @@ end intrinsic;
 is totally positive generator for the fractional ideal representing the Hecke operator and
 u comes form a set of representative for the totally positive units modulo squares. */
 
-//FIXME: Refactor IndexOfSummation and PrecompIndexOfSummation so that they have a common core
-intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl) -> SeqEnum
+intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl : precomp := false) -> SeqEnum
   {Computes all a,b for which x^2 + bx + a is used in the summation for T(mm) and P(aa)}
   // Preliminaries
   F := BaseField(M);
@@ -558,55 +551,35 @@ intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl) -> S
   a := ReduceShintaniMinimizeTrace(a)[1];
 
   // Looping over all totally positive generators of the form au for u a totally positive unit mod squares
-  Indexforsum := [ [b,a*u] : b in IdealCMExtensions(M, a*u, 1*ZF), u in TotallyPositiveUnits];
-  Indexforsum cat:= [ [-i[1], i[2]] : i in Indexforsum  | i[1] ne 0 ];  // Add x^2 +/- bx + au
+  Indexforsum := [[b,a*u] : b in IdealCMExtensions(M,a*u,aa), u in TotallyPositiveUnits];
 
-  // Remove all orders x^2 + bx + a where 1) aa does not divide conductor ff or 2) b is not aa
-  L := [];
-  for pair in Indexforsum do
-    b := pair[1];
-    a := pair[2];
-    D := b^2-4*a;
-    K := ext<F | x^2 - D >;
-    ZK := Integers(K);
-    DD := Discriminant(ZK);
-    ff := Sqrt((D*ZF)/DD); // Conductor
-    if IsIntegral( ff * aa^(-1) ) and b in aa then
-      L cat:= [pair];
-    end if;
-  end for;
-  return L;
+  /// Non precomputed version /// 
+  /* This version has two key differences:
+  1) Returns coefficients corresponding to both x^2 + bx + au and x^2 - bx + au.
+  2) Runs a loop to remove pairs where aa does not divide the order of the conductor ff */
+  if not precomp then 
+    // Ensure that both x^2 - bx + au and x^2 + bx + au are in IndexforSum
+    Indexforsum cat:= [ [-i[1], i[2]] : i in Indexforsum  | i[1] ne 0 ];
+    // Remove all orders x^2 + bx + a where aa does not divide conductor ff 
+    L := [];
+    for pair in Indexforsum do
+      b := pair[1];
+      a := pair[2];
+      D := b^2-4*a;
+      K := ext<F | x^2 - D >;
+      ZK := Integers(K);
+      DD := Discriminant(ZK);
+      ff := Sqrt((D*ZF)/DD); // Conductor
+      if ff subset aa then
+        L cat:= [pair];
+      end if;
+    end for;
+
+    Indexforsum := Indexforsum;
+  end if;
+
+  return Indexforsum;
 end intrinsic;
-
-
-
-intrinsic PrecompIndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl) -> SeqEnum
-  {Computes the a,b for which x^2 + bx + a is used in the summation}
-
-  // Preliminaries
-  F := BaseField(M);
-  ZF := Integers(M);
-  U,mU := UnitGroup(ZF);
-  Ugens := [mU(u) : u in Generators(U)];
-
-  // Totally positive units mod squares
-  TotallyPositiveUnits := [];
-  for v in CartesianPower([0,1],#Ugens) do
-    unitelt := &*[Ugens[i]^v[i] : i in [1..#Ugens]];
-    if IsTotallyPositive(unitelt) then
-      Append(~TotallyPositiveUnits,unitelt);
-    end if;
-  end for;
-
-  // Totally positive generator for mm * aa ^ 2
-  bool, a := IsNarrowlyPrincipal( mm * aa^2 );
-  require bool : Sprintf("Ideal %o is not narrowly principal", IdealOneLine(mm));
-  a := ReduceShintaniMinimizeTrace(a)[1];
-
-  // Index for summation
-  return [[b,a*u] : b in IdealCMExtensions(M,a*u,aa), u in TotallyPositiveUnits];
-end intrinsic;
-
 
 
 intrinsic IdealCMExtensions(M::ModFrmHilDGRng, a::RngElt, aa::RngOrdIdl) -> SeqEnum
@@ -728,7 +701,7 @@ end intrinsic;
 
 ///////////////////////////////////// Optimal Embeddings ///////////////////////////////////////////////
 
-intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::RngOrdIdl, ZK::RngOrd) -> RngIntElt
+intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::RngOrdIdl, D::FldAlgElt) -> RngIntElt
   {Computes embedding numbers for x^2 - d * pi^(f) mod pp^e where: e is positive integers, f is positive even integer, pp is a prime ideal, and d = disc(ZK) has valuation(d,pp) = g where ZK is the ring of integers of the extension x^2 - d.}
 
   // Preliminaries
@@ -737,61 +710,39 @@ intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::RngOrd
 
   // Case 1 : p is odd
   if IsOdd(q) then
-    if f eq 0 then
-      return OptimalEmbeddingsOdd(e,f,g,pp,ZK);
-    else
-      return OptimalEmbeddingsOdd(e,f,g,pp,ZK) + Z!OptimalEmbeddingsOdd(e+1,f,g,pp,ZK)/q;
-    end if;
+    return f eq 0 select OptimalEmbeddingsOdd(e,f,g,pp,D) else OptimalEmbeddingsOdd(e,f,g,pp,D) + Z!OptimalEmbeddingsOdd(e+1,f,g,pp,D)/q;
   // Case 2 : p is even
   else
-    if f + g eq 0 then
-      return OptimalEmbeddingsEven(e,f,g,pp,ZK);
-    else
-      return OptimalEmbeddingsEven(e,f,g,pp,ZK) + Z!OptimalEmbeddingsEven(e+1,f,g,pp,ZK)/q;
-    end if;
+    return f + g eq 0 select OptimalEmbeddingsEven(e,f,g,pp,D) else OptimalEmbeddingsEven(e,f,g,pp,D) + Z!OptimalEmbeddingsEven(e+1,f,g,pp,D)/q;
   end if;
 end intrinsic;
 
 
 
-intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::RngOrdIdl, ZK::RngOrd) -> RngIntElt
+intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::RngOrdIdl, D::FldAlgElt) -> RngIntElt
   {Returns all solutions to x^2 - D mod pp^e where D = d*pi^f}
 
   // Size of residue field
   q := Norm(pp);
 
-  // Artin Symbol
-  function ArtinSymbol(pp)
-    if IsSplit(pp,ZK) then return 1; // Split: Return 1
-    elif IsRamified(pp,ZK) then return 0; // Ramified: Return 0
-    else return -1; end if; // Inert: Return -1
-  end function;
-
   // Embedding Numbers
   if f + g ge e then // Case 1 : f >= e
     N := q^(Floor(e/2));
   else // Case 2 : f < e
-    N := q^( ExactQuotient(f,2) ) * ArtinSymbol(pp) * (1 + ArtinSymbol(pp));
+    N := q^(ExactQuotient(f,2)) * UnramifiedSquareSymbol(D,pp) * (1 + UnramifiedSquareSymbol(D,pp));
   end if;
   return N;
 end intrinsic;
 
 
 
-intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::RngOrdIdl, ZK::RngOrd) -> RngIntElt
+intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::RngOrdIdl, D::FldAlgElt) -> RngIntElt
   {Returns all solutions to x^2 - D mod pp^e where D = d*pi^(g+f)}
 
   // Preliminaries
   q := Norm(pp); // Size of residue field
   ZF := Order(pp);
   v := Valuation(2*ZF,pp); // Valuation of 2*ZF
-
-  // Artin Symbol
-  function ArtinSymbol(pp)
-    if IsSplit(pp,ZK) then return 1; // Split: Return 1
-    elif IsRamified(pp,ZK) then return 0; // Ramified: Return 0
-    else return -1; end if; // Inert: Return -1
-  end function;
 
   // Embedding Numbers
   if g + f ge (e + 2*v) then // Case 1 : g + 2f >= e + 2v
@@ -800,10 +751,10 @@ intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, pp::Rn
     if IsOdd(g) then // Subcase 2.1 : g is odd
       N := 0;
     else // Subcase 2.2 : g is even
-      if e le (f + 1 - ArtinSymbol(pp)^2) then // Subsubcase 2.2.1 e <= f when pp is split or inert and e <= 2f+1 when pp is ramified
+      if e le (f + 1 - UnramifiedSquareSymbol(D,pp)^2) then // Subsubcase 2.2.1 e <= f when pp is split or inert and e <= 2f+1 when pp is ramified
         N := q^(Floor(e/2));
       else // Subsubcase 2.2.2 e > 2f when pp is split or inert and e > f+1 when pp is ramified
-        N := q^( ExactQuotient(f,2) ) * ArtinSymbol(pp) * (1 + ArtinSymbol(pp) );
+        N := q^( ExactQuotient(f,2) ) * UnramifiedSquareSymbol(D,pp) * (1 + UnramifiedSquareSymbol(D,pp) );
       end if;
     end if;
   end if;
