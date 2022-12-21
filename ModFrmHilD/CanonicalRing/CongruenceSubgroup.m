@@ -547,7 +547,8 @@ intrinsic NumberOfParabolicPoints(Gamma::GrpHilbert) -> RngIntElt
     return NumberOfCusps(Gamma);
 end intrinsic;
 
-intrinsic CuspsWithResolution(Gamma::GrpHilbert) -> SeqEnum
+
+intrinsic Cusps(Gamma::GrpHilbert : WithResolution:=false) -> SeqEnum
 {Return the cusps of X_Gamma as a sequence of points in a projective space.}
   NN := Level(Gamma);
   bb := Component(Gamma);
@@ -572,14 +573,23 @@ intrinsic CuspsWithResolution(Gamma::GrpHilbert) -> SeqEnum
     alpha, beta := Explode(Eltseq(pt));
     alpha, beta := NormalizeCusp(working_bb, NN, alpha, beta);
     assert alpha in ZF and beta in ZF;
-    continued_fraction, period := CuspResolutionIntersections(working_bb, NN, alpha, beta : GroupType:=GroupType);
     // alpha, beta = scalar*alpha, beta
     // this keeps them integral, but not normalized according to bb
     // FIXME: alpha and beta are not canonical
     pt := P1ZF![Numerator(scalar)*alpha, Denominator(scalar)*beta];
-    Append(~res, <MM, pt, continued_fraction, period>);
+    if WithResolution then
+      continued_fraction, period := CuspResolutionIntersections(working_bb, NN, alpha, beta : GroupType:=GroupType);
+      Append(~res, <MM, pt, continued_fraction, period>);
+    else
+      Append(~res, <MM, pt>);
+    end if;
   end for;
   return res;
+end intrinsic;
+
+intrinsic CuspsWithResolution(Gamma::GrpHilbert) -> SeqEnum
+{Return the cusps of X_Gamma as a sequence of points in a projective space.}
+  return Cusps(Gamma : WithResolution:=true);
 end intrinsic;
 
 intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::Tup) -> MonStgElt
@@ -594,3 +604,4 @@ intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::Tup) -> MonStgElt
 
   return Join([LMFDBLabel(G), LMFDBLabel(bb), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
 end intrinsic;
+

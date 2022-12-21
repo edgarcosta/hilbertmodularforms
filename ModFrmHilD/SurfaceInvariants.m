@@ -8,15 +8,14 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   require D notin [8,12]: "Discriminant not supported";
   require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
 		"Level is not supported";
-  
-  cusps := Cusps(Gamma);
+
+  cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
   l := 0;
   for cusp in cusps do
-      alpha, beta := NormalizeCusp(cusp[1], Level(Gamma), cusp[3][1], cusp[3][2]);
-      L,n := CuspResolutionIntersections(Gamma, alpha, beta);
-      l +:= #L * n;
+    _, _, L, n := Explode(cusp);
+    l +:= #L * n;
   end for;
 
   // get elliptic points contribution
@@ -57,14 +56,13 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   require D notin [8,12]: "Discriminant not supported";
   require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
 		"Level is not supported";
-  
-  cusps := Cusps(Gamma);
+
+  cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
   cusp_chern := 0;
   for cusp in cusps do
-      alpha, beta := NormalizeCusp(cusp[1], Level(Gamma), cusp[3][1], cusp[3][2]);
-      L,n := CuspResolutionIntersections(Gamma, alpha, beta);
+    _, _, L, n := Explode(cusp);
       if (n eq 1) and (#L eq 1) then
 	  cusp_chern +:= L[1];
       else
