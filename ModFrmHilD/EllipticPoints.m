@@ -248,7 +248,7 @@ end function;
 function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
     // Compute the number of local embeddings of the monogenic order
     // x^2 + b1 * x + a1.
-    return EmbeddingNumbers(b1, a1, prime, exponent);
+    return OptimalEmbeddingNumber(b1, a1, prime, exponent);
 end function;
 
 
