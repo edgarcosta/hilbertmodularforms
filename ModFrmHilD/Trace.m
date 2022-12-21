@@ -101,7 +101,7 @@ end intrinsic;
 
 /////////////////////////////// ModFrmHilD: HilberSeriesCusp /////////////////////////////////////////
 
-intrinsic HilberSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
+intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
   { returns the hilbert series for the dimension of the space of cusp forms of level NN }
 
   R<T> := PowerSeriesRing(Rationals());
@@ -145,8 +145,8 @@ intrinsic HilberSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
     Include(~done, pair);
     mult := t ne 0 select 2 else 1;
     // C(u,t)
-    C := EmbeddingNumberOverUnitIndex(M, t, u, NN, aa);
-    vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", u, t, EmbeddingNumberOverUnitIndex(M, t, u, NN, aa);
+    C := EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa); 
+    vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", u, t, EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa); 
     vprintf HMFTrace : "WeightFactor: <%o, %o> %o\n", u, t, WeightFactor(u, t, prec);
     res +:= mult * C * WeightFactor(u, t, prec);
   end for;
