@@ -301,7 +301,7 @@ function check(d)
 
     function dim_row(level)
       PS<T> := PowerSeriesRing(Integers() : Precision:=30);
-      HC := HilberSeriesCusp(R, level*ZF);
+      HC := HilbertSeriesCusp(R, level*ZF);
       return [AbsEltseq(PS!HC)[k+1] : k in weights];
     end function;
     assert dimensions[d] eq [dim_row(n) : n in levels];
