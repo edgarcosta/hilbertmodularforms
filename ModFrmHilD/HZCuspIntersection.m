@@ -19,7 +19,7 @@ intrinsic HZCuspIntersection(F::FldQuad, t::RngIntElt,
        if #s eq 1 and n eq 1 then
 	   s[1] +:= 2;
        end if;
-       ws := [HJReconstructPeriodic(F,[s[(i+j) mod #s + 1] : j in [1..#s]]) 
+       ws := [HJReconstructPeriodic(F,[s[(i+j-2) mod #s + 1] : j in [1..#s]]) 
 	      : i in [1..#s]];
        Qs := [Matrix([[Norm(x+y)-Norm(x)-Norm(y) : y in [1,w]] : x in [1,w]]) 
 	      : w in ws];
@@ -65,6 +65,8 @@ intrinsic HZCuspIntersection(F::FldQuad, t::RngIntElt,
        //assert &and[all_mults[i][2] eq all_mults[i+1][1] 
 	//	   : i in [1..#all_mults-1]];
        // cusp_mults := [m[1] : m in all_mults];
+       // realigning to fit the intersection numbers
+       // cusp_mults := cusp_mults[2..#cusp_mults] cat [cusp_mults[1]];
        Append(~cusps_mults, cusp_mults);
    end for;
    return cusps_mults;

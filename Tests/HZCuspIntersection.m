@@ -7,7 +7,11 @@ procedure testHZ(D, bs, mults)
             results:= HZCuspIntersection(F, t, N, b);
             for i->res in results do
                 pass := false;
-                assert CanonicalCyclicShift(res) eq CanonicalCyclicShift(mults[b][t][i]);
+                // assert CanonicalCyclicShift(res) eq CanonicalCyclicShift(mults[b][t][i]);
+		if res ne mults[b][t][i] then
+		    printf "res = %o, mults[%o][%o][%o] = %o", res, IdealOneLine(b), t, i, mults[b][t][i];
+		    assert false;
+		end if;
             end for;
         end for;
     end for;
@@ -45,7 +49,7 @@ mults[60][b][1] := [[1],[1]];
 mults[60][b][10] := [[2],[2]];
 
 b := bs[60][2];
-mults[60][b][2] := [[0,1],[0,1]];
+mults[60][b][2] := [[1,0],[1,0]];
 mults[60][b][17] := [[2,2],[2,2]];
 
 b := bs[60][3];
@@ -58,10 +62,10 @@ mults[60][b][51] := [[0,1,1,0,1,1],[0,1,1,0,1,1]];
 mults[60][b][59] := [[0,0,1,2,1,0],[0,0,1,2,1,0]];
 
 b := bs[60][4];
-mults[60][b][3] := [[0,1,0],[0,1,0]];
-mults[60][b][7] := [[1,0,1],[1,0,1]];
-mults[60][b][22] := [[1,2,1],[1,2,1]];
-mults[60][b][30] := [[1,0,1],[1,0,1]];
+mults[60][b][3] := [[1,0,0],[1,0,0]];
+mults[60][b][7] := [[0,1,1],[0,1,1]];
+mults[60][b][22] := [[2,1,1],[2,1,1]];
+mults[60][b][30] := [[0,1,1],[0,1,1]];
 
 printf "\n\tTesting Example 1 in [vdG] p. 92...";
 testHZ(13, bs[13], mults[13]);
