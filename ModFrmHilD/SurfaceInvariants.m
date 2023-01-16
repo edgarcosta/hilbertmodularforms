@@ -235,7 +235,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
       N := Generator(Level(Gamma) meet Integers());
       require Norm(Component(Gamma)) eq 1: "Only principal genus supported for higher level.";
       if N in [1 .. 10] cat [12, 13, 16, 18, 25] then
-        Append(~LevelList, N);
+        Append(~LevelList, N^2);
       end if;
     end if;
 
