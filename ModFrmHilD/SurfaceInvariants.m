@@ -131,7 +131,7 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
   chi := ArithmeticGenus(Gamma);
 
   if (chi eq 1) then
-    if RationalityCriterion then
+    if RationalityCriterion(Gamma) then
       return [-1];
     else
       return [-1, 2];
@@ -244,10 +244,12 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
       return false;
     end if;
 
+    // print LevelList;
+
     //Compute intersections of HZ divisors with cusps.
     IntList := [];
     for M in LevelList do
-      HZInt := HZCuspIntersection(F, M^2, Level(Gamma), Component(Gamma));
+      HZInt := HZCuspIntersection(F, M, Level(Gamma), Component(Gamma));
       HZIntList := [];
       for x in HZInt do
         HZIntList cat:= x;
@@ -308,7 +310,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
 
     end for;
 
-    return false;
+  return false;
 end intrinsic;
 
 // IO
