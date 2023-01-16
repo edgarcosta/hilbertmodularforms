@@ -5,9 +5,9 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   F := BaseField(Gamma);
   ZF := Integers(F);
   D := Discriminant(ZF);
-  require D notin [8,12]: "Discriminant not supported";
-  require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
-		"Level is not supported";
+  // require D notin [8,12]: "Discriminant not supported";
+  // require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
+ //		"Level is not supported";
   
   cusps := Cusps(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -54,9 +54,9 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   F := BaseField(Gamma);
   ZF := Integers(F);
   D := Discriminant(ZF);
-  require D notin [8,12]: "Discriminant not supported";
-  require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
-		"Level is not supported";
+  // require D notin [8,12]: "Discriminant not supported";
+  // require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
+	//	"Level is not supported";
   
   cusps := Cusps(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
