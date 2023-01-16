@@ -493,7 +493,7 @@ Ker(Gamma(1)->PSL(ZF/n)), in the case GroupType:="SL2", for testing purposes.}
 
     L := [-b: b in periodic];
     if #L eq 1 and k eq 1 then L := [L[1]+2]; end if;
-    return L, k;
+    return CanonicalCyclicShift(L), k;
 end intrinsic;
 
 /* ------------------------------------------------------------------------- */
