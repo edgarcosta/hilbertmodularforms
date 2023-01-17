@@ -280,17 +280,7 @@ intrinsic Cusps(NN::RngOrdIdl, bb::RngOrdIdl : GammaType := "Gamma0") -> SeqEnum
   return cusps_seq;
 end intrinsic;
 
-intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::List) -> MonStgElt
-  {Script for writing cusp data to data table row}
 
-    bb, MM, pt := Explode(elt);
-    alpha, beta := Explode(Eltseq(pt));
-    alpha, beta := NormalizeCusp(BaseField(G), alpha, beta, Level(G));
-    P1 := Parent(pt);
-    cf, p := CuspResolutionIntersections(G, P1![alpha, beta]);
-    ptstr := StripWhiteSpace(Sprint([Eltseq(elt) : elt in [alpha, beta]]));
-    return Join([LMFDBLabel(G), LMFDBLabel(bb), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
-end intrinsic;
 
 // copy-pasta-ed from ModSym/Dirichlet.m and adapted for Hecke
 intrinsic GaloisConjugacyRepresentatives(S::[GrpHeckeElt]) -> SeqEnum

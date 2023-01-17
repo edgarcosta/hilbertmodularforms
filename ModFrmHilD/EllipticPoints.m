@@ -248,7 +248,7 @@ end function;
 function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
     // Compute the number of local embeddings of the monogenic order
     // x^2 + b1 * x + a1.
-    return EmbeddingNumbers(b1, a1, prime, exponent);
+    return OptimalEmbeddingNumber(b1, a1, prime, exponent);
 end function;
 
 
@@ -468,6 +468,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
     assert dim eq 2;
     level := Level(Gamma);
 
+    // clF_plus, m_clF_plus := NarrowClassGroup(F);
 
     ellipticCounts := AssociativeArray();
     ellipticCountsByOrder := AssociativeArray();
@@ -505,6 +506,9 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
 	    localCount := ActualLocalOptimalEmbeddingNumbers(F, level, S, dff);
 
+	    // clS, m_clS := PicardGroup(AbsoluteOrder(S));
+	    // norm_im := sub<clF_plus | [Norm(S!!m_clS(g))@@m_clF_plus : g in Generators(clS)]>;	    
+	    
             if AmbientType(Gamma) eq SL_Type then
                 // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
                 // The forumla in Proposition 4.2.3 says that the number of elliptic points
@@ -533,8 +537,23 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	    total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
 	    K := NumberField(S);
 
+	    /*
+	    al_sign := false;
+	    if GCD(level, dff) ne 1*ZF then
+		al_sign := &or[Norm(x[1])^x[2] lt 0 : x in Factorization(level)];
+	    end if;
+	    */
+	    sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
+
 	    // Check which signs occur (CM types)
-	    if IsUnramified(K) then
+	    is_unr := IsUnramified(K);
+	    // and (GCD(Norm(level),Discriminant(F)) eq 1);
+	    if GCD(Norm(level),3) ne 1 then
+		is_unr := is_unr and OrderNormIndexWithAL(S,level) eq 2;
+	    end if;
+	    if is_unr then
+		assert OrderNormIndex(S) eq 2;
+
 		a := SteinitzClass(Module(S));
 		sign := ArtinSymbol(Integers(K), a*Component(Gamma));
 		if (sign eq 1) then 
@@ -708,4 +727,51 @@ intrinsic ActualCorrectOrders(F::FldNum, rho : Bound := 0) -> Tup
   return Rdata;
 end intrinsic;
 
+intrinsic OrderNormIndex(S::RngOrd)->RngIntElt
+{Returns the index of Nm(Pic(S)) inside the narrow ray class group of the base field.}
+  S_abs := AbsoluteOrder(S);
+  pic_S, pic_map := PicardGroup(S_abs);
+  R := BaseRing(S);
+  cg, cg_map := NarrowClassGroup(R);
+  norm_im := sub< cg | [Norm(S!!(Denominator(pic_map(g))*pic_map(g))) @@ cg_map 
+			: g in Generators(pic_S)]>;
+  return Index(cg, norm_im);
+end intrinsic;
 
+intrinsic OrderNormIndexWithAL(S::RngOrd, N::RngQuadIdl)->RngIntElt
+{Returns the index of Nm(Pic(S)) inside the narrow ray class group of the base field.}
+  S_abs := AbsoluteOrder(S);
+  pic_S, pic_map := PicardGroup(S_abs);
+  R := BaseRing(S);
+  cg, cg_map := ClassGroup(R);
+  cg_sq := hom<cg -> cg | [2*g : g in Generators(cg)]>;
+  ncg, ncg_map := NarrowClassGroup(R);
+  norms := [Norm(S!!(Denominator(pic_map(g))*pic_map(g))) @@ ncg_map 
+	    : g in Generators(pic_S)];
+  fac_N := Factorization(N);
+  AL_primes := [fa[1] : fa in fac_N];
+  F := NumberField(R);
+  M2F := MatrixAlgebra(F,2);
+  _, B, mat_map := IsQuaternionAlgebra(M2F);
+  gens := [[1,0,0,0],[0,1,0,0],[0,0,0,1]];
+  gens cat:= [[0,0,g,0] : g in Generators(N)];
+  O := Order([mat_map(M2F!g) : g in gens]);
+  for i->p in AL_primes do
+      e := fac_N[i][2];
+      // The two-sided ideal
+      J := ideal< O | [mat_map([0,1,t^e,0]) : t in Generators(p)]>;
+      // Lifting the AL to a global element
+      fraka := Norm(J);
+      fraka_cl := fraka @@ cg_map;
+      c_inv := cg_map(fraka_cl @@ cg_sq);
+      c := c_inv^(-1);
+      cJ := lideal< O | [x*y : x in Generators(c), y in Generators(J)]>;
+      assert Norm(cJ) @@ cg_map eq cg!0;
+      is_principal, alpha := IsPrincipal(cJ);
+      assert is_principal;
+      assert &and[alpha*g*alpha^(-1) in O : g in Generators(O)];
+      Append(~norms, Norm(alpha) @@ ncg_map);
+  end for;
+  norm_im := sub< ncg | norms >;
+  return Index(ncg, norm_im);
+end intrinsic;

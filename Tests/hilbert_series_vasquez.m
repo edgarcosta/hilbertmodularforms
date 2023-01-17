@@ -10,7 +10,7 @@ for D in Ds do
     level := 1*ZF;
     M := GradedRingOfHMFs(F, 0);
     M2 := HMFSpace(M, level, [2,2]);
-    HC := HilberSeriesCusp(M, level);
+    HC := HilbertSeriesCusp(M, level);
     R<T> := Parent(HC);
     HE := EisensteinDimension(M2)*T^2/(1-T^2);
     H := HC + HE + NarrowClassNumber(M);
