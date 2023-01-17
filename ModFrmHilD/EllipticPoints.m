@@ -730,13 +730,33 @@ intrinsic OrderNormIndexWithAL(S::RngOrd, N::RngQuadIdl)->RngIntElt
   for i->p in AL_primes do
       e := fac_N[i][2];
       // The two-sided ideal
-      J := ideal< O | [mat_map([0,1,t^e,0]) : t in Generators(p)]>;
+      gens := [];
+      for t in Generators(N) do
+	  gens_p := Generators(p);
+	  for i in [1..#gens_p] do
+	      M := N div p^e;
+	      if (M ne 1*R) then
+		  while (gens_p[i] in M) do
+		      gens_p[i] +:= &+[Random([-10..10])*g : g in gens_p 
+				       | g ne gens_p[i]];
+		  end while;
+	      end if;
+	      pi := gens_p[i];
+	      q := pi^e;
+	      x := InverseMod(q, M);
+	      Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
+	  end for;
+      end for;
+      J := ideal< O | gens>;
+      assert (J eq lideal<O | gens>) and (J eq rideal<O | gens>);
       // Lifting the AL to a global element
       fraka := Norm(J);
       fraka_cl := fraka @@ cg_map;
       c_inv := cg_map(fraka_cl @@ cg_sq);
       c := c_inv^(-1);
-      cJ := lideal< O | [x*y : x in Generators(c), y in Generators(J)]>;
+      c_gens := [x*y : x in Generators(c), y in Generators(J)];
+      cJ := ideal< O | c_gens>;
+      assert (cJ eq lideal<O | c_gens>) and (cJ eq rideal<O | c_gens>);
       assert Norm(cJ) @@ cg_map eq cg!0;
       is_principal, alpha := IsPrincipal(cJ);
       assert is_principal;
