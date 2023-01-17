@@ -425,9 +425,9 @@ intrinsic IndexOfSummation(Gamma::GrpHilbert) -> Any
     // This is the index of summation in the trace formula. However, this
     // is probably not what we want.
 
-    // Nevertheless, it would seem that what we do want is to 
+    // Perhaps this should be called "TotallyNegativePolynomials".
 
-    F := Field(Gamma);
+    F := BaseField(Gamma);
     N := Level(Gamma);
     ZFI := 1*MaximalOrder(F);
     
@@ -437,6 +437,10 @@ intrinsic IndexOfSummation(Gamma::GrpHilbert) -> Any
     return IndexOfSummation(M, N, ZFI);
     
 end intrinsic;
+
+// TODO: Looks like the right thing to do is use "IndexOfSummation" to extract
+// all of the torsion elements. Then maybe do the conductor thing...
+// Still, it really isn't clear how to detect any overlap...
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -498,7 +502,6 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             hS  := Srec`PicardNumber;
             QS  := Srec`HasseUnitIndex;
             
-            // localCount := 1; // TODO: Generalize to other levels.
             // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
 	    localCount := ActualLocalOptimalEmbeddingNumbers(F, level, S, dff);
 
@@ -531,8 +534,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	    K := NumberField(S);
 
 	    // Check which signs occur (CM types)
-	    is_unr := IsUnramified(K);
-	    if is_unr then
+	    if IsUnramified(K) then
 		a := SteinitzClass(Module(S));
 		sign := ArtinSymbol(Integers(K), a*Component(Gamma));
 		if (sign eq 1) then 
@@ -547,7 +549,8 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 		num_plus := total_num div 2;
 		num_minus := total_num div 2;
 	    end if;
-            // ellipticCountsByOrder[S] := hS * groupCorrectionFactor * localCount;
+
+            // Update associative array.
 	    ellipticCountsByOrder[S] := AssociativeArray();
 	    ellipticCountsByOrder[S][rot_factor] := num_plus;
 	    ellipticCountsByOrder[S][rot_factor_minus] := num_minus;
