@@ -123,6 +123,24 @@ intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
   return Join([Label(Gamma), KodairaDimension(Gamma), HodgeDiamond(Gamma)[3][1..2]], ":");
 end intrinsic;
 
+intrinsic EasyIsGeneralType(hs::SeqEnum) -> Any
+  {}
+  chi, c12 := Explode(HodegToChiC12(hs));
+  if (chi gt 1) and (c12 gt 0) then
+    return true;
+  end if;
+  return false;
+end intrinsic;
+
+intrinsic HodgeToChiC12(hs::SeqEnum) -> Any
+  {}
+  h20, h11 := Explode(hs);
+  chi := h20 + 1;
+  c12 := 10*(h20 + 1) - h11;
+  return [chi, c12];
+end intrinsic;
+
+
 intrinsic vanderGeerTable( : Discriminants := []) -> List
   {Return the table of invariants from pp. 269-276 of van der Geer. dot and unlisted values are returned as -100. If Discriminants is nonempty, return only those rows of the table with the corresponding discriminants.}
   dot := -100;
