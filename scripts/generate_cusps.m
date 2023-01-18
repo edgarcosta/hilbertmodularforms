@@ -16,6 +16,8 @@ end if;
 
 if not assigned cut then
   cut := 1000;
+else
+  cut := StringToInteger(cut);
 end if;
 
 MaxLevelNorm := Ceiling(cut*D^(-3/2));
