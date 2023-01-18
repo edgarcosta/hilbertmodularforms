@@ -55,7 +55,7 @@ try
     G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
     print WriteGeometricInvariantsToRow(G);
 catch e
-  WriteStderr(Sprtinf("Failed for D = %o, NN =%o , bb=%o", D, LMFDBLabel(NN), LMFDBLabel(bb)));
+  WriteStderr(Sprintf("Failed for D = %o, NN =%o , bb=%o", D, LMFDBLabel(NN), LMFDBLabel(bb)));
   WriteStderr(e);
   exit 1;
 end try;
