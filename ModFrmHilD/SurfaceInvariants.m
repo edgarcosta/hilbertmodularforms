@@ -274,17 +274,20 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
 
     //Blow down any subset of the HZ divisors and check if we have a good configuration.
     for I in Subsets({1 .. #LevelList}) do
-      if #I eq 0 then //Without blowing down: check if any -1 curve on boundary intersects exceptional HZ divisor.
-        exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
-
-        for i in exc_indices do
-          for j in [1 .. #LevelList] do
-            if not IntList[j][i] eq 0 then
-              vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
-              return true;
-            end if;
-          end for;
-        end for;
+     //Without blowing down,
+      if #I eq 0 then //Without blowing down, we're stuck.
+      continue;
+      // Old attempt. I don't think this is true.
+      // exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
+      //
+      //   for i in exc_indices do
+      //     for j in [1 .. #LevelList] do
+      //       if not IntList[j][i] eq 0 then
+      //         vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+      //         return true;
+      //       end if;
+      //     end for;
+      //   end for;
       else
 
       // List of indices s.t. boundary curve is now exceptional
