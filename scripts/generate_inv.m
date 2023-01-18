@@ -17,7 +17,11 @@ if D in [8,12] then
   exit 0;
 end if;
 
-MaxLevelNorm := Ceiling(100*D^(-3/2));
+if not assigned cut then
+  cut := 1000;
+end if;
+
+MaxLevelNorm := Ceiling(cut*D^(-3/2));
 
 if not assigned AmbientType then
   print "Missing argument AmbientType";
