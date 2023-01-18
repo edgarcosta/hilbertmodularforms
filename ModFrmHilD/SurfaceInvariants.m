@@ -1,29 +1,32 @@
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
-  // At the moment we do not handle them. 
+  // At the moment we do not handle them.
   F := BaseField(Gamma);
-  assert Discriminant(Integers(F)) notin [8,12];
- 
-  cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
+  ZF := Integers(F);
+  D := Discriminant(ZF);
+  require D notin [8,12]: "Discriminant not supported";
+  require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
+		"Level is not supported";
+
+  cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
-  l := 0;  
+  l := 0;
   for cusp in cusps do
-      alpha, beta := NormalizeCusp(cusp[1], Level(Gamma), cusp[3][1], cusp[3][2]);
-      L,n := CuspResolutionIntersections(Gamma, alpha, beta);
-      l +:= #L * n;
+    _, _, L, n := Explode(cusp);
+    l +:= #L * n;
   end for;
-  
+
   // get elliptic points contribution
   a := CountEllipticPoints(Gamma);
-  
+
   elliptic := 0;
-  for n in Keys(a) do 
+  for n in Keys(a) do
       for rot_factor in Keys(a[n]) do
 	  // This is ad-hoc for surfaces
 	  if rot_factor[1] eq 1 then
-	      len := 1;  
+	      len := 1;
 	  elif rot_factor[1] eq n-1 then
 	      len := n-1;
 	  elif n eq 5 then
@@ -46,17 +49,20 @@ end intrinsic;
 intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
-  // At the moment we do not handle them. 
+  // At the moment we do not handle them.
   F := BaseField(Gamma);
-  assert Discriminant(Integers(F)) notin [8,12];
-  
-  cusps := Cusps(Level(Gamma), Component(Gamma) : GammaType := "Gamma0");
+  ZF := Integers(F);
+  D := Discriminant(ZF);
+  require D notin [8,12]: "Discriminant not supported";
+  require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
+		"Level is not supported";
+
+  cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
   // get cusp contribution
   cusp_chern := 0;
   for cusp in cusps do
-      alpha, beta := NormalizeCusp(cusp[1], Level(Gamma), cusp[3][1], cusp[3][2]);
-      L,n := CuspResolutionIntersections(Gamma, alpha, beta);
+    _, _, L, n := Explode(cusp);
       if (n eq 1) and (#L eq 1) then
 	  cusp_chern +:= L[1];
       else
@@ -71,7 +77,7 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   else
       a5 := 0;
   end if;
-  
+
   elliptic := a3_plus * (-1/3) + a5 * (-2/5);
   k2 := 2*vol + cusp_chern + elliptic;
   assert IsIntegral(k2);
@@ -116,11 +122,206 @@ intrinsic KodairaDimension(Gamma::GrpHilbert) -> MonStgElt
   return -100; // FIXME
 end intrinsic;
 
+//To be improved
+intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
+  {Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to Gamma,
+    based on the arithmetic genus. When the level is 1, it gives a more refined list based on K^2.
+  }
+
+  chi := ArithmeticGenus(Gamma);
+
+  if (chi eq 1) then
+    if RationalityCriterion(Gamma) then
+      return [-1];
+    else
+      return [-1, 2];
+    end if;
+  else
+    if Norm(Level(Gamma)) eq 1 then
+      k2 := K2(Gamma) + getHZExceptionalNum(Gamma); //K2 of the minimal model of the HMS.
+      if (chi eq 2) and (k2 eq 0) then
+        return [0, 1];
+      elif (chi ge 1) and (k2 eq 0) then
+        return [1];
+      else
+        return [2];
+      end if;
+    else // We don't yet know the number of exceptional curves, so K2(minimal model) >= K2(Gamma).
+      k2 := K2(Gamma);
+      if (chi eq 2) and (k2 le 0) then
+        return [0, 1, 2];
+      elif (chi ge 1) and (k2 le 0) then
+        return [1, 2];
+      else
+        return [2];
+    end if;
+
+    end if;
+
+  end if;
+end intrinsic;
+
+intrinsic PrimeDiscriminant(D,q) -> MonStgElt
+    {}
+    assert D mod q eq 0;
+    assert IsFundamentalDiscriminant(D);
+    sign := (q mod 4 eq 1) select 1 else -1;
+    if (q eq 2) then
+      sign_list := [(-1) : p in PrimeDivisors(D) | p mod 4 eq 3];
+      if #sign_list eq 0 then
+        sign := 1;
+      else
+       sign := &*sign_list;
+      end if;
+      end if;
+    return sign*q^Valuation(D,q);
+end intrinsic;
+
+intrinsic getHZExceptionalNum(Gamma) -> MonStgElt
+    {Returns number of exceptional HZ divisors if the surface is *not rational*;
+      currently only implemented for level 1.}
+
+    require Norm(Level(Gamma)) eq 1 : "Only implemented for level 1";
+
+    A := Norm(Component(Gamma));
+    D := Discriminant(Integers(BaseField(Gamma)));
+    qs := PrimeDivisors(D);
+    Dqs := [PrimeDiscriminant(D,q) : q in qs];
+    s := 2*&*[1 + KroneckerSymbol(Dq,A) : Dq in Dqs];
+    s +:= &*[1 + KroneckerSymbol(Dq, 2*A) : Dq in Dqs];
+    s +:= &*[1 + KroneckerSymbol(Dq, 3*A) : Dq in Dqs] div 2;
+    s +:= (1 - KroneckerSymbol(D,3)^2)*
+	  &*[1 + KroneckerSymbol(Dq,9*A) : Dq in Dqs];
+    if D eq 105 then
+	  s +:= 2;
+    end if;
+    return s;
+end intrinsic;
+
+intrinsic RationalityCriterion(Gamma) -> BoolElt
+    {Checks whether the Rationality Criterion is satisfied.
+      Note 1: Only implemented for Gamma0(N) level.
+      Note 2: it could be refined by including more Hirzebruch--Zagier divisors.}
+
+    F := BaseField(Gamma);
+
+    //Make a list of intersection numbers of cusps.
+    res := CuspsWithResolution(Gamma);
+    self_int_res := [];
+    for x in res do
+      self_int_res cat:= x[3];
+    end for;
+
+    LevelList := [];
+
+    //Make a list of possible exceptional Hirzebruch--Zagier divisors.
+    if Norm(Level(Gamma)) eq 1 then //vdG VII.4 gives the following
+      A := Component(Gamma);
+      if Norm(A) eq 1 then
+        Append(~LevelList, 1);
+        Append(~LevelList, 4);
+        Append(~LevelList, 9);
+      end if;
+
+      if NormEquation(F, 2*Norm(A)) then //2 is the norm of an ideal in the genus of A.
+        Append(~LevelList, 2);
+      end if;
+
+      if NormEquation(F, 3*Norm(A)) then //3 is the norm of an ideal in the genus of A.
+        Append(~LevelList, 3);
+      end if;
+
+    else //for now, only consider F_N if genus(F_N) = 0
+      N := Generator(Level(Gamma) meet Integers());
+      require Norm(Component(Gamma)) eq 1: "Only principal genus supported for higher level.";
+      if N in [1 .. 10] cat [12, 13, 16, 18, 25] then
+        Append(~LevelList, N^2);
+      end if;
+    end if;
+
+    if #LevelList eq 0 then
+      vprintf HilbertModularForms: "No exceptional HZ divisors found";
+      return false;
+    end if;
+
+    // print LevelList;
+
+    //Compute intersections of HZ divisors with cusps.
+    IntList := [];
+    for M in LevelList do
+      HZInt := HZCuspIntersection(F, M, Level(Gamma), Component(Gamma));
+      HZIntList := [];
+      for x in HZInt do
+        HZIntList cat:= x;
+      end for;
+      Append(~IntList, HZIntList);
+    end for;
+
+    // print IntList;
+
+    //Check if any (-1)-curves on the boundary give rationality.
+
+    // for i in [1 .. #(self_int_res)] do
+    //   if self_int_res[i] eq -1 then
+    //     for j in [1 .. #(LevelList)] do
+    //       if not IntList[j][i][1] eq 0 then
+    //         vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+    //         return true;
+    //       end if;
+    //     end for;
+    //   end if;
+    // end for;
+
+    //Blow down any subset of the HZ divisors and check if we have a good configuration.
+    for I in Subsets({1 .. #LevelList}) do
+      if #I eq 0 then //Without blowing down: check if any -1 curve on boundary intersects exceptional HZ divisor.
+        exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
+
+        for i in exc_indices do
+          for j in [1 .. #LevelList] do
+            if not IntList[j][i] eq 0 then
+              vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+              return true;
+            end if;
+          end for;
+        end for;
+      else
+
+      // List of indices s.t. boundary curve is now exceptional
+      exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
+      // Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
+
+      if #exc_indices le 1 then //One (-1) curve is not enough!
+        continue;
+      end if;
+
+      // For each two expectional boundary curves, do they intersect?
+
+        for S in Subsets(Set(exc_indices), 2) do
+          T := SetToSequence(S);
+          for j in I do
+            if IntList[j][T[1]] ne 0 and IntList[j][T[2]] ne 0 then
+              vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n", LevelList[SetToSequence(I)];
+              return true;
+            end if;
+          end for;
+        end for;
+      end if;
+
+    end for;
+
+  return false;
+end intrinsic;
+
 // IO
 intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
   {Script for writing geometric invariants to data table row. Format is label:Kodaira-dimension:[h^[2,0], h^[1,1]].}
   h2 := HodgeDiamond(Gamma)[3];
-  return Join([Label(Gamma), KodairaDimension(Gamma), HodgeDiamond(Gamma)[3][1..2]], ":");
+  return StripWhiteSpace(Join([
+        LMFDBLabel(Gamma),
+        Sprint(KodairaDimension(Gamma)),
+        Sprint(HodgeDiamond(Gamma)[3][1..2])
+  ], ":"));
 end intrinsic;
 
 intrinsic EasyIsGeneralType(hs::SeqEnum) -> Any
@@ -145,7 +346,7 @@ intrinsic vanderGeerTable( : Discriminants := []) -> List
   {Return the table of invariants from pp. 269-276 of van der Geer. dot and unlisted values are returned as -100. If Discriminants is nonempty, return only those rows of the table with the corresponding discriminants.}
   dot := -100;
   unk := -100; // Unlisted value.
-  table := 
+  table :=
   [*
     [* 5, -1, [1], 2, 1, 1, 1, 14, 1, dot, 1, 12, 0 *],
     [* 8, -1, [1], 2, 1, 1, 2, 15, 1, dot, 1, 13, 0 *],

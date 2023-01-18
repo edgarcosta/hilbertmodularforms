@@ -1,4 +1,4 @@
-// usage: magma target:=SUBSTRING run_tests.m
+// usage: magma target:=SUBSTRING exitsignal:=BOOL run_tests.m
 if assigned filename then
   tests := [filename];
 else
