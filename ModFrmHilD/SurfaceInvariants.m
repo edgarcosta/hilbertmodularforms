@@ -68,9 +68,10 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 	      // len := 2;
 	      assert len eq 2;
 	  elif n eq 12 then
-	      assert rot_factor[1] eq 5;
-	      // len := 3;
-	      assert len eq 3;
+	      if rot_factor[1] eq 5 then
+		  // len := 3;
+		  assert len eq 3;
+	      end if;
 	  end if;
 	  elliptic +:= a[n][rot_factor] * (len + (n-1)/n);
       end for;
@@ -124,7 +125,11 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 	  k2_pt, _ := EllipticPointK2E(n, Integers()!rot_factor[1]);
 	  // verification
 	  if n eq 5 then
-	      assert k2_pt eq -2/5;
+	      if rot_factor[1] in [2,3] then
+		  assert k2_pt eq -2/5;
+	      elif rot_factor[1] eq 4 then
+		  assert k2_pt eq 0;
+	      end if;
 	  elif n eq 3 then
 	      if rot_factor[1] eq 1 then
 		  assert k2_pt eq -1/3;
