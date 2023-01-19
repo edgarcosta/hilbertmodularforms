@@ -554,9 +554,9 @@ function PossibleIsotropyOrders(F)
                      | Degree(f[1]) eq 2} ];
     */
     // Sdiv := [IsEven(m) select m else 2*m : m in Sdiv];
-    Sdiv_final := [2*m : m in Sdiv] cat [m : m in Sdiv | IsEven(m)];
-    
-    return Sort(Sdiv_final);    
+    Sdiv_final := {2*m : m in Sdiv} join {m : m in Sdiv | IsEven(m)};
+
+    return Sort([m : m in Sdiv_final]);    
 end function;
 
 ////////////////////////////////////////////////////////////////////////////////
