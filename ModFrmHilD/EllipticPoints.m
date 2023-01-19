@@ -356,7 +356,10 @@ as a record.}
 		end if;
 	    end for;
 	else
-	    error "Not implemented for this order";
+	    fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
+	    if (Degree(fs) ne 2) then return []; end if;
+            fieldList := [ext<F | fs>];
+	    // error "Not implemented for this order";
 	end if;
     else	
         fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
