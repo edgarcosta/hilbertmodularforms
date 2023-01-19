@@ -1,33 +1,3 @@
-intrinsic EllipticPointResolution(order::RngIntElt,
-					 rot_factor::RngIntElt) ->
-	  SeqEnum[RngIntElt], SeqEnum[FldRatElt], SeqEnum[FldRatElt]
-{}
-  frac := order/rot_factor;
-  c := [Ceiling(frac)];
-  x := [1, frac^(-1)];
-  y := [0, order^(-1)];
-  Append(~x, c[1]*x[2] - x[1]);
-  Append(~y, c[1]*y[2] - y[1]);
-  d := c[#c] - frac;
-  while (d ne 0) do
-      Append(~c, Ceiling(d^(-1)));
-      Append(~x, c[#c]*x[#c+1] - x[#c]);
-      Append(~y, c[#c]*y[#c+1] - y[#c]);
-      d := c[#c] - d^(-1);
-  end while;
-  return c, x, y;
-end intrinsic;
-
-intrinsic EllipticPointK2E(order::RngIntElt, rot_factor::RngIntElt) -> FldRatElt, RngIntElt
-{}
-  c,x,y := EllipticPointResolution(order, rot_factor);
-  a := [x[i]+y[i]-1 : i in [2..#c+1]];
-  sq := -(&+[a[i]^2*c[i] : i in [1..#c]]);
-  k2 := sq + 2*&+[Rationals() | a[i]*a[i+1] : i in [1..#c-1]];
-
-  return k2, #c;
-end intrinsic;	  
-
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
   // for these fields there are additional orders of points
@@ -35,10 +5,9 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   F := BaseField(Gamma);
   ZF := Integers(F);
   D := Discriminant(ZF);
-
-  // require D notin [8,12]: "Discriminant not supported";
-  // require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
-//		"Level is not supported";
+  require D notin [8,12]: "Discriminant not supported";
+  require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
+		"Level is not supported";
 
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -55,22 +24,17 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   elliptic := 0;
   for n in Keys(a) do
       for rot_factor in Keys(a[n]) do
-	  _, len := EllipticPointK2E(n, Integers()!rot_factor[1]);
-	  // This is ad-hoc check for surfaces
+	  // This is ad-hoc for surfaces
 	  if rot_factor[1] eq 1 then
-	      // len := 1;
-	      assert len eq 1;
+	      len := 1;
 	  elif rot_factor[1] eq n-1 then
-	      // len := n-1;
-	      assert len eq n-1;
+	      len := n-1;
 	  elif n eq 5 then
 	      assert rot_factor[1] in [2,3];
-	      // len := 2;
-	      assert len eq 2;
+	      len := 2;
 	  elif n eq 12 then
 	      assert rot_factor[1] eq 5;
-	      // len := 3;
-	      assert len eq 3;
+	      len := 3;
 	  end if;
 	  elliptic +:= a[n][rot_factor] * (len + (n-1)/n);
       end for;
@@ -89,10 +53,9 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   F := BaseField(Gamma);
   ZF := Integers(F);
   D := Discriminant(ZF);
-
-  // require D notin [8,12]: "Discriminant not supported";
-  // require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
-  //		"Level is not supported";
+  require D notin [8,12]: "Discriminant not supported";
+  require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
+		"Level is not supported";
 
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -108,7 +71,6 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   end for;
   // get elliptic points contribution
   a := CountEllipticPoints(Gamma);
-  /*
   a3_plus := a[3][[1,1]];
   if IsDefined(a,5) then
       a5 := a[5][[2,1]] + a[5][[3,1]];
@@ -117,26 +79,6 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   end if;
 
   elliptic := a3_plus * (-1/3) + a5 * (-2/5);
- */
-  elliptic := 0;
-  for n in Keys(a) do
-      for rot_factor in Keys(a[n]) do
-	  k2_pt, _ := EllipticPointK2E(n, Integers()!rot_factor[1]);
-	  // verification
-	  if n eq 5 then
-	      assert k2_pt eq -2/5;
-	  elif n eq 3 then
-	      if rot_factor[1] eq 1 then
-		  assert k2_pt eq -1/3;
-	      else
-		  assert k2_pt eq 0;
-	      end if;
-	  elif n eq 2 then
-	      assert k2_pt eq 0;
-	  end if;
-	  elliptic +:= k2_pt * a[n][rot_factor];
-      end for;
-  end for;
   k2 := 2*vol + cusp_chern + elliptic;
   assert IsIntegral(k2);
   k2 := Integers()!k2;
