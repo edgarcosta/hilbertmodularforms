@@ -147,8 +147,29 @@ end intrinsic;
 intrinsic HilbertSeries(G::GrpHilbert) -> FldFunRatUElt
 {Return the Hilbert series for the space of Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
-    require Index(G) eq 1 : "Only implemented for level = (1).";
-    return HilbertSeriesVasquez(BaseField(G));
+    require AmbientType(G) eq GLPlus_Type: "Only implemented for GL+";
+    if Index(G) eq 1 then //level = 1
+        return HilbertSeriesVasquez(BaseField(G));
+    F := BaseField(G);
+    M := GradedRingOfHMFs(F, 0);
+    level := Level(G);
+    M2 := HMFSpace(M, level, [2,2]);
+    HC := HilbertSeriesCusp(M, level);
+    R<T> := Parent(HC);
+    HE := EisensteinDimension(M2)*T^2/(1-T^2);
+    H := HC + HE + NarrowClassNumber(M);
+    return H;
+end intrinsic;
+
+
+intrinsic HilbertSeries(G::GrpHilbert) -> FldFunRatUElt
+{Return the Hilbert series for the space of cusp Hilbert Modular Forms of weight `k` with respect to
+the congruence subgroup `G`.}
+    require AmbientType(G) eq GLPlus_Type: "Only implemented for GL+";
+    F := BaseField(G);
+    M := GradedRingOfHMFs(F, 0);
+    level := Level(G);
+    return HilbertSeriesCusp(M, level);
 end intrinsic;
 
 
