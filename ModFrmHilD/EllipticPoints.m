@@ -606,7 +606,7 @@ intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
   alpha0 := [alphas[j] - i*signs_s[j] * Sqrt(1 - alphas[j]^2) :
 	     j in [1..Degree(F)]];
   // Here we assume it is a surface
-  assert exists(t){t : t in [1..q-1] | alpha0[1]^t eq alpha0[2]};
+  assert exists(t){t : t in [1..q-1] | Abs(alpha0[1]^t - alpha0[2]) lt Exp(-20)};
   return [t,1];
 end intrinsic;
 
