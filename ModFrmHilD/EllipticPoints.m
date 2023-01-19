@@ -526,6 +526,21 @@ end function;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
+{}
+  s := Trace(S.1);
+  n := Norm(S.1);
+  a := s^2/(2*n) - 1;
+  CC<i> := ComplexField();
+  alphas := RealEmbeddings(a);
+  signs_s := [Sign(x) : x in RealEmbeddings(s)];
+  F := BaseField(NumberField(S));
+  alpha0 := [alphas[j] - i*signs_s[j] * Sqrt(1 - alphas[j]^2) :
+	     j in [1..Degree(F)]];
+  // Here we assume it is a surface
+  assert exists(t){t : t in [1..q-1] | alpha0[1]^t eq alpha0[2]};
+  return [t,1];
+end intrinsic;
 
 intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 {Given a congruence subgroup `Gamma` (level, field, decoration data), return something.}
@@ -556,23 +571,15 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	ell_order := ExactQuotient(rho,2);
 	// Get options for the rotation factors
 	U, mU := UnitGroup(Integers(ell_order));
-	qU, pi := quo<U | (-1) @@ mU>;
-
-	// !! TODO : needs to sort them according to the 
-	// order of the real embeddings of F
-	rot_factor := Reverse(Sort([mU(g @@ pi) : g in qU]));
-
-	// For now we are only doing surfaces
-	assert #rot_factor le 2;
-	if rot_factor eq [1] then
-	    rot_factor := [1,1];
-	end if;
-	rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
+	U2,i1,i2,pi1,pi2 := DirectSum(U,U);
+	T := pi1(Kernel(hom<U2 -> U | [pi1(x) + pi2(x) : x in Generators(U2)]>));
+	rot_factors := [[q,1] : q in Reverse(Sort([mU(g) : g in T]))];
 	
         listOfOrders := OrderTermData(Gamma, F, rho);
         count := AssociativeArray();
-	count[rot_factor] := 0;
-	count[rot_factor_minus] := 0;
+	for rot_factor in rot_factors do
+	    count[rot_factor] := 0;
+	end for;
 
         for Srec in listOfOrders do
             // Extract Record data
@@ -648,6 +655,9 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	    end if;
             // ellipticCountsByOrder[S] := hS * groupCorrectionFactor * localCount;
 	    ellipticCountsByOrder[S] := AssociativeArray();
+	    
+	    rot_factor := RotationFactor(S, ell_order);
+	    rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
 	    ellipticCountsByOrder[S][rot_factor] := num_plus;
 	    ellipticCountsByOrder[S][rot_factor_minus] := num_minus;
             count[rot_factor] +:= num_plus;
