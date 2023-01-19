@@ -595,8 +595,9 @@ end intrinsic;
 
 intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
 {}
-  s := Trace(S.1);
-  n := Norm(S.1);
+  zeta := NumberField(S).1;	  
+  s := Trace(zeta);
+  n := Norm(zeta);
   a := s^2/(2*n) - 1;
   CC<i> := ComplexField();
   alphas := RealEmbeddings(a);
