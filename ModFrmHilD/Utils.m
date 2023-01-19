@@ -188,3 +188,18 @@ intrinsic QuadraticFields(low::RngIntElt, high::RngIntElt : ExcludeBad:=false) -
                         Discriminant(K) le high and Discriminant(K) ge low];
     return quadraticFields;
 end intrinsic;
+
+
+intrinsic WriteStderr(s::MonStgElt)
+{ write to stderr }
+  E := Open("/dev/stderr", "w");
+  Write(E, s);
+  Flush(E);
+end intrinsic;
+
+
+
+intrinsic WriteStderr(e::Err)
+{ write to stderr }
+  WriteStderr(Sprint(e) cat "\n");
+end intrinsic;
