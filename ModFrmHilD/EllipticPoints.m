@@ -617,7 +617,8 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 
     isoOrds := PossibleIsotropyOrders(F);
     for rho in isoOrds do
-	ell_order := ExactQuotient(rho,2);
+	ell_order := ExactQuotient(rho, 2);
+        
 	// Get options for the rotation factors
 	U, mU := UnitGroup(Integers(ell_order));
 	qU, pi := quo<U | (-1) @@ mU>;
@@ -679,8 +680,8 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	    total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
 	    K := NumberField(S);
 
-            print S, Norm(Norm(Conductor(S)));
-            print rho, localCount, total_num, groupCorrectionFactor, hS;
+            vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
+            vprint EllipticPointsDebug : rho, localCount, total_num, groupCorrectionFactor, hS;
             
 	    /*
 	    al_sign := false;
@@ -692,9 +693,9 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 
 	    // YYY: Check which signs occur (CM types)
 	    is_unr := IsUnramified(K);
-	    // and (GCD(Norm(level),Discriminant(F)) eq 1);
-	    if GCD(Norm(level),3) ne 1 then
-		is_unr := is_unr and OrderNormIndexWithAL(S,level) eq 2;
+	    // and (GCD(Norm(level), Discriminant(F)) eq 1);
+	    if GCD(Norm(level), 3) ne 1 then
+		is_unr := is_unr and OrderNormIndexWithAL(S, level) eq 2;
 	    end if;
 	    if is_unr then
 		assert OrderNormIndex(S) eq 2;
@@ -725,6 +726,29 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
         ellipticCounts[ExactQuotient(rho, 2)] := count;        
     end for;
 
+    // Post-process the elliptic counts due to overcounting in the previous
+    // step.
+
+    for rho in isoOrds do
+        rho2 := rho div 2;
+        if IsPrime(rho2) then continue; end if;
+        for p in PrimeDivisors(rho2) do
+            rho2p := rho2 div p;
+            for rot in Keys(ellipticCounts[rho2]) do
+                
+                // Get the corresponding rotation factor for g^p, which is just
+                // a reduction of the rotation factor of the original element
+                // mod the order.
+                Par := Integers(rho2p);
+                rotp := [Par ! (Integers() ! x) : x in rot];
+
+                // Update the table element.
+                ellipticCounts[rho2p][rotp] -:= ellipticCounts[rho2][rot];
+                
+            end for;
+        end for;
+    end for;
+    
     return ellipticCounts, ellipticCountsByOrder;    
 end intrinsic;
 
@@ -735,6 +759,9 @@ function ConvertRotationLabel(order, rot_factor)
     case rot_factor:
     when [1,1]: return <order, 1, 1>;
     when [2,1]: return <order, 1, -1>;
+    when [5,1]: return <order, 1, -1>;
+    when [7,1]: return <order, 1, -1>; // This is likely not correct.
+    when [3,1]: return <order, 1, -1>;
     end case;
     error "Not implemented for rotation factor:", rot_factor;
 end function;
