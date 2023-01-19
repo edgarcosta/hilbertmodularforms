@@ -357,7 +357,10 @@ as a record.}
 		end if;
 	    end for;
 	else
-	    error "Not implemented for this order";
+	    fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
+	    if (Degree(fs) ne 2) then return []; end if;
+            fieldList := [ext<F | fs>];
+	    // error "Not implemented for this order";
 	end if;
     else	
         fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
@@ -551,9 +554,9 @@ function PossibleIsotropyOrders(F)
                      | Degree(f[1]) eq 2} ];
     */
     // Sdiv := [IsEven(m) select m else 2*m : m in Sdiv];
-    Sdiv_final := [2*m : m in Sdiv] cat [m : m in Sdiv | IsEven(m)];
-    
-    return Sort(Sdiv_final);    
+    Sdiv_final := {2*m : m in Sdiv} join {m : m in Sdiv | IsEven(m)};
+
+    return Sort([m : m in Sdiv_final]);    
 end function;
 
 ////////////////////////////////////////////////////////////////////////////////
