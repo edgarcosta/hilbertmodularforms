@@ -104,7 +104,8 @@ intrinsic CongruenceSubgroup(AmbType::MonStgElt, F::FldNum) -> GrpHilbert
     return CongruenceSubgroup(AmbType, F, 1*ZF, 1*ZF);
 end intrinsic;
 
-// Gamma0
+//////////////////////////
+// Gamma0 Constructors
 
 intrinsic Gamma0(AmbientType::MonStgElt, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
@@ -122,19 +123,30 @@ intrinsic Gamma0(F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
     return Gamma0("SL", F, N, B);
 end intrinsic;
 
-
 intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
     return Gamma0(F, N, 1*Integers(F));
 end intrinsic;
 
-
-// At the moment, this is the only way to create a group of type Gamma_0(N).
 intrinsic Gamma0(F::FldNum) -> GrpHilbert
 {Return the Hilbert Modular group over `F`.}
     return Gamma0(F, 1*MaximalOrder(F));
 end intrinsic;
 
+// With Ambient type
+intrinsic Gamma0(AmbientType::MonStgElt, F::FldNum, N::RngOrdIdl) -> GrpHilbert
+{Return the Congruence Subgroup Gamma_0(N) over the number field `F`.}
+    return Gamma0(AmbientType, F, N, 1*Integers(F));
+end intrinsic;
+
+intrinsic Gamma0(AmbientType::MonStgElt, F::FldNum) -> GrpHilbert
+{Return the Hilbert Modular group over `F`.}
+    return Gamma0(AmbientType, F, 1*MaximalOrder(F));
+end intrinsic;
+
+
+//////////////////////////
+// Gamma1 Constructors
 
 intrinsic Gamma1(AmbientType::MonStgElt, F::FldNum, N::RngOrdIdl, B::RngOrdIdl) -> GrpHilbert
 {Return the Congruence Subgroup Gamma_1(N) over the number field `F`.}
