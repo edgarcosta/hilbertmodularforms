@@ -106,23 +106,31 @@ for row in prestelTable do
     D := row[1];
     F := QuadraticField(D);
 
-    // Need to look over all components?
-    G := CongruenceSubgroup("GL+", F);
+    hF  := ClassNumber(F);
+    hFp := NarrowClassNumber(F);
 
-    counts := CountEllipticPoints(G);
-    lst := Sort([ <rho, &+[x : x in counts[rho]]> : rho in Keys(counts)],
-                func<x,y | x[1] - y[1]>);
+    // Lemma: If F is a real quadratic field, then the fundamental unit is totally
+    // positive if and only if Cl(F) ne Cl+(F). In particular, Gamma_{e0} in Prestel's
+    // table is GL+(ZF) if and only if Cl(F) == Cl+(F).
 
-    // When the class number is 2 and the narrow class number is not 2, then
-    // there is a discrepency between GL+ and Gamma_e0. (???).
-    print "------";
-    print "Disc: ", D;
-    print "Class_number: ", ClassNumber(F);
-    print "Narrow_Class_Number: ", NarrowClassNumber(F);
-    print "Unit_index: ", IndexOfTotallyPositiveUnitsModSquares(F);
-    print [* x[2] : x in lst *];
-    print row[7..11];
-    
+    if hF eq hFp then
+        // Need to look over all components?
+        G := CongruenceSubgroup("GL+", F);
+
+        counts := CountEllipticPoints(G);
+        lst := Sort([ <rho, &+[x : x in counts[rho]]> : rho in Keys(counts)],
+                    func<x,y | x[1] - y[1]>);
+
+        // When the class number is 2 and the narrow class number is not 2, then
+        // there is a discrepency between GL+ and Gamma_e0. (???).
+        print "------";
+        print "Disc: ", D;
+        print "Class_number: ", ClassNumber(F);
+        print "Narrow_Class_Number: ", NarrowClassNumber(F);
+        print "Unit_index: ", IndexOfTotallyPositiveUnitsModSquares(F);
+        print [* x[2] : x in lst *];
+        print row[7..11];
+    end if;    
 end for;
 
 
