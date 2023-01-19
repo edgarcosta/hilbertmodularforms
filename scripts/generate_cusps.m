@@ -14,7 +14,13 @@ if not IsFundamentalDiscriminant(D) then
   exit 0;
 end if;
 
-MaxLevelNorm := Ceiling(5000/D);
+if not assigned cut then
+  cut := 1000;
+else
+  cut := StringToInteger(cut);
+end if;
+
+MaxLevelNorm := Ceiling(cut*D^(-3/2));
 
 if not assigned AmbientType then
   print "Missing argument AmbientType";
@@ -38,10 +44,15 @@ labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in idea
 ParallelSort(~labels, ~ideals);
 for NN in ideals do
   for bb in narrow_reps do
-    G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
-    for c in CuspsWithResolution(G) do
-      print WriteCuspDataToRow(G, c);
-    end for;
+    try
+      G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
+      for c in CuspsWithResolution(G) do
+        print WriteCuspDataToRow(G, c);
+      end for;
+    catch e
+      WriteStderr(Sprintf("Failed for D = %o, NN =%o , bb=%o", D, LMFDBLabel(NN), LMFDBLabel(bb)));
+      WriteStderr(e);
+      exit 1;
+    end try;
   end for;
 end for;
-exit;

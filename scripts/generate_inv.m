@@ -17,7 +17,13 @@ if D in [8,12] then
   exit 0;
 end if;
 
-MaxLevelNorm := Ceiling(5000/D);
+if not assigned cut then
+  cut := 1000;
+else
+  cut := StringToInteger(cut);
+end if;
+
+MaxLevelNorm := Ceiling(cut*D^(-3/2));
 
 if not assigned AmbientType then
   print "Missing argument AmbientType";
@@ -45,8 +51,15 @@ for NN in ideals do
     continue;
   end if;
   for bb in narrow_reps do
+try
     G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
     print WriteGeometricInvariantsToRow(G);
+catch e
+  WriteStderr(Sprintf("Failed for D = %o, NN =%o , bb=%o", D, LMFDBLabel(NN), LMFDBLabel(bb)));
+  WriteStderr(e);
+  exit 1;
+end try;
   end for;
 end for;
 exit;
+
