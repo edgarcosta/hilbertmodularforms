@@ -454,19 +454,17 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 
 	// !! TODO : needs to sort them according to the 
 	// order of the real embeddings of F
-	rot_factor := Reverse(Sort([mU(g @@ pi) : g in qU]));
-
+	
 	// For now we are only doing surfaces
-	assert #rot_factor le 2;
-	if rot_factor eq [1] then
-	    rot_factor := [1,1];
-	end if;
-	rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
+	rot_factors := [[q,1] : q in Reverse(Sort([mU(g @@ pi) : g in qU]))];
 	
         listOfOrders := OrderTermData(Gamma, F, rho);
         count := AssociativeArray();
-	count[rot_factor] := 0;
-	count[rot_factor_minus] := 0;
+	for rot_factor in rot_factos do
+	    count[rot_factor] := 0;
+	    count[rot_factor_minus] := 0;
+	    rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
+	end for;
 
         for Srec in listOfOrders do
             // Extract Record data
