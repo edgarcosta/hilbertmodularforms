@@ -320,14 +320,47 @@ as a record.}
     // We want the automorphism of order 2q.
     assert IsEven(rho) and rho ne 2;
 
-    if AmbientType(G) eq GLPlus_Type and rho eq 4 then   // Special case of the formula.
+    if AmbientType(G) eq GLPlus_Type then  // Special case of the formula.
         UF, mUF := UnitGroup(MaximalOrder(F));
         tpunits := TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);
 
-        _<T> := PolynomialRing(F);        
-        fieldList := [ext<F | T^2 + u> : u in tpunits];
-    else
+        _<T> := PolynomialRing(F);
+	if rho eq 4 then
+            fieldList := [ext<F | T^2 + u> : u in tpunits];
+	elif rho eq 6 then
+	    fieldList := [ext<F | T^2 - T + 1>];
+	elif rho eq 8 then
+	    fieldList := [];
+	    for u in tpunits do
+		is_sqr, t := IsSquare(2*u);
+		if is_sqr then
+		    Append(~fieldList, ext<F | T^2 - t*T + u>);
+		end if;
+	    end for;
+	elif rho eq 12 then
+	    fieldList := [];
+	    for u in tpunits do
+		is_sqr, t := IsSquare(3*u);
+		if is_sqr then
+		    Append(~fieldList, ext<F | T^2 - t*T + u>);
+		end if;
+	    end for;
+	elif rho eq 24 then
+	    is_sqr, sqrt3 := IsSquare(F!3);
+	    if not is_sqr then return []; end if;
+	    fieldList := [];
+	    for u in tpunits do
+		is_sqr, t := IsSquare((2+sqrt3)*u);
+		if is_sqr then
+		    Append(~fieldList, ext<F | T^2 - t*T + u>);
+		end if;
+	    end for;
+	else
+	    error "Not implemented for this order";
+	end if;
+    else	
         fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
+	if (Degree(fs) ne 2) then return []; end if;
         fieldList := [ext<F | fs>];
     end if;
         
@@ -355,12 +388,21 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
 
     // Compute the order Oq = ZF[zeta_2s] and its conductor.
     S := Order([K.1]);
+    zeta := K.1;
+    t := Trace(zeta);
+    u := Norm(zeta);
 
     // Cache unit groups.
     UK, mUK := UnitGroup(AbsoluteOrder(ZK));
     UF, mUF := UnitGroup(ZF);
 
+    // F is totally real, so the quotient consists only of
+    // quotient of the torsion subgroups
+    
+    FUnitIndexInK := #TorsionSubgroup(UK) div 2;
+    
     // Cache the discriminant and conductor.
+    D := Discriminant(ZF);
     Dq := Discriminant(MinimalPolynomial(K.1));
     ff := SquareRoot(ZF !! Discriminant(S)/Discriminant(ZK));
 
@@ -382,6 +424,67 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         Fartin := [1 - UnramifiedSquareSymbol(Dq, pp[1])/AbsoluteNorm(pp[1])
                    : pp in Factorization(dff)];
 
+	// Adding this to avoid magma bug when creating absolute orders
+	// Based on analysis in Prestel, which might be wrong for
+	// non-trivial levels
+/*	
+	if (t eq 0) and (u eq 1) and (D notin [8,12]) then
+	    w := 2;
+	elif (t in [-1,1]) and (u eq 1) and (D ne 12) then
+	    w := 3;
+	elif (D eq 5) then
+	    is_sqr, sqrt5 := IsSquare(F!5);
+	    assert is_sqr;
+	    traces := [eps1*(1+eps2*sqrt5)/2 : eps1, eps2 in [-1,1]];
+	    if (t in traces) then
+		w := 5;
+	    end if;
+	elif (t^2 eq 2*u) then // order 4
+	    assert D mod 4 eq 0;
+	    if (dff eq 1*ZF) then
+		if (D ne 12) then
+		    w := 2;
+		else
+		    w := 6;
+		end if;
+	    else
+		if ((D div 4) mod 4 eq 2) then
+		    assert dff^2 eq 2*ZF;
+		    w := 1;
+		else
+		    assert ((D div 4) mod 4 eq 3);
+		    assert (dff^2 eq 2*ZF) or (dff eq 2*ZF);
+		    if (dff eq 2*ZF) then
+			w := 1;
+		    else
+			w := 2;
+		    end if;
+		end if;
+	    end if;
+	elif (D eq 12) then
+	    is_sqr, sqrt3 := IsSquare(F!3);
+	    assert is_sqr;
+	    if (t^2 eq u*(2+sqrt3)) then
+		w := 6;
+	    end if;
+	elif (t^2 eq 3*u) then
+	    if (dff eq 1*ZF) then
+		w := 3;
+	    else
+		assert dff^2 eq 3*ZF;
+		w := 3/2;
+	    end if;
+	else
+	    assert (t eq 0);
+	    w := 1;
+	end if;
+	  
+	SUnitIndexInK := FUnitIndexInK / w;
+
+	// This should have worked
+	// assert SUnitIndexInK eq #quo<UK | OqUnitsInK>;
+	hOq := hK / SUnitIndexInK * AbsoluteNorm(dff) * Product(Fartin);
+*/	
         hOq := hK / #quo<UK | OqUnitsInK> * AbsoluteNorm(dff) * Product(Fartin);
         assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
 
@@ -406,12 +509,15 @@ function PossibleIsotropyOrders(F)
     // S = all prime powers m such that [F(zeta_m):F] = 2
     // Now get all possible m such that [F(zeta_m):F] = 2
     Sdiv := [m : m in Divisors(S) | m ne 1 and Valuation(m,2) ne 1]; // avoid repetition
+    /*
     Sdiv := [m : m in Sdiv | 
              forall{ f : f in Factorization(CyclotomicPolynomial(m), F)
                      | Degree(f[1]) eq 2} ];
-    Sdiv := [IsEven(m) select m else 2*m : m in Sdiv];
-
-    return Sdiv;    
+    */
+    // Sdiv := [IsEven(m) select m else 2*m : m in Sdiv];
+    Sdiv_final := [2*m : m in Sdiv] cat [m : m in Sdiv | IsEven(m)];
+    
+    return Sort(Sdiv_final);    
 end function;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -518,8 +624,14 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	    */
 	    sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
 	    // Check which signs occur (CM types)
-	    is_unr := IsUnramified(K) and /* (not al_sign); */ (GCD(sqfree_level, dff) eq 1*ZF);
- 	    if is_unr then
+
+	    is_unr := IsUnramified(K);
+	    // and (GCD(Norm(level),Discriminant(F)) eq 1);
+	    if GCD(Norm(level),3) ne 1 then
+		is_unr := is_unr and OrderNormIndexWithAL(S,level) eq 2;
+	    end if;
+	    if is_unr then
+		assert OrderNormIndex(S) eq 2;
 		a := SteinitzClass(Module(S));
 		sign := ArtinSymbol(Integers(K), a*Component(Gamma));
 		if (sign eq 1) then 
@@ -666,7 +778,7 @@ intrinsic ActualCorrectOrders(F::FldNum, rho : Bound := 0) -> Tup
 
           // Picard number of the absolute order.
           OqUnitsInK := [mUOq(u) @@ mUK : u in Generators(UOq)];
-          
+
           hOq := hK/#quo<UK | OqUnitsInK> * AbsoluteNorm(dff) *
                     &*[1-UnramifiedSquareSymbol(Dq, pp[1])/AbsoluteNorm(pp[1])
                        : pp in Factorization(dff)];
@@ -692,4 +804,71 @@ intrinsic ActualCorrectOrders(F::FldNum, rho : Bound := 0) -> Tup
   return Rdata;
 end intrinsic;
 
+intrinsic OrderNormIndex(S::RngOrd)->RngIntElt
+{Returns the index of Nm(Pic(S)) inside the narrow ray class group of the base field.}
+  S_abs := AbsoluteOrder(S);
+  pic_S, pic_map := PicardGroup(S_abs);
+  R := BaseRing(S);
+  cg, cg_map := NarrowClassGroup(R);
+  norm_im := sub< cg | [Norm(S!!(Denominator(pic_map(g))*pic_map(g))) @@ cg_map 
+			: g in Generators(pic_S)]>;
+  return Index(cg, norm_im);
+end intrinsic;
 
+intrinsic OrderNormIndexWithAL(S::RngOrd, N::RngQuadIdl)->RngIntElt
+{Returns the index of Nm(Pic(S)) inside the narrow ray class group of the base field.}
+  S_abs := AbsoluteOrder(S);
+  pic_S, pic_map := PicardGroup(S_abs);
+  R := BaseRing(S);
+  cg, cg_map := ClassGroup(R);
+  cg_sq := hom<cg -> cg | [2*g : g in Generators(cg)]>;
+  ncg, ncg_map := NarrowClassGroup(R);
+  norms := [Norm(S!!(Denominator(pic_map(g))*pic_map(g))) @@ ncg_map 
+	    : g in Generators(pic_S)];
+  fac_N := Factorization(N);
+  AL_primes := [fa[1] : fa in fac_N];
+  F := NumberField(R);
+  M2F := MatrixAlgebra(F,2);
+  _, B, mat_map := IsQuaternionAlgebra(M2F);
+  gens := [[1,0,0,0],[0,1,0,0],[0,0,0,1]];
+  gens cat:= [[0,0,g,0] : g in Generators(N)];
+  O := Order([mat_map(M2F!g) : g in gens]);
+  for i->p in AL_primes do
+      e := fac_N[i][2];
+      // The two-sided ideal
+      gens := [];
+      for t in Generators(N) do
+	  gens_p := Generators(p);
+	  for i in [1..#gens_p] do
+	      M := N div p^e;
+	      if (M ne 1*R) then
+		  while (gens_p[i] in M) do
+		      gens_p[i] +:= &+[Random([-10..10])*g : g in gens_p 
+				       | g ne gens_p[i]];
+		  end while;
+	      end if;
+	      pi := gens_p[i];
+	      q := pi^e;
+	      x := InverseMod(q, M);
+	      Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
+	  end for;
+      end for;
+      J := ideal< O | gens>;
+      assert (J eq lideal<O | gens>) and (J eq rideal<O | gens>);
+      // Lifting the AL to a global element
+      fraka := Norm(J);
+      fraka_cl := fraka @@ cg_map;
+      c_inv := cg_map(fraka_cl @@ cg_sq);
+      c := c_inv^(-1);
+      c_gens := [x*y : x in Generators(c), y in Generators(J)];
+      cJ := ideal< O | c_gens>;
+      assert (cJ eq lideal<O | c_gens>) and (cJ eq rideal<O | c_gens>);
+      assert Norm(cJ) @@ cg_map eq cg!0;
+      is_principal, alpha := IsPrincipal(cJ);
+      assert is_principal;
+      assert &and[alpha*g*alpha^(-1) in O : g in Generators(O)];
+      Append(~norms, Norm(alpha) @@ ncg_map);
+  end for;
+  norm_im := sub< ncg | norms >;
+  return Index(ncg, norm_im);
+end intrinsic;
