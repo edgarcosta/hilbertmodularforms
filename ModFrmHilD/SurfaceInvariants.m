@@ -209,7 +209,9 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     res := CuspsWithResolution(Gamma);
     self_int_res := [];
     for x in res do
-      self_int_res cat:= x[3];
+      for y in [1 .. x[4]] do
+        self_int_res cat:= x[3];
+      end for;
     end for;
 
     LevelList := [];
@@ -251,12 +253,16 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     for M in LevelList do
       HZInt := HZCuspIntersection(F, M, Level(Gamma), Component(Gamma));
       HZIntList := [];
-      for x in HZInt do
-        HZIntList cat:= x;
+      assert #HZInt eq #res;
+      for i in [1 .. #HZInt] do
+        for j in [1 .. res[i][4]] do
+          HZIntList cat:= HZInt[i];
+        end for;
       end for;
       Append(~IntList, HZIntList);
     end for;
 
+    // print self_int_res;
     // print IntList;
 
     //Check if any (-1)-curves on the boundary give rationality.
@@ -292,7 +298,6 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
 
       // List of indices s.t. boundary curve is now exceptional
       exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
-      // Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
 
       if #exc_indices le 1 then //One (-1) curve is not enough!
         continue;
