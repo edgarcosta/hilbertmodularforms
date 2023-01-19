@@ -150,6 +150,7 @@ the congruence subgroup `G`.}
     require AmbientType(G) eq GLPlus_Type: "Only implemented for GL+";
     if Index(G) eq 1 then //level = 1
         return HilbertSeriesVasquez(BaseField(G));
+    end if;
     F := BaseField(G);
     M := GradedRingOfHMFs(F, 0);
     level := Level(G);
