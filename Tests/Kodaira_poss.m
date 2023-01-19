@@ -1,6 +1,6 @@
 // Verifying Theorem 3.3 in vdG.
 
-for D in [5, 13, 17, 28,33] do
+for D in [13,17,24,28,33] do
   F := QuadraticField(D);
   gamma := Gamma0(F, 1*Integers(F), 1*Integers(F));
   assert KodairaDimensionPossibilities(gamma) eq [-1];

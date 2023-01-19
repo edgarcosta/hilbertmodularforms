@@ -267,7 +267,9 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     res := CuspsWithResolution(Gamma);
     self_int_res := [];
     for x in res do
-      self_int_res cat:= x[3];
+      for y in [1 .. x[4]] do
+        self_int_res cat:= x[3];
+      end for;
     end for;
 
     LevelList := [];
@@ -309,12 +311,16 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     for M in LevelList do
       HZInt := HZCuspIntersection(F, M, Level(Gamma), Component(Gamma));
       HZIntList := [];
-      for x in HZInt do
-        HZIntList cat:= x;
+      assert #HZInt eq #res;
+      for i in [1 .. #HZInt] do
+        for j in [1 .. res[i][4]] do
+          HZIntList cat:= HZInt[i];
+        end for;
       end for;
       Append(~IntList, HZIntList);
     end for;
 
+    // print self_int_res;
     // print IntList;
 
     //Check if any (-1)-curves on the boundary give rationality.
@@ -332,22 +338,24 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
 
     //Blow down any subset of the HZ divisors and check if we have a good configuration.
     for I in Subsets({1 .. #LevelList}) do
-      if #I eq 0 then //Without blowing down: check if any -1 curve on boundary intersects exceptional HZ divisor.
-        exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
-
-        for i in exc_indices do
-          for j in [1 .. #LevelList] do
-            if not IntList[j][i] eq 0 then
-              vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
-              return true;
-            end if;
-          end for;
-        end for;
+     //Without blowing down,
+      if #I eq 0 then //Without blowing down, we're stuck.
+      continue;
+      // Old attempt. I don't think this is true.
+      // exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
+      //
+      //   for i in exc_indices do
+      //     for j in [1 .. #LevelList] do
+      //       if not IntList[j][i] eq 0 then
+      //         vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+      //         return true;
+      //       end if;
+      //     end for;
+      //   end for;
       else
 
       // List of indices s.t. boundary curve is now exceptional
       exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
-      // Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
 
       if #exc_indices le 1 then //One (-1) curve is not enough!
         continue;
