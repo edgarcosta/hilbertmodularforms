@@ -572,7 +572,8 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 	// Get options for the rotation factors
 	U, mU := UnitGroup(Integers(ell_order));
 	U2,i1,i2,pi1,pi2 := DirectSum(U,U);
-	T := pi1(Kernel(hom<U2 -> U | [pi1(x) + pi2(x) : x in Generators(U2)]>));
+	T := pi1(Kernel(hom<U2 -> U |
+			   [pi1(U2.x) + pi2(U2.x) : x in [1..Ngens(U2)]]>));
 	rot_factors := [[q,1] : q in Reverse(Sort([mU(g) : g in T]))];
 	
         listOfOrders := OrderTermData(Gamma, F, rho);
