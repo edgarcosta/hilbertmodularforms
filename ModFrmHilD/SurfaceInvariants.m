@@ -326,14 +326,14 @@ end intrinsic;
 
 intrinsic EasyIsGeneralType(hs::SeqEnum) -> Any
   {}
-  chi, c12 := Explode(HodegToChiC12(hs));
+  chi, c12 := Explode(HodgeToChiK2(hs));
   if (chi gt 1) and (c12 gt 0) then
     return true;
   end if;
   return false;
 end intrinsic;
 
-intrinsic HodgeToChiC12(hs::SeqEnum) -> Any
+intrinsic HodgeToChiK2(hs::SeqEnum) -> Any
   {}
   h20, h11 := Explode(hs);
   chi := h20 + 1;

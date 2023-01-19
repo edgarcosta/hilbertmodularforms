@@ -143,25 +143,6 @@ intrinsic ReadData(filename::MonStgElt : Delimiter := ":") -> Any
     return data;
 end intrinsic;
 
-intrinsic EasyIsGeneralType(invs::SeqEnum) -> Any
-  {}
-  h20, h11 := Explode(invs);
-  chi := h20 + 1;
-  c12 := 10*(h20 + 1) - h11;
-  if (chi gt 1) and (c12 gt 0) then
-    return true;
-  end if;
-  return false;
-end intrinsic;
-
-intrinsic HodgeToChiC12(hs::SeqEnum) -> Any
-  {}
-  h20, h11 := Explode(hs);
-  chi := h20 + 1;
-  c12 := 10*(h20 + 1) - h11;
-  return [chi, c12];
-end intrinsic;
-
 intrinsic WriteRecords(filename::MonStgElt, S::SeqEnum[SeqEnum[MonStgElt]]) -> RngIntElt
 {Given a list of lists of strings, create a colon delimited file with one list per line, return number of records written. }
     fp := Open(filename,"w");
