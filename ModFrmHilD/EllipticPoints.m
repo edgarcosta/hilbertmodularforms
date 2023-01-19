@@ -701,7 +701,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 		al_sign := &or[Norm(x[1])^x[2] lt 0 : x in Factorization(level)];
 	    end if;
 	    */
-	    sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
+	    // sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
 
 	    // YYY: Check which signs occur (CM types)
 	    is_unr := IsUnramified(K);
@@ -777,6 +777,7 @@ function ConvertRotationLabel(order, rot_factor)
     when [5,1]: return <order, 1, -1>;
     when [7,1]: return <order, 1, -1>; // This is likely not correct.
     when [3,1]: return <order, 1, -1>;
+    else: return <order, -99, -99>;
     end case;
     error "Not implemented for rotation factor:", rot_factor;
 end function;
@@ -789,7 +790,11 @@ intrinsic _EllipticPointData0(G::GrpHilbert) -> Assoc
     Data := AssociativeArray();
     for order in Keys(Counts) do
         for factor in Keys(Counts[order]) do
-            Data[ConvertRotationLabel(order, factor)] := Counts[order][factor];
+            // Drop identically 0 entries.
+            c := Counts[order][factor];
+            if c ne 0 then
+                Data[ConvertRotationLabel(order, factor)] := c;
+            end if;
         end for;
     end for;
 
