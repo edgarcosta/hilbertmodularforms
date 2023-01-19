@@ -320,14 +320,47 @@ as a record.}
     // We want the automorphism of order 2q.
     assert IsEven(rho) and rho ne 2;
 
-    if AmbientType(G) eq GLPlus_Type and rho eq 4 then   // Special case of the formula.
+    if AmbientType(G) eq GLPlus_Type then  // Special case of the formula.
         UF, mUF := UnitGroup(MaximalOrder(F));
         tpunits := TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);
 
-        _<T> := PolynomialRing(F);        
-        fieldList := [ext<F | T^2 + u> : u in tpunits];
-    else
+        _<T> := PolynomialRing(F);
+	if rho eq 4 then
+            fieldList := [ext<F | T^2 + u> : u in tpunits];
+	elif rho eq 6 then
+	    fieldList := [ext<F | T^2 - T + 1>];
+	elif rho eq 8 then
+	    fieldList := [];
+	    for u in tpunits do
+		is_sqr, t := IsSquare(2*u);
+		if is_sqr then
+		    Append(~fieldList, ext<F | T^2 - t*T + u>);
+		end if;
+	    end for;
+	elif rho eq 12 then
+	    fieldList := [];
+	    for u in tpunits do
+		is_sqr, t := IsSquare(3*u);
+		if is_sqr then
+		    Append(~fieldList, ext<F | T^2 - t*T + u>);
+		end if;
+	    end for;
+	elif rho eq 24 then
+	    is_sqr, sqrt3 := IsSquare(F!3);
+	    if not is_sqr then return []; end if;
+	    fieldList := [];
+	    for u in tpunits do
+		is_sqr, t := IsSquare((2+sqrt3)*u);
+		if is_sqr then
+		    Append(~fieldList, ext<F | T^2 - t*T + u>);
+		end if;
+	    end for;
+	else
+	    error "Not implemented for this order";
+	end if;
+    else	
         fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
+	if (Degree(fs) ne 2) then return []; end if;
         fieldList := [ext<F | fs>];
     end if;
         
@@ -355,12 +388,21 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
 
     // Compute the order Oq = ZF[zeta_2s] and its conductor.
     S := Order([K.1]);
+    zeta := K.1;
+    t := Trace(zeta);
+    u := Norm(zeta);
 
     // Cache unit groups.
     UK, mUK := UnitGroup(AbsoluteOrder(ZK));
     UF, mUF := UnitGroup(ZF);
 
+    // F is totally real, so the quotient consists only of
+    // quotient of the torsion subgroups
+    
+    FUnitIndexInK := #TorsionSubgroup(UK) div 2;
+    
     // Cache the discriminant and conductor.
+    D := Discriminant(ZF);
     Dq := Discriminant(MinimalPolynomial(K.1));
     ff := SquareRoot(ZF !! Discriminant(S)/Discriminant(ZK));
 
@@ -382,6 +424,67 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         Fartin := [1 - UnramifiedSquareSymbol(Dq, pp[1])/AbsoluteNorm(pp[1])
                    : pp in Factorization(dff)];
 
+	// Adding this to avoid magma bug when creating absolute orders
+	// Based on analysis in Prestel, which might be wrong for
+	// non-trivial levels
+/*	
+	if (t eq 0) and (u eq 1) and (D notin [8,12]) then
+	    w := 2;
+	elif (t in [-1,1]) and (u eq 1) and (D ne 12) then
+	    w := 3;
+	elif (D eq 5) then
+	    is_sqr, sqrt5 := IsSquare(F!5);
+	    assert is_sqr;
+	    traces := [eps1*(1+eps2*sqrt5)/2 : eps1, eps2 in [-1,1]];
+	    if (t in traces) then
+		w := 5;
+	    end if;
+	elif (t^2 eq 2*u) then // order 4
+	    assert D mod 4 eq 0;
+	    if (dff eq 1*ZF) then
+		if (D ne 12) then
+		    w := 2;
+		else
+		    w := 6;
+		end if;
+	    else
+		if ((D div 4) mod 4 eq 2) then
+		    assert dff^2 eq 2*ZF;
+		    w := 1;
+		else
+		    assert ((D div 4) mod 4 eq 3);
+		    assert (dff^2 eq 2*ZF) or (dff eq 2*ZF);
+		    if (dff eq 2*ZF) then
+			w := 1;
+		    else
+			w := 2;
+		    end if;
+		end if;
+	    end if;
+	elif (D eq 12) then
+	    is_sqr, sqrt3 := IsSquare(F!3);
+	    assert is_sqr;
+	    if (t^2 eq u*(2+sqrt3)) then
+		w := 6;
+	    end if;
+	elif (t^2 eq 3*u) then
+	    if (dff eq 1*ZF) then
+		w := 3;
+	    else
+		assert dff^2 eq 3*ZF;
+		w := 3/2;
+	    end if;
+	else
+	    assert (t eq 0);
+	    w := 1;
+	end if;
+	  
+	SUnitIndexInK := FUnitIndexInK / w;
+
+	// This should have worked
+	// assert SUnitIndexInK eq #quo<UK | OqUnitsInK>;
+	hOq := hK / SUnitIndexInK * AbsoluteNorm(dff) * Product(Fartin);
+*/	
         hOq := hK / #quo<UK | OqUnitsInK> * AbsoluteNorm(dff) * Product(Fartin);
         assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
 
@@ -406,12 +509,15 @@ function PossibleIsotropyOrders(F)
     // S = all prime powers m such that [F(zeta_m):F] = 2
     // Now get all possible m such that [F(zeta_m):F] = 2
     Sdiv := [m : m in Divisors(S) | m ne 1 and Valuation(m,2) ne 1]; // avoid repetition
+    /*
     Sdiv := [m : m in Sdiv | 
              forall{ f : f in Factorization(CyclotomicPolynomial(m), F)
                      | Degree(f[1]) eq 2} ];
-    Sdiv := [IsEven(m) select m else 2*m : m in Sdiv];
-
-    return Sdiv;    
+    */
+    // Sdiv := [IsEven(m) select m else 2*m : m in Sdiv];
+    Sdiv_final := [2*m : m in Sdiv] cat [m : m in Sdiv | IsEven(m)];
+    
+    return Sort(Sdiv_final);    
 end function;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -672,7 +778,7 @@ intrinsic ActualCorrectOrders(F::FldNum, rho : Bound := 0) -> Tup
 
           // Picard number of the absolute order.
           OqUnitsInK := [mUOq(u) @@ mUK : u in Generators(UOq)];
-          
+
           hOq := hK/#quo<UK | OqUnitsInK> * AbsoluteNorm(dff) *
                     &*[1-UnramifiedSquareSymbol(Dq, pp[1])/AbsoluteNorm(pp[1])
                        : pp in Factorization(dff)];
