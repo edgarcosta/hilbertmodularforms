@@ -30,6 +30,7 @@ end intrinsic;
 
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
+  if not assigned Gamma`EulerNumber then
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
   F := BaseField(Gamma);
@@ -79,12 +80,14 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   // elliptic := a2 * (1 + 1/2) + a3_plus * (1 + 2/3) + a3_minus * (2 + 2/3);
   e := vol + l + elliptic;
   assert IsIntegral(e);
-  e := Integers()!e;
-  return e;
+  Gamma`EulerNumber := Integers()!e;
+  end if;
+  return Gamma`EulerNumber;
 end intrinsic;
 
 intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 {}
+  if not assigned Gamma`K2 then
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
   F := BaseField(Gamma);
@@ -144,8 +147,9 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   end for;
   k2 := 2*vol + cusp_chern + elliptic;
   assert IsIntegral(k2);
-  k2 := Integers()!k2;
-  return k2;
+  Gamma`K2 := Integers()!k2;
+  end if;
+  return Gamma`K2;
 end intrinsic;
 
 intrinsic ArithmeticGenus(Gamma::GrpHilbert) -> RngIntElt
@@ -389,7 +393,9 @@ intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
   return StripWhiteSpace(Join([
         LMFDBLabel(Gamma),
         //Sprint(KodairaDimension(Gamma)),
-        Sprint(h2[1..2])
+        Sprint(h2[1..2]),
+        Sprint(K2(Gamma)),
+        Sprint(ArithmeticGenus(Gamma))
   ], ":"));
 end intrinsic;
 
