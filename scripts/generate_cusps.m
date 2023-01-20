@@ -58,7 +58,7 @@ for NN in ideals do
         print WriteCuspDataToRow(G, c);
       end for;
     catch e
-      print StripWhiteSpace(Join([LMFDBLabel(G),"NULL"],":"));
+      print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
       WriteStderr(Sprintf("Failed WriteCuspDataToRow for %o\n", LMFDBLabel(G)));
       WriteStderr(e);
     end try;

@@ -47,10 +47,8 @@ ideals := IdealsUpTo(MaxLevelNorm, F);
 labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in ideals];
 ParallelSort(~labels, ~ideals);
 for NN in ideals do
-  if GCD(NN, 3*D*ZF) ne 1*ZF then
-    continue;
-  end if;
-  if gamma eq "Gamma1" and not IsSquarefree(NN) then
+  if (GCD(NN, 3*D*ZF) ne 1*ZF) or (gamma eq "Gamma1" and not IsSquarefree(NN)) then
+    print StripWhiteSpace(Join([LMFDBLabel(G),"SKIPPED"],":"));
     continue;
   end if;
   for bb in narrow_reps do
@@ -58,7 +56,7 @@ for NN in ideals do
         G := CongruenceSubgroup(ambient, gamma, F, NN, bb);
         print WriteGeometricInvariantsToRow(G);
     catch e
-      print StripWhiteSpace(Join([LMFDBLabel(G),"NULL"],":"));
+      print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
       WriteStderr(Sprintf("Failed WriteGeometricInvariantsToRow for %o", LMFDBLabel(G)));
       WriteStderr(e);
     end try;
