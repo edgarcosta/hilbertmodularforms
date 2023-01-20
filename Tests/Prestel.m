@@ -16,8 +16,6 @@
 //   <12> singularities (GL case),
 
 
-// // "D",2,3,4,5,6,2,3,4,6,12 // Header row.
-
 prestelTable := 
 // "D",2,3,4,5,6,2,3,4,6,12 // Header row.
 [*
@@ -82,36 +80,6 @@ prestelTable :=
  [* 95,32,16,0,0,0,0,0,0,0,0 *], 
  [* 97,4,4,0,0,0,0,0,0,0,0 *]
  *];
-
-// Read entries from Prestel's table
-/* function ReadPretzelTable() */
-
-/*     print "Got here"; */
-/*     io := Open("Tests/PrestelTable.csv", "r"); */
-/*     data := [* *]; */
-
-/*     print "Got here II"; */
-    
-/*     // Read the header row and ignore. */
-/*     line := Gets(io); */
-    
-/*     while true do */
-/*         line := Gets(io); */
-
-/*         print "Got here III"; */
-
-/*         if IsEof(line) then break; end if; */
-/*         args := eval("[* " * line * " *]"); */
-
-/*         // Replace D with the discriminant. */
-/*         F := QuadraticField(args[1]); */
-/*         args[1] := Discriminant(F); */
-        
-/*         // Update. */
-/*         Append(~data, args); */
-/*     end while; */
-/*     return data; */
-/* end function; */
 
 function StandardizePretzelTable(table)
     // If the GL+ entries are completely empty, then Prestel means one should
