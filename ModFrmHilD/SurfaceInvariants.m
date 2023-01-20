@@ -179,6 +179,27 @@ intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
   return [h_0, h_1, h_2, h_3, h_4];
 end intrinsic;
 
+intrinsic TestArithmeticGenus(F::FldNum, NN::RngOrdIdl) -> Any
+  {Compute the arithmetic genus as (1/12)*(K^2 + e), summed over all components, and as dim(S_2) + #Cl^+(F); return true if these are equal. Currently only for GL+ type.}
+
+  NCl, mp := NarrowClassGroup(F);
+  chi1 := 0;
+  for bb in [mp(el) : el in NCl] do
+    G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
+    chi1 +:= ArithmeticGenus(G);
+    vprintf HilbertModularForms: "for bb = (%o), chi = %o\n", IdealOneLine(bb), ArithmeticGenus(G);
+  end for;
+  vprintf HilbertModularForms: "(1/12)*(K^2 + e) = %o\n", chi1;
+
+  M := GradedRingOfHMFs(F, 0);
+  h := HilbertSeriesCusp(M, NN);
+  //h := HilbertSeriesCusp(G);
+  Pow<x> := PowerSeriesRing(Rationals());
+  chi2 := Coefficient(Pow!h,2) + #NCl;
+  vprintf HilbertModularForms: "dim(S_2) + #Cl^+(F) = %o\n", chi2;
+  return chi1 eq chi2;
+end intrinsic;
+
 // TODO
 intrinsic KodairaDimension(Gamma::GrpHilbert) -> MonStgElt
   {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma. Currently just returns -100}
@@ -393,14 +414,17 @@ intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
   ], ":"));
 end intrinsic;
 
+/*
+// is this still right even when we haven't blown down?
 intrinsic EasyIsGeneralType(hs::SeqEnum) -> Any
   {}
-  chi, c12 := Explode(HodgeToChiK2(hs));
-  if (chi gt 1) and (c12 gt 0) then
+  chi, k2 := Explode(HodgeToChiK2(hs));
+  if (chi gt 1) and (k2 gt 0) then
     return true;
   end if;
   return false;
 end intrinsic;
+*/
 
 intrinsic HodgeToChiK2(hs::SeqEnum) -> Any
   {}
