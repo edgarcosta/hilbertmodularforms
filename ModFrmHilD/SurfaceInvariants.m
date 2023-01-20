@@ -273,7 +273,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     self_int_res := [];
     for x in res do
       for y in [1..x[4]] do
-	self_int_res cat:= x[3];
+	    self_int_res cat:= x[3];
       end for;
     end for;
 
