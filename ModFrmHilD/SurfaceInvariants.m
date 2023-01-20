@@ -26,7 +26,7 @@ intrinsic EllipticPointK2E(order::RngIntElt, rot_factor::RngIntElt) -> FldRatElt
   k2 := sq + 2*&+[Rationals() | a[i]*a[i+1] : i in [1..#c-1]];
 
   return k2, #c;
-end intrinsic;	  
+end intrinsic;
 
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}

@@ -32,7 +32,11 @@ declare attributes GrpHilbert :
   Index,
   LMFDBlabel,
   Level,
-  PrintString;
+  PrintString,
+  Cusps,
+  EulerNumber,
+  CountEllipticPoints,
+  ;
 
 /////////////////// Creation ///////////////////
 
