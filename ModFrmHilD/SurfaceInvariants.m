@@ -26,10 +26,11 @@ intrinsic EllipticPointK2E(order::RngIntElt, rot_factor::RngIntElt) -> FldRatElt
   k2 := sq + 2*&+[Rationals() | a[i]*a[i+1] : i in [1..#c-1]];
 
   return k2, #c;
-end intrinsic;	  
+end intrinsic;
 
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
+  if not assigned Gamma`EulerNumber then
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
   F := BaseField(Gamma);
@@ -79,12 +80,14 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   // elliptic := a2 * (1 + 1/2) + a3_plus * (1 + 2/3) + a3_minus * (2 + 2/3);
   e := vol + l + elliptic;
   assert IsIntegral(e);
-  e := Integers()!e;
-  return e;
+  Gamma`EulerNumber := Integers()!e;
+  end if;
+  return Gamma`EulerNumber;
 end intrinsic;
 
 intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 {}
+  if not assigned Gamma`K2 then
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
   F := BaseField(Gamma);
@@ -144,8 +147,9 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   end for;
   k2 := 2*vol + cusp_chern + elliptic;
   assert IsIntegral(k2);
-  k2 := Integers()!k2;
-  return k2;
+  Gamma`K2 := Integers()!k2;
+  end if;
+  return Gamma`K2;
 end intrinsic;
 
 intrinsic ArithmeticGenus(Gamma::GrpHilbert) -> RngIntElt
@@ -177,6 +181,27 @@ intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
   h_3 := h_1;
   h_4 := h_0;
   return [h_0, h_1, h_2, h_3, h_4];
+end intrinsic;
+
+intrinsic TestArithmeticGenus(F::FldNum, NN::RngOrdIdl) -> Any
+  {Compute the arithmetic genus as (1/12)*(K^2 + e), summed over all components, and as dim(S_2) + #Cl^+(F); return true if these are equal. Currently only for GL+ type.}
+
+  NCl, mp := NarrowClassGroup(F);
+  chi1 := 0;
+  for bb in [mp(el) : el in NCl] do
+    G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
+    chi1 +:= ArithmeticGenus(G);
+    vprintf HilbertModularForms: "for bb = (%o), chi = %o\n", IdealOneLine(bb), ArithmeticGenus(G);
+  end for;
+  vprintf HilbertModularForms: "(1/12)*(K^2 + e) = %o\n", chi1;
+
+  M := GradedRingOfHMFs(F, 0);
+  h := HilbertSeriesCusp(M, NN);
+  //h := HilbertSeriesCusp(G);
+  Pow<x> := PowerSeriesRing(Rationals());
+  chi2 := Coefficient(Pow!h,2) + #NCl;
+  vprintf HilbertModularForms: "dim(S_2) + #Cl^+(F) = %o\n", chi2;
+  return chi1 eq chi2;
 end intrinsic;
 
 // TODO
@@ -265,6 +290,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     {Checks whether the Rationality Criterion is satisfied.
       Note 1: Only implemented for Gamma0(N) level.
       Note 2: it could be refined by including more Hirzebruch--Zagier divisors.}
+    require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
 
     F := BaseField(Gamma);
 
@@ -389,9 +415,32 @@ intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
   return StripWhiteSpace(Join([
         LMFDBLabel(Gamma),
         //Sprint(KodairaDimension(Gamma)),
-        Sprint(h2[1..2])
+        Sprint(h2[1..2]),
+        Sprint(K2(Gamma)),
+        Sprint(ArithmeticGenus(Gamma))
   ], ":"));
 end intrinsic;
+
+/*
+// is this still right even when we haven't blown down?
+intrinsic EasyIsGeneralType(hs::SeqEnum) -> Any
+  {}
+  chi, k2 := Explode(HodgeToChiK2(hs));
+  if (chi gt 1) and (k2 gt 0) then
+    return true;
+  end if;
+  return false;
+end intrinsic;
+*/
+
+intrinsic HodgeToChiK2(hs::SeqEnum) -> Any
+  {}
+  h20, h11 := Explode(hs);
+  chi := h20 + 1;
+  c12 := 10*(h20 + 1) - h11;
+  return [chi, c12];
+end intrinsic;
+
 
 intrinsic vanderGeerTable( : Discriminants := []) -> List
   {Return the table of invariants from pp. 269-276 of van der Geer. dot and unlisted values are returned as -100. If Discriminants is nonempty, return only those rows of the table with the corresponding discriminants.}

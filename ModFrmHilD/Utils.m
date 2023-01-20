@@ -122,6 +122,26 @@ intrinsic ReadRecords(filename::MonStgElt : Delimiter:=":") -> SeqEnum
     return [Split(r,Delimiter):r in Split(Read(filename))];
 end intrinsic;
 
+intrinsic ReadData(filename::MonStgElt : Delimiter := ":") -> Any
+  {}
+  data := [];
+  RE := "^[0-9]+.[0-9]+.[0-9]+.[0-9]+";
+  file := Open(filename, "r");
+    while true do
+      line := Gets(file);
+      if IsEof(line) then
+        break;
+      end if;
+      //if not "-" in line then
+      if not Regexp(RE,line) then
+        continue;
+      end if;
+      label, k, invs := Explode(Split(line, Delimiter));
+      invs := eval invs;
+      Append(~data, [* label, invs *]);
+    end while;
+    return data;
+end intrinsic;
 
 intrinsic WriteRecords(filename::MonStgElt, S::SeqEnum[SeqEnum[MonStgElt]]) -> RngIntElt
 {Given a list of lists of strings, create a colon delimited file with one list per line, return number of records written. }
