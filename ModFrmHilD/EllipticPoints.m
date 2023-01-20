@@ -595,8 +595,9 @@ end intrinsic;
 
 intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
 {}
-  s := Trace(S.1);
-  n := Norm(S.1);
+  zeta := NumberField(S).1;	  
+  s := Trace(zeta);
+  n := Norm(zeta);
   a := s^2/(2*n) - 1;
   CC<i> := ComplexField();
   alphas := RealEmbeddings(a);
@@ -605,7 +606,7 @@ intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
   alpha0 := [alphas[j] - i*signs_s[j] * Sqrt(1 - alphas[j]^2) :
 	     j in [1..Degree(F)]];
   // Here we assume it is a surface
-  assert exists(t){t : t in [1..q-1] | alpha0[1]^t eq alpha0[2]};
+  assert exists(t){t : t in [1..q-1] | Abs(alpha0[1]^t - alpha0[2]) lt Exp(-20)};
   return [t,1];
 end intrinsic;
 
@@ -743,10 +744,12 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
     // Post-process the elliptic counts due to overcounting in the previous
     // step.
 
-    for rho in isoOrds do
+    for rho in Reverse(isoOrds) do
         rho2 := rho div 2;
         if IsPrime(rho2) then continue; end if;
-        for p in PrimeDivisors(rho2) do
+	divs := [d : d in Divisors(rho2) |
+		 (d ne 1) and (rho2 div d) in Keys(ellipticCounts)];
+        for p in divs do
             rho2p := rho2 div p;
             for rot in Keys(ellipticCounts[rho2]) do
                 
@@ -758,7 +761,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 
                 // Update the table element.
                 ellipticCounts[rho2p][rotp] -:= ellipticCounts[rho2][rot];
-                
+
             end for;
         end for;
     end for;
