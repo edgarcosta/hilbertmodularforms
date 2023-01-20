@@ -169,8 +169,6 @@ end function;
 
 prestelTable := StandardizePretzelTable(prestelTable);
 
-print "Got here IV";
-
 // Check data entry.
 assert #{#entry : entry in prestelTable} eq 1;
 
