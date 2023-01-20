@@ -606,7 +606,7 @@ intrinsic Cusps(Gamma::GrpHilbert : WithResolution:=false) -> SeqEnum
     // FIXME: alpha and beta are not canonical
     pt := P1ZF![Numerator(scalar)*alpha, Denominator(scalar)*beta];
     if WithResolution then
-      continued_fraction, period := CuspResolutionIntersections(working_bb, NN, alpha, beta : GroupType:=GroupType);
+      continued_fraction, period := CuspResolutionIntersections(working_bb, NN, alpha, beta : GroupType:=GroupType, GammaType := GammaType(Gamma));
       Append(~res, <MM, pt, continued_fraction, period>);
     else
       Append(~res, <MM, pt>);
