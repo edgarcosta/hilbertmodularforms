@@ -272,7 +272,9 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     res := CuspsWithResolution(Gamma);
     self_int_res := [];
     for x in res do
-      self_int_res cat:= x[3];
+	for y in [1..x[4]] do
+	    self_int_res cat:= x[3];
+	end for;
     end for;
 
     LevelList := [];
@@ -340,44 +342,44 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
 
     //Blow down any subset of the HZ divisors and check if we have a good configuration.
     for I in Subsets({1 .. #LevelList}) do
-	if #I eq 0 then //Without blowing down: check if any -1 curve on boundary intersects exceptional HZ divisor.
+      if #I eq 0 then //Without blowing down: check if any -1 curve on boundary intersects exceptional HZ divisor.
 	    
-            exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
+        exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
 
-            for i in exc_indices do
-		for j in [1 .. #LevelList] do
-		    if not IntList[j][i] eq 0 then
-			vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
-			return true;
-		    end if;
-		end for;
-            end for;
-	else
-
-	    // List of indices s.t. boundary curve is now exceptional
-	    exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
-	    // Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
-
-	    if #exc_indices le 1 then //One (-1) curve is not enough!
-		continue;
+        for i in exc_indices do
+	  for j in [1 .. #LevelList] do
+	    if not IntList[j][i] eq 0 then
+	      vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+	      return true;
 	    end if;
+	  end for;
+        end for;
+      else
 
-	    // For each two expectional boundary curves, do they intersect?
+	// List of indices s.t. boundary curve is now exceptional
+	exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
+	// Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
 
-            for S in Subsets(Set(exc_indices), 2) do
-		T := SetToSequence(S);
-		for j in I do
-		    if IntList[j][T[1]] ne 0 and IntList[j][T[2]] ne 0 then
-			vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n", LevelList[SetToSequence(I)];
-			return true;
-		    end if;
-		end for;
-            end for;
+	if #exc_indices le 1 then //One (-1) curve is not enough!
+	  continue;
 	end if;
+
+	// For each two expectional boundary curves, do they intersect?
+
+        for S in Subsets(Set(exc_indices), 2) do
+	  T := SetToSequence(S);
+	  for j in I do
+	    if IntList[j][T[1]] ne 0 and IntList[j][T[2]] ne 0 then
+	      vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n", LevelList[SetToSequence(I)];
+	      return true;
+	    end if;
+	  end for;
+        end for;
+      end if;
 
     end for;
 
-  return false;
+    return false;
 end intrinsic;
 
 // IO
