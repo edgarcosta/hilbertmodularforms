@@ -388,7 +388,7 @@ intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
   h2 := HodgeDiamond(Gamma)[3];
   return StripWhiteSpace(Join([
         LMFDBLabel(Gamma),
-        Sprint(KodairaDimension(Gamma)),
+        //Sprint(KodairaDimension(Gamma)),
         Sprint(HodgeDiamond(Gamma)[3][1..2])
   ], ":"));
 end intrinsic;
