@@ -26,7 +26,10 @@ if not assigned AmbientType then
   print "Missing argument AmbientType";
   exit 1;
 end if;
-assert AmbientType in ["GL+", "SL"];
+assert AmbientType in ["GL+", "GL", "SL"];
+if AmbientType eq "GL" then
+  AmbientType := "GL+";
+end if;
 
 if not assigned GammaType then
   print "Missing argument GammaType";
@@ -46,6 +49,11 @@ ParallelSort(~labels, ~ideals);
 for NN in ideals do
   if GCD(NN, 3*D*ZF) ne 1*ZF then
     continue;
+  end if;
+  if GammaType eq "Gamma1" then
+    if not IsSquarefree(NN) then
+      continue;
+    end if;
   end if;
   for bb in narrow_reps do
     try
