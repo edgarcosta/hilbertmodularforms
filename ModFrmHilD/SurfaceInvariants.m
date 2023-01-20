@@ -269,6 +269,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     {Checks whether the Rationality Criterion is satisfied.
       Note 1: Only implemented for Gamma0(N) level.
       Note 2: it could be refined by including more Hirzebruch--Zagier divisors.}
+    require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
 
     F := BaseField(Gamma);
 
