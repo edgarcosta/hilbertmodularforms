@@ -49,7 +49,7 @@ for d in ds do
 end for;
 
 ds := [d : d in [2..500] | IsFundamentalDiscriminant(d)];
-ds := [d : d in ds | d notin [8,12]];
+// ds := [d : d in ds | d notin [8,12]];
 DN_bound := 500;
 
 printf "Testing integrality of genus for some random (disc;level;comp)...";
