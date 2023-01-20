@@ -163,7 +163,7 @@ the congruence subgroup `G`.}
 end intrinsic;
 
 
-intrinsic HilbertSeries(G::GrpHilbert) -> FldFunRatUElt
+intrinsic HilbertSeriesCusp(G::GrpHilbert) -> FldFunRatUElt
 {Return the Hilbert series for the space of cusp Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
     require AmbientType(G) eq GLPlus_Type: "Only implemented for GL+";
