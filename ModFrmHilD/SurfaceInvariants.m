@@ -356,24 +356,24 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
         end for;
       else
 
-	// List of indices s.t. boundary curve is now exceptional
-	exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
-	// Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
+        // List of indices s.t. boundary curve is now exceptional
+        exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
+        // Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
 
-      if #exc_indices le 1 then //One (-1) curve is not enough!
-        continue;
-      end if;
+        if #exc_indices le 1 then //One (-1) curve is not enough!
+            continue;
+        end if;
 
-      // For each two expectional boundary curves, do they intersect?
+        // For each two expectional boundary curves, do they intersect?
 
-      for S in Subsets(Set(exc_indices), 2) do
-        T := SetToSequence(S);
-        for j in I do
-          if IntList[j][T[1]] ne 0 and IntList[j][T[2]] ne 0 then
-            vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n", LevelList[SetToSequence(I)];
-            return true;
-          end if;
-        end for;
+        for S in Subsets(Set(exc_indices), 2) do
+          T := SetToSequence(S);
+          for j in I do
+            if IntList[j][T[1]] ne 0 and IntList[j][T[2]] ne 0 then
+              vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n", LevelList[SetToSequence(I)];
+              return true;
+            end if;
+          end for;
         end for;
       end if;
 
