@@ -47,6 +47,9 @@ ideals := IdealsUpTo(MaxLevelNorm, F);
 labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in ideals];
 ParallelSort(~labels, ~ideals);
 for NN in ideals do
+  if GCD(NN, 3*D*ZF) ne 1*ZF then
+    continue;
+  end if;
   if gamma eq "Gamma1" and not IsSquarefree(NN) then
     continue;
   end if;
