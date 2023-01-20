@@ -29,7 +29,7 @@ if not assigned AmbientType then
   print "Missing argument AmbientType";
   exit 1;
 end if;
-assert AmbientType in ["GL", "SL"];
+assert AmbientType in ["GL+", "SL"];
 
 if not assigned GammaType then
   print "Missing argument GammaType";
