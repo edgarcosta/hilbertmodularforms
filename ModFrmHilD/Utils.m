@@ -212,7 +212,7 @@ end intrinsic;
 
 intrinsic WriteStderr(s::MonStgElt)
 { write to stderr }
-  E := Open("/dev/stderr", "w");
+  E := Open("/dev/stderr", "a");
   Write(E, s);
   Flush(E);
 end intrinsic;

@@ -258,10 +258,17 @@ just an integer divided by beta)}
                 exps := [e-f, e-f, 0, add];
             end if;
         elif GammaType eq "Gamma1" then
+            if not IsSquarefree(n) then
+                print "Isotropy group is not G(M,V) in general for Gamma1, GL2+, and non-squarefree level";
+                assert IsSquarefree(n);
+            end if;
             if f lt e then
-                exps := [f, f, e-f, e-f+add];
+                assert f eq 0;
+                exps := [0, 0, e-f, e-f+add];
             else //f=e
-                exps := [e, e, 0, add];
+                assert f eq 1;
+                assert e eq 1;
+                exps := [1, 1, 0, add];
             end if;
         elif GammaType eq "Gamma" then
             exps := [e, e, e, add];
