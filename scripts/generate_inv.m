@@ -50,7 +50,7 @@ for NN in ideals do
   if GCD(NN, 3*D*ZF) ne 1*ZF then
     continue;
   end if;
-  if GammaType eq Gamma1 then
+  if GammaType eq "Gamma1" then
     if not IsSquarefree(NN) then
       continue;
     end if;
