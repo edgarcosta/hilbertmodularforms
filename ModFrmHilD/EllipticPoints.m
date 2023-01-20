@@ -744,10 +744,12 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
     // Post-process the elliptic counts due to overcounting in the previous
     // step.
 
-    for rho in isoOrds do
+    for rho in Reverse(isoOrds) do
         rho2 := rho div 2;
         if IsPrime(rho2) then continue; end if;
-        for p in PrimeDivisors(rho2) do
+	divs := [d : d in Divisors(rho2) |
+		 (d ne 1) and (rho2 div d) in Keys(ellipticCounts)];
+        for p in divs do
             rho2p := rho2 div p;
             for rot in Keys(ellipticCounts[rho2]) do
                 
@@ -759,7 +761,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 
                 // Update the table element.
                 ellipticCounts[rho2p][rotp] -:= ellipticCounts[rho2][rot];
-                
+
             end for;
         end for;
     end for;
