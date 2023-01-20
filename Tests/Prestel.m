@@ -111,9 +111,9 @@ for row in prestelTable do
 
     // Lemma: If F is a real quadratic field, then the fundamental unit is totally
     // positive if and only if Cl(F) ne Cl+(F). In particular, Gamma_{e0} in Prestel's
-    // table is GL+(ZF) if and only if Cl(F) == Cl+(F).
+    // table is GL+(ZF) if and only if Cl(F) != Cl+(F).
 
-    if hF eq hFp then
+    if hF ne hFp then
         // Need to look over all components?
         G := CongruenceSubgroup("GL+", F);
 
