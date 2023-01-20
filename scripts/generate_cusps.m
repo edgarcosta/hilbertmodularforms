@@ -37,7 +37,12 @@ assert GammaType in ["Gamma", "Gamma0", "Gamma1"];
 
 
 F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
-_, mp := NarrowClassGroup(F);
+H, mp := NarrowClassGroup(F);
+if assigned narrowclassone then
+  if #H ne 1 then
+    exit 0;
+  end if;
+end if;
 narrow_reps := IdealRepsMapDeterministic(F, mp);
 ideals := IdealsUpTo(MaxLevelNorm, F);
 labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in ideals];
@@ -50,9 +55,9 @@ for NN in ideals do
         print WriteCuspDataToRow(G, c);
       end for;
     catch e
-      WriteStderr(Sprintf("Failed for D = %o, NN =%o , bb=%o", D, LMFDBLabel(NN), LMFDBLabel(bb)));
+      print StripWhiteSpace(Join([LMFDBLabel(G),"NULL"],":"));
+      WriteStderr(Sprintf("Failed WriteCuspDataToRow for %o\n", LMFDBLabel(G)));
       WriteStderr(e);
-      exit 1;
     end try;
   end for;
 end for;
