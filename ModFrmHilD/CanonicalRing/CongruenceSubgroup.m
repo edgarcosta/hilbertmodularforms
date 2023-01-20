@@ -33,9 +33,11 @@ declare attributes GrpHilbert :
   LMFDBlabel,
   Level,
   PrintString,
-  Cusps,
-  EulerNumber,
   CountEllipticPoints,
+  CuspsWithResolution,
+  CuspsWithoutResolution,
+  EulerNumber,
+  K2
   ;
 
 /////////////////// Creation ///////////////////
@@ -566,6 +568,16 @@ end intrinsic;
 
 intrinsic Cusps(Gamma::GrpHilbert : WithResolution:=false) -> SeqEnum
 {Return the cusps of X_Gamma as a sequence of points in a projective space.}
+  if assigned Gamma`CuspsWithResolution then
+    if WithResolution then
+      return Gamma`CuspsWithResolution;
+    else
+      return [<elt[1], elt[2]> : elt in Gamma`CuspsWithResolution];
+    end if;
+  end if;
+  if not WithResolution and assigned Gamma`CuspsWithoutResolution then
+    return Gamma`CuspsWithoutResolution;
+  end if;
   NN := Level(Gamma);
   bb := Component(Gamma);
   ZF := Integers(BaseField(Gamma));
@@ -594,12 +606,17 @@ intrinsic Cusps(Gamma::GrpHilbert : WithResolution:=false) -> SeqEnum
     // FIXME: alpha and beta are not canonical
     pt := P1ZF![Numerator(scalar)*alpha, Denominator(scalar)*beta];
     if WithResolution then
-      continued_fraction, period := CuspResolutionIntersections(working_bb, NN, alpha, beta : GroupType:=GroupType);
+      continued_fraction, period := CuspResolutionIntersections(working_bb, NN, alpha, beta : GroupType:=GroupType, GammaType := GammaType(Gamma));
       Append(~res, <MM, pt, continued_fraction, period>);
     else
       Append(~res, <MM, pt>);
     end if;
   end for;
+  if WithResolution then
+    Gamma`CuspsWithResolution := res;
+  else
+    Gamma`CuspsWithoutResolution := res;
+  end if;
   return res;
 end intrinsic;
 
