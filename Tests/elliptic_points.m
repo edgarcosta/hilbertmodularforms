@@ -71,10 +71,13 @@ for K in quadraticFields do
     cg, mp := NarrowClassGroup(K);
 
     disc := Discriminant(K);
-    if disc in [8, 12] then continue; end if;
+//    if disc in [8, 12] then continue; end if;
     // printf "%o,", disc;
 
-    for b in cg do
+    // randomizing since otherwise it takes too long
+    bs := [Random(cg) : i in [1..2]];
+    for b in bs do
+    
   if b eq Identity(cg) then
       signs := [1 : i in [1..#cg]];
   else
@@ -104,7 +107,11 @@ for K in quadraticFields do
         assert &and [&and[count in Integers() : count in counts] : counts in A];
 
         // Also do an integrality check for levels.
-        for N in [1..13] do
+	// randomizing since otherwise it takes too long
+	Ns := [Random([1..13]) : i in [1..2]];
+	for N in Ns do
+        // for N in [1..13] do
+	    printf "[%o; %o; %o],", Discriminant(ZK), N, IdealOneLine(B);
             G0N_SL := CongruenceSubgroup("SL", "Gamma0", K, N*ZK, B);
       G0N_GL := CongruenceSubgroup("GL+", "Gamma0", K, N*ZK, B);
             A := CountEllipticPoints(G0N_SL);
