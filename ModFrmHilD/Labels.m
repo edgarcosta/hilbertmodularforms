@@ -54,3 +54,17 @@ intrinsic LMFDBLabel(G::GrpHilbert) -> MonStgElt
 end intrinsic;
 
 
+intrinsic LMFDBCongruenceSubgroups(s::MonStgElt) -> GrpHilbert
+ {CongruenceSubgroup given by the label}
+    s := "2.2.97.1-4.3-1.1-gl-1";
+    field, level, bb, ambient, gamma := Explode(Split(s, "-"));
+    AmbientType := [elt[2] : elt in [<"gl", "GL+">, <"sl", "SL">] | elt[1] eq ambient][1];
+    GammaType := [elt[2] : elt in [<"f", "Gamma">, <"0", "Gamma0">, <"1", "Gamma1">] | elt[1] eq gamma][1];
+    D := StringToInteger(Split(field, ".")[3]);
+    F := QuadraticField(D);
+    NN := LMFDBIdeal(F, level);
+    bb := LMFDBIdeal(F, bb);
+    G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
+    assert LMFDBLabel(G) eq s;
+    return G;
+end intrinsic;
