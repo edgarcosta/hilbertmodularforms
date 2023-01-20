@@ -22,20 +22,20 @@ end if;
 
 MaxLevelNorm := Ceiling(cut*D^(-3/2));
 
-if not assigned AmbientType then
-  print "Missing argument AmbientType";
+if not assigned ambient then
+  print "Missing argument ambient";
   exit 1;
 end if;
-assert AmbientType in ["GL+", "GL", "SL"];
-if AmbientType eq "GL" then
-  AmbientType := "GL+";
+assert ambient in ["GL+", "GL", "SL"];
+if ambient eq "GL" then
+  ambient := "GL+";
 end if;
 
-if not assigned GammaType then
-  print "Missing argument GammaType";
+if not assigned gamma then
+  print "Missing argument gamma";
   exit 1;
 end if;
-assert GammaType in ["Gamma", "Gamma0", "Gamma1"];
+assert gamma in ["Gamma", "Gamma0", "Gamma1"];
 
 
 
@@ -47,12 +47,12 @@ ideals := IdealsUpTo(MaxLevelNorm, F);
 labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in ideals];
 ParallelSort(~labels, ~ideals);
 for NN in ideals do
-  if GammaType eq "Gamma1" and not IsSquarefree(NN) then
+  if gamma eq "Gamma1" and not IsSquarefree(NN) then
     continue;
   end if;
   for bb in narrow_reps do
     try
-        G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
+        G := CongruenceSubgroup(ambient, gamma, F, NN, bb);
         print WriteGeometricInvariantsToRow(G);
     catch e
       print StripWhiteSpace(Join([LMFDBLabel(G),"NULL"],":"));
