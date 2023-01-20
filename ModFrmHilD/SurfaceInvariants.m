@@ -272,9 +272,9 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     res := CuspsWithResolution(Gamma);
     self_int_res := [];
     for x in res do
-	for y in [1..x[4]] do
-	    self_int_res cat:= x[3];
-	end for;
+      for y in [1..x[4]] do
+	self_int_res cat:= x[3];
+      end for;
     end for;
 
     LevelList := [];
@@ -320,7 +320,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
       for i in [1 .. #HZInt] do
         for j in [1 .. res[i][4]] do
             HZIntList cat:= HZInt[i];
-	end for;
+        end for;
       end for;
       Append(~IntList, HZIntList);
     end for;
@@ -343,16 +343,16 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     //Blow down any subset of the HZ divisors and check if we have a good configuration.
     for I in Subsets({1 .. #LevelList}) do
       if #I eq 0 then //Without blowing down: check if any -1 curve on boundary intersects exceptional HZ divisor.
-	    
+
         exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
 
         for i in exc_indices do
-	  for j in [1 .. #LevelList] do
-	    if not IntList[j][i] eq 0 then
-	      vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
-	      return true;
-	    end if;
-	  end for;
+          for j in [1 .. #LevelList] do
+            if not IntList[j][i] eq 0 then
+              vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+              return true;
+            end if;
+          end for;
         end for;
       else
 
@@ -360,20 +360,20 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
 	exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
 	// Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
 
-	if #exc_indices le 1 then //One (-1) curve is not enough!
-	  continue;
-	end if;
+      if #exc_indices le 1 then //One (-1) curve is not enough!
+        continue;
+      end if;
 
-	// For each two expectional boundary curves, do they intersect?
+      // For each two expectional boundary curves, do they intersect?
 
-        for S in Subsets(Set(exc_indices), 2) do
-	  T := SetToSequence(S);
-	  for j in I do
-	    if IntList[j][T[1]] ne 0 and IntList[j][T[2]] ne 0 then
-	      vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n", LevelList[SetToSequence(I)];
-	      return true;
-	    end if;
-	  end for;
+      for S in Subsets(Set(exc_indices), 2) do
+        T := SetToSequence(S);
+        for j in I do
+          if IntList[j][T[1]] ne 0 and IntList[j][T[2]] ne 0 then
+            vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n", LevelList[SetToSequence(I)];
+            return true;
+          end if;
+        end for;
         end for;
       end if;
 
