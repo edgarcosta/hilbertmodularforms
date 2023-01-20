@@ -20,7 +20,7 @@
 
 // Read entries from Prestel's table
 function ReadPretzelTable()
-    io := Open("PrestelTable.csv", "r");
+    io := Open("Tests/PrestelTable.csv", "r");
     data := [* *];
 
     // Read the header row and ignore.
