@@ -319,7 +319,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
       assert #HZInt eq #res;
       for i in [1 .. #HZInt] do
         for j in [1 .. res[i][4]] do
-            HZIntList cat:= HZInt[i];
+          HZIntList cat:= HZInt[i];
         end for;
       end for;
       Append(~IntList, HZIntList);
@@ -361,7 +361,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
         // Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
 
         if #exc_indices le 1 then //One (-1) curve is not enough!
-            continue;
+          continue;
         end if;
 
         // For each two expectional boundary curves, do they intersect?
