@@ -49,13 +49,17 @@ ParallelSort(~labels, ~ideals);
 for NN in ideals do
   for bb in narrow_reps do
     G := CongruenceSubgroup(ambient, gamma, F, NN, bb);
-    try
-      print StripWhiteSpace(Join([LMFDBLabel(G), Sprint(KodairaDimensionPossibilities(G))],":"));
-    catch e
-      print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
-      WriteStderr(Sprintf("Failed WriteGeometricInvariantsToRow for %o", LMFDBLabel(G)));
-      WriteStderr(e);
-    end try;
+    if (GCD(NN, 3*D*ZF) ne 1*ZF) or (gamma eq "Gamma1" and not IsSquarefree(NN)) then
+      print StripWhiteSpace(Join([LMFDBLabel(G),"SKIPPED"],":"));
+    else
+      try
+        print StripWhiteSpace(Join([LMFDBLabel(G), Sprint(KodairaDimensionPossibilities(G))],":"));
+      catch e
+        print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
+        WriteStderr(Sprintf("Failed WriteGeometricInvariantsToRow for %o", LMFDBLabel(G)));
+        WriteStderr(e);
+      end try;
+    end if;
   end for;
 end for;
 exit;
