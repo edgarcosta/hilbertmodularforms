@@ -594,7 +594,7 @@ intrinsic Cusps(Gamma::GrpHilbert : WithResolution:=false) -> SeqEnum
   end if;
   working_bb := scalar*bb;
   assert GCD(working_bb, NN) eq 1*ZF;
-  cusps := Cusps(NN, working_bb : GammaType := GammaType(Gamma));
+  cusps := Cusps(NN, working_bb : GammaType := GammaType(Gamma), GroupType := GroupType);
   res := [];
   for c in cusps do
     _, MM, pt := Explode(c);
