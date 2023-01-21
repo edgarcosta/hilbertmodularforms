@@ -35,7 +35,7 @@ if not assigned gamma then
   print "Missing argument gamma";
   exit 1;
 end if;
-assert gamma in ["Gamma", "Gamma0", "Gamma1"];
+assert gamma eq "Gamma0";
 
 
 
@@ -53,7 +53,7 @@ for NN in ideals do
       print StripWhiteSpace(Join([LMFDBLabel(G),"SKIPPED"],":"));
     else
       try
-        print WriteGeometricInvariantsToRow(G);
+        print StripWhiteSpace(Join([LMFDBLabel(G), Sprint(KodairaDimensionPossibilities(G))],":"));
       catch e
         print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
         WriteStderr(Sprintf("Failed WriteGeometricInvariantsToRow for %o", LMFDBLabel(G)));
@@ -63,4 +63,5 @@ for NN in ideals do
   end for;
 end for;
 exit;
+
 

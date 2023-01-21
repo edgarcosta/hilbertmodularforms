@@ -150,7 +150,7 @@ intrinsic IsNormalizedCusp(b :: RngOrdFracIdl, n :: RngOrdIdl,
 {True iff alpha*ZF, beta*b^(-1) are both integral ideals and alpha, beta, n are coprime}
     ZF := Order(b);
     ints := alpha in 1*ZF and beta in b;
-    coprime := IsCoprimeFracIdl(alpha*ZF, Gcd(beta*ZF, n));
+    coprime := IsCoprimeFracIdl(alpha*ZF + beta*b^(-1), n);
     return ints and coprime;
 end intrinsic;
 
@@ -258,10 +258,16 @@ just an integer divided by beta)}
                 exps := [e-f, e-f, 0, add];
             end if;
         elif GammaType eq "Gamma1" then
+            if not IsSquarefree(n) then
+                error "Isotropy group is not G(M,V) in general for Gamma1, GL2+, and non-squarefree level";
+            end if;
             if f lt e then
-                exps := [f, f, e-f, e-f+add];
+                assert f eq 0;
+                exps := [0, 0, e-f, e-f+add];
             else //f=e
-                exps := [e, e, 0, add];
+                assert f eq 1;
+                assert e eq 1;
+                exps := [1, 1, 0, add];
             end if;
         elif GammaType eq "Gamma" then
             exps := [e, e, e, add];
@@ -318,6 +324,7 @@ positive unit that generates it.}
     M0 := I^-2 * b^-1;
 
     M := M0;
+    qq := 1*ZF; //Congruence conditions on eps-1, in case Gamma1, GL2+, squarefree
     W := 1*ZF; //Congruence conditions on v-1
     W2 := 1*ZF; //Congruence conditions on v^2-1
     X := 1*ZF; //Congruence conditions on x-x0;
@@ -328,6 +335,7 @@ positive unit that generates it.}
         L, x0 := CuspResolutionCongruences(b, n, g, p:
                                            GammaType:=GammaType, GroupType:=GroupType);
         ev, ev2, em, ex := Explode(L);
+        qq *:= p^em;
         M *:= p^em;
         W *:= p^ev;
         W2 *:= p^ev2;
@@ -362,18 +370,34 @@ positive unit that generates it.}
         x *:= scal;
     end if;
 
-    V := CuspResolutionV(W, W2: GroupType:=GroupType);
+    V := CuspResolutionV(W, W2, qq: GroupType:=GroupType, GammaType := GammaType);
     return M, V, Matrix(F, [[1,x],[0,1]])*g;
 end intrinsic;
 
-intrinsic CuspResolutionV(W::RngOrdIdl, W2::RngOrdIdl: GroupType := "GL2+") -> RngOrdElt
+intrinsic CuspResolutionV(W::RngOrdIdl, W2::RngOrdIdl, qq::RngOrdIdl:
+                          GroupType := "GL2+", GammaType := "Gamma0") -> RngOrdElt
 {}
     ZF := Order(W);
     F := NumberField(ZF);
 
     //Get totally positive unit generating V
     v := FundamentalUnitTotPos(F);
-    if GroupType eq "GL2+" then
+    if GroupType eq "GL2+" and GammaType eq "Gamma1" then
+        //Use qq
+        w := FundamentalUnit(F);
+        Q := quo<ZF|qq>;
+        U, Umap := UnitGroup(Q);
+        k := Order((Q!w)@@Umap);
+        w := w^k;
+        //Now quotient by w^k mod W
+        Q := quo<ZF|W>;
+        U, Umap := UnitGroup(Q);
+        vmod := (Q!v)@@Umap;
+        wmod := (Q!w)@@Umap;
+        R, Rmap := quo<U|wmod>;
+        k := Order(vmod@Rmap);
+        V := v^k;
+    elif GroupType eq "GL2+" then
         //Congruence conditions are simply on v; we can ignore W2.
         Q := quo<ZF|W>;
         U, Umap := UnitGroup(Q);

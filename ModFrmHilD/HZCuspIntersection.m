@@ -1,4 +1,4 @@
-intrinsic HZCuspIntersection(F::FldQuad, t::RngIntElt, 
+intrinsic HZCuspIntersection(F::FldNum, t::RngIntElt, 
 			     N::RngOrdIdl, b::RngOrdIdl 
 			     : GammaType := "Gamma0") -> 
 	  SeqEnum[SeqEnum[RngIntElt]]
