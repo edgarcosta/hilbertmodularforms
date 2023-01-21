@@ -65,7 +65,7 @@ for NN in ideals do
       end try;
     end if;
   end for;
-  if testarithmeticgenus assigned and not skipping and [ambient, gamma] eq ["GL+", "Gamma0"] then
+  if assigned testarithmeticgenus and not skipping and [ambient, gamma] eq ["GL+", "Gamma0"] then
     M := GradedRingOfHMFs(F, 0);
     h := HilbertSeriesCusp(M, NN);
     chi2 := Coefficient(PowerSeriesRing(Rationals())!h,2) + #NCl;
