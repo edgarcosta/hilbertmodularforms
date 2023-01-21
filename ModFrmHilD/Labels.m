@@ -56,7 +56,6 @@ end intrinsic;
 
 intrinsic LMFDBCongruenceSubgroup(s::MonStgElt) -> GrpHilbert
  {CongruenceSubgroup given by the label}
-    s := "2.2.97.1-4.3-1.1-gl-1";
     field, level, bb, ambient, gamma := Explode(Split(s, "-"));
     AmbientType := [elt[2] : elt in [<"gl", "GL+">, <"sl", "SL">] | elt[1] eq ambient][1];
     GammaType := [elt[2] : elt in [<"f", "Gamma">, <"0", "Gamma0">, <"1", "Gamma1">] | elt[1] eq gamma][1];
