@@ -597,29 +597,21 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             // Record the data into the table.
             total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
             K := NumberField(S);
+	    ZK := Integers(K);
 
             vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
             vprint EllipticPointsDebug : rho, localCount, total_num, groupCorrectionFactor, hS;
 
-            /*
-            al_sign := false;
-            if GCD(level, dff) ne 1*ZF then
-                al_sign := &or[Norm(x[1])^x[2] lt 0 : x in Factorization(level)];
-            end if;
-            */
-            // sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
-
             // YYY: Check which signs occur (CM types)
             is_unr := IsUnramified(K);
-            // and (GCD(Norm(level), Discriminant(F)) eq 1);
-            if GCD(Norm(level), 3) ne 1 then
-                is_unr := is_unr and OrderNormIndexWithAL(S, level) eq 2;
-            end if;
-            if is_unr then
-                assert OrderNormIndex(S) eq 2;
+	    oos := is_unr and &and[IsSplit(p_e[1], ZK) :
+				   p_e in Factorization(level) |
+				   IsOdd(p_e[2])];
+            if oos then
+                // assert OrderNormIndex(S) eq 2;
 
                 a := SteinitzClass(Module(S));
-                sign := ArtinSymbol(Integers(K), a*Component(Gamma));
+                sign := ArtinSymbol(ZK, a*Component(Gamma));
                 if (sign eq 1) then
                     num_plus  := total_num;
                     num_minus := 0;
