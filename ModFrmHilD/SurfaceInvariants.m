@@ -226,6 +226,8 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
     if (Level(Gamma) eq 1*ZF) or ((Component(Gamma) @@ mp) eq NCl.0) then 
       if RationalityCriterion(Gamma) then
         return [-1];
+      else
+        return [-1, 2];
       end if;
     else
       return [-1, 2];
