@@ -216,11 +216,16 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
     based on the arithmetic genus. When the level is 1, it gives a more refined list based on K^2.
   }
 
+  F := BaseField(Gamma);
+  ZF := Integers(F);
+  NCl, mp := NarrowClassGroup(F);
   chi := ArithmeticGenus(Gamma);
 
   if (chi eq 1) then
-    if RationalityCriterion(Gamma) then
-      return [-1];
+    if (Level(Gamma) eq 1*ZF) or ((Component(Gamma) @@ mp) eq NCl.0) then 
+      if RationalityCriterion(Gamma) then
+        return [-1];
+      end if;
     else
       return [-1, 2];
     end if;
@@ -410,7 +415,7 @@ end intrinsic;
 
 // IO
 intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
-  {Script for writing geometric invariants to data table row. Format is label:Kodaira-dimension:[h^[2,0], h^[1,1]].}
+  {Script for writing geometric invariants to data table row. Format is label:[h^[2,0], h^[1,1]]:K^2:chi.}
   h2 := HodgeDiamond(Gamma)[3];
   return StripWhiteSpace(Join([
         LMFDBLabel(Gamma),
