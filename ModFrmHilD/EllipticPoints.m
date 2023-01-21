@@ -51,8 +51,8 @@ intrinsic ArtinSymbol(ZK::RngOrd, pp::RngOrdIdl) -> RngIntElt
 {.}
     vprintf HilbertModularForms,1: "%o,%o,%o", ZK, pp, BaseRing(ZK);
     if not IsPrime(pp) then
-	fac := Factorization(pp);
-	return &*([1] cat [ArtinSymbol(ZK, p[1]) : p in fac | IsOdd(p[2])]);
+        fac := Factorization(pp);
+        return &*([1] cat [ArtinSymbol(ZK, p[1]) : p in fac | IsOdd(p[2])]);
     end if;
     if IsSplit(pp,ZK) then return 1;
     elif IsRamified(pp,ZK) then return 0;
@@ -326,45 +326,45 @@ as a record.}
         tpunits := TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);
 
         _<T> := PolynomialRing(F);
-	if rho eq 4 then
+        if rho eq 4 then
             fieldList := [ext<F | T^2 + u> : u in tpunits];
-	elif rho eq 6 then
-	    fieldList := [ext<F | T^2 - T + 1>];
-	elif rho eq 8 then
-	    fieldList := [];
-	    for u in tpunits do
-		is_sqr, t := IsSquare(2*u);
-		if is_sqr then
-		    Append(~fieldList, ext<F | T^2 - t*T + u>);
-		end if;
-	    end for;
-	elif rho eq 12 then
-	    fieldList := [];
-	    for u in tpunits do
-		is_sqr, t := IsSquare(3*u);
-		if is_sqr then
-		    Append(~fieldList, ext<F | T^2 - t*T + u>);
-		end if;
-	    end for;
-	elif rho eq 24 then
-	    is_sqr, sqrt3 := IsSquare(F!3);
-	    if not is_sqr then return []; end if;
-	    fieldList := [];
-	    for u in tpunits do
-		is_sqr, t := IsSquare((2+sqrt3)*u);
-		if is_sqr then
-		    Append(~fieldList, ext<F | T^2 - t*T + u>);
-		end if;
-	    end for;
-	else
-	    fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
-	    if (Degree(fs) ne 2) then return []; end if;
+        elif rho eq 6 then
+            fieldList := [ext<F | T^2 - T + 1>];
+        elif rho eq 8 then
+            fieldList := [];
+            for u in tpunits do
+                is_sqr, t := IsSquare(2*u);
+                if is_sqr then
+                    Append(~fieldList, ext<F | T^2 - t*T + u>);
+                end if;
+            end for;
+        elif rho eq 12 then
+            fieldList := [];
+            for u in tpunits do
+                is_sqr, t := IsSquare(3*u);
+                if is_sqr then
+                    Append(~fieldList, ext<F | T^2 - t*T + u>);
+                end if;
+            end for;
+        elif rho eq 24 then
+            is_sqr, sqrt3 := IsSquare(F!3);
+            if not is_sqr then return []; end if;
+            fieldList := [];
+            for u in tpunits do
+                is_sqr, t := IsSquare((2+sqrt3)*u);
+                if is_sqr then
+                    Append(~fieldList, ext<F | T^2 - t*T + u>);
+                end if;
+            end for;
+        else
+            fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
+            if (Degree(fs) ne 2) then return []; end if;
             fieldList := [ext<F | fs>];
-	    // error "Not implemented for this order";
-	end if;
+            // error "Not implemented for this order";
+        end if;
     else
         fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
-	if (Degree(fs) ne 2) then return []; end if;
+        if (Degree(fs) ne 2) then return []; end if;
         fieldList := [ext<F | fs>];
     end if;
 
@@ -455,66 +455,66 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         Fartin := [1 - UnramifiedSquareSymbol(Dq, pp[1])/AbsoluteNorm(pp[1])
                    : pp in Factorization(dff)];
 
-	// Adding this to avoid magma bug when creating absolute orders
-	// Based on analysis in Prestel, which might be wrong for
-	// non-trivial levels
+        // Adding this to avoid magma bug when creating absolute orders
+        // Based on analysis in Prestel, which might be wrong for
+        // non-trivial levels
 /*
-	if (t eq 0) and (u eq 1) and (D notin [8,12]) then
-	    w := 2;
-	elif (t in [-1,1]) and (u eq 1) and (D ne 12) then
-	    w := 3;
-	elif (D eq 5) then
-	    is_sqr, sqrt5 := IsSquare(F!5);
-	    assert is_sqr;
-	    traces := [eps1*(1+eps2*sqrt5)/2 : eps1, eps2 in [-1,1]];
-	    if (t in traces) then
-		w := 5;
-	    end if;
-	elif (t^2 eq 2*u) then // order 4
-	    assert D mod 4 eq 0;
-	    if (dff eq 1*ZF) then
-		if (D ne 12) then
-		    w := 2;
-		else
-		    w := 6;
-		end if;
-	    else
-		if ((D div 4) mod 4 eq 2) then
-		    assert dff^2 eq 2*ZF;
-		    w := 1;
-		else
-		    assert ((D div 4) mod 4 eq 3);
-		    assert (dff^2 eq 2*ZF) or (dff eq 2*ZF);
-		    if (dff eq 2*ZF) then
-			w := 1;
-		    else
-			w := 2;
-		    end if;
-		end if;
-	    end if;
-	elif (D eq 12) then
-	    is_sqr, sqrt3 := IsSquare(F!3);
-	    assert is_sqr;
-	    if (t^2 eq u*(2+sqrt3)) then
-		w := 6;
-	    end if;
-	elif (t^2 eq 3*u) then
-	    if (dff eq 1*ZF) then
-		w := 3;
-	    else
-		assert dff^2 eq 3*ZF;
-		w := 3/2;
-	    end if;
-	else
-	    assert (t eq 0);
-	    w := 1;
-	end if;
+        if (t eq 0) and (u eq 1) and (D notin [8,12]) then
+            w := 2;
+        elif (t in [-1,1]) and (u eq 1) and (D ne 12) then
+            w := 3;
+        elif (D eq 5) then
+            is_sqr, sqrt5 := IsSquare(F!5);
+            assert is_sqr;
+            traces := [eps1*(1+eps2*sqrt5)/2 : eps1, eps2 in [-1,1]];
+            if (t in traces) then
+                w := 5;
+            end if;
+        elif (t^2 eq 2*u) then // order 4
+            assert D mod 4 eq 0;
+            if (dff eq 1*ZF) then
+                if (D ne 12) then
+                    w := 2;
+                else
+                    w := 6;
+                end if;
+            else
+                if ((D div 4) mod 4 eq 2) then
+                    assert dff^2 eq 2*ZF;
+                    w := 1;
+                else
+                    assert ((D div 4) mod 4 eq 3);
+                    assert (dff^2 eq 2*ZF) or (dff eq 2*ZF);
+                    if (dff eq 2*ZF) then
+                        w := 1;
+                    else
+                        w := 2;
+                    end if;
+                end if;
+            end if;
+        elif (D eq 12) then
+            is_sqr, sqrt3 := IsSquare(F!3);
+            assert is_sqr;
+            if (t^2 eq u*(2+sqrt3)) then
+                w := 6;
+            end if;
+        elif (t^2 eq 3*u) then
+            if (dff eq 1*ZF) then
+                w := 3;
+            else
+                assert dff^2 eq 3*ZF;
+                w := 3/2;
+            end if;
+        else
+            assert (t eq 0);
+            w := 1;
+        end if;
 
-	SUnitIndexInK := FUnitIndexInK / w;
+        SUnitIndexInK := FUnitIndexInK / w;
 
-	// This should have worked
-	// assert SUnitIndexInK eq #quo<UK | OqUnitsInK>;
-	hOq := hK / SUnitIndexInK * AbsoluteNorm(dff) * Product(Fartin);
+        // This should have worked
+        // assert SUnitIndexInK eq #quo<UK | OqUnitsInK>;
+        hOq := hK / SUnitIndexInK * AbsoluteNorm(dff) * Product(Fartin);
 */
         hOq := hK / #quo<UK | OqUnitsInK> * AbsoluteNorm(dff) * Product(Fartin);
 
@@ -604,7 +604,7 @@ intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
   signs_s := [Sign(x) : x in RealEmbeddings(s)];
   F := BaseField(NumberField(S));
   alpha0 := [alphas[j] - i*signs_s[j] * Sqrt(1 - alphas[j]^2) :
-	     j in [1..Degree(F)]];
+             j in [1..Degree(F)]];
   // Here we assume it is a surface
   assert exists(t){t : t in [1..q-1] | Abs(alpha0[1]^t - alpha0[2]) lt Exp(-20)};
   return [t,1];
@@ -639,20 +639,20 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 
     isoOrds := PossibleIsotropyOrders(F);
     for rho in isoOrds do
-	ell_order := ExactQuotient(rho, 2);
+        ell_order := ExactQuotient(rho, 2);
 
-	// Get options for the rotation factors
-	U, mU := UnitGroup(Integers(ell_order));
-	U2,i1,i2,pi1,pi2 := DirectSum(U,U);
-	T := pi1(Kernel(hom<U2 -> U |
-			   [pi1(U2.x) + pi2(U2.x) : x in [1..Ngens(U2)]]>));
-	rot_factors := [[q,1] : q in Reverse(Sort([mU(g) : g in T]))];
+        // Get options for the rotation factors
+        U, mU := UnitGroup(Integers(ell_order));
+        U2,i1,i2,pi1,pi2 := DirectSum(U,U);
+        T := pi1(Kernel(hom<U2 -> U |
+                           [pi1(U2.x) + pi2(U2.x) : x in [1..Ngens(U2)]]>));
+        rot_factors := [[q,1] : q in Reverse(Sort([mU(g) : g in T]))];
 
         listOfOrders := OrderTermData(Gamma, F, rho);
         count := AssociativeArray();
-	for rot_factor in rot_factors do
-	    count[rot_factor] := 0;
-	end for;
+        for rot_factor in rot_factors do
+            count[rot_factor] := 0;
+        end for;
 
         for Srec in listOfOrders do
             // Extract Record data
@@ -662,10 +662,10 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             QS  := Srec`HasseUnitIndex;
 
             // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
-	    localCount := ActualLocalOptimalEmbeddingNumbers(F, level, S, dff);
+            localCount := ActualLocalOptimalEmbeddingNumbers(F, level, S, dff);
 
-	    // clS, m_clS := PicardGroup(AbsoluteOrder(S));
-	    // norm_im := sub<clF_plus | [Norm(S!!m_clS(g))@@m_clF_plus : g in Generators(clS)]>;
+            // clS, m_clS := PicardGroup(AbsoluteOrder(S));
+            // norm_im := sub<clF_plus | [Norm(S!!m_clS(g))@@m_clF_plus : g in Generators(clS)]>;
 
             if AmbientType(Gamma) eq SL_Type then
                 // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
@@ -692,53 +692,53 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             end if;
 
             // Record the data into the table.
-	    total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
-	    K := NumberField(S);
+            total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
+            K := NumberField(S);
 
             vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
             vprint EllipticPointsDebug : rho, localCount, total_num, groupCorrectionFactor, hS;
 
-	    /*
-	    al_sign := false;
-	    if GCD(level, dff) ne 1*ZF then
-		al_sign := &or[Norm(x[1])^x[2] lt 0 : x in Factorization(level)];
-	    end if;
-	    */
-	    // sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
+            /*
+            al_sign := false;
+            if GCD(level, dff) ne 1*ZF then
+                al_sign := &or[Norm(x[1])^x[2] lt 0 : x in Factorization(level)];
+            end if;
+            */
+            // sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
 
-	    // YYY: Check which signs occur (CM types)
-	    is_unr := IsUnramified(K);
-	    // and (GCD(Norm(level), Discriminant(F)) eq 1);
-	    if GCD(Norm(level), 3) ne 1 then
-		is_unr := is_unr and OrderNormIndexWithAL(S, level) eq 2;
-	    end if;
-	    if is_unr then
-		assert OrderNormIndex(S) eq 2;
+            // YYY: Check which signs occur (CM types)
+            is_unr := IsUnramified(K);
+            // and (GCD(Norm(level), Discriminant(F)) eq 1);
+            if GCD(Norm(level), 3) ne 1 then
+                is_unr := is_unr and OrderNormIndexWithAL(S, level) eq 2;
+            end if;
+            if is_unr then
+                assert OrderNormIndex(S) eq 2;
 
-		a := SteinitzClass(Module(S));
-		sign := ArtinSymbol(Integers(K), a*Component(Gamma));
-		if (sign eq 1) then
-		    num_plus  := total_num;
-		    num_minus := 0;
-		else
-		    num_plus  := 0;
-		    num_minus := total_num;
-		end if;
-	    else
-		assert IsEven(total_num);
-		num_plus := total_num div 2;
-		num_minus := total_num div 2;
-	    end if;
+                a := SteinitzClass(Module(S));
+                sign := ArtinSymbol(Integers(K), a*Component(Gamma));
+                if (sign eq 1) then
+                    num_plus  := total_num;
+                    num_minus := 0;
+                else
+                    num_plus  := 0;
+                    num_minus := total_num;
+                end if;
+            else
+                assert IsEven(total_num);
+                num_plus := total_num div 2;
+                num_minus := total_num div 2;
+            end if;
 
             // Update associative array.
-	    ellipticCountsByOrder[S] := AssociativeArray();
+            ellipticCountsByOrder[S] := AssociativeArray();
 
-	    rot_factor := RotationFactor(S, ell_order);
-	    rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
-	    ellipticCountsByOrder[S][rot_factor] := num_plus;
-	    ellipticCountsByOrder[S][rot_factor_minus] := num_minus;
+            rot_factor := RotationFactor(S, ell_order);
+            rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
+            ellipticCountsByOrder[S][rot_factor] := num_plus;
+            ellipticCountsByOrder[S][rot_factor_minus] := num_minus;
             count[rot_factor] +:= num_plus;
-	    count[rot_factor_minus] +:= num_minus;
+            count[rot_factor_minus] +:= num_minus;
         end for;
 
         ellipticCounts[ExactQuotient(rho, 2)] := count;
@@ -750,8 +750,8 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
     for rho in Reverse(isoOrds) do
         rho2 := rho div 2;
         if IsPrime(rho2) then continue; end if;
-	divs := [d : d in Divisors(rho2) |
-		 (d ne 1) and (rho2 div d) in Keys(ellipticCounts)];
+        divs := [d : d in Divisors(rho2) |
+                 (d ne 1) and (rho2 div d) in Keys(ellipticCounts)];
         for p in divs do
             rho2p := rho2 div p;
             for rot in Keys(ellipticCounts[rho2]) do
@@ -957,7 +957,7 @@ intrinsic OrderNormIndex(S::RngOrd)->RngIntElt
   R := BaseRing(S);
   cg, cg_map := NarrowClassGroup(R);
   norm_im := sub< cg | [Norm(S!!(Denominator(pic_map(g))*pic_map(g))) @@ cg_map
-			: g in Generators(pic_S)]>;
+                        : g in Generators(pic_S)]>;
   return Index(cg, norm_im);
 end intrinsic;
 
@@ -975,7 +975,7 @@ We also need the group of sign changes generated by the Atkin-Lehner (AL) elemen
   cg_sq := hom<cg -> cg | [2*g : g in Generators(cg)]>;
   ncg, ncg_map := NarrowClassGroup(R);
   norms := [Norm(S!!(Denominator(pic_map(g))*pic_map(g))) @@ ncg_map
-	    : g in Generators(pic_S)];
+            : g in Generators(pic_S)];
 
   ////////////
   // Hmm...Below does not really depend on S, aside from the norms.
@@ -1015,27 +1015,27 @@ We also need the group of sign changes generated by the Atkin-Lehner (AL) elemen
     for t in Generators(N) do
       gens_p := Generators(p);
       for i in [1..#gens_p] do
-	M := N div p^e;
-	if (M ne 1*R) then
-	    while (gens_p[i] in M) do
-		gens_p[i] +:= &+[Random([-10..10]) * g : g in gens_p
-				 | g ne gens_p[i]];
-	    end while;
-	end if;
-	pi := gens_p[i];
-	q := pi^e;
-	Q, piQ := quo<R | M>;
-	is_invertible, x_im := IsInvertible(piQ(q));
-//	    x := InverseMod(q, M);
-	if is_invertible then
-	    x := x_im @@ piQ;
-	    Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
-	end if;
+        M := N div p^e;
+        if (M ne 1*R) then
+            while (gens_p[i] in M) do
+                gens_p[i] +:= &+[Random([-10..10]) * g : g in gens_p
+                                 | g ne gens_p[i]];
+            end while;
+        end if;
+        pi := gens_p[i];
+        q := pi^e;
+        Q, piQ := quo<R | M>;
+        is_invertible, x_im := IsInvertible(piQ(q));
+//          x := InverseMod(q, M);
+        if is_invertible then
+            x := x_im @@ piQ;
+            Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
+        end if;
       end for;
     end for;
 
     if IsEmpty(gens) then
-	Append(~gens, B!1);
+        Append(~gens, B!1);
     end if;
 
     J := ideal< O | gens>;
@@ -1044,7 +1044,7 @@ We also need the group of sign changes generated by the Atkin-Lehner (AL) elemen
 
     // assert (J eq lideal<O | gens>) and (J eq rideal<O | gens>);
     if not( (J eq lideal<O | gens>) and (J eq rideal<O | gens>)) then
-	continue;
+        continue;
     end if;
 
     // Lifting the AL to a global element
@@ -1136,17 +1136,17 @@ Gamma_0(N)}
     for t in Generators(N) do
       gens_p := Generators(p);
       for i in [1..#gens_p] do
-	M := N div p^e;
-	if (M ne 1*R) then
-	    while (gens_p[i] in M) do
-		gens_p[i] +:= &+[Random([-10..10]) * g : g in gens_p
-				 | g ne gens_p[i]];
-	    end while;
-	end if;
-	pi := gens_p[i];
-	q := pi^e;
-	x := InverseMod(q, M);
-	Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
+        M := N div p^e;
+        if (M ne 1*R) then
+            while (gens_p[i] in M) do
+                gens_p[i] +:= &+[Random([-10..10]) * g : g in gens_p
+                                 | g ne gens_p[i]];
+            end while;
+        end if;
+        pi := gens_p[i];
+        q := pi^e;
+        x := InverseMod(q, M);
+        Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
       end for;
     end for;
     J := ideal< O | gens>;
@@ -1195,17 +1195,17 @@ intrinsic RandomishOrderIdeal(O) -> Any
     for t in Generators(N) do
       gens_p := Generators(p);
       for i in [1..#gens_p] do
-	M := N div p^e;
-	if (M ne 1*R) then
-	    while (gens_p[i] in M) do
-		gens_p[i] +:= &+[Random([-10..10]) * g : g in gens_p
-				 | g ne gens_p[i]];
-	    end while;
-	end if;
-	pi := gens_p[i];
-	q := pi^e;
-	x := InverseMod(q, M);
-	Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
+        M := N div p^e;
+        if (M ne 1*R) then
+            while (gens_p[i] in M) do
+                gens_p[i] +:= &+[Random([-10..10]) * g : g in gens_p
+                                 | g ne gens_p[i]];
+            end while;
+        end if;
+        pi := gens_p[i];
+        q := pi^e;
+        x := InverseMod(q, M);
+        Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
       end for;
     end for;
     J := ideal< O | gens>;
