@@ -150,7 +150,7 @@ intrinsic IsNormalizedCusp(b :: RngOrdFracIdl, n :: RngOrdIdl,
 {True iff alpha*ZF, beta*b^(-1) are both integral ideals and alpha, beta, n are coprime}
     ZF := Order(b);
     ints := alpha in 1*ZF and beta in b;
-    coprime := IsCoprimeFracIdl(alpha*ZF, Gcd(beta*ZF, n));
+    coprime := IsCoprimeFracIdl(alpha*ZF + beta*b^(-1), n);
     return ints and coprime;
 end intrinsic;
 
