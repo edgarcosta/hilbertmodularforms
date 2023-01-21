@@ -93,7 +93,7 @@ procedure TestCuspResolutionMV()
     I := alpha*ZF + beta*b^(-1);
     assert IsNormalizedCuspChangeMatrix(b, n, g);
     
-    GammaType := Random(["Gamma0", "Gamma"]; //"Gamma1": we need a squarefree level if GL2+
+    GammaType := Random(["Gamma0", "Gamma"]); //"Gamma1": we need a squarefree level if GL2+
     GroupType := Random(["GL2+", "SL2"]);
     M, V, g := CuspResolutionMV(b, n, alpha, beta:
                                 GammaType := GammaType, GroupType := GroupType);
