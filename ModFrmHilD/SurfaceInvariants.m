@@ -216,6 +216,7 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
     based on the arithmetic genus. When the level is 1, it gives a more refined list based on K^2.
   }
 
+  require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
   F := BaseField(Gamma);
   ZF := Integers(F);
   NCl, mp := NarrowClassGroup(F);
