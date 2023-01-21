@@ -144,16 +144,13 @@ intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> FldFunRatUElt
     return HilbertSeriesVasquez(BaseField(M));
 end intrinsic;
 
-intrinsic HilbertSeries(G::GrpHilbert) -> FldFunRatUElt
+intrinsic HilbertSeries(F::FldNum, level::RndOrdIdl) -> FldFunRatUElt
 {Return the Hilbert series for the space of Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
-    require AmbientType(G) eq GLPlus_Type and GammaType(G) eq GAMMA_0_Type: "Only implemented for Gamma0 over GL+";
-    if Index(G) eq 1 then //level = 1
-        return HilbertSeriesVasquez(BaseField(G));
+    if Norm(level) eq 1 then
+        return HilbertSeriesVasquez(F);
     end if;
-    F := BaseField(G);
     M := GradedRingOfHMFs(F, 0);
-    level := Level(G);
     M2 := HMFSpace(M, level, [2,2]);
     HC := HilbertSeriesCusp(M, level);
     R<T> := Parent(HC);
@@ -163,13 +160,10 @@ the congruence subgroup `G`.}
 end intrinsic;
 
 
-intrinsic HilbertSeriesCusp(G::GrpHilbert) -> FldFunRatUElt
+intrinsic HilbertSeriesCusp(F::FldNum, level::RndOrdIdl) -> FldFunRatUElt
 {Return the Hilbert series for the space of cusp Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
-    require AmbientType(G) eq GLPlus_Type and GammaType(G) eq GAMMA_0_Type: "Only implemented for Gamma0 over GL+";
-    F := BaseField(G);
     M := GradedRingOfHMFs(F, 0);
-    level := Level(G);
     return HilbertSeriesCusp(M, level);
 end intrinsic;
 
