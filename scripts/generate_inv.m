@@ -48,7 +48,8 @@ labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in idea
 ParallelSort(~labels, ~ideals);
 for NN in ideals do
   chisum := 0;
-  skipping := (GCD(NN, 3*D*ZF) ne 1*ZF) or (gamma eq "Gamma1" and not IsSquarefree(NN));
+  //skipping := (GCD(NN, 3*D*ZF) ne 1*ZF) or (gamma eq "Gamma1" and not IsSquarefree(NN));
+  skipping := (gamma eq "Gamma1" and not IsSquarefree(NN));
   for bb in narrow_reps do
     G := CongruenceSubgroup(ambient, gamma, F, NN, bb);
     if skipping then
