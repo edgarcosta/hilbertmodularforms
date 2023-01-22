@@ -58,7 +58,7 @@ for _ in [1..10] do
     d := Random(ds);
     F := QuadraticField(d);
     ZF := Integers(F);
-    N := Random(IdealsUpTo(Floor(DN_bound/d),F : CoprimeTo := 3*d*ZF));
+    N := Random(IdealsUpTo(Floor(DN_bound/d),F));
     cg, cg_map := NarrowClassGroup(F);
     b := Random(cg);
     B := cg_map(b);
@@ -70,11 +70,9 @@ for _ in [1..10] do
     G_SL := CongruenceSubgroup("SL", "Gamma0", F, N, B);
     chi := ArithmeticGenus(G_SL);
     assert IsIntegral(chi);
-    /*
     G_GL := CongruenceSubgroup("GL+", "Gamma0", F, N, B);
     chi := ArithmeticGenus(G_GL);
     assert IsIntegral(chi);
-   */
 end for;
 
 // Print newline.
