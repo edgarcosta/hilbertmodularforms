@@ -223,9 +223,11 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
   chi := ArithmeticGenus(Gamma);
 
   if (chi eq 1) then
-    if (Level(Gamma) eq 1*ZF) or ((Component(Gamma) @@ mp) eq NCl.0) then 
+    if (Level(Gamma) eq 1*ZF) or ((Component(Gamma) @@ mp) eq NCl.0) then
       if RationalityCriterion(Gamma) then
         return [-1];
+      else
+        return [-1, 2];
       end if;
     else
       return [-1, 2];
@@ -346,7 +348,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     //Compute intersections of HZ divisors with cusps.
     IntList := [];
     for M in LevelList do
-      HZInt := HZCuspIntersection(F, M, Level(Gamma), Component(Gamma));
+      HZInt := HZCuspIntersection(Gamma, M);
       HZIntList := [];
       assert #HZInt eq #res;
       for i in [1 .. #HZInt] do
@@ -374,18 +376,18 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
 
     //Blow down any subset of the HZ divisors and check if we have a good configuration.
     for I in Subsets({1 .. #LevelList}) do
-      if #I eq 0 then //Without blowing down: check if any -1 curve on boundary intersects exceptional HZ divisor.
-
-        exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
-
-        for i in exc_indices do
-          for j in [1 .. #LevelList] do
-            if not IntList[j][i] eq 0 then
-              vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
-              return true;
-            end if;
-          end for;
-        end for;
+      if #I eq 0 then //Without blowing down, nothing to do. 
+        continue;
+        // exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
+        //
+        // for i in exc_indices do
+        //   for j in [1 .. #LevelList] do
+        //     if not IntList[j][i] eq 0 then
+        //       vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+        //       return true;
+        //     end if;
+        //   end for;
+        // end for;
       else
 
         // List of indices s.t. boundary curve is now exceptional

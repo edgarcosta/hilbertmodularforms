@@ -101,7 +101,7 @@ end intrinsic;
 
 /////////////////////////////// ModFrmHilD: HilberSeriesCusp /////////////////////////////////////////
 
-intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
+intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> RngSerPowElt
   { returns the hilbert series for the dimension of the space of cusp forms of level NN }
 
   R<T> := PowerSeriesRing(Rationals());
@@ -110,7 +110,6 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
   n := Degree(F);
   Disc := Discriminant(ZF);
   h := ClassNumber(F);
-  
 
   // for consistency with the rest of the code for trace formulas
   mm := 1*ZF; // hecke operator
@@ -118,12 +117,19 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
 
   // list of pairs (u,t) that we will sum over
   // FIXME maybe do (u,t) and (u,-t) in one go
+  vprintf HMFTrace : "Computing index of summation...";
+  vtime HMFTrace:
   pairs := IndexOfSummation(M, mm, aa);
 
   // degree(1/T^2) + degree(\sum_{k \in 2Z_>0} (k-1)^n T^k) + #pairs*degree(sum D_k)
   // the denominator of sum D_k has degree 2n and numerator at most 2n-1
   degree := 2 + (4*(n + 1)) + 2*2^n*#pairs;
-  prec := 2*degree + 1 + 20; // for sanity check later on
+  if prec cmpeq false then
+    prec := 2*degree + 1 + 20; // for sanity check later on
+    reconstruct := true;
+  else
+    reconstruct := false;
+  end if;
 
   // Correction term for weight 2
   res := (-1)^(n+1) * NarrowClassNumber(M)*T^2;
@@ -145,16 +151,20 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl) -> RngSerPowElt
     Include(~done, pair);
     mult := t ne 0 select 2 else 1;
     // C(u,t)
-    C := EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa); 
-    vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", u, t, EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa); 
+    C := EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa);
+    vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", u, t, EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa);
     vprintf HMFTrace : "WeightFactor: <%o, %o> %o\n", u, t, WeightFactor(u, t, prec);
     res +:= mult * C * WeightFactor(u, t, prec);
   end for;
-  R<X> := PolynomialRing(Rationals());
-  b, num, den := RationalReconstruction(R!AbsEltseq(res), X^(prec + 1), prec div 2, prec div 2);
-  assert b;
-  assert Degree(num) + Degree(den) le degree;
-  return num/den;
+  if reconstruct then
+    R<X> := PolynomialRing(Rationals());
+    b, num, den := RationalReconstruction(R!AbsEltseq(res), X^(prec + 1), prec div 2, prec div 2);
+    assert b;
+    assert Degree(num) + Degree(den) le degree;
+    return num/den;
+  else
+    return res;
+  end if;
 end intrinsic;
 
 
@@ -303,6 +313,7 @@ intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl : pre
   Ugens := [mU(u) : u in Generators(U)];
 
   // Totally positive units mod squares
+  vprintf HMFTrace: "Computing TotallyPositiveUnits...";
   TotallyPositiveUnits := [];
   for v in CartesianPower([0,1],#Ugens) do
     unitelt := &*[Ugens[i]^v[i] : i in [1..#Ugens]];
@@ -310,14 +321,19 @@ intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl : pre
       Append(~TotallyPositiveUnits,unitelt);
     end if;
   end for;
+  vprintf HMFTrace: "Done %o\n", #TotallyPositiveUnits;
 
+  vprintf HMFTrace, 2: "Reducing shintani...";
   // Finding a totally positive generator for mm
   bool, a := IsNarrowlyPrincipal(mm*aa^2);
   require bool : Sprintf("Ideal %o is not narrowly principal", IdealOneLine(mm));
   a := ReduceShintaniMinimizeTrace(a)[1];
+  vprintf HMFTrace, 2: "Done\n";
 
+  vprintf HMFTrace, 2: "Computing Indexforsum...";
   // Looping over all totally positive generators of the form au for u a totally positive unit mod squares
   Indexforsum := [[b,a*u] : b in IdealCMExtensions(M,a*u,aa), u in TotallyPositiveUnits];
+  vprintf HMFTrace, 2: "Done\n";
 
   // Non precomputed version - adjusted to contain both x^2 - bx + au and x^2 + bx + au. 
   if not precomp then 
@@ -330,6 +346,7 @@ end intrinsic;
 
 intrinsic IdealCMExtensions(M::ModFrmHilDGRng, a::RngElt, aa::RngOrdIdl) -> SeqEnum
   {Computes all elements b satifying b^2 << 4a, but only yields one of +/-b}
+  vprintf HMFTrace, 2: "IdealCMExtensions(M, %o, %o)\n", a, aa;
   F := BaseField(M);
   ZF := Integers(M);
   places := Places(M);
@@ -338,8 +355,10 @@ intrinsic IdealCMExtensions(M::ModFrmHilDGRng, a::RngElt, aa::RngOrdIdl) -> SeqE
   YLB := 0;
   XUB := 2*Sqrt(Evaluate(a,places[1]));
   YUB := 2*Sqrt(Evaluate(a,places[2]));
-  T := ElementsInABox(M, aa, XLB, YLB, XUB, YUB);
+  vprintf HMFTrace, 3: "computing ElementsInABox(M, aa, %o, %o, %o, %o)...", XLB, YLB, XUB, YUB;
+  vtime HMFTrace, 3: T := ElementsInABox(M, aa, XLB, YLB, XUB, YUB);
   T := [ i : i in T | i^2-4*a ne 0]; // Zero is "technically" not totally positive for this computation
+  vprintf HMFTrace, 2: "Done with IdealCMExtensions(M, %o, %o)\n", a, aa;
   return T;
 end intrinsic;
 

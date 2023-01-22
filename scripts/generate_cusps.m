@@ -4,6 +4,21 @@ SetClassGroupBounds("GRH");
 if assigned debug then
   SetDebugOnError(true);
 end if;
+ 
+if assigned label then
+G := LMFDBCongruenceSubgroup(label);
+try
+  for c in CuspsWithResolution(G) do
+    print WriteCuspDataToRow(G, c);
+  end for;
+  exit 0;
+catch e
+  print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
+  WriteStderr(Sprintf("Failed WriteCuspDataToRow for %o\n", LMFDBLabel(G)));
+  WriteStderr(e);
+  exit 1;
+end try;
+end if;
 
 if not assigned D then
   print "Missing argument D";

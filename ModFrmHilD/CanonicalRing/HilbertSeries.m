@@ -160,11 +160,11 @@ the congruence subgroup `G`.}
 end intrinsic;
 
 
-intrinsic HilbertSeriesCusp(F::FldNum, level::RngOrdIdl) -> FldFunRatUElt
+intrinsic HilbertSeriesCusp(F::FldNum, level::RngOrdIdl : prec:=false) -> FldFunRatUElt
 {Return the Hilbert series for the space of cusp Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
     M := GradedRingOfHMFs(F, 0);
-    return HilbertSeriesCusp(M, level);
+    return HilbertSeriesCusp(M, level : prec:=prec);
 end intrinsic;
 
 

@@ -362,10 +362,12 @@ as a record.}
             fieldList := [ext<F | fs>];
             // error "Not implemented for this order";
         end if;
-    else
+    elif AmbientType(G) eq SL_Type then
         fs := Factorization(CyclotomicPolynomial(rho), F)[1][1];
         if (Degree(fs) ne 2) then return []; end if;
         fieldList := [ext<F | fs>];
+    else
+        error "Unknown Ambient type for Congruence Subgroup: ", AmbientType(G);
     end if;
 
     return &cat[OrderTermDataForK(K : Bound:=Bound) : K in fieldList];
@@ -435,10 +437,6 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         vprint EllipticPointsDebug : "Order:", AbsoluteOrder(Oq) : Magma;
         vprint EllipticPointsDebug : "Conductor:", dff;
 
-        // TODO: XXX: So apparently, the bug is coming from the fact that the
-        // unit group computation is extremely inconsistent. Somehow it is possible to give this
-        // function the same input and receive different output...
-
         // We need the units.
         UOq, mUOq := UnitGroup(AbsoluteOrder(Oq));
 
@@ -455,67 +453,6 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         Fartin := [1 - UnramifiedSquareSymbol(Dq, pp[1])/AbsoluteNorm(pp[1])
                    : pp in Factorization(dff)];
 
-        // Adding this to avoid magma bug when creating absolute orders
-        // Based on analysis in Prestel, which might be wrong for
-        // non-trivial levels
-/*
-        if (t eq 0) and (u eq 1) and (D notin [8,12]) then
-            w := 2;
-        elif (t in [-1,1]) and (u eq 1) and (D ne 12) then
-            w := 3;
-        elif (D eq 5) then
-            is_sqr, sqrt5 := IsSquare(F!5);
-            assert is_sqr;
-            traces := [eps1*(1+eps2*sqrt5)/2 : eps1, eps2 in [-1,1]];
-            if (t in traces) then
-                w := 5;
-            end if;
-        elif (t^2 eq 2*u) then // order 4
-            assert D mod 4 eq 0;
-            if (dff eq 1*ZF) then
-                if (D ne 12) then
-                    w := 2;
-                else
-                    w := 6;
-                end if;
-            else
-                if ((D div 4) mod 4 eq 2) then
-                    assert dff^2 eq 2*ZF;
-                    w := 1;
-                else
-                    assert ((D div 4) mod 4 eq 3);
-                    assert (dff^2 eq 2*ZF) or (dff eq 2*ZF);
-                    if (dff eq 2*ZF) then
-                        w := 1;
-                    else
-                        w := 2;
-                    end if;
-                end if;
-            end if;
-        elif (D eq 12) then
-            is_sqr, sqrt3 := IsSquare(F!3);
-            assert is_sqr;
-            if (t^2 eq u*(2+sqrt3)) then
-                w := 6;
-            end if;
-        elif (t^2 eq 3*u) then
-            if (dff eq 1*ZF) then
-                w := 3;
-            else
-                assert dff^2 eq 3*ZF;
-                w := 3/2;
-            end if;
-        else
-            assert (t eq 0);
-            w := 1;
-        end if;
-
-        SUnitIndexInK := FUnitIndexInK / w;
-
-        // This should have worked
-        // assert SUnitIndexInK eq #quo<UK | OqUnitsInK>;
-        hOq := hK / SUnitIndexInK * AbsoluteNorm(dff) * Product(Fartin);
-*/
         hOq := hK / #quo<UK | OqUnitsInK> * AbsoluteNorm(dff) * Product(Fartin);
 
         vprint EllipticPointsDebug : "Picard:", hOq;
@@ -548,44 +485,11 @@ function PossibleIsotropyOrders(F)
     // S = all prime powers m such that [F(zeta_m):F] = 2
     // Now get all possible m such that [F(zeta_m):F] = 2
     Sdiv := [m : m in Divisors(S) | m ne 1 and Valuation(m,2) ne 1]; // avoid repetition
-    /*
-    Sdiv := [m : m in Sdiv |
-             forall{ f : f in Factorization(CyclotomicPolynomial(m), F)
-                     | Degree(f[1]) eq 2} ];
-    */
-    // Sdiv := [IsEven(m) select m else 2*m : m in Sdiv];
     Sdiv_final := {2*m : m in Sdiv} join {m : m in Sdiv | IsEven(m)};
 
     return Sort([m : m in Sdiv_final]);
 end function;
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// Experimental...
-//
-////////////////////////////////////////////////////////////////////////////////
-
-intrinsic IndexOfSummation(Gamma::GrpHilbert) -> Any
-{}
-    // This is the index of summation in the trace formula. However, this
-    // is probably not what we want.
-
-    // Perhaps this should be called "TotallyNegativePolynomials".
-
-    F := BaseField(Gamma);
-    N := Level(Gamma);
-    ZFI := 1*MaximalOrder(F);
-
-    // Need a Mothership for some reason.
-    M := GradedRingOfHMFs(F, 1);
-
-    return IndexOfSummation(M, N, ZFI);
-
-end intrinsic;
-
-// TODO: Looks like the right thing to do is use "IndexOfSummation" to extract
-// all of the torsion elements. Then maybe do the conductor thing...
-// Still, it really isn't clear how to detect any overlap...
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -693,29 +597,21 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             // Record the data into the table.
             total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
             K := NumberField(S);
+	    ZK := Integers(K);
 
             vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
             vprint EllipticPointsDebug : rho, localCount, total_num, groupCorrectionFactor, hS;
 
-            /*
-            al_sign := false;
-            if GCD(level, dff) ne 1*ZF then
-                al_sign := &or[Norm(x[1])^x[2] lt 0 : x in Factorization(level)];
-            end if;
-            */
-            // sqfree_level := &*[Parent(level) | x[1] : x in Factorization(level) | IsOdd(x[2])];
-
             // YYY: Check which signs occur (CM types)
             is_unr := IsUnramified(K);
-            // and (GCD(Norm(level), Discriminant(F)) eq 1);
-            if GCD(Norm(level), 3) ne 1 then
-                is_unr := is_unr and OrderNormIndexWithAL(S, level) eq 2;
-            end if;
-            if is_unr then
-                assert OrderNormIndex(S) eq 2;
+	    oos := is_unr and &and[IsSplit(p_e[1], ZK) :
+				   p_e in Factorization(level) |
+				   IsOdd(p_e[2])];
+            if oos then
+                // assert OrderNormIndex(S) eq 2;
 
                 a := SteinitzClass(Module(S));
-                sign := ArtinSymbol(Integers(K), a*Component(Gamma));
+                sign := ArtinSymbol(ZK, a*Component(Gamma));
                 if (sign eq 1) then
                     num_plus  := total_num;
                     num_minus := 0;
