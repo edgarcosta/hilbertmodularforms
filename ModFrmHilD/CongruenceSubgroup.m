@@ -307,109 +307,109 @@ points.}
 
     // TODO: XXX: Properly implement elliptic points for arbitrary congruence subgroups.
     if not IsPrincipalCongruenceSubgroup(Gamma) then
-  error "Not implemented for non-principal congruence subgroups.";
+        error "Not implemented for non-principal congruence subgroups.";
     end if;
 
     // The next thing to check is if we are in one of the special discriminant cases.
     // The special discriminants vis a vis torsion are D = 5, 8, 12.
     if D in [5,8,12] then
-  return _EllipticPointDataSpecialCases(Gamma);
+        return _EllipticPointDataSpecialCases(Gamma);
     end if;
 
     if Index(Gamma) eq 1 then
-  // If we are looking at the full Hilbert Modular Group with component \frak{b},
-  // then [vdG, p. 267] provides tables to compute the number and types of torsion points.
+        // If we are looking at the full Hilbert Modular Group with component \frak{b},
+        // then [vdG, p. 267] provides tables to compute the number and types of torsion points.
 
-  // Order 2 points.
-  //
-  if D mod 4 eq 1 then
-      ellipticData[<2,1,1>] := ClassNumber(-4*D);
-  elif D mod 8 eq 0 then
-      ellipticData[<2,1,1>] := 3*ClassNumber(-D);
-  else
-      Dby4 := ExactQuotient(D, 4);
-      h := ClassNumber(-Dby4);
+        // Order 2 points.
+        //
+        if D mod 4 eq 1 then
+            ellipticData[<2,1,1>] := ClassNumber(-4*D);
+        elif D mod 8 eq 0 then
+            ellipticData[<2,1,1>] := 3*ClassNumber(-D);
+        else
+            Dby4 := ExactQuotient(D, 4);
+            h := ClassNumber(-Dby4);
 
-      case [Dby4 mod 8, B mod 4]:
-      when [3,1]:
-    ellipticData[<2,1,1>] := 10*h;
-      when [3,3]:
-    ellipticData[<2,1,1>] := 10*h;
-      when [7,1]:
-    ellipticData[<2,1,1>] := 4*h;
-      when [7,3]:
-    ellipticData[<2,1,1>] := 4*h;
-      end case;
-  end if;
+            case [Dby4 mod 8, B mod 4]:
+            when [3,1]:
+                ellipticData[<2,1,1>] := 10*h;
+            when [3,3]:
+                ellipticData[<2,1,1>] := 10*h;
+            when [7,1]:
+                ellipticData[<2,1,1>] := 4*h;
+            when [7,3]:
+                ellipticData[<2,1,1>] := 4*h;
+            end case;
+        end if;
 
-  // Order 3 points
-  //
-  if D mod 3 ne 0 then
-      h := ExactQuotient(ClassNumber(-3*D), 2);
-      ellipticData[<3,1, 1>] := h;
-      ellipticData[<3,1,-1>] := h;
-  else
-      Dby3 := ExactQuotient(D, 3);
-      h := ClassNumber(-Dby3);
+        // Order 3 points
+        //
+        if D mod 3 ne 0 then
+            h := ExactQuotient(ClassNumber(-3*D), 2);
+            ellipticData[<3,1, 1>] := h;
+            ellipticData[<3,1,-1>] := h;
+        else
+            Dby3 := ExactQuotient(D, 3);
+            h := ClassNumber(-Dby3);
 
-      case [Dby3 mod 3, B mod 3]:
-      when [1,1]:
-    ellipticData[<3,1,1>] := 4*h;
-    ellipticData[<3,1,-1>] := h;
+            case [Dby3 mod 3, B mod 3]:
+            when [1,1]:
+                ellipticData[<3,1,1>] := 4*h;
+                ellipticData[<3,1,-1>] := h;
 
-      when [1,2]:
-    ellipticData[<3,1,1>] := h;
-    ellipticData[<3,1,-1>] := 4*h;
+            when [1,2]:
+                ellipticData[<3,1,1>] := h;
+                ellipticData[<3,1,-1>] := 4*h;
 
-      when [2,1]:
-    ellipticData[<3,1,1>] := 3*h;
-    ellipticData[<3,1,-1>] := 0;
+            when [2,1]:
+                ellipticData[<3,1,1>] := 3*h;
+                ellipticData[<3,1,-1>] := 0;
 
-      when [2,2]:
-    ellipticData[<3,1,1>] := 0;
-    ellipticData[<3,1,-1>] := 3*h;
-      end case;
-  end if;
+            when [2,2]:
+                ellipticData[<3,1,1>] := 0;
+                ellipticData[<3,1,-1>] := 3*h;
+            end case;
+        end if;
 
     elif IsPrincipalCongruenceSubgroup(Gamma) then
-  // Let A := Norm(\frak{b}), where \frak{b} := ComponentIdeal(Gamma). We use the following
-  // remark of [vdG, p. 110]
-  //
-  // Proposition: If (A, N) = 1, then the number of elliptic points is given by...
-  //
-  if N^2 eq 2*ZK then
-      if D mod 8 eq 0 then
-    ellipticData[<2, 1, 1>] := 6 * ClassNumber(-D);
-      elif D mod 4 eq 0 then
-    Dby4 := ExactQuotient(D, 4);
-    h := ClassNumber(-Dby4);
+        // Let A := Norm(\frak{b}), where \frak{b} := ComponentIdeal(Gamma). We use the following
+        // remark of [vdG, p. 110]
+        //
+        // Proposition: If (A, N) = 1, then the number of elliptic points is given by...
+        //
+        if N^2 eq 2*ZK then
+            if D mod 8 eq 0 then
+                ellipticData[<2, 1, 1>] := 6 * ClassNumber(-D);
+            elif D mod 4 eq 0 then
+                Dby4 := ExactQuotient(D, 4);
+                h := ClassNumber(-Dby4);
 
-    case Dby4 mod 8:
-    when 7:
-        ellipticData[<2, 1, 1>] := 12 * h;
+                case Dby4 mod 8:
+                when 7:
+                    ellipticData[<2, 1, 1>] := 12 * h;
 
-    when 3:
-         ellipticData[<2, 1, 1>] := 24 * h;
-    end case;
-      end if;
+                when 3:
+                    ellipticData[<2, 1, 1>] := 24 * h;
+                end case;
+            end if;
 
-  elif N^2 eq 3*ZK then
-      if D mod 3 eq 0 then
-    Dby3 := ExactQuotient(D, 3);
-    h := ClassNumber(-Dby3);
+        elif N^2 eq 3*ZK then
+            if D mod 3 eq 0 then
+                Dby3 := ExactQuotient(D, 3);
+                h := ClassNumber(-Dby3);
 
-    // In each case, there are no points of the other type.
-    case (B*D) mod 9:
-    when 6:
-        ellipticData[<3, 1, 1>] := 12 * h;
+                // In each case, there are no points of the other type.
+                case (B*D) mod 9:
+                when 6:
+                    ellipticData[<3, 1, 1>] := 12 * h;
 
-    when 3:
-        ellipticData[<3, 1, -1>] := 12 * h;
-    end case;
-      end if;
-  end if;
-  //
-  // (End of Theorem)
+                when 3:
+                    ellipticData[<3, 1, -1>] := 12 * h;
+                end case;
+            end if;
+        end if;
+        //
+        // (End of Theorem)
     end if;
 
     // Assign into Gamma and return
@@ -425,36 +425,36 @@ intrinsic _EllipticPointDataSpecialCases(Gamma::GrpHilbert) -> Assoc
     require Index(Gamma) eq 1 : "Only implemented for level 1 for special discrminants.";
 
     if D eq 5 then
-  ellipticData[<2, 1, 1>] := 2;
-  ellipticData[<3, 1, 1>] := 1;
-  ellipticData[<3, 1,-1>] := 1;
-  ellipticData[<5, 1, 3>] := 1; // Type <5, 2, 1>
-  ellipticData[<5, 1, 2>] := 1; // Type <5, 3, 1>
+        ellipticData[<2, 1, 1>] := 2;
+        ellipticData[<3, 1, 1>] := 1;
+        ellipticData[<3, 1,-1>] := 1;
+        ellipticData[<5, 1, 3>] := 1; // Type <5, 2, 1>
+        ellipticData[<5, 1, 2>] := 1; // Type <5, 3, 1>
 
     elif D eq 8 then
-  ellipticData[<2, 1, 1>] := 2;
-  ellipticData[<3, 1, 1>] := 1;
-  ellipticData[<3, 1,-1>] := 1;
-  ellipticData[<4, 1, 1>] := 1;
-  ellipticData[<4, 1,-1>] := 1;
+        ellipticData[<2, 1, 1>] := 2;
+        ellipticData[<3, 1, 1>] := 1;
+        ellipticData[<3, 1,-1>] := 1;
+        ellipticData[<4, 1, 1>] := 1;
+        ellipticData[<4, 1,-1>] := 1;
 
     elif D eq 12 then
 
-  B := Component(Gamma);
+        B := Component(Gamma);
 
-  if HasTotallyPositiveGenerator(B) then
-      ellipticData[<2, 1, 1>] := 3;
-      ellipticData[<3, 1, 1>] := 2;
-      ellipticData[<3, 1,-1>] := 0;
-      ellipticData[<6, 1,-1>] := 1;
+        if HasTotallyPositiveGenerator(B) then
+            ellipticData[<2, 1, 1>] := 3;
+            ellipticData[<3, 1, 1>] := 2;
+            ellipticData[<3, 1,-1>] := 0;
+            ellipticData[<6, 1,-1>] := 1;
 
-  else
-      ellipticData[<2, 1, 1>] := 3;
-      ellipticData[<3, 1, 1>] := 0;
-      ellipticData[<3, 1,-1>] := 2;
-      ellipticData[<6, 1, 1>] := 1;
+        else
+            ellipticData[<2, 1, 1>] := 3;
+            ellipticData[<3, 1, 1>] := 0;
+            ellipticData[<3, 1,-1>] := 2;
+            ellipticData[<6, 1, 1>] := 1;
 
-  end if;
+        end if;
     end if;
 
     Gamma`EllipticPointData := ellipticData;
@@ -606,7 +606,9 @@ intrinsic Cusps(Gamma::GrpHilbert : WithResolution:=false) -> SeqEnum
     // FIXME: alpha and beta are not canonical
     pt := P1ZF![Numerator(scalar)*alpha, Denominator(scalar)*beta];
     if WithResolution then
-      continued_fraction, period := CuspResolutionIntersections(working_bb, NN, alpha, beta : GroupType:=GroupType, GammaType := GammaType(Gamma));
+      continued_fraction, period :=
+          CuspResolutionIntersections(working_bb, NN, alpha, beta :
+                                      GroupType:=GroupType, GammaType := GammaType(Gamma));
       Append(~res, <MM, pt, continued_fraction, period>);
     else
       Append(~res, <MM, pt>);

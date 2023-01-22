@@ -7,9 +7,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Types, Records, and Constants.
-OrderTermRecordFormat := recformat<Order, Conductor, PicardNumber, HasseUnitIndex>;
+OrderTermRecordFormat := recformat<Order, Conductor, PicardNumber, HasseUnitIndex,
+                                  NumberField, MaximalOrder, RotationElement>;
 
 declare verbose EllipticPointsDebug, 1;
+import "CongruenceSubgroup.m": GAMMA_0_Type;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -17,8 +19,10 @@ declare verbose EllipticPointsDebug, 1;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> SeqEnum
-{}
+intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF::GrpAb, mUF::Map) -> SeqEnum
+{Compute representatives for the group of totally positive units modulo squares in
+the associated number field. The first and second arguments should be the two outputs
+of UnitGroup(F).}
     // UF  -- Unit group of ground field F.
     // mUF -- The map.
 
@@ -34,14 +38,14 @@ intrinsic TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF) -> SeqEnum
 end intrinsic;
 
 intrinsic TotallyPositiveUnitsModSquaresRepresentatives(F::FldNum) -> SeqEnum
-{}
+{.}
     ZF := MaximalOrder(F);
     UF, mUF := UnitGroup(F);
     return TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);
 end intrinsic;
 
 intrinsic IndexOfTotallyPositiveUnitsModSquares(F::FldNum) -> RngIntElt
-{}
+{.}
     UF, mUF := UnitGroup(MaximalOrder(F));
     return #TotallyPositiveUnitsModSquaresRepresentatives(UF, mUF);
 end intrinsic;
@@ -203,14 +207,24 @@ function EvenLocalEmbeddingNumber(t, n, e, pp)
     return emb;
 end function;
 
-// Main thing we call.
-function ActualLocalOptimalEmbeddingNumbers(F, level, OrderS, dff)
+
+intrinsic CountAdelicOptimalEmbeddings(Gamma::GrpHilbert, Srec::Rec) -> RngIntElt
+{Given a congruence subgroup `Gamma` and an order `S` (as a record), return the
+number of embeddings of the adelic completion of `S` into the adelic completion of
+`Gamma`.}
     // This function is based off of the function EllipticInvariants
     // within "Magma/package/Geometry/GrpPSL2/GrpPSL2Shim/shimura.m".
     //
     // NOTE: In our case, the discriminant of the quaternion algebra is 1, because
     // for a HMS the relevant quaternion algebra is M2(ZF).
 
+    require GammaType(Gamma) eq GAMMA_0_Type : "Not implemented for non Gamma0 type";
+    F      := BaseField(Gamma);
+    level  := Level(Gamma);
+
+    OrderS := Srec`Order;
+    dff    := Srec`Conductor;
+    
     ZK := MaximalOrder(OrderS);
     ZF := MaximalOrder(F);
 
@@ -238,7 +252,7 @@ function ActualLocalOptimalEmbeddingNumbers(F, level, OrderS, dff)
         end if;
     end for;
     return embeddingCount;
-end function;
+end intrinsic;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -246,11 +260,11 @@ end function;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
-    // Compute the number of local embeddings of the monogenic order
-    // x^2 + b1 * x + a1.
-    return OptimalEmbeddingNumber(b1, a1, prime, exponent);
-end function;
+/* function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent) */
+/*     // Compute the number of local embeddings of the monogenic order */
+/*     // x^2 + b1 * x + a1. */
+/*     return OptimalEmbeddingNumber(b1, a1, prime, exponent); */
+/* end function; */
 
 
 function OrderWithConductor(ZK, ff)
@@ -263,34 +277,33 @@ function OrderWithConductor(ZK, ff)
 end function;
 
 
-function NumberOfAdelicOptimalEmbeddings(ZF, level, pair)
-    // Preliminaries
-    b := pair[1];
-    a := pair[2];
-    D := b^2-4*a;
-    F := NumberField(ZF);
-    // _<x> := PolynomialRing(F);
-    // K := ext<F | x^2 - D >;
-    // ZK := Integers(K);
-    // DD := Discriminant(ZK);
+/* function NumberOfAdelicOptimalEmbeddings(ZF, level, pair) */
+/*     // Preliminaries */
+/*     b := pair[1]; */
+/*     a := pair[2]; */
+/*     D := b^2-4*a; */
+/*     F := NumberField(ZF); */
+/*     // _<x> := PolynomialRing(F); */
+/*     // K := ext<F | x^2 - D >; */
+/*     // ZK := Integers(K); */
+/*     // DD := Discriminant(ZK); */
 
-    //ff := Sqrt((D*ZF)/DD); // Conductor
-    //Kabs := AbsoluteField(K);
-    //ZKabs := Integers(Kabs);
-    //UK,mUK := UnitGroup(ZKabs);
-    //_, mKabstoK := IsIsomorphic(Kabs,K);
+/*     //ff := Sqrt((D*ZF)/DD); // Conductor */
+/*     //Kabs := AbsoluteField(K); */
+/*     //ZKabs := Integers(Kabs); */
+/*     //UK,mUK := UnitGroup(ZKabs); */
+/*     //_, mKabstoK := IsIsomorphic(Kabs,K); */
 
-    term := 1;
-    for pp in Factorization(level) do
-        term *:= LocalOptimalEmbeddingNumbers(pair[1], pair[2], pp[1], pp[2]);
-    end for;
-    return term;
-end function;
+/*     term := 1; */
+/*     for pp in Factorization(level) do */
+/*         term *:= LocalOptimalEmbeddingNumbers(pair[1], pair[2], pp[1], pp[2]); */
+/*     end for; */
+/*     return term; */
+/* end function; */
 
-intrinsic OrdersContaining(ZK, S) -> Any
+intrinsic OrdersContaining(ZK, S) -> SeqEnum, SeqEnum
 {Given an order S contained in the maximal order ZK for a number field K,
-compute all orders in K containing S.
-It is assumed that S is generated by ZK.1 .}
+compute all orders in K containing S. It is assumed that S is generated by ZK.1 .}
 
     ZF := BaseRing(ZK);
     K  := NumberField(ZK);
@@ -314,7 +327,7 @@ It is assumed that S is generated by ZK.1 .}
 end intrinsic;
 
 
-intrinsic OrderTermData(G::GrpHilbert, F::FldNum, rho::RngIntElt : Bound:=0) -> Rec
+intrinsic OrderTermData(G::GrpHilbert, F::FldNum, rho::RngIntElt : Bound:=0) -> SeqEnum[Rec]
 {Given a real quadratic field F, and some other parameter `rho`, returns the orders associated
 to rho along with cached data needed to evaluate important quantities. The data is returned
 as a record.}
@@ -374,7 +387,7 @@ as a record.}
 end intrinsic;
 
 
-intrinsic OrderTermDataForK(K::FldNum : Bound := 0) -> Rec
+intrinsic OrderTermDataForK(K::FldNum : Bound := 0) -> SeqEnum[Rec]
 {Given a quadratic extension K of a totally real field F, where K.1 corresponds to the
 relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
 
@@ -471,7 +484,10 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         Append(~Rdata, rec<OrderTermRecordFormat | Order:=Oq,
                                                    Conductor:=dff,
                                                    PicardNumber:=hOq,
-                                                   HasseUnitIndex:=QOq>);
+                                                   HasseUnitIndex:=QOq,
+                                                   NumberField:=K,
+                                                   MaximalOrder:=ZK,
+                                                   RotationElement:=zeta>);
     end for;
 
     return Rdata;
@@ -490,6 +506,146 @@ function PossibleIsotropyOrders(F)
     return Sort([m : m in Sdiv_final]);
 end function;
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Rotation types.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+function RotationFactorPossibilities(ell_order)
+    // Get the possible rotation types for the given order.
+    
+    U, mU := UnitGroup(Integers(ell_order));
+    U2,i1,i2,pi1,pi2 := DirectSum(U,U);
+    T := pi1(Kernel(hom<U2 -> U | [pi1(U2.x) + pi2(U2.x) : x in [1..Ngens(U2)]]>));
+    rot_factors := [[q,1] : q in Reverse(Sort([mU(g) : g in T]))];
+
+    return rot_factors;
+end function;
+
+intrinsic RotationFactor(zeta::FldNumElt, q::RngIntElt) -> SeqEnum[RngIntElt]
+{Given an element `zeta` of finite order in `K^\times/R^\times`, where `K` is a CM extension
+of a totally real field `F` and `R` is the ring of integers of `F`, return the rotation factors
+associated to the action of `zeta` on the Degree(F)-fold product of upper half planes.
+
+This intrinsic only produces one of the rotation factors, as opposed to `RotationFactors`.
+}
+  F := BaseField(Parent(zeta));
+  s := Trace(zeta);
+  n := Norm(zeta);
+  a := s^2/(2*n) - 1;
+  CC<i> := ComplexField();
+  alphas := RealEmbeddings(a);
+  signs_s := [Sign(x) : x in RealEmbeddings(s)];
+  
+  alpha0 := [alphas[j] - i*signs_s[j] * Sqrt(1 - alphas[j]^2) :
+             j in [1..Degree(F)]];
+
+  // Here we assume it is a surface
+  assert exists(t){t : t in [1..q-1] | Abs(alpha0[1]^t - alpha0[2]) lt Exp(-20)};
+  return [t,1];
+end intrinsic;
+
+intrinsic RotationFactors(zeta::FldNumElt, q::RngIntElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt]
+{Given an element `zeta` of finite order in `K^\times/R^\times`, where `K` is a CM extension
+of a totally real field `F` and `R` is the ring of integers of `F`, return the rotation factors
+associated to the action of `zeta` on the Degree(F)-fold product of upper half planes.}
+    rot_factor := RotationFactor(zeta, q);
+    rot_factor_minus := [q - rot_factor[1], rot_factor[2]];
+    return rot_factor, rot_factor_minus;
+end intrinsic;    
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Counting by order
+//
+////////////////////////////////////////////////////////////////////////////////
+
+intrinsic AreEmbeddingsOrientedOptimallySelective(Srec::Rec, Gamma::GrpHilbert) -> BoolElt
+{}
+    K  := Srec`NumberField;
+    ZK := Srec`MaximalOrder;
+    level := Level(Gamma);
+    require GammaType(Gamma) eq GAMMA_0_Type : "Gamma type not supported.";
+    
+    is_unr := IsUnramified(K);
+    level_cond := &and[IsSplit(p_e[1], ZK) : p_e in Factorization(level) | IsOdd(p_e[2])];
+
+    return is_unr and level_cond;
+end intrinsic;
+
+intrinsic CountEllipticPoints(Gamma::GrpHilbert, Srec::Rec, hF, hFplus) -> RngIntElt, RngIntElt
+{Given a congruence subgroup `Gamma` and an order S (with additional data), counts
+the number of elliptic points whose associated order admits an embedding of S. The two
+integers returned are the rotation orders for the plus type and minus type, respectively.}
+
+    // Extract Record data
+    S   := Srec`Order;
+    dff := Srec`Conductor;
+    hS  := Srec`PicardNumber;
+    QS  := Srec`HasseUnitIndex;
+    K   := Srec`NumberField;
+    ZK  := Srec`MaximalOrder;
+
+    dim   := Degree(BaseField(Gamma));
+    level := Level(Gamma);
+    
+    if AmbientType(Gamma) eq SL_Type then
+        // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
+        // The forumla in Proposition 4.2.3 says that the number of elliptic points
+        // is
+        //
+        //     mq^1 = 2^(n-1)/h(R) * Sum(S; h(S)/Q(S) * m(hatS, hatO; hatOtimes)).
+        //
+        // Where Q(S) is the Hasse Unit Index. We loop over the terms S.
+
+        // NOTE: Factor of 2 in the paper, not in John's book.
+        groupCorrectionFactor := 2^(dim-1) / (hF * QS);
+
+    elif AmbientType(Gamma) eq GLPlus_Type then
+        // The forumla in Proposition 4.2.3 says that the number of elliptic points
+        // is
+        //
+        //     mq^1 = 2^(n-1)/h^+(R) * Sum(S; h(S) * m(hatS, hatO; hatOtimes)).
+        //
+        groupCorrectionFactor := 2^(dim-1) / hFplus;
+
+    else
+        error "Case not implemented for Ambient Type", AmbientType(Gamma);
+    end if;
+
+    // Adelic count
+    localCount := CountAdelicOptimalEmbeddings(Gamma, Srec);
+    
+    // Record the data into the table.
+    total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
+
+    vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
+    vprint EllipticPointsDebug : localCount, total_num, groupCorrectionFactor, hS;
+
+    
+    // YYY: Check which signs occur (CM types) via oriented optimal selectivity.
+    if AreEmbeddingsOrientedOptimallySelective(Srec, Gamma) then
+        // assert OrderNormIndex(S) eq 2;
+
+        a := SteinitzClass(Module(S));
+        sign := ArtinSymbol(ZK, a*Component(Gamma));
+        if (sign eq 1) then
+            num_plus  := total_num;
+            num_minus := 0;
+        else
+            num_plus  := 0;
+            num_minus := total_num;
+        end if;
+    else
+        assert IsEven(total_num);
+        num_plus := total_num div 2;
+        num_minus := total_num div 2;
+    end if;
+
+    return num_plus, num_minus;
+end intrinsic;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -497,28 +653,16 @@ end function;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
-{}
-  zeta := NumberField(S).1;
-  s := Trace(zeta);
-  n := Norm(zeta);
-  a := s^2/(2*n) - 1;
-  CC<i> := ComplexField();
-  alphas := RealEmbeddings(a);
-  signs_s := [Sign(x) : x in RealEmbeddings(s)];
-  F := BaseField(NumberField(S));
-  alpha0 := [alphas[j] - i*signs_s[j] * Sqrt(1 - alphas[j]^2) :
-             j in [1..Degree(F)]];
-  // Here we assume it is a surface
-  assert exists(t){t : t in [1..q-1] | Abs(alpha0[1]^t - alpha0[2]) lt Exp(-20)};
-  return [t,1];
-end intrinsic;
+intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Assoc
+{Given a congruence subgroup `Gamma` (level, field, decoration data), return an associative
+array with the number of elliptic points for Gamma by type. The result is returned as an 
+associative array of associative arrays. The keys of the first are orders of the isotropy 
+groups. The keys of the second are the rotation factors. The values are the number of points 
+with the given rotation factor.}
 
-intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
-{Given a congruence subgroup `Gamma` (level, field, decoration data), return something.}
-  if assigned Gamma`CountEllipticPoints then
-    return Explode(Gamma`CountEllipticPoints);
-  end if;
+    if assigned Gamma`CountEllipticPoints then
+        return Explode(Gamma`CountEllipticPoints);
+    end if;
 
     // The algorithm is based on page 739 of "Quaternion Algebra, Voight".
     // Essentially, we count optimal embeddings of the order generated by the
@@ -534,9 +678,6 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 
     dim := Degree(F); // Dimension of Hilbert modular variety.
     assert dim eq 2;
-    level := Level(Gamma);
-
-    // clF_plus, m_clF_plus := NarrowClassGroup(F);
 
     ellipticCounts := AssociativeArray();
     ellipticCountsByOrder := AssociativeArray();
@@ -546,101 +687,37 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
         ell_order := ExactQuotient(rho, 2);
 
         // Get options for the rotation factors
-        U, mU := UnitGroup(Integers(ell_order));
-        U2,i1,i2,pi1,pi2 := DirectSum(U,U);
-        T := pi1(Kernel(hom<U2 -> U | [pi1(U2.x) + pi2(U2.x) : x in [1..Ngens(U2)]]>));
-        rot_factors := [[q,1] : q in Reverse(Sort([mU(g) : g in T]))];
-
-        listOfOrders := OrderTermData(Gamma, F, rho);
         count := AssociativeArray();
-        for rot_factor in rot_factors do
+        for rot_factor in RotationFactorPossibilities(ell_order) do
             count[rot_factor] := 0;
         end for;
 
+        listOfOrders := OrderTermData(Gamma, F, rho);
+        
         for Srec in listOfOrders do
-            // Extract Record data
-            S   := Srec`Order;
-            dff := Srec`Conductor;
-            hS  := Srec`PicardNumber;
-            QS  := Srec`HasseUnitIndex;
+            S := Srec`Order;
+            
+            num_plus, num_minus := CountEllipticPoints(Gamma, Srec, hF, hFplus);
+            rot_factor_plus, rot_factor_minus := RotationFactors(Srec`RotationElement, ell_order);
 
-            // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
-            localCount := ActualLocalOptimalEmbeddingNumbers(F, level, S, dff);
-
-            // clS, m_clS := PicardGroup(AbsoluteOrder(S));
-            // norm_im := sub<clF_plus | [Norm(S!!m_clS(g))@@m_clF_plus : g in Generators(clS)]>;
-
-            if AmbientType(Gamma) eq SL_Type then
-                // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
-                // The forumla in Proposition 4.2.3 says that the number of elliptic points
-                // is
-                //
-                //     mq^1 = 2^(n-1)/h(R) * Sum(S; h(S)/Q(S) * m(hatS, hatO; hatOtimes)).
-                //
-                // Where Q(S) is the Hasse Unit Index. We loop over the terms S.
-
-                // NOTE: Factor of 2 in the paper, not in John's book.
-                groupCorrectionFactor := 2^(dim-1) / (hF * QS);
-
-            elif AmbientType(Gamma) eq GLPlus_Type then
-                // The forumla in Proposition 4.2.3 says that the number of elliptic points
-                // is
-                //
-                //     mq^1 = 2^(n-1)/h^+(R) * Sum(S; h(S) * m(hatS, hatO; hatOtimes)).
-                //
-                groupCorrectionFactor := 2^(dim-1) / hFplus;
-
-            else
-                error "Case not implemented for Ambient Type", AmbientType(Gamma);
-            end if;
-
-            // Record the data into the table.
-            total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
-            K := NumberField(S);
-	    ZK := Integers(K);
-
-            vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
-            vprint EllipticPointsDebug : rho, localCount, total_num, groupCorrectionFactor, hS;
-
-            // YYY: Check which signs occur (CM types)
-            is_unr := IsUnramified(K);
-	    oos := is_unr and &and[IsSplit(p_e[1], ZK) :
-				   p_e in Factorization(level) |
-				   IsOdd(p_e[2])];
-            if oos then
-                // assert OrderNormIndex(S) eq 2;
-
-                a := SteinitzClass(Module(S));
-                sign := ArtinSymbol(ZK, a*Component(Gamma));
-                if (sign eq 1) then
-                    num_plus  := total_num;
-                    num_minus := 0;
-                else
-                    num_plus  := 0;
-                    num_minus := total_num;
-                end if;
-            else
-                assert IsEven(total_num);
-                num_plus := total_num div 2;
-                num_minus := total_num div 2;
-            end if;
-
-            // Update associative array.
+            // Update debug information
             ellipticCountsByOrder[S] := AssociativeArray();
-
-            rot_factor := RotationFactor(S, ell_order);
-            rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
-            ellipticCountsByOrder[S][rot_factor] := num_plus;
+            ellipticCountsByOrder[S][rot_factor_plus]  := num_plus;
             ellipticCountsByOrder[S][rot_factor_minus] := num_minus;
-            count[rot_factor] +:= num_plus;
+
+            // Update requested information
+            count[rot_factor_plus]  +:= num_plus;
             count[rot_factor_minus] +:= num_minus;
         end for;
 
         ellipticCounts[ExactQuotient(rho, 2)] := count;
     end for;
 
-    // Post-process the elliptic counts due to overcounting in the previous
-    // step.
+    // Any times there is a containment relation S^x/R^x < S'^x/R^x,
+    // we overcount the contribution
+    // from S, since an elliptic point of order 4 is also counted as a point of order 2.
+    // 
+    // Thus, we post-process the elliptic counts due to overcounting in the previous step.
 
     for rho in Reverse(isoOrds) do
         rho2 := rho div 2;
@@ -669,9 +746,19 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 end intrinsic;
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Conversion to format used by ChowRing
+//
+////////////////////////////////////////////////////////////////////////////////
+
+// NOTE: This stuff is not used in the LuCant paper, but might come in handy later.
+
 function ConvertRotationLabel(order, rot_factor)
     // Convert the rotation factor to the elliptic point type
-    // in Theorem~2.5 of van der Geer.
+    // in Tables of van der Geer.
+
+    //assert false;
     case rot_factor:
     when [1,1]: return <order, 1, 1>;
     when [2,1]: return <order, 1, -1>;
@@ -684,7 +771,7 @@ function ConvertRotationLabel(order, rot_factor)
 end function;
 
 intrinsic _EllipticPointData0(G::GrpHilbert) -> Assoc
-{}
+{Helper function for `EllipticPointData`.}
     Counts := CountEllipticPoints(G);
 
     // Do some post processing.
@@ -705,129 +792,13 @@ end intrinsic;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Testing.
+// Debug utilities.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic _FieldAndGroup(n : Group:="SL") -> Any
-{}
-    F := QuadraticField(n);
-    G := CongruenceSubgroup(Group, F);
-    return F, G;
-end intrinsic;
-
-intrinsic TestEC(n)
-{}
-    F, G := _FieldAndGroup(n);
-    A, B := CountEllipticPoints(G);
-    print "Results:";
-    print Eltseq(A);
-    // print Eltseq(B);
-end intrinsic;
-
-intrinsic TestECGL(n)
-{}
-    F, G := _FieldAndGroup(n : Group:="GL+");
-    A, B := CountEllipticPoints(G);
-    print "Numbers of elliptic points:";
-    print "a2", Eltseq(A[2]);
-    print "a3", Eltseq(A[3]);
-    print ArithmeticGenus(G);
-    // print Eltseq(B);
-end intrinsic;
-
-intrinsic ActualCorrectOrders(F::FldNum, rho : Bound := 0) -> Tup
-{For a totally real field F, computes and stores the class numbers
- and associated data for all cyclotomic quadratic extensions of F.}
-
-  ZF := MaximalOrder(F);
-  UF, mUF := UnitGroup(ZF);
-
-  // Order of the torsion element.
-  s := rho;
-
-  // TODO: Should be able to choose K as sqrt(-u) for some totally positive unit u.
-
-  // vprintf Shimura : "Computing class number for %o\n", s;
-  fs := Factorization(CyclotomicPolynomial(s), F)[1][1];
-  K  := ext<F | fs>;
-  ZK := MaximalOrder(K);
-  Kabs := AbsoluteField(K);
-
-  // This is the hugely expensive step.
-  if Bound cmpeq 0 then
-      hK := ClassNumber(Kabs);
-  elif Bound cmpeq "BachBound" then
-      hK := ClassNumber(Kabs : Bound := Floor(BachBound(Kabs)/40));
-  else
-      hK := ClassNumber(Kabs : Bound := Bound);
-  end if;
-
-  // Compute the order Oq = ZF[zeta_2s] and its conductor.
-  Oq := Order([K.1]);
-  Dq := Discriminant(MinimalPolynomial(K.1));
-  ff := SquareRoot(ZF!!Discriminant(Oq)/Discriminant(ZK));
-
-  UK, mUK := UnitGroup(AbsoluteOrder(ZK));
-  wK := #TorsionSubgroup(UK);
-
-  Rdata := [];
-
-  // Loop over orders by their conductor dff.
-  for dff in Divisors(ff) do
-
-      // if ZK is maximal, we have Cl(O_dff)/Cl(K) = 1.
-      if dff eq ideal<ZF | 1> then
-          Oq := ZK;
-          UOq := UK;
-          mUOq := mUK;
-          wOq := wK;
-          hOq := hK;
-
-      else
-          // Otherwise, use the classic formula to compute the relative class number.
-          Oq := OrderWithConductor(ZK, dff);
-          UOq, mUOq := UnitGroup(AbsoluteOrder(Oq));
-
-          // We only take orders where Oq has exact torsion unit group of order s.
-          assert #TorsionSubgroup(UOq) eq s;
-
-          // Picard number of the absolute order.
-          OqUnitsInK := [mUOq(u) @@ mUK : u in Generators(UOq)];
-
-          hOq := hK/#quo<UK | OqUnitsInK> * AbsoluteNorm(dff) *
-                    &*[1-UnramifiedSquareSymbol(Dq, pp[1])/AbsoluteNorm(pp[1])
-                       : pp in Factorization(dff)];
-
-          assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
-          // hOq := #PicardGroup(AbsoluteOrder(Oq));
-      end if;
-
-
-      // The local unit adjustment. (Hasse unit index)
-      UQ  := sub<UF | [Norm(ZK ! mUOq(u)) @@ mUF : u in Generators(UOq)]>;
-      QOq := #quo<UQ | [2*u : u in Generators(UF)]>;
-      // QOq := HasseUnitIndex(Oq);
-      //hQOq := hOq/QOq;
-
-
-      // dff  -- divisor of conductor of R[i].
-      // hOq  -- Class number of the order S.
-      // QOq  -- Hasse Unit index of the order S.
-      Append(~Rdata, <dff, hOq, Rationals() ! QOq>);
-  end for;
-
-  return Rdata;
-end intrinsic;
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Experimentation.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-intrinsic JohnPicardNumberCode(Z_Kabs, Z_K, UK, mUK, Dq, dff) -> Any
-{Copied from Shimura curves}
+intrinsic JohnPicardNumberCode(Z_Kabs, Z_K, UK, mUK, Dq, dff) -> RngIntElt
+{Copied from Shimura curves. Computes the picard number of the order with conductor
+dff inside Z_K. This function is for debug use only.}
 
     assert Z_K.1 eq 1;
     CI := CoefficientIdeals(Z_K);
@@ -845,7 +816,7 @@ intrinsic JohnPicardNumberCode(Z_Kabs, Z_K, UK, mUK, Dq, dff) -> Any
     return hOq;
 end intrinsic;
 
-intrinsic OrderNormIndex(S::RngOrd)->RngIntElt
+intrinsic OrderNormIndex(S::RngOrd) -> RngIntElt
 {Returns the index of Nm(Pic(S)) inside the narrow ray class group of the base field.}
   S_abs := AbsoluteOrder(S);
   pic_S, pic_map := PicardGroup(S_abs);
@@ -856,10 +827,13 @@ intrinsic OrderNormIndex(S::RngOrd)->RngIntElt
   return Index(cg, norm_im);
 end intrinsic;
 
-//intrinsic OrderNormIndexWithAL(S::RngOrd, N::RngQuadIdl)->RngIntElt
-intrinsic OrderNormIndexWithAL(S::RngOrd, N::RngOrdIdl)->RngIntElt
+intrinsic OrderNormIndexWithAL(S::RngOrd, N::RngOrdIdl) -> RngIntElt
 {Returns the index of Nm(Pic(S)) inside the narrow ray class group of the base field.
-We also need the group of sign changes generated by the Atkin-Lehner (AL) elements.}
+We also need the group of sign changes generated by the Atkin-Lehner (AL) elements.
+
+This function is for debug purposes only. Additionally, it is presently known to produce
+incorrect results.}
+  
   S_abs := AbsoluteOrder(S);
   R := BaseRing(S);
   F := NumberField(R);
@@ -886,7 +860,6 @@ We also need the group of sign changes generated by the Atkin-Lehner (AL) elemen
   gens cat:= [[0,0,g,0] : g in Generators(N)];
   O := Order([mat_map(M2F ! g) : g in gens]);
 
-  // YYY:
   for i->p in AL_primes do
     // Find the Atkin-Lehner involution associated to the
     // prime p.
@@ -921,7 +894,7 @@ We also need the group of sign changes generated by the Atkin-Lehner (AL) elemen
         q := pi^e;
         Q, piQ := quo<R | M>;
         is_invertible, x_im := IsInvertible(piQ(q));
-//          x := InverseMod(q, M);
+
         if is_invertible then
             x := x_im @@ piQ;
             Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
@@ -968,7 +941,10 @@ end intrinsic;
 
 intrinsic AtkinLehnerIdealBasis(Gamma::GrpHilbert) -> Any
 {Computes a set of generators for the Atkin-Lehner group associated to
-Gamma_0(N)}
+Gamma_0(N).
+
+This function is for debug purposes only. Additionally, it is presently known to produce
+incorrect results.}
 
   // According to John's book (Chapter 28.9), Atkin-Lehner involutions correspond
   // to elements in the Atkin-Lehner group, i.e., Idl(O)/Idl(R). These in turn
@@ -981,7 +957,7 @@ Gamma_0(N)}
   // In other words, we are looking for ideals that have reduced norm (determinant)
   // equal to p. This gives us a generating set.
 
-  assert GammaType(Gamma) eq "Gamma0";
+  assert GammaType(Gamma) eq GAMMA_0_Type;
 
   F := BaseField(Gamma);
   N := Level(Gamma);
@@ -1017,8 +993,6 @@ Gamma_0(N)}
   // 4. Repeat until we get a group of the right order.
   // end while
 
-
-  // YYY:
   for i->p in AL_primes do
     // Find the Atkin-Lehner involution associated to the
     // prime p.
@@ -1069,44 +1043,3 @@ Gamma_0(N)}
 
   return 0;
 end intrinsic;
-
-// TODO: Enforce type
-/*
-intrinsic RandomishOrderIdeal(O) -> Any
-{}
-    //for i->p in AL_primes do
-
-    // Find the Atkin-Lehner involution associated to the
-    // prime p.
-    e := fac_N[i][2];
-
-    // Construct a two-sided ideal corresponding to an Atkin-Lehner involution.
-    // Seemingly, we try random global representatives until we get something of the
-    // correct norm?
-
-    // We want to choose an ideal using random elements, but need to ensure
-    // that the norms are OK.
-    gens := [];
-    for t in Generators(N) do
-      gens_p := Generators(p);
-      for i in [1..#gens_p] do
-        M := N div p^e;
-        if (M ne 1*R) then
-            while (gens_p[i] in M) do
-                gens_p[i] +:= &+[Random([-10..10]) * g : g in gens_p
-                                 | g ne gens_p[i]];
-            end while;
-        end if;
-        pi := gens_p[i];
-        q := pi^e;
-        x := InverseMod(q, M);
-        Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
-      end for;
-    end for;
-    J := ideal< O | gens>;
-    assert (J eq lideal<O | gens>) and (J eq rideal<O | gens>);
-
-
-
-end intrinsic;
-*/
