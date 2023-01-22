@@ -7,7 +7,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Types, Records, and Constants.
-OrderTermRecordFormat := recformat<Order, Conductor, PicardNumber, HasseUnitIndex>;
+OrderTermRecordFormat := recformat<Order, Conductor, PicardNumber, HasseUnitIndex,
+                                  NumberField, MaximalOrder>;
 
 declare verbose EllipticPointsDebug, 1;
 
@@ -471,7 +472,9 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         Append(~Rdata, rec<OrderTermRecordFormat | Order:=Oq,
                                                    Conductor:=dff,
                                                    PicardNumber:=hOq,
-                                                   HasseUnitIndex:=QOq>);
+                                                   HasseUnitIndex:=QOq,
+                                                   NumberField:=K,
+                                                   MaximalOrder:=ZK>);
     end for;
 
     return Rdata;
@@ -496,7 +499,18 @@ end function;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
+function RotationFactorPossibilities(ell_order)
+    // Get the possible rotation types for the given order.
+    
+    U, mU := UnitGroup(Integers(ell_order));
+    U2,i1,i2,pi1,pi2 := DirectSum(U,U);
+    T := pi1(Kernel(hom<U2 -> U | [pi1(U2.x) + pi2(U2.x) : x in [1..Ngens(U2)]]>));
+    rot_factors := [[q,1] : q in Reverse(Sort([mU(g) : g in T]))];
+
+    return rot_factors;
+end function;
+
+intrinsic RotationFactor(S::RngOrd, q::RngIntElt) -> SeqEnum[RngIntElt]
 {}
   zeta := NumberField(S).1;
   s := Trace(zeta);
@@ -514,6 +528,104 @@ intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
   return [t,1];
 end intrinsic;
 
+intrinsic RotationFactors(S::RngOrd, q::RngIntElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt]
+{}
+    rot_factor := RotationFactor(S, ell_order);
+    rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
+    return rot_factor, rot_factor_minus;
+end intrinsic;    
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Counting by order
+//
+////////////////////////////////////////////////////////////////////////////////
+
+intrinsic AreEmbeddingsOrientedOptimallySelective(Srec, Gamma::GrpHilbert) -> BoolElt
+{}
+    K  := Srec`NumberField;
+    ZK := Srec`MaximalOrder;
+    level := Level(Gamma);
+    require GammaType(Gamma) eq GAMMA_0_Type : "Gamma type not supported.";
+    
+    is_unr := IsUnramified(K);
+    level_cond := &and[IsSplit(p_e[1], ZK) : p_e in Factorization(level) | IsOdd(p_e[2])];
+
+    return is_unr and level_cond;
+end intrinsic;
+
+intrinsic CountEllipticPoints(Gamma::GrpHilbert, Srec::Rec, hF, hFplus) -> Any
+{Given a congruence subgroup `Gamma` and an order S (with additional data), counts
+the number of elliptic points whose associated order admits an embedding of S.}
+
+    // Extract Record data
+    S   := Srec`Order;
+    dff := Srec`Conductor;
+    hS  := Srec`PicardNumber;
+    QS  := Srec`HasseUnitIndex;
+    K   := Srec`NumberField;
+    ZK  := Srec`MaximalOrder;
+
+    dim   := Degree(BaseField(Gamma));
+    level := Level(Gamma);
+    
+    if AmbientType(Gamma) eq SL_Type then
+        // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
+        // The forumla in Proposition 4.2.3 says that the number of elliptic points
+        // is
+        //
+        //     mq^1 = 2^(n-1)/h(R) * Sum(S; h(S)/Q(S) * m(hatS, hatO; hatOtimes)).
+        //
+        // Where Q(S) is the Hasse Unit Index. We loop over the terms S.
+
+        // NOTE: Factor of 2 in the paper, not in John's book.
+        groupCorrectionFactor := 2^(dim-1) / (hF * QS);
+
+    elif AmbientType(Gamma) eq GLPlus_Type then
+        // The forumla in Proposition 4.2.3 says that the number of elliptic points
+        // is
+        //
+        //     mq^1 = 2^(n-1)/h^+(R) * Sum(S; h(S) * m(hatS, hatO; hatOtimes)).
+        //
+        groupCorrectionFactor := 2^(dim-1) / hFplus;
+
+    else
+        error "Case not implemented for Ambient Type", AmbientType(Gamma);
+    end if;
+
+    // Adelic count
+    localCount := CountAdelicOptimalEmbeddings(BaseField(Gamma), level, S, dff);
+    
+    // Record the data into the table.
+    total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
+
+    vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
+    vprint EllipticPointsDebug : localCount, total_num, groupCorrectionFactor, hS;
+
+    
+    // YYY: Check which signs occur (CM types) via oriented optimal selectivity.
+
+    if AreEmbeddingsOrientedOptimallySelective(Srec, Gamma) then
+        // assert OrderNormIndex(S) eq 2;
+
+        a := SteinitzClass(Module(S));
+        sign := ArtinSymbol(ZK, a*Component(Gamma));
+        if (sign eq 1) then
+            num_plus  := total_num;
+            num_minus := 0;
+        else
+            num_plus  := 0;
+            num_minus := total_num;
+        end if;
+    else
+        assert IsEven(total_num);
+        num_plus := total_num div 2;
+        num_minus := total_num div 2;
+    end if;
+
+    return num_plus, num_minus;
+end intrinsic;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -524,9 +636,9 @@ end intrinsic;
 
 intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 {Given a congruence subgroup `Gamma` (level, field, decoration data), return something.}
-  if assigned Gamma`CountEllipticPoints then
-    return Explode(Gamma`CountEllipticPoints);
-  end if;
+    if assigned Gamma`CountEllipticPoints then
+        return Explode(Gamma`CountEllipticPoints);
+    end if;
 
     // The algorithm is based on page 739 of "Quaternion Algebra, Voight".
     // Essentially, we count optimal embeddings of the order generated by the
@@ -542,9 +654,6 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 
     dim := Degree(F); // Dimension of Hilbert modular variety.
     assert dim eq 2;
-    level := Level(Gamma);
-
-    // clF_plus, m_clF_plus := NarrowClassGroup(F);
 
     ellipticCounts := AssociativeArray();
     ellipticCountsByOrder := AssociativeArray();
@@ -554,101 +663,37 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
         ell_order := ExactQuotient(rho, 2);
 
         // Get options for the rotation factors
-        U, mU := UnitGroup(Integers(ell_order));
-        U2,i1,i2,pi1,pi2 := DirectSum(U,U);
-        T := pi1(Kernel(hom<U2 -> U | [pi1(U2.x) + pi2(U2.x) : x in [1..Ngens(U2)]]>));
-        rot_factors := [[q,1] : q in Reverse(Sort([mU(g) : g in T]))];
-
-        listOfOrders := OrderTermData(Gamma, F, rho);
         count := AssociativeArray();
-        for rot_factor in rot_factors do
+        for rot_factor in RotationFactorPossibilities(ell_order) do
             count[rot_factor] := 0;
         end for;
 
+        listOfOrders := OrderTermData(Gamma, F, rho);
+        
         for Srec in listOfOrders do
-            // Extract Record data
-            S   := Srec`Order;
-            dff := Srec`Conductor;
-            hS  := Srec`PicardNumber;
-            QS  := Srec`HasseUnitIndex;
+            S := Srec`Order;
+            
+            num_plus, num_minus := CountEllipticPoints(Gamma, Srec, hF, hFplus);
+            rot_factor_plus, rot_factor_minus := RotationFactors(S, ell_order);
 
-            // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
-            localCount := CountAdelicOptimalEmbeddings(F, level, S, dff);
-
-            // clS, m_clS := PicardGroup(AbsoluteOrder(S));
-            // norm_im := sub<clF_plus | [Norm(S!!m_clS(g))@@m_clF_plus : g in Generators(clS)]>;
-
-            if AmbientType(Gamma) eq SL_Type then
-                // The case of van der Geer -- PSL_2 acting on upper-half-plane-squared HH^2.
-                // The forumla in Proposition 4.2.3 says that the number of elliptic points
-                // is
-                //
-                //     mq^1 = 2^(n-1)/h(R) * Sum(S; h(S)/Q(S) * m(hatS, hatO; hatOtimes)).
-                //
-                // Where Q(S) is the Hasse Unit Index. We loop over the terms S.
-
-                // NOTE: Factor of 2 in the paper, not in John's book.
-                groupCorrectionFactor := 2^(dim-1) / (hF * QS);
-
-            elif AmbientType(Gamma) eq GLPlus_Type then
-                // The forumla in Proposition 4.2.3 says that the number of elliptic points
-                // is
-                //
-                //     mq^1 = 2^(n-1)/h^+(R) * Sum(S; h(S) * m(hatS, hatO; hatOtimes)).
-                //
-                groupCorrectionFactor := 2^(dim-1) / hFplus;
-
-            else
-                error "Case not implemented for Ambient Type", AmbientType(Gamma);
-            end if;
-
-            // Record the data into the table.
-            total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
-            K := NumberField(S);
-            ZK := Integers(K);
-
-            vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
-            vprint EllipticPointsDebug : rho, localCount, total_num, groupCorrectionFactor, hS;
-
-            // YYY: Check which signs occur (CM types)
-            is_unr := IsUnramified(K);
-            oos := is_unr and &and[IsSplit(p_e[1], ZK) :
-                                   p_e in Factorization(level) |
-                                   IsOdd(p_e[2])];
-            if oos then
-                // assert OrderNormIndex(S) eq 2;
-
-                a := SteinitzClass(Module(S));
-                sign := ArtinSymbol(ZK, a*Component(Gamma));
-                if (sign eq 1) then
-                    num_plus  := total_num;
-                    num_minus := 0;
-                else
-                    num_plus  := 0;
-                    num_minus := total_num;
-                end if;
-            else
-                assert IsEven(total_num);
-                num_plus := total_num div 2;
-                num_minus := total_num div 2;
-            end if;
-
-            // Update associative array.
+            // Update debug information
             ellipticCountsByOrder[S] := AssociativeArray();
-
-            rot_factor := RotationFactor(S, ell_order);
-            rot_factor_minus := [ell_order - rot_factor[1], rot_factor[2]];
-            ellipticCountsByOrder[S][rot_factor] := num_plus;
+            ellipticCountsByOrder[S][rot_factor_plus]  := num_plus;
             ellipticCountsByOrder[S][rot_factor_minus] := num_minus;
-            count[rot_factor] +:= num_plus;
+
+            // Update requested information
+            count[rot_factor_plus]  +:= num_plus;
             count[rot_factor_minus] +:= num_minus;
         end for;
 
         ellipticCounts[ExactQuotient(rho, 2)] := count;
     end for;
 
-    // Post-process the elliptic counts due to overcounting in the previous
-    // step.
+    // Any times there is a containment relation S^x/R^x < S'^x/R^x,
+    // we overcount the contribution
+    // from S, since an elliptic point of order 4 is also counted as a point of order 2.
+    // 
+    // Thus, we post-process the elliptic counts due to overcounting in the previous step.
 
     for rho in Reverse(isoOrds) do
         rho2 := rho div 2;
