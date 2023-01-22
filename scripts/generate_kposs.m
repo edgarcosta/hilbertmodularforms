@@ -5,6 +5,19 @@ if assigned debug then
   SetDebugOnError(true);
 end if;
 
+if assigned label then
+G := LMFDBCongruenceSubgroup(label);
+try
+  print StripWhiteSpace(Join([LMFDBLabel(G), Sprint(KodairaDimensionPossibilities(G))],":"));
+  exit 0;
+catch e
+  print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
+  WriteStderr(Sprintf("Failed KodairaDimensionPossibilities for %o\n", LMFDBLabel(G)));
+  WriteStderr(e);
+  exit 1;
+end try;
+end if;
+
 if not assigned D then
   print "Missing argument D";
   exit 1;
@@ -47,16 +60,17 @@ ideals := IdealsUpTo(MaxLevelNorm, F);
 labels := [[StringToInteger(c) : c in Split(LMFDBLabel(elt), ".")] : elt in ideals];
 ParallelSort(~labels, ~ideals);
 for NN in ideals do
+  skipping := (gamma eq "Gamma1" and not IsSquarefree(NN));
   for bb in narrow_reps do
     G := CongruenceSubgroup(ambient, gamma, F, NN, bb);
-    if (GCD(NN, 3*D*ZF) ne 1*ZF) or (gamma eq "Gamma1" and not IsSquarefree(NN)) then
+    if skipping then
       print StripWhiteSpace(Join([LMFDBLabel(G),"SKIPPED"],":"));
     else
       try
         print StripWhiteSpace(Join([LMFDBLabel(G), Sprint(KodairaDimensionPossibilities(G))],":"));
       catch e
         print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
-        WriteStderr(Sprintf("Failed WriteGeometricInvariantsToRow for %o", LMFDBLabel(G)));
+        WriteStderr(Sprintf("Failed KodairaDimensionPossibilities for %o", LMFDBLabel(G)));
         WriteStderr(e);
       end try;
     end if;

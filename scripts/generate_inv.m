@@ -5,6 +5,20 @@ if assigned debug then
   SetDebugOnError(true);
 end if;
 
+if assigned label then
+  G := LMFDBCongruenceSubgroup(label);
+  try
+    print WriteGeometricInvariantsToRow(G);
+    exit 0;
+  catch e
+    print StripWhiteSpace(Join([LMFDBLabel(G),"FAILED"],":"));
+    WriteStderr(Sprintf("Failed WriteGeometricInvariantsToRow for %o\n", LMFDBLabel(G)));
+    WriteStderr(e);
+    exit 1;
+  end try;
+ end if;
+ 
+
 if not assigned D then
   print "Missing argument D";
   exit 1;
