@@ -1,7 +1,7 @@
 intrinsic EllipticPointResolution(order::RngIntElt,
 					 rot_factor::RngIntElt) ->
 	  SeqEnum[RngIntElt], SeqEnum[FldRatElt], SeqEnum[FldRatElt]
-{}
+{Given the order and rotation factor of an elliptic point, returns the type (n; a, b).}
   frac := order/rot_factor;
   c := [Ceiling(frac)];
   x := [1, frac^(-1)];
@@ -19,7 +19,7 @@ intrinsic EllipticPointResolution(order::RngIntElt,
 end intrinsic;
 
 intrinsic EllipticPointK2E(order::RngIntElt, rot_factor::RngIntElt) -> FldRatElt, RngIntElt
-{}
+{Given the order and rotation factor of an elliptic point, returns the local Chern cycle.}
   c,x,y := EllipticPointResolution(order, rot_factor);
   a := [x[i]+y[i]-1 : i in [2..#c+1]];
   sq := -(&+[a[i]^2*c[i] : i in [1..#c]]);
@@ -29,7 +29,7 @@ intrinsic EllipticPointK2E(order::RngIntElt, rot_factor::RngIntElt) -> FldRatElt
 end intrinsic;
 
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
-{}
+{Given a congruence subgroup, computes the EulerNumber of the resulting Hilbert modular surface.}
   if not assigned Gamma`EulerNumber then
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
@@ -86,17 +86,13 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 end intrinsic;
 
 intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
-{}
+{Given a congruence subgroup, computes the K2 of the resulting Hilbert modular surface.}
   if not assigned Gamma`K2 then
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
   F := BaseField(Gamma);
   ZF := Integers(F);
   D := Discriminant(ZF);
-
-  // require D notin [8,12]: "Discriminant not supported";
-  // require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
-  //		"Level is not supported";
 
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -153,24 +149,24 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 end intrinsic;
 
 intrinsic ArithmeticGenus(Gamma::GrpHilbert) -> RngIntElt
-{}
+{Given a congruence subgroup, computes the Arithmetic Genus of the resulting Hilbert modular surface.}
   chi := K2(Gamma) + EulerNumber(Gamma);
   assert chi mod 12 eq 0;
   return chi div 12;
 end intrinsic;
 
 intrinsic Irregularity(Gamma::GrpHilbert) -> RngIntElt
-{}
+{Given a congruence subgroup, computes the irregularity of the resulting Hilbert modular surface. It is always 0.}
   return 0;
 end intrinsic;
 
 intrinsic GeometricGenus(Gamma::GrpHilbert) -> RngIntElt
-{}
+{Given a congruence subgroup, computes the Geometric Genus of the resulting Hilbert modular surface.}
   return ArithmeticGenus(Gamma)-1;
 end intrinsic;
 
 intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
-{}
+{Given a congruence subgroup, computes the Hodge Diamond of the resulting Hilbert modular surface.}
   h_0 := [1];
   q := Irregularity(Gamma);
   h_1 := [q,q];
@@ -210,10 +206,11 @@ intrinsic KodairaDimension(Gamma::GrpHilbert) -> MonStgElt
   return -100; // FIXME
 end intrinsic;
 
-//To be improved
+// Could be improved in the future.
 intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
   {Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to Gamma,
-    based on the arithmetic genus. When the level is 1, it gives a more refined list based on K^2.
+    based on the arithmetic genus and the rationality criterion. When the level is 1, it gives a more refined list based on K^2.
+		Currently only implemented for Gamma0.
   }
 
   require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
@@ -258,7 +255,7 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
 end intrinsic;
 
 intrinsic PrimeDiscriminant(D,q) -> MonStgElt
-    {}
+    {Given q|D, return +-q^(Valuation(D,q)) as needed in getHZExceptionalNum. }
     assert D mod q eq 0;
     assert IsFundamentalDiscriminant(D);
     sign := (q mod 4 eq 1) select 1 else -1;
@@ -297,12 +294,12 @@ end intrinsic;
 intrinsic RationalityCriterion(Gamma) -> BoolElt
     {Checks whether the Rationality Criterion is satisfied.
       Note 1: Only implemented for Gamma0(N) level.
-      Note 2: it could be refined by including more Hirzebruch--Zagier divisors.}
+      Note 2: it could be refined by including more Hirzebruch--Zagier divisors and resolution cycles coming from elliptic points.}
     require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
 
     F := BaseField(Gamma);
 
-    //Make a list of intersection numbers of cusps.
+    //Make a list of intersection numbers of cuspidal resolution cycles.
     res := CuspsWithResolution(Gamma);
     self_int_res := [];
     for x in res do
@@ -343,8 +340,6 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
       return false;
     end if;
 
-    // print LevelList;
-
     //Compute intersections of HZ divisors with cusps.
     IntList := [];
     for M in LevelList do
@@ -359,46 +354,20 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
       Append(~IntList, HZIntList);
     end for;
 
-    // print IntList;
-
-    //Check if any (-1)-curves on the boundary give rationality.
-
-    // for i in [1 .. #(self_int_res)] do
-    //   if self_int_res[i] eq -1 then
-    //     for j in [1 .. #(LevelList)] do
-    //       if not IntList[j][i][1] eq 0 then
-    //         vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
-    //         return true;
-    //       end if;
-    //     end for;
-    //   end if;
-    // end for;
-
     //Blow down any subset of the HZ divisors and check if we have a good configuration.
     for I in Subsets({1 .. #LevelList}) do
-      if #I eq 0 then //Without blowing down, nothing to do. 
+      if #I eq 0 then //Without blowing down, nothing to do.
         continue;
-        // exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] eq -1];
-        //
-        // for i in exc_indices do
-        //   for j in [1 .. #LevelList] do
-        //     if not IntList[j][i] eq 0 then
-        //       vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
-        //       return true;
-        //     end if;
-        //   end for;
-        // end for;
       else
 
-        // List of indices s.t. boundary curve is now exceptional
+        // List of indices s.t. blown down resolution curve is now exceptional
         exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
-        // Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
 
-        if #exc_indices le 1 then //One (-1) curve is not enough!
+        if #exc_indices le 1 then //One (-1)-curve is not enough!
           continue;
         end if;
 
-        // For each two expectional boundary curves, do they intersect?
+        // For each two blown down expectional boundary curves, do they intersect?
 
         for S in Subsets(Set(exc_indices), 2) do
           T := SetToSequence(S);
@@ -442,7 +411,7 @@ end intrinsic;
 */
 
 intrinsic HodgeToChiK2(hs::SeqEnum) -> Any
-  {}
+  {Compute the Arithmetic Genus and c_1^2 from Hodge numbers h^{2,0} and h^{1,1}.}
   h20, h11 := Explode(hs);
   chi := h20 + 1;
   c12 := 10*(h20 + 1) - h11;
