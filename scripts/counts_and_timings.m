@@ -46,8 +46,6 @@ for k in Keys(counts) do
   print "-----------------------";
 end for;
 
-
-
 for el in higher do
   G := LMFDBCongruenceSubgroup(el[1]);
   printf "chi = %o, K^2 = %o\n", ArithmeticGenus(G), K2(G);
