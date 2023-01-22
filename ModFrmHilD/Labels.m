@@ -4,6 +4,7 @@ intrinsic LMFDBLabel(F::FldNum) -> MonStgElt
  n := Degree(F);
  require n eq 2: "only quadratic fields for now";
  D := Discriminant(Integers(F));
+ assert DefiningPolynomial(F) eq MinimalPolynomial(Integers(QuadraticField(D)).2);
  real_places := D gt 0 select 2 else 0;
  return Sprintf("%o.%o.%o.1", n, real_places, Abs(D));
 end intrinsic;
@@ -60,7 +61,7 @@ intrinsic LMFDBCongruenceSubgroup(s::MonStgElt) -> GrpHilbert
     AmbientType := [elt[2] : elt in [<"gl", "GL+">, <"sl", "SL">] | elt[1] eq ambient][1];
     GammaType := [elt[2] : elt in [<"f", "Gamma">, <"0", "Gamma0">, <"1", "Gamma1">] | elt[1] eq gamma][1];
     D := StringToInteger(Split(field, ".")[3]);
-    F := QuadraticField(D);
+    F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
     NN := LMFDBIdeal(F, level);
     bb := LMFDBIdeal(F, bb);
     G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
