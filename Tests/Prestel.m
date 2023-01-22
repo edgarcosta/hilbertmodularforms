@@ -148,7 +148,7 @@ for row in prestelTable do
 
     D := row[1];
     F := QuadraticField(D);
-    G := CongruenceSubgroup("SL", F);
+    G := Gamma0("SL", F);
 
     counts := CountEllipticPoints(G);
     lst := Sort([ <rho, &+[x : x in counts[rho]]> : rho in Keys(counts)],
@@ -185,7 +185,7 @@ for row in prestelTable do
     
     if hF eq 1 and hF ne hFp and GCD(D, 3) eq 1 then
         // Need to look over all components?
-        G := CongruenceSubgroup("GL+", F);
+        G := Gamma0("GL+", F);
 
         counts := CountEllipticPoints(G);
         lst := Sort([ <rho, &+[x : x in counts[rho]]> : rho in Keys(counts)],

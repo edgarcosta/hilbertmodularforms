@@ -746,9 +746,19 @@ with the given rotation factor.}
 end intrinsic;
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Conversion to format used by ChowRing
+//
+////////////////////////////////////////////////////////////////////////////////
+
+// NOTE: This stuff is not used in the LuCant paper, but might come in handy later.
+
 function ConvertRotationLabel(order, rot_factor)
     // Convert the rotation factor to the elliptic point type
-    // in Theorem~2.5 of van der Geer.
+    // in Tables of van der Geer.
+
+    //assert false;
     case rot_factor:
     when [1,1]: return <order, 1, 1>;
     when [2,1]: return <order, 1, -1>;
