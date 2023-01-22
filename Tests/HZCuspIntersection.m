@@ -3,8 +3,9 @@ procedure testHZ(D, bs, mults)
     ZF<z> := Integers(F);
     N := 1*ZF;
     for b in bs do
+	Gamma := CongruenceSubgroup("SL", "Gamma0", F, N, b);
         for t in Keys(mults[b]) do
-            results:= HZCuspIntersection(F, t, N, b);
+            results:= HZCuspIntersection(Gamma, t);
             for i->res in results do
                 pass := false;
                 // assert CanonicalCyclicShift(res) eq CanonicalCyclicShift(mults[b][t][i]);
