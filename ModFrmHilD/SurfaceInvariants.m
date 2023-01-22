@@ -348,7 +348,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     //Compute intersections of HZ divisors with cusps.
     IntList := [];
     for M in LevelList do
-      HZInt := HZCuspIntersection(F, M, Level(Gamma), Component(Gamma));
+      HZInt := HZCuspIntersection(Gamma, M);
       HZIntList := [];
       assert #HZInt eq #res;
       for i in [1 .. #HZInt] do

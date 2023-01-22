@@ -1,17 +1,15 @@
-intrinsic HZCuspIntersection(F::FldNum, t::RngIntElt, 
-			     N::RngOrdIdl, b::RngOrdIdl 
-			     : GammaType := "Gamma0") -> 
+intrinsic HZCuspIntersection(Gamma::GrpHilbert, t::RngIntElt) -> 
 	  SeqEnum[SeqEnum[RngIntElt]]
 {computes the intersection numbers of the Hirzebruch-Zagier divisor F_t with the cusp resolutions}
-   cusps := Cusps(N, b : GammaType := GammaType);
+   cusps := CuspsWithResolution(Gamma);
    cusps_mults := [];
+   b := Component(Gamma);
+   N := Level(Gamma);
+   F := BaseField(Gamma);
    for cusp in cusps do
-       alpha := cusp[3][1];
-       beta := cusp[3][2];
-       alpha, beta := NormalizeCusp(b, N, alpha, beta);
-       L, n := CuspResolutionIntersections(b, N, alpha, beta: GammaType:=GammaType,
-                                          GroupType:="SL2");
-       self_intersections := L;
+       self_intersections := cusp[3];
+       n := cusp[4];
+       
        // !! TODO : That only works if the intersection cycle is of 
        // length at least 3
        s := [-x : x in self_intersections];
