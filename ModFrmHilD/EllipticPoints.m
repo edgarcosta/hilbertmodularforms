@@ -204,7 +204,7 @@ function EvenLocalEmbeddingNumber(t, n, e, pp)
 end function;
 
 // Main thing we call.
-function ActualLocalOptimalEmbeddingNumbers(F, level, OrderS, dff)
+function CountAdelicOptimalEmbeddings(F, level, OrderS, dff)
     // This function is based off of the function EllipticInvariants
     // within "Magma/package/Geometry/GrpPSL2/GrpPSL2Shim/shimura.m".
     //
@@ -246,11 +246,11 @@ end function;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent)
-    // Compute the number of local embeddings of the monogenic order
-    // x^2 + b1 * x + a1.
-    return OptimalEmbeddingNumber(b1, a1, prime, exponent);
-end function;
+/* function LocalOptimalEmbeddingNumbers(b1, a1, prime, exponent) */
+/*     // Compute the number of local embeddings of the monogenic order */
+/*     // x^2 + b1 * x + a1. */
+/*     return OptimalEmbeddingNumber(b1, a1, prime, exponent); */
+/* end function; */
 
 
 function OrderWithConductor(ZK, ff)
@@ -263,29 +263,29 @@ function OrderWithConductor(ZK, ff)
 end function;
 
 
-function NumberOfAdelicOptimalEmbeddings(ZF, level, pair)
-    // Preliminaries
-    b := pair[1];
-    a := pair[2];
-    D := b^2-4*a;
-    F := NumberField(ZF);
-    // _<x> := PolynomialRing(F);
-    // K := ext<F | x^2 - D >;
-    // ZK := Integers(K);
-    // DD := Discriminant(ZK);
+/* function NumberOfAdelicOptimalEmbeddings(ZF, level, pair) */
+/*     // Preliminaries */
+/*     b := pair[1]; */
+/*     a := pair[2]; */
+/*     D := b^2-4*a; */
+/*     F := NumberField(ZF); */
+/*     // _<x> := PolynomialRing(F); */
+/*     // K := ext<F | x^2 - D >; */
+/*     // ZK := Integers(K); */
+/*     // DD := Discriminant(ZK); */
 
-    //ff := Sqrt((D*ZF)/DD); // Conductor
-    //Kabs := AbsoluteField(K);
-    //ZKabs := Integers(Kabs);
-    //UK,mUK := UnitGroup(ZKabs);
-    //_, mKabstoK := IsIsomorphic(Kabs,K);
+/*     //ff := Sqrt((D*ZF)/DD); // Conductor */
+/*     //Kabs := AbsoluteField(K); */
+/*     //ZKabs := Integers(Kabs); */
+/*     //UK,mUK := UnitGroup(ZKabs); */
+/*     //_, mKabstoK := IsIsomorphic(Kabs,K); */
 
-    term := 1;
-    for pp in Factorization(level) do
-        term *:= LocalOptimalEmbeddingNumbers(pair[1], pair[2], pp[1], pp[2]);
-    end for;
-    return term;
-end function;
+/*     term := 1; */
+/*     for pp in Factorization(level) do */
+/*         term *:= LocalOptimalEmbeddingNumbers(pair[1], pair[2], pp[1], pp[2]); */
+/*     end for; */
+/*     return term; */
+/* end function; */
 
 intrinsic OrdersContaining(ZK, S) -> Any
 {Given an order S contained in the maximal order ZK for a number field K,
@@ -490,10 +490,9 @@ function PossibleIsotropyOrders(F)
     return Sort([m : m in Sdiv_final]);
 end function;
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Main functionality.
+// Rotation types.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -509,10 +508,19 @@ intrinsic RotationFactor(S::RngOrd, q::RngIntElt)->SeqEnum[RngIntElt]
   F := BaseField(NumberField(S));
   alpha0 := [alphas[j] - i*signs_s[j] * Sqrt(1 - alphas[j]^2) :
              j in [1..Degree(F)]];
+
   // Here we assume it is a surface
   assert exists(t){t : t in [1..q-1] | Abs(alpha0[1]^t - alpha0[2]) lt Exp(-20)};
   return [t,1];
 end intrinsic;
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Main functionality.
+//
+////////////////////////////////////////////////////////////////////////////////
+
 
 intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
 {Given a congruence subgroup `Gamma` (level, field, decoration data), return something.}
@@ -565,7 +573,7 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             QS  := Srec`HasseUnitIndex;
 
             // localCount := NumberOfAdelicOptimalEmbeddings(ZF, level, Stuple);
-            localCount := ActualLocalOptimalEmbeddingNumbers(F, level, S, dff);
+            localCount := CountAdelicOptimalEmbeddings(F, level, S, dff);
 
             // clS, m_clS := PicardGroup(AbsoluteOrder(S));
             // norm_im := sub<clF_plus | [Norm(S!!m_clS(g))@@m_clF_plus : g in Generators(clS)]>;
@@ -597,16 +605,16 @@ intrinsic CountEllipticPoints(Gamma::GrpHilbert) -> Any
             // Record the data into the table.
             total_num := Integers() ! (hS * groupCorrectionFactor * localCount);
             K := NumberField(S);
-	    ZK := Integers(K);
+            ZK := Integers(K);
 
             vprint EllipticPointsDebug : S, Norm(Norm(Conductor(S)));
             vprint EllipticPointsDebug : rho, localCount, total_num, groupCorrectionFactor, hS;
 
             // YYY: Check which signs occur (CM types)
             is_unr := IsUnramified(K);
-	    oos := is_unr and &and[IsSplit(p_e[1], ZK) :
-				   p_e in Factorization(level) |
-				   IsOdd(p_e[2])];
+            oos := is_unr and &and[IsSplit(p_e[1], ZK) :
+                                   p_e in Factorization(level) |
+                                   IsOdd(p_e[2])];
             if oos then
                 // assert OrderNormIndex(S) eq 2;
 
@@ -705,124 +713,7 @@ end intrinsic;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Testing.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-intrinsic _FieldAndGroup(n : Group:="SL") -> Any
-{}
-    F := QuadraticField(n);
-    G := CongruenceSubgroup(Group, F);
-    return F, G;
-end intrinsic;
-
-intrinsic TestEC(n)
-{}
-    F, G := _FieldAndGroup(n);
-    A, B := CountEllipticPoints(G);
-    print "Results:";
-    print Eltseq(A);
-    // print Eltseq(B);
-end intrinsic;
-
-intrinsic TestECGL(n)
-{}
-    F, G := _FieldAndGroup(n : Group:="GL+");
-    A, B := CountEllipticPoints(G);
-    print "Numbers of elliptic points:";
-    print "a2", Eltseq(A[2]);
-    print "a3", Eltseq(A[3]);
-    print ArithmeticGenus(G);
-    // print Eltseq(B);
-end intrinsic;
-
-intrinsic ActualCorrectOrders(F::FldNum, rho : Bound := 0) -> Tup
-{For a totally real field F, computes and stores the class numbers
- and associated data for all cyclotomic quadratic extensions of F.}
-
-  ZF := MaximalOrder(F);
-  UF, mUF := UnitGroup(ZF);
-
-  // Order of the torsion element.
-  s := rho;
-
-  // TODO: Should be able to choose K as sqrt(-u) for some totally positive unit u.
-
-  // vprintf Shimura : "Computing class number for %o\n", s;
-  fs := Factorization(CyclotomicPolynomial(s), F)[1][1];
-  K  := ext<F | fs>;
-  ZK := MaximalOrder(K);
-  Kabs := AbsoluteField(K);
-
-  // This is the hugely expensive step.
-  if Bound cmpeq 0 then
-      hK := ClassNumber(Kabs);
-  elif Bound cmpeq "BachBound" then
-      hK := ClassNumber(Kabs : Bound := Floor(BachBound(Kabs)/40));
-  else
-      hK := ClassNumber(Kabs : Bound := Bound);
-  end if;
-
-  // Compute the order Oq = ZF[zeta_2s] and its conductor.
-  Oq := Order([K.1]);
-  Dq := Discriminant(MinimalPolynomial(K.1));
-  ff := SquareRoot(ZF!!Discriminant(Oq)/Discriminant(ZK));
-
-  UK, mUK := UnitGroup(AbsoluteOrder(ZK));
-  wK := #TorsionSubgroup(UK);
-
-  Rdata := [];
-
-  // Loop over orders by their conductor dff.
-  for dff in Divisors(ff) do
-
-      // if ZK is maximal, we have Cl(O_dff)/Cl(K) = 1.
-      if dff eq ideal<ZF | 1> then
-          Oq := ZK;
-          UOq := UK;
-          mUOq := mUK;
-          wOq := wK;
-          hOq := hK;
-
-      else
-          // Otherwise, use the classic formula to compute the relative class number.
-          Oq := OrderWithConductor(ZK, dff);
-          UOq, mUOq := UnitGroup(AbsoluteOrder(Oq));
-
-          // We only take orders where Oq has exact torsion unit group of order s.
-          assert #TorsionSubgroup(UOq) eq s;
-
-          // Picard number of the absolute order.
-          OqUnitsInK := [mUOq(u) @@ mUK : u in Generators(UOq)];
-
-          hOq := hK/#quo<UK | OqUnitsInK> * AbsoluteNorm(dff) *
-                    &*[1-UnramifiedSquareSymbol(Dq, pp[1])/AbsoluteNorm(pp[1])
-                       : pp in Factorization(dff)];
-
-          assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
-          // hOq := #PicardGroup(AbsoluteOrder(Oq));
-      end if;
-
-
-      // The local unit adjustment. (Hasse unit index)
-      UQ  := sub<UF | [Norm(ZK ! mUOq(u)) @@ mUF : u in Generators(UOq)]>;
-      QOq := #quo<UQ | [2*u : u in Generators(UF)]>;
-      // QOq := HasseUnitIndex(Oq);
-      //hQOq := hOq/QOq;
-
-
-      // dff  -- divisor of conductor of R[i].
-      // hOq  -- Class number of the order S.
-      // QOq  -- Hasse Unit index of the order S.
-      Append(~Rdata, <dff, hOq, Rationals() ! QOq>);
-  end for;
-
-  return Rdata;
-end intrinsic;
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Experimentation.
+// Debug utilities.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -856,7 +747,6 @@ intrinsic OrderNormIndex(S::RngOrd)->RngIntElt
   return Index(cg, norm_im);
 end intrinsic;
 
-//intrinsic OrderNormIndexWithAL(S::RngOrd, N::RngQuadIdl)->RngIntElt
 intrinsic OrderNormIndexWithAL(S::RngOrd, N::RngOrdIdl)->RngIntElt
 {Returns the index of Nm(Pic(S)) inside the narrow ray class group of the base field.
 We also need the group of sign changes generated by the Atkin-Lehner (AL) elements.}
@@ -886,7 +776,6 @@ We also need the group of sign changes generated by the Atkin-Lehner (AL) elemen
   gens cat:= [[0,0,g,0] : g in Generators(N)];
   O := Order([mat_map(M2F ! g) : g in gens]);
 
-  // YYY:
   for i->p in AL_primes do
     // Find the Atkin-Lehner involution associated to the
     // prime p.
@@ -921,7 +810,7 @@ We also need the group of sign changes generated by the Atkin-Lehner (AL) elemen
         q := pi^e;
         Q, piQ := quo<R | M>;
         is_invertible, x_im := IsInvertible(piQ(q));
-//          x := InverseMod(q, M);
+
         if is_invertible then
             x := x_im @@ piQ;
             Append(~gens, mat_map([q*x, 1, q^2*x-q, q]));
@@ -1017,8 +906,6 @@ Gamma_0(N)}
   // 4. Repeat until we get a group of the right order.
   // end while
 
-
-  // YYY:
   for i->p in AL_primes do
     // Find the Atkin-Lehner involution associated to the
     // prime p.
