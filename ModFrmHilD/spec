@@ -1,5 +1,6 @@
 {
   Basis.m
+  CongruenceSubgroup.m
   CuspResolution.m
   Cusps.m
   Elements.m
@@ -49,5 +50,4 @@ CanonicalRing
   CanonicalRing.m
   HilbertSeries.m
   IntersectionRing.m
-  CongruenceSubgroup.m
 }
