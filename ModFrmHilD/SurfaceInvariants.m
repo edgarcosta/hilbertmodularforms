@@ -411,7 +411,7 @@ end intrinsic;
 */
 
 intrinsic HodgeToChiK2(hs::SeqEnum) -> Any
-  {Compute the Arithmetic Genus and c_1^2 from Hodge numbers h^{2,0} and h^{1,1}.}
+  {Compute the Arithmetic Genus and c_1^2 from Hodge numbers h^(2,0) and h^(1,1).}
   h20, h11 := Explode(hs);
   chi := h20 + 1;
   c12 := 10*(h20 + 1) - h11;
