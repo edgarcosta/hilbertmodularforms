@@ -145,6 +145,18 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   return Gamma`K2;
 end intrinsic;
 
+intrinsic ChernNumbersOfMinimalResolution(Gamma::GrpHilbert) -> SeqEnum
+{Returns `c1^2, c2`,  corresponding to the Chern numbers of the
+minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
+    return ChernNumbers(Gamma);
+end intrinsic;
+
+intrinsic ChernNumbers(Gamma::GrpHilbert) -> SeqEnum
+{Returns `c1^2, c2`,  corresponding to the Chern numbers of the
+minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.}
+    return K2(Gamma), EulerNumber(Gamma);
+end intrinsic;
+
 intrinsic ArithmeticGenus(Gamma::GrpHilbert) -> RngIntElt
 {}
   chi := K2(Gamma) + EulerNumber(Gamma);
