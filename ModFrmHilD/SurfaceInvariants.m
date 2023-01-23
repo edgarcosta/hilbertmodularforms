@@ -1,6 +1,5 @@
-intrinsic EllipticPointResolution(order::RngIntElt,
-					 rot_factor::RngIntElt) ->
-	  SeqEnum[RngIntElt], SeqEnum[FldRatElt], SeqEnum[FldRatElt]
+intrinsic EllipticPointResolution(order::RngIntElt, rot_factor::RngIntElt) ->
+          SeqEnum[RngIntElt], SeqEnum[FldRatElt], SeqEnum[FldRatElt]
 {}
   frac := order/rot_factor;
   c := [Ceiling(frac)];
@@ -40,7 +39,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 
   // require D notin [8,12]: "Discriminant not supported";
   // require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
-  //		"Level is not supported";
+  //"Level is not supported";
 
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -59,28 +58,28 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   for rot_factor in Keys(a) do
       rot_tup := IntegerTuple(rot_factor);
       n := rot_tup[1];
-      
-	  _, len := EllipticPointK2E(n, rot_tup[3]);
-	  // This is ad-hoc check for surfaces
-	  if rot_tup[3] eq 1 then
-	      // len := 1;
-	      assert len eq 1;
-	  elif rot_tup[3] eq n-1 then
-	      // len := n-1;
-	      assert len eq n-1;
-	  elif n eq 5 then
-	      assert rot_tup[3] in [2,3];
-	      // len := 2;
-	      assert len eq 2;
-	  elif n eq 12 then
-	      if rot_tup[3] eq 5 then
-		  // len := 3;
-		  assert len eq 3;
-	      end if;
-	  end if;
-	  elliptic +:= a[rot_tup] * (len + (n-1)/n);
-      end for;
-      //end for;
+
+      _, len := EllipticPointK2E(n, rot_tup[3]);
+      // This is ad-hoc check for surfaces
+      if rot_tup[3] eq 1 then
+          // len := 1;
+          assert len eq 1;
+      elif rot_tup[3] eq n-1 then
+          // len := n-1;
+          assert len eq n-1;
+      elif n eq 5 then
+          assert rot_tup[3] in [2,3];
+          // len := 2;
+          assert len eq 2;
+      elif n eq 12 then
+          if rot_tup[3] eq 5 then
+              // len := 3;
+              assert len eq 3;
+          end if;
+      end if;
+      elliptic +:= a[rot_tup] * (len + (n-1)/n);
+  end for;
+  //end for;
 
   // elliptic := a2 * (1 + 1/2) + a3_plus * (1 + 2/3) + a3_minus * (2 + 2/3);
   e := vol + l + elliptic;
@@ -110,9 +109,9 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   for cusp in cusps do
     _, _, L, n := Explode(cusp);
       if (n eq 1) and (#L eq 1) then
-	  cusp_chern +:= L[1];
+          cusp_chern +:= L[1];
       else
-	  cusp_chern +:= n*(&+[2+b : b in L]);
+          cusp_chern +:= n*(&+[2+b : b in L]);
       end if;
   end for;
 
@@ -127,19 +126,19 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 
       // verification
       if n eq 5 then
-	  if rot_tup[3] in [2,3] then
-	      assert k2_pt eq -2/5;
-	  elif rot_tup[3] eq 4 then
-	      assert k2_pt eq 0;
-	  end if;
+          if rot_tup[3] in [2,3] then
+              assert k2_pt eq -2/5;
+          elif rot_tup[3] eq 4 then
+              assert k2_pt eq 0;
+          end if;
       elif n eq 3 then
-	  if rot_tup[3] eq 1 then
-	      assert k2_pt eq -1/3;
-	  else
-	      assert k2_pt eq 0;
-	  end if;
+          if rot_tup[3] eq 1 then
+              assert k2_pt eq -1/3;
+          else
+              assert k2_pt eq 0;
+          end if;
       elif n eq 2 then
-	  assert k2_pt eq 0;
+          assert k2_pt eq 0;
       end if;
       elliptic +:= k2_pt * a[rot_factor];
   end for;
@@ -287,9 +286,9 @@ intrinsic getHZExceptionalNum(Gamma) -> MonStgElt
     s +:= &*[1 + KroneckerSymbol(Dq, 2*A) : Dq in Dqs];
     s +:= &*[1 + KroneckerSymbol(Dq, 3*A) : Dq in Dqs] div 2;
     s +:= (1 - KroneckerSymbol(D,3)^2)*
-	  &*[1 + KroneckerSymbol(Dq,9*A) : Dq in Dqs];
+          &*[1 + KroneckerSymbol(Dq,9*A) : Dq in Dqs];
     if D eq 105 then
-	  s +:= 2;
+        s +:= 2;
     end if;
     return s;
 end intrinsic;
@@ -307,7 +306,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     self_int_res := [];
     for x in res do
       for y in [1..x[4]] do
-	    self_int_res cat:= x[3];
+          self_int_res cat:= x[3];
       end for;
     end for;
 
