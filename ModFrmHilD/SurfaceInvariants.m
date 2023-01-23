@@ -43,6 +43,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
+
   // get cusp contribution
   l := 0;
   for cusp in cusps do
@@ -54,7 +55,6 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   a := CountEllipticPoints(Gamma);
 
   elliptic := 0;
-  //for n in Keys(a) do
   for rot_factor in Keys(a) do
     rot_tup := IntegerTuple(rot_factor);
     n := rot_tup[1];
@@ -79,7 +79,6 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
     end if;
     elliptic +:= a[rot_tup] * (len + (n-1)/n);
   end for;
-  //end for;
 
   // elliptic := a2 * (1 + 1/2) + a3_plus * (1 + 2/3) + a3_minus * (2 + 2/3);
   e := vol + l + elliptic;
@@ -97,10 +96,6 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
   F := BaseField(Gamma);
   ZF := Integers(F);
   D := Discriminant(ZF);
-
-  // require D notin [8,12]: "Discriminant not supported";
-  // require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
-  //		"Level is not supported";
 
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -369,7 +364,8 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     //   if self_int_res[i] eq -1 then
     //     for j in [1 .. #(LevelList)] do
     //       if not IntList[j][i][1] eq 0 then
-    //         vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+    //         vprintf HilbertModularForms:
+    //                  "Exceptional curve on boundary intersects exceptional HZ divisor\n";
     //         return true;
     //       end if;
     //     end for;
@@ -385,7 +381,8 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
         // for i in exc_indices do
         //   for j in [1 .. #LevelList] do
         //     if not IntList[j][i] eq 0 then
-        //       vprintf HilbertModularForms: "Exceptional curve on boundary intersects exceptional HZ divisor\n";
+        //       vprintf HilbertModularForms:
+        //              "Exceptional curve on boundary intersects exceptional HZ divisor\n";
         //       return true;
         //     end if;
         //   end for;
@@ -393,7 +390,8 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
       else
 
         // List of indices s.t. boundary curve is now exceptional
-        exc_indices := [i : i in [1 .. #self_int_res] | self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
+        exc_indices := [i : i in [1 .. #self_int_res] |
+                        self_int_res[i] + &+[ IntList[j][i] : j in I] eq -1];
         // Error in &+[ IntList[j][i] : j in I], seems like I'm still adding lists!
 
         if #exc_indices le 1 then //One (-1) curve is not enough!
@@ -406,7 +404,8 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
           T := SetToSequence(S);
           for j in I do
             if IntList[j][T[1]] ne 0 and IntList[j][T[2]] ne 0 then
-              vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n", LevelList[SetToSequence(I)];
+              vprintf HilbertModularForms: "Blow down curves F_N for N in %o\n",
+                                           LevelList[SetToSequence(I)];
               return true;
             end if;
           end for;
