@@ -575,8 +575,6 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
     orders, conductors := OrdersContaining(ZK, S);
     Rdata := [];
 
-    // print ZK, UK, [mUK(g) : g in Generators(UK)];
-
     for i in [1..#orders] do
         Oq := orders[i]; dff := conductors[i];
 
@@ -602,13 +600,14 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         hOq := hK / #quo<UK | OqUnitsInK> * AbsoluteNorm(dff) * Product(Fartin);
 
         vprint EllipticPointsDebug : "Picard:", hOq;
-        vprint EllipticPointsDebug : "John Picard:",
-                                     JohnPicardNumberCode(ZKabs, ZK, UK, mUK, Dq, dff);
+        vprint EllipticPointsDebug : "John Relative Picard:",
+                                     JohnRelativePicardNumberCode(ZKabs, ZK, UK, mUK, Dq, dff);
 
         vprint EllipticPointsDebug : "Receipt:", hK,  #quo<UK | OqUnitsInK>,
                                      AbsoluteNorm(dff) , Product(Fartin);
 
-        assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
+        // This check is reasonable for small levels, but can crash magma for large levels.
+        // assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
 
         // The local unit adjustment. (Hasse unit index)
         UQ  :=  sub<UF | [Norm(ZK ! mUOq(u)) @@ mUF : u in Generators(UOq)]>;
@@ -623,6 +622,7 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
                                                    RotationElement:=zeta>);
     end for;
 
+    vprint EllipticPointsDebug : "Exit OrderTermDataForK";
     return Rdata;
 end intrinsic;
 
@@ -950,8 +950,8 @@ end intrinsic;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic JohnPicardNumberCode(Z_Kabs, Z_K, UK, mUK, Dq, dff) -> RngIntElt
-{Copied from Shimura curves. Computes the picard number of the order with conductor
+intrinsic JohnRelativePicardNumberCode(Z_Kabs, Z_K, UK, mUK, Dq, dff) -> RngIntElt
+{Copied from Shimura curves. Computes the relative picard number of the order with conductor
 dff inside Z_K. This function is for debug use only.}
 
     assert Z_K.1 eq 1;
