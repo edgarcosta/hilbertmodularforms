@@ -1,3 +1,4 @@
+import "CongruenceSubgroup.m" : GAMMA_Type, GAMMA_0_Type, GAMMA_1_Type;
 
 intrinsic LMFDBLabel(F::FldNum) -> MonStgElt
  { LMFDB label for quadratic fields }
@@ -22,10 +23,6 @@ end intrinsic;
 
 intrinsic GammaTypeLabel(GammaType::MonStgElt) -> MonStgElt
 { TODO }
-// strings for the time being
-GAMMA_Type := "Gamma";
-GAMMA_0_Type := "Gamma0";
-GAMMA_1_Type := "Gamma1";
     case GammaType:
         when GAMMA_Type: return "f";
         when GAMMA_0_Type: return "0";

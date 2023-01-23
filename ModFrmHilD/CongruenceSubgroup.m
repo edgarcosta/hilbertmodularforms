@@ -287,8 +287,11 @@ points.}
     // Proposition: If Gamma is the principal congruence subgroup of level N of the Hilbert
     //              modular group Gamma_{K, \frak{b}}, and N^2 is not equal to either (2) or (3),
     //              then Gamma acts freely on the squared upper half plane.
-
+    //
     // Thus, the first thing is the level and return an empty array in the trivial cases.
+
+    require IsPrincipalCongruenceSubgroup(Gamma):
+          "Congruence subgroup has mismatched gamma type.";
 
     K := BaseField(Gamma);
     ZK := RingOfIntegers(K);
@@ -303,11 +306,6 @@ points.}
     ellipticData := AssociativeArray();
     if IsPrincipalCongruenceSubgroup(Gamma) and N^2 notin [1*ZK, 2*ZK, 3*ZK] then
         return ellipticData;
-    end if;
-
-    // TODO: XXX: Properly implement elliptic points for arbitrary congruence subgroups.
-    if not IsPrincipalCongruenceSubgroup(Gamma) then
-        error "Not implemented for non-principal congruence subgroups.";
     end if;
 
     // The next thing to check is if we are in one of the special discriminant cases.
@@ -546,18 +544,7 @@ end intrinsic;
 
 intrinsic NumberOfCusps(Gamma::GrpHilbert) -> RngIntElt
 {Computes the number of cusps of Gamma_0(N).}
-
-    error "Congruence Subgroup of the form Gamma_0(N) not implemented.";
-
-    // Create the HMF ring.
-    F := BaseField(Gamma);
-    N := Level(Gamma);
-    prec := 20; // This should be irrelevant.
-    M := GradedRingOfHMFs(F, prec);
-    Mn := HMFSpace(M, N, [k : k in [1..Degree(F)]]);
-
-    // Return the number of cusps.
-    return NumberOfCusps(Mn); // TODO: XXX:
+    return #Cusps(Gamma);
 end intrinsic;
 
 intrinsic NumberOfParabolicPoints(Gamma::GrpHilbert) -> RngIntElt
