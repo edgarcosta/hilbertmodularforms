@@ -798,6 +798,54 @@ procedure UpdateCountArray(~Counts, key, value)
     return;
 end procedure;
 
+CONST_LabelSortingFunc := func<x,y | Tuple(y)[1] - Tuple(x)[1]>; // High to low.
+
+procedure CorrectCountsByInclusionExclusion(~ellipticCounts)
+    sortedKeys := Sort(Setseq(Keys(ellipticCounts)), CONST_LabelSortingFunc);
+
+    for key in sortedKeys do
+        tup := Tuple(key);
+        rho := tup[1];
+        
+        if IsPrime(rho) then continue; end if;
+        divs := [d : d in Divisors(rho) | d ne 1 and d ne rho];
+
+        // Subtract away anything lying lower in the key poset.
+        for p in divs do
+            rhop := rho div p;
+            subLabel := <rhop> cat <Integers() ! tup[i] : i in [2..#tup]>;
+            assert IsDefined(ellipticCounts, subLabel);
+            ellipticCounts[subLabel] -:= ellipticCounts[key];
+        end for;
+    end for;
+
+    return;
+end procedure;
+
+// Function above should be equivalent to the old code below.
+/* for rho in Reverse(isoOrds) do */
+/*     rho2 := rho div 2; */
+/*     if IsPrime(rho2) then continue; end if; */
+/*     divs := [d : d in Divisors(rho2) | */
+/*              (d ne 1) and (rho2 div d) in Keys(ellipticCounts)]; */
+/*     for p in divs do */
+/*         rho2p := rho2 div p; */
+/*         for rot in Keys(ellipticCounts[rho2]) do */
+
+/*             // Get the corresponding rotation factor for g^p, which is just */
+/*             // a reduction of the rotation factor of the original element */
+/*             // mod the order. */
+/*             Par := Integers(rho2p); */
+/*             rotp := [Par ! (Integers() ! x) : x in rot]; */
+
+/*             // Update the table element. */
+/*             ellipticCounts[rho2p][rotp] -:= ellipticCounts[rho2][rot]; */
+
+/*         end for; */
+/*     end for; */
+/* end for; */
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Main functionality.
@@ -812,7 +860,7 @@ groups. The keys of the second are the rotation factors. The values are the numb
 with the given rotation factor.}
 
     if assigned Gamma`CountEllipticPoints then
-        return Explode(Gamma`CountEllipticPoints);
+        return Gamma`CountEllipticPoints;
     end if;
 
     // The algorithm is based on page 739 of "Quaternion Algebra, Voight".
@@ -836,13 +884,6 @@ with the given rotation factor.}
     isoOrds := PossibleIsotropyOrders(F);
     for rho in isoOrds do
         ell_order := ExactQuotient(rho, 2);
-
-        // Get options for the rotation factors
-        /* count := AssociativeArray(); */
-        /* for rot_factor in RotationFactorPossibilities(ell_order) do */
-        /*     count[rot_factor] := 0; */
-        /* end for; */
-
         listOfOrders := OrderTermData(Gamma, F, rho);
         
         for Srec in listOfOrders do
@@ -867,50 +908,10 @@ with the given rotation factor.}
     // from S, since an elliptic point of order 4 is also counted as a point of order 2.
     // 
     // Thus, we post-process the elliptic counts due to overcounting in the previous step.
-
-    sortingFunc := func<x,y | Tuple(y)[1] - Tuple(x)[1]>; // High to low.
-    sortedKeys := Sort(Setseq(Keys(ellipticCounts)), sortingFunc);
-
-    for key in sortedKeys do
-        tup := Tuple(key);
-        rho := tup[1];
+    CorrectCountsByInclusionExclusion(~ellipticCounts);
         
-        if IsPrime(rho) then continue; end if;
-        divs := [d : d in Divisors(rho) | d ne 1 and d ne rho];
-
-        // Subtract away anything lying lower in the key poset.
-        for p in divs do
-            rhop := rho div p;
-            subLabel := <rhop> cat <Integers() ! tup[i] : i in [2..#tup]>;
-            assert IsDefined(ellipticCounts, subLabel);
-            ellipticCounts[subLabel] -:= ellipticCounts[key];
-        end for;
-    end for;
-    
-    /* for rho in Reverse(isoOrds) do */
-    /*     rho2 := rho div 2; */
-    /*     if IsPrime(rho2) then continue; end if; */
-    /*     divs := [d : d in Divisors(rho2) | */
-    /*              (d ne 1) and (rho2 div d) in Keys(ellipticCounts)]; */
-    /*     for p in divs do */
-    /*         rho2p := rho2 div p; */
-    /*         for rot in Keys(ellipticCounts[rho2]) do */
-
-    /*             // Get the corresponding rotation factor for g^p, which is just */
-    /*             // a reduction of the rotation factor of the original element */
-    /*             // mod the order. */
-    /*             Par := Integers(rho2p); */
-    /*             rotp := [Par ! (Integers() ! x) : x in rot]; */
-
-    /*             // Update the table element. */
-    /*             ellipticCounts[rho2p][rotp] -:= ellipticCounts[rho2][rot]; */
-
-    /*         end for; */
-    /*     end for; */
-    /* end for; */
-
-    Gamma`CountEllipticPoints := <ellipticCounts, ellipticCountsByOrder>;
-    return Explode(Gamma`CountEllipticPoints);
+    Gamma`CountEllipticPoints := ellipticCounts;
+    return Gamma`CountEllipticPoints;
 end intrinsic;
 
 
