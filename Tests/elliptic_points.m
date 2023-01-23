@@ -61,8 +61,29 @@ function CorrectEllipticPointCounts(entry)
     return a2, a31, a32;
 end function;
 
-function CompareCountsToTable(A, entry)
-    return 0;
+function CheckKV(ellipticCounts, key, value)
+    // Make sure that if the key doesn't exist, there are not supposed to be any
+    // points of that type.
+    if not IsDefined(ellipticCounts, key) and value ne 0 then
+        return false;
+    end if;
+
+    if not IsDefined(ellipticCounts, key) and value eq 0 then
+        return true;
+    end if;
+
+    // Else, compare the values.
+    return ellipticCounts[key] eq value;
+end function;
+
+function CountsAgreeWithTable(ellipticCounts, entry)
+    // Compute the numbers of elliptic points in the table.
+    a2, a3p, a3m := CorrectEllipticPointCounts(entry);
+
+    check1 := CheckKV(ellipticCounts, <2,1,1>, a2);
+    check2 := CheckKV(ellipticCounts, <3,1,1>, a3p);
+    check3 := CheckKV(ellipticCounts, <3,1,2>, a3m);
+    return &and [check1, check2, check3];
 end function;
 
 quadraticFields := Setseq({QuadraticField(D) : D in [2..53] | IsSquarefree(D)});
@@ -86,9 +107,6 @@ for K in quadraticFields do
 
         entry := Find(disc, signs);
 
-        // Compute the numbers of elliptic points in the table.
-        a2, a3p, a3m := CorrectEllipticPointCounts(entry);
-
         // Now compute the HMS
         ZK := MaximalOrder(K);
         B := mp(b);
@@ -96,15 +114,13 @@ for K in quadraticFields do
         G_GL := CongruenceSubgroup("GL+", "Gamma0", K, 1*ZK, B);
 
         A := CountEllipticPoints(G_SL);
-        boo := (A[<2,1,1>] eq a2) and (A[<3,1,1>] eq a3p) and (A[<3,2,1>] eq a3m);
-        if not boo then
+        if not CountsAgreeWithTable(A, entry) then
             error "Values not equal:", disc, signs;
         end if;
 
         // Also check if the number of elliptic points are integers in the GL+ case.
         A := CountEllipticPoints(G_GL);
         assert &and[count in Integers() : count in A];
-        //assert &and [&and[count in Integers() : count in counts] : counts in A];
 
         // Also do an integrality check for levels.
 	// randomizing since otherwise it takes too long
@@ -119,8 +135,6 @@ for K in quadraticFields do
 
             A := CountEllipticPoints(G0N_GL);
             assert &and[count in Integers() : count in A];
-            //assert &and [&and[count in Integers() : count in counts] :
-            //           counts in A];
         end for;
     end for;
 end for;
