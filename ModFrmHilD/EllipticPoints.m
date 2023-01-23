@@ -73,6 +73,12 @@ intrinsic Tuple(L::GrpHilbRotationLabel) -> Tup
     return L`tuple;
 end intrinsic;
 
+intrinsic IntegerTuple(L::GrpHilbRotationLabel) -> Tup
+{Return the tuple attribute of the rotation label, with entries as integers.}
+    return <Integers() ! x : x in Tuple(L)>;
+end intrinsic;
+
+
 // Print
 intrinsic Print(L::GrpHilbRotationLabel)
 {Print.}

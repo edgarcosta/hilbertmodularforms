@@ -55,29 +55,32 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   a := CountEllipticPoints(Gamma);
 
   elliptic := 0;
-  for n in Keys(a) do
-      for rot_factor in Keys(a[n]) do
-	  _, len := EllipticPointK2E(n, Integers()!rot_factor[1]);
+  //for n in Keys(a) do
+  for rot_factor in Keys(a) do
+      rot_tup := IntegerTuple(rot_factor);
+      n := rot_tup[1];
+      
+	  _, len := EllipticPointK2E(n, rot_tup[3]);
 	  // This is ad-hoc check for surfaces
-	  if rot_factor[1] eq 1 then
+	  if rot_tup[3] eq 1 then
 	      // len := 1;
 	      assert len eq 1;
-	  elif rot_factor[1] eq n-1 then
+	  elif rot_tup[3] eq n-1 then
 	      // len := n-1;
 	      assert len eq n-1;
 	  elif n eq 5 then
-	      assert rot_factor[1] in [2,3];
+	      assert rot_tup[3] in [2,3];
 	      // len := 2;
 	      assert len eq 2;
 	  elif n eq 12 then
-	      if rot_factor[1] eq 5 then
+	      if rot_tup[3] eq 5 then
 		  // len := 3;
 		  assert len eq 3;
 	      end if;
 	  end if;
-	  elliptic +:= a[n][rot_factor] * (len + (n-1)/n);
+	  elliptic +:= a[rot_tup] * (len + (n-1)/n);
       end for;
-  end for;
+      //end for;
 
   // elliptic := a2 * (1 + 1/2) + a3_plus * (1 + 2/3) + a3_minus * (2 + 2/3);
   e := vol + l + elliptic;
@@ -112,41 +115,35 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 	  cusp_chern +:= n*(&+[2+b : b in L]);
       end if;
   end for;
+
   // get elliptic points contribution
   a := CountEllipticPoints(Gamma);
-  /*
-  a3_plus := a[3][[1,1]];
-  if IsDefined(a,5) then
-      a5 := a[5][[2,1]] + a[5][[3,1]];
-  else
-      a5 := 0;
-  end if;
 
-  elliptic := a3_plus * (-1/3) + a5 * (-2/5);
- */
   elliptic := 0;
-  for n in Keys(a) do
-      for rot_factor in Keys(a[n]) do
-	  k2_pt, _ := EllipticPointK2E(n, Integers()!rot_factor[1]);
-	  // verification
-	  if n eq 5 then
-	      if rot_factor[1] in [2,3] then
-		  assert k2_pt eq -2/5;
-	      elif rot_factor[1] eq 4 then
-		  assert k2_pt eq 0;
-	      end if;
-	  elif n eq 3 then
-	      if rot_factor[1] eq 1 then
-		  assert k2_pt eq -1/3;
-	      else
-		  assert k2_pt eq 0;
-	      end if;
-	  elif n eq 2 then
+  for rot_factor in Keys(a) do
+      rot_tup := IntegerTuple(rot_factor);
+      n := rot_tup[1];
+      k2_pt, _ := EllipticPointK2E(n, rot_tup[3]);
+
+      // verification
+      if n eq 5 then
+	  if rot_tup[3] in [2,3] then
+	      assert k2_pt eq -2/5;
+	  elif rot_tup[3] eq 4 then
 	      assert k2_pt eq 0;
 	  end if;
-	  elliptic +:= k2_pt * a[n][rot_factor];
-      end for;
+      elif n eq 3 then
+	  if rot_tup[3] eq 1 then
+	      assert k2_pt eq -1/3;
+	  else
+	      assert k2_pt eq 0;
+	  end if;
+      elif n eq 2 then
+	  assert k2_pt eq 0;
+      end if;
+      elliptic +:= k2_pt * a[rot_factor];
   end for;
+
   k2 := 2*vol + cusp_chern + elliptic;
   assert IsIntegral(k2);
   Gamma`K2 := Integers()!k2;
