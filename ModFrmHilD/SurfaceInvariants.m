@@ -30,7 +30,8 @@ end intrinsic;
 
 intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 {}
-  if not assigned Gamma`EulerNumber then
+  if assigned Gamma`EulerNumber then return Gamma`EulerNumber; end if;
+
   // for these fields there are additional orders of points
   // At the moment we do not handle them.
   F := BaseField(Gamma);
@@ -39,7 +40,7 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 
   // require D notin [8,12]: "Discriminant not supported";
   // require (Level(Gamma) eq 1*ZF) or (GCD(Level(Gamma), 3*D*ZF) eq 1*ZF):
-//		"Level is not supported";
+  //		"Level is not supported";
 
   cusps := CuspsWithResolution(Gamma);
   vol := VolumeOfFundamentalDomain(Gamma);
@@ -77,11 +78,12 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
 	  elliptic +:= a[n][rot_factor] * (len + (n-1)/n);
       end for;
   end for;
+
   // elliptic := a2 * (1 + 1/2) + a3_plus * (1 + 2/3) + a3_minus * (2 + 2/3);
   e := vol + l + elliptic;
   assert IsIntegral(e);
   Gamma`EulerNumber := Integers()!e;
-  end if;
+
   return Gamma`EulerNumber;
 end intrinsic;
 
@@ -191,7 +193,8 @@ intrinsic TestArithmeticGenus(F::FldNum, NN::RngOrdIdl) -> Any
   for bb in [mp(el) : el in NCl] do
     G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
     chi1 +:= ArithmeticGenus(G);
-    vprintf HilbertModularForms: "for bb = (%o), chi = %o\n", IdealOneLine(bb), ArithmeticGenus(G);
+    vprintf HilbertModularForms: "for bb = (%o), chi = %o\n",
+                                 IdealOneLine(bb), ArithmeticGenus(G);
   end for;
   vprintf HilbertModularForms: "(1/12)*(K^2 + e) = %o\n", chi1;
 
