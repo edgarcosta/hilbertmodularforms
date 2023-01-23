@@ -159,24 +159,28 @@ minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.
 end intrinsic;
 
 intrinsic ArithmeticGenus(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the Arithmetic Genus of the resulting Hilbert modular surface.}
+{Given a congruence subgroup, computes the Arithmetic Genus of the resulting Hilbert modular 
+surface.}
   chi := K2(Gamma) + EulerNumber(Gamma);
   assert chi mod 12 eq 0;
   return chi div 12;
 end intrinsic;
 
 intrinsic Irregularity(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the irregularity of the resulting Hilbert modular surface. It is always 0.}
+{Given a congruence subgroup, computes the irregularity of the resulting Hilbert modular surface.
+ It is always 0.}
   return 0;
 end intrinsic;
 
 intrinsic GeometricGenus(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the Geometric Genus of the resulting Hilbert modular surface.}
+{Given a congruence subgroup, computes the Geometric Genus of the resulting Hilbert modular 
+surface.}
   return ArithmeticGenus(Gamma)-1;
 end intrinsic;
 
 intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
-{Given a congruence subgroup, computes the Hodge Diamond of the resulting Hilbert modular surface.}
+{Given a congruence subgroup, computes the Hodge Diamond of the resulting Hilbert modular 
+surface.}
   h_0 := [1];
   q := Irregularity(Gamma);
   h_1 := [q,q];
