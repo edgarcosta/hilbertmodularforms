@@ -56,28 +56,28 @@ intrinsic EulerNumber(Gamma::GrpHilbert) -> RngIntElt
   elliptic := 0;
   //for n in Keys(a) do
   for rot_factor in Keys(a) do
-      rot_tup := IntegerTuple(rot_factor);
-      n := rot_tup[1];
+    rot_tup := IntegerTuple(rot_factor);
+    n := rot_tup[1];
 
-      _, len := EllipticPointK2E(n, rot_tup[3]);
-      // This is ad-hoc check for surfaces
-      if rot_tup[3] eq 1 then
-          // len := 1;
-          assert len eq 1;
-      elif rot_tup[3] eq n-1 then
-          // len := n-1;
-          assert len eq n-1;
-      elif n eq 5 then
-          assert rot_tup[3] in [2,3];
-          // len := 2;
-          assert len eq 2;
-      elif n eq 12 then
-          if rot_tup[3] eq 5 then
-              // len := 3;
-              assert len eq 3;
-          end if;
+    _, len := EllipticPointK2E(n, rot_tup[3]);
+    // This is ad-hoc check for surfaces
+    if rot_tup[3] eq 1 then
+      // len := 1;
+      assert len eq 1;
+    elif rot_tup[3] eq n-1 then
+      // len := n-1;
+      assert len eq n-1;
+    elif n eq 5 then
+      assert rot_tup[3] in [2,3];
+      // len := 2;
+      assert len eq 2;
+    elif n eq 12 then
+      if rot_tup[3] eq 5 then
+        // len := 3;
+        assert len eq 3;
       end if;
-      elliptic +:= a[rot_tup] * (len + (n-1)/n);
+    end if;
+    elliptic +:= a[rot_tup] * (len + (n-1)/n);
   end for;
   //end for;
 
@@ -120,27 +120,27 @@ intrinsic K2(Gamma::GrpHilbert) -> RngIntElt
 
   elliptic := 0;
   for rot_factor in Keys(a) do
-      rot_tup := IntegerTuple(rot_factor);
-      n := rot_tup[1];
-      k2_pt, _ := EllipticPointK2E(n, rot_tup[3]);
+    rot_tup := IntegerTuple(rot_factor);
+    n := rot_tup[1];
+    k2_pt, _ := EllipticPointK2E(n, rot_tup[3]);
 
-      // verification
-      if n eq 5 then
-          if rot_tup[3] in [2,3] then
-              assert k2_pt eq -2/5;
-          elif rot_tup[3] eq 4 then
-              assert k2_pt eq 0;
-          end if;
-      elif n eq 3 then
-          if rot_tup[3] eq 1 then
-              assert k2_pt eq -1/3;
-          else
-              assert k2_pt eq 0;
-          end if;
-      elif n eq 2 then
-          assert k2_pt eq 0;
+    // verification
+    if n eq 5 then
+      if rot_tup[3] in [2,3] then
+        assert k2_pt eq -2/5;
+      elif rot_tup[3] eq 4 then
+        assert k2_pt eq 0;
       end if;
-      elliptic +:= k2_pt * a[rot_factor];
+    elif n eq 3 then
+      if rot_tup[3] eq 1 then
+        assert k2_pt eq -1/3;
+      else
+        assert k2_pt eq 0;
+      end if;
+    elif n eq 2 then
+      assert k2_pt eq 0;
+    end if;
+    elliptic +:= k2_pt * a[rot_factor];
   end for;
 
   k2 := 2*vol + cusp_chern + elliptic;
@@ -182,7 +182,8 @@ intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
 end intrinsic;
 
 intrinsic TestArithmeticGenus(F::FldNum, NN::RngOrdIdl) -> Any
-  {Compute the arithmetic genus as (1/12)*(K^2 + e), summed over all components, and as dim(S_2) + #Cl^+(F); return true if these are equal. Currently only for GL+ type.}
+  {Compute the arithmetic genus as (1/12)*(K^2 + e), summed over all components, and as 
+  dim(S_2) + #Cl^+(F); return true if these are equal. Currently only for GL+ type.}
 
   NCl, mp := NarrowClassGroup(F);
   chi1 := 0;
@@ -205,15 +206,17 @@ end intrinsic;
 
 // TODO
 intrinsic KodairaDimension(Gamma::GrpHilbert) -> MonStgElt
-  {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma. Currently just returns -100}
+  {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma. 
+  Currently just returns -100}
+    error "Not Implemented";
   return -100; // FIXME
 end intrinsic;
 
 //To be improved
 intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
-  {Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to Gamma,
-    based on the arithmetic genus. When the level is 1, it gives a more refined list based on K^2.
-  }
+{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to 
+Gamma, based on the arithmetic genus. When the level is 1, it gives a more refined list based 
+on K^2.}
 
   require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
   F := BaseField(Gamma);
@@ -273,8 +276,8 @@ intrinsic PrimeDiscriminant(D,q) -> MonStgElt
 end intrinsic;
 
 intrinsic getHZExceptionalNum(Gamma) -> MonStgElt
-    {Returns number of exceptional HZ divisors if the surface is *not rational*;
-      currently only implemented for level 1.}
+{Returns number of exceptional HZ divisors if the surface is *not rational*;
+ currently only implemented for level 1.}
 
     require Norm(Level(Gamma)) eq 1 : "Only implemented for level 1";
 
@@ -294,9 +297,9 @@ intrinsic getHZExceptionalNum(Gamma) -> MonStgElt
 end intrinsic;
 
 intrinsic RationalityCriterion(Gamma) -> BoolElt
-    {Checks whether the Rationality Criterion is satisfied.
-      Note 1: Only implemented for Gamma0(N) level.
-      Note 2: it could be refined by including more Hirzebruch--Zagier divisors.}
+{Checks whether the Rationality Criterion is satisfied.
+ Note 1: Only implemented for Gamma0(N) level.
+ Note 2: it could be refined by including more Hirzebruch--Zagier divisors.}
     require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
 
     F := BaseField(Gamma);
@@ -417,7 +420,8 @@ end intrinsic;
 
 // IO
 intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
-  {Script for writing geometric invariants to data table row. Format is label:[h^[2,0], h^[1,1]]:K^2:chi.}
+{Script for writing geometric invariants to data table row. 
+Format is label:[h^[2,0], h^[1,1]]:K^2:chi.}
   h2 := HodgeDiamond(Gamma)[3];
   return StripWhiteSpace(Join([
         LMFDBLabel(Gamma),
