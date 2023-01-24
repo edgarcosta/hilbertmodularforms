@@ -145,25 +145,16 @@ assert #{#entry : entry in prestelTable} eq 1;
 ///////////////
 // SL tests
 for row in prestelTable do
-
     D := row[1];
     F := QuadraticField(D);
     G := Gamma0("SL", F);
 
     counts := CountEllipticPoints(G);
-    lst := Sort([ <rho, &+[x : x in counts[rho]]> : rho in Keys(counts)],
-                func<x,y | x[1] - y[1]>);
-
-    for x in lst do
-        assert CountLookup(row, AmbientType(G), x[1]) eq x[2];
-    end for;
-    
-    /* print "------"; */
-    /* print "Disc: ", D; */
-    /* print "Narrow_Class_Number: ", NarrowClassNumber(F); */
-    /* print "Unit_index: ", IndexOfTotallyPositiveUnitsModSquares(F); */
-    /* print [* x[2] : x in lst *]; */
-    /* print row[2..6]; */    
+    for q in [1..12] do
+        countq := Sum([* counts[k] : k in Keys(counts) | IntegerTuple(k)[1] eq q *]);
+        
+        assert CountLookup(row, AmbientType(G), q) eq countq;
+    end for;    
 end for;
 
 ///////////////
@@ -184,23 +175,13 @@ for row in prestelTable do
     // agree with their results.
     
     if hF eq 1 and hF ne hFp and GCD(D, 3) eq 1 then
-        // Need to look over all components?
         G := Gamma0("GL+", F);
-
         counts := CountEllipticPoints(G);
-        lst := Sort([ <rho, &+[x : x in counts[rho]]> : rho in Keys(counts)],
-                    func<x,y | x[1] - y[1]>);
-
-        for x in lst do
-            assert CountLookup(row, AmbientType(G), x[1]) eq x[2];
+        
+        for q in [1..12] do
+            countq := Sum([* counts[k] : k in Keys(counts) | IntegerTuple(k)[1] eq q *]);
+        
+            assert CountLookup(row, AmbientType(G), q) eq countq;
         end for;
-
-        /* print "------"; */
-        /* print "Disc: ", D; */
-        /* print "Class_number: ", ClassNumber(F); */
-        /* print "Narrow_Class_Number: ", NarrowClassNumber(F); */
-        /* print "Unit_index: ", IndexOfTotallyPositiveUnitsModSquares(F); */
-        /* print [* x[2] : x in lst *]; */
-        /* print row[7..11]; */
     end if;    
 end for;

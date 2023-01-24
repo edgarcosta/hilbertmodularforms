@@ -15,6 +15,139 @@ import "CongruenceSubgroup.m": GAMMA_0_Type;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// Rotation label type
+//
+////////////////////////////////////////////////////////////////////////////////
+
+declare type GrpHilbRotationLabel;
+declare type GrpHilbRotationLabelUniversalParent[GrpHilbRotationLabel];
+LABEL_UNIVERSAL_PARENT := New(GrpHilbRotationLabelUniversalParent);
+
+// A rotation label consists of a triple <rho; a1, ..., an>, where rho is the order
+// of the action of a finite order element on a product of Degree(F) upper
+// half planes, and the local action of an element is given by
+//
+//     (z1, ..., zn) -> (zeta_rho^a1 * z1, ..., zeta_rho^an * zn)
+//
+// The rotation label is a property of a cyclic group, so two labels are equivalent
+// if they are obtained by picking two different cyclic generators of the same group.
+// That is, by picking a different rho-th root of unity.
+//
+// By definition, each ai is coprime to rho.
+//
+// Our interface allows the user to input any of the equivalent labels as a tuple
+// and "Just work" for extracting elements from associative arrays, with the type
+// doing equivalence checks in the background.
+
+declare attributes GrpHilbRotationLabel : tuple;
+
+intrinsic StandardizeRotationTuple(tup) -> Tup
+{Standardize so that the label is of the form <n; 1, a2, ...>.}  
+    n := tup[1];
+    R := Integers(n);
+
+    a1 := R ! tup[2];
+    _, a1inv := IsInvertible(a1);
+
+    return <n> cat <a1inv * tup[i] : i in [2..#tup]>;    
+end intrinsic;
+
+// Creation (Internal, the user shouldn't really notice
+intrinsic HMVRotationLabel(tup::Tup) -> GrpHilbRotationLabel
+{}
+    msg := "Rotation order must be an integer larger than 1.";
+    require ISA(Type(tup[1]), RngIntElt) and tup[1] gt 1: msg;
+
+    require #tup gt 1: "Rotation tuple must be of the form <n, a1, ...>.";
+
+    R := Integers(tup[1]);
+    require &and [IsInvertible(R ! tup[i]) : i in [2..#tup]]: "Invalid rotation tuple.";
+    
+    L := New(GrpHilbRotationLabel);
+    L`tuple := StandardizeRotationTuple(tup);
+    return L;
+end intrinsic;
+
+intrinsic Tuple(L::GrpHilbRotationLabel) -> Tup
+{Return the tuple attribute of the rotation label.}
+    return L`tuple;
+end intrinsic;
+
+intrinsic IntegerTuple(L::GrpHilbRotationLabel) -> Tup
+{Return the tuple attribute of the rotation label, with entries as integers.}
+    return <Integers() ! x : x in Tuple(L)>;
+end intrinsic;
+
+
+// Print
+intrinsic Print(L::GrpHilbRotationLabel)
+{Print.}
+    printf "Label%o", Tuple(L);
+end intrinsic;
+
+intrinsic Print(L::GrpHilbRotationLabelUniversalParent)
+{Print.}
+    printf "Universal parent for Hilbert Modular Rotation Labels.";
+end intrinsic;
+
+
+// eq
+intrinsic 'eq'(L1::GrpHilbRotationLabelUniversalParent,
+               L2::GrpHilbRotationLabelUniversalParent) -> BoolElt
+{}
+    return true;
+end intrinsic;
+
+
+intrinsic 'eq'(L1::GrpHilbRotationLabel, L2::GrpHilbRotationLabel) -> BoolElt
+{}
+    // Convert to standard form.
+    tup1 := Tuple(L1);
+    tup2 := Tuple(L2);
+
+    if #tup1 ne #tup2 then return false; end if;
+    if #tup1 ne #tup2 then return false; end if;
+    
+    
+    // Compare.
+    return Tuple(L1) eq Tuple(L2); // TODO: Update this to be correct.
+end intrinsic;
+
+intrinsic 'eq'(L1::GrpHilbRotationLabel, L2::Tup) -> BoolElt
+{}
+    return L1 eq HMVRotationLabel(L2);
+end intrinsic;
+
+intrinsic 'eq'(L1::Tup, L2::GrpHilbRotationLabel) -> BoolElt
+{}
+    return 'eq'(L2, L1);
+end intrinsic;
+
+
+// Parent (For hacky array key comparison purposes)
+intrinsic Parent(L::GrpHilbRotationLabel) -> Any
+{}
+    return LABEL_UNIVERSAL_PARENT;
+end intrinsic;
+
+// Coercion
+intrinsic IsCoercible(X::GrpHilbRotationLabelUniversalParent, y::Any) -> BoolElt, .
+{Return whether y is coercible into X and the result if so}
+
+    if Type(y) eq GrpHilbRotationLabel then
+	return true, y;
+    end if;
+
+    if Type(y) eq Tup then
+        return true, HMVRotationLabel(y);
+    end if;
+    
+    return false, "Illegal coercion.";
+end intrinsic;
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // Helper functions.
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -442,8 +575,6 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
     orders, conductors := OrdersContaining(ZK, S);
     Rdata := [];
 
-    // print ZK, UK, [mUK(g) : g in Generators(UK)];
-
     for i in [1..#orders] do
         Oq := orders[i]; dff := conductors[i];
 
@@ -469,13 +600,14 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
         hOq := hK / #quo<UK | OqUnitsInK> * AbsoluteNorm(dff) * Product(Fartin);
 
         vprint EllipticPointsDebug : "Picard:", hOq;
-        vprint EllipticPointsDebug : "John Picard:",
-                                     JohnPicardNumberCode(ZKabs, ZK, UK, mUK, Dq, dff);
+        vprint EllipticPointsDebug : "John Relative Picard:",
+                                     JohnRelativePicardNumberCode(ZKabs, ZK, UK, mUK, Dq, dff);
 
         vprint EllipticPointsDebug : "Receipt:", hK,  #quo<UK | OqUnitsInK>,
                                      AbsoluteNorm(dff) , Product(Fartin);
 
-        assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
+        // This check is reasonable for small levels, but can crash magma for large levels.
+        // assert hOq eq #PicardGroup(AbsoluteOrder(Oq));
 
         // The local unit adjustment. (Hasse unit index)
         UQ  :=  sub<UF | [Norm(ZK ! mUOq(u)) @@ mUF : u in Generators(UOq)]>;
@@ -490,6 +622,7 @@ relevant generator of the order, compute all orders containing (ZF + K.1 * ZF).}
                                                    RotationElement:=zeta>);
     end for;
 
+    vprint EllipticPointsDebug : "Exit OrderTermDataForK";
     return Rdata;
 end intrinsic;
 
@@ -523,13 +656,11 @@ function RotationFactorPossibilities(ell_order)
     return rot_factors;
 end function;
 
-intrinsic RotationFactor(zeta::FldNumElt, q::RngIntElt) -> SeqEnum[RngIntElt]
-{Given an element `zeta` of finite order in `K^\times/R^\times`, where `K` is a CM extension
+intrinsic RotationFactors(zeta::FldNumElt, q::RngIntElt) -> SeqEnum[RngIntElt]
+{Given an element `zeta` of finite order `q` in `K^\times/R^\times`, where `K` is a CM extension
 of a totally real field `F` and `R` is the ring of integers of `F`, return the rotation factors
-associated to the action of `zeta` on the Degree(F)-fold product of upper half planes.
+associated to the action of `zeta` on the Degree(F)-fold product of upper half planes.}
 
-This intrinsic only produces one of the rotation factors, as opposed to `RotationFactors`.
-}
   F := BaseField(Parent(zeta));
   s := Trace(zeta);
   n := Norm(zeta);
@@ -543,17 +674,20 @@ This intrinsic only produces one of the rotation factors, as opposed to `Rotatio
 
   // Here we assume it is a surface
   assert exists(t){t : t in [1..q-1] | Abs(alpha0[1]^t - alpha0[2]) lt Exp(-20)};
-  return [t,1];
+
+  rplus := HMVRotationLabel(<q, t, 1>);
+  rminu := HMVRotationLabel(<q, q-t, 1>);
+  return rplus, rminu;
 end intrinsic;
 
-intrinsic RotationFactors(zeta::FldNumElt, q::RngIntElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt]
-{Given an element `zeta` of finite order in `K^\times/R^\times`, where `K` is a CM extension
-of a totally real field `F` and `R` is the ring of integers of `F`, return the rotation factors
-associated to the action of `zeta` on the Degree(F)-fold product of upper half planes.}
-    rot_factor := RotationFactor(zeta, q);
-    rot_factor_minus := [q - rot_factor[1], rot_factor[2]];
-    return rot_factor, rot_factor_minus;
-end intrinsic;    
+/* intrinsic RotationFactors(zeta::FldNumElt, q::RngIntElt) -> SeqEnum[RngIntElt], SeqEnum[RngIntElt] */
+/* {Given an element `zeta` of finite order in `K^\times/R^\times`, where `K` is a CM extension */
+/* of a totally real field `F` and `R` is the ring of integers of `F`, return the rotation factors */
+/* associated to the action of `zeta` on the Degree(F)-fold product of upper half planes.} */
+/*     rot_factor := RotationFactor(zeta, q); */
+/*     rot_factor_minus := [q - rot_factor[1], rot_factor[2]]; */
+/*     return rot_factor, rot_factor_minus; */
+/* end intrinsic;     */
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -649,6 +783,71 @@ end intrinsic;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// Update functions
+//
+////////////////////////////////////////////////////////////////////////////////
+
+procedure UpdateCountArray(~Counts, key, value)
+    if value ne 0 then
+        if IsDefined(Counts, key) then
+            Counts[key] +:= value;
+        else
+            Counts[key] := value;
+        end if;
+    end if;
+    return;
+end procedure;
+
+CONST_LabelSortingFunc := func<x,y | Tuple(y)[1] - Tuple(x)[1]>; // High to low.
+
+procedure CorrectCountsByInclusionExclusion(~ellipticCounts)
+    sortedKeys := Sort(Setseq(Keys(ellipticCounts)), CONST_LabelSortingFunc);
+
+    for key in sortedKeys do
+        tup := Tuple(key);
+        rho := tup[1];
+        
+        if IsPrime(rho) then continue; end if;
+        divs := [d : d in Divisors(rho) | d ne 1 and d ne rho];
+
+        // Subtract away anything lying lower in the key poset.
+        for p in divs do
+            rhop := rho div p;
+            subLabel := <rhop> cat <Integers() ! tup[i] : i in [2..#tup]>;
+            assert IsDefined(ellipticCounts, subLabel);
+            ellipticCounts[subLabel] -:= ellipticCounts[key];
+        end for;
+    end for;
+
+    return;
+end procedure;
+
+// Function above should be equivalent to the old code below.
+/* for rho in Reverse(isoOrds) do */
+/*     rho2 := rho div 2; */
+/*     if IsPrime(rho2) then continue; end if; */
+/*     divs := [d : d in Divisors(rho2) | */
+/*              (d ne 1) and (rho2 div d) in Keys(ellipticCounts)]; */
+/*     for p in divs do */
+/*         rho2p := rho2 div p; */
+/*         for rot in Keys(ellipticCounts[rho2]) do */
+
+/*             // Get the corresponding rotation factor for g^p, which is just */
+/*             // a reduction of the rotation factor of the original element */
+/*             // mod the order. */
+/*             Par := Integers(rho2p); */
+/*             rotp := [Par ! (Integers() ! x) : x in rot]; */
+
+/*             // Update the table element. */
+/*             ellipticCounts[rho2p][rotp] -:= ellipticCounts[rho2][rot]; */
+
+/*         end for; */
+/*     end for; */
+/* end for; */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // Main functionality.
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -661,7 +860,7 @@ groups. The keys of the second are the rotation factors. The values are the numb
 with the given rotation factor.}
 
     if assigned Gamma`CountEllipticPoints then
-        return Explode(Gamma`CountEllipticPoints);
+        return Gamma`CountEllipticPoints;
     end if;
 
     // The algorithm is based on page 739 of "Quaternion Algebra, Voight".
@@ -685,13 +884,6 @@ with the given rotation factor.}
     isoOrds := PossibleIsotropyOrders(F);
     for rho in isoOrds do
         ell_order := ExactQuotient(rho, 2);
-
-        // Get options for the rotation factors
-        count := AssociativeArray();
-        for rot_factor in RotationFactorPossibilities(ell_order) do
-            count[rot_factor] := 0;
-        end for;
-
         listOfOrders := OrderTermData(Gamma, F, rho);
         
         for Srec in listOfOrders do
@@ -706,11 +898,9 @@ with the given rotation factor.}
             ellipticCountsByOrder[S][rot_factor_minus] := num_minus;
 
             // Update requested information
-            count[rot_factor_plus]  +:= num_plus;
-            count[rot_factor_minus] +:= num_minus;
+            UpdateCountArray(~ellipticCounts, rot_factor_plus, num_plus);
+            UpdateCountArray(~ellipticCounts, rot_factor_minus, num_minus);
         end for;
-
-        ellipticCounts[ExactQuotient(rho, 2)] := count;
     end for;
 
     // Any times there is a containment relation S^x/R^x < S'^x/R^x,
@@ -718,31 +908,10 @@ with the given rotation factor.}
     // from S, since an elliptic point of order 4 is also counted as a point of order 2.
     // 
     // Thus, we post-process the elliptic counts due to overcounting in the previous step.
-
-    for rho in Reverse(isoOrds) do
-        rho2 := rho div 2;
-        if IsPrime(rho2) then continue; end if;
-        divs := [d : d in Divisors(rho2) |
-                 (d ne 1) and (rho2 div d) in Keys(ellipticCounts)];
-        for p in divs do
-            rho2p := rho2 div p;
-            for rot in Keys(ellipticCounts[rho2]) do
-
-                // Get the corresponding rotation factor for g^p, which is just
-                // a reduction of the rotation factor of the original element
-                // mod the order.
-                Par := Integers(rho2p);
-                rotp := [Par ! (Integers() ! x) : x in rot];
-
-                // Update the table element.
-                ellipticCounts[rho2p][rotp] -:= ellipticCounts[rho2][rot];
-
-            end for;
-        end for;
-    end for;
-
-    Gamma`CountEllipticPoints := <ellipticCounts, ellipticCountsByOrder>;
-    return Explode(Gamma`CountEllipticPoints);
+    CorrectCountsByInclusionExclusion(~ellipticCounts);
+        
+    Gamma`CountEllipticPoints := ellipticCounts;
+    return Gamma`CountEllipticPoints;
 end intrinsic;
 
 
@@ -753,22 +922,6 @@ end intrinsic;
 ////////////////////////////////////////////////////////////////////////////////
 
 // NOTE: This stuff is not used in the LuCant paper, but might come in handy later.
-
-function ConvertRotationLabel(order, rot_factor)
-    // Convert the rotation factor to the elliptic point type
-    // in Tables of van der Geer.
-
-    //assert false;
-    case rot_factor:
-    when [1,1]: return <order, 1, 1>;
-    when [2,1]: return <order, 1, -1>;
-    when [5,1]: return <order, 1, -1>;
-    when [7,1]: return <order, 1, -1>; // This is likely not correct.
-    when [3,1]: return <order, 1, -1>;
-    else: return <order, -99, -99>;
-    end case;
-    error "Not implemented for rotation factor:", rot_factor;
-end function;
 
 intrinsic _EllipticPointData0(G::GrpHilbert) -> Assoc
 {Helper function for `EllipticPointData`.}
@@ -781,7 +934,8 @@ intrinsic _EllipticPointData0(G::GrpHilbert) -> Assoc
             // Drop identically 0 entries.
             c := Counts[order][factor];
             if c ne 0 then
-                Data[ConvertRotationLabel(order, factor)] := c;
+                rot := HMVRotationLabel(<order> cat <x : x in factor>);
+                Data[rot] := c;
             end if;
         end for;
     end for;
@@ -796,8 +950,8 @@ end intrinsic;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-intrinsic JohnPicardNumberCode(Z_Kabs, Z_K, UK, mUK, Dq, dff) -> RngIntElt
-{Copied from Shimura curves. Computes the picard number of the order with conductor
+intrinsic JohnRelativePicardNumberCode(Z_Kabs, Z_K, UK, mUK, Dq, dff) -> RngIntElt
+{Copied from Shimura curves. Computes the relative picard number of the order with conductor
 dff inside Z_K. This function is for debug use only.}
 
     assert Z_K.1 eq 1;
