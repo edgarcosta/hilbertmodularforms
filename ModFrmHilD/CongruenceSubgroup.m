@@ -617,13 +617,12 @@ end intrinsic;
 intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::Tup) -> MonStgElt
   {Script for writing cusp data to data table row}
 
-  bb := Component(G);
   MM, pt, cf, p := Explode(elt);
   // WARNING: alpha and beta are not normalized according to Level and Component
   // and not canonical
   alpha, beta := Explode(Eltseq(pt));
   ptstr := StripWhiteSpace(Sprint([Eltseq(elt) : elt in [alpha, beta]]));
 
-  return Join([LMFDBLabel(G), LMFDBLabel(bb), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
+  return Join([LMFDBLabel(G), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
 end intrinsic;
 
