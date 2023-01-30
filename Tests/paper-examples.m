@@ -1,1 +1,1 @@
-examples/paper-examples.m
+../examples/paper-examples.m
