@@ -58,6 +58,7 @@ jobs:
   printjob:
     name: print event
     runs-on: ubuntu-latest
+    if: false
     steps:
       - name: dump github context
         env:
@@ -71,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests
     needs: [check-env, matrix]
-    if: needs.check-env.outputs.my-key.defined == 'true'
+    if: needs.check-env.outputs.defined == 'true'
 
     strategy:
       fail-fast: false
