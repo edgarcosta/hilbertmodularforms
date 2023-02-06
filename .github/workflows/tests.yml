@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests
     needs: [check-env, matrix]
-    if: needs.check-env.outputs.my-key == 'true'
+    if: needs.check-env.outputs.defined == 'true'
 
     strategy:
       fail-fast: false
