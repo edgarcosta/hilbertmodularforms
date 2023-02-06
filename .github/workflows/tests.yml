@@ -35,7 +35,7 @@ jobs:
 
       - name: Check matrix definition
         run: |
-          matrix='${{ needs.matrix.outputs.matrix }}'
+          matrix='${{needs.matrix.outputs.matrix}}'
           echo $matrix
           echo $matrix | jq .
           echo $matrix | json2yaml
@@ -55,18 +55,18 @@ jobs:
       my-key: ${{ steps.my-key.outputs.defined }}
 
     steps:
-        - id: my-key
-          env:
-            MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
-          if: "${{ env.MAGMA_MAC != '' }}"
-          run: |
-            echo "defined=true" >> $GITHUB_OUTPUT
+      - id: my-key
+        env:
+          MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
+        if: "${{ env.MAGMA_MAC != '' }}"
+        run: |
+          echo "defined=true" >> $GITHUB_OUTPUT
 
   test:
     runs-on: ubuntu-latest
     name: Run tests
     needs: [check-env, matrix]
-    if: needs.check-env.outputs.defined == 'true'
+    if: needs.check-env.outputs.my-key.defined == 'true'
 
     strategy:
       fail-fast: false
