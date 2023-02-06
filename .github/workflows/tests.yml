@@ -44,13 +44,13 @@ jobs:
   check-env:
     runs-on: ubuntu-latest
     outputs:
-      my-key: ${{ steps.my-key.outputs.defined }}
+      has_access: ${{ steps.my-key.outputs.defined }}
 
     steps:
       - id: my-key
         env:
           MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
-        if: "${{ env.MAGMA_MAC != '' }}"
+        if: "${{ env.MAGMA_URL != '' }}"
         run: |
           echo "defined=true" >> $GITHUB_OUTPUT
 
@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests
     needs: [check-env, matrix]
-    if: needs.check-env.outputs.defined == 'true'
+    if: needs.check-env.outputs.has_access == 'true'
 
     strategy:
       fail-fast: false
