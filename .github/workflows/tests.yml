@@ -40,15 +40,7 @@ jobs:
           echo $matrix | jq .
           echo $matrix | json2yaml
 
-  #  printJob:
-  #    name: Print event
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #    - name: Dump GitHub context
-  #      env:
-  #        GITHUB_CONTEXT: ${{ toJson(github) }}
-  #      run: |
-  #        echo "$GITHUB_CONTEXT"
+
   check-env:
     runs-on: ubuntu-latest
     outputs:
@@ -63,8 +55,15 @@ jobs:
           echo "defined=true" >> $GITHUB_OUTPUT
 
 
-
-
+  printjob:
+    name: print event
+    runs-on: ubuntu-latest
+    steps:
+      - name: dump github context
+        env:
+          github_context: ${{ tojson(github) }}
+        run: |
+          echo "$github_context"
 
 
 
