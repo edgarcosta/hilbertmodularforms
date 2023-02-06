@@ -65,8 +65,11 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests
     needs: [check-env, matrix]
-    matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
     if: needs.check-env.outputs.my-key == 'true'
+
+    strategy:
+      fail-fast: fasle
+      matrix: ${{ matrix.version }}
 
     steps:
       - name: Check user permission
