@@ -50,7 +50,7 @@ jobs:
     steps:
       - id: my-key
         env:
-          MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
+          MAGMA_URL: ${{ secrets.MAGMA_URL }}
         if: "${{ env.MAGMA_URL != '' }}"
         run: |
           echo "has_access=true" >> $GITHUB_OUTPUT
