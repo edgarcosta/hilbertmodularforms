@@ -59,7 +59,8 @@ jobs:
           env:
             MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
           if: "${{ env.MAGMA_MAC != '' }}"
-          run: echo "defined=true" >> $GITHUB_OUTPUT
+          run: |
+            echo "defined=true" >> $GITHUB_OUTPUT
 
   test:
     runs-on: ubuntu-latest
