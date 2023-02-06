@@ -68,7 +68,7 @@ jobs:
     if: needs.check-env.outputs.my-key == 'true'
 
     strategy:
-      fail-fast: fasle
+      fail-fast: false
       matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
 
     steps:
