@@ -124,7 +124,7 @@ jobs:
         env:
           MAGMA_URL: ${{ secrets.MAGMA_URL }}
         shell: bash
-        if: steps.condacache.outputs.cache-hit != 'true'
+        if: steps.magmacache.outputs.cache-hit != 'true'
         run: |
           wget "$MAGMA_URL" -O magma.tar.gz --quiet
           tar xf magma.tar.gz
