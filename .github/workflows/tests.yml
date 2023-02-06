@@ -64,7 +64,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Run tests
-    needs: [check-env]
+    needs: [check-env, matrix]
+    matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
     if: needs.check-env.outputs.my-key == 'true'
 
     steps:
@@ -121,5 +122,5 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          ./magma/magma -b exitsignal:="" run_tests.m
+          ./magma/magma -b target:=${{matrix.target}} exitsignal:="" run_tests.m
 
