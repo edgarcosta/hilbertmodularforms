@@ -69,7 +69,7 @@ jobs:
 
     strategy:
       fail-fast: fasle
-      matrix: ${{ matrix.version }}
+      matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
 
     steps:
       - name: Check user permission
