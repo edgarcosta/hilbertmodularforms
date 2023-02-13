@@ -422,7 +422,7 @@ end intrinsic;
 intrinsic WriteLMFDBRow(Gamma::GrpHilbert) -> MonStgElt
 {Script for writing information about the surface to table row.
 Format is
-label:field_label:narrow_class_nb:level_label:level_norm:component_label:is_pp:ambient_type:gamma_type:h20:h11:K2:chi:number_of_cusps:kposs
+label:field_label:field_discr:narrow_class_nb:level_label:level_norm:component_label:is_pp:group_type:gamma_type:h20:h11:K2:chi:number_of_cusps:kposs
 where is_pp is true iff component is the inverse different of the quadratic field.}
     F_label, N_label, b_label, group_type, gamma_type := Explode(Split(LMFDBLabel(Gamma), "-"));
     F := BaseField(Gamma);
@@ -431,6 +431,7 @@ where is_pp is true iff component is the inverse different of the quadratic fiel
     is_pp := IsNarrowlyPrincipal(Different(Integers(F)) * Component(Gamma));
     return StripWhiteSpace(Join([LMFDBLabel(Gamma),
                                  F_label,
+                                 Sprint(Discriminant(F)),
                                  Sprint(NarrowClassNumber(F)),
                                  N_label,
                                  Sprint(Norm(N)),
