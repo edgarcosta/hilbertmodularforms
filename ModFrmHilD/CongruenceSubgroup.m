@@ -627,3 +627,8 @@ intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::Tup) -> MonStgElt
   return Join([LMFDBLabel(G), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
 end intrinsic;
 
+intrinsic WriteEllipticPointDataToRow(G::GrpHilbert, r::GrpHilbRotationLabel, nb::RngIntElt) -> MonStgElt
+{Script for writing elliptic point data to table row}
+    n, a, b := Explode(Tuple(r));
+    return Join([LMFDBLabel(G), Sprint([n,a,b]), Sprint(nb)], ":");
+end intrinsic;

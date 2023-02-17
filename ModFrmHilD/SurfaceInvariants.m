@@ -443,8 +443,9 @@ where is_pp is true iff component is the inverse different of the quadratic fiel
                                  Sprint(h2[2]),
                                  Sprint(K2(Gamma)),
                                  Sprint(ArithmeticGenus(Gamma)),
+                                 Sprint(KodairaDimensionPossibilities(Gamma)),
                                  Sprint(NumberOfCusps(Gamma)),
-                                 Sprint(KodairaDimensionPossibilities(Gamma))
+                                 Sprint(NumberOfEllipticPoints(Gamma))
                                 ], ":"));                                    
 end intrinsic;
 
