@@ -178,7 +178,7 @@ surface.}
   return ArithmeticGenus(Gamma)-1;
 end intrinsic;
 
-intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntEltt
+intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntElt
 {Given a congruence subgroup, computes the Hodge Diamond of the resulting Hilbert modular 
 surface.}
   h_0 := [1];
