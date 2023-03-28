@@ -37,7 +37,8 @@ declare attributes GrpHilbert :
   CuspsWithResolution,
   CuspsWithoutResolution,
   EulerNumber,
-  K2
+  K2,
+  VolumeOfFundamentalDomain
   ;
 
 /////////////////// Creation ///////////////////

@@ -8,32 +8,83 @@ on:
 
 jobs:
 
-  #  printJob:
-  #    name: Print event
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #    - name: Dump GitHub context
-  #      env:
-  #        GITHUB_CONTEXT: ${{ toJson(github) }}
-  #      run: |
-  #        echo "$GITHUB_CONTEXT"
-  check-env:
+  matrix:
     runs-on: ubuntu-latest
     outputs:
-      my-key: ${{ steps.my-key.outputs.defined }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - id: set-matrix
+        run: |
+          matrix=$((
+            echo '{ "target" : ['
+            ls -1 Tests | sed -r 's/^([^,]*)(,?)$/"\1"\2/'  | paste -sd "," -
+            echo " ]}"
+          ) | jq -c .)
+          echo $matrix
+          echo $matrix | jq .
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  check-matrix:
+    runs-on: ubuntu-latest
+    needs: matrix
+    steps:
+      - name: Install json2yaml
+        run: |
+          sudo npm install -g json2yaml
+
+      - name: Check matrix definition
+        run: |
+          matrix='${{needs.matrix.outputs.matrix}}'
+          echo $matrix
+          echo $matrix | jq .
+          echo $matrix | json2yaml
+
+  has_access:
+    runs-on: ubuntu-latest
+    outputs:
+      has_access: ${{ steps.my-key.outputs.has_access }}
 
     steps:
-        - id: my-key
-          env:
-            MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
-          if: "${{ env.MAGMA_MAC != '' }}"
-          run: echo "::set-output name=defined::true"
+      - id: my-key
+        env:
+          MAGMA_URL: ${{ secrets.MAGMA_URL }}
+        if: "${{ env.MAGMA_URL != '' }}"
+        run: |
+          echo "has_access=true" >> $GITHUB_OUTPUT
+
+  check-has_access:
+    runs-on: ubuntu-latest
+    needs: has_access
+    steps:
+      - name: Check has_access definition
+        run: |
+          echo ${{needs.has_access.outputs.has_access}}
+
+
+
+  printjob:
+    name: print event
+    runs-on: ubuntu-latest
+    if: false
+    steps:
+      - name: dump github context
+        env:
+          github_context: ${{ tojson(github) }}
+        run: |
+          echo "$github_context"
+
+
 
   test:
     runs-on: ubuntu-latest
     name: Run tests
-    needs: [check-env]
-    if: needs.check-env.outputs.my-key == 'true'
+    needs: [has_access, matrix]
+    if: needs.has_access.outputs.has_access == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
 
     steps:
       - name: Check user permission
@@ -43,7 +94,6 @@ jobs:
           required-permission: write
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: Stop workflow for users with no write access
         if: "! steps.check.outputs.has-permission"
@@ -66,28 +116,36 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-
-
-      - name: Create dummy network device
+      - name: Cache magma
+        uses: actions/cache@v3
+        id: magmacache
         env:
-          MAGMA_MAC: ${{ secrets.MAGMA_MAC }}
-        shell: bash
-        run: |
-          sudo ip link add dumdum type dummy
-          sudo ifconfig dumdum hw ether "$MAGMA_MAC"
-
+          # Increase this value to reset cache when MAGMA_URL changes
+          CACHE_NUMBER: 2.27-6
+        with:
+          path: |
+            ./magma
+          key:
+            ${{ env.CACHE_NUMBER }}
 
       - name: Install magma
         env:
           MAGMA_URL: ${{ secrets.MAGMA_URL }}
         shell: bash
+        if: steps.magmacache.outputs.cache-hit != 'true'
         run: |
           wget "$MAGMA_URL" -O magma.tar.gz --quiet
           tar xf magma.tar.gz
+
+      - name: Create dummy network device
+        shell: bash
+        run: |
+          sudo ip link add dumdum type dummy
+          sudo ifconfig dumdum hw ether `./magma/magma -d | grep "Valid MAC addresses" -A1 | tail -n1`
           echo | ./magma/magma
 
       - name: Run tests
         shell: bash
         run: |
-          ./magma/magma -b exitsignal:="" run_tests.m
+          ./magma/magma -b target:=${{matrix.target}} exitsignal:="" run_tests.m
 
