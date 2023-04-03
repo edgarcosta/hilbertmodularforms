@@ -485,7 +485,7 @@ full Hilbert modular group.}
     if n eq 1 then return 1; end if;
 
     index := n^3;
-    for ff in Factorization(n) do
+    for ff in Factorization(N) do
         q := #quo< Integers(F) | ff[1]>;
         index *:= 1 - 1/q^2;
     end for;
