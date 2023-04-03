@@ -120,13 +120,14 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
         a := GeneratorOfQuotientModuleCRT(ss,MM);
         c := GeneratorOfQuotientModuleCRT(ss*bb*MM,(NN/MM));
         ZFMM, mpMM := quo<ZF | MM>;
-        ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;
+        ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;	
     elif GammaType eq "Gamma" then
         // TODO: is this right?
-        a := GeneratorOfQuotientModuleCRT(ss,NN);
+        a := GeneratorOfQuotientModuleCRT(ss,MM);
         c := GeneratorOfQuotientModuleCRT(ss*bb,NN);
-        ZFMM, mpMM := quo<ZF | NN>;
-        ZFNNMM, mpNNMM := quo<ZF | NN >;
+        ZFMM, mpMM := quo<ZF | MM>;
+        ZFNN, mpNN := quo<ZF | NN >;
+	ZFNNMM, mpNNMM := quo<ZF | (NN div MM) >;
     end if;
   
     UQMM, mpQMM := UnitGroup(ZFMM);
@@ -168,6 +169,11 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
         Append(~T, [* mpQMM(p1(el)) @@ mpMM, mpQNNMM(p2(el)) @@ mpNNMM *]);
     end for;
     reps := [ [* a*(el[1] @@ mpMM), c*(el[2] @@ mpNNMM) *] : el in T];
+    if GammaType eq "Gamma" then
+	// !! TODO - there should be a better way to get at the kernel
+	ker_red := [x @@ mpNN : x in ZFNN | mpMM(x @@ mpNN) eq 0];
+	reps := [ [* r[1] + k, r[2] *] : r in reps, k in ker_red];
+    end if;
     final := [];
     for el in reps do
         a0, c0 := Explode(el);
@@ -179,7 +185,7 @@ intrinsic MakePairsForQuadruple(NN::RngOrdIdl, bb::RngOrdIdl, ss::RngOrdFracIdl,
             end if;
         elif GammaType eq "Gamma" then
             a_new := ReduceModuloIdeal(a0, ss, ss*NN);
-            c_new := ReduceModuloIdeal(c0, ss*bb, ss*bb*NN);
+            c_new := ReduceModuloIdeal(c0, ss*bb*MM, ss*bb*NN);
             if c_new eq 0 then
                 c_new := Generators(ss*bb*MM)[1];
             end if;
@@ -358,6 +364,8 @@ intrinsic CuspSanityCheck(NN::RngOrdIdl : GammaType := "Gamma0") -> BoolElt
       d := NumberOfCusps(Mk); //Computed using \sum_M \phi(...)    
   elif GammaType eq "Gamma1" then
       d := quad_cnt; //Replace with some other test
+  elif GammaType eq "Gamma" then
+      d := GammaCuspCount(NN);
   else
       error "GammaType not recognized";
   end if;

@@ -484,12 +484,12 @@ full Hilbert modular group.}
     n := Norm(N);
     if n eq 1 then return 1; end if;
 
-    index := 1;
-    for ff in Factorization(n) do
-        q := ff[1]^ff[2];
-        index *:= q * (q^2 - 1);
+    index := n^3;
+    for ff in Factorization(N) do
+        q := #quo< Integers(F) | ff[1]>;
+        index *:= 1 - 1/q^2;
     end for;
-    return n;
+    return Integers()!index;
 end intrinsic;
 
 intrinsic IndexOfGamma0(F::FldNum, N::RngOrdIdl) -> RngIntElt
