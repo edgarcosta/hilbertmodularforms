@@ -427,26 +427,40 @@ where is_pp is true iff component is the inverse different of the quadratic fiel
     F_label, N_label, b_label, group_type, gamma_type := Explode(Split(LMFDBLabel(Gamma), "-"));
     F := BaseField(Gamma);
     N := Level(Gamma);
+    b := ComponentIdeal(Gamma);
     h2 := HodgeDiamond(Gamma)[3];
     is_pp := IsNarrowlyPrincipal(Different(Integers(F)) * Component(Gamma));
+    Ngens := [Eltseq(x): x in Generators(N)];
+    bgens := [Eltseq(x): x in Generators(b)];
     return StripWhiteSpace(Join([LMFDBLabel(Gamma),
                                  F_label,
-                                 Sprint(Discriminant(F)),
-                                 Sprint(NarrowClassNumber(F)),
-                                 N_label,
-                                 Sprint(Norm(N)),
                                  b_label,
-                                 Sprint(is_pp),
-                                 group_type,
                                  gamma_type,
-                                 Sprint(h2[1]),
-                                 Sprint(h2[2]),
+                                 group_type,
+                                 N_label,
+                                 Sprint(Ngens),
+                                 Sprint(bgens),
+                                 Sprint(KodairaDimensionPossibilities(Gamma)),
                                  Sprint(K2(Gamma)),
                                  Sprint(ArithmeticGenus(Gamma)),
-                                 Sprint(KodairaDimensionPossibilities(Gamma)),
-                                 Sprint(NumberOfCusps(Gamma)),
-                                 Sprint(NumberOfEllipticPoints(Gamma))
-                                ], ":"));                                    
+                                 Sprint(h2[1]),
+                                 Sprint(h2[2]),
+                                 Sprint(NarrowClassNumber(F)),
+                                 Sprint(Norm(N)),
+                                 Sprint(NumberOfCusps(Gamma)),                                 
+                                 Sprint(Discriminant(F)),
+                                 Sprint(NumberOfEllipticPoints(Gamma)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 2)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 3)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 4)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 5)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 6)),
+                                 Sprint(LengthOfCuspResolutions(Gamma)),
+                                 Sprint(LengthOfEllipticPointResolutions(Gamma)),
+                                 Sprint(LengthOfResolutions(Gamma)),
+                                 Sprint(EulerNumber(Gamma)),
+                                 Sprint(is_pp)
+                                ], ":"));                               
 end intrinsic;
 
 /*
