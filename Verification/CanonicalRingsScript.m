@@ -1,5 +1,5 @@
 /*
-  Usage: run the following command in ~/github/hilbertmodularforms, or wherever config.m is located
+  Usage: run the following command in ~/github/hilbertmodularforms, or wherever spec is located
 
   parallel -j 16 --joblog joblog --eta magma -b D:={} Verification/CanonicalRingsScript.m  ::: {9..50} > output.txt
 */
