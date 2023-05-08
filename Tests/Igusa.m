@@ -22,7 +22,7 @@ end function;
 
 
 ds := [];
-possible_ds := [d : d in [1..100] | IsFundamentalDiscriminant(d) and ClassNumber(d) eq 1];
+possible_ds := [d : d in [1..50] | IsFundamentalDiscriminant(d) and ClassNumber(d) eq 1];
 t := Time();
 for counter in [1..20] do
     d := Random(possible_ds);
@@ -30,6 +30,6 @@ for counter in [1..20] do
         d := Random(possible_ds);
     end while;
     Append(~ds, d);
-    printf "%o ", D;
+    printf "%o ", d;
     assert TestIgusa(d);
 end for;
