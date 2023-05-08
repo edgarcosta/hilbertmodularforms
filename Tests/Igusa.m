@@ -30,6 +30,6 @@ for counter in [1..20] do
         d := Random(possible_ds);
     end while;
     Append(~ds, d);
-    printf "%o ", D;
+    printf "%o ", d;
     assert TestIgusa(d);
 end for;
