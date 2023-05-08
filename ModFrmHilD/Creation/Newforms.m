@@ -6,7 +6,7 @@ import "../../ModFrmHil/copypaste/hecke.m" : hecke_algebra;
 //TODO force ExtendMultiplicatively with character!!!!
 
 
-intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
+intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, chi::GrpHeckeElt, prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
   { set a_nn := prod(a_p^e : (p,e) in factorization(nn) }
   // TODO: take character into acount
   if factorization cmpeq false then
@@ -22,7 +22,7 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, pri
   QX<X, Y> := PolynomialRing(Q, 2);
   R<T> := PowerSeriesRing(QX : Precision := prec);
   recursion := Coefficients(1/(1 - X*T + Y*T^2));
-  // If good, then 1/(1 - a_p T + Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
+  // If good, then 1/(1 - a_p T + Chi(p)*Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
   for p in prime_ideals do
     Np := Norm(p);
@@ -40,7 +40,7 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, pri
       if Npe gt max_norm then
         break;
       end if;
-      coeffs[pe] := Evaluate(recursion[e+1], [coeffs[p], Npk]);
+      coeffs[pe] := Evaluate(recursion[e+1], [coeffs[p], Npk * Chi(p)]);
     end for;
   end for;
   // extend multiplicatively
@@ -51,13 +51,14 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, pri
   end for;
 end intrinsic;
 
-intrinsic Eigenform(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
+intrinsic Eigenform(Mk::ModFrmHilD, EigenValues::Assoc : OldLevel:=false) -> ModFrmHilDElt
   {given a_p constructs the modular form}
-// require IsTrivial(DirichletRestriction(Character(Mk))) : "Only implemented for character whose Dirichlet restriction is trivial";
+  require IsTrivial(DirichletRestriction(Character(Mk))) : "Only implemented for character whose Dirichlet restriction is trivial";
   k := Weight(Mk);
   require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
   k := k[1];
   N := Level(Mk);
+  chi := Character(Mk);
 
   ZF := Integers(Mk);
   // a_0 and a_1
@@ -71,7 +72,7 @@ intrinsic Eigenform(Mk::ModFrmHilD, EigenValues::Assoc) -> ModFrmHilDElt
     return Factorization(M, n);
   end function;
   //FIXME
-  ExtendMultiplicatively(~coeffs, N, k, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
+  ExtendMultiplicatively(~coeffs, N, k, chi, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
 
   // coefficients by bb
   CoeffsArray := AssociativeArray();
@@ -137,7 +138,7 @@ intrinsic OldEigenformInclusions(Mk::ModFrmHilD, f::ModFrmHilElt) -> ModFrmHilDE
   end function;
 
   //FIXME
-  ExtendMultiplicatively(~coeffs, N1, k, primes, ideals : factorization:=factorization);
+  ExtendMultiplicatively(~coeffs, N1, k, chi, primes, ideals : factorization:=factorization);
 
   res := [];
   for dd in Divisors(N2/N1) do
@@ -226,7 +227,6 @@ intrinsic GaloisOrbitDescentNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDEl
   return &cat[GaloisOrbitDescentEigenForm(Mk, d) : d in MagmaNewformDecomposition(Mk)];
 end intrinsic;
 
-
 intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[ModFrmHilDElt]
   {return Galois descent of a Hilbert newform}
   vprintf HilbertModularForms: "Computing rational basis for %o...", S;
@@ -260,8 +260,7 @@ intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[M
   end function;
   vprintf HilbertModularForms: "Extending Hecke operators multiplicatevely...";
   vtime HilbertModularForms:
-  //FIXME
-  ExtendMultiplicatively(~coeffs, N1, k, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
+  ExtendMultiplicatively(~coeffs, N1, k, chi, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
 
 
   res := [];
