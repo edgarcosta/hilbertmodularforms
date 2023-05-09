@@ -39,7 +39,7 @@ end intrinsic;
 
 
 // Generic extending multiplicatevely
-intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, chi::GrpHeckeElt, prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
+intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, chi::., prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
   { set a_nn := prod(a_p^e : (p,e) in factorization(nn) }
   // TODO: take character into acount
   if factorization cmpeq false then
@@ -120,12 +120,109 @@ intrinsic Eigenforms(
     chiH := chi;
   end if;
 
-  ExtendMultiplicatively(~coeffs, N, k, chiH, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
+  ExtendMultiplicatively(~coeffs, N, k, chiH, PrimeIdeals(M) : factorization:=factorization);
 
   Tzeta_powers := [Tzeta^i : i in [0..Nrows(Tzeta) - 1]];
 
   res := [];
   for dd in Divisors(Level(Mk)/N) do
+    ddinv := dd^-1;
+    // coefficients by bb
+    CoeffsArray := [AssociativeArray() : _ in [1..Nrows(Tzeta)]];
+    for bb in NarrowClassGroupReps(M) do
+      for i in [1..Nrows(Tzeta)] do
+        CoeffsArray[i][bb] := AssociativeArray();
+      end for;
+      for nu->nn in ShintaniRepsIdeal(M)[bb] do
+        nnddinv := nn * ddinv;
+        if IsIntegral(nnddinv) then
+          nnddinv := ZF !! nnddinv;
+          bool, v := IsDefined(coeffs, ZF !! nn*ddinv);
+        else
+          v := 0;
+        end if;
+        for i in [1..Nrows(Tzeta)] do
+          CoeffsArray[i][bb][nu] := bool select Trace(Matrix(BaseRing(v), Tzeta_powers[i])*v) else 0;
+        end for;
+      end for;
+    end for;
+    for i in [1..Nrows(Tzeta)] do
+      Append(~res, HMF(Mk, CoeffsArray[i]));
+    end for;
+  end for;
+  return res;
+end intrinsic;
+
+// Eigenforms new/old in Mk
+intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
+  {return the inclusions of f, as ModFrmHil(Elt), into M}
+
+  if Type(f) eq ModFrmHil then
+    S := f;
+    if not GaloisDescent then
+      f := Eigenforms(S);
+    end if;
+  else
+    require Type(f) eq ModFrmHilElt : "f must be ModFrmHil or ModFrmHilElt";
+    require IsEigenform(f): "The form must be an eigenform";
+    S := Parent(f);
+  end if;
+
+  M := Parent(Mk);
+  N := Level(Mk);
+  NS := Level(S);
+  require N subset NS :"The level must divide the level of the target ambient space";
+  require AssociatedPrimitiveCharacter(chi) eq AssociatedPrimitiveCharacter(Character(Mk)): "The character of f must match the level of the target ambient space";
+  require Weight(S) eq Weight(Mk): "The weight of the form and space do not match";
+  require #SequenceToSet(Weight(S)) eq 1 : "Only implemented for parallel weight";
+  k := Weight(S)[1];
+
+  divisors := Divisors(N/NS);
+  if N eq NS then
+    primes := PrimeIdeals(M);
+    ideals := Ideals(M);
+  else
+    ZF := Integers(Mk);
+    ideals := &cat[[ZF !! (nn*ddinv) : nn in Ideals(M) | IsIntegral(nn*ddinv)] where ddinv := dd^-1 : dd in divisors];
+    // remove duplicates
+    ideals := SetToSequence(SequenceToSet(ideals));
+    norms := [CorrectNorm(I) : I in ideals];
+    ParallelSort(~norms, ~ideals);
+    primes := SetToSequence(SequenceToSet(&cat[[fac[1] : fac in Factorization(M, nn)] : nn in ideals | not IsZero(nn)]));
+  end if;
+
+  if GaloisDescent then
+    fn := func<pp|Matrix(HeckeOperator(S, pp))>;
+    _ , _, _, _, _, Tzeta, _ := Explode(hecke_algebra(S : generator:=true));
+    Z := Parent(chi)`TargetRing;
+    K := NumberField(MinimalPolynomial(Tzeta));
+    r, m := Explode(Explode(Roots(DefiningPolynomial(Z), K)));
+    assert m eq 1;
+    ZtoH := hom<Z->Parent(Tzeta) |  [Evaluate(Polynomial(Eltseq(r)), Tzeta)]>;
+    chiH := map<Domain(chi) -> Parent(Tzeta) | x :-> ZtoH(chi(x))>;
+  else
+    fn := func<pp|HeckeEigenvalue(f, pp)>;
+    Tzeta := Matrix(HeckeEigenvalueField(S), Matrix(1,1, [1]));
+    chiH := chi;
+  end if;
+
+  vprintf HilbertModularForms: "Computing eigenvalues for %o...\n", S;
+  coeffs := AssociativeArray();
+  vtime HilbertModularForms:
+  for pp in primes do
+    coeffs[pp] :=  fn(pp);
+  end for;
+  ZF := Integers(Mk);
+  coeffs[0*ZF] := 0;
+  coeffs[1*ZF] := 1;
+
+  ExtendMultiplicatively(~coeffs, N, k, chiH, primes, ideals : factorization:=func<n|Factorization(M, n)>);
+
+  Tzeta_powers := [Tzeta^i : i in [0..Nrows(Tzeta) - 1]];
+
+
+  res := [];
+  for dd in divisors do
     ddinv := dd^-1;
     // coefficients by bb
     CoeffsArray := [AssociativeArray() : _ in [1..Nrows(Tzeta)]];
@@ -153,64 +250,9 @@ intrinsic Eigenforms(
   return res;
 end intrinsic;
 
-// Eigenforms new/old in Mk
-intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=false) -> SeqEnum[ModFrmHilDElt]
-  {return the inclusions of f, as ModFrmHil(Elt), into M}
-
-  if Type(f) eq ModFrmHil then
-    S := f;
-    if not GaloisDescent then
-      f := Eigenforms(S);
-    end if;
-  else
-    require Type(f) eq ModFrmHilElt : "f must be ModFrmHil or ModFrmHilElt";
-    require IsEigenform(f): "The form must be an eigenform";
-    S := Parent(f);
-  end if;
-
-  M := Parent(Mk);
-  N := Level(Mk);
-  NS := Level(S);
-  require N subset NS :"The level must divide the level of the target ambient space";
-  require AssociatedPrimitiveCharacter(chi) eq AssociatedPrimitiveCharacter(Character(Mk)): "The character of f must match the level of the target ambient space";
-  require Weight(S) eq Weight(Mk): "The weight of the form and space do not match";
-  require #SequenceToSet(Weight(S)) eq 1 : "Only implemented for parallel weight";
-
-  if N eq NS then
-    primes := PrimeIdeals(M);
-  else
-    ZF := Integers(Mk);
-    divisors := Divisors(N/NS);
-    ideals := &cat[[ZF !! (nn*ddinv) : nn in Ideals(M) | IsIntegral(nn*ddinv)] where ddinv := dd^-1 : dd in divisors];
-    // remove duplicates
-    ideals := SetToSequence(SequenceToSet(ideals));
-    norms := [CorrectNorm(I) : I in ideals];
-    ParallelSort(~norms, ~ideals);
-    primes := SetToSequence(SequenceToSet(&cat[[fac[1] : fac in Factorization(M, nn)] : nn in ideals | not IsZero(nn)]));
-  end if;
-
-  if GaloisDescent then
-    fn := func<pp|Matrix(HeckeOperator(S, pp))>;
-    _ , _, _, _, _, Tzeta, _ := Explode(hecke_algebra(S : generator:=true));
-    require IsTrivial(Character(S)): "We have not implemented this yet";
-  else
-    fn := func<pp|HeckeEigenvalue(f, pp)>;
-    Tzeta := Matrix(1,1, [1]);
-  end if;
-
-  vprintf HilbertModularForms: "Computing eigenvalues for %o...\n", S;
-  ev := AssociativeArray();
-  vtime HilbertModularForms:
-  for pp in PrimeIdeals(M) do
-    ev[pp] :=  fn(pp);
-  end for;
-
-  return Eigenforms(Mk, NS, chi, ev);
-end intrinsic;
 
 
-
-intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {return the inclusion of MkN1 into MkN2}
   require Weight(MkN1) eq Weight(MkN2) : "the weights must match";
   require BaseField(MkN1) eq BaseField(MkN2) : "the base fields must match";
@@ -220,69 +262,13 @@ intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD) -> SeqEnum[ModFrmHilD
   N1 := Level(MkN1);
   N2 := Level(MkN2);
   require N2 subset N1: "the level of the first argument must divide the level of the second argument";
-  require N2 ne N1: "the level of the first argument must differ from the level of the second argument";
-  return &cat[Eigenforms(MkN2, elt[1], elt[2]) : elt in MagmaNewCuspForms(MkN1)];
+  //require N2 ne N1: "the level of the first argument must differ from the level of the second argument";
+  return &cat[Eigenforms(MkN2, elt[1], elt[2] : GaloisDescent:=GaloisDescent) : elt in MagmaNewCuspForms(MkN1)];
 end intrinsic;
 
 
-intrinsic NewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic NewCuspForms(Mk::ModFrmHilD : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {returns Hilbert newforms}
-  return &cat[Eigenforms(Mk, elt[1], elt[2]) : elt in MagmaNewCuspForms(Mk)];
+  return &cat[Eigenforms(Mk, elt[1], elt[2] : GaloisDescent:=GaloisDescent) : elt in MagmaNewCuspForms(Mk)];
 end intrinsic;
 
-
-intrinsic GaloisOrbitDescentNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  {return Galois descent of Hilbert newforms}
-  return &cat[Eigenforms(Mk, elt[1], elt[2] : GaloisDescent:=true) : elt in MagmaNewformDecomposition(Mk)];
-end intrinsic;
-
-intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[ModFrmHilDElt]
-  {return Galois descent of a Hilbert newform}
-  vprintf HilbertModularForms: "Computing rational basis for %o...", S;
-  M := Parent(Mk);
-  // find a single generator
-  _ , _, _, _, _, Tzeta, _ := Explode(hecke_algebra(S : generator:=true));
-  Tzeta_powers := [Tzeta^i : i in [0..Dimension(S) - 1]];
-
-  M := Parent(Mk);
-  N2 := Level(Mk);
-  N1 := Level(S);
-  require N2 eq N1: "The level of f must match the level of the target ambient space";
-  k := Weight(Mk);
-  require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
-  k := k[1];
-
-  vprintf HilbertModularForms: "Computing HeckeOperators ...";
-  HeckeOperators := AssociativeArray();
-  vtime HilbertModularForms:
-  for pp in PrimeIdeals(M) do
-   HeckeOperators[pp] := Matrix(HeckeOperator(S, pp));
-  end for;
-  ZF := Integers(Mk);
-  // a_0 and a_1
-  M := Parent(Mk);
-  coeffs := HeckeOperators;
-  coeffs[0*ZF] := 0;
-  coeffs[1*ZF] := 1;
-  function factorization(n)
-    return Factorization(M, n);
-  end function;
-  vprintf HilbertModularForms: "Extending Hecke operators multiplicatevely...";
-  vtime HilbertModularForms:
-  ExtendMultiplicatively(~coeffs, N1, k, Character(Mk), PrimeIdeals(M), Ideals(M) : factorization:=factorization);
-
-
-  res := [];
-  for i in [1..Dimension(S)] do
-    // coefficients by bb
-    CoeffsArray := AssociativeArray();
-    for bb in NarrowClassGroupReps(M) do
-      CoeffsArray[bb] := AssociativeArray();
-      for nu->nn in ShintaniRepsIdeal(M)[bb] do
-        CoeffsArray[bb][nu] := Trace(Tzeta_powers[i]*coeffs[nn]);
-      end for;
-    end for;
-    Append(~res, HMF(Mk, CoeffsArray));
-  end for;
-  return res;
-end intrinsic;

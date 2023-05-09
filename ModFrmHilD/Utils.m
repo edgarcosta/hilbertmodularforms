@@ -1,3 +1,5 @@
+
+
 intrinsic QuadraticConjugate(elt::FldNumElt) -> FldNumElt
  {}
   return Trace(elt) - elt;
