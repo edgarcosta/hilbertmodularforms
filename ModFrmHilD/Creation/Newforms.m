@@ -194,12 +194,18 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   if GaloisDescent then
     fn := func<pp|Matrix(HeckeOperator(S, pp))>;
     _ , _, _, _, _, Tzeta, _ := Explode(hecke_algebra(S : generator:=true));
-    Z := Parent(chi)`TargetRing;
-    K := NumberField(MinimalPolynomial(Tzeta));
-    r, m := Explode(Explode(Roots(DefiningPolynomial(Z), K)));
-    assert m eq 1;
-    ZtoH := hom<Z->Parent(Tzeta) |  [Evaluate(Polynomial(Eltseq(r)), Tzeta)]>;
-    chiH := map<Domain(chi) -> Parent(Tzeta) | x :-> ZtoH(chi(x))>;
+    if Order(chi) in [1,2] then
+      chiH := chi;
+    else
+      chi_copy := chi;
+      Z<z> := CyclotomicField(Order(chi));
+      SetTargetRing(~chi_copy, z);
+      K := NumberField(MinimalPolynomial(Tzeta));
+      r, m := Explode(Explode(Roots(DefiningPolynomial(Z), K)));
+      assert m eq 1;
+      ZtoH := hom<Z->T |  [Evaluate(Polynomial(Eltseq(r)), Tzeta)]>;
+      chiH := map<Domain(chi_copy) -> Parent(Tzeta) | x :-> ZtoH(chi_copy(x))>;
+    end if;
   else
     fn := func<pp|HeckeEigenvalue(f, pp)>;
     Tzeta := Matrix(HeckeEigenvalueField(S), Matrix(1,1, [1]));
