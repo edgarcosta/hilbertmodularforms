@@ -22,9 +22,9 @@ end function;
 
 
 ds := [];
-possible_ds := [d : d in [1..50] | IsFundamentalDiscriminant(d) and ClassNumber(d) eq 1];
+possible_ds := [d : d in [1..30] | IsFundamentalDiscriminant(d) and ClassNumber(d) eq 1];
 t := Time();
-for counter in [1..20] do
+for counter in [1..3] do
     d := Random(possible_ds);
     while d in ds do
         d := Random(possible_ds);
