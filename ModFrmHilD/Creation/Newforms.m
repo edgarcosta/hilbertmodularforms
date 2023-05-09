@@ -110,6 +110,10 @@ intrinsic Eigenforms(
   end function;
 
   if Tzeta ne 1 then
+    Z := Parent(chi)`TargetRing;
+    K := NumberField(MinimalPolynomial(Tzeta));
+    r, m := Explode(Explode(Roots(DefiningPolynomial(Z), K)));
+    assert m eq 1;
     ZtoH := hom<Z->Parent(Tzeta) |  [Evaluate(Polynomial(Eltseq(r)), Tzeta)]>;
     chiH := map<Domain(chi) -> Parent(Tzeta) | x :-> ZtoH(chi(x))>;
   else
