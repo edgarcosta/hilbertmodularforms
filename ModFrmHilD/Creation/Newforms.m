@@ -229,8 +229,7 @@ end intrinsic;
 
 intrinsic GaloisOrbitDescentNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {return Galois descent of Hilbert newforms}
-  //FIXME EDGAR add elt[2]
-  return &cat[GaloisOrbitDescentEigenForm(Mk, elt[1]) : elt in MagmaNewformDecomposition(Mk)];
+  return &cat[Eigenforms(Mk, elt[1], elt[2] : GaloisDescent:=true) : elt in MagmaNewformDecomposition(Mk)];
 end intrinsic;
 
 intrinsic GaloisOrbitDescentEigenForm(Mk::ModFrmHilD, S::ModFrmHil) -> SeqEnum[ModFrmHilDElt]
