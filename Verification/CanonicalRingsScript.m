@@ -10,7 +10,7 @@ try
   D := StringToInteger(D);
   if not IsFundamentalDiscriminant(D) then exit 0; end if;
   // TODO: deal with multiplying forms supported on only one component
-  if not NarrowClassNumber(NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2))) eq 1 then exit 0; end if;
+  //if not NarrowClassNumber(NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2))) eq 1 then exit 0; end if;
   procedure WriteCanonicalRingToFile(G,S)
       R<[x]> := CoordinateRing(Ambient(S));
       print Sprintf("R<[x]> := %m;", R);
@@ -32,7 +32,7 @@ try
       for bb in comps do
         G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
         if Discriminant(F) eq 5 then
-          S := HilbertModularVariety(F, NN, 20, 40 : Precision := 10, IdealClassesSupport := [bb]);
+          S := HilbertModularVariety(F, NN, 20, 40 : Precision := 10, IdealClassesSupport := [bb], Alg := "WeightedLLL");
         elif Discriminant(F) eq 8 then
           S := HilbertModularVariety(F, NN, 14, 28 : Precision := 10, IdealClassesSupport := [bb]);
         else
