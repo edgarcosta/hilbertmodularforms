@@ -229,7 +229,7 @@ intrinsic ConstructGeneratorsAndRelations(
       basis := PrecomputedGens[minimalGenWeight];
 
   elif ComputeNewGenerators then
-      basis := Basis(HMFSpace(M, N, [minimalGenWeight : i in [1..n]]));
+      basis := Basis(HMFSpace(M, N, [minimalGenWeight : i in [1..n]]) : IdealClassesSupport := IdealClassesSupport);
       assert not IsNull(basis);
   else
       msg := "No generators of parallel weight 2 found. Functionality for non-parallel weight "*
