@@ -13,8 +13,8 @@ try
       R<[x]> := CoordinateRing(Ambient(S));
       print Sprintf("R<[x]> := %m;", R);
       print "A := Proj(R);";
-      print "eqns := DefiningEquations(S);";
-      print Sprintf("NN := ideal< Integers(F) | %o >;\n", Generators(NN));
+      printf "eqns := %o;\n", DefiningEquations(S);
+      print Sprintf("NN := ideal< Integers(F) | %o >;", Generators(NN));
       print "C[NN] := Scheme(A,eqns);";
   end procedure;
 
