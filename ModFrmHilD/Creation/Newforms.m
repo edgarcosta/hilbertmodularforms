@@ -85,74 +85,6 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, chi
 end intrinsic;
 
 
-// Generic creation of eigenforms
-intrinsic Eigenforms(
-  Mk::ModFrmHilD,
-  N::RngOrdIdl,
-  chi::GrpHeckeElt,
-  EigenValues::Assoc :
-  Tzeta := Matrix(1,1, [1]))-> SeqEnum[ModFrmHilDElt]
-  {given a_p from of eigenform with level N and character chi constructs all the eigenforms embedded in Mk }
-  k := Weight(Mk);
-  require #SequenceToSet(k) eq 1 : "Only implemented for parallel weight";
-  k := k[1];
-
-  ZF := Integers(Mk);
-  // a_0 and a_1
-  M := Parent(Mk);
-  coeffs := EigenValues;
-  coeffs[0*ZF] := 0;
-  coeffs[1*ZF] := 1;
-
-
-  function factorization(n)
-    return Factorization(M, n);
-  end function;
-
-  if Tzeta ne 1 then
-    Z := Parent(chi)`TargetRing;
-    K := NumberField(MinimalPolynomial(Tzeta));
-    r, m := Explode(Explode(Roots(DefiningPolynomial(Z), K)));
-    assert m eq 1;
-    ZtoH := hom<Z->Parent(Tzeta) |  [Evaluate(Polynomial(Eltseq(r)), Tzeta)]>;
-    chiH := map<Domain(chi) -> Parent(Tzeta) | x :-> ZtoH(chi(x))>;
-  else
-    chiH := chi;
-  end if;
-
-  ExtendMultiplicatively(~coeffs, N, k, chiH, PrimeIdeals(M) : factorization:=factorization);
-
-  Tzeta_powers := [Tzeta^i : i in [0..Nrows(Tzeta) - 1]];
-
-  res := [];
-  for dd in Divisors(Level(Mk)/N) do
-    ddinv := dd^-1;
-    // coefficients by bb
-    CoeffsArray := [AssociativeArray() : _ in [1..Nrows(Tzeta)]];
-    for bb in NarrowClassGroupReps(M) do
-      for i in [1..Nrows(Tzeta)] do
-        CoeffsArray[i][bb] := AssociativeArray();
-      end for;
-      for nu->nn in ShintaniRepsIdeal(M)[bb] do
-        nnddinv := nn * ddinv;
-        if IsIntegral(nnddinv) then
-          nnddinv := ZF !! nnddinv;
-          bool, v := IsDefined(coeffs, ZF !! nn*ddinv);
-        else
-          v := 0;
-        end if;
-        for i in [1..Nrows(Tzeta)] do
-          CoeffsArray[i][bb][nu] := bool select Trace(Matrix(BaseRing(v), Tzeta_powers[i])*v) else 0;
-        end for;
-      end for;
-    end for;
-    for i in [1..Nrows(Tzeta)] do
-      Append(~res, HMF(Mk, CoeffsArray[i]));
-    end for;
-  end for;
-  return res;
-end intrinsic;
-
 // Eigenforms new/old in Mk
 intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {return the inclusions of f, as ModFrmHil(Elt), into M}
@@ -226,6 +158,8 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
 
   Tzeta_powers := [Tzeta^i : i in [0..Nrows(Tzeta) - 1]];
 
+  // the coefficient ring of the coefficients
+  R := GaloisDescent select Rationals() else HeckeEigenvalueField(S);
 
   res := [];
   for dd in divisors do
@@ -245,7 +179,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
           v := 0;
         end if;
         for i in [1..Nrows(Tzeta)] do
-          CoeffsArray[i][bb][nu] := bool select Trace(Tzeta_powers[i]*v) else 0;
+          CoeffsArray[i][bb][nu] := R!(bool select Trace(Tzeta_powers[i]*v) else 0);
         end for;
       end for;
     end for;
