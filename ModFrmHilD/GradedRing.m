@@ -11,9 +11,9 @@ declare attributes ModFrmHilDGRng:
   NarrowClassGroup, // GrpAb
   NarrowClassNumber, // RngIntElt
   NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
-  NarrowClassGroupRepsMap, // Assoc: g::GrpElt -> bb::RngFracIdl
+  NarrowClassGroupRepsMap, // Assoc: g::GrpElt -> bb::RngOrdFracIdl
   NarrowClassGroupReps, // Values(NarrowClassGroupRepsMap)
-  IdealDualNarrowClassGroupReps, //  Assoc: g::GrpElt -> bbp::RngFracIdl, where bbp := bb*Difference(Integers)^-1]
+  IdealDualNarrowClassGroupReps, //  Assoc: g::GrpElt -> bbp::RngOrdFracIdl, where bbp := bb*Difference(Integers)^-1]
   NarrowClassGroupRepsToIdealDual, // Assoc, bb -> bbp
   UnitGroup, // GrpAb
   UnitGroupMap, // Map : GrpAb -> Units of ZF
