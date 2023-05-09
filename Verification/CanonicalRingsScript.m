@@ -16,7 +16,7 @@ try
       print Sprintf("R<[x]> := %m;", R);
       print "A := Proj(R);";
       printf "eqns := %o;\n", DefiningEquations(S);
-      printf "C[%o] := Scheme(A,eqns);\n", LMFDBLabel(G);
+      printf "C[\"%o\"] := Scheme(A,eqns);\n", LMFDBLabel(G);
   end procedure;
 
 

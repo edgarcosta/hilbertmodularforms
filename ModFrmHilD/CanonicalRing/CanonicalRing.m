@@ -686,7 +686,6 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::Rng
   S := MakeScheme(Gens, Rels);
   P_wtd<[x]> := Ambient(S);
   eqns_S := DefiningEquations(S);
-  P := Parent(eqns_S[1]);
   return S;
 end intrinsic;
 
