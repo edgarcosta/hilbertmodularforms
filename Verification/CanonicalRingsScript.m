@@ -23,6 +23,22 @@ try
   //for D in [i : i in [9..50] | IsFundamentalDiscriminant(i)] do
     print "";
     printf "// Computing for quadratic field with discriminant %o\n", D;
+    // set precision
+    prec := 10;
+    printf "// Computed with precision = %o\n", prec;
+    // set bounds on degrees of generators and relations
+    if D eq 5 then
+      gen_bd := 20;
+      rel_bd := 40;
+    elif D eq 8 then
+      gen_bd := 14;
+      rel_bd := 28;
+    else
+      gen_bd := 16;
+      rel_bd := 32;
+    end if;
+    printf "// generator degree bound = %o\n", gen_bd;
+    printf "// relation degree bound = %o\n", rel_bd;
     F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
     printf "F := NumberField(MinimalPolynomial(Integers(QuadraticField(%o)).2));\n", D;
     for NN in IdealsUpTo(1,F) do
@@ -31,13 +47,7 @@ try
       comps := [mpdet[el] : el in NCl];
       for bb in comps do
         G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
-        if Discriminant(F) eq 5 then
-          S := HilbertModularVariety(F, NN, 20, 40 : Precision := 10, IdealClassesSupport := [bb], Alg := "WeightedLLL");
-        elif Discriminant(F) eq 8 then
-          S := HilbertModularVariety(F, NN, 14, 28 : Precision := 10, IdealClassesSupport := [bb]);
-        else
-          S := HilbertModularVariety(F, NN, 10, 20 : Precision := 10, IdealClassesSupport := [bb]);
-        end if;
+        S := HilbertModularVariety(F, NN, gen_bd, rel_bd : Precision := prec, IdealClassesSupport := [bb]);
         WriteCanonicalRingToFile(G,S);
       end for;
     end for;
