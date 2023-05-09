@@ -193,7 +193,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
 
   if GaloisDescent then
     fn := func<pp|Matrix(HeckeOperator(S, pp))>;
-    _ , _, _, _, _, Tzeta, _ := Explode(hecke_algebra(S : generator:=true));
+    T , _, _, _, _, Tzeta, _ := Explode(hecke_algebra(S : generator:=true));
     if Order(chi) in [1,2] then
       chiH := chi;
     else
