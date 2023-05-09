@@ -1,7 +1,7 @@
 /*
   Usage: run the following command in ~/github/hilbertmodularforms, or wherever spec is located
 
-  parallel -j 16 --joblog joblog --eta magma -b D:={} Verification/CanonicalRingsScript.m  ::: {9..50} > Verification/CanonicalRingsArray.m
+  parallel -j 16 --joblog joblog --eta magma -b D:={} Verification/CanonicalRingsScript.m  ::: {9..50} >> Verification/CanonicalRingsArray.m
 */
 
 AttachSpec("spec");
@@ -20,8 +20,10 @@ try
 
 
   //for D in [i : i in [9..50] | IsFundamentalDiscriminant(i)] do
+    print "";
+    printf "// Computing for quadratic field with discriminant %o\n", D;
     F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
-    printf "F := NumberField(MinimalPolynomial(Integers(QuadraticField(%o)).2));", D;
+    printf "F := NumberField(MinimalPolynomial(Integers(QuadraticField(%o)).2));\n", D;
     for NN in IdealsUpTo(1,F) do
       if Discriminant(F) eq 5 then
         S := HilbertModularVariety(F, NN, 20, 40 : Precision := 10);
