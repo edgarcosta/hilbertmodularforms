@@ -305,7 +305,7 @@ intrinsic CuspResolutionMV(b::RngOrdFracIdl, n::RngOrdIdl,
                               alpha::FldNumElt, beta::FldNumElt:
                               GammaType := "Gamma0",
                               GroupType := "GL2+")
-          -> RngFracIdl, RngOrdElt, AlgMatElt
+          -> RngOrdFracIdl, RngOrdElt, AlgMatElt
 {Given a normalized cusp (alpha:beta), compute M, V and a change-of-cusp matrix
 g sending (alpha:beta) to infinity such that g^-1 [v,m;0,1] lies in the given
 level subgroup (as a transformation, i.e. up to a scalar matrix) precisely when
