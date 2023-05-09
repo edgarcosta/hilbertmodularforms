@@ -109,7 +109,14 @@ intrinsic Eigenforms(
     return Factorization(M, n);
   end function;
 
-  ExtendMultiplicatively(~coeffs, N, k, chi, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
+  if Tzeta ne 1 then
+    ZtoH := hom<Z->Parent(Tzeta) |  [Evaluate(Polynomial(Eltseq(r)), Tzeta)]>;
+    chiH := map<Domain(chi) -> Parent(Tzeta) | x :-> ZtoH(chi(x))>;
+  else
+    chiH := chi;
+  end if;
+
+  ExtendMultiplicatively(~coeffs, N, k, chiH, PrimeIdeals(M), Ideals(M) : factorization:=factorization);
 
   Tzeta_powers := [Tzeta^i : i in [0..Nrows(Tzeta) - 1]];
 
