@@ -12,7 +12,6 @@ end intrinsic;
 
 intrinsic LMFDBField(label::MonStgElt) -> FldNum
   {Given an LMFDB label for a number field, return that field}
-
   deg, r, D, i := Explode([StringToInteger(el) : el in Split(label, ".")]);
   require deg eq 2: "Only for quadratic fields for now";
   return NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
