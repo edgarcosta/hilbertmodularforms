@@ -9,8 +9,7 @@ AttachSpec("spec");
 try 
   D := StringToInteger(D);
   if not IsFundamentalDiscriminant(D) then exit 0; end if;
-  // TODO: deal with multiplying forms supported on only one component
-  //if not NarrowClassNumber(NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2))) eq 1 then exit 0; end if;
+
   procedure WriteCanonicalRingToFile(G,S)
       R<[x]> := CoordinateRing(Ambient(S));
       print Sprintf("R<[x]> := %m;", R);
@@ -19,8 +18,6 @@ try
       printf "C[\"%o\"] := Scheme(A,eqns);\n", LMFDBLabel(G);
   end procedure;
 
-
-  //for D in [i : i in [9..50] | IsFundamentalDiscriminant(i)] do
     print "";
     printf "// Computing for quadratic field with discriminant %o\n", D;
     // set precision
@@ -33,22 +30,30 @@ try
     elif D eq 8 then
       gen_bd := 14;
       rel_bd := 28;
+    elif D eq 12 then
+      gen_bd := 14;
+      rel_bd := 28;
     else
-      gen_bd := 16;
-      rel_bd := 32;
+      gen_bd := 10;
+      rel_bd := 20;
     end if;
     printf "// generator degree bound = %o\n", gen_bd;
     printf "// relation degree bound = %o\n", rel_bd;
     F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
     printf "F := NumberField(MinimalPolynomial(Integers(QuadraticField(%o)).2));\n", D;
     for NN in IdealsUpTo(1,F) do
+      printf "// level has label %o\n", LMFDBLabel(NN);
       NCl, mp := NarrowClassGroup(F);
       mpdet := IdealRepsMapDeterministic(F, mp);
       comps := [mpdet[el] : el in NCl];
       for bb in comps do
+        t0 := Cputime();
+        printf "// component has label %o\n", LMFDBLabel(bb);
         G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
         S := HilbertModularVariety(F, NN, gen_bd, rel_bd : Precision := prec, IdealClassesSupport := [bb]);
         WriteCanonicalRingToFile(G,S);
+        t1 := Cputime();
+        printf "// Computation took %o seconds\n", t1-t0;
       end for;
     end for;
 //end for;
