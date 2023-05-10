@@ -50,7 +50,8 @@ try
         t0 := Cputime();
         printf "// component has label %o\n", LMFDBLabel(bb);
         G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
-        S := HilbertModularVariety(F, NN, gen_bd, rel_bd : Precision := prec, IdealClassesSupport := [bb]);
+        // now using weighted LLL-reduced basis
+        S := HilbertModularVariety(F, NN, gen_bd, rel_bd : Precision := prec, IdealClassesSupport := [bb], Alg := "WeightedLLL");
         WriteCanonicalRingToFile(G,S);
         t1 := Cputime();
         printf "// Computation took %o seconds\n", t1-t0;
