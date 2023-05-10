@@ -37,12 +37,15 @@ intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false,
     prec := Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
   end if;
 
+  nus := [ShintaniRepsUpToTrace(M, bb, prec) : bb in bbs];
   mat := Matrix([
     &cat[
-      &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in ShintaniRepsUpToTrace(M, bb, prec)]
-      : bb in bbs]
+      &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in nus[i]]
+      : i->bb in bbs]
     : f in list]);
-  nus := &cat[ShintaniRepsUpToTrace(M, bb, prec) : bb in bbs];
+  nus := &cat nus;
+  assert Ncols(mat) eq #nus*Degree(CoefficientRing(list[1]));
+  assert Nrows(mat) eq #list;
   return mat, nus;
 end intrinsic;
 
