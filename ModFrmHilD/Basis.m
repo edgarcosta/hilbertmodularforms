@@ -4,7 +4,7 @@
 //                                               //
 ///////////////////////////////////////////////////
 
-//Auxiliar function to handle the optional parameters for Basis calls
+//Auxiliary function to handle the optional parameters for Basis calls
 function SubBasis(basis, IdealClassesSupport, GaloisInvariant)
   if IsNull(basis) then return basis; end if;
   Mk := Parent(basis[1]);
