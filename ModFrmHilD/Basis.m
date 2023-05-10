@@ -64,7 +64,7 @@ intrinsic CuspFormBasis(
           end if;
         end if;
       end for;
-      require CuspDimension(Mk) eq &+[Degree(CoefficientRing(f)) : f in #Mk`CuspFormBasis] : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
+      require CuspDimension(Mk) eq &+[Degree(CoefficientRing(f)) : f in Mk`CuspFormBasis] : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
     else
       Mk`CuspFormBasis := Weight1CuspBasis(Mk);
     end if;
