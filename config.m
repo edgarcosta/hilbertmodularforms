@@ -6,7 +6,8 @@
 // else
 //   error "make sure your working directory is hilbertmodularforms repository";
 // end if;
-AttachSpec("ModFrmHilD/spec");
-AttachSpec("ModFrmHil/spec");
+AttachSpec("spec");
 // setting
 SetColumns(0);
+// Set class group bound for faster computations
+SetClassGroupBounds("GRH");

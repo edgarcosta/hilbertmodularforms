@@ -88,10 +88,11 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> 
 {Returns the pullback of the Siegel Eisenstein series of a given weight}
   F := BaseField(M);
   ZF := Integers(F);
-  Clplus, mp := NarrowClassGroup(F);
+  Clplus := NarrowClassGroup(M);
+  mp := NarrowClassGroupMap(M);
   h := ClassNumber(F);
   // We get the ideal class corresponding to the component for the different ideal
-  bb := mp(Different(ZF)@@mp);
+  bb := NarrowClassGroupRepsMap(M)[Different(ZF)@@mp];
   _, factors:=IsNarrowlyPrincipal(Different(ZF)/bb); //this will be a factor that will make sure our nu later on are totally positive integral elements
   if not IsTotallyPositive(factors) then //just in case factors is negative
     factors:=-factors;
@@ -151,7 +152,7 @@ end intrinsic;
 intrinsic CanonicalRepresentation(f::ModFrmHilDElt) -> Any
 {gets this in terms of basis elements}
 Mk := Parent(f);
-F := Field(f);
+F := BaseField(f);
 M := GradedRing(f);
 N := Level(f);
 
