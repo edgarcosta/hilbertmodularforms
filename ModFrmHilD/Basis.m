@@ -64,10 +64,7 @@ intrinsic CuspFormBasis(
           end if;
         end if;
       end for;
-      if GaloisDescent then
-        // if we are taking Q orbits
-        require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
-      end if;
+      require CuspDimension(Mk) eq &+[Degree(CoefficientRing(f)) : f in #Mk`CuspFormBasis] : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
     else
       Mk`CuspFormBasis := Weight1CuspBasis(Mk);
     end if;
