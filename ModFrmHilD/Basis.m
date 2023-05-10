@@ -40,7 +40,8 @@ intrinsic CuspFormBasis(
   Mk::ModFrmHilD
   :
   IdealClassesSupport:=false,
-  GaloisInvariant:=false) -> SeqEnum[ModFrmHilDElt]
+  GaloisInvariant:=false,
+  GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
   require #SequenceToSet(Weight(Mk)) eq 1: "We only support parallel weight.";
@@ -50,22 +51,23 @@ intrinsic CuspFormBasis(
     k := Weight(Mk);
 
     if k[1] ge 2 then
-      cuspbasis := [];
+      Mk`CuspFormBasis := [];
       // This only works for trivial character, as we rely on the magma functionality
-//      require IsTrivial(DirichletRestriction(Character(Mk))): "We only support CuspFormBasis for characters with trivial dirichlet restriction, as we rely on the magma functionality";
+      require IsTrivial(DirichletRestriction(Character(Mk))): "We only support CuspFormBasis for characters with trivial dirichlet restriction, as we rely on the magma functionality";
       for dd in Divisors(N) do
         Mkdd := HMFSpace(Parent(Mk), dd, k);
         if CuspDimension(Mkdd) gt 0 then
           if dd eq N then
-            cuspbasis cat:= NewCuspForms(Mk);
+            Mk`CuspFormBasis cat:= NewCuspForms(Mk : GaloisDescent:=GaloisDescent);
           else
-            cuspbasis cat:= OldCuspForms(Mkdd, Mk);
+            Mk`CuspFormBasis cat:= OldCuspForms(Mkdd, Mk : GaloisDescent:=GaloisDescent);
           end if;
         end if;
       end for;
-      // we are taking Q orbits
-      Mk`CuspFormBasis := &cat[GaloisOrbitDescent(f) : f in cuspbasis];
-      require CuspDimension(Mk) eq #Mk`CuspFormBasis : "CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis;
+      if GaloisDescent then
+        // if we are taking Q orbits
+        require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
+      end if;
     else
       Mk`CuspFormBasis := Weight1CuspBasis(Mk);
     end if;
