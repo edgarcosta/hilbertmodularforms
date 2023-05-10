@@ -449,15 +449,15 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   w := IsTotallyPositive(w) select w else -w; // ensure is totally positive
 
   /////////// Hash function //////////
-  // Write each discriminant as d * ZF = mm * aa^2 with mm squarefree. Let bb = [ aa ] be the ideal representing the class of aa in CL^+(F). 
-  // Then [aa * bb^(-1)] = (x) for some x in ZF_>0 so d * ZF = mm * bb^2 * (x)^2. Thus a unique representative for 
-  // the square class of -d can be picked as the reduced shintani generator for mm * bb^2 with respect fundamental unit squared.
+  // Write each discriminant as d * ZF = mm * aa^2 with mm squarefree. Let bb = [ aa ] be the ideal representing the class of aa in CL(F). 
+  // Then [aa * bb^(-1)] = (x) for some x in ZF so d * ZF = mm * bb^2 * (x)^2. Thus a unique representative for 
+  // the square class of -d can be picked as the "reduced shintani generator" for mm * bb^2 with respect the !! square !! of the fundamental unit.
   
   function UniqueDiscriminant(d)
     mm := d * ZF;
     aa := &*( [1*ZF] cat [ pp[1] ^ (pp[2] div 2) : pp in Factorization(mm)] ); // Note pp[2] div 2 = Floor(pp[2]/2)
-    for bb in NCreps do
-      boo, x := IsNarrowlyPrincipal( aa * bb^(-1) );
+    for bb in Creps do
+      boo, x := IsPrincipal( aa * bb^(-1) );
       if boo then
         pair := ReduceShintaniMinimizeTrace( -d / x^2 );
         D := -pair[1];
