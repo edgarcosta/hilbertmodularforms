@@ -4,7 +4,7 @@
 //                                               //
 ///////////////////////////////////////////////////
 
-//Auxiliar function to handle the optional parameters for Basis calls
+//Auxiliary function to handle the optional parameters for Basis calls
 function SubBasis(basis, IdealClassesSupport, GaloisInvariant)
   if IsNull(basis) then return basis; end if;
   Mk := Parent(basis[1]);
@@ -14,7 +14,7 @@ function SubBasis(basis, IdealClassesSupport, GaloisInvariant)
   else
     IdealClassesSupport := SequenceToSet(IdealClassesSupport); // Optionally we may specify a subset of ideal classes
   end if;
-  IdealClassesSupportComplement := SequenceToSet(NarrowClassGroupReps(Parent(Mk))) diff IdealClassesSupport;
+  IdealClassesSupportComplement := Setseq(SequenceToSet(NarrowClassGroupReps(Parent(Mk))) diff IdealClassesSupport);
 
   if #IdealClassesSupportComplement eq 0 then // in this case LinearDependence will return the identity matrix
     basis := basis;
