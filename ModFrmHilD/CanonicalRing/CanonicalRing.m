@@ -229,7 +229,7 @@ intrinsic ConstructGeneratorsAndRelations(
       basis := PrecomputedGens[minimalGenWeight];
 
   elif ComputeNewGenerators then
-      basis := Basis(HMFSpace(M, N, [minimalGenWeight : i in [1..n]]));
+      basis := Basis(HMFSpace(M, N, [minimalGenWeight : i in [1..n]]) : IdealClassesSupport := IdealClassesSupport);
       assert not IsNull(basis);
   else
       msg := "No generators of parallel weight 2 found. Functionality for non-parallel weight "*
@@ -686,7 +686,6 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::Rng
   S := MakeScheme(Gens, Rels);
   P_wtd<[x]> := Ambient(S);
   eqns_S := DefiningEquations(S);
-  P := Parent(eqns_S[1]);
   return S;
 end intrinsic;
 
