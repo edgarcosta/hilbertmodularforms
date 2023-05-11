@@ -17,7 +17,7 @@ E2:=EisensteinSeries(M2, triv, triv);
 E6:=EisensteinSeries(M6, triv, triv);
 
 f := 67*(2^5*3^3*5^2)^(-1)*(E2^3-E6);
-delta:= RestrictionToDiagonal(f,M6,1*ZF:prec:=prec);
+delta:= RestrictionToDiagonal(f,M,1*ZF:prec:=prec);
 
 modForms := ModularForms(Gamma0(1),12);
 R<q> := PowerSeriesRing(Rationals());
