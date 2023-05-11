@@ -169,8 +169,17 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
   end if;
 end intrinsic;
 
-
-
+intrinsic HilbertSeries(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> RngSerPowElt
+  {Compute the Hilbert Series for the full space, Eisenstein and cuspidal}
+  // Hilbert Series for Cusp Space
+  ans := HilbertSeriesCusp(M, NN : prec:=false);
+  R<X> := Parent(ans);
+  // Compute the dimension of the Eisenstein Series
+  Mk := HMFSpace(M,NN,[2,2]);
+  n := NumberOfCusps(Mk);
+  ans +:= n/(1-X^2);
+  return ans;
+end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
