@@ -1,35 +1,33 @@
-intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,Mk::ModFrmHilD:Precision:=15) -> ModFrmElt
-  {Given an HMF f of parallel weight k, returns the classical modular curve of weight nk and level NNcapQQ obtained from restricting
-  the HMF to the diagonal.}
-  require #SequenceToSet(Weight(Mk)) eq 1: "Only defined for parallel weight.";
-  M := Parent(Mk);
-  F := BaseField(M);
+intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngQuadIdl:prec:=10) -> ModFrmElt
+  {Given an HMF f of parallel weight k, returns the classical modular curve of weight nk and level obtained from restricting
+  the component bb of the HMF to the diagonal.}
+  require #SequenceToSet(Weight(f)) eq 1: "Only defined for parallel weight.";
+  F := M`BaseField;
   ZF := Integers(F);
   C := BaseField(F);
   R<q> := PowerSeriesRing(C);
   restriction := R!0;
-  ideals := M`NarrowClassGroupReps;
-  NN := Mk`Level;
+  NN := Level(f);
   N := Integers()!(Denominator(NN)^(-1)*Generator((Denominator(NN)*NN) meet Integers()));
   D := Different(ZF);
-  k :=  Mk`Weight[1];
-  n := #Mk`Weight;
+  k :=  Weight(f)[1];
+  n := #Weight(f);
+  fbb := f`Components[bb];
   // modForms only accepts integer coefficients
   denom := 1;
-  for bb in ideals do
-    b := Integers()!(Denominator(bb)^(-1)*Generator((Denominator(bb)*bb) meet Integers()));
-    for j in [0..Precision] do
-      trace_j := PositiveElementsOfTrace(D^(-1)*bb,j);
-      coefficient := 0;
-      for i in [1..#trace_j] do
-        nu := ReduceShintani(M,bb,trace_j[i]);
-        coefficient +:= Coefficients(f)[bb][nu];
-        denom := Lcm(denom, Denominator(Coefficients(f)[bb][nu]));
-      end for;
-      restriction +:= coefficient*q^(j div b);
+  b := Integers()!(Denominator(bb)^(-1)*Generator((Denominator(bb)*bb) meet Integers()));
+  assert prec*b le M`Precision; //Increase precision!
+  for j in [0..(prec*b)] do
+    tracej := PositiveElementsOfTrace(bb*D^(-1),j);
+    coefficient := 0;
+    for nu in tracej do
+      nuRed := ReduceShintani(M,bb,nu);
+      coeffNu := Coefficients(fbb)[nuRed];
+      coefficient +:= coeffNu;
+      denom := Lcm(denom, Denominator(coeffNu));
     end for;
+    restriction +:= coefficient*q^(j div b);
   end for;
   modForms := ModularForms(Gamma0(N),n*k);
-  return modForms!(denom*(restriction +O(q^(Precision))));
-  // return (restriction +O(q^(Precision+1)));
+  return modForms!(denom*(restriction +O(q^(prec))));
 end intrinsic;
