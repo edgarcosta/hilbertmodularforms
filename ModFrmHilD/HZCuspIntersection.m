@@ -71,9 +71,8 @@ intrinsic HZCuspIntersection(Gamma::GrpHilbert, t::RngIntElt) ->
 end intrinsic;
 
 // !! TODO : Should be able to figure out the bound from the arithmetic - there is a sublatice which fixes everything
-intrinsic DoesCurveIntersectCusp(B::AlgMatElt, cusp::Pt, N::RngQuadIdl
-				 : bound := 1000) -> BoolElt, SeqEnum[FldQuadElt]
-{.}
+intrinsic DoesCurveIntersectInfty(B::AlgMatElt, N::RngQuadIdl) -> BoolElt, SeqEnum[FldQuadElt]
+{Checks whether the curve F_B on X_0(N) intersects the cusp at infinity. If it does, returns a list of possible values for lambda such that F_B looks like F_lambda near the cusp.}
   F := BaseRing(B);
   sigma := Automorphisms(F)[2];
   ZF := Integers(F);
@@ -83,6 +82,27 @@ intrinsic DoesCurveIntersectCusp(B::AlgMatElt, cusp::Pt, N::RngQuadIdl
   a := B[1,1] / sqrtD;
   b := B[2,2] / sqrtD;
   lambda := B[1,2];
+  if (b eq 0) then
+      if (lambda eq sigma(lambda)) then
+	  eps := FundamentalUnit(F);
+	  g := Matrix([[eps,0],[0,eps^(-1)]]);
+	  B := (Transpose(Parent(g)![sigma(x) : x in Eltseq(g)]) * B * g);
+	  a := B[1,1] / sqrtD;
+	  b := B[2,2] / sqrtD;
+	  lambda := B[1,2];
+      end if;
+      assert lambda ne sigma(lambda);
+      t := 1;
+      if a*sqrtD eq -lambda+sigma(lambda) then
+	  t := -1;
+      end if;
+      g := Matrix([[1,t],[0,1]]);
+      B := (Transpose(Parent(g)![sigma(x) : x in Eltseq(g)]) * B * g);
+      a := B[1,1] / sqrtD;
+      b := B[2,2] / sqrtD;
+      lambda := B[1,2];
+  end if;
+  assert b ne 0;
   norm_exists, elts := NormEquation(ZF, Integers()!Determinant(B));
   if not norm_exists then
       return false, [];
@@ -139,9 +159,18 @@ intrinsic DoesCurveIntersectCusp(B::AlgMatElt, cusp::Pt, N::RngQuadIdl
   end if;
   sol := Solution(Matrix(mod_vecs), res);
   ker_basis := Lattice(Matrix(Basis(Kernel(Matrix(mod_vecs)))));
-  clv := [v[1] : v in CloseVectors(ker_basis, sol, bound)];
-  sols := [sol - v : v in clv];
-  vs := [m_sunits(sol_sunits-sunits!ker_sunits_mod!Eltseq(sol)[1..Degree(sol)-1]) : sol in sols];
+  ker_basis_sunits := sub< sunits | [sunits!ker_sunits_mod!Eltseq(sol)[1..Degree(sol)-1] : sol in Basis(ker_basis)]>;
+  vecs := [[Valuation(m_sunits(g),p) : p in primes] cat [(1-Sign(Norm(m_sunits(g)))) div 2] : g in gens] cat [[0 : p in primes] cat [2]];
+  ker := Kernel(Matrix(vecs));
+  tot_pos_unit_gens := [sunits!Eltseq(b)[1..Ngens(sunits)] : b in Basis(ker)];
+  tot_pos_unit_sunits := sub<sunits | tot_pos_unit_gens>;
+  reps, quo_map := ker_basis_sunits / (ker_basis_sunits meet tot_pos_unit_sunits);
+  sol_sunit := sunits!ker_sunits_mod!Eltseq(sol)[1..Degree(sol)-1];
+  sols := [sol_sunits - sol_sunit + r@@quo_map : r in reps];  
+//  clv := [v[1] : v in CloseVectors(ker_basis, sol, bound)];
+//  sols := [sol - v : v in clv];
+//  vs := [m_sunits(sol_sunits-sunits!ker_sunits_mod!Eltseq(sol)[1..Degree(sol)-1]) : sol in sols];
+  vs := [m_sunits(s) : s in sols];
   us := [v * m_sunits(v0) : v in vs];
   assert &and[ZF_mod_I!u eq u_mod_I : u in us];
   xs := [z0*u : u in us];
@@ -171,7 +200,11 @@ intrinsic DoesCurveIntersectCusp(B::AlgMatElt, cusp::Pt, N::RngQuadIdl
       B_new := (Transpose(Parent(g)![sigma(x) : x in Eltseq(g)]) * B * g);
       assert B_new[1,1] eq 0;
       // our_new lambda
-      Append(~lams, B_new[1,2]);
+      lam_new := B_new[1,2];
+      if not IsTotallyPositive(lam_new) then
+	  lam_new := -lam_new;
+      end if;
+      Append(~lams, lam_new);
   end for;
   return true, [x : x in Set(lams)];
 end intrinsic;
@@ -190,6 +223,7 @@ intrinsic HZCuspIntersection(Gamma::GrpHilbert, lambda::FldQuadElt) ->
    B := Matrix([[0,lambda],[-sigma(lambda), 0]]);
    for cusp in cusps do
        M, V, g := CuspResolutionMV(1*ZF, N, F!cusp[2][1], F!cusp[2][2]);
+       g := g^(-1);
        B_cusp := (Transpose(Parent(g)![sigma(x) : x in Eltseq(g)]) * B * g);
        self_intersections := cusp[3];
        n := cusp[4];
@@ -200,7 +234,7 @@ intrinsic HZCuspIntersection(Gamma::GrpHilbert, lambda::FldQuadElt) ->
        end if;
 //       lambdas := [B_cusp[1,2]];
 //       if (B_cusp[1,1] ne 0) then
-       has_intersect, lambdas := DoesCurveIntersectCusp(B_cusp, cusp[2], N);
+       has_intersect, lambdas := DoesCurveIntersectInfty(B_cusp, N);
        if not has_intersect then
 	   Append(~cusps_mults, [0 : i in [1..#s]]);
 	   continue;
@@ -224,15 +258,38 @@ intrinsic HZCuspIntersection(Gamma::GrpHilbert, lambda::FldQuadElt) ->
        end for;
        assert &and[A[i] + A[i+2] eq s[i+1] * A[i+1] : i in [1..#s-2]];
        Ms := [1*ZF + A[1]*ZF] cat [A[i] * ZF + A[i+1]*ZF : i in [1..#s-1]];
+       _, alpha := IsPrincipal(Ms[1]);
+       eps := FundamentalUnit(F);
+       if Norm(alpha) lt 0 then
+	   alpha *:= eps;
+       end if;
+       if not IsTotallyPositive(alpha) then
+	   alpha *:= -1;
+       end if;
+       assert IsTotallyPositive(alpha);
        assert &and[Ms[1] eq M : M in Ms];
        bases := [Matrix([Eltseq(x) : x in [A[i],A[i+1]]]) : i in [1..#s-1]];
        bases := [Matrix([Eltseq(x) : x in [F!1,A[1]]])] cat bases;
        cusp_mults := [0 : QF in QFs];
+       // basis for the big cone
+       big_basis := Matrix([Eltseq(x) : x in [F!1,A[#A]]]);
        for lambda in lambdas do
-	   sols := [Solution(basis, Vector(Eltseq(F!lambda))) : basis in bases];
+	   big_coords := Solution(big_basis, Vector(Eltseq(F!lambda*alpha)));
+	   while big_coords[2] lt 0 do
+	       alpha *:= eps^(-2);
+	       big_coords := Solution(big_basis, 
+				      Vector(Eltseq(F!lambda*alpha)));
+	   end while;
+	   while big_coords[1] lt 0 do
+	       alpha *:= eps^2;
+	       big_coords := Solution(big_basis, 
+				      Vector(Eltseq(F!lambda*alpha)));
+	   end while;       				 
+	   sols := [Solution(basis, Vector(Eltseq(F!lambda*alpha))) 
+		    : basis in bases];
 	   is_intersect := [Evaluate(QFs[i], 
 				     Reverse(Eltseq(sols[i])))*Norm(Ms[i]) 
-			    eq Norm(lambda) and sols[i][1] ge 0 and 
+			    eq Norm(lambda*alpha) and sols[i][1] ge 0 and 
 			    sols[i][2] ge 0 
 			    :  i in [1..#s]];
 	   rel_inds := [i : i in [1..#s] | is_intersect[i]];
