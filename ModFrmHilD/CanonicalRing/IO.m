@@ -17,7 +17,7 @@ function ConvertLabel(label)
   // convert congruence subgroup label to label for writing (no component)
   spl := Split(label,"-");
   assert #spl eq 5;
-  return spl[1..2] cat spl[4..5];
+  return Join(spl[1..2] cat spl[4..5], "-");
 end function;
 
 intrinsic WriteCanonicalSurfaceToString(label::MonStgElt, S::Sch) -> MonStgElt
@@ -74,12 +74,12 @@ intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filenam
 
   label := LMFDBLabel(G);
   if filename eq "" then
-    filename := Sprintf("../hilbertmodularsurfacesdata/CanonicalRingEquations/%o.m", ConvertLabel(label))
+    filename := Sprintf("../hilbertmodularsurfacesdata/CanonicalRingEquations/%o.m", ConvertLabel(label));
   end if;
 
   tt1 := Cputime();
-  printf "// Total computation for all components took %o seconds\n", tt1-tt0;
-  Write(
+  s *:= Sprintf("// Total computation for all components took %o seconds\n", tt1-tt0);
+  Write(filename, s);
   return Sprintf("Canonical ring equations written to %o\n", filename);
 end intrinsic;
 
@@ -98,10 +98,16 @@ intrinsic GenerateFieldsAndLevels(B::RngIntElt) -> MonStElt
   for D := 1 to B do
     if IsFundamentalDiscriminant(D) then
       F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
-      for NN in IdealsUpTo(B/D, F) do
-        s *:= Sprintf("%o %o", LMFDBLabel(F), LMFDBLabel(NN);
+      for NN in IdealsUpTo(B div D, F) do
+        s *:= Sprintf("%o %o\n", LMFDBLabel(F), LMFDBLabel(NN));
       end for;
     end if;
   end for;
   return s;
+end intrinsic;
+
+intrinsic CreateInputFile(B) -> MonStgElt
+  {}
+  Write("input.txt", GenerateFieldsAndLevels(B) : Overwrite := true);
+  return "Input file input.txt created";
 end intrinsic;
