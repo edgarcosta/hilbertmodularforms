@@ -205,6 +205,7 @@ intrinsic ConstructGeneratorsAndRelations(
   if IdealClassesSupport cmpeq false then
     IdealClassesSupport := NarrowClassGroupReps(M); // the default is all ideals classes
   end if;
+  require IdealClassesSupport subset NarrowClassGroupReps(M): "IdealClassesSupport must be a subset of our choosen represetatives given by NarrowClassGroupReps(M)";
 
   require Type(PrecomputedGens) eq Assoc: "The parameter 'PrecomputedGens' must be an associative array";
   Gens := AssociativeArray();
@@ -316,10 +317,10 @@ intrinsic ConstructGeneratorsAndRelations(
       knownDim := have_dim_formula select Dimension(Mk) else false;
 
       basisWeightk := ExtendBasis(weightedSymBasis, Mk :
-                                  Alg := Alg,
-                                  KnownMkDimension := knownDim,
-                                  IdealClassesSupport := IdealClassesSupport,
-                                  GaloisInvariant := GaloisInvariant);
+                                  Alg:=Alg,
+                                  KnownMkDimension:=knownDim,
+                                  IdealClassesSupport:=IdealClassesSupport,
+                                  GaloisInvariant:=GaloisInvariant);
 
       newGens := basisWeightk[#weightedSymBasis + 1 .. #basisWeightk];
 
