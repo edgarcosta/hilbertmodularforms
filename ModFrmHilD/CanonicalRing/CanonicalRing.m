@@ -823,7 +823,7 @@ intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Is::SeqEnum
   H_test := &+[HilbertSeries(I) : I in Is];
   vprintf HilbertModularForms: "series from trace formula = %o\n", H_trace;
   vprintf HilbertModularForms: "series from computed graded ring= %o\n", H_test;
-  return H_test eq H_trace;
+  return H_test eq H_trace, H_trace, H_test;
 end intrinsic;
 
 intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Rs::SeqEnum[RngMPolRes]) -> BoolElt
