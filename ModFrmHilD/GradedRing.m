@@ -37,6 +37,7 @@ declare attributes ModFrmHilDGRng:
   // where nu is Shintani reduced, i.e., s(nu) = s(nu')
   // M stands for monoid, multiplication, and mangling
   PrecomputationforTrace, // Precomputed orders for the Trace formula
+  PrecomputationforTraceIdeals, // Ideals by which we can let Hecke act for free
   ClassNumbersPrecomputation, // Precomputed class numbers for Trace formula
   // HMFPrecomputation, // Precomputed quantities for the Trace formula (Old)
   // Book keeping
@@ -341,6 +342,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`ReduceIdealToShintaniRep := AssociativeArray();
   M`IdealsByNarrowClassGroup := AssociativeArray();
   M`PrecomputationforTrace := AssociativeArray();
+  M`PrecomputationforTraceIdeals := {};
   M`ClassNumbersPrecomputation := AssociativeArray();
   // Elements and Shintani domains
   // instanciate all associative arrays
@@ -560,8 +562,9 @@ end intrinsic;
 
 intrinsic PrecomputeTraceForms(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   {Given a list of ideals L = [aa,bb, ...], precomputes values to generate traceforms t_aa, t_bb, ... }
+  M`PrecomputationforTraceIdeals join:=SequenceToSet(L);
   A := SetToSequence({ ii * aa : ii in Ideals(M), aa in L }); // Set of ideals
-  HMFTracePrecomputation(M,A);
+  HMFTracePrecomputation(M, A);
 end intrinsic;
 
 

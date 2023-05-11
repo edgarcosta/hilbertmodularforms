@@ -259,9 +259,12 @@ intrinsic ModFrmHilDEltCompInitialize() -> ModFrmHilDElt
   return f;
 end intrinsic;
 
-intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
+intrinsic ModFrmHilDEltInitialize(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Create an empty ModFrmHilDElt object.}
   f := New(ModFrmHilDElt);
+  f`Parent := Mk;
+  Append(~Mk`KnownForms, f);
+  f`Components := AssociativeArray();
   return f;
 end intrinsic;
 
@@ -278,7 +281,7 @@ end intrinsic;
 
 intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   {new instance of ModFrmHilDElt.}
-  g := ModFrmHilDEltInitialize();
+  g := New(ModFrmHilDElt);
   for attr in GetAttributes(Type(f)) do
     if assigned f``attr then
       g``attr := f``attr;
@@ -388,9 +391,7 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   bbs := NarrowClassGroupReps(M);
   require Keys(components) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
-  f := ModFrmHilDEltInitialize();
-  f`Parent := Mk;
-  f`Components := AssociativeArray();
+  f := ModFrmHilDEltInitialize(Mk);
   for bb in bbs do
     f_bb := components[bb];
     require ComponentIdeal(f_bb) eq bb: "Components mismatch";
@@ -421,8 +422,6 @@ intrinsic HMF(Mk::ModFrmHilD,
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
   f := ModFrmHilDEltInitialize();
-  f`Parent := Mk;
-  f`Components := AssociativeArray();
 
   if prec cmpeq 0 then
     prec := Precision(M);

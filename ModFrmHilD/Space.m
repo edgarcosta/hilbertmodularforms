@@ -12,9 +12,10 @@ declare attributes ModFrmHilD:
   Weight, // SeqEnum[RngIntElt]
   Level, // RngOrdIdl
   Basis, // = EisensteinBasis cat CuspFormBasis SeqEnum[ModFrmHilDElt]
-  Character, // GrpHeckeElt, JV: why aren't we using Dirichlet?
+  Character, // GrpHeckeElt
   UnitCharacters, // Assoc: unit[bb] = omega
                  // Type(omega) = GrpCharUnitTotElt: TotallyPositiveUnits(Parent(Parent)) -> CoefficientRing
+  KnownForms, // SeqEnum[ModFrmHilDElt] known forms in the space
   EisensteinBasis, // SeqEnum[ModFrmHilDElt]
   CuspFormBasis, // SeqEnum[ModFrmHilDElt]
   EllipticBasis, // SeqEnum[ModFrmHilDElt]
@@ -111,6 +112,7 @@ end intrinsic;
 intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   {Create an empty ModFrmHilD object.}
   M := New(ModFrmHilD);
+  M`KnownForms := [];
   return M;
 end intrinsic;
 
