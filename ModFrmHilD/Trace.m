@@ -32,8 +32,6 @@ I have some code to quickly compute the Hasse unit index without doing the class
 ///////////////////////////////// ModFrmHilD: Trace //////////////////////////////////////////////
 
 declare verbose HMFTrace, 3;
-declare attributes ModFrmHilDGRng:
-  ClassNumberandUnitIndexCache;
 
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
@@ -676,7 +674,6 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-
 intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, ZF::RngQuad, hplus::RngIntElt) -> Any
   {Returns the class number and the unit index 2[Z_K^* : Z_F^*] = #mu_K [Z_K^* : mu_K Z_F^*]}
   /* This takes as input
@@ -686,35 +683,15 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
         - hplus = the narrow class number of F ** Note : that this is not critical for this function, can removed or or set to optional parameter **
   */
 
-  if not assigned M`ClassNumberandUnitIndexCache then
-    M`ClassNumberandUnitIndexCache := AssociativeArray();
-  end if;
-  function ClassNumbeTorsionUnitGroup(M, K)
-    D := Discriminant(Integers(K));
-    b, v := IsDefined(M`ClassNumberandUnitIndexCache, D);
-    if not b then
-      M`ClassNumberandUnitIndexCache[D] := [];
-    end if;
-    Append(~M`ClassNumberandUnitIndexCache[D], AbsoluteField(K));
+  // Preliminaries //
+  // Magma requires absolute extensions for class number and units
+  Kabs := AbsoluteField(K);
 
+  // Class group
+  h := ClassNumber(Kabs);
 
-    b := false;
-    if not b then
-      // Magma requires absolute extensions for class number and units
-      Kabs := AbsoluteField(K);
-      // Class group
-      h := ClassNumber(Kabs);
-      // Roots of unity
-      mu_K, mapmu_K := TorsionUnitGroup(Kabs); // roots of unity
-      v := <Kabs, h, mu_K, mapmu_K, K>;
-      //M`ClassNumberandUnitIndexCache[D] := v;
-    end if;
-    return Explode(v);
-  end function;
-
-  Kabscached, h, mu_K, mapmu_K, original_K := ClassNumbeTorsionUnitGroup(M, K);
-
-
+  // Roots of unity
+  mu_K, mapmu_K := TorsionUnitGroup(Kabs); // roots of unity
   w := #mu_K; // size of the unity group
 
   // The unit index is either w or 2*w.
@@ -725,24 +702,6 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
   number hplus is odd — since we already have the narrow class number stored */
   if hplus mod 2 eq 0 then  //////////
 
-    //b, mKabs := IsIsomorphic(Kabscached, K);
-    // hack because the above doesnt work
-    Kabs := AbsoluteField(K);
-    b1, m1 := IsIsomorphic(Kabs, K);
-    assert b1;
-    b2, m2 := IsIsomorphic(Kabscached, Kabs);
-    if not b2 then
-      print Norm(Discriminant(Integers(K)));
-      print Discriminant(Integers(Kabscached));
-      print Discriminant(Integers(Kabs));
-      print Polredabs(DefiningPolynomial(Kabscached));
-      print Polredabs(DefiningPolynomial(Kabs));
-      print K;
-      print original_K;
-    end if;
-    assert b2;
-    mKabs := m2*m1;
-
     // Now we set the element B
     twopower := 2^Valuation(w,2);
     if twopower eq 2 then
@@ -752,6 +711,8 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
       g := mu_K.1;
       // oddpartw := [p[1]^p[2] : p in Factorization(w) | p[1] ne 2];
       oddpart := Integers()!(w/twopower);
+      b, mKabs := IsIsomorphic(Kabs,K);
+      assert b;
       zeta_2 := mKabs(mapmu_K(oddpart*g)); // zeta_2 is now an element of a CM-extension K/F
       B := Norm(1 + zeta_2);
       // B := 2 + zeta_2 + zeta_2^(-1); // this is the norm from K to F — should be equivalent to 1 + zeta_2 + 1/zeta_2
