@@ -817,21 +817,21 @@ intrinsic GeneratorWeightBound(G::GrpHilbert : experiment:=false) -> Any
     return Maximum(m, Degree(Numerator(poly)));
 end intrinsic;
 
-intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, I::RngMPol) -> BoolElt
-  {Given an ideal I defining the graded ring, check if its Hilbert series agrees with the one coming from the trace formula}
+intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Is::SeqEnum[RngMPol]) -> BoolElt
+  {Given a sequence Is of ideals defining graded rings, check if the sum of their Hilbert series agrees with the one coming from the trace formula (which includes all components)}
   H_trace := HilbertSeries(M,NN);
-  H_test := HilbertSeries(I);
-  printf "series from trace formula = %o\n", H_trace;
-  printf "series from computed graded ring= %o\n", H_test;
+  H_test := &+[HilbertSeries(I) : I in Is];
+  vprintf HilbertModularForms: "series from trace formula = %o\n", H_trace;
+  vprintf HilbertModularForms: "series from computed graded ring= %o\n", H_test;
   return H_test eq H_trace;
 end intrinsic;
 
-intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, R::RngMPolRes) -> BoolElt
-  {Given the graded ring R, check if its Hilbert series agrees with the one coming from the trace formula}
-  return HilbertSeriesSanityCheck(M, NN, PreimageIdeal(ideal< R | 0>));
+intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Rs::SeqEnum[RngMPolRes]) -> BoolElt
+  {Given a sequence Rs of graded rings, check if the sum of their Hilbert series agrees with the one coming from the trace formula (which includes all components)}
+  return HilbertSeriesSanityCheck(M, NN, [PreimageIdeal(ideal< R | 0>) : R in Rs]);
 end intrinsic;
 
-intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, S::Sch) -> BoolElt
-  {Given a surface S, check if its Hilbert series agrees with the one coming from the trace formula}
-  return HilbertSeriesSanityCheck(M, NN, Ideal(S));
+intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Ss::SeqEnum[Sch]) -> BoolElt
+  {Given a sequence Ss of surfaces, check if the sum of their Hilbert series agrees with the one coming from the trace formula (which includes all components)}
+  return HilbertSeriesSanityCheck(M, NN, [Ideal(S) : S in Ss]);
 end intrinsic;
