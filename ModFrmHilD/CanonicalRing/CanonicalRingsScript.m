@@ -7,7 +7,7 @@
 
   Then run the following command in ~/github/hilbertmodularforms
 
-  parallel -j 16 --joblog joblog --eta -a --colsep ' ' input.txt echo magma -b F_lab:={1} NN_lab:={2} ModFrmHilD/CanonicalRing/CanonicalRingsScript.m >> ../hilbertmodularsurfacesdata/CanonicalRingEquations.m
+  parallel -j 16 --joblog joblog --eta --colsep ' ' -a input.txt magma -b F_lab:={1} NN_lab:={2} ModFrmHilD/CanonicalRing/CanonicalRingsScript.m
 */
 
 AttachSpec("spec");

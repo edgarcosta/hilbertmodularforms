@@ -65,9 +65,9 @@ intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filenam
   M := GradedRingOfHMFs(F,prec);
   sane, H_trace, H_test := HilbertSeriesSanityCheck(M,NN,Ss);
   if sane then
-    s *:= "// Sanity check passed: Hilbert series agree!";
+    s *:= "// Sanity check passed: Hilbert series agree!\n";
   else
-    s *:= "// Sanity check failed!";
+    s *:= "// Sanity check failed!\n";
     s *:= Sprintf("// series from trace formula = %o\n", H_trace);
     s *:= Sprintf("// computed series = %o\n", H_test);
   end if;
