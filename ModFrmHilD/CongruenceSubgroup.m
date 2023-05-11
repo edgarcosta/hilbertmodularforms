@@ -48,7 +48,7 @@ intrinsic IsRealQuadraticField(F::FldNum) -> BoolElt
     return Degree(F) eq 2 and BaseRing(F) eq Rationals() and Discriminant(F) gt 0;
 end intrinsic;
 
-// Main constructor from which all else is derivedn
+// Main constructor from which all else is derived
 intrinsic CongruenceSubgroup(
               AmbientType::MonStgElt,
               GammaType::MonStgElt,
