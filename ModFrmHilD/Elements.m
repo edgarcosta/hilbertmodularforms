@@ -421,7 +421,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   bbs := NarrowClassGroupReps(M);
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
-  f := ModFrmHilDEltInitialize();
+  f := ModFrmHilDEltInitialize(Mk);
 
   if prec cmpeq 0 then
     prec := Precision(M);
