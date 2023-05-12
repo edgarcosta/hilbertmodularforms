@@ -5,7 +5,7 @@ Mockup implementation of Hilbert Modular Forms
 # Authors:
 
 - [Eran Assaf](https://math.dartmouth.edu/~eassaf/)
-- [Angelica Babei](https://angelicababei.com/),
+- [Angelica Babei](https://angelicababei.com/)
 - [Ben Breen](http://www.benbreenmath.com/)
 - [Sara Chari](https://www.bates.edu/mathematics/faculty-profile/sara-l-chari/)
 - [Edgar Costa](https://edgarcosta.org)
