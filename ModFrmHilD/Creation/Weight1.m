@@ -24,7 +24,10 @@ intrinsic HeckeStableSubspace(
         for vec in lindep do
             f := &+[vec[i]*Vprev[i] : i in [1 .. #Vprev]];
             M := CoefficientsMatrix([f]); d := Denominator(M); M := Matrix(Integers(),d*M);
-            Append(~Vnew, f/GCD(Eltseq(M)));
+            g := GCD(Eltseq(M));
+            if not g eq 0 then
+                Append(~Vnew, f/g);
+            end if;
         end for;
 
         if dimprev eq dimnew then
@@ -141,11 +144,13 @@ intrinsic HeckeStabilityCuspBasis(
         Mksquared := HMFSpace(M, N, [2*k[1], 2*k[2]], chi^2);
         B := CuspFormBasis(Mksquared);
         
+        vprintf HilbertModularForms: "Done?\n";
         done := true;
         for f in V do
             Bandf2 := Append(B, f^2);
             if #LinearDependence(Bandf2) eq 0 then
                 done := false;
+                vprintf HilbertModularForms: "No!\n";
             end if;
         end for;
 
