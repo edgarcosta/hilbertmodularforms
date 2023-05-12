@@ -362,12 +362,12 @@ It is assumed that `forms` are linearly independent.}
         // First try our luck with just Eisenstein series. If that fails, use the fallback.
 
         eisensteinbasis := EisensteinBasis(Mk : IdealClassesSupport:=IdealClassesSupport, GaloisInvariant:=GaloisInvariant);
-        moreforms := forms cat eisensteinbasis;
+        moreforms := Basis(forms cat eisensteinbasis);
         coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
 
         // TODO: This double complement call can surely be optimized away.
         if Rank(coeffs_matrix) eq KnownMkDimension then
-            return forms cat ComplementBasis(forms, moreforms : Alg := Alg);
+            return forms cat ComplementBasis(forms, Basis(moreforms) : Alg := Alg);
         end if;
     end if;
 
