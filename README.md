@@ -4,17 +4,21 @@ Implementation to compute graded rings of Hilbert modular forms in [Magma](http:
 
 ## Tests
 
-## Examples
-
-Examples of computations that can be executed via
+Example computations that are run during CI via `run_tests.m`.
+These examples can also be executed via
 
 ```{shell}
-magma example_filename.m
+magma/Tests/filename.m
 ```
+
+## Examples
+
+These files are similar to what is found in Tests, but not run during CI.
 
 ## WorkInProgress
 
 Examples that may or may not run successfully, but have code or comments that may be useful or informative.
+Once a file has been polished and appropriate for public consumption it can be moved to Examples or Tests.
 
 ## Authors
 
