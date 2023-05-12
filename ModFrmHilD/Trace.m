@@ -107,6 +107,7 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
   R<T> := PowerSeriesRing(Rationals());
   F := BaseField(M);
   ZF := Integers(M);
+  require Order(NN) eq ZF : "level must belong to the maximal order of F";
   n := Degree(F);
   Disc := Discriminant(ZF);
   h := ClassNumber(F);
@@ -137,7 +138,6 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
   // Constant term
   B := h * Norm(NN) * Abs(DedekindZetaExact(F,-1)) / 2^(n-1);
   B *:= &*( [1] cat [1 + Norm(p[1])^(-1) : p in Factorization(NN)] );
-
   res +:= B*R!([(k mod 2 eq 0 and k gt 0) select (k-1)^(n) else 0 : k in [0..prec]]);
   res +:= O(T^(prec + 1));
 

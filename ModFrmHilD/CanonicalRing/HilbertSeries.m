@@ -147,7 +147,7 @@ end intrinsic;
 intrinsic HilbertSeries(F::FldNum, level::RngOrdIdl) -> FldFunRatUElt
 {Return the Hilbert series for the space of Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
-    if Norm(level) eq 1 then
+    if (NarrowClassNumber(F) eq 1) and (Norm(level) eq 1) then
         return HilbertSeriesVasquez(F);
     end if;
     M := GradedRingOfHMFs(F, 0);
