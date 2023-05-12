@@ -42,9 +42,7 @@ intrinsic CuspFormBasis(
   :
   IdealClassesSupport:=false,
   GaloisInvariant:=false,
-  GaloisDescent:=true,
-  UseKnown:=true,
-  UseTraceForms:=true
+  GaloisDescent:=true
   ) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
@@ -58,54 +56,12 @@ intrinsic CuspFormBasis(
 
     if k[1] ge 2 then
       cusp_forms := [Mk | ];
-      magma_forms := [Mk | ];
-      divisors := Divisors(N);
-
-      shortcut := GaloisDescent and (UseKnown or UseTraceForms);
-      if shortcut then
-        require Dimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : Sprintf("insufficient precision: number of coefficients = %o < %o = ambient dimension", NumberOfCoefficients(Parent(Mk)), Dimension(Mk)) ;
-        eisenstein_basis := EisensteinBasis(Mk);
-        vprint HilbertModularForms: "#Eisenstein forms =", #eisenstein_basis;
-        known_forms := eisenstein_basis;
-        if UseKnown then
-          known_forms cat:= Mk`KnownForms;
-          vprint HilbertModularForms: "#Mk`KnownForms =", #Mk`KnownForms;
-        end if;
-        if UseTraceForms then //these should come for free
-          trace_forms := [Mk | Trace(Mk, elt) : elt in Parent(Mk)`PrecomputationforTraceIdeals];
-          known_forms cat:= trace_forms;
-          vprint HilbertModularForms: "#trace_forms =", #trace_forms;
-        end if;
-        // extract linear independence forms
-        basis_known_forms := Basis(known_forms);
-        vprint HilbertModularForms: "#basis_known_forms =", #basis_known_forms;
-        //EDGAR you failed here, these are not cuspidal
-        cusp_forms := ComplementBasis(eisenstein_basis, basis_known_forms);
-        vprint HilbertModularForms: "#cusp_forms =", #cusp_forms;
-        if #cusp_forms eq CuspDimension(Mk) then
-          divisors := []; //we are done
-        end if;
-      end if;
-
-      for i->dd in divisors do
+      for i->dd in Divisors(N) do
         Mkdd := HMFSpace(Parent(Mk), dd, k);
-        forms := CuspForms(Mkdd, Mk : GaloisDescent:=GaloisDescent);
-        vprint HilbertModularForms: i, Norm(dd), "#forms =", #forms;
-        require &and[not IsZero(f) : f in forms] : "insufficient precision: a cusp form of level form seems to be zero";
-        magma_forms cat:= forms;
-        if shortcut and #forms gt 0 then
-          cusp_forms := Basis(cusp_forms cat forms);
-          vprint HilbertModularForms: "#cusp_forms =", #cusp_forms;
-          require CuspDimension(Mk) ge #cusp_forms: "life is hard...";
-          if #cusp_forms eq CuspDimension(Mk) then
-            break dd;
-          end if;
-        end if;
+        cusp_forms cat:= CuspForms(Mkdd, Mk : GaloisDescent:=GaloisDescent);
+        vprint HilbertModularForms: i, Norm(dd), "#cusp_forms =", #cusp_forms;
+        require &and[not IsZero(f) : f in cusp_forms] : "insufficient precision: a cusp form of level form seems to be zero";
       end for;
-      if #magma_forms eq #cusp_forms or not shortcut then
-        // the shortcut didn't get us anywhere
-        cusp_forms := magma_forms;
-      end if;
       dim := 0;
       if #cusp_forms gt 0 then
         dim := &+[Degree(CoefficientRing(f)) : f in cusp_forms];
@@ -152,17 +108,55 @@ intrinsic Basis(
   Mk::ModFrmHilD
   :
   IdealClassesSupport:=false,
-  GaloisInvariant:=false
+  GaloisInvariant:=false,
+  UseKnown:=true,
+  UseTraceForms:=true
   ) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   if not assigned Mk`Basis then
-    require Dimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : "Dimension of the space too large for the current precision";
+    require Dimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : Sprintf("insufficient precision: number of coefficients = %o < %o = ambient dimension", NumberOfCoefficients(Parent(Mk)), Dimension(Mk)) ;
+    k := Weight(Mk);
+    require #SequenceToSet(Weight(Mk)) eq 1: "We only support parallel weight.";
     vprintf HilbertModularForms: "Computing basis for space of parallel weight %o with precision %o\n", Weight(Mk)[1], Precision(Parent(Mk));
-    // Cuspforms
-    CB := CuspFormBasis(Mk);
     //Eisenstein Series
-    EB := EisensteinBasis(Mk);
-    Mk`Basis := EB cat CB;
+    res := EisensteinBasis(Mk);
+
+    shortcut := UseKnown or UseTraceForms;
+    if #res lt Dimension(Mk) and shortcut and k[1] ge 2 then
+      divisors := Divisors(Level(Mk));
+      vprint HilbertModularForms: "#Eisenstein forms =", #res;
+      if UseKnown then
+        res cat:= Mk`KnownForms;
+        vprint HilbertModularForms: "#Mk`KnownForms =", #Mk`KnownForms;
+      end if;
+      if UseTraceForms then //these should come for free
+        trace_forms := [Mk | Trace(Mk, elt) : elt in Parent(Mk)`PrecomputationforTraceIdeals];
+        res cat:= trace_forms;
+        vprint HilbertModularForms: "#trace_forms =", #trace_forms;
+      end if;
+      res := Basis(res);
+      vprint HilbertModularForms: "#res =", #res;
+      if #res eq Dimension(Mk) then
+        divisors := []; //we are done
+      end if;
+      for i->dd in divisors do
+        Mkdd := HMFSpace(Parent(Mk), dd, k);
+        cusp_forms := CuspForms(Mkdd, Mk : GaloisDescent:=true);
+        vprint HilbertModularForms: i, Norm(dd), "#cusp_forms =", #cusp_forms;
+        require &and[not IsZero(f) : f in cusp_forms] : "insufficient precision: a cusp form of seems to be zero";
+        res cat:= cusp_forms;
+        res := Basis(res);
+        vprint HilbertModularForms: i, Norm(dd), "#res =", #res;
+        if #res eq Dimension(Mk) then
+          break dd;
+        end if;
+      end for;
+
+      require Dimension(Mk) eq #res : Sprintf("CuspDimension(Mk) = %o != %o = dim(forms)", Dimension(Mk), #res);
+    else
+      res cat:= CuspFormBasis(Mk);
+    end if;
+    Mk`Basis := res;
   end if;
 
   // this handles the optional parameters
