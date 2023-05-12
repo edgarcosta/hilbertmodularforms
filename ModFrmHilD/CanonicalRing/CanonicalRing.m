@@ -654,11 +654,12 @@ end function;
 /////////////////////////////////////////////////////
 
 // Given a number field F, a level NN, and a bound B on the weight of the generators, return the precision (number of coefficients) required to do linear algebra
-function ComputePrecisionFromHilbertSeries(F, NN, B)
+intrinsic ComputePrecisionFromHilbertSeries(F::FldNum, NN::RngOrdIdl, B::RngIntElt) -> RngIntElt
+  {Compute the number of q-expansion coefficients needed from the coefficients of the Hilbert series}
   H := HilbertSeries(F,NN);
   Pow<T> := PowerSeriesRing(Rationals());
   return Coefficient(Pow!H, B);
-end function;
+end intrinsic;
 
 intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
 				: Precision := 100,
