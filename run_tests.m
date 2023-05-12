@@ -1,4 +1,4 @@
-// usage: magma target:=SUBSTRING exitsignal:=BOOL run_tests.m
+// usage: magma target:=SUBSTRING (debug:=) run_tests.m
 if assigned filename then
   tests := [filename];
 else
@@ -39,7 +39,5 @@ if #failed gt 0 then
     print f;
   end for;
 end if;
-if assigned exitsignal then
-  exit #failed;
-end if;
+exit #failed;
 
