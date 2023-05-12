@@ -85,7 +85,7 @@ intrinsic HeckeStabilityCuspBasis(
     if not ok then
         vprintf HilbertModularForms: "No appropriate weight 1 Eisenstein series, need to go to weight 3\n";
 
-        for psi0 in H do
+        for psi0 in Elements(H) do
             psi := psi0*chiinv;
             if IsGamma1EisensteinWeight(psi, 3) then
                 MEis := HMFSpace(M, N, [3,3], psi);
