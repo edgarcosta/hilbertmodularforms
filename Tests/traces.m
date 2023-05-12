@@ -960,7 +960,6 @@ function check(d)
     return true;
 end function;
 
-
 ds := [];
 for counter in [1..5] do
     if Set(ds) eq Keys(traces) then
@@ -974,4 +973,5 @@ for counter in [1..5] do
     _ := check(d);
 end for;
 
+// adding this one since it was wrong before
 
