@@ -23,7 +23,8 @@ intrinsic HeckeStableSubspace(
         Vnew := [];
         for vec in lindep do
             f := &+[vec[i]*Vprev[i] : i in [1 .. #Vprev]];
-            Append(~Vnew, f);
+            M := CoefficientsMatrix([f]); d := Denominator(M); M := Matrix(Integers(),d*M);
+            Append(~Vnew, f/GCD(Eltseq(M)));
         end for;
 
         if dimprev eq dimnew then
@@ -154,7 +155,7 @@ intrinsic HeckeStabilityCuspBasis(
 
                 Vcheck := Basis(HMFSpace(M, N, [2*k[1] + 2,2*k[2] + 2]));
                 assert #LinearDependence(Vcheck) eq 0;
-            end prove;
+            end if;
 
             return V;
         end if;
@@ -176,5 +177,5 @@ intrinsic Weight1CuspBasis(
    - The optional parameter bound is the maximum norm of primes pp we will check T_pp-stability for before we declare defeat,
    - The optional parameter prove is true or false. If true, we verify that we had enough precision to check the equality of the potentially meromorphic form with a holomorphic one.
   }
-  return HeckeStabilityCuspBasis(Mk : bound, prove);
+  return HeckeStabilityCuspBasis(Mk : bound := bound, prove := prove);
 end intrinsic;
