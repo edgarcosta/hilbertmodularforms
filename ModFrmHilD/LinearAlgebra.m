@@ -98,7 +98,7 @@ intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, p
 end intrinsic;
 
 
-
+// JV: Edgar, do echelon form over QQ
 intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {returns Basis for the vector space spanned by the inputted forms}
   if #generators eq 0 then return generators; end if;

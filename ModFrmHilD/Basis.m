@@ -36,6 +36,7 @@ end function;
 
 // Currently calls the Newforms and Eisenstein series from Creations folder
 
+//  idea: if known basis for Mk use Hecke to extract basis for Sk
 intrinsic CuspFormBasis(
   Mk::ModFrmHilD
   :
@@ -64,14 +65,23 @@ intrinsic CuspFormBasis(
       if shortcut then
         require Dimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : Sprintf("insufficient precision: number of coefficients = %o < %o = ambient dimension", NumberOfCoefficients(Parent(Mk)), Dimension(Mk)) ;
         eisenstein_basis := EisensteinBasis(Mk);
+        vprint HilbertModularForms: "#Eisenstein forms =", #eisenstein_basis;
         known_forms := eisenstein_basis;
         if UseKnown then
           known_forms cat:= Mk`KnownForms;
+          vprint HilbertModularForms: "#Mk`KnownForms =", #Mk`KnownForms;
         end if;
         if UseTraceForms then //these should come for free
-          known_forms cat:= [Mk | Trace(Mk, elt) : elt in Parent(Mk)`PrecomputationforTraceIdeals];
+          trace_forms := [Mk | Trace(Mk, elt) : elt in Parent(Mk)`PrecomputationforTraceIdeals];
+          known_forms cat:= trace_forms;
+          vprint HilbertModularForms: "#trace_forms =", #trace_forms;
         end if;
-        cusp_forms := ComplementBasis(eisenstein_basis, Basis(known_forms));
+        // extract linear independence forms
+        basis_known_forms := Basis(known_forms);
+        vprint HilbertModularForms: "#basis_known_forms =", #basis_known_forms;
+        //EDGAR you failed here, these are not cuspidal
+        cusp_forms := ComplementBasis(eisenstein_basis, basis_known_forms);
+        vprint HilbertModularForms: "#cusp_forms =", #cusp_forms;
         if #cusp_forms eq CuspDimension(Mk) then
           divisors := []; //we are done
         end if;
@@ -80,10 +90,13 @@ intrinsic CuspFormBasis(
       for i->dd in divisors do
         Mkdd := HMFSpace(Parent(Mk), dd, k);
         forms := CuspForms(Mkdd, Mk : GaloisDescent:=GaloisDescent);
+        vprint HilbertModularForms: i, Norm(dd), "#forms =", #forms;
         require &and[not IsZero(f) : f in forms] : "insufficient precision: a cusp form of level form seems to be zero";
         magma_forms cat:= forms;
         if shortcut and #forms gt 0 then
           cusp_forms := Basis(cusp_forms cat forms);
+          vprint HilbertModularForms: "#cusp_forms =", #cusp_forms;
+          require CuspDimension(Mk) ge #cusp_forms: "life is hard...";
           if #cusp_forms eq CuspDimension(Mk) then
             break dd;
           end if;
