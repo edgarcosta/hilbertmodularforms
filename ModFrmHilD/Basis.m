@@ -81,7 +81,7 @@ intrinsic CuspFormBasis(
         forms := NewCuspForms(Mk : GaloisDescent:=GaloisDescent);
         require &and[not IsZero(f) : f in forms] : "precision too low to distinguish between cusp form and 0";
         magma_forms cat:= forms;
-        if shortcut then
+        if shortcut and #forms gt 0 then
           cusp_forms := Basis(cusp_forms cat forms);
           if #cusp_forms eq CuspDimension(Mk) then
             break dd;
