@@ -32,8 +32,18 @@ procedure testDimension(F,N,k)
     */
     // Instead we check for the dimension of the HilbertCuspForms
     
-    dim_hmf := Dimension(HilbertCuspForms(F,N,[k,k]);
+    dim_hmf := Dimension(HilbertCuspForms(F,N,[k,k]));
     assert dim_gl eq dim_hmf;
+end procedure;
+
+procedure testTraceDimension(F,N,k)
+    prec := 1;
+    R := GradedRingOfHMFs(F, prec);
+    hmf := HMFSpace(R, N, [k,k]);
+    dim_trace := CuspDimension(hmf : version := "trace");
+    delete hmf`CuspDimension;
+    dim_builtin := CuspDimension(hmf : version := "builtin");
+    assert dim_trace eq dim_builtin;
 end procedure;
 
 DN_bound := 500;
@@ -53,6 +63,23 @@ for _ in [1..num_attempts] do
     testDimension(F,N,k);
 end for;
 
+printf "checking dimensions by trace when k = 2 at ";
+k := 2;
+for _ in [1..num_attempts] do
+    d := Random(ds);
+    F := QuadraticField(d);
+    ZF := Integers(F);
+    N := Random(IdealsUpTo(Floor(DN_bound/d),F));
+    printf "(%o;%o;%o),", d,IdealOneLine(N),k;
+    testTraceDimension(F,N,k);
+end for;
+
+d := 473;
+F := QuadraticField(d);
+ZF := Integers(F);
+N := 1*ZF;
+printf "(%o;%o;%o),", d,IdealOneLine(N),k;
+testTraceDimension(F,N,k);
 
 // Long test
 /*

@@ -376,7 +376,7 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
       // Edgar: Ben, should one use Strace?
       Mk`CuspDimension := Integers()!Trace(Mk,1*ZF);
       if SequenceToSet(k) eq Set([2]) then
-        Mk`CuspDimension -:= NarrowClassNumber(M);
+        Mk`CuspDimension -:= NarrowClassNumber(M) div ClassNumber(ZF);
       end if;
     end if;
   end if;
