@@ -105,7 +105,7 @@ intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   E := EchelonForm(C);
   r := Rank(E);
   Mk := Parent(generators[1]);
-  return [Mk | HMF(Eltseq(row), nus, bbs) : row in Rows(E)[1..r] ];
+  return [Mk | HMF(Mk, Eltseq(row), nus, bbs) : row in Rows(E)[1..r] ];
 end intrinsic;
 
 
