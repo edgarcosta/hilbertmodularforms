@@ -119,8 +119,8 @@ intrinsic ComplementBasis(
   if #Wbasis eq 0 then return Vbasis; end if;
   require Parent(Wbasis[1]) eq Parent(Vbasis[1]) : "Forms not in the same space";
   Mk := Parent(Wbasis[1]);
-  Rs := {CoefficientRing(elt) : elt in Vbasis} join {CoefficientRing(elt) : elt in Wbasis};
-  require #Rs eq 1 : "we expect the forms to have the same coefficient ring";
+  R := CoefficientRing(Wbasis[1]);
+  require &and[R eq CoefficientRing(elt) : elt in Vbasis cat Wbasis] : "we expect the forms to have the same coefficient ring";
   VCoeffMatrix, nus1 := CoefficientsMatrix(Vbasis);
   WCoeffMatrix, nus2 := CoefficientsMatrix(Wbasis);
   assert nus1 eq nus2;
