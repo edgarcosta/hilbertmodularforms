@@ -61,11 +61,11 @@ intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false,
       &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in nus[i]]
       : i->bb in bbs]
     : f in list]);
-  nus := &cat nus;
-  assert Ncols(mat) eq #nus*Degree(CoefficientRing(list[1]));
+  assert Ncols(mat) eq &+[#elt : elt in nus]*Degree(CoefficientRing(list[1]));
   assert Nrows(mat) eq #list;
-  return mat, nus;
+  return mat, nus, bbs;
 end intrinsic;
+
 
 intrinsic ShortLinearDependence(M::Mtrx) -> SeqEnum[RngIntElt]
   {
@@ -98,11 +98,14 @@ intrinsic LinearDependence(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false, p
 end intrinsic;
 
 
-// JV: Edgar, do echelon form over QQ
 intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {returns Basis for the vector space spanned by the inputted forms}
   if #generators eq 0 then return generators; end if;
-  return [generators[i] : i in PivotRows(CoefficientsMatrix(generators))];
+  C, nus, bbs := CoefficientsMatrix(generators);
+  E := EchelonForm(C);
+  r := Rank(E);
+  Mk := Parent(generators[1]);
+  return [Mk | HMF(Mk, Eltseq(row), nus, bbs) : row in Rows(E)[1..r] ];
 end intrinsic;
 
 
