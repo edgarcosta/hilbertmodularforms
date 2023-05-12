@@ -1,11 +1,29 @@
 // Generic Linear algebra
-intrinsic PivotColumns(A::Mtrx: is_echelonized:=false) -> SeqEnum[RngIntElt]
+intrinsic PivotColumns(A::Mtrx: is_echelonized:=false, rank:=false) -> SeqEnum[RngIntElt]
   {Return the pivot column positions of the matrix A}
-  if not is_echelonized then
+  if Type(BaseRing(A)) in [RngInt, FldRat] then
+    if rank cmpeq false then
+      rank := Rank(A);
+    end if;
+    d := Denominator(A);
+    AZ := Matrix(Integers(), d*A);
+    p := 1;
+    while true do
+      p := NextPrime(p);
+      if d mod p ne 0 then
+        Ap := Matrix(GF(p), AZ);
+        if Rank(Ap) eq rank then
+          return $$(Ap : rank:=rank);
+        end if;
+      end if;
+    end while;
+  elif not is_echelonized then
     A := EchelonForm(A);
   end if;
-  r := Rank(A);
-  return Sort(SetToSequence({ PivotColumn(A, i) : i in [1..r] }));
+  if rank cmpeq false then
+    rank := Rank(A);
+  end if;
+  return Sort(SetToSequence({ PivotColumn(A, i) : i in [1..rank] }));
 end intrinsic;
 
 intrinsic PivotRows(A::Mtrx) -> SeqEnum[RngIntElt]
@@ -81,6 +99,15 @@ end intrinsic;
 
 
 
+intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
+  {returns Basis for the vector space spanned by the inputted forms}
+  if #generators eq 0 then return generators; end if;
+  return [generators[i] : i in PivotRows(CoefficientsMatrix(generators))];
+end intrinsic;
+
+
+
+
 intrinsic ComplementBasis(
   Wbasis::SeqEnum[ModFrmHilDElt],
   Vbasis::SeqEnum[ModFrmHilDElt]
@@ -142,14 +169,14 @@ end intrinsic;
 
 intrinsic ComplementBasis(Wbasis::SeqEnum[ModFrmHilDElt] : Alg := "WeightedLLL"
   )-> SeqEnum[ModFrmHilDElt]
-  {Given bases for a space W contained within a space `V` of Hilbert Modular Surfaces, 
+  {Given bases for a space W contained within a space `V` of Hilbert Modular Surfaces,
   (i.e., `V := Parent(Wbasis[1])`), return a basis for the complement of W in V}
   return ComplementBasis(Wbasis, Parent(Wbasis[1]) : Alg:=Alg);
 end intrinsic;
 
 intrinsic ComplementBasis(Wbasis::SeqEnum[ModFrmHilDElt], V::ModFrmHilD : Alg := "WeightedLLL"
   )-> SeqEnum[ModFrmHilDElt]
-  {Given bases for a space W contained within a space `V` of Hilbert Modular Surfaces, 
+  {Given bases for a space W contained within a space `V` of Hilbert Modular Surfaces,
   return a basis for the complement of W in V}
   return ComplementBasis(Wbasis, Basis(V) : Alg:=Alg);
 end intrinsic;

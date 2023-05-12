@@ -6,7 +6,7 @@
 
 //Auxiliary function to handle the optional parameters for Basis calls
 function SubBasis(basis, IdealClassesSupport, GaloisInvariant)
-  if IsNull(basis) then return basis; end if;
+  if IsNull(basis) or #basis eq 0 then return basis; end if;
   Mk := Parent(basis[1]);
   // handle optional argument IdealClassesSupport
   if IdealClassesSupport cmpeq false then
@@ -41,39 +41,72 @@ intrinsic CuspFormBasis(
   :
   IdealClassesSupport:=false,
   GaloisInvariant:=false,
-  GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
+  GaloisDescent:=true,
+  UseKnown:=true,
+  UseTraceForms:=true
+  ) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
   require #SequenceToSet(Weight(Mk)) eq 1: "We only support parallel weight.";
 
   if not assigned Mk`CuspFormBasis then
+    require CuspDimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : "Dimension of the space too large for the current precision";
     N := Level(Mk);
     k := Weight(Mk);
 
     if k[1] ge 2 then
-      Mk`CuspFormBasis := [];
-      // This only works for trivial character, as we rely on the magma functionality
-      require IsTrivial(DirichletRestriction(Character(Mk))): "We only support CuspFormBasis for characters with trivial dirichlet restriction, as we rely on the magma functionality";
-      for dd in Divisors(N) do
+      cusp_forms := [Mk | ];
+      magma_forms := [Mk | ];
+      divisors := Divisors(N);
+
+      shortcut := GaloisDescent and (UseKnown or UseTraceForms);
+      if shortcut then
+        require Dimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : "Dimension of the space too large for the current precision";
+        eisenstein_basis := EisensteinBasis(Mk);
+        known_forms := eisenstein_basis;
+        if UseKnown then
+          known_forms cat:= Mk`KnownForms;
+        end if;
+        if UseTraceForms then //these should come for free
+          known_forms cat:= [Mk | Trace(Mk, elt) : elt in Parent(Mk)`PrecomputationforTraceIdeals];
+        end if;
+        cusp_forms := ComplementBasis(eisenstein_basis, Basis(known_forms));
+        if #cusp_forms eq CuspDimension(Mk) then
+          divisors := []; //we are done
+        end if;
+      end if;
+
+      for i->dd in divisors do
         Mkdd := HMFSpace(Parent(Mk), dd, k);
-        if CuspDimension(Mkdd) gt 0 then
-          if dd eq N then
-            Mk`CuspFormBasis cat:= NewCuspForms(Mk : GaloisDescent:=GaloisDescent);
-          else
-            Mk`CuspFormBasis cat:= OldCuspForms(Mkdd, Mk : GaloisDescent:=GaloisDescent);
+        forms := NewCuspForms(Mk : GaloisDescent:=GaloisDescent);
+        require &and[not IsZero(f) : f in forms] : "precision too low to distinguish between cusp form and 0";
+        magma_forms cat:= forms;
+        if shortcut then
+          cusp_forms := Basis(cusp_forms cat forms);
+          if #cusp_forms eq CuspDimension(Mk) then
+            break dd;
           end if;
         end if;
       end for;
-      dim := 0;
-      if #Mk`CuspFormBasis gt 0 then
-        dim := &+[Degree(CoefficientRing(f)) : f in Mk`CuspFormBasis];
+      if shortcut and #magma_forms eq #cusp_forms then
+        // the shortcut didn't get us anywhere
+        cusp_forms := magma_forms;
       end if;
-      require CuspDimension(Mk) eq dim : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
+      dim := 0;
+      if #cusp_forms gt 0 then
+        dim := &+[Degree(CoefficientRing(f)) : f in cusp_forms];
+      end if;
+      require CuspDimension(Mk) eq dim : Sprintf("CuspDimension(Mk) = %o != %o = dim(forms)", CuspDimension(Mk), dim);
+      if GaloisDescent then
+        Mk`CuspFormBasis := cusp_forms;
+      end if;
     else
+      // FIXME not passing arguments
       Mk`CuspFormBasis := Weight1CuspBasis(Mk);
+      cusp_forms := Mk`CuspFormBasis;
     end if;
   end if;
-  return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, GaloisInvariant);
+  return SubBasis(cusp_forms, IdealClassesSupport, GaloisInvariant);
 end intrinsic;
 
 
@@ -85,9 +118,10 @@ intrinsic EisensteinBasis(
   ) -> SeqEnum[ModFrmHilDElt]
   { return a basis for the complement to the cuspspace of Mk }
   if not assigned Mk`EisensteinBasis then
+    require EisensteinDimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : "Dimension of the space too large for the current precision";
     pairs := EisensteinAdmissibleCharacterPairs(Mk);
-    eisensteinbasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
-    Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
+    eisensteinbasis := [Mk | ] cat &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
+    Mk`EisensteinBasis := [Mk | ] cat &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
     require #Mk`EisensteinBasis eq EisensteinDimension(Mk) : "#Mk`EisensteinBasis = %o != %o = EisensteinDimension(Mk)", #Mk`EisensteinBasis, EisensteinDimension(Mk);
   end if;
 
@@ -106,6 +140,7 @@ intrinsic Basis(
   ) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   if not assigned Mk`Basis then
+    require Dimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : "Dimension of the space too large for the current precision";
     vprintf HilbertModularForms: "Computing basis for space of parallel weight %o with precision %o\n", Weight(Mk)[1], Precision(Parent(Mk));
     // Cuspforms
     CB := CuspFormBasis(Mk);

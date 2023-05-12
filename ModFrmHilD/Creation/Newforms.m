@@ -4,7 +4,8 @@ import "../../ModFrmHil/copypaste/hecke.m" : hecke_algebra;
 // Caching magma computations
 intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
   {return the NewformDecomposition in magma type}
- require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
+  // This only works for trivial character, as we rely on the magma functionality
+   require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
   if not assigned Mk`MagmaNewformDecomposition then
     N := Level(Mk);
     k := Weight(Mk);
@@ -161,7 +162,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   // the coefficient ring of the coefficients
   R := GaloisDescent select Rationals() else HeckeEigenvalueField(S);
 
-  res := [];
+  res := [Mk | ];
   for dd in divisors do
     ddinv := dd^-1;
     // coefficients by bb
@@ -192,7 +193,7 @@ end intrinsic;
 
 
 
-intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
+intrinsic CuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {return the inclusion of MkN1 into MkN2}
   require Weight(MkN1) eq Weight(MkN2) : "the weights must match";
   require BaseField(MkN1) eq BaseField(MkN2) : "the base fields must match";
@@ -203,12 +204,16 @@ intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD : GaloisDescent:=true)
   N2 := Level(MkN2);
   require N2 subset N1: "the level of the first argument must divide the level of the second argument";
   //require N2 ne N1: "the level of the first argument must differ from the level of the second argument";
-  return &cat[Eigenforms(MkN2, elt[1], elt[2] : GaloisDescent:=GaloisDescent) : elt in MagmaNewCuspForms(MkN1)];
+  magma_forms := GaloisDescent select MagmaNewformDecomposition else MagmaNewCuspForms;
+  if CuspDimension(MkN1) gt 0 then
+    return &cat[Eigenforms(MkN2, elt[1], elt[2] : GaloisDescent:=GaloisDescent) : elt in magma_forms(MkN1)];
+  else
+    return [MkN2 | ];
+  end if;
 end intrinsic;
 
 
 intrinsic NewCuspForms(Mk::ModFrmHilD : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {returns Hilbert newforms}
-  return &cat[Eigenforms(Mk, elt[1], elt[2] : GaloisDescent:=GaloisDescent) : elt in MagmaNewCuspForms(Mk)];
+  return CuspForms(Mk, Mk : GaloisDescent:=GaloisDescent);
 end intrinsic;
-

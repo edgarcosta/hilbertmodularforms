@@ -263,7 +263,6 @@ intrinsic ModFrmHilDEltInitialize(Mk::ModFrmHilD) -> ModFrmHilDElt
   {Create an empty ModFrmHilDElt object.}
   f := New(ModFrmHilDElt);
   f`Parent := Mk;
-  Append(~Mk`KnownForms, f);
   f`Components := AssociativeArray();
   return f;
 end intrinsic;
@@ -849,7 +848,14 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   for bb in Keys(comp_f) do
     comp[bb] := comp_f[bb] * comp_g[bb];
   end for;
-  return HMFSumComponents(Parent(f)*Parent(g), comp);
+  res := HMFSumComponents(Parent(f)*Parent(g), comp);
+  if CoefficientRing(res) eq Rationals() then
+    M := Parent(res);
+    if not assigned M`CuspFormBasis then
+      Append(~M`KnownForms, res);
+    end if;
+  end if;
+  return res;
 end intrinsic;
 
 

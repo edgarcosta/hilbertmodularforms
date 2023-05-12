@@ -112,7 +112,7 @@ end intrinsic;
 intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   {Create an empty ModFrmHilD object.}
   M := New(ModFrmHilD);
-  M`KnownForms := [];
+  M`KnownForms := [M | ];
   return M;
 end intrinsic;
 
