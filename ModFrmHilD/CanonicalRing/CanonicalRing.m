@@ -653,6 +653,13 @@ end function;
 //
 /////////////////////////////////////////////////////
 
+// Given a number field F, a level NN, and a bound B on the weight of the generators, return the precision (number of coefficients) required to do linear algebra
+function ComputePrecisionFromHilbertSeries(F, NN, B)
+  H := HilbertSeries(F,NN);
+  Pow<T> := PowerSeriesRing(Rationals());
+  return Coefficient(Pow!H, B);
+end function;
+
 intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
 				: Precision := 100,
 				  LowestWeight:=2,
@@ -661,8 +668,7 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::Rng
 				  GaloisInvariant:=false,
 				  ComputeNewGenerators:=true,
 				  PrecomputedGens:=AssociativeArray()) -> Srfc
-{
-  Compute a model for the (canonical ring of the) Hilbert modular sXurface over F of level N.
+{ Compute a model for the (canonical ring of the) Hilbert modular surface over F of level N.
   Generators will have parallel weight upto MaxWeightGens, and relations will have parallel upto MaxWeightRelations.
   Return a three Associative arrays, indexed by weight, corresponding to generators, relations and the monomials.
   Use the optional parameter 'LowestWeight' to specifiy the lowest weight for the generators.
@@ -671,6 +677,10 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::Rng
   Use the optional parameter 'GaloisInvariant' to restrict the generators to be Galois invariant, i.e., invariant under the swap map.
   Use the optional parameters 'PrecomputedGens' as an AssociativeArray to provide precomputed generators.
   Use the optional parameters 'ComputeNewGenerators' to determine if new generators will be computed.}
+
+  // check that precision is high enough
+  require Precision ge ComputePrecisionFromHilbertSeries(F, N, MaxGeneratorWeight): "Precision is too low; not enough coefficients for linear algebra";
+
   R := GradedRingOfHMFs(F, Precision);
   dict := ConstructGeneratorsAndRelations(R, N, MaxGeneratorWeight, MaxRelationWeight:
 					  LowestWeight:=LowestWeight,

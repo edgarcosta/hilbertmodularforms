@@ -2,16 +2,33 @@
 // return the precision, generators bound, and relations bound
 // TODO: dependence on level?
 function SetPrecisionAndBounds(D, NN)
+  F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
   if D eq 5 then
-    return 10, 20, 40;
+    gen_bd := 20;
   elif D eq 8 then
-    return 10, 14, 28;
+    gen_bd := 14;
   elif D eq 12 then
-    return 10, 14, 28;
+    gen_bd := 14;
   else
+    gen_bd := 10;
     return 10, 10, 20;
   end if;
+  return ComputePrecisionFromHilbertSeries(F, NN, gen_bd), gen_bd, 2*gen_bd;
 end function;
+
+/*
+  function SetPrecisionAndBounds(D, NN)
+    if D eq 5 then
+      return 10, 20, 40;
+    elif D eq 8 then
+      return 10, 14, 28;
+    elif D eq 12 then
+      return 10, 14, 28;
+    else
+      return 10, 10, 20;
+    end if;
+  end function;
+*/
 
 function ConvertLabel(label)
   // convert congruence subgroup label to label for writing (no component)

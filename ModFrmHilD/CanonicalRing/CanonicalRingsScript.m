@@ -5,7 +5,7 @@
   2.2.12.1 2.1
   2.2.12.1 3.1  
 
-  Then run the following command in ~/github/hilbertmodularforms
+  Then run the following command in the directory hilbertmodularforms
 
   parallel -j 16 --joblog joblog --eta --colsep ' ' -a input.txt magma -b F_lab:={1} NN_lab:={2} ModFrmHilD/CanonicalRing/CanonicalRingsScript.m
 */
