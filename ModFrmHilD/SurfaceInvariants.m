@@ -419,6 +419,50 @@ Format is label:[h^[2,0], h^[1,1]]:K^2:chi.}
   ], ":"));
 end intrinsic;
 
+intrinsic WriteLMFDBRow(Gamma::GrpHilbert) -> MonStgElt
+{Script for writing information about the surface to table row.
+Format is
+label:field_label:field_discr:narrow_class_nb:level_label:level_norm:component_label:is_pp:group_type:gamma_type:h20:h11:K2:chi:number_of_cusps:kposs
+where is_pp is true iff component is the inverse different of the quadratic field.}
+    F_label, N_label, b_label, group_type, gamma_type := Explode(Split(LMFDBLabel(Gamma), "-"));
+    F := BaseField(Gamma);
+    N := Level(Gamma);
+    b := ComponentIdeal(Gamma);
+    h2 := HodgeDiamond(Gamma)[3];
+    is_pp := IsNarrowlyPrincipal(Different(Integers(F)) * Component(Gamma));
+    Ngens := [Eltseq(x): x in Generators(N)];
+    bgens := [Eltseq(x): x in Generators(b)];
+    return StripWhiteSpace(Join([LMFDBLabel(Gamma),
+                                 F_label,
+                                 b_label,
+                                 gamma_type,
+                                 group_type,
+                                 N_label,
+                                 Sprint(Ngens),
+                                 Sprint(bgens),
+                                 Sprint(KodairaDimensionPossibilities(Gamma)),
+                                 Sprint(K2(Gamma)),
+                                 Sprint(ArithmeticGenus(Gamma)),
+                                 Sprint(h2[1]),
+                                 Sprint(h2[2]),
+                                 Sprint(NarrowClassNumber(F)),
+                                 Sprint(Norm(N)),
+                                 Sprint(NumberOfCusps(Gamma)),                                 
+                                 Sprint(Discriminant(F)),
+                                 Sprint(NumberOfEllipticPoints(Gamma)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 2)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 3)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 4)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 5)),
+                                 Sprint(NumberOfEllipticPoints(Gamma, 6)),
+                                 Sprint(LengthOfCuspResolutions(Gamma)),
+                                 Sprint(LengthOfEllipticPointResolutions(Gamma)),
+                                 Sprint(LengthOfResolutions(Gamma)),
+                                 Sprint(EulerNumber(Gamma)),
+                                 Sprint(is_pp)
+                                ], ":"));                               
+end intrinsic;
+
 /*
 // is this still right even when we haven't blown down?
 intrinsic EasyIsGeneralType(hs::SeqEnum) -> Any
@@ -465,7 +509,7 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
     _, q, _ := XGCD(q_inv,n);
     Qn<zeta> := CyclotomicField(n);
     cont := &+[zeta^(i*(q+1)*m)/(n*(1-zeta^i)*(1-zeta^(i*q))) 
-	       : i in [1..n] | GCD(i,n) eq 1];
+	       : i in [1..n-1]];
     elliptic +:= cont*a[rot_factor];
   end for;
 
@@ -477,7 +521,11 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
   chi := 0;
   for cusp in cusps do
     _, _, L, n := Explode(cusp);
-    chi +:= n/12*&+[3+b : b in L];
+    if (n eq 1) and (#L eq 1) then
+        chi +:= 1/12*(1+L[1]);
+    else
+	chi +:= n/12*&+[3+b : b in L];
+    end if;
   end for;
   
   dim +:= chi;

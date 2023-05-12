@@ -51,4 +51,5 @@ CanonicalRing
   CanonicalRing.m
   HilbertSeries.m
   IntersectionRing.m
+  IO.m
 }
