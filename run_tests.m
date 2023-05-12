@@ -1,4 +1,5 @@
 // usage: magma target:=SUBSTRING (debug:=) run_tests.m
+load "config.m";
 if assigned filename then
   tests := [filename];
 else
@@ -7,7 +8,9 @@ end if;
 if assigned debug then
   SetDebugOnError(true);
 end if;
-load "config.m";
+if assigned verbose then
+  SetVerbose("HilbertModularForms", StringToInteger(verbose));
+end if;
 failed := [];
 if not assigned target then
   target := "";
