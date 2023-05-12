@@ -40,7 +40,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
       for aa in Divisors(ZF!!(I + nn)) do
         if I eq 0*ZF then
           //takes care if the coefficients for the zero ideal are different
-          c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[mp((bb*nn/aa^2)@@mp)][ZF!0];
+          c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[NarrowClassRepresentative(M, bb*nn/aa^2)][ZF!0];
         else
           b, cf := IsCoefficientDefined(f, ZF!!(aa^(-2) * (I*nn)));
           if not b then
