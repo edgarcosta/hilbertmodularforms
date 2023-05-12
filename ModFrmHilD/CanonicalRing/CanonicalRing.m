@@ -654,11 +654,12 @@ end function;
 /////////////////////////////////////////////////////
 
 // Given a number field F, a level NN, and a bound B on the weight of the generators, return the precision (number of coefficients) required to do linear algebra
-intrinsic ComputePrecisionFromHilbertSeries(F::FldNum, NN::RngOrdIdl, B::RngIntElt) -> RngIntElt
+intrinsic ComputePrecisionFromHilbertSeries(NN::RngOrdIdl, B::RngIntElt) -> RngIntElt
   {Compute the number of q-expansion coefficients needed from the coefficients of the Hilbert series}
+  F := NumberField(Order(NN));
   H := HilbertSeries(F,NN);
   Pow<T> := PowerSeriesRing(Rationals());
-  return Coefficient(Pow!H, B);
+  return Integers()!Coefficient(Pow!H, B);
 end intrinsic;
 
 intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
@@ -680,7 +681,7 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::Rng
   Use the optional parameters 'ComputeNewGenerators' to determine if new generators will be computed.}
 
   // check that precision is high enough
-  require Precision ge ComputePrecisionFromHilbertSeries(F, N, MaxGeneratorWeight): "Precision is too low; not enough coefficients for linear algebra";
+  require Precision ge ComputePrecisionFromHilbertSeries(N, MaxGeneratorWeight): "Precision is too low; not enough coefficients for linear algebra";
 
   R := GradedRingOfHMFs(F, Precision);
   dict := ConstructGeneratorsAndRelations(R, N, MaxGeneratorWeight, MaxRelationWeight:

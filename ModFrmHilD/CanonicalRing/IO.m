@@ -1,8 +1,9 @@
 // given a discriminant D and level NN
 // return the precision, generators bound, and relations bound
 // TODO: dependence on level?
-function SetPrecisionAndBounds(D, NN)
-  F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
+function SetPrecisionAndBounds(NN)
+  F := NumberField(Order(NN));
+  D := Discriminant(F);
   if D eq 5 then
     gen_bd := 20;
   elif D eq 8 then
@@ -12,7 +13,7 @@ function SetPrecisionAndBounds(D, NN)
   else
     gen_bd := 10;
   end if;
-  return Integers()!ComputePrecisionFromHilbertSeries(F, NN, gen_bd), gen_bd, 2*gen_bd;
+  return Integers()!ComputePrecisionFromHilbertSeries(NN, gen_bd), gen_bd, 2*gen_bd;
 end function;
 
 /*
@@ -56,8 +57,7 @@ intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filenam
   tt0 := Cputime();
   s := Sprintf("// Computing for quadratic field %o\n", LMFDBLabel(F));
   s := Sprintf("// level has label %o\n", LMFDBLabel(NN));
-  D := Discriminant(F);
-  prec, gen_bd, rel_bd := SetPrecisionAndBounds(D,NN);
+  prec, gen_bd, rel_bd := SetPrecisionAndBounds(NN);
   s *:= Sprintf("// Computed with precision = %o\n", prec);
   s *:= Sprintf("// generator degree bound = %o\n", gen_bd);
   s *:= Sprintf("// relation degree bound = %o\n", rel_bd);
