@@ -20,12 +20,10 @@ The `D` in this name stands for _Dartmouth_ where this project originated.
 
 Source code to compute formulas for Hilbert series of Hilbert modular surfaces.
 
-### spec and sig files
+### spec files
 
 Package specification files, or `spec` files, help organize imports in various places.
 Package specification documentation: [http://magma.maths.usyd.edu.au/magma/handbook/text/24#181](http://magma.maths.usyd.edu.au/magma/handbook/text/24#181).
-
-`.sig` files contain signature information for Magma package files. See [http://magma.maths.usyd.edu.au/magma/handbook/text/24#164](http://magma.maths.usyd.edu.au/magma/handbook/text/24#164).
 
 ## Tests
 
