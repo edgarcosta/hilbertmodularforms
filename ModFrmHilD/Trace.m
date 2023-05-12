@@ -686,7 +686,6 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
   // Preliminaries //
   // Magma requires absolute extensions for class number and units
   Kabs := AbsoluteField(K);
-  _, mKabs := IsIsomorphic(Kabs,K);
 
   // Class group
   h := ClassNumber(Kabs);
@@ -712,6 +711,8 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
       g := mu_K.1;
       // oddpartw := [p[1]^p[2] : p in Factorization(w) | p[1] ne 2];
       oddpart := Integers()!(w/twopower);
+      b, mKabs := IsIsomorphic(Kabs,K);
+      assert b;
       zeta_2 := mKabs(mapmu_K(oddpart*g)); // zeta_2 is now an element of a CM-extension K/F
       B := Norm(1 + zeta_2);
       // B := 2 + zeta_2 + zeta_2^(-1); // this is the norm from K to F — should be equivalent to 1 + zeta_2 + 1/zeta_2

@@ -46,15 +46,29 @@ try
       NCl, mp := NarrowClassGroup(F);
       mpdet := IdealRepsMapDeterministic(F, mp);
       comps := [mpdet[el] : el in NCl];
+      series := [];
+      // TODO: should loop over Galois orbits of components so that surface is both irreducible and defined over QQ
       for bb in comps do
         t0 := Cputime();
         printf "// component has label %o\n", LMFDBLabel(bb);
         G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
-        S := HilbertModularVariety(F, NN, gen_bd, rel_bd : Precision := prec, IdealClassesSupport := [bb]);
+        // now using weighted LLL-reduced basis
+        S := HilbertModularVariety(F, NN, gen_bd, rel_bd : Precision := prec, IdealClassesSupport := [bb], Alg := "WeightedLLL");
         WriteCanonicalRingToFile(G,S);
+        Append(~series, HilbertSeries(Ideal(S)));
         t1 := Cputime();
         printf "// Computation took %o seconds\n", t1-t0;
       end for;
+      M := GradedRingOfHMFs(F,prec);
+      H_trace := HilbertSeries(M,NN);
+      H_test := &+series;
+      if H_test eq H_trace then
+        print "// Sanity check passed: Hilbert series agree!";
+      else
+        print "// Sanity check failed!";
+        printf "// series from trace formula = %o\n", H_trace;
+        printf "// computed series = %o\n", H_test;
+      end if;
     end for;
 //end for;
   exit 0;

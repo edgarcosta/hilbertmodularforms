@@ -431,7 +431,7 @@ end intrinsic;
 
 /////////////// ModFrmHilD: Trace Precomputation ////////////////
 
-// FIXME: HMFTracePrecomputation - Pass tracebasis to IdealCMextensions instead of computing each time 
+// FIXME: HMFTracePrecomputation - Pass tracebasis to IdealCMextensions instead of computing each time
 
 intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   {Precomputes class number and unit indices for a list of ideals L}
@@ -442,22 +442,22 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   _<x> := PolynomialRing(F); // Polynomial ring over F
   UF := UnitGroup(M); // Unit Group of F
   mUF := UnitGroupMap(M); // Unit Group of F map
-  C,mC := ClassGroup(F); // class group  
+  C,mC := ClassGroup(F); // class group
   Creps := [ mC(i) : i in C ]; // class group representatives
   NCreps := NarrowClassGroupReps(M);
   w := FundamentalUnit(F); // Fundamental Unit
   w := IsTotallyPositive(w) select w else -w; // ensure is totally positive
 
   /////////// Hash function //////////
-  // Write each discriminant as d * ZF = mm * aa^2 with mm squarefree. Let bb = [ aa ] be the ideal representing the class of aa in CL^+(F). 
-  // Then [aa * bb^(-1)] = (x) for some x in ZF_>0 so d * ZF = mm * bb^2 * (x)^2. Thus a unique representative for 
-  // the square class of -d can be picked as the reduced shintani generator for mm * bb^2 with respect fundamental unit squared.
-  
+  // Write each discriminant as d * ZF = mm * aa^2 with mm squarefree. Let bb = [ aa ] be the ideal representing the class of aa in CL(F).
+  // Then [aa * bb^(-1)] = (x) for some x in ZF so d * ZF = mm * bb^2 * (x)^2. Thus a unique representative for
+  // the square class of -d can be picked as the "reduced shintani generator" for mm * bb^2 with respect the !! square !! of the fundamental unit.
+
   function UniqueDiscriminant(d)
     mm := d * ZF;
     aa := &*( [1*ZF] cat [ pp[1] ^ (pp[2] div 2) : pp in Factorization(mm)] ); // Note pp[2] div 2 = Floor(pp[2]/2)
-    for bb in NCreps do
-      boo, x := IsNarrowlyPrincipal( aa * bb^(-1) );
+    for bb in Creps do
+      boo, x := IsPrincipal( aa * bb^(-1) );
       if boo then
         pair := ReduceShintaniMinimizeTrace( -d / x^2 );
         D := -pair[1];
@@ -471,14 +471,14 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
     return ZF!D;
   end function;
 
-  
-  // Precomputations
-  A := TracePrecomputation(M); 
-  B := ClassNumbersPrecomputation(M); 
 
-  // First pass. A[mm][aa] := List of [b,a,D] 
+  // Precomputations
+  A := TracePrecomputation(M);
+  B := ClassNumbersPrecomputation(M);
+
+  // First pass. A[mm][aa] := List of [b,a,D]
   vprintf HilbertModularForms, 1 : "start %o. \n", Cputime();
-  
+
   Discs := {};
   ideals := Set(L) diff Keys(A); // ideals to precompute
   for mm in ideals do
@@ -499,36 +499,38 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   end for;
 
 
-  // Second pass. Compute a hash with unique discriminants up to squares. 
+  // Second pass. Compute a hash with unique discriminants up to squares.
   vprintf HilbertModularForms, 1 : "Pass 1 finished at %o. Now computing reduced discriminants for %o orders. \n", Cputime(), #Discs;
-  
+
   Hash := AssociativeArray();
   RDiscs := {};
   for d in Discs do
     D := UniqueDiscriminant(d);
     Include(~RDiscs, D);
-    Hash[d] := D; 
+    Hash[d] := D;
   end for;
 
 
 
-  // Third pass. Compute ring of integers, class numbers, and unit index for new keys 
+  // Third pass. Compute ring of integers, class numbers, and unit index for new keys
   vprintf HilbertModularForms, 1 : "Pass 2 finished at %o. Now computing class numbers and unit indices for %o fields. \n", Cputime(), #RDiscs;
-  
+
   SetClassGroupBounds("GRH"); // Bounds
   NK := RDiscs diff Keys(B);
   for D in NK do
     K := ext<F | x^2 - D >; // Field K/F
     ZK := Integers(K); // Ring of Integers
+    //ZKabs := Integers(Kabs);
     DD := Discriminant(ZK); // Discriminant
-    Kabs := AbsoluteField(K); // Class groups computations only for absolute extensions?
     hplus := NarrowClassNumber(M); // Narrow class number
+    //Kabs := AbsoluteField(K); // Class groups computations only for absolute extensions?
+    //_ := Integers(Kabs);
     h,w := ClassNumberandUnitIndex(M, K, D, ZF, hplus); // Class group of K and Hasse Unit index
     B[D] := [* h, w, DD *];
   end for;
 
 
-  // Fourth Pass. Removing pairs where ff/aa is not integral 
+  // Fourth Pass. Removing pairs where ff/aa is not integral
   vprintf HilbertModularForms, 1 : "Pass 3 finished at %o. Now removing pairs where ff/aa is not integral. \n", Cputime();
   for mm in ideals do
     for aa in Creps do
@@ -542,7 +544,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   // Assign
   M`PrecomputationforTrace := A;
   M`ClassNumbersPrecomputation := B;
-  
+
 end intrinsic;
 
 
