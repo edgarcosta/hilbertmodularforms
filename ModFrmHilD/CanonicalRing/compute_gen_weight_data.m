@@ -17,5 +17,5 @@ for f in files do
 end for;
 
 for quad in quads do
-  Write("ModFrmHilD/CanonicalRing/gen_weight_data.txt", Sprintf("%o\n", quad));
+  Write("ModFrmHilD/CanonicalRing/gen_weight_data.txt", Sprintf("%o", quad));
 end for;
