@@ -355,7 +355,7 @@ intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 // TODO swap the default
-intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
+intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
   {return dimension of S(Mk)}
   require version in ["builtin", "trace"] : "the options for trace are either \"builtin\" or \"trace formula\"";
   // FIXME: Ben will fix this eventually...
