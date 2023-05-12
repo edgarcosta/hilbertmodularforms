@@ -1,8 +1,12 @@
 # hilbertmodularforms
-Mockup implementation of Hilbert Modular Forms
 
+Implementation to compute graded rings of Hilbert modular forms in [Magma](http://magma.maths.usyd.edu.au/magma/).
 
-# Authors:
+## Tests
+
+## Examples
+
+## Authors
 
 - [Eran Assaf](https://math.dartmouth.edu/~eassaf/)
 - [Angelica Babei](https://angelicababei.com/),
@@ -19,5 +23,3 @@ Mockup implementation of Hilbert Modular Forms
 - [Shikhin Sethi](https://www.math.princeton.edu/people/shikhin-sethi)
 - [Samuel Tripp](https://samueltripp.github.io/)
 - [John Voight](http://www.math.dartmouth.edu/~jvoight/)
-
-
