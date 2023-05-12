@@ -1,11 +1,11 @@
 printf "Testing GaloisDescent argument...";
 F:=QuadraticField(10);
 prec:=10;
-M:=GradedRingOfHMFs(F, prec);
-ZF:=Integers(F);
-N:= 23*ZF;
-M2 := HMFSpace(M, N, [2,2]);
-C2 := CuspFormBasis(M2);
-delete M2`CuspFormBasis;
-// recompute without GaloisDescent
-C2 := CuspFormBasis(M2 : GaloisDescent:=false);
+R := GradedRingOfHMFs(F, prec);
+ZF := Integers(F);
+N := 3*ZF;
+M := HMFSpace(R, N, [2,2]);
+BQQ := CuspFormBasis(M);
+assert #BQQ eq 14;
+Bext := CuspFormBasis(M : GaloisDescent:=false);
+assert [Degree(CoefficientRing(f)) : f in Bext] eq [ 2, 2, 2, 2, 3, 3 ];

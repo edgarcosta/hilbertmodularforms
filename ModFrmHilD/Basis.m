@@ -49,7 +49,8 @@ intrinsic CuspFormBasis(
 
   require #SequenceToSet(Weight(Mk)) eq 1: "We only support parallel weight.";
 
-  if not assigned Mk`CuspFormBasis then
+  // we only cache GaloisDescent basis
+  if not assigned Mk`CuspFormBasis or not GaloisDescent then
     require CuspDimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : "Dimension of the space too large for the current precision";
     N := Level(Mk);
     k := Weight(Mk);
@@ -61,7 +62,7 @@ intrinsic CuspFormBasis(
 
       shortcut := GaloisDescent and (UseKnown or UseTraceForms);
       if shortcut then
-        require Dimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : "Dimension of the space too large for the current precision";
+        require Dimension(Mk) lt NumberOfCoefficients(Parent(Mk)) : Sprintf("insufficient precision: number of coefficients = %o < %o = ambient dimension", NumberOfCoefficients(Parent(Mk)), Dimension(Mk)) ;
         eisenstein_basis := EisensteinBasis(Mk);
         known_forms := eisenstein_basis;
         if UseKnown then
@@ -79,7 +80,7 @@ intrinsic CuspFormBasis(
       for i->dd in divisors do
         Mkdd := HMFSpace(Parent(Mk), dd, k);
         forms := CuspForms(Mkdd, Mk : GaloisDescent:=GaloisDescent);
-        require &and[not IsZero(f) : f in forms] : "precision too low to distinguish between cusp form and 0";
+        require &and[not IsZero(f) : f in forms] : "insufficient precision: a cusp form of level form seems to be zero";
         magma_forms cat:= forms;
         if shortcut and #forms gt 0 then
           cusp_forms := Basis(cusp_forms cat forms);
@@ -88,7 +89,7 @@ intrinsic CuspFormBasis(
           end if;
         end if;
       end for;
-      if shortcut and #magma_forms eq #cusp_forms then
+      if #magma_forms eq #cusp_forms or not shortcut then
         // the shortcut didn't get us anywhere
         cusp_forms := magma_forms;
       end if;
@@ -105,6 +106,8 @@ intrinsic CuspFormBasis(
       Mk`CuspFormBasis := Weight1CuspBasis(Mk);
       cusp_forms := Mk`CuspFormBasis;
     end if;
+  else
+    cusp_forms := Mk`CuspFormBasis;
   end if;
   return SubBasis(cusp_forms, IdealClassesSupport, GaloisInvariant);
 end intrinsic;
