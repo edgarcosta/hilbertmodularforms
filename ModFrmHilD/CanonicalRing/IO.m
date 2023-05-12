@@ -12,7 +12,7 @@ function SetPrecisionAndBounds(D, NN)
   else
     gen_bd := 10;
   end if;
-  return ComputePrecisionFromHilbertSeries(F, NN, gen_bd), gen_bd, 2*gen_bd;
+  return Integers()!ComputePrecisionFromHilbertSeries(F, NN, gen_bd), gen_bd, 2*gen_bd;
 end function;
 
 /*
