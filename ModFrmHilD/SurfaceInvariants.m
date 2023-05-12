@@ -438,3 +438,49 @@ intrinsic HodgeToChiK2(hs::SeqEnum) -> Any
   c12 := 10*(h20 + 1) - h11;
   return [chi, c12];
 end intrinsic;
+
+intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
+{Use [vdG 4.4] to compute the dimension.}
+  assert IsEven(k) and (k gt 0);
+  if (k eq 2) then
+      return ArithmeticGenus(Gamma) - 1;
+  end if;
+  
+  vol := VolumeOfFundamentalDomain(Gamma);
+  
+  dim := ((k-1)^2 / 4) * vol;
+  m := k div 2;
+  
+  // get elliptic points contribution
+  a := CountEllipticPoints(Gamma);
+
+  elliptic := 0;
+  for rot_factor in Keys(a) do
+    rot_tup := IntegerTuple(rot_factor);
+    n := rot_tup[1];
+    // normalize to type (q,1)
+    assert rot_tup[2] eq 1;
+    // q := rot_tup[2] * rot_tup[3]^(-1) mod n;
+    q_inv := rot_tup[3];
+    _, q, _ := XGCD(q_inv,n);
+    Qn<zeta> := CyclotomicField(n);
+    cont := &+[zeta^(i*(q+1)*m)/(n*(1-zeta^i)*(1-zeta^(i*q))) 
+	       : i in [1..n] | GCD(i,n) eq 1];
+    elliptic +:= cont*a[rot_factor];
+  end for;
+
+  dim +:= elliptic;
+  
+  // get cusp contribution
+  cusps := CuspsWithResolution(Gamma);
+
+  chi := 0;
+  for cusp in cusps do
+    _, _, L, n := Explode(cusp);
+    chi +:= n/12*&+[3+b : b in L];
+  end for;
+  
+  dim +:= chi;
+  
+  return dim;
+end intrinsic;

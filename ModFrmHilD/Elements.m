@@ -183,9 +183,9 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   F := BaseField(M);
   ZF := Integers(F);
   ddF := Different(ZF);
-  mCl := NarrowClassGroupMap(M);
+  //mCl := NarrowClassGroupMap(M);
   // nn = nu*bbp^-1 = nu*ddF*bb^-1
-  bb := mCl((nn^-1*ddF)@@mCl);
+  bb := NarrowClassRepresentative(M, (nn^-1*ddF));
   assert bb in NarrowClassGroupReps(M);
   _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
   nu := ReduceShintaniMinimizeTrace(nu)[1];
