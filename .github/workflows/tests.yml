@@ -147,5 +147,5 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          ./magma/magma -b target:=${{matrix.target}} exitsignal:="" run_tests.m
+          ./magma/magma target:=${{matrix.target}} exitsignal:="" run_tests.m
 
