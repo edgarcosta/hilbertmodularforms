@@ -4,7 +4,7 @@ ZF := Integers(F);
 NN := 1*ZF;
 gen_bd := 8;
 rel_bd := 2*gen_bd;
-prec := ComputePrecision(NN, gen_bd);
+prec := ComputePrecisionFromHilbertSeries(NN, gen_bd);
 S := HilbertModularSurface(F, NN, gen_bd, rel_bd : Precision := prec);
 assert Dimension(S) eq 2;
 assert ArithmeticGenus(S) eq 1;
