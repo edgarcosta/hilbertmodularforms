@@ -78,7 +78,7 @@ intrinsic CuspFormBasis(
 
       for i->dd in divisors do
         Mkdd := HMFSpace(Parent(Mk), dd, k);
-        forms := NewCuspForms(Mk : GaloisDescent:=GaloisDescent);
+        forms := CuspForms(Mkdd, Mk : GaloisDescent:=GaloisDescent);
         require &and[not IsZero(f) : f in forms] : "precision too low to distinguish between cusp form and 0";
         magma_forms cat:= forms;
         if shortcut and #forms gt 0 then
