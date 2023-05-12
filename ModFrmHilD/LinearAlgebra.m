@@ -116,6 +116,11 @@ intrinsic ComplementBasis(
   )-> SeqEnum[ModFrmHilDElt]
   {Given bases for spaces W < V, return a basis for the complement of W in V}
 
+  if #Wbasis eq 0 then return Vbasis; end if;
+  require Parent(Wbasis[1]) eq Parent(Vbasis[1]) : "Forms not in the same space";
+  Mk := Parent(Wbasis[1]);
+  Rs := {CoefficientRing(elt) : elt in Vbasis} join {CoefficientRing(elt) : elt in Wbasis};
+  require #Rs eq 1 : "we expect the forms to have the same coefficient ring";
   VCoeffMatrix, nus1 := CoefficientsMatrix(Vbasis);
   WCoeffMatrix, nus2 := CoefficientsMatrix(Wbasis);
   assert nus1 eq nus2;
@@ -164,7 +169,7 @@ intrinsic ComplementBasis(
 
   WComplementBasis := WExtendedCoeffBasis[Dimension(W) + 1..Dimension(V)];
   sol := Solution(VCoeffMatrix, WComplementBasis);
-  return [ &+[elt[i]*Vbasis[i] : i in [1..#Vbasis]] : elt in sol];
+  return [Mk |  &+[elt[i]*Vbasis[i] : i in [1..#Vbasis]] : elt in sol];
 end intrinsic;
 
 intrinsic ComplementBasis(Wbasis::SeqEnum[ModFrmHilDElt] : Alg := "WeightedLLL"
