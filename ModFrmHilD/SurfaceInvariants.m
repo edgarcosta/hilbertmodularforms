@@ -465,7 +465,7 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
     _, q, _ := XGCD(q_inv,n);
     Qn<zeta> := CyclotomicField(n);
     cont := &+[zeta^(i*(q+1)*m)/(n*(1-zeta^i)*(1-zeta^(i*q))) 
-	       : i in [1..n] | GCD(i,n) eq 1];
+	       : i in [1..n-1]];
     elliptic +:= cont*a[rot_factor];
   end for;
 
@@ -477,7 +477,11 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
   chi := 0;
   for cusp in cusps do
     _, _, L, n := Explode(cusp);
-    chi +:= n/12*&+[3+b : b in L];
+    if (n eq 1) and (#L eq 1) then
+        chi +:= 1/12*(1+L[1]);
+    else
+	chi +:= n/12*&+[3+b : b in L];
+    end if;
   end for;
   
   dim +:= chi;
