@@ -15,19 +15,29 @@ intrinsic HeckeStableSubspace(
         for g in Vprev do
             Append(~TpVprev, HeckeOperator(g, pp));
         end for;
+        
+        if IsZero(CoefficientsMatrix(TpVprev)) then
+            vprintf HilbertModularForms: "Tpp acts as 0 on V, so V is stable\n";
+            return Vprev;
+        end if;
 
         lindep := LinearDependence(Vprev cat TpVprev);
         dimnew := #lindep;
+        
         vprintf HilbertModularForms: "New dim = %o\n", dimnew;
+        
+        if dimnew eq 0 then
+            return [];
+        end if;
+        
+        require dimnew le dimprev: "Something went wrong, probably need to increase precision.";
 
         Vnew := [];
         for vec in lindep do
             f := &+[vec[i]*Vprev[i] : i in [1 .. #Vprev]];
-            M := CoefficientsMatrix([f]); d := Denominator(M); M := Matrix(Integers(),d*M);
-            g := GCD(Eltseq(M));
-            if not g eq 0 then
-                Append(~Vnew, f/g);
-            end if;
+            M := CoefficientsMatrix([f]); 
+            d := Denominator(M); M := Matrix(Integers(),d*M);
+            Append(~Vnew, f/GCD(Eltseq(M)));
         end for;
 
         if dimprev eq dimnew then
@@ -120,6 +130,8 @@ intrinsic HeckeStabilityCuspBasis(
     Mkl := HMFSpace(M, N, [k[1] + l, k[2] + l]);
     Bkl := CuspFormBasis(Mkl);
     vprintf HilbertModularForms: "Size of basis is %o.\n", #Bkl;
+    
+    require #Bkl eq CuspDimension(Mkl) : "Need to increase precision to compute this space"; 
 
     vprintf HilbertModularForms: "Dividing by the  Eisenstein series\n";
     
@@ -137,12 +149,18 @@ intrinsic HeckeStabilityCuspBasis(
         vprintf HilbertModularForms: "Computing Hecke stable subspace for prime %o\n of norm %o.\n", pp, Norm(pp);
         
         V := HeckeStableSubspace(V, ZF!!pp);
+
+        if #V eq 0 then
+            return V;
+        end if;
         
         //Now V is our updated candidate for the space of weight 1 forms. We need to check if the forms are holomorphic by squaring.
         vprintf HilbertModularForms: "Checking that forms are holomorphic by squaring\n";
 
         Mksquared := HMFSpace(M, N, [2*k[1], 2*k[2]], chi^2);
         B := CuspFormBasis(Mksquared);
+        
+        require #B eq CuspDimension(Mksquared): "Need to increase precision to compute this space";
         
         vprintf HilbertModularForms: "Done?\n";
         done := true;
@@ -151,14 +169,16 @@ intrinsic HeckeStabilityCuspBasis(
             if #LinearDependence(Bandf2) eq 0 then
                 done := false;
                 vprintf HilbertModularForms: "No!\n";
+                vprintf HilbertModularForms: "Linear dependence:\n %o \n", LinearDependence(Bandf2);
+                break f;
             end if;
         end for;
-
         if done then
+             vprintf HilbertModularForms: "Yes!\n";
             if prove then
                 vprintf HilbertModularForms: "Need to verify that the precision is large enough to compute the space larger space\n";
 
-                Vcheck := Basis(HMFSpace(M, N, [2*k[1] + 2,2*k[2] + 2]));
+                Vcheck := Basis(HMFSpace(M, N, [2*k[1] + 2*l,2*k[2] + 2*l]));
                 assert #LinearDependence(Vcheck) eq 0;
             end if;
 
