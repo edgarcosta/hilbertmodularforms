@@ -18,7 +18,7 @@ assert IsZero(Components(f2)[bb2]);
 assert IsZero(f1*f2);
 
 M4 := HMFSpace(GrRing, N, [4, 4]);
-B4 := Basis(M4);
+B4 := EisensteinBasis(M4) cat CuspFormBasis(M4);
 assert #B4 eq 4;
 
 assert LinearDependence([f1*f1] cat B4) eq [[ 23, -46, 46, -1728, 0 ]];

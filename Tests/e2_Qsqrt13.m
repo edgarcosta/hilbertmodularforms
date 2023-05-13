@@ -33,7 +33,7 @@ assert IsZero(hecke_h - Coefficient(h, 2*ZF)*h);
 
 
 M4 := HMFSpace(M, [4,4]);
-B4:=Basis(M4);
+B4 := EisensteinBasis(M4) cat CuspFormBasis(M4);
 assert #B4 eq 2;
 assert {[Coefficients(b)[1*ZF][elt] : elt in ShintaniRepsUpToTrace(M, 1*ZF, 2)]:  b in B4 } eq
 {
