@@ -18,7 +18,7 @@ jobs:
         run: |
           matrix=$((
             echo '{ "target" : ['
-            ls -1 Tests | sed -r 's/^([^,]*)(,?)$/"\1"\2/'  | paste -sd "," -
+            ls -1 Tests | grep -v '^_' | sed -r 's/^([^,]*)(,?)$/"\1"\2/'  | paste -sd "," -
             echo " ]}"
           ) | jq -c .)
           echo $matrix
@@ -87,10 +87,6 @@ jobs:
       matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
 
     steps:
-      - name: Checks target
-        if: startsWith(${{matrix.target}}, "_")
-        run: false
-
       - name: Check user permission
         id: check
         uses: scherermichael-oss/action-has-permission@master
@@ -151,5 +147,5 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          ./magma/magma target:=${{matrix.target}} exitsignal:="" run_tests.m
+          ./magma/magma -b target:=${{matrix.target}} exitsignal:="" run_tests.m
 
