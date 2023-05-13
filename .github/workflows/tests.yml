@@ -87,6 +87,10 @@ jobs:
       matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
 
     steps:
+      - name: Checks target
+        if: startsWith(${{matrix.target}}, "_")
+        run: false
+
       - name: Check user permission
         id: check
         uses: scherermichael-oss/action-has-permission@master
@@ -147,5 +151,5 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          ./magma/magma -b target:=${{matrix.target}} exitsignal:="" run_tests.m
+          ./magma/magma target:=${{matrix.target}} exitsignal:="" run_tests.m
 
