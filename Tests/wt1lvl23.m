@@ -1,6 +1,5 @@
-SetVerbose("HilbertModularForms", 3);
 F:=QuadraticField(5);
-prec:=10;
+prec:=20;
 M:=GradedRingOfHMFs(F, prec);
 ZF:=Integers(F);
 N:= 23*ZF;
