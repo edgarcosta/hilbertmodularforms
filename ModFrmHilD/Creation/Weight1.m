@@ -89,7 +89,7 @@ intrinsic HeckeStabilityCuspBasis(
                     ok := true;
                     mypair := pair;
                     l := 1;
-                    break;
+                    break psi0;
                 end if;
             end for;
         end if;
@@ -110,7 +110,7 @@ intrinsic HeckeStabilityCuspBasis(
                         ok := true;
                         mypair := pair;
                         l := 3;
-                        break;
+                        break psi0;
                     end if;
                 end for;
             end if;
@@ -127,7 +127,7 @@ intrinsic HeckeStabilityCuspBasis(
         
     //Load space of Cusp forms of weight [k1 + l,k2 + l] and level N.
     vprintf HilbertModularForms: "Computing basis of cusp forms of weight [%o,%o] and level %o\n", k[1] + l, k[2] + l, N;
-    Mkl := HMFSpace(M, N, [k[1] + l, k[2] + l]);
+    Mkl := HMFSpace(M, N, [k[1] + l, k[2] + l], chi*Character(MEis));
     Bkl := CuspFormBasis(Mkl);
     vprintf HilbertModularForms: "Size of basis is %o.\n", #Bkl;
     
@@ -165,11 +165,13 @@ intrinsic HeckeStabilityCuspBasis(
         vprintf HilbertModularForms: "Done?\n";
         done := true;
         for f in V do
+            assert Character(Parent(f)) eq chi;
+            assert Level(Parent(f)) eq N;
             Bandf2 := Append(B, f^2);
             if #LinearDependence(Bandf2) eq 0 then
                 done := false;
                 vprintf HilbertModularForms: "No!\n";
-                vprintf HilbertModularForms: "Linear dependence:\n %o \n", LinearDependence(Bandf2);
+//                vprintf HilbertModularForms: "Linear dependence:\n %o \n", LinearDependence(Bandf2);
                 break f;
             end if;
         end for;
