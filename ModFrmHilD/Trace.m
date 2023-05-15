@@ -35,7 +35,12 @@ declare verbose HMFTrace, 3;
 
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
-  // This is wrong at 1*Zf and k = 2, see CuspDimension for the fix
+  // This is wrong at 1*Zf and k = 2, see CuspDimension for the fix ( Ben: I think fixed? )
+
+  // If mm = 0 then return 0
+  if IsZero(mm) then
+    return 0;
+  end if;
 
   // Initialize
   k := Weight(Mk);
@@ -53,8 +58,14 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
   // Compute Trace[ T(mm) * P(aa) ] over representatives aa for the class group
-  return (1/#C) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi(aa) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in CReps ];
+  Tr := (1/#C) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi(aa) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in CReps ];
 
+  // Correction factor for the Eisenstein series in weight (2,...,2)
+  if Set(k) eq {2} then
+    Tr +:= CorrectionFactor(Mk, mm);
+  end if;
+
+  return Tr;
 end intrinsic;
 
 
@@ -64,17 +75,33 @@ end intrinsic;
 intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp := false) -> RngElt
   {Computes Trace[ T(mm) * P(aa) ] where T(mm) is the mth hecke operator and P(aa) is the diamond operator}
 
-  // If mm * aa^2 = 0 or is not narrowly principal then return 0
+  // If mm * aa^2 is not narrowly principal then return 0
   mmaa := mm * aa^2;
-  if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
+  if not IsNarrowlyPrincipal(mmaa) then
     return 0;
   end if;
 
   // Preliminaries
   M := Parent(Mk);
   NN := Level(Mk);
+  ZF := Integers(M);
   NNfact := Factorization(NN);
   k := Weight(Mk);
+
+  // Bad Primes
+  BPrimes := [ p[1] : p in Factorization(mm) | NN subset p[1] ];
+
+  // Function: Given an integral element t, check if the ideal t*ZF contains any bad primes 
+  function IsBad(t)
+    ans := true;
+    for pp in BPrimes do
+      if Valuation(t,pp) ne 0 then 
+        ans := false;
+        break;
+      end if;
+    end for;
+    return ans;
+  end function;
 
   // Index for summation
   Indexforsum := precomp select TracePrecomputationByIdeal(M,mm)[aa] else IndexOfSummation(M, mm, aa);
@@ -88,13 +115,18 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
       emb := PrecompEmbeddingNumberOverUnitIndex(M, data, NNfact, aa);
       emb := t eq 0 select emb else 2*emb; // Factor of 2 accounts for x^2 +/- bx + a.
     else
-      emb := EmbeddingNumberOverUnitIndex(M, data, NNfact, aa);
+      emb := EmbeddingNumberOverUnitIndex(M, data, NNfact, aa); 
+    end if;
+    // Adjust for bad primes
+    if #BPrimes ne 0 then
+      emb := IsBad(t) select 1/2^(#BPrimes) * emb else 0;
     end if;
     Sumterm +:= wk * emb;
   end for;
 
   // Trace is Constant term + Sum term
-  tr := ConstantTerm(Mk,mmaa) + Sumterm;
+  tr := (#BPrimes ne 0) select Sumterm else ConstantTerm(Mk,mmaa) + Sumterm;
+
   return tr;
 end intrinsic;
 
@@ -284,21 +316,67 @@ intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> RngElt
 end intrinsic;
 
 
-/*
+// Correction Factor 
 intrinsic CorrectionFactor(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
-  {Correction factor for parallel weight 2 and chi = 1}
+  {Correction factor for parallel weight 2}
   // Preliminaries
   k := Weight(Mk);
-  F := BaseField(Mk);
+  chi := Character(Mk);
+  NN := Level(Mk);
+  M := Parent(Mk);
+  NC := NarrowClassGroup(M);
+  mNC := NarrowClassGroupMap(M);
+  F := BaseField(M);
+  ZF := Integers(F);
   n := Degree(F);
-  // If all ki = 2 then correction factor appears (see Arenas)
-  if Set(k) eq {2} then
-    return (-1)^(n+1)*&+([ Norm(dd) : dd in Divisors(mm)]);
-  else
+  mC := ClassGroupPrimeRepresentatives(ZF, NN); // Class group map whose image lands in primes that are coprime to NN
+  C := Domain(mC); // Class group? The ClassGroupPrimeRepresentatives function needs to be fixed, it should not just return a map!
+  CReps := [ mC(i) : i in C ];
+
+
+  /* Requirements
+  (1) k = (2,...,2) is parallel weight 2
+  (2) chi factors through the homomorphism C -> NC given by a |-> a^2.
+  (3) mm is a square in the narrow class group. (Maybe this should be checked in the main trace function)
+  */
+
+  // Requirement (1)
+  if Set(k) ne {2} then
     return 0;
   end if;
+
+  // Requirement (2)
+  // Find kernel of homomorphims a |-> a^2 and check that chi is trivial on this subgroup.
+  ker := [ i : i in CReps | IsNarrowlyPrincipal(i^2) ]; 
+  if {chi(a) : a in ker} ne {1} then
+    return 0;
+  end if;
+
+  // Requirement (3)
+  // Find square roots of mm in the narrow class group.
+  S := [i : i in NC | 2*i eq (mm)@@mNC ]; 
+  if #S eq 0 then 
+    return 0;
+  end if; 
+
+  //////////////// Computing trace on the Eisenstein Space //////////////////
+
+  /* Write mm = mmG * mmB where (mmG, NN) = 1, i.e., divide mm into good and bad primes */
+  mmG := &*( [1*ZF] cat [ p[1]^p[2] : p in Factorization(mm) | IsCoprime(p[1],NN) ] ); // Good primes
+  mmB := (mm / mmG); // Bad primes
+
+  // Counting element of given norm for both good and bad primes
+  C := Norm(mmB) * &+[ Norm(aa) : aa in Divisors(mmG) ];
+
+  // size of 2-torsion subgroup CL+(F)[2] 
+  hplustwo := #[i : i in NC | 2*i eq NC!0 ]; 
+
+  // Representative [mm0]^2 = [mm] in narrow class group. 
+  mm0 := mNC(S[1]); 
+
+  return (-1)^(n+1) * C * hplustwo * chi(mm0)^(-1);
 end intrinsic;
-*/
+
 
 
 //////////////////////////////////////////////////////////
