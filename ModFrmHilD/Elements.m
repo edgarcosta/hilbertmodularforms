@@ -490,12 +490,12 @@ end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDEltComp) -> BoolElt
   {check if form is identically zero}
-  return IsZero([c : k->c in Coefficients(f)]);
+  return IsZero([c : c in Coefficients(f)]);
 end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
   {check if form is identically zero}
-  return IsZero([f_bb : k->f_bb in Components(f)]);
+  return IsZero([f_bb : f_bb in Components(f)]);
 end intrinsic;
 
 intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
