@@ -835,7 +835,7 @@ end intrinsic;
 ///////////////////////////////////////////////////
 
 
-
+/*
 intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   {Produces the trace of mm on the space Mk}
 
@@ -866,10 +866,11 @@ intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
       tr +:= chi( H[aa] ) * (OK ! Trace(Tmm * D ));
     end for;
   end if;
-
   return tr / #C;
 
 end intrinsic;
+*/
+
 
 
 
@@ -954,7 +955,10 @@ intrinsic HeckeOp(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   ZF := Integers(F);
   Factmm := Factorization(mm);
   MJV := HilbertCuspForms(F, NN, k);
-  N := NewSubspace(MJV);
+  // Ben: It seems like I have to sometimes run NewformDecomposition in order to produce diamond operators
+  // N := NewSubspace(MJV);
+  // _ := NewformDecomposition(N);
+
 
   // corner case
   if mm eq 1*ZF then
