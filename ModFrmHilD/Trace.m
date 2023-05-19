@@ -93,11 +93,19 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
   // Bad Primes
   BPrimes := [ p[1] : p in Factorization(mm) | NN subset p[1] ];
 
+  /* The implementation below with Baa and IsBad(t) allows the diamond operator to work with bad primes. 
+  If this breaks, we can instead pick representative of the class group that are coprime
+  to the level of the space and then change the IsBad(t) to record whether Valuation(t,pp) gt 0 */
+  Baa := AssociativeArray(); // Store valuations of aa so as not to recompute
+  for pp in BPrimes do
+    Baa[pp] := Valuation(aa,pp);
+  end for;
+
   // Function: Given an integral element t, check if the ideal t*ZF contains any bad primes 
   function IsBad(t)
     ans := true;
     for pp in BPrimes do
-      if Valuation(t,pp) ne 0 then 
+      if Valuation(t,pp) gt Baa[pp] then 
         ans := false;
         break;
       end if;
@@ -835,7 +843,7 @@ end intrinsic;
 ///////////////////////////////////////////////////
 
 
-/*
+
 intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   {Produces the trace of mm on the space Mk}
 
@@ -869,7 +877,7 @@ intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   return tr / #C;
 
 end intrinsic;
-*/
+
 
 
 
