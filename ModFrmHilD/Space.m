@@ -208,8 +208,8 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`UnitCharacters := unitcharacters;
   require Type(Mk`UnitCharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
   require Keys(Mk`UnitCharacters) eq SequenceToSet(NarrowClassGroupReps(M)) :"we expect the keys of the associative array to be narrow class group reprsentatives";
-  require {Type(v): v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
-  require &and[BaseField(v) eq BaseField(M): v in Mk`UnitCharacters]: "we expect all the unit characters to have the same base field";
+  require {Type(v): k->v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
+  require &and[BaseField(v) eq BaseField(M): k->v in Mk`UnitCharacters]: "we expect all the unit characters to have the same base field";
   M`Spaces[N][<k, chi, uc_values>] := Mk;
   return Mk;
 end intrinsic;
@@ -355,7 +355,7 @@ intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 // TODO swap the default
-intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
+intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
   {return dimension of S(Mk)}
   require version in ["builtin", "trace"] : "the options for trace are either \"builtin\" or \"trace formula\"";
   // FIXME: Ben will fix this eventually...
@@ -373,11 +373,7 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
     else
       M := Parent(Mk);
       ZF := Integers(M);
-      // Edgar: Ben, should one use Strace?
       Mk`CuspDimension := Integers()!Trace(Mk,1*ZF);
-      if SequenceToSet(k) eq Set([2]) then
-        Mk`CuspDimension -:= NarrowClassNumber(M);
-      end if;
     end if;
   end if;
   return Mk`CuspDimension;

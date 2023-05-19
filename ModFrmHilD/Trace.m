@@ -35,7 +35,12 @@ declare verbose HMFTrace, 3;
 
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
-  // This is wrong at 1*Zf and k = 2, see CuspDimension for the fix
+  // This is wrong at 1*Zf and k = 2, see CuspDimension for the fix ( Ben: I think fixed? )
+
+  // If mm = 0 then return 0
+  if IsZero(mm) then
+    return 0;
+  end if;
 
   // Initialize
   k := Weight(Mk);
@@ -53,8 +58,14 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
   // Compute Trace[ T(mm) * P(aa) ] over representatives aa for the class group
-  return (1/#C) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi(aa) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in CReps ];
+  Tr := (1/#C) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi(aa) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in CReps ];
 
+  // Correction factor for the Eisenstein series in weight (2,...,2)
+  if Set(k) eq {2} then
+    Tr +:= CorrectionFactor(Mk, mm);
+  end if;
+
+  return Tr;
 end intrinsic;
 
 
@@ -64,17 +75,33 @@ end intrinsic;
 intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp := false) -> RngElt
   {Computes Trace[ T(mm) * P(aa) ] where T(mm) is the mth hecke operator and P(aa) is the diamond operator}
 
-  // If mm * aa^2 = 0 or is not narrowly principal then return 0
+  // If mm * aa^2 is not narrowly principal then return 0
   mmaa := mm * aa^2;
-  if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
+  if not IsNarrowlyPrincipal(mmaa) then
     return 0;
   end if;
 
   // Preliminaries
   M := Parent(Mk);
   NN := Level(Mk);
+  ZF := Integers(M);
   NNfact := Factorization(NN);
   k := Weight(Mk);
+
+  // Bad Primes
+  BPrimes := [ p[1] : p in Factorization(mm) | NN subset p[1] ];
+
+  // Function: Given an integral element t, check if the ideal t*ZF contains any bad primes 
+  function IsBad(t)
+    ans := true;
+    for pp in BPrimes do
+      if Valuation(t,pp) ne 0 then 
+        ans := false;
+        break;
+      end if;
+    end for;
+    return ans;
+  end function;
 
   // Index for summation
   Indexforsum := precomp select TracePrecomputationByIdeal(M,mm)[aa] else IndexOfSummation(M, mm, aa);
@@ -90,11 +117,16 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
     else
       emb := EmbeddingNumberOverUnitIndex(M, data, NNfact, aa); 
     end if;
+    // Adjust for bad primes
+    if #BPrimes ne 0 then
+      emb := IsBad(t) select 1/2^(#BPrimes) * emb else 0;
+    end if;
     Sumterm +:= wk * emb;
   end for;
 
   // Trace is Constant term + Sum term
-  tr := ConstantTerm(Mk,mmaa) + Sumterm;
+  tr := (#BPrimes ne 0) select Sumterm else ConstantTerm(Mk,mmaa) + Sumterm;
+
   return tr;
 end intrinsic;
 
@@ -107,6 +139,7 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
   R<T> := PowerSeriesRing(Rationals());
   F := BaseField(M);
   ZF := Integers(M);
+  require Order(NN) eq ZF : "level must belong to the maximal order of F";
   n := Degree(F);
   Disc := Discriminant(ZF);
   h := ClassNumber(F);
@@ -137,7 +170,6 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
   // Constant term
   B := h * Norm(NN) * Abs(DedekindZetaExact(F,-1)) / 2^(n-1);
   B *:= &*( [1] cat [1 + Norm(p[1])^(-1) : p in Factorization(NN)] );
-
   res +:= B*R!([(k mod 2 eq 0 and k gt 0) select (k-1)^(n) else 0 : k in [0..prec]]);
   res +:= O(T^(prec + 1));
 
@@ -167,8 +199,17 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
   end if;
 end intrinsic;
 
-
-
+intrinsic HilbertSeries(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> RngSerPowElt
+  {Compute the Hilbert Series for the full space, Eisenstein and cuspidal}
+  // Hilbert Series for Cusp Space
+  ans := HilbertSeriesCusp(M, NN : prec:=false);
+  R<X> := Parent(ans);
+  // Compute the dimension of the Eisenstein Series
+  Mk := HMFSpace(M,NN,[2,2]);
+  n := NumberOfCusps(Mk);
+  ans +:= n/(1-X^2);
+  return ans;
+end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
@@ -201,7 +242,7 @@ Embedding Numbers over Unit Index
     - OptimalEmbeddingNumbers                          (Computes optimal embedding number for an order x^2 + bx + a using a formula.)
       * Subroutine: PolynomialforOrder                 (Computes a polynomial for the local max order of in the extension (ZK)_pp / ZF_pp above a prime pp with a conductor of bb)
       * Subroutine: PolynomialMaximalOrder             (Computes a polynomial for the local max order of in the extension (ZK)_pp / ZF_pp above a prime pp)
-     
+
 
   * PrecompEmbeddingNumbersOverUnitIndex               (Computes Embedding numbers for an order x^2 + bx + a over a unit index)
     - OptimalEmbedding                                 (Computes optimal embedding number for an order x^2 + bx + a using a formula.)
@@ -275,21 +316,67 @@ intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> RngElt
 end intrinsic;
 
 
-/*
+// Correction Factor 
 intrinsic CorrectionFactor(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
-  {Correction factor for parallel weight 2 and chi = 1}
+  {Correction factor for parallel weight 2}
   // Preliminaries
   k := Weight(Mk);
-  F := BaseField(Mk);
+  chi := Character(Mk);
+  NN := Level(Mk);
+  M := Parent(Mk);
+  NC := NarrowClassGroup(M);
+  mNC := NarrowClassGroupMap(M);
+  F := BaseField(M);
+  ZF := Integers(F);
   n := Degree(F);
-  // If all ki = 2 then correction factor appears (see Arenas)
-  if Set(k) eq {2} then
-    return (-1)^(n+1)*&+([ Norm(dd) : dd in Divisors(mm)]);
-  else
+  mC := ClassGroupPrimeRepresentatives(ZF, NN); // Class group map whose image lands in primes that are coprime to NN
+  C := Domain(mC); // Class group? The ClassGroupPrimeRepresentatives function needs to be fixed, it should not just return a map!
+  CReps := [ mC(i) : i in C ];
+
+
+  /* Requirements
+  (1) k = (2,...,2) is parallel weight 2
+  (2) chi factors through the homomorphism C -> NC given by a |-> a^2.
+  (3) mm is a square in the narrow class group. (Maybe this should be checked in the main trace function)
+  */
+
+  // Requirement (1)
+  if Set(k) ne {2} then
     return 0;
   end if;
+
+  // Requirement (2)
+  // Find kernel of homomorphims a |-> a^2 and check that chi is trivial on this subgroup.
+  ker := [ i : i in CReps | IsNarrowlyPrincipal(i^2) ]; 
+  if {chi(a) : a in ker} ne {1} then
+    return 0;
+  end if;
+
+  // Requirement (3)
+  // Find square roots of mm in the narrow class group.
+  S := [i : i in NC | 2*i eq (mm)@@mNC ]; 
+  if #S eq 0 then 
+    return 0;
+  end if; 
+
+  //////////////// Computing trace on the Eisenstein Space //////////////////
+
+  /* Write mm = mmG * mmB where (mmG, NN) = 1, i.e., divide mm into good and bad primes */
+  mmG := &*( [1*ZF] cat [ p[1]^p[2] : p in Factorization(mm) | IsCoprime(p[1],NN) ] ); // Good primes
+  mmB := (mm / mmG); // Bad primes
+
+  // Counting element of given norm for both good and bad primes
+  C := Norm(mmB) * &+[ Norm(aa) : aa in Divisors(mmG) ];
+
+  // size of 2-torsion subgroup CL+(F)[2] 
+  hplustwo := #[i : i in NC | 2*i eq NC!0 ]; 
+
+  // Representative [mm0]^2 = [mm] in narrow class group. 
+  mm0 := mNC(S[1]); 
+
+  return (-1)^(n+1) * C * hplustwo * chi(mm0)^(-1);
 end intrinsic;
-*/
+
 
 
 //////////////////////////////////////////////////////////
@@ -335,8 +422,8 @@ intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl : pre
   Indexforsum := [[b,a*u] : b in IdealCMExtensions(M,a*u,aa), u in TotallyPositiveUnits];
   vprintf HMFTrace, 2: "Done\n";
 
-  // Non precomputed version - adjusted to contain both x^2 - bx + au and x^2 + bx + au. 
-  if not precomp then 
+  // Non precomputed version - adjusted to contain both x^2 - bx + au and x^2 + bx + au.
+  if not precomp then
     Indexforsum cat:= [ [-i[1], i[2]] : i in Indexforsum  | i[1] ne 0 ];
   end if;
 
@@ -371,19 +458,19 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-// Functions 
+// Functions
 
 function FastArtinSymbol(D, pp, DD)
-  /* {Returns the artin symbol (K/pp) which is 0 if pp ramifies, -1, if pp splits and 
+  /* {Returns the artin symbol (K/pp) which is 0 if pp ramifies, -1, if pp splits and
   1 if pp is inert in the extension K = F(x) / (x^2 - D) where ZK has discrminant DD} */
   // D element of F for generating the field K = F(x) / (x^2 - D)
   // pp prime ideal of F
   // DD discriminant of the maximal order K
-  if DD subset pp then 
+  if DD subset pp then
     return 0;
-  elif IsLocalSquare(D,pp) then 
+  elif IsLocalSquare(D,pp) then
     return 1;
-  else 
+  else
     return -1;
   end if;
 end function;
@@ -407,7 +494,7 @@ end function;
 /////////////////////////////////// Embedding Numbers over Unit index  //////////////////////////////////////////////
 
 intrinsic EmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, FactNN::SeqEnum, aa::RngOrdIdl) -> RngElt
-  {Returns a count for the number of embeddings of the order S = ZF[x] / x^2 - tx + n into a Eichler order O(nn) of 
+  {Returns a count for the number of embeddings of the order S = ZF[x] / x^2 - tx + n into a Eichler order O(nn) of
   level NN in the definite quaternion algebra B/F with index aa up to units [O(nn)^* : ZF^*]}
   //
   // data = [t, n] coefficients for the polynomial x^2 - tx + n
@@ -415,7 +502,7 @@ intrinsic EmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, FactNN:
   // Mk HMFSpace (carries field F, ring of integers ZF, level NN, and unit group + unit group map UF, mUF)
   // aa ideal for the diamond operator
   //
-  
+
   // Preliminaries
   ZF := Integers(M);
   F := BaseField(M);
@@ -428,7 +515,7 @@ intrinsic EmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, FactNN:
   hw := ClassNumberOverUnitIndex(M,K); // Computes h/w where h = class number of K and w = unit index of 2 * [ZK^* : ZF^*]
   ff := Sqrt((D*ZF)/DD); // Conductor
 
-  // Sum over conductors 
+  // Sum over conductors
   conductorsum := 0;
   if ff subset aa then // check if aa divides ff
     for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
@@ -454,7 +541,7 @@ end intrinsic;
 /////////////////////////////////// Embedding Numbers over Unit index (Precomputations)  //////////////////////////////////////////////
 
 intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, NNfact::SeqEnum, aa::RngOrdIdl) -> RngElt
-  {Returns a count for the number of embeddings of the order S = ZF[x] / x^2 - tx + n into a Eichler order O(nn) of 
+  {Returns a count for the number of embeddings of the order S = ZF[x] / x^2 - tx + n into a Eichler order O(nn) of
   level NN in the definite quaternion algebra B/F with index aa up to units [O(nn)^* : ZF^*]}
   //
   // t, n coefficients for the polynomial x^2 - tx + n
@@ -677,7 +764,6 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
   // Preliminaries //
   // Magma requires absolute extensions for class number and units
   Kabs := AbsoluteField(K);
-  _, mKabs := IsIsomorphic(Kabs,K);
 
   // Class group
   h := ClassNumber(Kabs);
@@ -703,6 +789,8 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
       g := mu_K.1;
       // oddpartw := [p[1]^p[2] : p in Factorization(w) | p[1] ne 2];
       oddpart := Integers()!(w/twopower);
+      b, mKabs := IsIsomorphic(Kabs,K);
+      assert b;
       zeta_2 := mKabs(mapmu_K(oddpart*g)); // zeta_2 is now an element of a CM-extension K/F
       B := Norm(1 + zeta_2);
       // B := 2 + zeta_2 + zeta_2^(-1); // this is the norm from K to F — should be equivalent to 1 + zeta_2 + 1/zeta_2

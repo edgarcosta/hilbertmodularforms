@@ -53,7 +53,158 @@ intrinsic EisensteinSeries(
   return E;
 end intrinsic;
 
+intrinsic EisensteinConstantCoefficient(
+    M::ModFrmHilDGRng,
+    Weight::SeqEnum[RngIntElt],
+    eta::GrpHeckeElt,
+    psi::GrpHeckeElt
+    ) -> Tup
+  {return an associative array with constant coefficients indexed by bb}
+    
+  // We are following the notation in Section 2.2 of Dasgupta, Darmon, Pollack - Hilbert Modular Forms and the Gross-Stark Conjecture
+  aa := Modulus(eta); // aa := Conductor(eta);
+  bb := Modulus(psi); // bb := Conductor(psi);
+  require #SequenceToSet(Weight) eq 1: "We only support EisensteinSeries with parallel weight";
+  k := Weight[1];
 
+  //Set the coefficient field to be the common field for eta and psi.
+  lcm := LCM(Order(eta), Order(psi));
+  L<z> := CyclotomicField(lcm);
+  etainv := eta^-1;
+  psiinv := psi^-1;
+  SetTargetRing(~eta, z);
+  SetTargetRing(~psi, z);
+  SetTargetRing(~etainv, z);
+  SetTargetRing(~psiinv, z);
+
+  // deal with L-values
+  if IsOne(aa) then // aa = 1
+    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    SetTargetRing(~prim, z);
+    c0aa := LValue_Recognized(M, k, prim);
+  else
+    c0aa := 0;
+  end if;
+  // k = 1 and bb == 1
+  if k eq 1 and IsOne(bb) then
+    prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+    SetTargetRing(~prim, z);
+    c0bb := LValue_Recognized(M, k, prim);
+  else
+    c0bb := 0;
+  end if;
+
+  constant_term := AssociativeArray();
+  n := Degree(BaseField(M));
+
+  // deal with L-values
+  if IsOne(aa) then // aa = 1
+    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
+    SetTargetRing(~prim, z);
+    c0aa := L!LValue_Recognized(M, k, prim);
+  else
+    c0aa := 0;
+  end if;
+  // k = 1 and bb == 1
+  if k eq 1 and IsOne(bb) then
+    prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
+    SetTargetRing(~prim, z);
+    c0bb := L!LValue_Recognized(M, k, prim);
+  else
+    c0bb := 0;
+  end if;
+
+  constant_term := AssociativeArray();
+  n := Degree(BaseField(M));
+  bbs := NarrowClassGroupReps(M);
+  for bb in bbs do
+    constant_term[bb] := AssociativeArray();
+    // zero term for bb, equation (49) and (50)
+    // For them [nn] = \lambda, while we have [nn][bb']=[(1)]
+    // Thus we may take tt_lambda = 1/bb'$
+    bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
+    tt_lambda := bbp^-1;
+    constant_term[bb] := 2^(-n)*( etainv(tt_lambda)*c0aa +  psiinv(tt_lambda)*c0bb );
+  end for;
+
+
+  // Normalize coefficients
+  bb1 := bbs[1];
+  c0inv := (not (constant_term[bb1] in [0,1])) select (1/constant_term[bb1]) else 1;
+  for bb->c in constant_term do
+    constant_term[bb] *:= c0inv;
+  end for;
+  assert constant_term[bb1] in [0,1];
+
+    return constant_term;
+end intrinsic;
+
+//intrinsic EisensteinNonConstantCoefficient(
+//    M::ModFrmHilDGRng,
+//    Weight::SeqEnum[RngIntElt],
+//    eta::GrpHeckeElt,
+//    psi::GrpHeckeElt,
+//    ideals::SeqEnum[RngOrdIdl]
+//    ) -> Tup
+//  {return an associative array with a_nn with nn in ideals indexed by bb}
+//    
+//  // We are following the notation in Section 2.2 of Dasgupta, Darmon, Pollack - Hilbert Modular Forms and the Gross-Stark Conjecture
+//  aa := Modulus(eta); // aa := Conductor(eta);
+//  bb := Modulus(psi); // bb := Conductor(psi);
+//  require #SequenceToSet(Weight) eq 1: "We only support EisensteinSeries with parallel weight";
+//  k := Weight[1];
+//
+//  //Set the coefficient field to be the common field for eta and psi.
+//  lcm := LCM(Order(eta), Order(psi));
+//  L<z> := CyclotomicField(lcm);
+//  etainv := eta^-1;
+//  psiinv := psi^-1;
+//  SetTargetRing(~eta, z);
+//  SetTargetRing(~psi, z);
+//  SetTargetRing(~etainv, z);
+//  SetTargetRing(~psiinv, z);
+//
+//
+//  coeffs := AssociativeArray();
+//  for nn in ideals do
+//    if not IsZero(nn) then
+//      coeffs[nn] := c0inv * &+[eta(nn/rr) * psi(rr) * Norm(rr)^(k - 1) : rr in Divisors(nn)];
+//    end if;
+//  end for;
+//
+//    return coeffs;
+//end intrinsic;
+
+//intrinsic EisensteinCoefficientsFact(
+//    M::ModFrmHilDGRng,
+//    Weight::SeqEnum[RngIntElt],
+//    eta::GrpHeckeElt,
+//    psi::GrpHeckeElt,
+//    ideals::SeqEnum[RngOrdIdl]
+//  ) -> Tup
+//  {Factored code for Eisenstein Coefficients}
+//    lcm := LCM(Order(eta), Order(psi));
+//    L<z> := CyclotomicField(lcm);
+//    
+//    constant_term := EisensteinConstantCoefficient(M, Weight,eta,psi);
+//    coeffs := EisensteinNonConstantCoefficients(M, Weight,eta,psi,ideals);
+//
+//  // reduce field of definition
+//  if Degree(L) eq 1 then
+//    Lsub := Rationals();
+//  else
+//    Lsub := sub<L | [elt : elt in (Values(coeffs) cat Values(constant_term))]>;
+//  end if;
+//  if L ne Lsub then
+//    for nn->c in coeffs do
+//      coeffs[nn] := Lsub!c;
+//    end for;
+//    for bb->c in constant_term do
+//      constant_term[bb] := Lsub!c;
+//    end for;
+//  end if;
+//    return <constant_term, coeffs>;
+//end intrinsic;
 
 intrinsic EisensteinCoefficients(
   M::ModFrmHilDGRng,

@@ -18,7 +18,7 @@ jobs:
         run: |
           matrix=$((
             echo '{ "target" : ['
-            ls -1 Tests | sed -r 's/^([^,]*)(,?)$/"\1"\2/'  | paste -sd "," -
+            ls -1 Tests | grep -v '^_' | sed -r 's/^([^,]*)(,?)$/"\1"\2/'  | paste -sd "," -
             echo " ]}"
           ) | jq -c .)
           echo $matrix

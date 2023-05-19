@@ -928,19 +928,20 @@ intrinsic _EllipticPointData0(G::GrpHilbert) -> Assoc
     Counts := CountEllipticPoints(G);
 
     // Do some post processing.
-    Data := AssociativeArray();
-    for order in Keys(Counts) do
-        for factor in Keys(Counts[order]) do
-            // Drop identically 0 entries.
-            c := Counts[order][factor];
-            if c ne 0 then
-                rot := HMVRotationLabel(<order> cat <x : x in factor>);
-                Data[rot] := c;
-            end if;
-        end for;
-    end for;
+    /* Data := AssociativeArray(); */
+    /* for order in Keys(Counts) do */
+    /*     for factor in Keys(Counts[order]) do */
+    /*         // Drop identically 0 entries. */
+    /*         c := Counts[order][factor]; */
+    /*         if c ne 0 then */
+    /*             rot := HMVRotationLabel(<order> cat <x : x in factor>); */
+    /*             Data[rot] := c; */
+    /*         end if; */
+    /*     end for; */
+    /* end for; */
 
-    return Data;
+    /* return Data; */
+    return Counts;
 end intrinsic;
 
 

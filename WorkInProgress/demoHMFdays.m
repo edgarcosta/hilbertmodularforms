@@ -1,4 +1,5 @@
-// Demo file for HMF days
+// Example 
+
 load "config.m";
 
 // Create the graded ring

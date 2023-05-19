@@ -183,9 +183,9 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   F := BaseField(M);
   ZF := Integers(F);
   ddF := Different(ZF);
-  mCl := NarrowClassGroupMap(M);
+  //mCl := NarrowClassGroupMap(M);
   // nn = nu*bbp^-1 = nu*ddF*bb^-1
-  bb := mCl((nn^-1*ddF)@@mCl);
+  bb := NarrowClassRepresentative(M, (nn^-1*ddF));
   assert bb in NarrowClassGroupReps(M);
   _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
   nu := ReduceShintaniMinimizeTrace(nu)[1];
@@ -405,8 +405,7 @@ intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
               :
               CoeffsByIdeals:=false,
-              prec := 0
-              ) -> ModFrmHilDElt
+              prec := 0) -> ModFrmHilDElt
   {
     Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
     a double associative array coeffs
@@ -441,6 +440,25 @@ intrinsic HMF(Mk::ModFrmHilD,
     f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: CoeffsByIdeals:=CoeffsByIdeals, prec:=prec[bb]);
   end for;
   return f;
+end intrinsic;
+
+intrinsic HMF(Mk::ModFrmHilD,
+              seqcoeffs::SeqEnum,
+              nus::SeqEnum,
+              bbs::SeqEnum
+              ) -> ModFrmHilDElt
+  { Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
+    a sequence of coeff, mathching the sequence of nus and bbs }
+  coeffs := AssociativeArray();
+  for i->bb in bbs do
+    cbb := AssociativeArray();
+    k := &+[Integers() | #elt : elt in nus[1..i-1]];
+    for j->nu in nus[i] do
+      cbb[nu] := seqcoeffs[j + k];
+    end for;
+    coeffs[bb] := cbb;
+  end for;
+  return HMF(Mk, coeffs);
 end intrinsic;
 
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
