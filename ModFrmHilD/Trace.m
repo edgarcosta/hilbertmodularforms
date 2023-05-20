@@ -44,10 +44,12 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
 
   // Initialize
   k := Weight(Mk);
+  NN := Level(Mk);
   F := BaseField(Mk);
   ZF := Integers(F);
-  C,mC := ClassGroup(F);
-  CReps := [ mC(i) : i in C ];
+  h := ClassNumber(F);
+  CReps := ClassGroupReps(F);
+  H := CoprimeClassGroupHash(CReps,NN);
   chi := Character(Mk)^(-1);
   m,p := Conductor(chi);
   ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
@@ -58,7 +60,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
   // Compute Trace[ T(mm) * P(aa) ] over representatives aa for the class group
-  Tr := (1/#C) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi(aa) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in CReps ];
+  Tr := (1/h) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi( H[aa] ) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in CReps ];
 
   // Correction factor for the Eisenstein series in weight (2,...,2)
   if Set(k) eq {2} then
@@ -91,11 +93,19 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
   // Bad Primes
   BPrimes := [ p[1] : p in Factorization(mm) | NN subset p[1] ];
 
+  /* The implementation below with Baa and IsBad(t) allows the diamond operator to work with bad primes. 
+  If this breaks, we can instead pick representative of the class group that are coprime
+  to the level of the space and then change the IsBad(t) to record whether Valuation(t,pp) gt 0 */
+  Baa := AssociativeArray(); // Store valuations of aa so as not to recompute
+  for pp in BPrimes do
+    Baa[pp] := Valuation(aa,pp);
+  end for;
+
   // Function: Given an integral element t, check if the ideal t*ZF contains any bad primes 
   function IsBad(t)
     ans := true;
     for pp in BPrimes do
-      if Valuation(t,pp) ne 0 then 
+      if Valuation(t,pp) gt Baa[pp] then 
         ans := false;
         break;
       end if;
@@ -263,6 +273,21 @@ Class Group and Unit Index
 //              Helper Functions                 //
 //                                               //
 ///////////////////////////////////////////////////
+
+
+// Coprime Representative Hash
+// FIXME: Maybe store this to an HMFSpace?
+intrinsic CoprimeClassGroupHash(L::SeqEnum[RngOrdIdl], NN::RngOrdIdl) -> Assoc
+  {Given a sequence of integral ideals L = [a1, a2, ... ], this returns a hash H such that H[ai] = bi where bi is integral ideal such that (bi,NN) = 1 and [ai] = [bi] in the class group CL(F)}
+  ZF := Order(NN);
+  H := AssociativeArray();
+  for aa in L do 
+    q := CoprimeRepresentative(aa,NN);
+    bb := ideal < ZF | q * aa >;
+    H[aa] := bb;
+  end for;
+  return H;
+end intrinsic;
 
 
 // Weightfactor
@@ -818,7 +843,7 @@ end intrinsic;
 ///////////////////////////////////////////////////
 
 
-/*
+
 intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   {Produces the trace of mm on the space Mk}
 
@@ -832,19 +857,29 @@ intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   C,mC := ClassGroup(F); // class group
   reps := [ mC(i) : i in C ]; // class group representatives
   MJV := HilbertCuspForms(F, NN, k);
+  H := CoprimeClassGroupHash(reps,NN);
   Tmm := HeckeOp(Mk,mm);
+  K := CoefficientRing(Tmm);
 
   // loop over class group reps and take Trace[ T(mm) * P(aa) ] where T(mm) is the mth hecke operator and P(aa) is the diamond operator
+  tr := 0;
   if mm eq 1*ZF then
-    tr := (1/#C) * &+[ chi(aa) * (OK ! Trace(DiamondOperator(MJV,aa))) : aa in reps ];
+    tr := &+[ chi( H[aa] ) * (OK ! Trace( DiamondOperator(MJV,aa)) ) : aa in reps ];
   else
-    tr := (1/#C) * &+[ chi(aa) * (OK ! Trace(Tmm * DiamondOperator(MJV,aa))) : aa in reps ];
+    for aa in reps do
+      D := DiamondOperator(MJV,aa);
+      L := CoefficientRing(D);
+      boo, mK := IsIsomorphic(L,K);
+      D := Matrix(K,D);
+      tr +:= chi( H[aa] ) * (OK ! Trace(Tmm * D ));
+    end for;
   end if;
-
-  return tr;
+  return tr / #C;
 
 end intrinsic;
-*/
+
+
+
 
 
 // trace recursion function
@@ -928,6 +963,10 @@ intrinsic HeckeOp(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   ZF := Integers(F);
   Factmm := Factorization(mm);
   MJV := HilbertCuspForms(F, NN, k);
+  // Ben: It seems like I have to sometimes run NewformDecomposition in order to produce diamond operators
+  // N := NewSubspace(MJV);
+  // _ := NewformDecomposition(N);
+
 
   // corner case
   if mm eq 1*ZF then

@@ -2,9 +2,23 @@
 declare attributes FldAlg:
   TotallyPositiveUnits,
   TotallyPositiveUnitsMap,
-  FundamentalUnitTotPos
+  FundamentalUnitTotPos,
+  ClassGroupReps
   ;
 
+
+/////////////////////// (Narrow) Class Group Representatives ////////////
+// FIXME : Move narrow class group code from graded ring to this section
+
+intrinsic ClassGroupReps(F::FldAlg) -> SeqEnum
+  {Return ideal representatives for the class group}
+  if not assigned F`ClassGroupReps then 
+    C, mC := ClassGroup(F);
+    Reps := [ mC(i) : i in C ];
+    F`ClassGroupReps := Reps;
+  end if;
+  return F`ClassGroupReps;
+end intrinsic;
 
 
 /////////////////////// Totally positive associate /////////////////
