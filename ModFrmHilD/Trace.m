@@ -577,8 +577,9 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
 
   // Preliminaries
   ZF := Integers(M);
-  t, n, key := Explode(data);
+  t, n, key, c := Explode(data);
   h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]); // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*], DD = discriminant of maximal order
+  DD := (c eq 1) select Conjugate(DD) else DD; // Hash requires possible conjugation
   D := t^2 - 4*n; // Discriminant of order
   hw := h / w; // Computes h/w where h = class number of K and w = unit index of 2 * [ZK^* : ZF^*]
   ff := Sqrt((D*ZF)/DD); // Conductor

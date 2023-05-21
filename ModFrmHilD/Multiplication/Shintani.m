@@ -280,7 +280,7 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngElt : Precision := 100) -> Tup
   end if;
 end intrinsic;
 
-intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100) -> Any 
+intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100, Squares := false) -> Any 
   {Find the multiple of nu by a totally positive unit that is closest to the origin.}
 
   F := Parent(nu);
@@ -288,7 +288,7 @@ intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100) -> An
   if nu eq 0 then
     return Parent(nu)!0, 1;
   end if;
-  eps := FundamentalUnitTotPos(F);
+  eps := Squares select FundamentalUnitSquare(F) else FundamentalUnitTotPos(F);
   eps_RR := EmbedNumberFieldElement(eps : Precision := Precision);
   nu_RR := EmbedNumberFieldElement(nu : Precision := Precision);
   r := 1/(2*(Log(eps_RR[1])-Log(eps_RR[2])))*(Log(-(nu_RR[2]^2/nu_RR[1]^2)*(Log(eps_RR[2])/Log(eps_RR[1]))));
@@ -309,11 +309,11 @@ intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100) -> An
   return nus_min[ind], eps^rs[ind];
 end intrinsic;
 
-intrinsic ReduceShintaniMinimizeDistance(nu::RngElt : Precision := 100) -> Tup
+intrinsic ReduceShintaniMinimizeDistance(nu::RngElt : Precision := 100, Squares := false) -> Tup
   {}
   R := Parent(nu);
   F := NumberField(R);
-  return ReduceShintaniMinimizeDistance(F!nu : Precision := Precision);
+  return ReduceShintaniMinimizeDistance(F!nu : Precision := Precision, Squares := Squares);
 end intrinsic;
 
 // Test if an element is Shintani reduced
