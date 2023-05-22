@@ -355,16 +355,18 @@ intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
 end intrinsic;
 
 // TODO swap the default
-intrinsic CuspDimension(Mk::ModFrmHilD : version:="builtin") -> RngIntElt
+intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
   {return dimension of S(Mk)}
   require version in ["builtin", "trace"] : "the options for trace are either \"builtin\" or \"trace formula\"";
   // FIXME: Ben will fix this eventually...
   if not Mk`Ambient then
     version := "builtin";
   end if;
+  /*
   if NarrowClassNumber(Parent(Mk)) ne 1 and not IsTrivial(Character(Mk)) then
     version := "builtin";
   end if;
+  */
   if not assigned Mk`CuspDimension then
     k := Weight(Mk);
     if version eq "builtin" then
