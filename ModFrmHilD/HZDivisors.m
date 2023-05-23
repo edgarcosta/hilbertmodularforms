@@ -6,24 +6,24 @@ function R2(D,N)
     return [p : p in PrimeDivisors(D) | Valuation(N,p) ge 2*Valuation(D,p) ];
 end function;
 
-function PrimeFundamentalDiscriminant(D,q)
-    assert IsFundamentalDiscriminant(D);
-    assert D mod q eq 0;
-    assert IsPrime(q);
-    if (q mod 4 eq 1) then return q; end if;
-    if (q mod 4 eq 3) then return -q; end if;
-    // If we are here, q = 2
-    if D in [-8,8] then return D; end if;
-    sgn := #[p : p in PrimeDivisors(D) | p mod 4 eq 3] mod 2;
-    return (-1)^sgn * 4;
-end function;
+intrinsic PrimeDiscriminant(D::RngIntElt,q::RngIntElt) -> RngIntElt
+{Return the prime discriminant D(q).}
+    require D mod q eq 0 : "q must divide D.";
+    require IsFundamentalDiscriminant(D) : "D must be a fundamental discriminant.";
+    require IsPrime(q) : "q must be a prime.";
+    sign := (q mod 4 eq 1) select 1 else -1;
+    if (q eq 2) then
+	sign := (-1)^(#[p : p in PrimeDivisors(D) | p mod 4 eq 3]);
+    end if;
+    return sign*q^Valuation(D,q);
+end intrinsic;
 
 function IsHZEmpty(Gamma,N)
     D := Discriminant(BaseField(Gamma));
     b := Component(Gamma);
     R1_primes := R1(D,N);
     for q in R1_primes do
-	Dq := PrimeFundamentalDiscriminant(D,q);
+	Dq := PrimeDiscriminant(D,q);
 	chi := KroneckerCharacter(Dq);
 	hilb := HilbertSymbol(Norm(b), D, q);
 	if (chi(N) ne hilb) then
@@ -50,7 +50,31 @@ intrinsic Sqrt(x::RngOrdResElt) -> RngOrdResElt
   frakp := Factorization(N)[1][1];
   ZFp, comp_p := Completion(ZF, frakp);
   pi := UniformizingElement(ZFp);
-  sqrt_x := Parent(x)!((Sqrt(comp_p(ZF!x)) + O(pi^Valuation(N,frakp)))@@comp_p);
+  // This is to handle the p = 2 case
+  sqr := comp_p(ZF!x);
+  if IsSquare(sqr) then
+      sqrt_xp := Sqrt(sqr);
+  else
+      val_N := Valuation(N, frakp);
+      sqr +:= pi^val_N;
+      if IsSquare(sqr) then
+	  sqrt_xp := Sqrt(sqr);
+      else
+	  // This is the case p = 2.
+	  // Here I just give up and brute force my way for now
+	  assert exists(sqrt_x){y : y in ZF_mod_N | y^2 eq x};
+	  return sqrt_x;
+	  /*
+	  v := Valuation(sqr);
+	  assert (v gt 0) and IsEven(v);
+	  sqr div:= pi^v;
+	  ZF_mod_NN, red_NN := quo<ZF | frakp^(val_N - v)>;
+	  t := Sqrt(ZF_mod_NN!(((quo<ZFp | pi^(val_N - v)>)!sqr)@@comp_p));
+	  sqrt_xp := pi^(v div 2)*comp_p(ZF!t);
+	  */
+      end if;
+  end if;
+  sqrt_x := Parent(x)!((sqrt_xp + O(pi^Valuation(N,frakp)))@@comp_p);
   assert sqrt_x^2 eq x;
   return sqrt_x;
 end intrinsic;
@@ -69,7 +93,6 @@ intrinsic GetPossibleThetas(Gamma::GrpHilbert, N::RngIntElt) -> SeqEnum[Assoc]
 	v := Valuation(D,p);
 	frakp := PrimeIdealsOverPrime(F,p)[1];
 	ZFmodpv, red := quo<ZF | frakp^Valuation(D,p)>;
-//	Zmodpv := Integers(p^v);
 	if (p eq 2) and (v eq 2) then
 	    d := SquareFree(D);
 	    thetas := [1@@red, Sqrt(ZFmodpv!d)@@red];
@@ -122,10 +145,11 @@ intrinsic GetPossibleEtas(Gamma::GrpHilbert, N::RngIntElt) -> SeqEnum[Assoc]
     return etas;
 end intrinsic;
 
-function find_a(eta, D, b, N)
+function find_a(eta, D, bb, N)
     R2_primes := [x : x in Keys(eta)];
     eta_vals := [eta[x] : x in R2_primes];
-    a_prime_to := [p : p in PrimeDivisors(D*N*Norm(b)) | p notin R2_primes];
+    // The 2 is not necessary, but we would like to avoid complications arising at 2
+    a_prime_to := [p : p in PrimeDivisors(2*D*N*Norm(bb)) | p notin R2_primes];
     a := CRT(eta_vals cat [1 : p in a_prime_to], R2_primes cat a_prime_to);
     return a;
 end function;
@@ -150,22 +174,31 @@ function find_mu(theta, eta, a, D, bb, N)
 	Append(~values, Sqrt(red(N*Norm(bb))));
 	Append(~ideals, frakp^Valuation(D,p));
     end for;
-    // values cat:= [Sqrt(Integers(p^Valuation(D,p))!N*Norm(bb)) : p in other_primes];
-    // ideals cat:= [p^Valuation(D,p) : p in other_primes];
     for p in a_primes do
 	frakps := PrimeIdealsOverPrime(F,p);
 	frakp := frakps[1];
 	ZFmodpv, red := quo<ZF | frakp^Valuation(a,p)>;
 	if #frakps eq 1 then
 	    // inert case
-	    // !! TODO : consider the case p = 2
+	    // We assume p ne 2 since we can choose a this way
 	    U, mU := MultiplicativeGroup(ZFmodpv);
 	    Fq := GF(p^2);
 	    zeta := PrimitiveElement(Fq);
 	    h := hom<ZF -> Fq | zeta^(Eltseq(red(ZF.2)@@mU)[1]) >;
 	    h_inv := hom<Fq -> ZFmodpv | mU(U.1)>;
-	    is_norm, sol := NormEquation(Fq, h(N*Norm(bb)));
-	    assert is_norm;
+	    // For some reason this doesn't work. However, we can solve it by hands quite simply
+	    // is_norm, sol := NormEquation(Fq, h(N*Norm(bb)));
+	    // assert is_norm;
+	    t := h(N*Norm(bb));
+	    Fp := PrimeField(Fq);
+	    is_sqr, sol := IsSquare(Fp!t);
+	    if is_sqr then
+		sol := Fq!sol;
+	    else
+		is_sqr, sol := IsSquare(Norm(zeta)*Fp!t);
+		assert is_sqr;
+		sol := zeta * Fq!sol;
+	    end if;
 	    Append(~values, h_inv(sol)@@red);
 	    Append(~ideals, frakp^Valuation(a,p));
 	else
@@ -227,6 +260,7 @@ intrinsic GetAllHZComponents(Gamma::GrpHilbert, N::RngIntElt) -> SeqEnum[AlgMatE
     if IsHZEmpty(Gamma,N) then
 	return [];
     end if;
+    ZF := Order(Component(Gamma));
     require Level(Gamma) eq 1*ZF : "Currently only supports trivial level.";
     require AmbientType(Gamma) eq SL_Type : "Currently only supports SL type.";
     thetas := GetPossibleThetas(Gamma,N);
@@ -375,6 +409,32 @@ intrinsic GetHZComponent(Gamma::GrpHilbert, lambda::FldNumElt, comps::SeqEnum[Al
   return 0;
 end intrinsic;	  
 
+intrinsic Genera(R::RngOrd) -> Assoc
+{Return a representative from each genus of the order.}
+  cg, m_cg := ClassGroup(R);
+  ncg, m_ncg := NarrowClassGroup(R);
+  sq := hom<cg -> ncg | [(m_cg(cg.i)^2)@@m_ncg : i in [1..Ngens(cg)]] >;
+  coset_reps := Transversal(ncg, Image(sq));
+  ideals := [m_ncg(r) : r in coset_reps];
+  symbs := [Genus(bb) : bb in ideals];
+  genera := AssociativeArray(symbs);
+  for i->symb in symbs do
+      genera[symb] := ideals[i];
+  end for;
+  return genera;
+end intrinsic;
+
+intrinsic Genus(bb::RngOrdIdl) -> SeqEnum
+{Return the signs representing the genus of the ideal bb.}
+  D := Discriminant(Order(bb));
+  return [HilbertSymbol(Norm(bb), D, q) : q in PrimeDivisors(D)];
+end intrinsic;
+
+intrinsic IsPrincipalGenus(bb::RngOrdIdl) -> BoolElt
+{True if bb belongs to the principa genus of its order.}
+  return Set(Genus(bb)) eq {1};
+end intrinsic;
+
 // This is not enough. In order to get components correctly in the presence of level structure, we should
 // be able to construct explicit isometries transforming one Hermitian lattice to another, so that we will be
 // able to check how they act on a distinguished line.
@@ -422,6 +482,5 @@ function FindIsometry(B1, B2)
     bc := T1*T2^(-1);
     return bc;
 end function;
-
 
 

@@ -11,16 +11,6 @@ for i in [1..#ds] do
     es[ds[i]] := e_vals[i];
 end for;
 
-function PrimeDiscriminant(D,q)
-    assert D mod q eq 0;
-    assert IsFundamentalDiscriminant(D);
-    sign := (q mod 4 eq 1) select 1 else -1;
-    if (q eq 2) then
-	sign := &*[(-1) : p in PrimeDivisors(D) | p mod 4 eq 3];
-    end if;
-    return sign*q^Valuation(D,q);
-end function;
-
 // For K2, vdG only lists the value after blowing down succesively 
 // HZ execptional curves, we need to know how many there are to compare.
 function getHZExceptionalNum(Gamma)
@@ -49,7 +39,6 @@ for d in ds do
 end for;
 
 ds := [d : d in [2..500] | IsFundamentalDiscriminant(d)];
-// ds := [d : d in ds | d notin [8,12]];
 DN_bound := 500;
 
 printf "Testing integrality of genus for some random (disc;level;comp)...";
