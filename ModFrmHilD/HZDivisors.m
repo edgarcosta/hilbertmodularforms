@@ -304,8 +304,8 @@ intrinsic Eta(Gamma::GrpHilbert, B::AlgMatElt[FldNum]) -> SeqEnum[Assoc]
   sigma := Automorphisms(F)[2];
   D := Discriminant(ZF);
   sqrtD := Sqrt(F!D);
-  a := B[1,1] / sqrtD;
-  b := B[2,2] * Norm(bb) / sqrtD;
+  a := Integers()!(B[1,1] / sqrtD);
+  b := Integers()!(B[2,2] * Norm(bb) / sqrtD);
   lambda := B[1,2];
   require &and[B[i,j] eq -sigma(B[j,i]) : i,j in [1..2] | i lt j] : "B should be skew-Hermitian.";
   R2_primes := R2(D,N);
@@ -314,12 +314,59 @@ intrinsic Eta(Gamma::GrpHilbert, B::AlgMatElt[FldNum]) -> SeqEnum[Assoc]
       if GCD(a,p) eq 1 then
 	  eta[p] := HilbertSymbol(a, D, p);
       elif Valuation(b,p) eq Valuation(Norm(bb),p) then
-	  eta[p] := HilbertSymbol(b/Norm(bb), D, p);
+	  eta[p] := HilbertSymbol(b/Norm(bb), Rationals()!D, p);
       else
-	  a_new := a + b/Norm(bb) + (lambda - sigma(lambda)) / sqrtD;
+	  a_new := Rationals()! (a + b/Norm(bb) + (lambda - sigma(lambda)) / sqrtD);
 	  assert Valuation(a_new, p) eq 0;
-	  eta[p] := HilbertSymbol(a_new, D, p);
+	  eta[p] := HilbertSymbol(a_new, Rationals()!D, p);
       end if;
   end for;
   return eta;
 end intrinsic;
+
+intrinsic IsSameComponent(Gamma::GrpHilbert, B1::AlgMatElt[FldNum], B2::AlgMatElt[FldNum]) -> BoolElt
+{True if F_B1 and F_B2 belong to the same component on X_Gamma.}
+  theta1 :=  Theta(Gamma, B1);
+  theta2 := Theta(Gamma, B2);
+  sgn := 1;
+  eq_theta := IsThetaEqual(Gamma, theta1, theta2);
+  if not eq_theta then
+      sgn := -1;
+      // we negate to check for a minus sign;
+      for p in Keys(theta1) do
+	  theta1[p] := sgn * theta1[p];
+      end for;
+      eq_theta := IsThetaEqual(Gamma, theta1, theta2);
+      if not eq_theta then
+	  return false;
+      end if;
+  end if;
+
+  eta1 :=  Eta(Gamma, B1);
+  eta2 := Eta(Gamma, B2);
+  for p in Keys(eta1) do
+      eta1[p] := sgn * eta1[p];
+  end for;
+  
+  eq_eta := IsEtaEqual(Gamma, Eta(Gamma,B1), Eta(Gamma,B2));
+  
+  return eq_eta;
+end intrinsic;	  
+
+intrinsic GetHZComponent(Gamma::GrpHilbert, lambda::FldNumElt, comps::SeqEnum[AlgMatElt[FldNum]]) -> RngIntElt
+{Return the index of the component F_B where B is a matrix corresponding to lambda with a = 0 on X_Gamma.}
+  bb := Component(Gamma);
+  ZF := Order(bb);
+  F := NumberField(ZF);
+  sigma := Automorphisms(F)[2];
+  D := Discriminant(ZF);
+  sqrtD := Sqrt(F!D);
+  B := Matrix([[0,lambda],[-sigma(lambda), sqrtD / Norm(bb)]]);
+  for i->comp in comps do
+      if IsSameComponent(Gamma, comp, B) then
+	  return i;
+      end if;
+  end for;
+  // This should not happen. If we're here something is wrong!!!
+  return 0;
+end intrinsic;	  
