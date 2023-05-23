@@ -227,6 +227,8 @@ intrinsic GetAllHZComponents(Gamma::GrpHilbert, N::RngIntElt) -> SeqEnum[AlgMatE
     if IsHZEmpty(Gamma,N) then
 	return [];
     end if;
+    require Level(Gamma) eq 1*ZF : "Currently only supports trivial level.";
+    require AmbientType(Gamma) eq SL_Type : "Currently only supports SL type.";
     thetas := GetPossibleThetas(Gamma,N);
     etas := GetPossibleEtas(Gamma,N);
     is_minus,part,p := is_minus_in_orbit(Gamma,N);
@@ -358,6 +360,8 @@ intrinsic GetHZComponent(Gamma::GrpHilbert, lambda::FldNumElt, comps::SeqEnum[Al
   bb := Component(Gamma);
   ZF := Order(bb);
   F := NumberField(ZF);
+  require Level(Gamma) eq 1*ZF : "Currently only supports trivial level.";
+  require AmbientType(Gamma) eq SL_Type : "Currently only supports SL type.";
   sigma := Automorphisms(F)[2];
   D := Discriminant(ZF);
   sqrtD := Sqrt(F!D);
@@ -370,3 +374,54 @@ intrinsic GetHZComponent(Gamma::GrpHilbert, lambda::FldNumElt, comps::SeqEnum[Al
   // This should not happen. If we're here something is wrong!!!
   return 0;
 end intrinsic;	  
+
+// This is not enough. In order to get components correctly in the presence of level structure, we should
+// be able to construct explicit isometries transforming one Hermitian lattice to another, so that we will be
+// able to check how they act on a distinguished line.
+
+function bart(g)
+    F := BaseRing(g);
+    sigma := Automorphisms(F)[2];
+    return Parent(g)![sigma(x) : x in Eltseq(Transpose(g))];
+end function;
+
+function Orthogonalize(C)
+    assert (Nrows(C) eq 2) and (Ncols(C) eq 2);
+    a := C[1,1];
+    b := C[1,2];
+    c := C[2,2];
+    F := BaseRing(C);
+    sigma := Automorphisms(F)[2];
+    assert (C[2,1] eq sigma(b)) and (sigma(a) eq a) and (sigma(c) eq c);
+    if (a eq 0) and (c eq 0) then
+	T := Matrix(F, [[1,b],[1,-b]]);
+    elif (a eq 0) then
+	S := Matrix(F, [[0,1],[-1,0]]);
+	_, T := Orthogonalize(S*C*bart(S));
+	T := T*S;
+    else
+	T := Matrix(F, [[1,0],[-sigma(b),a]]); 
+    end if;
+    C_orth := T*C*bart(T);
+    assert (C_orth[1,2] eq 0) and (C_orth[2,1] eq 0);
+    return C_orth, T;
+end function;
+
+function FindIsometry(B1, B2)
+    // we start by constructing lattices for both in the same Hermitian space
+    F := BaseRing(B1);
+    ZF := Integers(F);
+    D := Discriminant(ZF);
+    sqrtD := Sqrt(F!D);
+    C1 := sqrtD*B1;
+    C2 := sqrtD*B2;
+    D1, T1 := Orthogonalize(C1);
+    D2, T2 := Orthogonalize(C2);
+    // !! TODO : Is that true? Maybe just away from the ramified primes? maybe up to a constant?
+    assert D1 eq D2;
+    bc := T1*T2^(-1);
+    return bc;
+end function;
+
+
+

@@ -333,6 +333,9 @@ intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) ->
    b := Component(Gamma);
    N := Level(Gamma);
    F := BaseField(Gamma);
+   ZF := Integers(F);
+   require Level(Gamma) eq 1*ZF : "Currently only supports trivial level.";
+   require AmbientType(Gamma) eq SL_Type : "Currently only supports SL type.";
    comps := GetAllHZComponents(Gamma,t);
    for cusp in cusps do
        self_intersections := cusp[3];
