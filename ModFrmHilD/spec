@@ -11,6 +11,7 @@
   GradedRing.m
   HJ-CFrac.m
   HZCuspIntersection.m
+  HZDivisors.m
   Hecke.m
   Labels.m
   LinearAlgebra.m
