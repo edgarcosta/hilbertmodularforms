@@ -884,70 +884,78 @@ end intrinsic;
 
 
 // trace recursion function
-// ****** Needs Testing ***********
+// ****  FIXME: This function has not been optimized *********
+// FIXME - In trace function change the Trace 0 to output 0 in the coefficient ring of Hecke character.
 intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
   {Computes the trace of T(pp)^r * T(pp)^s on the space Mk}
-
-  // mm = 0 or nn = 0 return 0
-  if IsZero(mm) or IsZero(nn) then
-    return 0;
-  end if;
 
   // initialize
   k := Weight(Mk);
   NN := Level(Mk);
   F := BaseField(Mk);
   ZF := Integers(F);
-  C,mC := ClassGroup(F); // class group
-  Creps := [ mC(i) : i in C ]; // class group representatives
-  chi := Character(Mk)^(-1);
+  C := ClassGroupReps(F); // class group representatives
+  H := CoprimeClassGroupHash(C,NN); // comprime class group reps
+  Bad := [p[1] : p in Factorization(NN)]; // Bad primes
+  chi := Character(Mk)^(-1); // character
   ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
+
+  // mm = 0 or nn = 0 return 0
+  if IsZero(mm) or IsZero(nn) then
+    return ZK ! 0;
+  end if;
 
   // requirements
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
-  // convert pp to class group rep
+  // function: convert aa to standard class group rep
   function Classrep(aa)
-    return [ bb : bb in Creps | IsPrincipal(bb*aa^(-1)) ][1];
+    return [ bb : bb in C | IsPrincipal(bb*aa^(-1)) ][1];
   end function;
 
-  // Greedy Algorithm - Store factorizations
-  cc := GCD(mm,nn);
-  mmp := &*([1*ZF] cat [ p[1]^p[2] : p in Factorization(mm) | not cc subset p[1]] ) ; // coprime to nn part
-  nnp := &*([1*ZF] cat [ p[1]^p[2] : p in Factorization(nn) | not cc subset p[1]] ) ; // coprime to mm part
-  ccstar := mmp * nnp;
-  tuples := [ [* 1, ccstar, 1*ZF *] ];
-  for pps in Factorization(cc) do
-    // prime
+  /* Write T(m) * T(n) as a sum of terms a * T(b) * D(c) indexed by tuples (a,b,c) where 
+    - a is scalar from the hecke recusion (from the norm of an ideal), 
+    - b is the ideal for the hecke operator T, and 
+    - c is the ideal for the diamond operator D */
+  
+  // Recursion tuples
+  tuples := [ [* 1, 1*ZF, 1*ZF *] ];
+  for pps in Factorization(mm * nn) do
     pp := pps[1];
-    require not NN subset pp: "prime is a subset of the level";
     r := Valuation(nn,pp);
     s := Valuation(mm,pp);
-    // Loop
+    // flag = true    <=>   no hecke recursion
+    flag := (r eq 0) or (s eq 0) or (pp in Bad) select true else false;
     newtuples := [];
-    for i in [0..Min(r,s)] do
-      for tuple in tuples do
-        a := tuple[1];
-        b := tuple[2];
-        c := tuple[3];
-        newtuples cat:= [ [*  a * Norm(pp)^(i * (k[1] - 1)), b * pp^(r + s - 2*i), c * pp^i  *] ];
-      end for;
+    for tuple in tuples do
+      a,b,c := Explode(tuple);
+      N := flag select [[* a, b*pp^(r+s), c *]] else [ [*  a*Norm(pp)^(i*(k[1]-1)), b*pp^(r+s-2*i), c*pp^i  *] : i in [0..Min(r,s)]];
+      newtuples cat:= N;
     end for;
     tuples := newtuples;
   end for;
 
-  // take product
+  // Sum
   ans := 0;
-  for aa in Creps do
-    for t in tuples do
-      qq := Classrep(t[3] * aa);
-      ans +:= (1 / Norm(qq)) ^ (k[1]-2) * chi(aa) * t[1] * TraceProduct(Mk, t[2], qq : precomp := true);
+  for t in tuples do
+    // initialize
+    x := 0;
+    a,b,c := Explode(t);
+    // Compute trace of T(b) * D(c) on Mk 
+    for aa in C do
+      qq := Classrep(c * aa);
+      x +:= (1 / Norm(qq)) ^ (k[1]-2) * chi( H[aa] ) * TraceProduct(Mk, b, qq : precomp := true);
     end for;
+    x *:= (1/#C);
+    // Eisenstein correction factor
+    if Set(k) eq {2} then
+      x +:= CorrectionFactor(Mk, b) * chi( c );
+    end if;
+    // Scale by a and add to sum
+    ans +:= a * x;
   end for;
-  ans *:= (1/#C);
 
   return ans;
-
 end intrinsic;
 
 
@@ -1038,156 +1046,6 @@ intrinsic HeckeTraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
     end for;
   end for;
   return HMF(Mk, coeffs);
-end intrinsic;
-
-
-intrinsic BadPrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> Any
-  {Computes trace of T(mm) * P(aa) for Hecke operator T(mm) and Diamond operator P(aa) using precomputations.}
-
-  // If mm * aa^2 = 0 or is not narrowly principal then return 0
-  mmaa := mm * aa^2;
-  if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
-    return 0;
-  end if;
-
-  // Space Preliminaries
-  M := Parent(Mk);
-  NN := Level(Mk);
-  NNfact := Factorization(NN);
-  k := Weight(Mk);
-  F := BaseField(Mk);
-  ZF := Integers(Mk);
-  n := Degree(F);
-  places := Places(M);
-  _<x> := PolynomialRing(ZF);
-
-  // Check precomputations
-  if not IsDefined( TracePrecomputation(M), mm) then
-    print "running precomputation for ideal     ", mm;
-    HMFTracePrecomputation(M,[mm]);
-  end if;
-  Indexforsum := TracePrecomputation(M)[mm][aa];
-
-  // Summation
-  Sumterm := 0;
-  for StoredData in Indexforsum do
-
-    // Preliminaries
-    b := StoredData[1];
-    a := StoredData[2]; // x^2 + bx + a
-    ZK := StoredData[5]; // Used for Artin Symbol
-    ff := StoredData[6]; // Conductor
-    h := StoredData[7]; // Class number of quadratic extension K/F
-    w := StoredData[8]; // Unit index of quadratic extension K/F
-
-    ///////////////////  Helper Functions //////////////////////
-
-    // Weightfactor
-    Weightfactor := function(b,a,l)
-      _<x> := PowerSeriesRing(RealField(k[1]+20),k[1]+20); // extend with weight
-      P := 1/(1 + b*x + a*x^2);
-      return Coefficient(P,l);
-    end function;
-
-    // Artin Symbol
-    function ArtinSymbol(pp)
-      if IsSplit(pp,ZK) then return 1;
-      elif IsRamified(pp,ZK) then return 0;
-      else return -1; end if;
-    end function;
-
-    // Constant
-    C := (h/w) * (&*[ Weightfactor( Evaluate(b,places[i]), Evaluate(a,places[i]), k[i]-2 ) : i in [1..n]]);
-    // We do one computation for x^2 - bx + a and x^2 + bx + a since the embedding numbers are the same
-    if b ne 0 then C *:= 2; end if;
-
-    // Conductor Sum
-    conductorsum := 0;
-    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
-      // Term from class number of order -> class number of maximal order
-      term := 1;
-      term *:= Norm(bb) * (&*([1] cat [1 - ArtinSymbol(pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
-      // Embedding numbers
-      for pair in NNfact do
-        pp := pair[1];
-        e := pair[2];
-        f := Valuation(bb,pp); // Conductor
-        g := Valuation(Discriminant(ZK),pp); // Valuation of discriminant
-        term *:= OptimalEmbeddings(e, 2*f, g, pp, ZK);
-      end for;
-      conductorsum +:= term;
-    end for;
-
-    // Add to Sumterm
-    Sumterm +:= C * conductorsum;
-  end for;
-
-  // Trace is Constant term + Sum term
-  tr := Round( ConstantTerm(Mk,mmaa) + Sumterm );
-
-  // adjust for bad primes ( This can be toggled on / off still produces a trace )
-  cc := GCD(NN,mm);
-  if cc ne 1*ZF then
-    Badness := [ dd : dd in Divisors(ideal< ZF | NN * cc^(-1) >) | dd ne NN ];
-    for dd in Badness do
-        // including space
-        Mdd := HMFSpace(M,dd,k);
-        // "index" of Mk(dd) in Mk(NN)
-        ii := ideal< ZF | NN * dd^(-1) >;
-        // include new traceform at level dd into level NN
-        L := [];
-        for ee in Divisors(GCD(mm,ii)) do
-          if ee ne 1*ZF then
-            mee := ideal< ZF | mm * ee^(-1) >;
-            print Norm(dd), Norm(ii), Norm(ee), Norm(mee), TraceRecurse(Mdd,ee,mee), #Divisors(ideal< ZF | ii * ee^(-1) >);
-            tr -:= TraceRecurse(Mdd,ee,mee) * #Divisors(ideal< ZF | ii * ee^(-1) >);
-          end if;
-        end for;
-    end for;
-  end if;
-
-  // return
-  return tr;
-end intrinsic;
-
-
-
-
-intrinsic PrecompTraceProductNew(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> Any
-  {Computes trace of T(mm) * P(aa) for Hecke operator T(mm) and Diamond operator P(aa) using precomputations.}
-
-  // If mm * aa^2 = 0 or is not narrowly principal then return 0
-  mmaa := mm * aa^2;
-  if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
-    return 0;
-  end if;
-
-  // Space Preliminaries
-  M := Parent(Mk);
-  NN := Level(Mk);
-  k := Weight(Mk);
-  F := BaseField(Mk);
-  ZF := Integers(Mk);
-
-  ///////////////////  Helper Functions //////////////////////
-
-  // sign of (p1^e1) * (p2^e2) * ... * (pn^en) = (-1) ^ (e1 + e2 + ... + en)
-  sgn := function(aa)
-    if aa eq 1*ZF then
-      return 1;
-    else
-      return (-1) ^ &+[i[2] : i in Factorization(aa)];
-    end if;
-  end function;
-
-  ans := 0;
-  for dd in Divisors(NN) do
-      Mdd := HMFSpace(M,dd,k);
-      ii := ideal< ZF | NN * dd^(-1) >;  // index of dd in NN
-      ans +:= sgn(dd) * Trace( Mdd, mm : precomp := true) * #Divisors(ii);
-  end for;
-
-  return ans;
 end intrinsic;
 
 
