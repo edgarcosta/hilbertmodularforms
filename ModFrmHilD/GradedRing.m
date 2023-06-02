@@ -444,9 +444,8 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   mUF := UnitGroupMap(M); // Unit Group of F map
   C,mC := ClassGroup(F); // class group
   Creps := [ mC(i) : i in C ]; // class group representatives
-  NCreps := NarrowClassGroupReps(M);
-  w := FundamentalUnit(F); // Fundamental Unit
-  w := IsTotallyPositive(w) select w else -w; // ensure is totally positive
+  NCreps := NarrowClassGroupReps(M); // narrow class group representatives
+  SetClassGroupBounds("GRH"); // Bounds
 
   /////////// Hash function //////////
   // For each discriminant d, this hash function associates a unique element w in F representing the field F(x)/(x^2-d) up to isomorphism over QQ. It runs in two phases:
@@ -524,18 +523,14 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
 
 
   // Third pass. Compute ring of integers, class numbers, and unit index for new keys
-  vprintf HilbertModularForms, 1 : "Pass 2 finished at %o. Now computing class numbers and unit indices for %o fields. \n", Cputime(), #RDiscs;
-
-  SetClassGroupBounds("GRH"); // Bounds
   NK := RDiscs diff Keys(B);
+  vprintf HilbertModularForms, 1 : "Pass 2 finished at %o. Now computing class numbers and unit indices for %o fields. \n", Cputime(), #NK;
+
   for D in NK do
     K := ext<F | x^2 - D >; // Field K/F
     ZK := Integers(K); // Ring of Integers
-    //ZKabs := Integers(Kabs);
     DD := Discriminant(ZK); // Discriminant
     hplus := NarrowClassNumber(M); // Narrow class number
-    //Kabs := AbsoluteField(K); // Class groups computations only for absolute extensions?
-    //_ := Integers(Kabs);
     h,w := ClassNumberandUnitIndex(M, K, D, ZF, hplus); // Class group of K and Hasse Unit index
     B[D] := [* h, w, DD *];
   end for;
