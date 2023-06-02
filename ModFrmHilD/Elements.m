@@ -1038,10 +1038,13 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
   M := Parent(Mk);
   N1 := Level(Mk_f);
   N2 := Level(Mk);
+  chi := Character(Mk);
+  chif := Character(Mk_f);
+  mf, pf := Modulus(chif);
   ZF := Integers(M);
 
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
-  require Character(Mk_f) eq Character(Mk): "Character(f) is not equal to Character(Mk)";
+  require chif eq Restrict(chi, mf, pf): "Character(f) is not equal to Character(Mk)";
   require UnitCharacters(Mk_f) eq UnitCharacters(Mk): "UnitCharacters(f) is not equal to UnitCharacters(Mk)";
   require N2 subset N1: "Level of f does not divide level of Mk";
   require N2 subset mm: "Ideal mm does not divide level of Mk";
