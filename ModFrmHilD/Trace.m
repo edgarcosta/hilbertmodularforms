@@ -490,7 +490,7 @@ function FastArtinSymbol(D, pp, DD)
   // D element of F for generating the field K = F(x) / (x^2 - D)
   // pp prime ideal of F
   // DD discriminant of the maximal order K
-  if DD subset pp then
+  if Valuation(DD,pp) gt 0 then
     return 0;
   elif IsLocalSquare(D,pp) then
     return 1;
@@ -941,11 +941,7 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
     x := 0;
     a,b,c := Explode(t);
     // Compute trace of T(b) * D(c) on Mk 
-    for aa in C do
-      qq := Classrep(c * aa);
-      x +:= chi( H[aa] ) * TraceProduct(Mk, b, qq : precomp := true);
-    end for;
-    x *:= (1/#C);
+    x := (1/#C) * &+[ chi( H[aa] ) * TraceProduct(Mk, b, Classrep(c * aa) : precomp := true) : aa in C ];
     // Eisenstein correction factor
     x +:= CorrectionFactor(Mk, b) * chi( c );
     // Scale by a and add to sum
