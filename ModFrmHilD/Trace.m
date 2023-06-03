@@ -58,7 +58,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
   // Compute Trace[ T(mm) * P(aa) ] over representatives aa for the class group
-  Tr := (1/#C) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi( H[aa] ) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in C ];
+  Tr := (1/#C) * &+[ chi( H[aa] ) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in C ];
 
   // Correction factor for the Eisenstein series in weight (2,...,2)
   Tr +:= CorrectionFactor(Mk, mm);
@@ -132,6 +132,9 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
 
   // Trace is Constant term + Sum term
   tr := (#BPrimes ne 0) select Sumterm else ConstantTerm(Mk,mmaa) + Sumterm;
+
+  // Rescale Diamond Operator by Norm of aa
+  tr *:= 1 / Norm(aa) ^ (k[1]-2);
 
   return tr;
 end intrinsic;
@@ -940,7 +943,7 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
     // Compute trace of T(b) * D(c) on Mk 
     for aa in C do
       qq := Classrep(c * aa);
-      x +:= (1 / Norm(qq)) ^ (k[1]-2) * chi( H[aa] ) * TraceProduct(Mk, b, qq : precomp := true);
+      x +:= chi( H[aa] ) * TraceProduct(Mk, b, qq : precomp := true);
     end for;
     x *:= (1/#C);
     // Eisenstein correction factor
