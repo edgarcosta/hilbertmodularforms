@@ -35,7 +35,6 @@ declare verbose HMFTrace, 3;
 
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
-  // This is wrong at 1*Zf and k = 2, see CuspDimension for the fix ( Ben: I think fixed? )
 
   // If mm = 0 then return 0
   if IsZero(mm) then
@@ -47,9 +46,8 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   NN := Level(Mk);
   F := BaseField(Mk);
   ZF := Integers(F);
-  h := ClassNumber(F);
-  CReps := ClassGroupReps(F);
-  H := CoprimeClassGroupHash(CReps,NN);
+  C := ClassGroupReps(F);
+  H := CoprimeClassGroupHash(C,NN);
   chi := Character(Mk)^(-1);
   m,p := Conductor(chi);
   ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
@@ -60,12 +58,10 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
   // Compute Trace[ T(mm) * P(aa) ] over representatives aa for the class group
-  Tr := (1/h) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi( H[aa] ) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in CReps ];
+  Tr := (1/#C) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi( H[aa] ) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in C ];
 
   // Correction factor for the Eisenstein series in weight (2,...,2)
-  if Set(k) eq {2} then
-    Tr +:= CorrectionFactor(Mk, mm);
-  end if;
+  Tr +:= CorrectionFactor(Mk, mm);
 
   return Tr;
 end intrinsic;
@@ -948,9 +944,7 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
     end for;
     x *:= (1/#C);
     // Eisenstein correction factor
-    if Set(k) eq {2} then
-      x +:= CorrectionFactor(Mk, b) * chi( c );
-    end if;
+    x +:= CorrectionFactor(Mk, b) * chi( c );
     // Scale by a and add to sum
     ans +:= a * x;
   end for;
