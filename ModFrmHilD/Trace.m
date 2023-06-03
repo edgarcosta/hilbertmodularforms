@@ -47,7 +47,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   F := BaseField(Mk);
   ZF := Integers(F);
   C := ClassGroupReps(F);
-  H := CoprimeClassGroupHash(C,NN);
+  H := CoprimeClassGroupRepresentatives(Mk);
   chi := Character(Mk)^(-1);
   m,p := Conductor(chi);
   ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
@@ -274,21 +274,6 @@ Class Group and Unit Index
 ///////////////////////////////////////////////////
 
 
-// Coprime Representative Hash
-// FIXME: Maybe store this to an HMFSpace?
-intrinsic CoprimeClassGroupHash(L::SeqEnum[RngOrdIdl], NN::RngOrdIdl) -> Assoc
-  {Given a sequence of integral ideals L = [a1, a2, ... ], this returns a hash H such that H[ai] = bi where bi is integral ideal such that (bi,NN) = 1 and [ai] = [bi] in the class group CL(F)}
-  ZF := Order(NN);
-  H := AssociativeArray();
-  for aa in L do 
-    q := CoprimeRepresentative(aa,NN);
-    bb := ideal < ZF | q * aa >;
-    H[aa] := bb;
-  end for;
-  return H;
-end intrinsic;
-
-
 // Weightfactor
 intrinsic WeightFactor(u::RngElt, t::RngElt, prec::RngIntElt) -> RngElt
   { Returns a generating series for the weight factor }
@@ -353,9 +338,8 @@ intrinsic CorrectionFactor(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   F := BaseField(M);
   ZF := Integers(F);
   n := Degree(F);
-  mC := ClassGroupPrimeRepresentatives(ZF, NN); // Class group map whose image lands in primes that are coprime to NN
-  C := Domain(mC); // Class group? The ClassGroupPrimeRepresentatives function needs to be fixed, it should not just return a map!
-  CReps := [ mC(i) : i in C ];
+  H := CoprimeClassGroupRepresentatives(Mk);
+  CReps := [ H[aa] : aa in ClassGroupReps(F) ];
 
 
   /* Requirements
@@ -390,15 +374,16 @@ intrinsic CorrectionFactor(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   mmB := (mm / mmG); // Bad primes
 
   // Counting element of given norm for both good and bad primes
-  C := Norm(mmB) * &+[ Norm(aa) : aa in Divisors(mmG) ];
+  x := Norm(mmB) * &+[ Norm(aa) : aa in Divisors(mmG) ];
 
   // size of 2-torsion subgroup CL+(F)[2] 
   hplustwo := #[i : i in NC | 2*i eq NC!0 ]; 
 
   // Representative [mm0]^2 = [mm] in narrow class group. 
-  mm0 := mNC(S[1]); 
+  mm0 := mNC(S[1]);
+  mm0 *:= CoprimeRepresentative(mm0,NN);  
 
-  return (-1)^(n+1) * C * hplustwo * chi(mm0)^(-1);
+  return (-1)^(n+1) * x * hplustwo * chi(mm0)^(-1);
 end intrinsic;
 
 
@@ -857,7 +842,7 @@ intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   C,mC := ClassGroup(F); // class group
   reps := [ mC(i) : i in C ]; // class group representatives
   MJV := HilbertCuspForms(F, NN, k);
-  H := CoprimeClassGroupHash(reps,NN);
+  H := CoprimeClassGroupRepresentatives(Mk);
   Tmm := HeckeOp(Mk,mm);
   K := CoefficientRing(Tmm);
 
@@ -894,7 +879,7 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
   F := BaseField(Mk);
   ZF := Integers(F);
   C := ClassGroupReps(F); // class group representatives
-  H := CoprimeClassGroupHash(C,NN); // comprime class group reps
+  H := CoprimeClassGroupRepresentatives(Mk);// comprime class group reps
   Bad := [p[1] : p in Factorization(NN)]; // Bad primes
   chi := Character(Mk)^(-1); // character
   ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character

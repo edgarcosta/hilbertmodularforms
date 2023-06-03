@@ -25,7 +25,8 @@ declare attributes ModFrmHilD:
   Ambient, // BoolElt
   MagmaSpace, //ModFrmHil
   MagmaNewformDecomposition, // List
-  MagmaNewCuspForms; // SeqEnum[ModFrmHilElt]
+  MagmaNewCuspForms, // SeqEnum[ModFrmHilElt]
+  CoprimeClassGroupRepresentatives; // Assoc
 
 
 ////////// ModFrmHilD fundamental intrinsics //////////
@@ -482,3 +483,24 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   end if;
   return Mk`EisensteinAdmissibleCharacterPairs;
 end intrinsic;
+
+// Coprime class group representatives
+intrinsic CoprimeClassGroupRepresentatives(Mk::ModFrmHilD) -> Assoc
+  {Returns an associative array which converts the standard class group representatives (stored as aa in ClassGroupReps(F))
+  to class group representatives bb that are coprime to NN i.e. H[aa] = bb where [aa] = [bb] in Cl(F) and (bb,NN) = 1.}
+  if not assigned Mk`CoprimeClassGroupRepresentatives then
+    NN := Level(Mk);
+    F := BaseField(Mk);
+    ZF := Integers(F);
+    C := ClassGroupReps(F); // class group representatives
+    H := AssociativeArray(); // Hash: Standard class group representative { aa } -> Class group representatives coprime to NN { bb }
+    for aa in C do 
+      q := CoprimeRepresentative(aa,NN);
+      bb := ideal < ZF | q * aa >;
+      H[aa] := bb;
+    end for;
+    Mk`CoprimeClassGroupRepresentatives := H;
+  end if;
+  return Mk`CoprimeClassGroupRepresentatives;
+end intrinsic;
+
