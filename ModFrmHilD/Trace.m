@@ -31,11 +31,6 @@ declare verbose HMFTrace, 3;
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
 
-  // If mm = 0 then return 0
-  if IsZero(mm) then
-    return 0;
-  end if;
-
   // Initialize
   k := Weight(Mk);
   NN := Level(Mk);
@@ -45,7 +40,12 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   H := CoprimeClassGroupRepresentatives(Mk);
   chi := Character(Mk)^(-1);
   m,p := Conductor(chi);
-  ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
+  ZK := Parent(chi)`TargetRing; // Coefficient ring 
+
+  // If mm = 0 then return 0
+  if IsZero(mm) then
+    return ZK ! 0;
+  end if;
 
   // requirements
   require m eq 1*ZF: "Only supports characters on the narrow class group";
@@ -53,7 +53,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
   // Compute Trace[ T(mm) * P(aa) ] over representatives aa for the class group
-  Tr := (1/#C) * &+[ chi( H[aa] ) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in C ];
+  Tr := (1/#C) * &+[ chi( H[aa] ) * TraceProduct(Mk, mm, aa : precomp := precomp ) : aa in C ];
 
   // Correction factor for the Eisenstein series in weight (2,...,2)
   Tr +:= CorrectionFactor(Mk, mm);
@@ -68,21 +68,21 @@ end intrinsic;
 intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp := false) -> RngElt
   {Computes Trace[ T(mm) * P(aa) ] where T(mm) is the mth hecke operator and P(aa) is the diamond operator}
 
-  // If mm * aa^2 is not narrowly principal then return 0
-  mmaa := mm * aa^2;
-  if not IsNarrowlyPrincipal(mmaa) then
-    return 0;
-  end if;
-
   // Preliminaries
   M := Parent(Mk);
   NN := Level(Mk);
+  k := Weight(Mk);
+  chi := Character(Mk);
   ZF := Integers(M);
   NNfact := Factorization(NN);
-  k := Weight(Mk);
+  ZK := Parent(chi)`TargetRing;
+  BPrimes := [ p[1] : p in Factorization(mm) | Valuation(NN,p[1]) gt 0 ]; // Bad Primes
 
-  // Bad Primes
-  BPrimes := [ p[1] : p in Factorization(mm) | NN subset p[1] ];
+  // If mm * aa^2 is not narrowly principal then return 0
+  mmaa := mm * aa^2;
+  if not IsNarrowlyPrincipal(mmaa) then
+    return ZK ! 0;
+  end if;
 
   /* The implementation below with Baa and IsBad(t) allows the diamond operator to work with bad primes. 
   If this breaks, we can instead pick representative of the class group that are coprime
@@ -94,10 +94,10 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
 
   // Function: Given an integral element t, check if the ideal t*ZF contains any bad primes 
   function IsBad(t)
-    ans := true;
+    ans := false;
     for pp in BPrimes do
       if Valuation(t,pp) gt Baa[pp] then 
-        ans := false;
+        ans := true;
         break;
       end if;
     end for;
@@ -107,7 +107,7 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
   // Index for summation
   Indexforsum := precomp select TracePrecomputationByIdeal(M,mm)[aa] else IndexOfSummation(M, mm, aa);
 
-  Sumterm := 0;
+  Sumterm := ZK ! 0;
   for data in Indexforsum do
     t, n := Explode(data);
     wk := Coefficient(WeightFactor(n,t,k[1]+2),k[1]); // Weight Factor
@@ -120,7 +120,7 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
     end if;
     // Adjust for bad primes
     if #BPrimes ne 0 then
-      emb := IsBad(t) select 1/2^(#BPrimes) * emb else 0;
+      emb := IsBad(t) select 0 else 1/2^(#BPrimes) * emb;
     end if;
     Sumterm +:= wk * emb;
   end for;
