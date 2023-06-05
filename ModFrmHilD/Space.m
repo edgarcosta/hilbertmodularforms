@@ -25,7 +25,9 @@ declare attributes ModFrmHilD:
   Ambient, // BoolElt
   MagmaSpace, //ModFrmHil
   MagmaNewformDecomposition, // List
-  MagmaNewCuspForms; // SeqEnum[ModFrmHilElt]
+  MagmaNewCuspForms, // SeqEnum[ModFrmHilElt]
+  CoprimeClassGroupRepresentatives, // Assoc
+  TraceCorrectionFactorFlag; // boo
 
 
 ////////// ModFrmHilD fundamental intrinsics //////////
@@ -482,3 +484,51 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   end if;
   return Mk`EisensteinAdmissibleCharacterPairs;
 end intrinsic;
+
+// Coprime class group representatives
+intrinsic CoprimeClassGroupRepresentatives(Mk::ModFrmHilD) -> Assoc
+  {Returns an associative array which converts the standard class group representatives (stored as aa in ClassGroupReps(F))
+  to class group representatives bb that are coprime to NN i.e. H[aa] = bb where [aa] = [bb] in Cl(F) and (bb,NN) = 1.}
+  if not assigned Mk`CoprimeClassGroupRepresentatives then
+    NN := Level(Mk);
+    F := BaseField(Mk);
+    ZF := Integers(F);
+    C := ClassGroupReps(F); // class group representatives
+    H := AssociativeArray(); // Hash: Standard class group representative { aa } -> Class group representatives coprime to NN { bb }
+    for aa in C do 
+      q := CoprimeRepresentative(aa,NN);
+      bb := ideal < ZF | q * aa >;
+      H[aa] := bb;
+    end for;
+    Mk`CoprimeClassGroupRepresentatives := H;
+  end if;
+  return Mk`CoprimeClassGroupRepresentatives;
+end intrinsic;
+
+
+// Trace flag for correction factor
+intrinsic TraceCorrectionFactorFlag(Mk::ModFrmHilD) -> Assoc
+  {Checks if Mk has parallel weight 2 and if the character chi factors through the map a -> a^2 from Cl(F) -> Cl+(F) }
+  if not assigned Mk`TraceCorrectionFactorFlag then
+    
+    // Initialize
+    k := Weight(Mk);
+    chi := Character(Mk);
+    F := BaseField(Mk);
+    H := CoprimeClassGroupRepresentatives(Mk);
+    C := [ H[aa] : aa in ClassGroupReps(F) ];
+    ker := [ i : i in C | IsNarrowlyPrincipal(i^2) ]; // kernel of map a |-> a^2 from Cl(F) -> Cl+(F)
+    
+    /* Requirements
+    (a) k = (2,...,2) is parallel weight 2
+    (b) chi factors through the homomorphism C -> NC given by a |-> a^2. */
+    
+    // Check Requirements
+    a := Set(k) eq {2}; 
+    b := {chi(a) : a in ker} eq {1}; 
+    Mk`TraceCorrectionFactorFlag := a and b;
+  end if;
+  return Mk`TraceCorrectionFactorFlag;
+end intrinsic;
+
+
