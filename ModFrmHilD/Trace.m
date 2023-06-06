@@ -212,6 +212,7 @@ intrinsic HilbertSeries(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> RngSe
   Mk := HMFSpace(M,NN,[2,2]);
   n := NumberOfCusps(Mk);
   ans +:= n/(1-X^2);
+  ans -:= (n-1);
   return ans;
 end intrinsic;
 
@@ -549,12 +550,18 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
   // M ModFrmHilDGRng (carries field F, ring of integers ZF, and unit group + unit group map UF, mUF)
   // aa ideal for the diamond operator
   //
+  // Notes: The key obtained from discriminant hash (key) represents either the square class of D or sigma(D) (here sigma : F -> F is the nontrivial field automorphism ) 
+  // based on whether c = 0 or 1. By setting d = key if c = 0 and d = Conjugate(key) if c = 1 and then running LocalSquare(M,d,pp[1]) instead of LocalSquare(M,D,pp[1]),
+  // we reduce the number of computations for LocalSquare() to 1/3 of its orginal size. However, this seems like an unnecessary and confusing simplification.
+  //
+  // d := (c eq 1) select Conjugate(key) else key; 
+  //
 
   // Preliminaries
   ZF := Integers(M);
   t, n, key, c := Explode(data);
-  h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]); // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*], DD = discriminant of maximal order
-  DD := (c eq 1) select Conjugate(DD) else DD; // Hash requires possible conjugation
+  h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]); // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*]
+  DD := (c eq 1) select Conjugate(DD) else DD; // DD = discriminant of maximal order
   D := t^2 - 4*n; // Discriminant of order
   hw := h / w; // Computes h/w where h = class number of K and w = unit index of 2 * [ZK^* : ZF^*]
   ff := Sqrt((D*ZF)/DD); // Conductor
@@ -562,13 +569,14 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
   // Conductor Sum
   conductorsum := 0;
   for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
-    term := Norm(bb) * (&*([1] cat [1 - FastArtinSymbol(D,pp[1],DD) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
+    term := Norm(bb) * (&*([1] cat [1 - LocalSquare(M,D,pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb) | Valuation(DD,pp[1]) eq 0 ])); // Artin symbol = ( LocalSquare(M,D,pp[1]) ) + (Valuation(DD,pp[1]) eq 0) code
     // Embedding numbers
     for pair in NNfact do
-      pp := pair[1];
-      e := pair[2];
+      pp, e := Explode(pair);
       f := Valuation(bb,pp); // Conductor
-      term *:= OptimalEmbeddings(e, 2*f, DD, pp, D);
+      g := Valuation(DD,pp); // Valuation of Discriminant
+      A := (g eq 0) select LocalSquare(M,D,pp) else 0; // Artin Symbol 
+      term *:= OptimalEmbeddings(e, 2*f, g, A, pp);
     end for;
     conductorsum +:= term;
   end for;
@@ -683,27 +691,30 @@ end intrinsic;
 
 ///////////////////////////////////// Optimal Embeddings ///////////////////////////////////////////////
 
-intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, DD::RngOrdIdl, pp::RngOrdIdl, D::RngElt) -> RngIntElt
-  {Computes embedding numbers for x^2 - d * pi^(f) mod pp^e where: e is positive integers, f is positive even integer, pp is a prime ideal, and d = disc(ZK) has valuation(d,pp) = g where ZK is the ring of integers of the extension x^2 - d.}
+intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
+  {Computes embedding numbers for x^2 - d * pi^(f) mod pp^e where: 
+  - e is a positive integer, 
+  - f is a positive even integer, 
+  - pp is a prime ideal, 
+  - A = (K/pp) is the artin symbol for the local field K = F_pp[x] / (x^2 - D), and 
+  - d = disc(ZK) is the fundamental discriminant of the integers of K with g = Valuation(d,pp) }
 
   // Preliminaries
   q := Norm(pp); // Size of residue field
-  Z := Integers(); // Integers (for conversion)
-  g := Valuation(DD,pp); // Valuation of discriminant
 
   // Case 1 : p is odd
   if IsOdd(q) then
-    return f eq 0 select OptimalEmbeddingsOdd(e,f,g,DD,pp,D) else OptimalEmbeddingsOdd(e,f,g,DD,pp,D) + Z!OptimalEmbeddingsOdd(e+1,f,g,DD,pp,D)/q;
+    return f eq 0 select OptimalEmbeddingsOdd(e,f,g,A,pp) else OptimalEmbeddingsOdd(e,f,g,A,pp) + ExactQuotient(OptimalEmbeddingsOdd(e+1,f,g,A,pp), q);
   // Case 2 : p is even
   else
-    return f + g eq 0 select OptimalEmbeddingsEven(e,f,g,DD,pp,D) else OptimalEmbeddingsEven(e,f,g,DD,pp,D) + Z!OptimalEmbeddingsEven(e+1,f,g,DD,pp,D)/q;
+    return f + g eq 0 select OptimalEmbeddingsEven(e,f,g,A,pp) else OptimalEmbeddingsEven(e,f,g,A,pp) + ExactQuotient(OptimalEmbeddingsEven(e+1,f,g,A,pp), q);
   end if;
 end intrinsic;
 
 
 
-intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, DD::RngOrdIdl, pp::RngOrdIdl, D::RngElt) -> RngIntElt
-  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^f}
+intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
+  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^f where g = power of pp in discriminant of maximal order, A = (K/pp) is the artin symbol K = F[x]/(x^2-D)}
 
   // Size of residue field
   q := Norm(pp);
@@ -712,15 +723,15 @@ intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, DD::Rng
   if f + g ge e then // Case 1 : f >= e
     N := q^(Floor(e/2));
   else // Case 2 : f < e
-    N := q^(ExactQuotient(f,2)) * FastArtinSymbol(D, pp, DD) * (1 + FastArtinSymbol(D, pp, DD));
+    N := q^(ExactQuotient(f,2)) * A * (1 + A);
   end if;
   return N;
 end intrinsic;
 
 
 
-intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, DD::RngOrdIdl, pp::RngOrdIdl, D::RngElt) -> RngIntElt
-  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^(g+f)}
+intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
+  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^(g+f) where g = power of pp in discriminant of maximal order, A = (K/pp) is the artin symbol K = F[x]/(x^2-D)}
 
   // Preliminaries
   q := Norm(pp); // Size of residue field
@@ -734,10 +745,10 @@ intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, DD::Rn
     if IsOdd(g) then // Subcase 2.1 : g is odd
       N := 0;
     else // Subcase 2.2 : g is even
-      if e le (f + 1 - FastArtinSymbol(D, pp, DD)^2) then // Subsubcase 2.2.1 e <= f when pp is split or inert and e <= 2f+1 when pp is ramified
+      if e le (f + 1 - A^2) then // Subsubcase 2.2.1 e <= f when pp is split or inert and e <= 2f+1 when pp is ramified
         N := q^(Floor(e/2));
       else // Subsubcase 2.2.2 e > 2f when pp is split or inert and e > f+1 when pp is ramified
-        N := q^( ExactQuotient(f,2) ) * FastArtinSymbol(D, pp, DD) * (1 + FastArtinSymbol(D, pp, DD));
+        N := q^( ExactQuotient(f,2) ) * A * (1 + A);
       end if;
     end if;
   end if;

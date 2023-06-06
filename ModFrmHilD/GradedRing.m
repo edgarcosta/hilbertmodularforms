@@ -46,8 +46,8 @@ declare attributes ModFrmHilDGRng:
   // a triple indexed Associative Array (level, weight, chi) -> M_k(N, chi)
   Spaces,
   // Associative array (k, psi) -> L(psi, 1-k)
-  LValues
-  ;
+  LValues,
+  LocalSquares;
 
 
  intrinsic IdealRepsMapDeterministic(F::FldNum, mp::Map) -> Assoc
@@ -454,7 +454,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   //             and let bb = [ aa ] be the ideal representing the class of aa in CL(F). Then [aa * bb^(-1)] = (x) for some x in ZF so d * ZF = mm * bb^2 * (x)^2. Let d0 := d / x^2. 
   //             Thus a unique representative for the square class of d can be picked as the "reduced shintani generator" for -d0 with respect the square of the fundamental unit.
   // 
-  // *  Phase 2: Let s : F -> F be the nontrivial automorphism of the quadratic field F. The fields F(x)/(x^2 - d) and F/(x^2 - s(d)) are isomorphic over QQ. We pick a unique 
+  // *  Phase 2: Let s : F -> F be the nontrivial automorphism of the quadratic field F. The fields F[x]/(x^2 - d) and F/(x^2 - s(d)) are isomorphic over QQ. We pick a unique 
   //             representative w by selecting either d0 or s(d0) based on which one has the larger embedding in the first real place. We record whether we took d0 or s(d0) 
   //             using an indicator function c, where (c = 0) <=> d0 and (c = 1) <=> s(d0). 
   //              
@@ -471,7 +471,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
         break;
       end if;
     end for;
-    assert IsSquare(D/d); // can be dropped 
+    // assert IsSquare(D/d); // can be dropped 
     // Phase 2
     c := 0; // keeps track of conjugation 0 = no conjugation, 1 = conjugation
     E := RealEmbeddings(D);
@@ -564,6 +564,36 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   M`ClassNumbersPrecomputation := B;
 
 end intrinsic;
+
+
+
+/* Caching Local Squares
+// Computing Artin symbols is the 3rd most expensive computation for the trace code (after class numbers and unit indices). 
+To compute the Artin symbol (K/pp) for the extension K = F[x] / (x^2 - D) and a prime pp, we need to
+  (1) Compute the ring of integers ZK and check if pp | disc(ZK) => return 0
+  (2) Check if D is a local square in the completion F_pp => return 1, else -1
+Since the local square computation is performed many times, we store the results to M to avoid repeating computations */
+intrinsic LocalSquare(M::ModFrmHilDGRng, d::RngOrdElt, pp::RngOrdIdl) -> RngIntElt
+  {Checks if D is a local square in the completion F_pp}
+
+  // initialize - LocalSquares
+  if not assigned M`LocalSquares then 
+    M`LocalSquares := AssociativeArray();
+  end if;
+
+  // initialize - LocalSquares[pp]
+  if not IsDefined(M`LocalSquares,pp) then
+    M`LocalSquares[pp] := AssociativeArray();
+  end if;
+
+  // initialize - LocalSquares[pp][d] 
+  if not IsDefined(M`LocalSquares[pp],d) then
+    M`LocalSquares[pp][d] := IsLocalSquare(d,pp) select 1 else -1; 
+  end if;
+
+  return M`LocalSquares[pp][d];
+end intrinsic;
+
 
 
 
