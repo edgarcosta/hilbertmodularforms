@@ -6,7 +6,7 @@ if assigned debug then
 end if;
 
 if assigned label then
-  field, level := Explode(Split(s, "-"));
+  field, level := Explode(Split(label, "-"));
   F := LMFDBField(field);
   NN := LMFDBIdeal(F, level);
   H := HilbertSeriesCusp(F, NN);
