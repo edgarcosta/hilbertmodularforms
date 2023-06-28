@@ -7,7 +7,7 @@ end if;
 
 if assigned label then
   G := LMFDBCongruenceSubgroup(label);
-  Flabel := LMFDBLabel(F);
+  F := Field(G);
   NN := Level(G);
   H := HilbertSeriesCusp(F, NN);
   num := Numerator(H);
