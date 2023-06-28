@@ -371,6 +371,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
  Note: Only implemented for level 1.}
 
     require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
+    require IsOne(Level(Gamma)): "Only implemented for level 1";
 
     F := BaseField(Gamma);
 
