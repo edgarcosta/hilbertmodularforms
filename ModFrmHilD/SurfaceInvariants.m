@@ -227,6 +227,64 @@ end intrinsic;
 // Could be improved in the future.
 intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
 {Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to 
+ Gamma, based on the arithmetic genus. When the level is 1, it
+ gives a more refined list based on K^2. Currently only implemented for Gamma0.}
+
+  require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
+  F := BaseField(Gamma);
+  ZF := Integers(F);
+  NCl, mp := NarrowClassGroup(F);
+  chi := ArithmeticGenus(Gamma);
+
+  if (Level(Gamma) eq 1*ZF) then //In level 1, we have the RationalityCriterion and we know the value of K2 of the minimal model exactly.
+    k2 := K2(Gamma) + getHZExceptionalNum(Gamma);
+    if (k2 eq 0) then
+        if (chi ge 3) then
+            return [1];
+        else
+            return [0, 1];
+        end if;
+    else // k2 > 0
+        if (chi eq 1) then
+            if RationalityCriterion(Gamma) then
+                return [-1];
+            elif (k2 eq 8) or (k2 eq 9) then
+                return [-1, 2];
+            else 
+                return [2];
+            end if;
+        else // chi not 1
+            return [2];
+        end if;
+    end if;
+  else // Not level 1, so we don't have RationalityCriterion yet and we don't know the number of exceptional curves, so K2(minimal model) >= K2(Gamma).
+    k2 := K2(Gamma);
+    if (k2 ge 1) then //The only options are [-1, 2]
+        if (chi eq 1) then
+            if (k2 ge 10) then
+                return [2];
+            else 
+                return [-1,2];
+            end if;
+        else 
+            return [2];
+        end if;
+    else // k2 is smaller then 0, so the lower bound is useless
+        if (chi eq 1) then
+            return [-1, 0, 1, 2];
+        elif (chi ge 3) then
+            return [1,2];
+        else
+            return [0,1,2];
+        end if;
+    end if;
+  
+  end if;
+end intrinsic;
+
+// Could be improved in the future.
+intrinsic KodairaDimensionPossibilitiesWithHZ(Gamma::GrpHilbert) -> MonStgElt
+{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to 
  Gamma, based on the arithmetic genus and the rationality criterion. When the level is 1, it
  gives a more refined list based on K^2. Currently only implemented for Gamma0.}
 
@@ -310,9 +368,7 @@ end intrinsic;
 
 intrinsic RationalityCriterion(Gamma) -> BoolElt
 {Checks whether the Rationality Criterion is satisfied.
- Note 1: Only implemented for Gamma0(N) level.
- Note 2: it could be refined by including more Hirzebruch--Zagier divisors and resolution cycles 
- coming from elliptic points.}
+ Note: Only implemented for level 1.}
 
     require GammaType(Gamma) eq "Gamma0": "Only implemented for Gamma0";
 
@@ -347,11 +403,12 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
       end if;
 
     else //for now, only consider F_N if genus(F_N) = 0
-      N := Generator(Level(Gamma) meet Integers());
-      require Norm(Component(Gamma)) eq 1: "Only principal genus supported for higher level.";
-      if N in [1 .. 10] cat [12, 13, 16, 18, 25] then
-        Append(~LevelList, N^2);
-      end if;
+        return false;
+//      N := Generator(Level(Gamma) meet Integers());
+//      require Norm(Component(Gamma)) eq 1: "Only principal genus supported for higher level.";
+//      if N in [1 .. 10] cat [12, 13, 16, 18, 25] then
+//        Append(~LevelList, N^2);
+//      end if;
     end if;
 
     if #LevelList eq 0 then
