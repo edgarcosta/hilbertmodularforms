@@ -11,8 +11,8 @@ examples := [*
   <"2.2.165.1-1.1-1.1-sl-0",<ArithmeticGenus, K2, getHZExceptionalNum>, <4, -20, 20>>,
   <"2.2.165.1-1.1-1.1-gl-0",<ArithmeticGenus, K2, getHZExceptionalNum>, <3, -10, 20>>,
   //Example 4
-  <"2.2.17.1-2.1-1.1-sl-0", <ArithmeticGenus, RationalityCriterion>, <1, true>>,
-  <"2.2.17.1-4.1-1.1-sl-0", <ArithmeticGenus, RationalityCriterion>, <1, true>>
+  <"2.2.17.1-2.1-1.1-sl-0", <ArithmeticGenus>, <1>>,
+  <"2.2.17.1-4.1-1.1-sl-0", <ArithmeticGenus>, <1>>
 *];
 for ex in examples do
   label, fns, expected := Explode(ex);
