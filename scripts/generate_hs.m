@@ -6,14 +6,14 @@ if assigned debug then
 end if;
 
 if assigned label then
-  G := LMFDBCongruenceSubgroup(label);
-  F := Field(G);
-  NN := Level(G);
+  field, level := Explode(Split(s, "-"));
+  F := LMFDBField(field);
+  NN := LMFDBIdeal(F, level);
   H := HilbertSeriesCusp(F, NN);
   num := Numerator(H);
   den := Denominator(H);
   _<x> := Parent(num);
-  print StripWhiteSpace(Sprintf("%o-%o:%o:%o", Flabel, LMFDBLabel(NN), Numerator(H), Denominator(H)));
+  print StripWhiteSpace(Sprintf("%o-%o:%o:%o", field, level, Numerator(H), Denominator(H)));
   exit 0;
 end if;
 
