@@ -5,6 +5,18 @@ if assigned debug then
   SetDebugOnError(true);
 end if;
 
+if assigned label then
+  G := LMFDBCongruenceSubgroup(label);
+  Flabel := LMFDBLabel(F);
+  NN := Level(G);
+  H := HilbertSeriesCusp(F, NN);
+  num := Numerator(H);
+  den := Denominator(H);
+  _<x> := Parent(num);
+  print StripWhiteSpace(Sprintf("%o-%o:%o:%o", Flabel, LMFDBLabel(NN), Numerator(H), Denominator(H)));
+  exit 0;
+end if;
+
 if not assigned D then
   print "Missing argument D";
   exit 1;
