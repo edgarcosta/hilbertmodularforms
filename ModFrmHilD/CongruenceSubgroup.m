@@ -135,6 +135,11 @@ intrinsic Gamma0(F::FldNum, N::RngOrdIdl) -> GrpHilbert
     return Gamma0(F, N, 1*Integers(F));
 end intrinsic;
 
+intrinsic Gamma0(N::RngOrdIdl) -> GrpHilbert
+{Return the Hilbert Modular group of level N.}
+    return Gamma0(NumberField(Order(N)), N);
+end intrinsic;
+
 intrinsic Gamma0(F::FldNum) -> GrpHilbert
 {Return the Hilbert Modular group over `F`.}
     return Gamma0(F, 1*MaximalOrder(F));
@@ -192,7 +197,7 @@ intrinsic Print(Gamma::GrpHilbert)
     printf "Component: (%o)\n", IdealOneLine(Component(Gamma));
     print "Index: ", Index(Gamma);
     print "Gamma Type:", GammaType(Gamma);
-    print "Supergroup:", AmbientType(Gamma);
+    printf "Supergroup: %o", AmbientType(Gamma);
     return;
 end intrinsic;
 

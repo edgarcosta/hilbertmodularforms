@@ -2,9 +2,24 @@
 declare attributes FldAlg:
   TotallyPositiveUnits,
   TotallyPositiveUnitsMap,
-  FundamentalUnitTotPos
+  FundamentalUnitTotPos,
+  FundamentalUnitSquare,
+  ClassGroupReps
   ;
 
+
+/////////////////////// (Narrow) Class Group Representatives ////////////
+// FIXME : Move narrow class group code from graded ring to this section
+
+intrinsic ClassGroupReps(F::FldAlg) -> SeqEnum
+  {Return ideal representatives for the class group}
+  if not assigned F`ClassGroupReps then 
+    C, mC := ClassGroup(F);
+    Reps := [ mC(i) : i in C ];
+    F`ClassGroupReps := Reps;
+  end if;
+  return F`ClassGroupReps;
+end intrinsic;
 
 
 /////////////////////// Totally positive associate /////////////////
@@ -75,6 +90,28 @@ intrinsic FundamentalUnitTotPos(F::FldNum) -> RngQuadElt
   end if;
   return F`FundamentalUnitTotPos;
 end intrinsic;
+
+
+intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
+  {return the fundamental unit totally positive}
+  assert Degree(F) le 2;
+  if Degree(F) eq 1 then
+    return Integers(F)!1;
+  end if;
+  if not assigned F`FundamentalUnitSquare then
+    eps := FundamentalUnit(F)^2;
+    places := InfinitePlaces(F);
+    eps1 := Evaluate(eps, places[1]);
+    if eps1 gt 1 then
+      // eps1*eps2 = Nm(eps) = 1
+      eps := 1/eps;
+    end if;
+    eps := Integers(F)!eps;
+    F`FundamentalUnitSquare := eps;
+  end if;
+  return F`FundamentalUnitSquare;
+end intrinsic;
+
 
 intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
 {Find a totally positive field element a such that qI is an integral ideal coprime to J;

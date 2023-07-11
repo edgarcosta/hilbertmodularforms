@@ -63,8 +63,7 @@ intrinsic LMFDBCongruenceSubgroup(s::MonStgElt) -> GrpHilbert
     field, level, bb, ambient, gamma := Explode(Split(s, "-"));
     AmbientType := [elt[2] : elt in [<"gl", "GL+">, <"sl", "SL">] | elt[1] eq ambient][1];
     GammaType := [elt[2] : elt in [<"f", "Gamma">, <"0", "Gamma0">, <"1", "Gamma1">] | elt[1] eq gamma][1];
-    D := StringToInteger(Split(field, ".")[3]);
-    F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
+    F := LMFDBField(field);
     NN := LMFDBIdeal(F, level);
     bb := LMFDBIdeal(F, bb);
     G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);

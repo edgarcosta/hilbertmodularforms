@@ -203,7 +203,12 @@ end function;
 
 intrinsic DiamondOperator(M::ModFrmHil, J::RngOrdIdl) -> AlgMatElt
 {Returns the matrix representing the diamond operator <J> on M.}
-	  
+
+    // require IsCoprime(J, Level(M)) : "Ideal representative should be coprime to the level";
+    // better - we just make it coprime;
+
+    J := CoprimeRepresentative(J, Level(M))*J;
+
     F_weight := getWeightBaseField(M);
     
     if Dimension(M) eq 0 then

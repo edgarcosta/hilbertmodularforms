@@ -11,23 +11,18 @@ Trace (Main function): Computes Tr T(mm) on an HMFspace Mk
   * PrecompTraceProduct (Subroutine): Computes trace of T(mm) * P(aa) on the full space with all characters using precomputations.
 
 TODOS
-* Bad primes - Our "Hecke Operator" is not the true Hecke Operator at bad primes.
-* Correction factor for spaces with k = (2,..,2) and chi = 1
 * Test nonparallel weight and odd degree weight.
+* Test characters with nontrivial infite part of the modulus, i.e. Q(sqrt60) with weight [4,4]
 * Cubic fields.
 
 FIXME
 * Large weight is off
-* Class group + class group representatives should be stored GradedRing.m
-* Check that we want to use chi^(-1) instead of chi in the computation for Trace
-* Test characters with nontrivial infite part of the modulus, i.e. Q(sqrt60) with weight [4,4]
 
 Notes
 * Computing unit index and class groups. The big bottleneck is precomputing the
 class numbers #CL(K) and Hasse unit index [ZK^* : ZF^*] for lots of CM-extensions K/F.
-I have some code to quickly compute the Hasse unit index without doing the class group.
-
- */
+- I have some code to quickly compute the Hasse unit index without doing the class group.
+* Once the precomputation is completed, FastArtinSymbol is the main bottleneck. */
 
 ///////////////////////////////// ModFrmHilD: Trace //////////////////////////////////////////////
 
@@ -35,17 +30,22 @@ declare verbose HMFTrace, 3;
 
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
-  // This is wrong at 1*Zf and k = 2, see CuspDimension for the fix
 
   // Initialize
   k := Weight(Mk);
+  NN := Level(Mk);
   F := BaseField(Mk);
   ZF := Integers(F);
-  C,mC := ClassGroup(F);
-  CReps := [ mC(i) : i in C ];
+  C := ClassGroupReps(F);
+  H := CoprimeClassGroupRepresentatives(Mk);
   chi := Character(Mk)^(-1);
   m,p := Conductor(chi);
-  ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
+  ZK := Parent(chi)`TargetRing; // Coefficient ring 
+
+  // If mm = 0 then return 0
+  if IsZero(mm) then
+    return ZK ! 0;
+  end if;
 
   // requirements
   require m eq 1*ZF: "Only supports characters on the narrow class group";
@@ -53,8 +53,12 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
   // Compute Trace[ T(mm) * P(aa) ] over representatives aa for the class group
-  return (1/#C) * &+[ 1 / Norm(aa) ^ (k[1]-2) * chi(aa) * (ZK ! TraceProduct(Mk, mm, aa : precomp := precomp )) : aa in CReps ];
+  Tr := (1/#C) * &+[ chi( H[aa] ) * TraceProduct(Mk, mm, aa : precomp := precomp ) : aa in C ];
 
+  // Correction factor for the Eisenstein series in weight (2,...,2)
+  Tr +:= CorrectionFactor(Mk, mm);
+
+  return Tr;
 end intrinsic;
 
 
@@ -64,22 +68,46 @@ end intrinsic;
 intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp := false) -> RngElt
   {Computes Trace[ T(mm) * P(aa) ] where T(mm) is the mth hecke operator and P(aa) is the diamond operator}
 
-  // If mm * aa^2 = 0 or is not narrowly principal then return 0
-  mmaa := mm * aa^2;
-  if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
-    return 0;
-  end if;
-
   // Preliminaries
   M := Parent(Mk);
   NN := Level(Mk);
-  NNfact := Factorization(NN);
   k := Weight(Mk);
+  chi := Character(Mk);
+  ZF := Integers(M);
+  NNfact := Factorization(NN);
+  ZK := Parent(chi)`TargetRing;
+  BPrimes := [ p[1] : p in Factorization(mm) | Valuation(NN,p[1]) gt 0 ]; // Bad Primes
+
+  // If mm * aa^2 is not narrowly principal then return 0
+  mmaa := mm * aa^2;
+  if not IsNarrowlyPrincipal(mmaa) then
+    return ZK ! 0;
+  end if;
+
+  /* The implementation below with Baa and IsBad(t) allows the diamond operator to work with bad primes. 
+  If this breaks, we can instead pick representative of the class group that are coprime
+  to the level of the space and then change the IsBad(t) to record whether Valuation(t,pp) gt 0 */
+  Baa := AssociativeArray(); // Store valuations of aa so as not to recompute
+  for pp in BPrimes do
+    Baa[pp] := Valuation(aa,pp);
+  end for;
+
+  // Function: Given an integral element t, check if the ideal t*ZF contains any bad primes 
+  function IsBad(t)
+    ans := false;
+    for pp in BPrimes do
+      if Valuation(t,pp) gt Baa[pp] then 
+        ans := true;
+        break;
+      end if;
+    end for;
+    return ans;
+  end function;
 
   // Index for summation
   Indexforsum := precomp select TracePrecomputationByIdeal(M,mm)[aa] else IndexOfSummation(M, mm, aa);
 
-  Sumterm := 0;
+  Sumterm := ZK ! 0;
   for data in Indexforsum do
     t, n := Explode(data);
     wk := Coefficient(WeightFactor(n,t,k[1]+2),k[1]); // Weight Factor
@@ -88,13 +116,21 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
       emb := PrecompEmbeddingNumberOverUnitIndex(M, data, NNfact, aa);
       emb := t eq 0 select emb else 2*emb; // Factor of 2 accounts for x^2 +/- bx + a.
     else
-      emb := EmbeddingNumberOverUnitIndex(M, data, NNfact, aa);
+      emb := EmbeddingNumberOverUnitIndex(M, data, NNfact, aa); 
+    end if;
+    // Adjust for bad primes
+    if #BPrimes ne 0 then
+      emb := IsBad(t) select 0 else 1/2^(#BPrimes) * emb;
     end if;
     Sumterm +:= wk * emb;
   end for;
 
   // Trace is Constant term + Sum term
-  tr := ConstantTerm(Mk,mmaa) + Sumterm;
+  tr := (#BPrimes ne 0) select Sumterm else ConstantTerm(Mk,mmaa) + Sumterm;
+
+  // Rescale Diamond Operator by Norm of aa
+  tr *:= 1 / Norm(aa) ^ (k[1]-2);
+
   return tr;
 end intrinsic;
 
@@ -176,6 +212,7 @@ intrinsic HilbertSeries(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> RngSe
   Mk := HMFSpace(M,NN,[2,2]);
   n := NumberOfCusps(Mk);
   ans +:= n/(1-X^2);
+  ans -:= (n-1);
   return ans;
 end intrinsic;
 
@@ -284,21 +321,63 @@ intrinsic ConstantTerm(Mk::ModFrmHilD, mm::RngOrdIdl) -> RngElt
 end intrinsic;
 
 
-/*
+
+
+// Correction Factor 
 intrinsic CorrectionFactor(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
-  {Correction factor for parallel weight 2 and chi = 1}
-  // Preliminaries
-  k := Weight(Mk);
-  F := BaseField(Mk);
-  n := Degree(F);
-  // If all ki = 2 then correction factor appears (see Arenas)
-  if Set(k) eq {2} then
-    return (-1)^(n+1)*&+([ Norm(dd) : dd in Divisors(mm)]);
-  else
+  {Correction factor for parallel weight 2}
+
+  /* Flag: 
+  - check for parallel weight 2, and 
+  - character chi factors through map a -> a^2 from Cl(F) -> Cl+(F) */
+  if not TraceCorrectionFactorFlag(Mk) then
     return 0;
   end if;
+
+  // Preliminaries
+  M := Parent(Mk);
+  C := NarrowClassGroup(M);
+  mC := NarrowClassGroupMap(M);
+  chi := Character(Mk)^(-1);
+  NN := Level(Mk);
+  F := BaseField(M);
+  ZF := Integers(F);
+  n := Degree(F);
+
+  // Requirements: mm must be a square in the narrow class group ( otherwise CorrectionFactor = 0 ).
+  // Find square root in Cl+(F)
+  A := (mm)@@mC;
+  boo := true;
+  for i in C do
+    if 2*i eq A then
+      mm0 := mC(i);
+      mm0 *:= CoprimeRepresentative(mm0,NN); // ensure coprime to level
+      boo := false;
+      break;
+    end if;
+  end for;
+
+  // No square root - return 0
+  if boo then 
+    return 0;
+  end if; 
+
+  //////////////// Computing trace on the Eisenstein Space //////////////////
+
+  // 2-torsion subgroup. FIXME: Should this be stored to field F?
+  hplustwo := #[i : i in C | 2*i eq C!0 ]; 
+
+  // Write mm = Good * Bad where (Good, NN) = 1 
+  Bad := &*([1*ZF] cat [ p[1]^Valuation(mm,p[1]) : p in Factorization(NN) ]);
+  Good := mm / Bad;
+
+  // Correction Factor
+  X := Norm(Bad) * &+[ Norm(aa) : aa in Divisors(Good) ];
+  X *:= (-1)^(n+1) * hplustwo * chi(mm0);
+
+  return X;
 end intrinsic;
-*/
+
 
 
 //////////////////////////////////////////////////////////
@@ -388,7 +467,7 @@ function FastArtinSymbol(D, pp, DD)
   // D element of F for generating the field K = F(x) / (x^2 - D)
   // pp prime ideal of F
   // DD discriminant of the maximal order K
-  if DD subset pp then
+  if Valuation(DD,pp) gt 0 then
     return 0;
   elif IsLocalSquare(D,pp) then
     return 1;
@@ -471,11 +550,18 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
   // M ModFrmHilDGRng (carries field F, ring of integers ZF, and unit group + unit group map UF, mUF)
   // aa ideal for the diamond operator
   //
+  // Notes: The key obtained from discriminant hash (key) represents either the square class of D or sigma(D) (here sigma : F -> F is the nontrivial field automorphism ) 
+  // based on whether c = 0 or 1. By setting d = key if c = 0 and d = Conjugate(key) if c = 1 and then running LocalSquare(M,d,pp[1]) instead of LocalSquare(M,D,pp[1]),
+  // we reduce the number of computations for LocalSquare() to 1/3 of its orginal size. However, this seems like an unnecessary and confusing simplification.
+  //
+  // d := (c eq 1) select Conjugate(key) else key; 
+  //
 
   // Preliminaries
   ZF := Integers(M);
-  t, n, key := Explode(data);
-  h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]); // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*], DD = discriminant of maximal order
+  t, n, key, c := Explode(data);
+  h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]); // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*]
+  DD := (c eq 1) select Conjugate(DD) else DD; // DD = discriminant of maximal order
   D := t^2 - 4*n; // Discriminant of order
   hw := h / w; // Computes h/w where h = class number of K and w = unit index of 2 * [ZK^* : ZF^*]
   ff := Sqrt((D*ZF)/DD); // Conductor
@@ -483,13 +569,14 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
   // Conductor Sum
   conductorsum := 0;
   for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
-    term := Norm(bb) * (&*([1] cat [1 - FastArtinSymbol(D,pp[1],DD) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
+    term := Norm(bb) * (&*([1] cat [1 - LocalSquare(M,D,pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb) | Valuation(DD,pp[1]) eq 0 ])); // Artin symbol = ( LocalSquare(M,D,pp[1]) ) + (Valuation(DD,pp[1]) eq 0) code
     // Embedding numbers
     for pair in NNfact do
-      pp := pair[1];
-      e := pair[2];
+      pp, e := Explode(pair);
       f := Valuation(bb,pp); // Conductor
-      term *:= OptimalEmbeddings(e, 2*f, DD, pp, D);
+      g := Valuation(DD,pp); // Valuation of Discriminant
+      A := (g eq 0) select LocalSquare(M,D,pp) else 0; // Artin Symbol 
+      term *:= OptimalEmbeddings(e, 2*f, g, A, pp);
     end for;
     conductorsum +:= term;
   end for;
@@ -604,27 +691,30 @@ end intrinsic;
 
 ///////////////////////////////////// Optimal Embeddings ///////////////////////////////////////////////
 
-intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, DD::RngOrdIdl, pp::RngOrdIdl, D::RngElt) -> RngIntElt
-  {Computes embedding numbers for x^2 - d * pi^(f) mod pp^e where: e is positive integers, f is positive even integer, pp is a prime ideal, and d = disc(ZK) has valuation(d,pp) = g where ZK is the ring of integers of the extension x^2 - d.}
+intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
+  {Computes embedding numbers for x^2 - d * pi^(f) mod pp^e where: 
+  - e is a positive integer, 
+  - f is a positive even integer, 
+  - pp is a prime ideal, 
+  - A = (K/pp) is the artin symbol for the local field K = F_pp[x] / (x^2 - D), and 
+  - d = disc(ZK) is the fundamental discriminant of the integers of K with g = Valuation(d,pp) }
 
   // Preliminaries
   q := Norm(pp); // Size of residue field
-  Z := Integers(); // Integers (for conversion)
-  g := Valuation(DD,pp); // Valuation of discriminant
 
   // Case 1 : p is odd
   if IsOdd(q) then
-    return f eq 0 select OptimalEmbeddingsOdd(e,f,g,DD,pp,D) else OptimalEmbeddingsOdd(e,f,g,DD,pp,D) + Z!OptimalEmbeddingsOdd(e+1,f,g,DD,pp,D)/q;
+    return f eq 0 select OptimalEmbeddingsOdd(e,f,g,A,pp) else OptimalEmbeddingsOdd(e,f,g,A,pp) + ExactQuotient(OptimalEmbeddingsOdd(e+1,f,g,A,pp), q);
   // Case 2 : p is even
   else
-    return f + g eq 0 select OptimalEmbeddingsEven(e,f,g,DD,pp,D) else OptimalEmbeddingsEven(e,f,g,DD,pp,D) + Z!OptimalEmbeddingsEven(e+1,f,g,DD,pp,D)/q;
+    return f + g eq 0 select OptimalEmbeddingsEven(e,f,g,A,pp) else OptimalEmbeddingsEven(e,f,g,A,pp) + ExactQuotient(OptimalEmbeddingsEven(e+1,f,g,A,pp), q);
   end if;
 end intrinsic;
 
 
 
-intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, DD::RngOrdIdl, pp::RngOrdIdl, D::RngElt) -> RngIntElt
-  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^f}
+intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
+  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^f where g = power of pp in discriminant of maximal order, A = (K/pp) is the artin symbol K = F[x]/(x^2-D)}
 
   // Size of residue field
   q := Norm(pp);
@@ -633,15 +723,15 @@ intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, DD::Rng
   if f + g ge e then // Case 1 : f >= e
     N := q^(Floor(e/2));
   else // Case 2 : f < e
-    N := q^(ExactQuotient(f,2)) * FastArtinSymbol(D, pp, DD) * (1 + FastArtinSymbol(D, pp, DD));
+    N := q^(ExactQuotient(f,2)) * A * (1 + A);
   end if;
   return N;
 end intrinsic;
 
 
 
-intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, DD::RngOrdIdl, pp::RngOrdIdl, D::RngElt) -> RngIntElt
-  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^(g+f)}
+intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
+  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^(g+f) where g = power of pp in discriminant of maximal order, A = (K/pp) is the artin symbol K = F[x]/(x^2-D)}
 
   // Preliminaries
   q := Norm(pp); // Size of residue field
@@ -655,10 +745,10 @@ intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, DD::Rn
     if IsOdd(g) then // Subcase 2.1 : g is odd
       N := 0;
     else // Subcase 2.2 : g is even
-      if e le (f + 1 - FastArtinSymbol(D, pp, DD)^2) then // Subsubcase 2.2.1 e <= f when pp is split or inert and e <= 2f+1 when pp is ramified
+      if e le (f + 1 - A^2) then // Subsubcase 2.2.1 e <= f when pp is split or inert and e <= 2f+1 when pp is ramified
         N := q^(Floor(e/2));
       else // Subsubcase 2.2.2 e > 2f when pp is split or inert and e > f+1 when pp is ramified
-        N := q^( ExactQuotient(f,2) ) * FastArtinSymbol(D, pp, DD) * (1 + FastArtinSymbol(D, pp, DD));
+        N := q^( ExactQuotient(f,2) ) * A * (1 + A);
       end if;
     end if;
   end if;
@@ -740,7 +830,7 @@ end intrinsic;
 ///////////////////////////////////////////////////
 
 
-/*
+
 intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   {Produces the trace of mm on the space Mk}
 
@@ -754,86 +844,97 @@ intrinsic TraceChecker(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   C,mC := ClassGroup(F); // class group
   reps := [ mC(i) : i in C ]; // class group representatives
   MJV := HilbertCuspForms(F, NN, k);
+  H := CoprimeClassGroupRepresentatives(Mk);
   Tmm := HeckeOp(Mk,mm);
+  K := CoefficientRing(Tmm);
 
   // loop over class group reps and take Trace[ T(mm) * P(aa) ] where T(mm) is the mth hecke operator and P(aa) is the diamond operator
+  tr := 0;
   if mm eq 1*ZF then
-    tr := (1/#C) * &+[ chi(aa) * (OK ! Trace(DiamondOperator(MJV,aa))) : aa in reps ];
+    tr := &+[ chi( H[aa] ) * (OK ! Trace( DiamondOperator(MJV,aa)) ) : aa in reps ];
   else
-    tr := (1/#C) * &+[ chi(aa) * (OK ! Trace(Tmm * DiamondOperator(MJV,aa))) : aa in reps ];
+    for aa in reps do
+      D := DiamondOperator(MJV,aa);
+      L := CoefficientRing(D);
+      boo, mK := IsIsomorphic(L,K);
+      D := Matrix(K,D);
+      tr +:= chi( H[aa] ) * (OK ! Trace(Tmm * D ));
+    end for;
   end if;
-
-  return tr;
+  return tr / #C;
 
 end intrinsic;
-*/
+
+
+
 
 
 // trace recursion function
-// ****** Needs Testing ***********
+// ****  FIXME: This function has not been optimized *********
+// FIXME - In trace function change the Trace 0 to output 0 in the coefficient ring of Hecke character.
 intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
   {Computes the trace of T(pp)^r * T(pp)^s on the space Mk}
-
-  // mm = 0 or nn = 0 return 0
-  if IsZero(mm) or IsZero(nn) then
-    return 0;
-  end if;
 
   // initialize
   k := Weight(Mk);
   NN := Level(Mk);
   F := BaseField(Mk);
   ZF := Integers(F);
-  C,mC := ClassGroup(F); // class group
-  Creps := [ mC(i) : i in C ]; // class group representatives
-  chi := Character(Mk)^(-1);
+  C := ClassGroupReps(F); // class group representatives
+  H := CoprimeClassGroupRepresentatives(Mk);// comprime class group reps
+  Bad := [p[1] : p in Factorization(NN)]; // Bad primes
+  chi := Character(Mk)^(-1); // character
   ZK := Parent(chi)`TargetRing; // Coefficient ring for the range of the Hecke Character
+
+  // mm = 0 or nn = 0 return 0
+  if IsZero(mm) or IsZero(nn) then
+    return ZK ! 0;
+  end if;
 
   // requirements
   require #Set(k) eq 1: "Not implemented for nonparallel weights";
 
-  // convert pp to class group rep
+  // function: convert aa to standard class group rep
   function Classrep(aa)
-    return [ bb : bb in Creps | IsPrincipal(bb*aa^(-1)) ][1];
+    return [ bb : bb in C | IsPrincipal(bb*aa^(-1)) ][1];
   end function;
 
-  // Greedy Algorithm - Store factorizations
-  cc := GCD(mm,nn);
-  mmp := &*([1*ZF] cat [ p[1]^p[2] : p in Factorization(mm) | not cc subset p[1]] ) ; // coprime to nn part
-  nnp := &*([1*ZF] cat [ p[1]^p[2] : p in Factorization(nn) | not cc subset p[1]] ) ; // coprime to mm part
-  ccstar := mmp * nnp;
-  tuples := [ [* 1, ccstar, 1*ZF *] ];
-  for pps in Factorization(cc) do
-    // prime
+  /* Write T(m) * T(n) as a sum of terms a * T(b) * D(c) indexed by tuples (a,b,c) where 
+    - a is scalar from the hecke recusion (from the norm of an ideal), 
+    - b is the ideal for the hecke operator T, and 
+    - c is the ideal for the diamond operator D */
+  
+  // Recursion tuples
+  tuples := [ [* 1, 1*ZF, 1*ZF *] ];
+  for pps in Factorization(mm * nn) do
     pp := pps[1];
-    require not NN subset pp: "prime is a subset of the level";
     r := Valuation(nn,pp);
     s := Valuation(mm,pp);
-    // Loop
+    // flag = true    <=>   no hecke recursion
+    flag := (r eq 0) or (s eq 0) or (pp in Bad) select true else false;
     newtuples := [];
-    for i in [0..Min(r,s)] do
-      for tuple in tuples do
-        a := tuple[1];
-        b := tuple[2];
-        c := tuple[3];
-        newtuples cat:= [ [*  a * Norm(pp)^(i * (k[1] - 1)), b * pp^(r + s - 2*i), c * pp^i  *] ];
-      end for;
+    for tuple in tuples do
+      a,b,c := Explode(tuple);
+      N := flag select [[* a, b*pp^(r+s), c *]] else [ [*  a*Norm(pp)^(i*(k[1]-1)), b*pp^(r+s-2*i), c*pp^i  *] : i in [0..Min(r,s)]];
+      newtuples cat:= N;
     end for;
     tuples := newtuples;
   end for;
 
-  // take product
+  // Sum
   ans := 0;
-  for aa in Creps do
-    for t in tuples do
-      qq := Classrep(t[3] * aa);
-      ans +:= (1 / Norm(qq)) ^ (k[1]-2) * chi(aa) * t[1] * TraceProduct(Mk, t[2], qq : precomp := true);
-    end for;
+  for t in tuples do
+    // initialize
+    a,b,c := Explode(t);
+    // Compute trace of T(b) * D(c) on Mk 
+    x := (1/#C) * &+[ chi( H[aa] ) * TraceProduct(Mk, b, Classrep(c * aa) : precomp := true) : aa in C ];
+    // Eisenstein correction factor
+    x +:= CorrectionFactor(Mk, b) * chi( c );
+    // Scale by a and add to sum
+    ans +:= a * x;
   end for;
-  ans *:= (1/#C);
 
   return ans;
-
 end intrinsic;
 
 
@@ -850,6 +951,10 @@ intrinsic HeckeOp(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   ZF := Integers(F);
   Factmm := Factorization(mm);
   MJV := HilbertCuspForms(F, NN, k);
+  // Ben: It seems like I have to sometimes run NewformDecomposition in order to produce diamond operators
+  // N := NewSubspace(MJV);
+  // _ := NewformDecomposition(N);
+
 
   // corner case
   if mm eq 1*ZF then
@@ -920,156 +1025,6 @@ intrinsic HeckeTraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
     end for;
   end for;
   return HMF(Mk, coeffs);
-end intrinsic;
-
-
-intrinsic BadPrecompTraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> Any
-  {Computes trace of T(mm) * P(aa) for Hecke operator T(mm) and Diamond operator P(aa) using precomputations.}
-
-  // If mm * aa^2 = 0 or is not narrowly principal then return 0
-  mmaa := mm * aa^2;
-  if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
-    return 0;
-  end if;
-
-  // Space Preliminaries
-  M := Parent(Mk);
-  NN := Level(Mk);
-  NNfact := Factorization(NN);
-  k := Weight(Mk);
-  F := BaseField(Mk);
-  ZF := Integers(Mk);
-  n := Degree(F);
-  places := Places(M);
-  _<x> := PolynomialRing(ZF);
-
-  // Check precomputations
-  if not IsDefined( TracePrecomputation(M), mm) then
-    print "running precomputation for ideal     ", mm;
-    HMFTracePrecomputation(M,[mm]);
-  end if;
-  Indexforsum := TracePrecomputation(M)[mm][aa];
-
-  // Summation
-  Sumterm := 0;
-  for StoredData in Indexforsum do
-
-    // Preliminaries
-    b := StoredData[1];
-    a := StoredData[2]; // x^2 + bx + a
-    ZK := StoredData[5]; // Used for Artin Symbol
-    ff := StoredData[6]; // Conductor
-    h := StoredData[7]; // Class number of quadratic extension K/F
-    w := StoredData[8]; // Unit index of quadratic extension K/F
-
-    ///////////////////  Helper Functions //////////////////////
-
-    // Weightfactor
-    Weightfactor := function(b,a,l)
-      _<x> := PowerSeriesRing(RealField(k[1]+20),k[1]+20); // extend with weight
-      P := 1/(1 + b*x + a*x^2);
-      return Coefficient(P,l);
-    end function;
-
-    // Artin Symbol
-    function ArtinSymbol(pp)
-      if IsSplit(pp,ZK) then return 1;
-      elif IsRamified(pp,ZK) then return 0;
-      else return -1; end if;
-    end function;
-
-    // Constant
-    C := (h/w) * (&*[ Weightfactor( Evaluate(b,places[i]), Evaluate(a,places[i]), k[i]-2 ) : i in [1..n]]);
-    // We do one computation for x^2 - bx + a and x^2 + bx + a since the embedding numbers are the same
-    if b ne 0 then C *:= 2; end if;
-
-    // Conductor Sum
-    conductorsum := 0;
-    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
-      // Term from class number of order -> class number of maximal order
-      term := 1;
-      term *:= Norm(bb) * (&*([1] cat [1 - ArtinSymbol(pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
-      // Embedding numbers
-      for pair in NNfact do
-        pp := pair[1];
-        e := pair[2];
-        f := Valuation(bb,pp); // Conductor
-        g := Valuation(Discriminant(ZK),pp); // Valuation of discriminant
-        term *:= OptimalEmbeddings(e, 2*f, g, pp, ZK);
-      end for;
-      conductorsum +:= term;
-    end for;
-
-    // Add to Sumterm
-    Sumterm +:= C * conductorsum;
-  end for;
-
-  // Trace is Constant term + Sum term
-  tr := Round( ConstantTerm(Mk,mmaa) + Sumterm );
-
-  // adjust for bad primes ( This can be toggled on / off still produces a trace )
-  cc := GCD(NN,mm);
-  if cc ne 1*ZF then
-    Badness := [ dd : dd in Divisors(ideal< ZF | NN * cc^(-1) >) | dd ne NN ];
-    for dd in Badness do
-        // including space
-        Mdd := HMFSpace(M,dd,k);
-        // "index" of Mk(dd) in Mk(NN)
-        ii := ideal< ZF | NN * dd^(-1) >;
-        // include new traceform at level dd into level NN
-        L := [];
-        for ee in Divisors(GCD(mm,ii)) do
-          if ee ne 1*ZF then
-            mee := ideal< ZF | mm * ee^(-1) >;
-            print Norm(dd), Norm(ii), Norm(ee), Norm(mee), TraceRecurse(Mdd,ee,mee), #Divisors(ideal< ZF | ii * ee^(-1) >);
-            tr -:= TraceRecurse(Mdd,ee,mee) * #Divisors(ideal< ZF | ii * ee^(-1) >);
-          end if;
-        end for;
-    end for;
-  end if;
-
-  // return
-  return tr;
-end intrinsic;
-
-
-
-
-intrinsic PrecompTraceProductNew(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl) -> Any
-  {Computes trace of T(mm) * P(aa) for Hecke operator T(mm) and Diamond operator P(aa) using precomputations.}
-
-  // If mm * aa^2 = 0 or is not narrowly principal then return 0
-  mmaa := mm * aa^2;
-  if IsZero(mmaa) or not IsNarrowlyPrincipal(mmaa) then
-    return 0;
-  end if;
-
-  // Space Preliminaries
-  M := Parent(Mk);
-  NN := Level(Mk);
-  k := Weight(Mk);
-  F := BaseField(Mk);
-  ZF := Integers(Mk);
-
-  ///////////////////  Helper Functions //////////////////////
-
-  // sign of (p1^e1) * (p2^e2) * ... * (pn^en) = (-1) ^ (e1 + e2 + ... + en)
-  sgn := function(aa)
-    if aa eq 1*ZF then
-      return 1;
-    else
-      return (-1) ^ &+[i[2] : i in Factorization(aa)];
-    end if;
-  end function;
-
-  ans := 0;
-  for dd in Divisors(NN) do
-      Mdd := HMFSpace(M,dd,k);
-      ii := ideal< ZF | NN * dd^(-1) >;  // index of dd in NN
-      ans +:= sgn(dd) * Trace( Mdd, mm : precomp := true) * #Divisors(ii);
-  end for;
-
-  return ans;
 end intrinsic;
 
 

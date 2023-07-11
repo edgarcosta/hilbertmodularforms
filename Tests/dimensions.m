@@ -17,22 +17,22 @@ procedure testDimension(F,N,k)
     
     // !!! This fails for the following example
     // D = 473, N = 1, k = 2
-    /*
+    
     dim_hmf := 0;
     prec := 1;
     R := GradedRingOfHMFs(F, prec);
     X := HeckeCharacterGroup(N,[1,2]);
     // For some reason trivial dirichlet restriction doesn't give all of them
-    chis := [chi : chi in Elements(X) | Norm(Conductor(chi)) eq 1];  
-    // chis := [chi : chi in Elements(X) | IsTrivial(DirichletRestriction(chi))];
+    // chis := [chi : chi in Elements(X) | Norm(Conductor(chi)) eq 1];  
+    chis := [chi : chi in Elements(X) | IsTrivial(DirichletRestriction(chi))];
     for chi in chis do
 	hmf := HMFSpace(R, N, [k,k], chi);
 	dim_hmf +:= CuspDimension(hmf);
     end for;
-    */
+    
     // Instead we check for the dimension of the HilbertCuspForms
     
-    dim_hmf := Dimension(HilbertCuspForms(F,N,[k,k]));
+    // dim_hmf := Dimension(HilbertCuspForms(F,N,[k,k]));
     assert dim_gl eq dim_hmf;
 end procedure;
 
