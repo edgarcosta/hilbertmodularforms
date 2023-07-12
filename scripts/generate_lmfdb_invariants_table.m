@@ -18,15 +18,15 @@ handlers := [elt : elt in
   <"invs", WriteInvariantsHeader, WriteInvariantsRow>,
   <"elliptic_pts", WriteElllipticPointsHeader, WriteElllipticPointsRows>
   *]
-  | table eq elt[0]][0];
+  | table eq elt[1]][1];
 if assigned label then
   if label eq "header" then
-    print handlers[0]();
+    print handlers[1]();
     exit 0;
   else
     G := LMFDBCongruenceSubgroup(label);
     try
-      print handlers[1](label);
+      print handlers[2](label);
       exit 0;
     catch e
       WriteStderr(Sprintf("Failed %o for %o\n", GetIntrinsicName(handlers[1]), label));
