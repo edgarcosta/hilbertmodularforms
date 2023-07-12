@@ -466,8 +466,8 @@ intrinsic _EllipticPointDataSpecialCases(Gamma::GrpHilbert) -> Assoc
 end intrinsic;
 
 intrinsic NumberOfEllipticPoints(Gamma::GrpHilbert) -> RngIntElt
-{}
-    return #EllipticPointData(Gamma);
+  {}
+  return &+[A[k] : k in Keys(A)] where A := EllipticPointData(Gamma);
 end intrinsic;
 
 intrinsic NumberOfEllipticPoints(Gamma::GrpHilbert, ord::RngIntElt) -> RngIntElt
