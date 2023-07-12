@@ -1,7 +1,8 @@
 /*
 # about 1min
-parallel magma -b D:={} scripts/generate_box.m  ::: {0..3000} 
-time magma -b scripts/generate_box.m  > group_labels.txt
+parallel magma -b D:={} scripts/generate_box.m  ::: {0..3000} > group_labels.txt
+time parallel -a data/group_labels.txt --joblog data/joblog/lmfdb_invariants_table.log -j 200 --eta magma -b label:={} scripts/generate_lmfdb_invariants_table.m  > data/lmfdb_invariants_table.txt
+*/
 
 
 AttachSpec("spec");
