@@ -5,7 +5,8 @@
 ///////////////////////////////////////////////////
 
 //Auxiliary function to handle the optional parameters for Basis calls
-function SubBasis(basis, IdealClassesSupport, GaloisInvariant)
+
+function SubBasis(basis, IdealClassesSupport, Symmetric)
   if IsNull(basis) then return basis; end if;
   Mk := Parent(basis[1]);
   // handle optional argument IdealClassesSupport
@@ -25,11 +26,11 @@ function SubBasis(basis, IdealClassesSupport, GaloisInvariant)
     basis := [ &+[rel[i]*B[i] : i in [1..#B]] : rel in relations];
   end if;
 
-  // handle optional argument GaloisInvariant
-  if GaloisInvariant then
-    InvariantGenerators := [1/2*(b + Swap(b)) : b in basis];
-    coeffs := CoefficientsMatrix(basis : IdealClasses:=IdealClassesSupport);
-    basis := [basis[i] : i in PivotRows(coeffs)];
+  // handle optional argument Symmetric
+  if Symmetric then
+    InvariantGenerators := [Symmetrize(b) : b in basis];
+    coeffs := CoefficientsMatrix(InvariantGenerators : IdealClasses:=IdealClassesSupport);
+    basis := [InvariantGenerators[i] : i in PivotRows(coeffs)];
   end if;
   return basis;
 end function;
@@ -40,7 +41,7 @@ intrinsic CuspFormBasis(
   Mk::ModFrmHilD
   :
   IdealClassesSupport:=false,
-  GaloisInvariant:=false,
+  Symmetric:=false,
   GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
@@ -73,7 +74,7 @@ intrinsic CuspFormBasis(
       Mk`CuspFormBasis := Weight1CuspBasis(Mk);
     end if;
   end if;
-  return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, GaloisInvariant);
+  return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
 
@@ -81,7 +82,7 @@ intrinsic EisensteinBasis(
   Mk::ModFrmHilD
   :
   IdealClassesSupport:=false,
-  GaloisInvariant:=false
+  Symmetric:=false
   ) -> SeqEnum[ModFrmHilDElt]
   { return a basis for the complement to the cuspspace of Mk }
   if not assigned Mk`EisensteinBasis then
@@ -92,7 +93,7 @@ intrinsic EisensteinBasis(
   end if;
 
   // this handles the optional parameters
-  return SubBasis(Mk`EisensteinBasis, IdealClassesSupport, GaloisInvariant);
+  return SubBasis(Mk`EisensteinBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
 
@@ -102,7 +103,7 @@ intrinsic Basis(
   Mk::ModFrmHilD
   :
   IdealClassesSupport:=false,
-  GaloisInvariant:=false
+  Symmetric:=false
   ) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   if not assigned Mk`Basis then
@@ -115,24 +116,24 @@ intrinsic Basis(
   end if;
 
   // this handles the optional parameters
-  return SubBasis(Mk`Basis, IdealClassesSupport, GaloisInvariant);
+  return SubBasis(Mk`Basis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
-intrinsic GaloisInvariantBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  {returns a basis for the Galois invariant subspace}
-
-  B := Basis(Mk);
-  InvariantGenerators:=[];
-  for x in B do
-    Append(~InvariantGenerators, 1/2*(x+Swap(x)));
-  end for;
-  InvariantBasis:=[];
-  for x in InvariantGenerators do
-    if #LinearDependence(InvariantBasis cat [x]) eq 0 then
-      Append(~InvariantBasis, x);
-    end if;
-  end for;
-  return InvariantBasis;
+intrinsic SymmetricBasis(
+  Mk::ModFrmHilD
+  :
+  IdealClassesSupport:=false
+  ) -> SeqEnum[ModFrmHilDElt]
+  {returns a basis for the invariant subspace under the automorphisms of F}
+  if not assigned Mk`Basis then
+    vprintf HilbertModularForms: "Computing symmetric basis for space of parallel weight %o with precision %o\n", Weight(Mk)[1], Precision(Parent(Mk));
+    // Cuspforms
+    CB := CuspFormBasis(Mk);
+    //Eisenstein Series
+    EB := EisensteinBasis(Mk);
+    Mk`Basis := EB cat CB;
+  end if;
+  return SubBasis(Mk`Basis, IdealClassesSupport, true);
 end intrinsic;
 
 intrinsic ComponentBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]

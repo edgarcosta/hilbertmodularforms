@@ -1120,19 +1120,19 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: swap map //////////
 
-
-intrinsic Swap(SwappedMk::ModFrmHilD, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
-  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+function AutomorphismAct(f, sigma)
+  // given a component f and sigma an automorphisms of the base field F, returns the component sigma(f)
   M := GradedRing(f);
   Mk := Parent(f);
   F := BaseField(M);
   ZF := Integers(F);
-  require Degree(F) eq 2: "only defined for quadratic fields";
-  sigma := hom<F -> F| Trace(F.1) - F.1>;
   NN := Level(f);
   NNbar := ideal<ZF | [sigma(x) : x in Generators(NN)]>;
-  require NN eq NNbar: "only implemented for Galois stable level";
-  require IsTrivial(Character(Mk)): "only implemented for trivial character";
+  for bb->u in UnitCharacters(Mk) do
+    assert u`trivial; // only implemented for trivial unit character
+  end for;
+  assert NN eq NNbar; // only implemented for Galois stable level
+  assert IsTrivial(Character(Mk)); // only implemented for trivial character
 
   //chibar := ??
   //Mkbar := HMFSpace(M, NNbar, Weight(f), chibar);
@@ -1140,37 +1140,77 @@ intrinsic Swap(SwappedMk::ModFrmHilD, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   bbbar := NarrowClassRepresentative(M, ideal<ZF | [sigma(x) : x in Generators(bb)]>);
   coeff := AssociativeArray();
   for nu->c in Coefficients(f) do
-    nubar := F!sigma(nu);
+    nubar := F!((sigma^(-1))(nu));
     snubar, epsilon := ReduceShintani(M, bbbar, nubar);
     coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c;
   end for;
-  ucbar := UnitCharacter(F, [sigma(v) : v in ValuesOnGens(UnitCharacter(f))]);
-  return HMFComp(Mk, bbbar, coeff: unitchar:=ucbar, prec:=Precision(f));
-end intrinsic;
+  return HMFComp(Mk, bbbar, coeff: prec:=Precision(f));
+end function;
 
-intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+intrinsic AutomorphismMap(f::ModFrmHilDElt, sigma::Map) -> ModFrmHilDElt
+  {given a hilbert modular form f and sigma an automorphisms of the base field F of f, returns the form sigma(f), where sigma permutes the nu_1, nu_2, ..., nu_n}
   M := GradedRing(f);
   Mk := Parent(f);
   F := BaseField(M);
   ZF := Integers(F);
-  require Degree(F) eq 2: "only defined for quadratic fields";
-  sigma := hom<F -> F| Trace(F.1) - F.1>;
   NN := Level(f);
   NNbar := ideal<ZF | [sigma(x) : x in Generators(NN)]>;
   require NN eq NNbar: "only implemented for Galois stable level";
   require IsTrivial(Character(Mk)): "only implemented for trivial character";
 
-  new_unitcharacters := AssociativeArray();
-  for bb->c in UnitCharacters(Mk) do
-    new_unitcharacters[bb] := UnitCharacter(F, [sigma(v) : v in ValuesOnGens(c)]);
+  for bb->u in UnitCharacters(Mk) do
+    require u`trivial: "only implemented for trivial unit character";
   end for;
-  LandingSpace := HMFSpace(M, NN, Weight(Mk), Character(Mk): unitcharacters:=new_unitcharacters);
+  //new_unitcharacters := AssociativeArray();
+  //for bb->c in UnitCharacters(Mk) do
+  //  new_unitcharacters[bb] := UnitCharacter(F, [v: v in ValuesOnGens(c)]);
+  //end for;
+  LandingSpace := HMFSpace(M, NN, Weight(Mk), Character(Mk): unitcharacters:=UnitCharacters(Mk));
 
   comp := AssociativeArray();
-  for fbb in Components(f) do
-    sfbb := Swap(LandingSpace, fbb);
+  for k->fbb in Components(f) do
+    sfbb := AutomorphismAct(fbb, sigma);
     comp[ComponentIdeal(fbb)] := sfbb;
   end for;
   return HMFSumComponents(LandingSpace, comp);
  end intrinsic;
+
+
+intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+  M := GradedRing(f);
+  F := BaseField(M);
+  require Degree(F) eq 2: "only defined for quadratic fields";
+  sigma := hom<F -> F| Trace(F.1) - F.1>;
+  return AutomorphismMap(f, sigma);
+ end intrinsic;
+
+
+
+ intrinsic Symmetrize(f::ModFrmHilDElt) -> ModFrmHilDElt
+   {given a hilbert modular form f, returns the symmetric form 1/#Aut(F|Q)*sum_(sigma in Aut) sigma(f)}
+   M := GradedRing(f);
+   F := BaseField(M);
+   Mk := Parent(f);
+   A:=Automorphisms(F);
+   r:=#A;
+   g:=Mk!0;
+   for sigma in A do
+    g+:=AutomorphismMap(f, sigma);
+   end for;
+   return g;
+  end intrinsic;
+
+ intrinsic IsSymmetric(f::ModFrmHilDElt) -> ModFrmHilDElt
+   {given a hilbert modular form f, returns if it is invariant under all the automorphisms of its base field F}
+   M := GradedRing(f);
+   F := BaseField(M);
+   A:=Automorphisms(F);
+   for sigma in A do
+    if not f eq AutomorphismMap(f, sigma) then return false; end if;
+   end for;
+   return true;
+  end intrinsic;
+
+
+
