@@ -159,7 +159,7 @@ minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.
 end intrinsic;
 
 intrinsic ArithmeticGenus(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the Arithmetic Genus of the resulting Hilbert modular 
+{Given a congruence subgroup, computes the Arithmetic Genus of the resulting Hilbert modular
 surface.}
   chi := K2(Gamma) + EulerNumber(Gamma);
   assert chi mod 12 eq 0;
@@ -173,13 +173,13 @@ intrinsic Irregularity(Gamma::GrpHilbert) -> RngIntElt
 end intrinsic;
 
 intrinsic GeometricGenus(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the Geometric Genus of the resulting Hilbert modular 
+{Given a congruence subgroup, computes the Geometric Genus of the resulting Hilbert modular
 surface.}
   return ArithmeticGenus(Gamma)-1;
 end intrinsic;
 
 intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the Hodge Diamond of the resulting Hilbert modular 
+{Given a congruence subgroup, computes the Hodge Diamond of the resulting Hilbert modular
 surface.}
   h_0 := [1];
   q := Irregularity(Gamma);
@@ -194,7 +194,7 @@ surface.}
 end intrinsic;
 
 intrinsic TestArithmeticGenus(F::FldNum, NN::RngOrdIdl) -> Any
-  {Compute the arithmetic genus as (1/12)*(K^2 + e), summed over all components, and as 
+  {Compute the arithmetic genus as (1/12)*(K^2 + e), summed over all components, and as
   dim(S_2) + #Cl^+(F); return true if these are equal. Currently only for GL+ type.}
 
   NCl, mp := NarrowClassGroup(F);
@@ -218,7 +218,7 @@ end intrinsic;
 
 // TODO
 intrinsic KodairaDimension(Gamma::GrpHilbert) -> MonStgElt
-  {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma. 
+  {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma.
   Currently just returns -100}
     error "Not Implemented";
   return -100; // FIXME
@@ -226,7 +226,7 @@ end intrinsic;
 
 // Could be improved in the future.
 intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
-{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to 
+{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to
  Gamma, based on the arithmetic genus. When the level is 1, it
  gives a more refined list based on K^2. Currently only implemented for Gamma0.}
 
@@ -250,7 +250,7 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
                 return [-1];
             elif (k2 eq 8) or (k2 eq 9) then
                 return [-1, 2];
-            else 
+            else
                 return [2];
             end if;
         else // chi not 1
@@ -263,10 +263,10 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
         if (chi eq 1) then
             if (k2 ge 10) then
                 return [2];
-            else 
+            else
                 return [-1,2];
             end if;
-        else 
+        else
             return [2];
         end if;
     else // k2 is smaller then 0, so the lower bound is useless
@@ -278,13 +278,13 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
             return [0,1,2];
         end if;
     end if;
-  
+
   end if;
 end intrinsic;
 
 // Could be improved in the future.
 intrinsic KodairaDimensionPossibilitiesWithHZ(Gamma::GrpHilbert) -> MonStgElt
-{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to 
+{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to
  Gamma, based on the arithmetic genus and the rationality criterion. When the level is 1, it
  gives a more refined list based on K^2. Currently only implemented for Gamma0.}
 
@@ -465,7 +465,7 @@ end intrinsic;
 
 // IO
 intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
-{Script for writing geometric invariants to data table row. 
+{Script for writing geometric invariants to data table row.
 Format is label:[h^[2,0], h^[1,1]]:K^2:chi.}
   h2 := HodgeDiamond(Gamma)[3];
   return StripWhiteSpace(Join([
@@ -505,7 +505,7 @@ where is_pp is true iff component is the inverse different of the quadratic fiel
                                  Sprint(h2[2]),
                                  Sprint(NarrowClassNumber(F)),
                                  Sprint(Norm(N)),
-                                 Sprint(NumberOfCusps(Gamma)),                                 
+                                 Sprint(NumberOfCusps(Gamma)),
                                  Sprint(Discriminant(F)),
                                  Sprint(NumberOfEllipticPoints(Gamma)),
                                  Sprint(NumberOfEllipticPoints(Gamma, 2)),
@@ -518,7 +518,7 @@ where is_pp is true iff component is the inverse different of the quadratic fiel
                                  Sprint(LengthOfResolutions(Gamma)),
                                  Sprint(EulerNumber(Gamma)),
                                  Sprint(is_pp)
-                                ], ":"));                               
+                                ], ":"));
 end intrinsic;
 
 /*
@@ -547,12 +547,12 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
   if (k eq 2) then
       return ArithmeticGenus(Gamma) - 1;
   end if;
-  
+
   vol := VolumeOfFundamentalDomain(Gamma);
-  
+
   dim := ((k-1)^2 / 4) * vol;
   m := k div 2;
-  
+
   // get elliptic points contribution
   a := CountEllipticPoints(Gamma);
 
@@ -566,13 +566,13 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
     q_inv := rot_tup[3];
     _, q, _ := XGCD(q_inv,n);
     Qn<zeta> := CyclotomicField(n);
-    cont := &+[zeta^(i*(q+1)*m)/(n*(1-zeta^i)*(1-zeta^(i*q))) 
+    cont := &+[zeta^(i*(q+1)*m)/(n*(1-zeta^i)*(1-zeta^(i*q)))
 	       : i in [1..n-1]];
     elliptic +:= cont*a[rot_factor];
   end for;
 
   dim +:= elliptic;
-  
+
   // get cusp contribution
   cusps := CuspsWithResolution(Gamma);
 
@@ -585,8 +585,8 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
 	chi +:= n/12*&+[3+b : b in L];
     end if;
   end for;
-  
+
   dim +:= chi;
-  
+
   return dim;
 end intrinsic;
