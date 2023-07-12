@@ -38,7 +38,7 @@ inv_column_handler := [*
   <"comp_gens", "bigint[]", func<G|[Eltseq(x): x in Generators(ComponentIdeal(G))]>>,
   <"kodaira_dims", "integer[]", KodairaDimensionPossibilities>,
   <"K2", "integer", K2>,
-  // chi -> arithmetic genus
+  // chi -> holomorphic_euler_characteristic
   <"chi", "integer", ArithmeticGenus>,
   <"h11", "integer", func<G|HodgeDiamond(G)[3][2]>>,
   <"h20", "integer", func<G|HodgeDiamond(G)[3][2]>>,
@@ -69,12 +69,16 @@ intrinsic WriteInvariantsHeader() -> MonStgElt
 end intrinsic;
 
 
+intrinsic WriteInvariantsRow(Gamma::GrpHilbert) -> MonStgElt
+{Script for writing information about the surface to table row.}
+  return Join([handler_wrap(elt, Gamma) : elt in inv_column_handler], ":");
+end intrinsic;
+
 intrinsic WriteInvariantsRow(label::MonStgElt) -> MonStgElt
 {Script for writing information about the surface to table row.}
   G := LMFDBCongruenceSubgroup(label);
-  return Join([handler_wrap(elt, G) : elt in inv_column_handler], ":");
+  return WriteInvariantsRow(G);
 end intrinsic;
-
 
 intrinsic WriteLMFDBRow(Gamma::GrpHilbert) -> MonStgElt
 {Script for writing information about the surface to table row.
