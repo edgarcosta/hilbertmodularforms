@@ -5,6 +5,7 @@
   Cusps.m
   Elements.m
   EllipticPoints.m
+  Export.m
   FldExt.m
   Formatting.m
   GradedPoly.m
@@ -22,8 +23,8 @@
   Trace.m
   UnitChar.m
   Utils.m
-  Verbose.m
   VDGTable.m
+  Verbose.m
   Workspace.m
 }
 
