@@ -106,7 +106,7 @@ end intrinsic;
 intrinsic WriteElllipticPointsRows(Gamma::GrpHilbert) -> MonStgElt
 {Script for writing information about the elliptic points on the surface to table row.}
   C := CountEllipticPoints(Gamma);
-  label := LMFDBlabel(Gamma);
+  label := LMFDBLabel(Gamma);
   return Join([
           Join([handler_wrap(elt, <label, key[1], value>) : elt in inv_column_handler ], ":")
           : key->value in EllipticPointData(Gamma)
