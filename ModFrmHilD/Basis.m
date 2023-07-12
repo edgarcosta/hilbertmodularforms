@@ -8,6 +8,7 @@
 
 function SubBasis(basis, IdealClassesSupport, Symmetric)
   if IsNull(basis) then return basis; end if;
+  IdealClassesCopy:=IdealClassesSupport;
   Mk := Parent(basis[1]);
   // handle optional argument IdealClassesSupport
   if IdealClassesSupport cmpeq false then
@@ -29,7 +30,7 @@ function SubBasis(basis, IdealClassesSupport, Symmetric)
   // handle optional argument Symmetric
   if Symmetric then
     InvariantGenerators := [Symmetrize(b) : b in basis];
-    coeffs := CoefficientsMatrix(InvariantGenerators : IdealClasses:=IdealClassesSupport);
+    coeffs := CoefficientsMatrix(InvariantGenerators : IdealClasses:=IdealClassesCopy);
     basis := [InvariantGenerators[i] : i in PivotRows(coeffs)];
   end if;
   return basis;
