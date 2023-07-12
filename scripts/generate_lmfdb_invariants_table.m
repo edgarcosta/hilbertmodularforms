@@ -1,3 +1,9 @@
+/*
+# about 1min
+parallel magma -b D:={} scripts/generate_box.m  ::: {0..3000} 
+time magma -b scripts/generate_box.m  > group_labels.txt
+
+
 AttachSpec("spec");
 SetClassGroupBounds("GRH");
 

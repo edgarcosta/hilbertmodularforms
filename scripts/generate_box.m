@@ -5,10 +5,10 @@ SetClassGroupBounds("GRH");
 if assigned D then
   Ds := [StringToInteger(D)];
 else
-  Ds := [1..3000];
+  Ds := [0..3000];
 end if;
 
-Ds := [elt : elt in Ds | IsFundamentalDiscriminant(elt)];
+Ds := [elt : elt in Ds | IsFundamentalDiscriminant(elt) or elt eq 0];
 
 if not assigned cut then
   cut := 5000;
@@ -23,9 +23,11 @@ ambients := [<"GL+", "gl">, <"SL", "sl">];
 
 gammas := [<"Gamma0", "0">];
 
-
-print("header");
 for D in Ds do
+  if D eq 0 then
+    print("header");
+    continue;
+  end if;
   F := NumberField(MinimalPolynomial(Integers(QuadraticField(D)).2));
   field_label := LMFDBLabel(F);
   ZF := Integers(F);
