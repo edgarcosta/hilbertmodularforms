@@ -17,7 +17,7 @@ end if;
 handlers := [elt : elt in
   [*
   <"invs", WriteInvariantsHeader, WriteInvariantsRow>,
-  <"elliptic", WriteElllipticPointsHeader, WriteElllipticPointsRows>
+  <"elliptic", WriteElllipticPointsHeader, WriteElllipticPointsRows>,
   <"cusps", WriteElllipticPointsHeader, WriteElllipticPointsRows>
   *]
   | table eq elt[1]][1];

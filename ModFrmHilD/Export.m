@@ -41,7 +41,7 @@ inv_column_handler := [*
   // chi -> holomorphic_euler_characteristic
   <"chi", "integer", ArithmeticGenus>,
   <"h11", "integer", func<G|HodgeDiamond(G)[3][2]>>,
-  <"h20", "integer", func<G|HodgeDiamond(G)[3][2]>>,
+  <"h20", "integer", func<G|HodgeDiamond(G)[3][1]>>,
   <"narrow_class_nb", "integer", func<G|NarrowClassNumber(BaseField(G))>>,
   <"level_norm", "integer", func<G|Norm(Level(G))>>,
   <"nb_cusps", "integer", NumberOfCusps>,
