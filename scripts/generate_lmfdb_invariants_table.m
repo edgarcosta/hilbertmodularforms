@@ -1,7 +1,7 @@
 /*
 # about 1min
-parallel magma -b D:={} scripts/generate_box.m  ::: {0..3000} > group_labels.txt
-time parallel -a data/group_labels.txt --joblog data/joblog/lmfdb_invariants_table.log -j 200 --eta magma -b label:={} scripts/generate_lmfdb_invariants_table.m  > data/lmfdb_invariants_table.txt
+time parallel magma -b D:={} scripts/generate_box.m  ::: {0..3000} > data/group_labels.txt
+table=invs; time parallel -a data/group_labels.txt --joblog data/joblog/lmfdb_invariants_table.log -j 200 --eta magma -b table:=${invs} label:={} scripts/generate_lmfdb_invariants_table.m  > data/lmfdb_${invs}_table.txt
 */
 
 
@@ -12,17 +12,22 @@ if assigned debug then
   SetDebugOnError(true);
 end if;
 
+
+handlers := [elt for elt in
+  [* <"invs", WriteInvariantsHeader, WriteInvariantsRow>,
+  <"elliptic_pts", WriteElllipticPointsHeader, WriteElllipticPointsRows> *]
+  | table eq elt[0]][0];
 if assigned label then
   if label eq "header" then
-    print WriteInvariantsHeader();
+    print handlers[0]();
     exit 0;
   else
     G := LMFDBCongruenceSubgroup(label);
     try
-      print WriteInvariantsRow(label);
+      print handlers[1](label);
       exit 0;
     catch e
-      WriteStderr(Sprintf("Failed WriteLMFDBRow for %o\n", label));
+      WriteStderr(Sprintf("Failed %o for %o\n", GetIntrinsicName(handlers[1]), label));
       WriteStderr(e);
       exit 1;
     end try;
