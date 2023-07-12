@@ -1,7 +1,7 @@
 /*
 # about 1min
 time parallel magma -b D:={} scripts/generate_box.m  ::: {0..3000} > data/group_labels.txt
-table=invs; time parallel -a data/group_labels.txt --joblog data/joblog/lmfdb_invariants_table.log -j 200 --eta magma -b table:=${invs} label:={} scripts/generate_lmfdb_invariants_table.m  > data/lmfdb_${invs}_table.txt
+table=invs; time parallel -a data/group_labels.txt --joblog data/joblog/lmfdb_${inv}_table.log -j 200 --eta magma -b table:=${invs} label:={} scripts/generate_lmfdb_invariants_table.m  > data/lmfdb_${invs}_table.txt
 */
 
 
@@ -13,9 +13,11 @@ if assigned debug then
 end if;
 
 
-handlers := [elt for elt in
-  [* <"invs", WriteInvariantsHeader, WriteInvariantsRow>,
-  <"elliptic_pts", WriteElllipticPointsHeader, WriteElllipticPointsRows> *]
+handlers := [elt : elt in
+  [*
+  <"invs", WriteInvariantsHeader, WriteInvariantsRow>,
+  <"elliptic_pts", WriteElllipticPointsHeader, WriteElllipticPointsRows>
+  *]
   | table eq elt[0]][0];
 if assigned label then
   if label eq "header" then
