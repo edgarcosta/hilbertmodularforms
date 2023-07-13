@@ -38,10 +38,10 @@ inv_column_handler := [*
   <"comp_gens", "bigint[]", func<G|[Eltseq(x): x in Generators(ComponentIdeal(G))]>>,
   <"kodaira_dims", "integer[]", KodairaDimensionPossibilities>,
   <"K2", "integer", K2>,
-  // chi -> arithmetic genus
+  // chi -> holomorphic_euler_characteristic
   <"chi", "integer", ArithmeticGenus>,
   <"h11", "integer", func<G|HodgeDiamond(G)[3][2]>>,
-  <"h20", "integer", func<G|HodgeDiamond(G)[3][2]>>,
+  <"h20", "integer", func<G|HodgeDiamond(G)[3][1]>>,
   <"narrow_class_nb", "integer", func<G|NarrowClassNumber(BaseField(G))>>,
   <"level_norm", "integer", func<G|Norm(Level(G))>>,
   <"nb_cusps", "integer", NumberOfCusps>,
@@ -56,26 +56,65 @@ inv_column_handler := [*
   <"len_ell_res", "integer", LengthOfEllipticPointResolutions>,
   <"len_res", "integer", LengthOfResolutions>,
   <"euler_nb", "integer", EulerNumber>,
-  <"is_pp", "bool", func<G|IsNarrowlyPrincipal(Different(Integers(BaseField(G))) * Component(G))>>
+  <"is_pp", "boolean", func<G|IsNarrowlyPrincipal(Different(Integers(BaseField(G))) * Component(G))>>
 *];
 
-
-intrinsic WriteInvariantsHeader() -> MonStgElt
+intrinsic WriteHeader(handlers) -> MonStgElt
 {Script for writing information about the surface to table row.}
-  headers := [[col[1] : col in inv_column_handler]];
-  headers cat:= [[col[2] : col in inv_column_handler]];
+  headers := [[col[1] : col in handlers]];
+  headers cat:= [[col[2] : col in handlers]];
 
   return Join([Join([elt : elt in row], ":") : row in headers], "\n") cat "\n";
 end intrinsic;
 
+intrinsic WriteInvariantsHeader() -> MonStgElt
+{Script for writing information about the surface to table row.}
+  return WriteHeader(inv_column_handler);
+end intrinsic;
+
+
+intrinsic WriteInvariantsRow(Gamma::GrpHilbert) -> MonStgElt
+{Script for writing information about the surface to table row.}
+  return Join([handler_wrap(elt, Gamma) : elt in inv_column_handler], ":");
+end intrinsic;
 
 intrinsic WriteInvariantsRow(label::MonStgElt) -> MonStgElt
 {Script for writing information about the surface to table row.}
   G := LMFDBCongruenceSubgroup(label);
-  return Join([handler_wrap(elt, G) : elt in inv_column_handler], ":");
+  return WriteInvariantsRow(G);
 end intrinsic;
 
 
+elliptic_points_table := [*
+  <"label", "text", func<x|x[1]>>,
+  <"rotation_type", "integer[]", func<x|x[2]>>,
+  <"nb", "integer", func<x|x[3]>>
+*];
+
+intrinsic WriteElllipticPointsHeader() -> MonStgElt
+{Script for writing information about the surface to table row.}
+  return WriteHeader(elliptic_points_table);
+end intrinsic;
+
+intrinsic WriteElllipticPointsRows(label::MonStgElt) -> MonStgElt
+{Script for writing information about the elliptic points on the surface to table row.}
+  G := LMFDBCongruenceSubgroup(label);
+  return WriteElllipticPointsRows(G);
+end intrinsic;
+
+
+intrinsic WriteElllipticPointsRows(Gamma::GrpHilbert) -> MonStgElt
+{Script for writing information about the elliptic points on the surface to table row.}
+  C := CountEllipticPoints(Gamma);
+  label := LMFDBLabel(Gamma);
+  return Join([
+          Join([handler_wrap(elt, <label, key[1], value>) : elt in inv_column_handler ], ":")
+          : key->value in EllipticPointData(Gamma)
+              ], "\n");
+end intrinsic;
+
+
+/*
 intrinsic WriteLMFDBRow(Gamma::GrpHilbert) -> MonStgElt
 {Script for writing information about the surface to table row.
 Format is
@@ -120,4 +159,5 @@ where is_pp is true iff component is the inverse different of the quadratic fiel
       is_pp
       *]], ":"));
 end intrinsic;
+*/
 
