@@ -251,7 +251,7 @@ end intrinsic;
 
 intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
   {}
-  return &+[#elt : elt in ShintaniReps(M)];
+  return &+[#elt : bb->elt in ShintaniReps(M)];
 end intrinsic;
 
 intrinsic TracePrecomputation(M::ModFrmHilDGRng) -> Assoc
