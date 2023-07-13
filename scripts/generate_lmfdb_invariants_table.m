@@ -31,7 +31,7 @@ if assigned label then
       print handlers[3](label);
       exit 0;
     catch e
-      WriteStderr(Sprintf("Failed %o for %o\n", GetIntrinsicName(handlers[1]), label));
+      WriteStderr(Sprintf("Failed %o for %o\n", GetIntrinsicName(handlers[3]), label));
       WriteStderr(e);
       exit 1;
     end try;
