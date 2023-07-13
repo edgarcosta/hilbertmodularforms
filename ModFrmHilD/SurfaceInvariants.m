@@ -237,6 +237,7 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
   chi := ArithmeticGenus(Gamma);
 
   if (Level(Gamma) eq 1*ZF) then //In level 1, we have the RationalityCriterion and we know the value of K2 of the minimal model exactly.
+      // This is not true! We know the value of K2 exactly only if the surface is not rational!
     k2 := K2(Gamma) + getHZExceptionalNum(Gamma);
     if (k2 eq 0) then
         if (chi ge 3) then
@@ -246,12 +247,14 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
         end if;
     else // k2 > 0
         if (chi eq 1) then
+	    // Eran: We need to allow also for the case of the surface being rational
             if RationalityCriterion(Gamma) then
                 return [-1];
-            elif (k2 eq 8) or (k2 eq 9) then
-                return [-1, 2];
+            // elif (k2 eq 8) or (k2 eq 9) then
+            //     return [-1, 2];
             else
-                return [2];
+                // return [2];
+		return [-1,2];
             end if;
         else // chi not 1
             return [2];
