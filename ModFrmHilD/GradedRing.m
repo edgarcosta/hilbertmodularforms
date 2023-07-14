@@ -45,6 +45,11 @@ declare attributes ModFrmHilDGRng:
   // [(<s(mu), epsilon>, <s(mu'), epsilon'>) :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu],
   // where nu is Shintani reduced, i.e., s(nu) = s(nu')
   // M stands for monoid, multiplication, and mangling
+  MPairs_NEW, // Assoc: just for testing, will be replaced soon TODO abhijitm
+  Shadows, // Shadows[bb][x] is a SetEnum of <nu, eps> pairs such that the coefficient of nu*eps
+           // needs to be included when performing multiplication.
+           // Such nu*eps are totally positive elements which are dominated (<= in every real embedding)
+           // by some fundamental domain representative.
   PrecomputationforTrace, // Precomputed orders for the Trace formula
   ClassNumbersPrecomputation, // Precomputed class numbers for Trace formula
   // HMFPrecomputation, // Precomputed quantities for the Trace formula (Old)

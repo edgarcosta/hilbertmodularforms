@@ -93,6 +93,76 @@ nus[bbs[2]] := [1/6*a + 1/2, 1/3*a + 1, 1, 1/2*a + 3/2, -1/6*a + 3/2, 1/6*a + 3/
 
 test_reps_to_norm(F, bbs, nus, norms);
 
+// testing MPairs
+
+prec := 20;
+M := GradedRingOfHMFs(F, prec);
+assert BaseField(M) eq F;
+bbs := M`NarrowClassGroupReps;
+
+shadows := ComputeShadows(M);
+mpairs_new := ComputeMPairs_NEW(M);
+
+// hardcoding the old output of MPairs
+
+mpairs := AssociativeArray();
+for bb in bbs do
+  mpairs[bb] := AssociativeArray();
+end for;
+
+reps_1 := [0, 1, 1/6*a + 1/2, 1/6*a + 1, 1/2, 1/2*a + 3/2, 1/3*a + 1, -1/6*a + 1];
+mpairs_1_list := [\
+  [[<0, 1>, <0, 1>]],
+  [[<1/2, 1>, <1/2, 1>], [<1/2 + 1/6*a, a + 2>, <1/2 + 1/6*a, 1>], [<1/2 + 1/6*a, 1>, <1/2 + 1/6*a, a + 2>], [<1, 1>, <0, 1>], [<0, 1>, <1, 1>]],  
+  [[<1/2 + 1/6*a, 1>, <0, 1>], [<0, 1>, <1/2 + 1/6*a, 1>]],
+  [[<1/2, 1>, <1/2 + 1/6*a, 1>], [<1/2 + 1/6*a, 1>, <1/2, 1>], [<1/1 + 1/6*a, 1>, <0, 1>], [<0, 1>, <1/1 + 1/6*a, 1>]],
+  [[<1/2, 1>, <0, 1>], [<0, 1>, <1/2, 1>]],
+  [[<1/2, -a + 2>, <1/2, 1>], [<1/2, 1>, <1/2, -a + 2>], [<1/1 + 1/3*a, 1>, <1/2 + 1/6*a, 1>], [<1/2 + 1/6*a, 1>, <1/1 + 1/3*a, 1>], [<3/2 + 1/2*a, 1>, <0, 1>], [<0, 1>, <3/2 + 1/2*a, 1>]],
+  [[<1/2 + 1/6*a, 1>, <1/2 + 1/6*a, 1>], [<1/1 + 1/3*a, 1>, <0, 1>], [<0, 1>, <1/1 + 1/3*a, 1>]],
+  [[<1/2 + 1/6*a, a + 2>, <1/2, 1>], [<1/2, 1>, <1/2 + 1/6*a, a + 2>], [<1/1 - 1/6*a, 1>, <0, 1>], [<0, 1>, <1/1 - 1/6*a, 1>]]
+];
+
+for i in [1 .. #reps_1] do
+  mpairs[bbs[1]][reps_1[i]] := mpairs_1_list[i];
+end for;
+
+reps_2 := [0, 1, 1/6*a + 1/2, 1/6*a + 3/2, 1/2*a + 3/2, 1/3*a + 1, -1/6*a + 3/2, 2/3*a + 2];
+mpairs_2_list := [\
+  [[<0, 1>, <0, 1>]],
+  [[<1/2 + 1/6*a, a + 2>, <1/2 + 1/6*a, 1>], [<1/2 + 1/6*a, 1>, <1/2 + 1/6*a, a + 2>], [<1, 1>, <0, 1>], [<0, 1>, <1, 1>]],
+  [[<1/2 + 1/6*a, 1>, <0, 1>], [<0, 1>, <1/2 + 1/6*a, 1>]],
+  [[<1/1 + 1/3*a, 1>, <1/2 + 1/6*a, a + 2>], [<1/2 + 1/6*a, a + 2>, <1/1 + 1/3*a, 1>], [<1, 1>, <1/2 + 1/6*a, 1>], [<1/2 + 1/6*a, 1>, <1, 1>], [<3/2 + 1/6*a, 1>, <0, 1>], [<0, 1>, <3/2 + 1/6*a, 1>]],
+  [[<1/1 + 1/3*a, 1>, <1/2 + 1/6*a, 1>], [<1/2 + 1/6*a, 1>, <1/1 + 1/3*a, 1>], [<3/2 + 1/2*a, 1>, <0, 1>], [<0, 1>, <3/2 + 1/2*a, 1>]],
+  [[<1/2 + 1/6*a, 1>, <1/2 + 1/6*a, 1>], [<1/1 + 1/3*a, 1>, <0, 1>], [<0, 1>, <1/1 + 1/3*a, 1>]],
+  [[<1, 1>, <1/2 + 1/6*a, a + 2>], [<1/2 + 1/6*a, a + 2>, <1, 1>], [<1/1 + 1/3*a, a + 2>, <1/2 + 1/6*a, 1>], [<1/2 + 1/6*a, 1>, <1/1 + 1/3*a, a + 2>], [<3/2 - 1/6*a, 1>, <0, 1>], [<0, 1>, <3/2 - 1/6*a, 1>]],
+  [[<1/1 + 1/3*a, 1>, <1/1 + 1/3*a, 1>], [<1/2 + 1/6*a, -a + 2>, <1/2 + 1/6*a, a + 2>], [<1/2 + 1/6*a, a + 2>, <1/2 + 1/6*a, -a + 2>], [<3/2 + 1/2*a, 1>, <1/2 + 1/6*a, 1>], [<1/2 + 1/6*a, 1>, <3/2 + 1/2*a, 1>], [<2/1 + 2/3*a, 1>, <0, 1>], [<0, 1>, <2/1 + 2/3*a, 1>]]
+];
+
+for i in [1 .. #reps_2] do
+  mpairs[bbs[2]][reps_2[i]] := mpairs_2_list[i];
+end for;
+
+for bb in bbs do
+  reps := FunDomainRepsUpToNorm(M)[bb][M`Precision];
+  for nu in reps do
+    coerced_mpairs_set := {}; // MPairs with all eps and nu coerced into F
+    for pair in mpairs[bb][nu] do
+      nu_1, eps_1 := Explode(pair[1]);
+      nu_2, eps_2 := Explode(pair[2]);
+      Include(~coerced_mpairs_set, [<F!nu_1, F!eps_1^-1>, <F!nu_2, F!eps_2^-1>]);
+    end for;
+    mpairs_new_set := SequenceToSet(mpairs_new[bb][nu]);
+    if #(mpairs_new_set sdiff coerced_mpairs_set) ne 0 then
+      printf "Error at class rep %o and representative %o:\n", IdealOneLine(bb), nu;
+      print "mpairs_new is:\n";
+      print mpairs_new_set;
+      print "coerced mpairs is:\n";
+      print coerced_mpairs_set;
+    end if;
+    assert coerced_mpairs_set eq mpairs_new_set;
+  end for;
+end for;
+
 // The cubic number field Q(zeta_7)+. 
 
 F<a> := NumberField(x^3-x^2-2*x+1);
@@ -112,3 +182,5 @@ assert nu_prime eq nu/eps_2;
 //assert Abs(rep_embed[1] - 12.542876546957239435622233943040328966125486709642126932300421480979986755594803638458377953396537060638970481992397465334397641293479711072585112648823806882758838455) lt TOLERANCE;
 //assert Abs(rep_embed[2] - 4.4178947925446465132165748450107518219373171256199260573969790264217653029157415164006286696983915185734010485386542777656639632403882414360609929478152080199995595143) lt TOLERANCE;
 //assert Abs(rep_embed[3] - 2.0392286604981140511611912119489192119371961647379470103025994925982479414894548451409933769050714207876284694689482568999383954661320474913538944033609850972416020305) lt TOLERANCE;
+
+

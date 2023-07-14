@@ -300,6 +300,204 @@ intrinsic PopulateFunDomainRepsArrays(M::ModFrmHilDGRng)
   end for;
 end intrinsic;
 
+intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+      bb: Fractional ideal of the ring of integers of the number field underlying M
+    returns: 
+      An associative array shadows_bb keyed by norm x whose values at x is an enumerated set
+      storing pairs (eps, nu), where eps is a totally positive unit and nu
+      a fundamental domain representative, such that the element nu*eps is dominated by 
+      (totally less than) some fundamental domain representative nu' with norm at most x. 
+
+      Practically, the elements eps*nu coming from shadows_bb[x] are the extra indices
+      which must be accounted for when multiplying ModFrmHilDEltComps of precision x.
+
+
+    Let log_max_coord be the logarithm of the largest coordinate entry appearing
+    in any representative nu. The algorithm enumerates totally positive elements
+    of the field lying in the intersection of the n-dimensional hypercube with 
+    opposite corners (0, .., 0) and (log_max_coord, .., log_max_coord) with the 
+    region of the totally positive orthant with norm at most M`Precision. 
+
+    For each such point (which we call a candidate shadow), it then checks 
+    if it is dominated by some representative. If it is, then we call it a shadow
+    and add it to our output. 
+
+    TODO abhijitm Needing to check domination after the fact is an annoying requirement
+    arising because this hypercube intersect small norm region is generally bigger than 
+    the correct region. I think I know of a better search algorithm but it'd be a lot of 
+    work so I feel this is good enough for now. 
+  }
+
+  RR_PREC := 100;
+  FUZZ := 10^-29;
+  RR := RealField(RR_PREC);
+
+  F := BaseField(M);
+  epses := TotallyPositiveUnitsGenerators(F);
+  ZF := Integers(F);
+  n := Degree(F);
+  places := InfinitePlaces(F);
+  bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
+
+  reps := FunDomainRepsUpToNorm(M)[bb][M`Precision];
+  nu_norms := {Norm(nu) : nu in reps | not IsZero(nu)}; 
+  min_norm := Min(nu_norms);
+
+  // The largest coordinate entry appearing in any representative nu.
+  // This determines the hypercube we work with
+  max_coord := Max(&cat[[Evaluate(nu, v) : v in places] : nu in reps]) + FUZZ;
+
+  // **Construct the simplex**
+  //
+  // In the norm x iteration, nm_smplx will store an (n-1)-simplex in R^(n-1),
+  // which we will use to compute shadows_bb which are translates of nu of norm x.
+  //
+  //
+  // Concretely, in the norm x iteration, the ith vertex of nm_smplx,
+  // prior to applying ForgetTraceLogBasis, will be the vector
+  // [log(max_coord), ..., log(max_coord)] + e_i * log(max_coord^n/x)
+  // in R^n. 
+  //
+  // ForgetTraceLogBasis does not care about trace, so we can treat
+  // this as the vector whose ith vertex is e_i * -n * log(max_coord/x)
+  // in R^n.
+  //
+  // Because ForgetTraceLogBasis is a linear transformation from
+  // R^n to R^(n-1), it commutes with rescaling, so it is enough to 
+  // construct the (n-1) simplex in R^n with vertices
+  // (1, 0, ..., 0), (0, 1, 0, ..., 0), ..., (0, ..., 0, 1),
+  // apply ForgetTraceLogBasis to get our initial nm_smplx, and then 
+  // dynamically rescale it when processing each x. This avoids repeatedly creating
+  // the simplex object. 
+  
+  z := Vector([RealField(100)!0 : _ in [1 .. n]]);
+  nm_splx_vtxs := [];
+  for i in [1 .. n] do
+    v := z;
+    v[i] := -1.0 * Log(max_coord^n / min_norm);
+
+    // after projecting onto the trace-zero hyperplane 
+    // (i.e. forgetting the trace)
+    // this will be n points in (n-1)-dimensional space
+    Append(~nm_splx_vtxs, Rationalize(ForgetTraceLogBasis(F, ElementToSequence(v), epses)));
+  end for;
+
+  epses := TotallyPositiveUnitsGenerators(F);
+  nm_splx := Polyhedron(nm_splx_vtxs);
+
+  prev_x := min_norm;
+  cand_shadows_bb := {<F!0, F!1>};
+  for x in nu_norms do 
+    // rescale nm_splx for this x
+    nm_splx := BestApproximation(Log(max_coord^n / x) / Log(max_coord^n / prev_x), 10^100) * nm_splx; 
+    nn_norm := Integers()!(Norm(x)/Norm(bbp));
+    for nu in FunDomainRepsOfNorm(M, bb, nn_norm) do
+      if IsZero(nu) then
+        continue;
+      end if;
+      splx := nm_splx;
+      // center the simplex at nu 
+      P := Polyhedron([Rationalize(ForgetTraceLogEmbed(nu^-1, epses))]);
+      splx +:= Polyhedron([Rationalize(ForgetTraceLogEmbed(nu^-1, epses))]);
+
+      // process each point
+      for pt in Points(splx) do
+        v := Vector(pt);
+        eps := ZF!1;
+        for i in [1 .. n-1] do
+          eps *:= (epses[i] ^ (IntegerRing()!v[i]));
+        end for;
+        Include(~cand_shadows_bb, <nu, eps>);
+      end for;
+    end for;
+    prev_x := x;
+  end for;
+
+  // Now that we have candidate shadows_bb, we want to prune the list
+  // to leave only the actual shadows_bb.
+  //
+  // We also want to group each shadow eps*nu by the smallest norm of a rep nu'
+  // such that nu' dominates eps*nu. This allows us to restrict the set of shadows_bb
+  // we keep track of if we are working with forms of lesser precision.
+
+  // TODO abhijitm can definitely do this more efficiently
+  shadows_bb := AssociativeArray();
+
+  for x in [0 .. M`Precision] do
+    shadows_bb[x] := {};
+  end for;
+
+  for cand_shadow in cand_shadows_bb do
+    nu, eps := Explode(cand_shadow);
+    for nup in reps do
+      nn_norm := Integers()!(Norm(nup)/Norm(bbp));
+      if IsDominatedBy(eps * nu, nup) then 
+        Include(~shadows_bb[nn_norm], <nu, eps>); 
+        Exclude(~cand_shadows_bb, cand_shadow);
+        break;
+      end if;
+    end for;
+  end for;
+
+  for nn_norm in [1 .. M`Precision] do
+    if IsDefined(shadows_bb, nn_norm) then
+      shadows_bb[nn_norm] join:= shadows_bb[nn_norm - 1];
+    else
+      shadows_bb[nn_norm] := shadows_bb[nn_norm - 1];
+    end if;
+  end for;
+
+  return shadows_bb;
+end intrinsic;
+
+intrinsic ComputeMPairs_NEW(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
+  {temporary function, just to ensure compatibility}
+
+  MPairs_bb := AssociativeArray();
+  shadows_bb := ComputeShadows(M, bb)[M`Precision];
+  for nu in FunDomainRepsUpToNorm(M)[bb][M`Precision] do
+    MPairs_bb[nu] := [];
+    for nu_1eps_1 in shadows_bb do
+      nu_1, eps_1 := Explode(nu_1eps_1);
+      if IsDominatedBy(eps_1*nu_1, nu) then
+        nu_2eps_2 := nu - eps_1*nu_1;
+        nu_2, eps_2 := FunDomainRep(nu_2eps_2);
+        assert <nu_2, eps_2> in shadows_bb;
+        Append(~MPairs_bb[nu], [<nu_1, eps_1>, <nu_2, eps_2>]);
+      end if;
+    end for;
+  end for;
+
+  return MPairs_bb;
+end intrinsic;
+
+intrinsic ComputeShadows(M::ModFrmHilDGRng) -> Assoc
+  {}
+  if not assigned M`Shadows then
+    M`Shadows := AssociativeArray();
+    for bb in M`NarrowClassGroupReps do
+      M`Shadows[bb] := ComputeShadows(M, bb);
+    end for;
+  end if;
+
+  return M`Shadows;
+end intrinsic;
+
+intrinsic ComputeMPairs_NEW(M::ModFrmHilDGRng) -> Any
+  {temporary function, just to test}
+  if not assigned M`MPairs then
+    M`MPairs := AssociativeArray();
+    for bb in M`NarrowClassGroupReps do
+      M`MPairs_NEW[bb] := ComputeMPairs_NEW(M, bb);
+    end for;
+  end if;
+
+  return M`MPairs_NEW;
+end intrinsic;
+
 /////// **************** HELPER FUNCTIONS **************** /////// 
 
 intrinsic EmbedNumberFieldElement(nu::FldNumElt : Precision := 100) -> SeqEnum
@@ -368,4 +566,52 @@ intrinsic ForgetTraceLogEmbed(nu::FldNumElt, epses::SeqEnum[RngOrdElt] : Precisi
   }
   F := Parent(nu);
   return ForgetTraceLogBasis(F, [Log(x) : x in EmbedNumberFieldElement(F!nu : Precision := Precision)], epses);
+end intrinsic;
+
+intrinsic IsDominatedBy(alpha::FldNumElt, beta::FldNumElt) -> BoolElt
+  {
+    input:
+      alpha: an element of a totally real number field F
+      beta: an element of a totally real number field F
+   returns:
+      true if and only if every coordinate of the embedding of alpha in R^n
+      is less than or equal to corresponding coordinate in the embedding of
+      beta in R^n
+  }
+  alpha_embed := EmbedNumberFieldElement(alpha);
+  beta_embed := EmbedNumberFieldElement(beta);
+  for i in [1 .. #alpha_embed] do
+    if alpha_embed[i] gt beta_embed[i] then
+      return false;
+    end if;
+  end for;
+  return true;
+end intrinsic;
+
+intrinsic Rationalize(A::SeqEnum[FldReElt] : Precision := 100) -> SeqEnum[FldRatElt]
+  {
+    input:
+      A: A sequence of real numbers
+    returns:
+      A sequence of rational numbers approximating
+      the real number. 
+
+      We use this to construct polyhedra since the polyhedron
+      constructor only accepts rational numbers.
+  }
+  // TODO I have no clue why it fails sometimes on the input -0.5000...
+  // if Precision is 100 but not if it's 99...
+  return [BestApproximation(A[i], 10^(Precision - 1)) : i in [1 .. #A]];
+end intrinsic;
+
+intrinsic Rationalize(v::ModTupFldElt : Precision := 100) -> SeqEnum[FldRatElt]
+  {
+    input:
+      v: A vector of real numbers
+      Precision: The number of decimal places we preserve when
+        rationalizing real numbers
+    returns:
+      A sequence of rational numbers
+  }
+  return Rationalize(ElementToSequence(v) : Precision := Precision);
 end intrinsic;
