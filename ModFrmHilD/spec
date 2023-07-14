@@ -32,6 +32,7 @@ Multiplication
 {
    Multiplication.m
    Shintani.m
+   PositiveUnitReps.m
 }
 
 Creation

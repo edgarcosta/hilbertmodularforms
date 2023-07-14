@@ -67,6 +67,14 @@ intrinsic FundamentalUnit(F::FldNum) -> FldElt
   return phi(FundamentalUnit(K));
 end intrinsic;
 
+// The algorithm for producing generators is nondeterministic, so we need to "orient" 
+// our chosen generators to avoid randomness. This particular choice remains
+// consistent with the existing behavior of FundamentalUnitTotPos
+function orient(F, eps)
+  v := InfinitePlaces(F)[1];
+  return (Abs(Evaluate(eps, v)) lt 1) select eps else eps^-1;
+end function;
+
 intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   {
     parameters:
@@ -119,6 +127,20 @@ intrinsic TotallyPositiveUnitsGeneratorsOrients(F::FldNum) -> SeqEnum
   }
   _ := TotallyPositiveUnitsGenerators(F);
   return F`TotallyPositiveUnitsGeneratorsOrients;
+end intrinsic;
+
+intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
+  {
+    parameters:
+      F: a number field
+    returns:
+      A sequence of elements of the ring of integers
+      which generate the group of units.
+  }
+
+  U, mU := UnitGroup(F);
+  ugs_unorient := [mU(gen) : gen in Exclude(Generators(U), U.1)];
+  return [orient(F, eps) : eps in ugs_unorient];
 end intrinsic;
 
 intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
