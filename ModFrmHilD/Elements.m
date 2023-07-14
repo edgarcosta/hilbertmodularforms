@@ -1177,6 +1177,7 @@ intrinsic AutomorphismMap(f::ModFrmHilDElt, sigma::Map) -> ModFrmHilDElt
  end intrinsic;
 
 
+
 intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
   {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
   M := GradedRing(f);
