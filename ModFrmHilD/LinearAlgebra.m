@@ -50,12 +50,8 @@ intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false,
     bbs := IdealClasses;
   end if;
   require #bbs gt 0: "at least one ideal class must be specified";
-  if Type(bbs) eq SeqEnum then
-    bbs := SequenceToSet(bbs);
-  end if;
-  if Type(bbs) eq SetEnum then
-    bbs := SetToIndexedSet(bbs);
-  end if;
+  // make it a SeqEnum
+  bbs := [bb : bb in bbs];
 
   if prec cmpeq false then
     prec := Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
