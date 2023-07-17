@@ -1142,7 +1142,8 @@ function AutomorphismAct(f, sigma)
   for nu->c in Coefficients(f) do
     nubar := F!((sigma^(-1))(nu));
     snubar, epsilon := ReduceShintani(M, bbbar, nubar);
-    coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c;
+    //coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c; // TODO: check the codomain of the unit character. So far, requiring unit char to be trivial so the evaluation is 1
+    coeff[snubar] := c;
   end for;
   return HMFComp(Mk, bbbar, coeff: prec:=Precision(f));
 end function;
@@ -1174,6 +1175,7 @@ intrinsic AutomorphismMap(f::ModFrmHilDElt, sigma::Map) -> ModFrmHilDElt
   end for;
   return HMFSumComponents(LandingSpace, comp);
  end intrinsic;
+
 
 
 intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt

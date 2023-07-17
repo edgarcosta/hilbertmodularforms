@@ -5,13 +5,13 @@ SetClassGroupBounds("GRH");
 if assigned D then
   Ds := [StringToInteger(D)];
 else
-  Ds := [0..3000];
+  Ds := [0..10000];
 end if;
 
 Ds := [elt : elt in Ds | IsFundamentalDiscriminant(elt) or elt eq 0];
 
 if not assigned cut then
-  cut := 5000;
+  cut := 10000;
 else
   cut := StringToInteger(cut);
 end if;

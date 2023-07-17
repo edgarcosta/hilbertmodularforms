@@ -85,15 +85,15 @@ intrinsic WriteInvariantsRow(label::MonStgElt) -> MonStgElt
 end intrinsic;
 
 
-elliptic_points_table := [*
+elliptic_points_handler := [*
   <"label", "text", func<x|x[1]>>,
-  <"rotation_type", "integer[]", func<x|x[2]>>,
+  <"rotation_type", "integer[]", func<x|[y : y in IntegerTuple(x[2])]>>,
   <"nb", "integer", func<x|x[3]>>
 *];
 
 intrinsic WriteElllipticPointsHeader() -> MonStgElt
 {Script for writing information about the surface to table row.}
-  return WriteHeader(elliptic_points_table);
+  return WriteHeader(elliptic_points_handler);
 end intrinsic;
 
 intrinsic WriteElllipticPointsRows(label::MonStgElt) -> MonStgElt
@@ -108,9 +108,58 @@ intrinsic WriteElllipticPointsRows(Gamma::GrpHilbert) -> MonStgElt
   C := CountEllipticPoints(Gamma);
   label := LMFDBLabel(Gamma);
   return Join([
-          Join([handler_wrap(elt, <label, key[1], value>) : elt in inv_column_handler ], ":")
+          Join([handler_wrap(elt, <label, key, value>) : elt in elliptic_points_handler ], ":")
           : key->value in EllipticPointData(Gamma)
               ], "\n");
+end intrinsic;
+
+/*
+intrinsic WriteEllipticPointDataToRow(G::GrpHilbert, r::GrpHilbRotationLabel, nb::RngIntElt) -> MonStgElt
+{Script for writing elliptic point data to table row}
+    n, a, b := Explode(Tuple(r));
+    return Join([LMFDBLabel(G), StripWhiteSpace(Sprint([Integers()|n,a,b])), Sprint(nb)], ":");
+end intrinsic;
+*/
+cusps_handler := [*
+  <"label", "text", func<x|x[1]>>,
+  <"M_label", "text", func<x|LMFDBLabel(x[2][1])>>,
+  <"coordinates", "bigint[]", func<x|[Eltseq(elt) : elt in Eltseq(x[2][2])]>>,
+  <"self_intersections_minimal", "integer[]", func<x|x[2][3]>>,
+  <"repetition", "integer", func<x|x[2][4]>>
+*];
+
+intrinsic WriteCuspsHeader() -> MonStgElt
+{Script for writing information about the surface to table row.}
+  return WriteHeader(cusps_handler);
+end intrinsic;
+
+intrinsic WriteCuspsRows(label::MonStgElt) -> MonStgElt
+{Script for writing information about the elliptic points on the surface to table row.}
+  G := LMFDBCongruenceSubgroup(label);
+  return WriteCuspsRows(G);
+end intrinsic;
+
+
+intrinsic WriteCuspsRows(Gamma::GrpHilbert) -> MonStgElt
+{Script for writing information about the elliptic points on the surface to table row.}
+  C := CountEllipticPoints(Gamma);
+  label := LMFDBLabel(Gamma);
+  return Join([
+          Join([handler_wrap(elt, <label, c>) : elt in cusps_handler ], ":")
+          : c in CuspsWithResolution(Gamma)
+              ], "\n");
+end intrinsic;
+
+intrinsic WriteCuspDataToRow(G::GrpHilbert, elt::Tup) -> MonStgElt
+  {Script for writing cusp data to data table row}
+
+  MM, pt, cf, p := Explode(elt);
+  // WARNING: alpha and beta are not normalized according to Level and Component
+  // and not canonical
+  alpha, beta := Explode(Eltseq(pt));
+  ptstr := StripWhiteSpace(Sprint([Eltseq(elt) : elt in [alpha, beta]]));
+
+  return Join([LMFDBLabel(G), LMFDBLabel(MM), ptstr, StripWhiteSpace(Sprint(cf)), Sprint(p)], ":");
 end intrinsic;
 
 
