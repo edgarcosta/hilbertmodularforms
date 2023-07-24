@@ -62,6 +62,110 @@ intrinsic FunDomainRep(nu::RngElt : lattice := "tot_pos", Precision := 100) -> F
   return FunDomainRep(F!nu : lattice := lattice, Precision := Precision); 
 end intrinsic;
 
+intrinsic IdealToRep(M::ModFrmHilDGRng) -> Assoc
+  {getter}
+  return M`IdealToRep;
+end intrinsic;
+
+intrinsic RepToIdeal(M::ModFrmHilDGRng) -> Assoc
+  {getter}
+  return M`RepToIdeal;
+end intrinsic;
+
+intrinsic IdealToRep(M::ModFrmHilDGRng, nn::RngOrdIdl) -> FldNumElt
+  {
+    inputs: 
+      M: A graded ring of Hilbert modular forms
+      nn: A integral ideal of the base field of M
+      bb: A narrow class representative
+    returns:
+      An totally positive element nu in the fundamental domain 
+      corresponding to the ideal nn.
+  }
+
+  if IsZero(nn) then 
+    return BaseField(M)!0;
+  end if;
+
+  bb := IdealToNarrowClassRep(nn);
+  return M`IdealToRep[bb][nn];
+end intrinsic;
+
+intrinsic RepToIdeal(M::ModFrmHilDGRng, nu::FldNumElt, bb::RngOrdFracIdl) -> RngOrdIdl
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+      nu: A fundamental domain representative field element
+      bb: A narrow class representative
+    returns:
+      An integral ideal nn corresponding to the representative nu on the component bb.
+  }
+
+  return M`RepToIdeal[bb][nu];
+end intrinsic;
+
+intrinsic RepIdealConversion(M::ModFrmHilDGRng) -> Assoc, Assoc
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+    returns:
+      Two 2D associative arrays,
+        - IdealToRep
+        - RepToIdeal,
+      which cache the conversion of nn to nu. 
+      Precisely, for each nn in the ideal class 
+      [bbp]^-1, the ideal nn * bbp is narrowly
+      principal, and we can use FunDomainRep
+      to get a totally positive generator.
+      We have IdealToRep[bb][nu] = nn
+      and RepToIdeal[bb][nu] = nn
+
+      // TODO we could combine this function into
+      // FunDomainRepsUpToNorm and maybe save a loop
+      // or two, but because narrow principalizing
+      // is probably the most expensive step anyways
+      // I figured code readability/cleanliness was
+      // worth more. There is a known optimization here
+      // if this step is too slow though. 
+  }
+  
+  if assigned M`IdealToRep and M`RepToIdeal then
+    return M`RepToIdeal, M`IdealToRep;
+  end if;
+
+  M`IdealToRep := AssociativeArray();
+  M`RepToIdeal := AssociativeArray();
+
+  F := BaseField(M);
+  ZF := Integers(M);
+  dd := Different(ZF);
+
+  for bb in NarrowClassGroupReps(M) do
+    M`IdealToRep[bb] := AssociativeArray();
+    M`RepToIdeal[bb] := AssociativeArray();
+
+    // dealing with the zero ideal, which lives
+    // on every component
+    M`IdealToRep[bb][0*ZF] := F!0;
+    M`RepToIdeal[bb][F!0] := 0*ZF;
+  end for;
+
+  for nn in IdealsUpTo(M`Precision, ZF) do
+    // we've already dealt with the zero ideal
+    if IsZero(nn) then
+      continue;
+    end if;
+    bb := IdealToNarrowClassRep(M, nn);
+    bbp := bb * dd^-1;
+    _, nu := IsNarrowlyPrincipal(nn * bbp);
+    nu, _ := FunDomainRep(nu);
+    M`IdealToRep[bb][nn] := nu;
+    M`RepToIdeal[bb][nu] := nn;
+  end for;
+
+  return M`RepToIdeal, M`IdealToRep;
+end intrinsic;
+
 /////// **************** HELPER FUNCTIONS **************** /////// 
 
 intrinsic EmbedNumberFieldElement(nu::FldNumElt : Precision := 100) -> SeqEnum

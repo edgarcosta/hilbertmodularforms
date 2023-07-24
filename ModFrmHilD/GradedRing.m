@@ -20,6 +20,9 @@ declare attributes ModFrmHilDGRng:
   DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
   Places, // SeqEnum : Real places for the field F
   Precision, // RngIntElt : trace bound for all expansions with this parent
+  // RepToIdeal and IdealToRep cache the conversion nn <-> nu
+  RepToIdeal, // RepToIdeal[bb][nu] := nn
+  IdealToRep, // IdealToRep[bb][nn] := nu
   ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
   // ShintaniRepsIdeal and IdealShitaniReps cache the conversion nn <-> nu
   // where nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
@@ -160,6 +163,22 @@ end intrinsic;
 intrinsic NarrowClassRepresentative(M::ModFrmHilDGRng, I::RngOrdFracIdl) -> RngOrdFracIdl
   {Returns the stored NarrowClassGroup representative for I}
   return NarrowClassGroupRepsMap(M)[I @@ NarrowClassGroupMap(M)];
+end intrinsic;
+
+intrinsic IdealToNarrowClassRep(M::ModFrmHilDGRng, nn::RngOrdIdl) -> RngOrdIdl
+    {
+      Given an integral ideal nn, returns the narrow class bb representing
+      the component on which the corresponding nu lives. 
+    }
+    
+    require not IsZero(nn) : "The zero ideal lives on every component.";
+    dd := Different(Integers(M));
+
+    // nn should be in the class of bbp^-1 = bb^-1 * dd,
+    // so the class of the bb corresponding to nn
+    // is that of nn^-1 * dd
+    bb_class := (nn^-1 * dd) @@ M`NarrowClassGroupMap;
+    return M`NarrowClassGroupRepsMap[bb_class];
 end intrinsic;
 
 intrinsic UnitGroup(M::ModFrmHilDGRng) -> Any
@@ -332,6 +351,10 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // TODO: see above 2 lines
   // prec
   M`Precision := prec;
+
+  // This function sets the M`RepToIdeal and M`IdealToRep assocs.
+  M`RepToIdeal, M`IdealToRep := RepIdealConversion(M);
+
   // positive element reps and Shintani reps for each class group rep
   // up to trace bound prec
   M`ShintaniReps := AssociativeArray();
