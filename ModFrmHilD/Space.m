@@ -430,6 +430,13 @@ end intrinsic;
 intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
   {return dimension of S(Mk)}
   require version in ["builtin", "trace"] : "the options for trace are either \"builtin\" or \"trace formula\"";
+
+  // the trace formula does not currently support
+  // nonparallel weight
+  if not IsParallel(Weight(Mk)) then
+    version := "builtin";
+  end if;
+  
   // FIXME: Ben will fix this eventually...
   if not Mk`Ambient then
     version := "builtin";
