@@ -163,17 +163,20 @@ intrinsic HeckeStabilityCuspBasis(
         vprintf HilbertModularForms: "Checking that forms are holomorphic by squaring\n";
 
         Mksquared := HMFSpace(M, N, [2*k[1], 2*k[2]], chi^2);
-        B := CuspFormBasis(Mksquared);
+        Bmod := Basis(Mksquared);
+        Bcusp := CuspFormBasis(Mksquared);
         
-        require #B eq CuspDimension(Mksquared): "Need to increase precision to compute this space";
+        require #Bcusp eq CuspDimension(Mksquared): "Need to increase precision to compute this space";
         
         vprintf HilbertModularForms: "Done?\n";
         done := true;
         for f in V do
             assert Character(Parent(f)) eq chi;
             assert Level(Parent(f)) eq N;
-            Bandf2 := Append(B, f^2);
-            if #LinearDependence(Bandf2) eq 0 then
+            Bmodandf2 := Append(Bmod, f^2);
+            // If f^2 is not in the upstairs (weight 2k character chi^2) space 
+            // of modular forms then V must not have been Hecke stable
+            if #LinearDependence(Bmodandf2) eq 0 then
                 done := false;
                 vprintf HilbertModularForms: "No!\n";
 //                vprintf HilbertModularForms: "Linear dependence:\n %o \n", LinearDependence(Bandf2);
@@ -181,7 +184,19 @@ intrinsic HeckeStabilityCuspBasis(
             end if;
         end for;
         if done then
-             vprintf HilbertModularForms: "Yes!\n";
+            vprintf HilbertModularForms: "Found a Hecke stable subspace!\n";
+
+            // We should now remove any Eisenstein series that ended up in this space
+            // so that we are left with only cusp forms
+            eigs := Eigenbasis(Mk, V);
+            V := [];
+            for eig in eigs do
+              // if eig^2 is a cusp form in the upstairs space, 
+              if #LinearDependence(Append(Bcusp, eig^2)) ne 0 then
+                Append(~V, eig);
+              end if;
+            end for;
+            
             if prove then
                 vprintf HilbertModularForms: "Need to verify that the precision is large enough to compute the space larger space\n";
 
