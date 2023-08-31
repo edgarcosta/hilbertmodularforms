@@ -87,7 +87,24 @@ end intrinsic;
 
 // Eigenforms new/old in Mk
 intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
-  {return the inclusions of f, as ModFrmHil(Elt), into M}
+  {
+    return the inclusions of f, as ModFrmHil(Elt), into M
+
+    Given an eigenform of type ModFrmHil (Magma's internal HMF type) 
+    with coefficients in a field L/F, where F is the base field for the 
+    space of HMFs, let V be the dimension [L:F] vector space of HMFs spanned 
+    by f and its conjugates.
+
+    This function returns a list of [L:F] forms of type ModFrmHilD 
+    -- defined over a subfield of the splitting field of F --
+    which span V. 
+
+
+    In general, the field of definition will be the smallest field over which
+    the Hecke operators are defined. See 
+    https://magma.maths.usyd.edu.au/magma/handbook/text/1735
+    for some more about this. 
+  }
 
   if Type(f) eq ModFrmHil then
     S := f;
@@ -125,6 +142,9 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
 
   if GaloisDescent then
     fn := func<pp|Matrix(HeckeOperator(S, pp))>;
+    // Tzeta is the matrix of a generator for the Hecke algebra
+    // (it has a generator because the Hecke algebra is isomorphic
+    // to a number field). 
     T , _, _, _, _, Tzeta, _ := Explode(hecke_algebra(S : generator:=true));
     if Order(chi) in [1,2] then
       chiH := chi;
@@ -159,6 +179,14 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   Tzeta_powers := [Tzeta^i : i in [0..Nrows(Tzeta) - 1]];
 
   // the coefficient ring of the coefficients
+  //
+  // if we are performing GaloisDescent, 
+  // the best we can do is the field over 
+  // which the Hecke operators are defined
+  //
+  // if not, then nothing changes and we use the
+  // field over which the eigenforms themselves
+  // are defined
   R := GaloisDescent select Rationals() else HeckeEigenvalueField(S);
 
   res := [];
@@ -179,6 +207,16 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
           v := 0;
         end if;
         for i in [1..Nrows(Tzeta)] do
+          // Let f_j be the jth Galois conjugate of f and T a generator
+          // for the Hecke algebra. Then, the ith basis vector that we output is
+          // T^i * (f_1 + ... + f_n). 
+          //
+          // To see why this is what the code is doing, think in the eigenbasis.
+          // Then, Tzeta_powers[i] = T^i is a diagonal matrix.
+          // The element v is the nnth Hecke operator, or equivalently, a diagonal matrix
+          // whose entries are the nnth Fourier coefficient of f_1, ..., f_n. 
+          // By linearity, the trace of this product is the nnth Fourier coefficient
+          // of T^i(f_1 + ... + f_n) as desired. 
           CoeffsArray[i][bb][nu] := R!(bool select Trace(Tzeta_powers[i]*v) else 0);
         end for;
       end for;
