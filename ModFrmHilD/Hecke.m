@@ -86,7 +86,6 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
   return g;
 end intrinsic;
 
-
 ///////////////////////////////////////////////////
 //                                               //
 //                Hecke stability                //
