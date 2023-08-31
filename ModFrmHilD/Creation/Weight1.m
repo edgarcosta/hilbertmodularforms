@@ -73,54 +73,59 @@ intrinsic HeckeStabilityCuspBasis(
     ZF := Integers(M);
 
     //Try to find appropriate Eisenstein series to use. Currently, we only support level one characters, so we look for Eisenstein series that put us in such spaces.
-    H := HeckeCharacterGroup(1*ZF, [1,2]);
+
 
     ok := false;
 
-    for psi0 in Elements(H) do
-        psi := psi0*chiinv;
-        if IsGamma1EisensteinWeight(psi, 1) then
-            MEis := HMFSpace(M, N, [1,1], psi);
-            AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
+    for I in IdealsUpTo(20, F) do
+      H := HeckeCharacterGroup(I, [1,2]);
 
-            for pair in AdmChars do
-                myarray := EisensteinConstantCoefficient(M, [1,1], pair[1], pair[2]); 
-                if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
-                    ok := true;
-                    mypair := pair;
-                    l := 1;
-                    break psi0;
-                end if;
-            end for;
-        end if;
+      for psi0 in Elements(H) do
+          psi := psi0*chiinv;
+          if IsGamma1EisensteinWeight(psi, 1) then
+              MEis := HMFSpace(M, N, [1,1], psi);
+              AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
+
+              for pair in AdmChars do
+                  myarray := EisensteinConstantCoefficient(M, [1,1], pair[1], pair[2]); 
+                  if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
+                      ok := true;
+                      mypair := pair;
+                      l := 1;
+                      eis_level := I;
+                      break I;
+                  end if;
+              end for;
+          end if;
+      end for;
+      
+      if not ok then
+          vprintf HilbertModularForms: "No appropriate weight 1 Eisenstein series, need to go to weight 3\n";
+
+          for psi0 in Elements(H) do
+              psi := psi0*chiinv;
+              if IsGamma1EisensteinWeight(psi, 3) then
+                  MEis := HMFSpace(M, N, [3,3], psi);
+                  AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
+
+                  for pair in AdmChars do
+                      myarray := EisensteinConstantCoefficient(M, [3,3], pair[1], pair[2]); 
+                      if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
+                          ok := true;
+                          mypair := pair;
+                          l := 3;
+                          eis_level := I;
+                          break I;
+                      end if;
+                  end for;
+              end if;
+          end for;    
+      end if;
     end for;
-    
-    if not ok then
-        vprintf HilbertModularForms: "No appropriate weight 1 Eisenstein series, need to go to weight 3\n";
-
-        for psi0 in Elements(H) do
-            psi := psi0*chiinv;
-            if IsGamma1EisensteinWeight(psi, 3) then
-                MEis := HMFSpace(M, N, [3,3], psi);
-                AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
-
-                for pair in AdmChars do
-                    myarray := EisensteinConstantCoefficient(M, [3,3], pair[1], pair[2]); 
-                    if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
-                        ok := true;
-                        mypair := pair;
-                        l := 3;
-                        break psi0;
-                    end if;
-                end for;
-            end if;
-        end for;    
-    end if;
-    
+      
     require ok : "There are no appropriate Eisenstein series - I don't think this should ever happen...\n";
     
-    
-    vprintf HilbertModularForms: "We will use an Eisenstein series of weight %o and character %o\n", l, psi;
+    vprintf HilbertModularForms: "We will use an Eisenstein series of weight %o, level %o, and character %o\n", l, IdealOneLine(eis_level), psi;
 
     Eis := EisensteinSeries(MEis, mypair[1], mypair[2]);
     
