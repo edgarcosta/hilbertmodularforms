@@ -73,54 +73,59 @@ intrinsic HeckeStabilityCuspBasis(
     ZF := Integers(M);
 
     //Try to find appropriate Eisenstein series to use. Currently, we only support level one characters, so we look for Eisenstein series that put us in such spaces.
-    H := HeckeCharacterGroup(1*ZF, [1,2]);
+
 
     ok := false;
 
-    for psi0 in Elements(H) do
-        psi := psi0*chiinv;
-        if IsGamma1EisensteinWeight(psi, 1) then
-            MEis := HMFSpace(M, N, [1,1], psi);
-            AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
+    for I in IdealsUpTo(20, F) do
+      H := HeckeCharacterGroup(I, [1,2]);
 
-            for pair in AdmChars do
-                myarray := EisensteinConstantCoefficient(M, [1,1], pair[1], pair[2]); 
-                if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
-                    ok := true;
-                    mypair := pair;
-                    l := 1;
-                    break psi0;
-                end if;
-            end for;
-        end if;
+      for psi0 in Elements(H) do
+          psi := psi0*chiinv;
+          if IsGamma1EisensteinWeight(psi, 1) then
+              MEis := HMFSpace(M, N, [1,1], psi);
+              AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
+
+              for pair in AdmChars do
+                  myarray := EisensteinConstantCoefficient(M, [1,1], pair[1], pair[2]); 
+                  if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
+                      ok := true;
+                      mypair := pair;
+                      l := 1;
+                      eis_level := I;
+                      break I;
+                  end if;
+              end for;
+          end if;
+      end for;
+      
+      if not ok then
+          vprintf HilbertModularForms: "No appropriate weight 1 Eisenstein series, need to go to weight 3\n";
+
+          for psi0 in Elements(H) do
+              psi := psi0*chiinv;
+              if IsGamma1EisensteinWeight(psi, 3) then
+                  MEis := HMFSpace(M, N, [3,3], psi);
+                  AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
+
+                  for pair in AdmChars do
+                      myarray := EisensteinConstantCoefficient(M, [3,3], pair[1], pair[2]); 
+                      if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
+                          ok := true;
+                          mypair := pair;
+                          l := 3;
+                          eis_level := I;
+                          break I;
+                      end if;
+                  end for;
+              end if;
+          end for;    
+      end if;
     end for;
-    
-    if not ok then
-        vprintf HilbertModularForms: "No appropriate weight 1 Eisenstein series, need to go to weight 3\n";
-
-        for psi0 in Elements(H) do
-            psi := psi0*chiinv;
-            if IsGamma1EisensteinWeight(psi, 3) then
-                MEis := HMFSpace(M, N, [3,3], psi);
-                AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
-
-                for pair in AdmChars do
-                    myarray := EisensteinConstantCoefficient(M, [3,3], pair[1], pair[2]); 
-                    if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
-                        ok := true;
-                        mypair := pair;
-                        l := 3;
-                        break psi0;
-                    end if;
-                end for;
-            end if;
-        end for;    
-    end if;
-    
+      
     require ok : "There are no appropriate Eisenstein series - I don't think this should ever happen...\n";
     
-    
-    vprintf HilbertModularForms: "We will use an Eisenstein series of weight %o and character %o\n", l, psi;
+    vprintf HilbertModularForms: "We will use an Eisenstein series of weight %o, level %o, and character %o\n", l, IdealOneLine(eis_level), psi;
 
     Eis := EisensteinSeries(MEis, mypair[1], mypair[2]);
     
@@ -158,17 +163,20 @@ intrinsic HeckeStabilityCuspBasis(
         vprintf HilbertModularForms: "Checking that forms are holomorphic by squaring\n";
 
         Mksquared := HMFSpace(M, N, [2*k[1], 2*k[2]], chi^2);
-        B := CuspFormBasis(Mksquared);
+        Bmod := Basis(Mksquared);
+        Bcusp := CuspFormBasis(Mksquared);
         
-        require #B eq CuspDimension(Mksquared): "Need to increase precision to compute this space";
+        require #Bcusp eq CuspDimension(Mksquared): "Need to increase precision to compute this space";
         
         vprintf HilbertModularForms: "Done?\n";
         done := true;
         for f in V do
             assert Character(Parent(f)) eq chi;
             assert Level(Parent(f)) eq N;
-            Bandf2 := Append(B, f^2);
-            if #LinearDependence(Bandf2) eq 0 then
+            Bmodandf2 := Append(Bmod, f^2);
+            // If f^2 is not in the upstairs (weight 2k character chi^2) space 
+            // of modular forms then V must not have been Hecke stable
+            if #LinearDependence(Bmodandf2) eq 0 then
                 done := false;
                 vprintf HilbertModularForms: "No!\n";
 //                vprintf HilbertModularForms: "Linear dependence:\n %o \n", LinearDependence(Bandf2);
@@ -176,7 +184,19 @@ intrinsic HeckeStabilityCuspBasis(
             end if;
         end for;
         if done then
-             vprintf HilbertModularForms: "Yes!\n";
+            vprintf HilbertModularForms: "Found a Hecke stable subspace!\n";
+
+            // We should now remove any Eisenstein series that ended up in this space
+            // so that we are left with only cusp forms
+            eigs := Eigenbasis(Mk, V);
+            V := [];
+            for eig in eigs do
+              // if eig^2 is a cusp form in the upstairs space, 
+              if #LinearDependence(Append(Bcusp, eig^2)) ne 0 then
+                Append(~V, eig);
+              end if;
+            end for;
+            
             if prove then
                 vprintf HilbertModularForms: "Need to verify that the precision is large enough to compute the space larger space\n";
 
@@ -205,4 +225,102 @@ intrinsic Weight1CuspBasis(
    - The optional parameter prove is true or false. If true, we verify that we had enough precision to check the equality of the potentially meromorphic form with a holomorphic one.
   }
   return HeckeStabilityCuspBasis(Mk : bound := bound, prove := prove);
+end intrinsic;
+
+///////////// Eigenbasis computation ////////////////
+
+// This code computes an eigenbasis for a Hecke-stable space 
+// of meromorphic ModFrmHilDElt objects by examining the action
+// on the Fourier coefficients. 
+//
+// At the time of writing, the only code we have for computing
+// Hecke matrices is via the quaternion algebra methods in 
+// ModFrmHil/copypaste/hecke.m. These do not work for the
+// spaces of ratios of forms we obtain in Hecke stability. 
+//
+// For most applications, the ModFrmHil code should be used. 
+
+intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> SeqEnum[ModFrmHilDElt]
+  {
+    inputs:
+      M: A space of forms on which the Hecke algebra acts by
+           commuting self-adjoint operators.
+      basis: A sequence of linearly independent ModFrmHilDElts
+             whose span is preserved by all the Hecke operators.
+      P: The largest norm of a prime ideal we check to establish a simultaneous eigenbasis
+    returns:
+      A sequence of HMFs which are an eigenbasis for the Hecke operators of primes
+      up to P. The forms are normalized where possible.
+  }
+  
+  MGRng := Parent(M);
+  F := MGRng`BaseField;
+  ZF := Integers(F);
+  dd := Different(ZF);
+  hecke_matrices := [];
+
+  for pp in PrimesUpTo(P, F) do
+    Append(~hecke_matrices, HeckeMatrix(basis, pp));
+  end for;
+
+  // B stores a matrix such that B * M * B^-1 is
+  // diagonal for every Hecke matrix M. 
+  // If e_i denotes the ith standard basis vector
+  // and v_i denotes the ith eigenvector in the 
+  // given basis, then this means that B^-1 e_i = v_i. 
+  // Therefore, the ith column of B^-1 is v_i.
+  _, B := Diagonalization(hecke_matrices);
+  Binv := B^-1;
+
+  eigs := [];
+
+  // the columns of P should be the coefficients
+  // of linear combinations of basis vectors giving
+  // rise to eigenvectors
+  // TODO is there really no way to get the columns of an AlgMatElt? 
+  for v in Rows(Transpose(Binv)) do
+    Append(~eigs, &+[v[i] * basis[i] : i in [1 .. #basis]]);
+  end for;
+
+  frob_traces := AssociativeArray();
+  for eig in eigs do
+    frob_traces[eig] := AssociativeArray(); 
+    bb_1 := NarrowClassRepresentative(MGRng, dd);
+    a_1 := Coefficients(eig)[bb_1][MGRng`IdealShitaniReps[bb_1][ideal<ZF|1>]];
+
+    for nn in IdealsUpTo(P, F) do
+      bb := NarrowClassRepresentative(MGRng, nn^-1 * dd);
+      frob_traces[eig][nn] := Coefficients(eig)[bb][MGRng`IdealShitaniReps[bb][nn]] / a_1;
+    end for;
+  end for;
+  return eigs, frob_traces;
+end intrinsic;
+
+intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
+  {
+    inputs:
+      basis: A sequence of linearly independent ModFrmHilDElts
+             whose span is preserved by all the Hecke operators.
+      nn: An integral ideal indexing the Hecke operator
+    returns:
+      A matrix over corresponding to the action of the Hecke operator on
+      this space. 
+  }
+
+  assert #LinearDependence(basis) eq 0;
+  rows := [];
+
+  for f in basis do
+    g := HeckeOperator(f, nn);
+    lindep := LinearDependence(basis cat [g]);
+    assert #lindep eq 1;
+    lindep := lindep[1];
+    // We will transpose at the end. 
+    // For now, each row stores the
+    // coefficients of the linear combination 
+    // of basis vectors which give rise to g
+    Append(~rows, [-1 * lindep[i] / lindep[#basis + 1] : i in [1 .. #basis]]);
+  end for;
+
+  return Transpose(Matrix(rows));
 end intrinsic;
