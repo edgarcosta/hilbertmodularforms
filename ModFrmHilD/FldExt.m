@@ -341,7 +341,7 @@ intrinsic UnitCharFieldsByWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> FldNum
   end if;
 
   R<x> := PolynomialRing(F);
-  if #SequenceToSet(k) eq 1 then
+  if IsParallel(k) then
     // if the weight is parallel, the unit character is trivial
     L := Rationals();
   elif IsParitious(k) then
@@ -423,4 +423,65 @@ intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision 
     end if;
   end for;
   return [aut_dict[i] : i in [1 .. n]];
+end intrinsic;
+
+intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
+  {
+    inputs: 
+      x: A totally positive element of a number field F. 
+         If k is nonparitious, we require x to be a totally
+         positive unit. 
+         // TODO abhijitm feels weird, will come back to it later,
+         // but the point is that we won't actually run this in the
+         // eigenvalue -> Fourier coefficient computation for
+         // nonparitious (and maybe eventually all) weights,
+         // so it only gets used to compute unit characters. 
+      k: A weight
+    returns:
+      We want to compute the element
+      y := \prod_i x_i^((k_0-k_i)/2)
+      where x_i is the image of eps under the ith real embedding of F,
+      k = (k_1, ..., k_n) is the weight, and k_0 = max_i(k_i). 
+
+      This quantity appears in the computation of the unit character 
+      as well as the computation of Fourier coefficients from Hecke eigenvalues.
+
+      The element y will lie in the UnitCharField(F,k). 
+  }
+
+  assert IsTotallyPositive(x);
+  if not IsParitious(k) then
+    assert Norm(x) eq 1;
+  end if;
+
+  F := Parent(x);
+  K := UnitCharField(F, k);
+  k0 := Max(k);
+
+  if IsParallel(k) then
+    return K!1;
+  end if;
+
+  auts := AutsReppingEmbeddingsOfF(F, k);
+  if IsParitious(k) then
+    // paritious nonparallel weight
+    return &*[auts[i](K!x)^(ExactQuotient(k0 - k[i], 2)) : i in [1 .. #auts]];
+  else
+    // nonparitious weight
+    v_0 := DistinguishedPlace(K);
+    y := &*[auts[i](Sqrt(K!x))^(k0 - k[i]) : i in [1 .. #auts]];
+    return PositiveInPlace(y, v_0);
+  end if;
+end intrinsic;
+
+
+intrinsic PositiveInPlace(nu::FldNumElt, v::PlcNumElt) -> FldNumElt
+  {
+    input: 
+      nu: An element of a number field F
+      v: A place of F
+    return:
+      nu if v(nu) > 0 and -nu otherwise.
+  }
+  return (Evaluate(nu, v) gt 0) select nu else -1*nu;
 end intrinsic;
