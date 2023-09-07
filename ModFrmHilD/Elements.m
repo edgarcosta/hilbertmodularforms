@@ -309,6 +309,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
                   :
+                  coeff_ring := DefaultCoefficientRing(Mk),
                   CoeffsByIdeals := false,
                   prec := 0) -> ModFrmHilDEltComp
   {
@@ -320,6 +321,11 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     for all nu in the Shintani cone, unless CoeffsByIdeals is true
     (to allow backwards compatibility), in which case
     coeffs[nn] = a_nn as above (and we assign according to Shintani rep).
+
+    The coefficients are assumed to lie in Mk`DefaultCoefficientRing
+    unless the optional argument coeff_ring is passed, in which
+    case we require that coeff_ring contain Mk`DefaultCoefficientRing
+    and that all the input coefficients can be coerced into coeff_ring.
   }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
@@ -350,32 +356,16 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     coeffs := coeffsnu;  // goodbye old data!
   end if;
 
-  // some coefficients might be defined over the integers instead
-  // of over the actual coefficient ring so we want to cast everything
-  // appropriately
   f`Coefficients := AssociativeArray();
-
-  // the default coefficient ring
-  R := Integers();
+  f`CoefficientRing := coeff_ring;
 
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
     b, c := IsDefined(coeffs, nu);
     require b : "Coefficients should be defined for each representative in the Shintani cone up to precision";
-    // we set R to be the parent of the first non-integral coefficient we see
-    // TODO can we not just directly cast to R? 
-    if Type(c) ne RngIntElt then
-      if R cmpeq Integers() then
-        R := Parent(c);
-      end if;
-    end if;
+
+    // coerce all the coefficents into the coefficient ring
+    f`Coefficients[nu] := (f`CoefficientRing)!coeffs[nu];
   end for;
-
-  f`CoefficientRing := R;
-
-  for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
-    f`Coefficients[nu] := R!coeffs[nu];
-  end for;
-
   return f;
 end intrinsic;
 
@@ -404,6 +394,7 @@ intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
               :
               CoeffsByIdeals:=false,
+              coeff_rings:=false, // Assoc RngFracIdl -> FldNum
               prec := 0) -> ModFrmHilDElt
   {
     Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
@@ -413,6 +404,10 @@ intrinsic HMF(Mk::ModFrmHilD,
     Explicitly, coeffs is an double associative array
     coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb')^-1
     for all nu in the Shintani cone.
+
+    The optional argument coeff_rings is an associative array
+    which takes narrow class group reps to the coefficient field
+    of their component. 
   }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
@@ -435,8 +430,11 @@ intrinsic HMF(Mk::ModFrmHilD,
     require Type(prec) eq Assoc: "prec must be either an integer or a AssociativeArray";
   end if;
   require Keys(prec) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
+
+
   for bb in bbs do
-    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: CoeffsByIdeals:=CoeffsByIdeals, prec:=prec[bb]);
+    coeff_ring := (coeff_rings cmpeq false) select Mk`DefaultCoefficientRing else coeff_rings[bb];
+    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: CoeffsByIdeals:=CoeffsByIdeals, coeff_ring := coeff_ring, prec:=prec[bb]);
   end for;
   return f;
 end intrinsic;
