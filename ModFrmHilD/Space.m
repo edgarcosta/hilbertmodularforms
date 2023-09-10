@@ -149,19 +149,53 @@ place where they do not match.}
 end intrinsic;
 
 intrinsic IsCompatibleWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngQuadElt
-{Check if the character chi is compatible with the weight k, i.e. psi_0(e) = sign(e)^k for all units e. If it fails, returns a unit e where they do not match.}
+  {
+    input: 
+      chi: A ray class character chi
+      k: A weight k
+    returns:
+      true if chi is compatible with the weight k, i.e. psi(e) = sign(e)^k for all units e.
+
+      false, e if chi is incompatible with the weight k, where is an unit such that 
+        psi(e) != sign(e)^k. 
+
+      To elaborate, let K be the base field of chi and let m_fin and m_inf 
+      denote the finite and infinite parts of the modulus of chi.
+      The Dirichlet restriction of chi is the restriction of chi to the ray residue ring
+      K^m/K^(m,1), where K^m is the multiplicative group of elements of K coprime to the
+      finite part of the modulus of chi and K^(m,1) is the corresponding ray. 
+      A character of the ray residue ring is a product of a character on (O_K/m)*,
+      where O_K is the ring of integers of the field of definition of chi, and 
+      the product of sign(v(eps)) for every (infinite real) v in m_inf. 
+
+      For a fixed Hecke character chi, we denote the character on (O_K/m)* by psi.
+
+      Nebentypus characters arise as characters of Gamma_0(m, bb)/Gamma_1(m, bb),
+      i.e. of (O_K/m)*. If we consider the action of the matrix (e 0 \\ 0 e)
+      on a HMF, we obtain the compatibility condition that psi(e) = sign(e)^k. 
+  }
+
   comps := Components(chi);
   level, places := Modulus(chi);
-  F := NumberField(Order(level));
+   
+  F := NumberField(Order(level)); 
+  ZF := Integers(F);
   require places eq [1..Degree(F)] : "Chi is not a narrow class group character.";
   require (Degree(F) eq #InfinitePlaces(F)) : "The field is not totally real.";
+
+  // implementing the character psi which is described above
+  // as the product of the components of chi on the finite places
+  psi := function(x); // x is a FldNumElt
+    return (level eq 1*ZF) select 1 else &*[comps[v[1]](x) : v in Factorization(level)];
+  end function;
+
   U, mU := UnitGroup(F);
   for eps in Generators(U) do
       sign_eps := 1;
       for i->v in InfinitePlaces(F) do
 	  sign_eps *:= Sign(Evaluate(mU(eps),v))^k[i];
       end for;
-      if (chi(mU(eps)) ne sign_eps) then
+      if (psi(mU(eps)) ne sign_eps) then
 	  return false, mU(eps);
       end if;
   end for;
