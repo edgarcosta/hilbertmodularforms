@@ -705,4 +705,3 @@ intrinsic DefaultCoefficientRing(Mk::ModFrmHilD) -> FldNum
   Mk`DefaultCoefficientRing := Compositum(NebCharField, UnitCharField);
   return Mk`DefaultCoefficientRing;
 end intrinsic;
-
