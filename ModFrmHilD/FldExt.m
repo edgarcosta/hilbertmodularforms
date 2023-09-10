@@ -389,3 +389,53 @@ intrinsic UnitCharFieldsByWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> FldNum
   F`UnitCharFieldsByWeight[k] := L;
   return L;
 end intrinsic;
+
+/////////////////////// unit character ///////////////////////////
+
+intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision := 50) -> SeqEnum[Map]
+  { 
+    inputs:
+      F: A totally real Galois number field of degree n
+      k: A weight, given as a SeqEnum of n natural numbers
+    returns:
+      Let K be UnitCharField, and v_0 a distinguished real
+      place of K (we choose the first one, but this is arbitrary).
+
+      We return a list [sigma_1, ..., sigma_n] 
+      of automorphisms of K sorted such that if 
+      [v_1, ..., v_n] is a list of real embeddings of F, 
+      then v_i(x) = v_0(sigma_i(x)) for all x in F. 
+      Note that when F is not Galois, this list is
+      not unique, but our algorithm is deterministic.
+  }
+  K := UnitCharField(F, k);
+  n := Degree(F);
+  places := RealPlaces(F);
+
+  a := PrimitiveElement(F);
+  a_embed_dict := AssociativeArray();
+  for i in [1 .. n] do
+    a_embed_dict[RealField(Precision)!Evaluate(a, places[i])] := i;
+  end for;
+
+  // a distinguished place of K 
+  // if we want to view our HMFs as having coefficients over C,
+  // we should apply v_0 to all the coefficients
+  v_0 := DistinguishedPlace(K);
+  
+  aut_dict := AssociativeArray();
+
+  // auts is the automorphisms of K
+  for aut in Automorphisms(K) do
+    aut_a_est := RealField(Precision)!Evaluate(aut(a), v_0);
+    b, x := IsDefined(a_embed_dict, aut_a_est);
+    if b then
+      aut_dict[x] := aut;
+      Remove(~a_embed_dict, aut_a_est);
+      if #a_embed_dict eq 0 then
+        break aut;
+      end if;
+    end if;
+  end for;
+  return [aut_dict[i] : i in [1 .. n]];
+end intrinsic;
