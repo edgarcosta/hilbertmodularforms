@@ -527,6 +527,26 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
 end intrinsic;
 
 
+///////// ModFrmHilDElt and ModFrmHilDComp: CoefficientRing ///////////
+
+intrinsic HasDefaultCoeffRing(f::ModFrmHilDEltComp) -> bool
+  {
+    returns true if f has coefficient ring equal to the default
+    coefficient ring for its weight and base field.
+  }
+  return f`CoefficientRing eq DefaultCoefficientRing(Parent(f));
+end intrinsic;
+
+intrinsic HasDefaultCoeffRing(f::ModFrmHilDElt) -> bool
+  {
+    returns true if every component of f has coefficient ring equal 
+    to the default coefficient ring for its weight and base field.
+  }
+  
+  bbs := NarrowClassGroupReps(Parent(Parent(f)));
+  return &and[HasDefaultCoeffRing(Components(f)[bb]) : bb in bbs];
+end intrinsic;
+
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
 
 //FIXME: this does nto agree with MAGMA standards
@@ -538,9 +558,9 @@ intrinsic ChangeCoefficientRing(f::ModFrmHilDEltComp, R::Rng) -> ModFrmHilDEltCo
   coeffs := Coefficients(f);
   new_coeffs := AssociativeArray(Universe(coeffs));
   for nu->anu in coeffs do
-    new_coeffs[nu] := R!anu;
+    new_coeffs[nu] := StrongCoerce(R, anu);
   end for;
-  return HMFComp(Parent(f), bb, new_coeffs: prec:=Precision(f));
+  return HMFComp(Parent(f), bb, new_coeffs: coeff_ring := R, prec:=Precision(f));
 end intrinsic;
 
 
@@ -736,9 +756,9 @@ intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   new_coeffs := AssociativeArray();
   coeffs := Coefficients(f);
   for nu in Keys(coeffs) do
-    coeffs[nu] := F!(c * coeffs[nu]);
+    coeffs[nu] := StrongCoerce(F, c) * coeffs[nu];
   end for;
-  return HMFComp(Parent(f), ComponentIdeal(f), coeffs: prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs: coeff_ring := F, prec:=Precision(f));
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDEltComp, c::Any) -> ModFrmHilDEltComp
@@ -782,13 +802,16 @@ intrinsic '+'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec := Minimum(prec_f, prec_g);
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
-  coeffs_f := Coefficients(f);
-  coeffs_g := Coefficients(g);
+
+  Ff := CoefficientRing(f);
+  Fg := CoefficientRing(g);
+  require Ff eq Fg : "We only support addition of HMFs with the same coefficient ring";
+
   coeffs_h := AssociativeArray(); // h := f+g
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     coeffs_h[nu] := coeffs_f[nu] + coeffs_g[nu];
   end for;
-  return HMFComp(Parent(f), ComponentIdeal(f), coeffs_h : prec:=prec);
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs_h : coeff_ring := Ff, prec:=prec);
 end intrinsic;
 
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -820,14 +843,23 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
   coeffs_h := AssociativeArray(); // h := f*g
-  // Compute the new CoefficientRing
+  
+  LandingSpace := Parent(f) * Parent(g);
+
   Ff := CoefficientRing(f);
   Fg := CoefficientRing(g);
   if Ff eq Fg then
     F := Ff;
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
+    // We try to put things in their default coefficient rings
+    // wherever possible
+    K := DefaultCoefficientRing(LandingSpace);
+    if IsSubfield(F, K) then
+      F := K;
+    end if;
   end if;
+
   table := MPairs(GradedRing(f))[ComponentIdeal(f)];
 
   // TODO: improve precision?
@@ -845,14 +877,14 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
       if evaluate_bool then
-        c +:= F!Evaluate(char_f, epsilon1) * F!coeffs_f[smu1] *  F!Evaluate(char_g, epsilon2) * F!coeffs_g[smu2];
+        c +:= StrongMultiply(F, [* Evaluate(char_f, epsilon1), coeffs_f[smu1], Evaluate(char_g, epsilon2), coeffs_g[smu2] *]);
       else
-        c +:= F!coeffs_f[smu1] * F!coeffs_g[smu2];
+        c +:= StrongMultiply(F, [* coeffs_f[smu1], coeffs_g[smu2] *]);
       end if;
     end for;
     coeffs_h[nu] := c;
   end for;
-  return HMFComp(Parent(f)*Parent(g), ComponentIdeal(f), coeffs_h : prec:=prec);
+  return HMFComp(Parent(f)*Parent(g), ComponentIdeal(f), coeffs_h : coeff_ring := F, prec:=prec);
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -882,17 +914,21 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
   coeffs_h := AssociativeArray(); // h := f/g
-  // Compute the new CoefficientRing
+                                  
   Ff := CoefficientRing(f);
   Fg := CoefficientRing(g);
   if Ff eq Fg then
     F := Ff;
-    if not IsField(F) and not IsInvertible(coeffs_g)[0] then
-      F := NumberField(F);
-    end if;
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
+    // We try to put elements in the default coefficient rings 
+    // of their spaces wherever possible
+    K := DefaultCoefficientRing(LandingSpace);
+    if IsSubfield(F, K) then
+      F := K;
+    end if;
   end if;
+
   table := MPairs(GradedRing(f))[ComponentIdeal(f)];
 
   // TODO: improve precision?
@@ -918,18 +954,18 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
         count +:= 1;
       else
         if evaluate_bool then
-          sum +:= F!Evaluate(char_f, epsilon1) * F!coeffs_g[smu1] *  F!Evaluate(char_h, epsilon2) * F!coeffs_h[smu2];
+          sum +:= StrongMultiply(F, [* Evaluate(char_f, epsilon1), coeffs_g[smu1], Evaluate(char_h, epsilon2), F!coeffs_h[smu2] *]);
         else
-          sum +:= F!coeffs_g[smu1] * F!coeffs_h[smu2];
+          sum +:= StrongMultiply(F, [* coeffs_g[smu1],  F!coeffs_h[smu2] *]);
         end if;
       end if;
     end for;
     //FIXME: this asserts should be moved to the creation of MPairs
     assert count eq 1;
-    coeffs_h[nu] := (F!coeffs_f[nu] - sum)/F!coeffs_g[0];
+    coeffs_h[nu] := (StrongCoerce(F, coeffs_f[nu]) - sum)/StrongCoerce(F, coeffs_g[0]);
   end for;
 
-  return HMFComp(LandingSpace, ComponentIdeal(f), coeffs_h : prec:=prec);
+  return HMFComp(LandingSpace, ComponentIdeal(f), coeffs_h : coeff_ring := F, prec:=prec);
 end intrinsic;
 
 intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -1035,6 +1071,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
   chif := Character(Mk_f);
   mf, pf := Modulus(chif);
   ZF := Integers(M);
+  coeff_ring := f`CoefficientRing;
 
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
   require chif eq Restrict(chi, mf, pf): "Character(f) is not equal to Character(Mk)";
@@ -1057,7 +1094,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
     end if;
   end for;
 
-  return HMFComp(Mk, mmbb, coeff : prec:=Precision(f));
+  return HMFComp(Mk, mmbb, coeff : coeff_ring := coeff_ring, prec:=Precision(f));
 end intrinsic;
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
@@ -1206,6 +1243,4 @@ intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
    end for;
    return true;
   end intrinsic;
-
-
 
