@@ -6,6 +6,19 @@ intrinsic HeckeStableSubspace(
     Given a sequence of forms V and an ideal pp, compute a basis of the subspace of span(V) that is stable under the Hecke operator T_pp. 
     }
     
+    // compute the kernel of Tp
+    // we include the kernel in our final output
+    // because it is also Hecke stable
+    TpV := [];
+    for f in V do
+      Append(~TpV, HeckeOperator(f, pp));
+    end for;
+    lindep := LinearDependence(TpV);
+    Tp_kernel := [&+[vec[i]*V[i] : i in [1 .. #V]] : vec in lindep];
+
+    // removing the kernel before entering the 
+    // iterative intersection loop
+    V := [V[i] : i in PivotRows(CoefficientsMatrix(TpV))];
     Vprev := V;
     dimprev := #V;
     
@@ -16,18 +29,13 @@ intrinsic HeckeStableSubspace(
             Append(~TpVprev, HeckeOperator(g, pp));
         end for;
         
-        if IsZero(CoefficientsMatrix(TpVprev)) then
-            vprintf HilbertModularForms: "Tpp acts as 0 on V, so V is stable\n";
-            return Vprev;
-        end if;
-
         lindep := LinearDependence(Vprev cat TpVprev);
         dimnew := #lindep;
         
         vprintf HilbertModularForms: "New dim = %o\n", dimnew;
         
         if dimnew eq 0 then
-            return [];
+            return Tp_kernel;
         end if;
         
         require dimnew le dimprev: "Something went wrong, probably need to increase precision.";
@@ -36,12 +44,20 @@ intrinsic HeckeStableSubspace(
         for vec in lindep do
             f := &+[vec[i]*Vprev[i] : i in [1 .. #Vprev]];
             M := CoefficientsMatrix([f]); 
-            d := Denominator(M); M := Matrix(Integers(),d*M);
-            Append(~Vnew, f/GCD(Eltseq(M)));
+            d := Denominator(M);
+            M := Matrix(Integers(),d*M);
+            gcd_M := GCD(Eltseq(M));
+            // If the generalization of Schaeffer's theorem to HMFs is true,
+            // then this can never happen
+            require gcd_M ne 0 : "We didn't think this could happen -- you may have found\
+                    an interesting example! Please email TODO.";
+            Append(~Vnew, f/gcd_M);
         end for;
 
+        // If the iterative intersection process has stabilized,
+        // then exit the loop.
         if dimprev eq dimnew then
-            return Vnew;
+            return Vnew cat Tp_kernel;
         end if;
 
         assert #Vnew eq dimnew;
