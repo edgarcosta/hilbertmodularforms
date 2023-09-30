@@ -56,11 +56,9 @@ end intrinsic;
 intrinsic HeckeStabilityCuspBasis(
     Mk::ModFrmHilD
     :
-    bound := 100,
     prove := true
     ) -> SeqEnum[ModFrmHilDElt]
     {Compute the space Mk using the Hecke stability method. 
-        - The optional parameter bound is the maximum norm of primes pp we will check T_pp-stability for before we declare defeat,
         - The optional parameter prove is true or false. If true, we verify that we had enough precision to check the equality of the potentially meromorphic form with a holomorphic one.
     }
     
@@ -68,77 +66,49 @@ intrinsic HeckeStabilityCuspBasis(
     k := Weight(Mk);
     N := Level(Mk);
     chi := Character(Mk);
-    chiinv := chi^(-1);
+    chi_prim := AssociatedPrimitiveCharacter(chi);
+
+    // This comes from the fact that we don't currently support 
+    // computation of cusp spaces with nebentypus of nontrivial 
+    // Dirichlet restriction. If and when this changes, 
+    // this line should be removed and the code modified. 
+    require IsGamma1EisensteinWeight(chi, 1) : "Hecke stability does not work for characters which are not totally odd";
+
     F := BaseField(M);
     ZF := Integers(M);
 
-    //Try to find appropriate Eisenstein series to use. Currently, we only support level one characters, so we look for Eisenstein series that put us in such spaces.
-
-
-    ok := false;
-
-    for I in IdealsUpTo(20, F) do
-      H := HeckeCharacterGroup(I, [1,2]);
-
-      for psi0 in Elements(H) do
-          psi := psi0*chiinv;
-          if IsGamma1EisensteinWeight(psi, 1) then
-              MEis := HMFSpace(M, N, [1,1], psi);
-              AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
-
-              for pair in AdmChars do
-                  myarray := EisensteinConstantCoefficient(M, [1,1], pair[1], pair[2]); 
-                  if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
-                      ok := true;
-                      mypair := pair;
-                      l := 1;
-                      eis_level := I;
-                      break I;
-                  end if;
-              end for;
-          end if;
-      end for;
-      
-      if not ok then
-          vprintf HilbertModularForms: "No appropriate weight 1 Eisenstein series, need to go to weight 3\n";
-
-          for psi0 in Elements(H) do
-              psi := psi0*chiinv;
-              if IsGamma1EisensteinWeight(psi, 3) then
-                  MEis := HMFSpace(M, N, [3,3], psi);
-                  AdmChars := EisensteinAdmissibleCharacterPairs(MEis);
-
-                  for pair in AdmChars do
-                      myarray := EisensteinConstantCoefficient(M, [3,3], pair[1], pair[2]); 
-                      if not (&*[myarray[key] : key in Keys(myarray)] eq 0) then
-                          ok := true;
-                          mypair := pair;
-                          l := 3;
-                          eis_level := I;
-                          break I;
-                      end if;
-                  end for;
-              end if;
-          end for;    
-      end if;
-    end for;
-      
-    require ok : "There are no appropriate Eisenstein series - I don't think this should ever happen...\n";
+    MEis := HMFSpace(M, N, [1,1], chi^-1);
+    triv_char := HeckeCharacterGroup(1*ZF, [1,2]).0;
+    // By Proposition 2.1 in DDP11 (https://annals.math.princeton.edu/wp-content/uploads/annals-v174-n1-p12-s.pdf)
+    // this Eisenstein series should be nonzero at the cusp at infinity in
+    // every component. Thus, we should be able to divide by it
+    // and obtain something with nebentypus character chi. 
+    myarray := EisensteinConstantCoefficient(M, [1,1], chi_prim^-1, triv_char);
+    require &*[myarray[key] : key in Keys(myarray)] ne 0 : "The Eisenstein series you've chosen is 0 at some cusps at infinity";
     
-    vprintf HilbertModularForms: "We will use an Eisenstein series of weight %o, level %o, and character %o\n", l, IdealOneLine(eis_level), psi;
-
-    Eis := EisensteinSeries(MEis, mypair[1], mypair[2]);
-    
+    // TODO abhijitm there's something annoying going on here
+    // with imprimitive characters,
+    // possibly to do with our constructions of Eisenstein series
+    // I'll come back to it after I've fixed some of the issues
+    // with coefficient rings and stuff, but this should be
+    // functional for now. 
+    //
+    // We take the primitive character 
+    Eis := EisensteinSeries(MEis, chi_prim^-1, triv_char);
         
-    //Load space of Cusp forms of weight [k1 + l,k2 + l] and level N.
-    vprintf HilbertModularForms: "Computing basis of cusp forms of weight [%o,%o] and level %o\n", k[1] + l, k[2] + l, N;
-    Mkl := HMFSpace(M, N, [k[1] + l, k[2] + l], chi*Character(MEis));
+    //Load space of Cusp forms of weight [k1 + 1,k2 + 1], level N, and trivial character
+    vprintf HilbertModularForms: "Computing basis of cusp forms of weight [%o,%o], level %o\n", k[1] + 1, k[2] + 1, N;
+    Mkl := HMFSpace(M, N, [k[1] + 1, k[2] + 1]);
     Bkl := CuspFormBasis(Mkl);
     vprintf HilbertModularForms: "Size of basis is %o.\n", #Bkl;
     
     require #Bkl eq CuspDimension(Mkl) : "Need to increase precision to compute this space"; 
 
-    vprintf HilbertModularForms: "Dividing by the  Eisenstein series\n";
+    if #Bkl eq 0 then
+      return [];
+    end if;
+
+    vprintf HilbertModularForms: "Dividing by the Eisenstein series\n";
     
     //Our initial candidate for our desired space.
     V := [];
@@ -146,70 +116,71 @@ intrinsic HeckeStabilityCuspBasis(
         Append(~V, f/Eis);
     end for;
 
-    //We will next loop over primes pp and compute the stable subspaces under T_pp.
-    //We skip over primes dividing level just to be safe. We try primes up to 100, but we usually just need 1 or 2.
+    // We want to choose the prime pp of smallest norm among
+    // the primes not dividing N
+    bound := 20;
     primes := PrimesUpTo(bound, F:coprime_to := N);
+    // if N divides every prime of norm up to 20, which seems
+    // unlikely, but just in case 
+    if #primes eq 0 then 
+        primes := PrimesUpTo(Norm(N), F:coprime_to := N)[1];
+    end if;
+    pp := primes[1];
 
-    for pp in primes do
-        vprintf HilbertModularForms: "Computing Hecke stable subspace for prime %o\n of norm %o.\n", pp, Norm(pp);
-        
-        V := HeckeStableSubspace(V, ZF!!pp);
+    vprintf HilbertModularForms: "Computing Hecke stable subspace for prime %o\n of norm %o.\n", pp, Norm(pp);
+    
+    V := HeckeStableSubspace(V, ZF!!pp);
 
-        if #V eq 0 then
-            return V;
-        end if;
-        
-        //Now V is our updated candidate for the space of weight 1 forms. We need to check if the forms are holomorphic by squaring.
-        vprintf HilbertModularForms: "Checking that forms are holomorphic by squaring\n";
+    if #V eq 0 then
+        return V;
+    end if;
+    
+    //Now V is our updated candidate for the space of weight 1 forms. We need to check if the forms are holomorphic by squaring.
+    vprintf HilbertModularForms: "Checking that forms are holomorphic by squaring\n";
 
-        Mksquared := HMFSpace(M, N, [2*k[1], 2*k[2]], chi^2);
-        Bmod := Basis(Mksquared);
-        Bcusp := CuspFormBasis(Mksquared);
-        
-        require #Bcusp eq CuspDimension(Mksquared): "Need to increase precision to compute this space";
-        
-        vprintf HilbertModularForms: "Done?\n";
-        done := true;
-        for f in V do
-            assert Character(Parent(f)) eq chi;
-            assert Level(Parent(f)) eq N;
-            Bmodandf2 := Append(Bmod, f^2);
-            // If f^2 is not in the upstairs (weight 2k character chi^2) space 
-            // of modular forms then V must not have been Hecke stable
-            if #LinearDependence(Bmodandf2) eq 0 then
-                done := false;
-                vprintf HilbertModularForms: "No!\n";
-//                vprintf HilbertModularForms: "Linear dependence:\n %o \n", LinearDependence(Bandf2);
-                break f;
-            end if;
-        end for;
-        if done then
-            vprintf HilbertModularForms: "Found a Hecke stable subspace!\n";
-
-            // We should now remove any Eisenstein series that ended up in this space
-            // so that we are left with only cusp forms
-            eigs := Eigenbasis(Mk, V);
-            V := [];
-            for eig in eigs do
-              // if eig^2 is a cusp form in the upstairs space, 
-              if #LinearDependence(Append(Bcusp, eig^2)) ne 0 then
-                Append(~V, eig);
-              end if;
-            end for;
-            
-            if prove then
-                vprintf HilbertModularForms: "Need to verify that the precision is large enough to compute the space larger space\n";
-
-                Vcheck := Basis(HMFSpace(M, N, [2*k[1] + 2*l,2*k[2] + 2*l]));
-                assert #LinearDependence(Vcheck) eq 0;
-            end if;
-
-            return V;
+    Mksquared := HMFSpace(M, N, [2*k[1], 2*k[2]], chi^2);
+    Bmod := Basis(Mksquared);
+    Bcusp := CuspFormBasis(Mksquared);
+    
+    require #Bcusp eq CuspDimension(Mksquared): "Need to increase precision to compute this space";
+    
+    vprintf HilbertModularForms: "Done?\n";
+    done := true;
+    for f in V do
+        assert Character(Parent(f)) eq chi;
+        assert Level(Parent(f)) eq N;
+        Bmodandf2 := Append(Bmod, f^2);
+        // If f^2 is not in the upstairs (weight 2k character chi^2) space 
+        // of modular forms then V must not have been Hecke stable
+        if #LinearDependence(Bmodandf2) eq 0 then
+            done := false;
+            vprintf HilbertModularForms: "No!\n";
+            break f;
         end if;
     end for;
-    
-    require false : "Not enough primes to ensure our forms are holomorphic.";
+    if done then
+        vprintf HilbertModularForms: "Found a Hecke stable subspace!\n";
 
+        // We should now remove any Eisenstein series that ended up in this space
+        // so that we are left with only cusp forms
+        eigs := Eigenbasis(Mk, V);
+        V := [];
+        for eig in eigs do
+          // if eig^2 is a cusp form in the upstairs space, 
+          if #LinearDependence(Append(Bcusp, eig^2)) ne 0 then
+            Append(~V, eig);
+          end if;
+        end for;
+        
+        if prove then
+            vprintf HilbertModularForms: "Need to verify that the precision is large enough to compute the space larger space\n";
+
+            Vcheck := Basis(HMFSpace(M, N, [2*k[1] + 2,2*k[2] + 2]));
+            assert #LinearDependence(Vcheck) eq 0;
+        end if;
+
+        return V;
+    end if;
     return [];
 end intrinsic;
 
@@ -217,14 +188,12 @@ end intrinsic;
 intrinsic Weight1CuspBasis(
   Mk::ModFrmHilD
   :
-  bound := 100,
   prove := true
   ) -> SeqEnum[ModFrmHilDElt]
   {Compute the basis of cuspidal parallel weight 1 forms using the Hecke stability method.
-   - The optional parameter bound is the maximum norm of primes pp we will check T_pp-stability for before we declare defeat,
    - The optional parameter prove is true or false. If true, we verify that we had enough precision to check the equality of the potentially meromorphic form with a holomorphic one.
   }
-  return HeckeStabilityCuspBasis(Mk : bound := bound, prove := prove);
+  return HeckeStabilityCuspBasis(Mk : prove := prove);
 end intrinsic;
 
 ///////////// Eigenbasis computation ////////////////

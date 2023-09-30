@@ -123,7 +123,7 @@ intrinsic EisensteinConstantCoefficient(
     // For them [nn] = \lambda, while we have [nn][bb']=[(1)]
     // Thus we may take tt_lambda = 1/bb'$
     bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
-    tt_lambda := bbp^-1;
+    tt_lambda := bbp;
     constant_term[bb] := 2^(-n)*( etainv(tt_lambda)*c0aa +  psiinv(tt_lambda)*c0bb );
   end for;
 
