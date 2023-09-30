@@ -9,10 +9,7 @@ intrinsic HeckeStableSubspace(
     // compute the kernel of Tp
     // we include the kernel in our final output
     // because it is also Hecke stable
-    TpV := [];
-    for f in V do
-      Append(~TpV, HeckeOperator(f, pp));
-    end for;
+    TpV := [HeckeOperator(f, pp) : f in V];
     lindep := LinearDependence(TpV);
     Tp_kernel := [&+[vec[i]*V[i] : i in [1 .. #V]] : vec in lindep];
 
@@ -24,11 +21,7 @@ intrinsic HeckeStableSubspace(
     
     for _ in [1 .. #V] do
         vprintf HilbertModularForms:  "Current dim = %o\n", dimprev;
-        TpVprev := [];
-        for g in Vprev do
-            Append(~TpVprev, HeckeOperator(g, pp));
-        end for;
-        
+        TpVprev := [HeckeOperator(g, pp) : g in Vprev];
         lindep := LinearDependence(Vprev cat TpVprev);
         dimnew := #lindep;
         
@@ -127,11 +120,8 @@ intrinsic HeckeStabilityCuspBasis(
     vprintf HilbertModularForms: "Dividing by the Eisenstein series\n";
     
     //Our initial candidate for our desired space.
-    V := [];
-    for f in Bkl do
-        Append(~V, f/Eis);
-    end for;
-
+    V := [f/Eis : f in Bkl];
+   
     // We want to choose the prime pp of smallest norm among
     // the primes not dividing N
     bound := 20;
@@ -242,11 +232,7 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   F := MGRng`BaseField;
   ZF := Integers(F);
   dd := Different(ZF);
-  hecke_matrices := [];
-
-  for pp in PrimesUpTo(P, F) do
-    Append(~hecke_matrices, HeckeMatrix(basis, pp));
-  end for;
+  hecke_matrices := [HeckeMatrix(basis, pp) : pp in PrimesUpTo(P, F)];
 
   // B stores a matrix such that B * M * B^-1 is
   // diagonal for every Hecke matrix M. 
