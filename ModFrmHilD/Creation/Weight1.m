@@ -85,14 +85,18 @@ intrinsic HeckeStabilityCuspBasis(
 
     F := BaseField(M);
     ZF := Integers(M);
+    n := Degree(F);
 
-    MEis := HMFSpace(M, N, [1,1], chi^-1);
+    par_wt_1 := [1 : _ in [1 .. n]];
+    MEis := HMFSpace(M, N, par_wt_1, chi^-1);
     triv_char := HeckeCharacterGroup(1*ZF, [1,2]).0;
+    MEis := HMFSpace(M, N, par_wt_1, chi^-1);
+    triv_char := HeckeCharacterGroup(1*ZF, [1 .. n]).0;
     // By Proposition 2.1 in DDP11 (https://annals.math.princeton.edu/wp-content/uploads/annals-v174-n1-p12-s.pdf)
     // this Eisenstein series should be nonzero at the cusp at infinity in
     // every component. Thus, we should be able to divide by it
     // and obtain something with nebentypus character chi. 
-    myarray := EisensteinConstantCoefficient(M, [1,1], chi_prim^-1, triv_char);
+    myarray := EisensteinConstantCoefficient(M, par_wt_1, chi_prim^-1, triv_char);
     require &*[myarray[key] : key in Keys(myarray)] ne 0 : "The Eisenstein series you've chosen is 0 at some cusps at infinity";
     
     // TODO abhijitm there's something annoying going on here
@@ -105,9 +109,9 @@ intrinsic HeckeStabilityCuspBasis(
     // We take the primitive character 
     Eis := EisensteinSeries(MEis, chi_prim^-1, triv_char);
         
-    //Load space of Cusp forms of weight [k1 + 1,k2 + 1], level N, and trivial character
-    vprintf HilbertModularForms: "Computing basis of cusp forms of weight [%o,%o], level %o\n", k[1] + 1, k[2] + 1, N;
-    Mkl := HMFSpace(M, N, [k[1] + 1, k[2] + 1]);
+    //Load space of Cusp forms of weight [k1 + 1, ..., kn + 1], level N, and trivial character
+    vprintf HilbertModularForms: "Computing basis of cusp forms of weight %o, level %o\n", [k[i] + 1 : i in [1 .. n]], N;
+    Mkl := HMFSpace(M, N, [k[i] + 1 : i in [1 .. n]]);
     Bkl := CuspFormBasis(Mkl);
     vprintf HilbertModularForms: "Size of basis is %o.\n", #Bkl;
     
@@ -144,21 +148,22 @@ intrinsic HeckeStabilityCuspBasis(
     //Now V is our updated candidate for the space of weight 1 forms. We need to check if the forms are holomorphic by squaring.
     vprintf HilbertModularForms: "Checking that forms are holomorphic by squaring\n";
 
-    Mksquared := HMFSpace(M, N, [2*k[1], 2*k[2]], chi^2);
-    Bmod := Basis(Mksquared);
-    Bcusp := CuspFormBasis(Mksquared);
+    d := Order(chi);
+    Mk_dth_power := HMFSpace(M, N, [d*k[i] : i in [1 .. n]]);
+    Bmod := Basis(Mk_dth_power);
+    Bcusp := CuspFormBasis(Mk_dth_power);
     
-    require #Bcusp eq CuspDimension(Mksquared): "Need to increase precision to compute this space";
+    require #Bcusp eq CuspDimension(Mk_dth_power): "Need to increase precision to compute this space";
     
     vprintf HilbertModularForms: "Done?\n";
     done := true;
     for f in V do
         assert Character(Parent(f)) eq chi;
         assert Level(Parent(f)) eq N;
-        Bmodandf2 := Append(Bmod, f^2);
-        // If f^2 is not in the upstairs (weight 2k character chi^2) space 
+        Bmodandfd := Append(Bmod, f^d);
+        // If f^d is not in the upstairs (weight dk) space 
         // of modular forms then V must not have been Hecke stable
-        if #LinearDependence(Bmodandf2) eq 0 then
+        if #LinearDependence(Bmodandfd) eq 0 then
             done := false;
             vprintf HilbertModularForms: "No!\n";
             break f;
@@ -173,7 +178,7 @@ intrinsic HeckeStabilityCuspBasis(
         V := [];
         for eig in eigs do
           // if eig^2 is a cusp form in the upstairs space, 
-          if #LinearDependence(Append(Bcusp, eig^2)) ne 0 then
+          if #LinearDependence(Append(Bcusp, eig^d)) ne 0 then
             Append(~V, eig);
           end if;
         end for;
