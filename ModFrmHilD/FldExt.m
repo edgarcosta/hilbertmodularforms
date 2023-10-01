@@ -463,7 +463,6 @@ intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
 
       The element y will lie in the UnitCharField(F,k). 
   }
-
   assert IsTotallyPositive(x);
   if not IsParitious(k) then
     assert Norm(x) eq 1;
@@ -489,7 +488,6 @@ intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
   end if;
 end intrinsic;
 
-
 intrinsic PositiveInPlace(nu::FldNumElt, v::PlcNumElt) -> FldNumElt
   {
     input: 
@@ -499,4 +497,31 @@ intrinsic PositiveInPlace(nu::FldNumElt, v::PlcNumElt) -> FldNumElt
       nu if v(nu) > 0 and -nu otherwise.
   }
   return (Evaluate(nu, v) gt 0) select nu else -1*nu;
+end intrinsic;
+
+intrinsic PositiveSqrt(nu::FldNumElt, K::FldNum) -> FldNumElt
+  {
+    input:
+      nu: An element of a number field F
+      K: A number field containing nu and a square root of nu.
+    return:
+      mu such that mu^2 = nu and mu is positive in the distinguished
+      place of K.
+  }
+  mu := Sqrt(K!nu);
+  v_0 := DistinguishedPlace(K);
+  return (Evaluate(mu, v_0) ge 0) select mu else -1*mu;
+end intrinsic;
+
+intrinsic NormToHalfWeight(I::RngFracIdl, k0::RngIntElt, K::FldNum) -> FldNumElt
+  {
+    input:
+      I: A fractional ideal
+      k0: A nonnegative integer
+      K: A number field containing Norm(I)^(k0/2)
+    return:
+      Norm(I)^(k0/2)
+  }
+  Nm := K!Norm(I);
+  return (k0 mod 2 eq 0) select Nm^(ExactQuotient(k0, 2)) else Nm^(k0/2);
 end intrinsic;
