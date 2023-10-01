@@ -177,6 +177,7 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   require not IsZero(nn) : "The zero coefficient exists on each component";
 
   M := GradedRing(f);
+  Mk := Parent(f);
   if not nn in Ideals(M) then
     return false, _;
   end if;
@@ -192,7 +193,8 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   if not nu in ShintaniReps(M)[bb] then
     return false, _;
   end if;
-  return true, Coefficients(f)[bb][nu];
+  c := Coefficients(f)[bb][nu];
+  return true, EltCoeffToIdlCoeff(c, nu, Weight(Mk), CoefficientRing(Components(f)[bb]), F);
 end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
@@ -214,6 +216,127 @@ intrinsic Coefficients(f::ModFrmHilDElt) -> Any
     coeffs[bb] := Coefficients(Components(f)[bb]);
   end for;
   return coeffs;
+end intrinsic;
+
+intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldNumElt, k::SeqEnum[RngIntElt], K::Fld, F::Fld) -> FldElt
+  {
+    inputs:
+      a_nn: An element of a number field (usually the splitting field of 
+              the base field of the HMF if GaloisDescent has been performed)
+              representing the "Frobenius trace" at nn. 
+              // TODO abhijitm phrase better, not exactly true
+      nu: A totally positive element of a number field (the base field of the HMF)
+      f: A component of a Hilbert modular form
+    returns:
+      The Fourier coefficient at nu of the HMF, the coefficient field.
+
+      The coefficients of an HMF are naturally indexed by totally positive elements
+      nu. However, after ExtendsMultiplicatively and GaloisDescent, we have coefficients
+      indexed by ideals nn. Fix a set of narrow class representatives. Based on the 
+      narrow class of nn, there is a narrow class representative bbp such that 
+      nn * bbp is a principal ideal. (In our code we
+      call this the ideal dual of a narrow class group representative but this distinction
+      isn't important here). 
+
+      However, the choice of generator nu such that bbp * nn = (nu) 
+      is not canonical, and by the modular transformation law,
+      two candidate generators nu and eps * nu -- for some totally positive unit eps -- 
+      should have Fourier coefficients related by 
+
+      a_(nu) = \prod_i eps_i^(k_i) a_(eps*nu),
+
+      where eps_i is the image of eps under the ith real embedding. 
+      When the weight is parallel (k_1 = ... = k_n) then we have
+      a_nu = a_(eps*nu) but in general this is not the case.
+
+      Shimura (Duke 78 Vol 45 No. 3) then writes
+
+      a_(nu) := a_(nn) * N(bbp)^(k_0/2) * nu^((k-k_0)/2)
+
+      where k_0 is the largest entry of k and nu_i is the image of nu under the ith
+      real embedding. This definition is compatible with the earlier transformation law.
+
+      This definition is canonical once we fix the normalization of each
+      Hecke operator, since we want the a_nn to be eigenvalues. In our case, the normalization
+      comes fixed because it comes from the Hecke code in ModFrmHil.
+
+      To reduce the degree of the number fields we need to work with, we use
+      the *technically incorrect* formula
+
+      a_(nu) := a_(nn) * nu^((k-k_0)/2)
+    }
+
+  if nu eq 0 then
+    return K!a_nn;
+  end if;
+
+  // TODO abhijitm I think this is straight up wrong when 
+  // the narrow class number is bigger than 1, but I'm 
+  // leaving it as is to stay consistent with existing
+  // behavior. 
+  //
+  // This might cause problems in the nonparitious case as
+  // written, 
+
+  return K!a_nn * K!EltToShiftedHalfWeight(nu, k)^(-1);
+end intrinsic;
+
+intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldOrdElt, k::SeqEnum[RngIntElt], K::Fld, F::Fld) -> FldElt
+  {
+    inputs:
+      a_nn: An element of a number field (usually the splitting field of 
+              the base field of the HMF if GaloisDescent has been performed)
+              representing the "Frobenius trace" at nn. 
+              // TODO abhijitm phrase better, not exactly true
+      nu: A totally positive element of a number field (the base field of the HMF)
+      f: A component of a Hilbert modular form
+    returns:
+      The Fourier coefficient at nu of the HMF, the coefficient field.
+
+      See the called function for details.
+  }
+  return IdlCoeffToEltCoeff(a_nn, F!nu, k, K, F);
+end intrinsic;
+
+intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldNumElt, k::SeqEnum[RngIntElt], K::Any, F::Any) -> FldElt
+  {
+    inputs:
+      a_nu: An element of a number field (usually the splitting field 
+              of the base field of the HMF if GaloisDescent has been performed)
+              representing the Fourier coefficient at nu.
+      nu: A totally positive element of a number field (the base field of the HMF)
+
+    returns:
+      The "Frobenius trace" at nn of the HMF, the coefficient field.
+
+      Reversing the formula in IdlCoeffToEltCoeff (explanation provided
+      in that function), we compute
+
+      a_(nn) := a_(nu) * N(bbp)^(-k_0/2) * N(nu)^((k_0-k_i)/2)
+  }
+
+  if nu eq 0 then
+    return K!a_nu;
+  end if;
+
+  k0 := Max(k);
+  return K!a_nu * K!EltToShiftedHalfWeight(nu, k);
+end intrinsic;
+
+intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldOrdElt, k::SeqEnum[RngIntElt], K::Fld, F::Fld) -> FldElt
+  {
+    inputs:
+      a_nu: An element of a number field (usually the splitting field 
+              of the base field of the HMF if GaloisDescent has been performed)
+              representing the Fourier coefficient at nu.
+      nu: A totally positive element of a number field (the base field of the HMF)
+      f: A component of a Hilbert modular form
+    returns:
+      The "Frobenius trace" at nn of the HMF, the coefficient field.
+
+      See the called function for details.
+  }
+  return EltCoeffToIdlCoeff(a_nu, F!nu, k, K, F);
 end intrinsic;
 
 intrinsic CoefficientRing(f::ModFrmHilDEltComp) -> Any
