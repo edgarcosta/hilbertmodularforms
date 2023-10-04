@@ -46,8 +46,6 @@ intrinsic CuspFormBasis(
   GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
-  require IsParallel(Weight(Mk)) : "not yet implemented for parallel weight";
-
   if assigned Mk`CuspFormBasis then
     return Mk`CuspFormBasis;
   end if;

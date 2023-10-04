@@ -40,9 +40,11 @@ end intrinsic;
 
 
 // Generic extending multiplicatevely
-intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, chi::., prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
+intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::., prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
   { set a_nn := prod(a_p^e : (p,e) in factorization(nn) }
   // TODO: take character into acount
+
+  k0 := Max(k);
   if factorization cmpeq false then
     factorization := Factorization;
   end if;
@@ -56,14 +58,14 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::RngIntElt, chi
   QX<X, Y> := PolynomialRing(Q, 2);
   R<T> := PowerSeriesRing(QX : Precision := prec);
   recursion := Coefficients(1/(1 - X*T + Y*T^2));
-  // If good, then 1/(1 - a_p T + Chi(p)*Norm(p) T^2) = 1 + a_p T + a_{p^2} T^2 + ...
+  // If good, then 1/(1 - a_p T + Chi(p)*Norm(p)^{k0-1} T^2) = 1 + a_p T + a_{p^2} T^2 + ...
   // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
   for p in prime_ideals do
     Np := Norm(p);
     if N subset p then
       Npk := 0;
     else
-      Npk := Np^(k - 1);
+      Npk := Np^(k0 - 1);
     end if;
     pe := p;
     Npe := Np;
@@ -119,13 +121,13 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   end if;
 
   M := Parent(Mk);
+  F := BaseField(M);
   N := Level(Mk);
   NS := Level(S);
   require N subset NS :"The level must divide the level of the target ambient space";
   require AssociatedPrimitiveCharacter(chi) eq AssociatedPrimitiveCharacter(Character(Mk)): "The character of f must match the level of the target ambient space";
   require Weight(S) eq Weight(Mk): "The weight of the form and space do not match";
-  require #SequenceToSet(Weight(S)) eq 1 : "Only implemented for parallel weight";
-  k := Weight(S)[1];
+  k := Weight(S);
 
   divisors := Divisors(N/NS);
   if N eq NS then
@@ -181,16 +183,18 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
 
   // the coefficient ring of the coefficients
   //
-  // if we are performing GaloisDescent, 
+  // If we are performing GaloisDescent, 
   // the best we can do is the field over 
-  // which the Hecke operators are defined
+  // which the Hecke operators are defined.
+  // This field is always contained within 
+  // the UnitCharField(F, k)
   //
-  // if not, then nothing changes and we use the
+  // If not, then nothing changes and we use the
   // field over which the eigenforms themselves
   // are defined
-  R := GaloisDescent select Rationals() else HeckeEigenvalueField(S);
-
+  R := GaloisDescent select UnitCharField(Mk) else HeckeEigenvalueField(S);
   res := [];
+
   for dd in divisors do
     ddinv := dd^-1;
     // coefficients by bb
@@ -218,7 +222,14 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
           // whose entries are the nnth Fourier coefficient of f_1, ..., f_n. 
           // By linearity, the trace of this product is the nnth Fourier coefficient
           // of T^i(f_1 + ... + f_n) as desired. 
-          CoeffsArray[i][bb][nu] := R!(bool select Trace(Tzeta_powers[i]*v) else 0);
+          a_nn := Trace(Tzeta_powers[i]*v);
+          if nn eq 0*ZF then
+            // apparently the norm of the zero ideal is not defined
+            // so we treat this case separately
+            CoeffsArray[i][bb][nu] := R!0;
+          else
+            CoeffsArray[i][bb][nu] := R!(bool select IdlCoeffToEltCoeff(a_nn, nu, k, R, F) else 0);
+          end if;
         end for;
       end for;
     end for;
@@ -228,8 +239,6 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   end for;
   return res;
 end intrinsic;
-
-
 
 intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {return the inclusion of MkN1 into MkN2}
