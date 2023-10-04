@@ -13,7 +13,8 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
   F := BaseField(M);
   Cl, mp := NarrowClassGroup(F);
   ZF := Integers(F);
-  k0 := Max(Weight(f));
+  k := Weight(f);
+  k0 := Max(k);
   chi := Character(Mk);
 
   coeffsTnnf := AssociativeArray();
@@ -56,7 +57,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
       if prec[bb] ne 0 then // the loop on aa didn't finish
         break; // breaks loop on nu
       else
-        coeffsTnnf[bb][nu] := c;
+        coeffsTnnf[bb][nu] := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]), F);
       end if;
     end for;
   end for;
