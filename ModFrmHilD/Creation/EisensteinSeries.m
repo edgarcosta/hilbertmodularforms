@@ -81,26 +81,6 @@ intrinsic EisensteinConstantCoefficient(
   if IsOne(aa) then // aa = 1
     prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
     SetTargetRing(~prim, z);
-    c0aa := LValue_Recognized(M, k, prim);
-  else
-    c0aa := 0;
-  end if;
-  // k = 1 and bb == 1
-  if k eq 1 and IsOne(bb) then
-    prim := AssociatedPrimitiveCharacter(eta*psi^(-1));
-    SetTargetRing(~prim, z);
-    c0bb := LValue_Recognized(M, k, prim);
-  else
-    c0bb := 0;
-  end if;
-
-  constant_term := AssociativeArray();
-  n := Degree(BaseField(M));
-
-  // deal with L-values
-  if IsOne(aa) then // aa = 1
-    prim := AssociatedPrimitiveCharacter(psi*eta^(-1));
-    SetTargetRing(~prim, z);
     c0aa := L!LValue_Recognized(M, k, prim);
   else
     c0aa := 0;
