@@ -17,7 +17,7 @@ intrinsic EisensteinSeries(
   require N subset aa*bb*dd: "Modulos(eta)*Modulos(psi)*dd must divide Level(Mk)";
   X := Parent(Character(Mk));
   require IsTrivial(eta*psi*Character(Mk)^-1): Sprintf("we must have psi*eta = Character(Mk), %o, %o", Parent(eta*psi), (Parent(Character(Mk))));
-  require #SequenceToSet(k) eq 1: "the weight is not parallel, there are no Eisenstein Series in this case";
+  require IsParallel(k): "the weight is not parallel, there are no Eisenstein Series in this case";
   k := k[1];
 
 

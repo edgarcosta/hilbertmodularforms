@@ -458,7 +458,7 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
   if not assigned Mk`EisensteinAdmissibleCharacterPairs then
     N := Level(Mk);
     k := Weight(Mk);
-    if #SequenceToSet(k) ne 1 then
+    if not IsParallel(k) then
       // there are no Eisenstein series in nonparallel weight
       Mk`EisensteinAdmissibleCharacterPairs := [* *];
       return Mk`EisensteinAdmissibleCharacterPairs;
@@ -566,4 +566,27 @@ intrinsic CuspidalSubspace(M::ModFrmHilD) -> ModFrmHilD
   Mk`IsCuspidal := true;
   Mk`IsNew := false;
   return Mk;  
+end intrinsic;
+
+intrinsic IsParitious(k::SeqEnum[RngIntElt]) -> BoolElt
+  {
+    input: 
+      k: The weight of the HMF
+    returns:
+      true when k is paritious (all components have the same parity)
+      false otherwise
+  }
+  k_1 := k[1];
+  return &and[((k_i - k[1]) mod 2 eq 0) : k_i in k];
+end intrinsic;
+
+intrinsic IsParallel(k::SeqEnum[RngIntElt]) -> BoolElt
+  {
+    input: 
+      k: The weight of the HMF
+    returns:
+      true when k is parallel (all components are equal)
+      false otherwise
+  }
+  return #SequenceToSet(k) eq 1;
 end intrinsic;
