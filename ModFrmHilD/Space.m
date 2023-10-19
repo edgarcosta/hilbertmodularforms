@@ -18,6 +18,8 @@ declare attributes ModFrmHilD:
   EisensteinBasis, // SeqEnum[ModFrmHilDElt]
   CuspFormBasis, // SeqEnum[ModFrmHilDElt]
   EllipticBasis, // SeqEnum[ModFrmHilDElt]
+  NewCuspFormBasis, // SeqEnum[ModFrmHilDElt] - basis for new cusp forms
+  OldCuspFormBasis, // SeqEnum[ModFrmHilDElt] - basis for old cusp forms
   Dimension, // RngIntElt
   CuspDimension, //RngIntElt
   EisensteinDimension, //RngIntElt

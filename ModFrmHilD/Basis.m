@@ -88,6 +88,56 @@ intrinsic CuspFormBasis(
   return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
+intrinsic NewCuspFormBasis(
+  Mk::ModFrmHilD 
+  : 
+  IdealClassesSupport := false,
+  Symmetric := false,
+  GaloisDescent := true) -> SeqEnum[ModFrmHilDElt]
+  {
+    input:
+      Mk: A space of HMFs
+      // TODO abhijitm describe the optional parameters 
+    returns: 
+      A list of forms spanning the space of new cusp forms
+  }
+  if not assigned Mk`NewCuspFormBasis then
+    Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := GaloisDescent);
+  end if;
+
+  return SubBasis(Mk`NewCuspFormBasis, IdealClassesSupport, Symmetric);
+end intrinsic;
+  
+intrinsic OldCuspFormBasis(
+  Mk::ModFrmHilD 
+  : 
+  IdealClassesSupport := false,
+  Symmetric := false,
+  GaloisDescent := true) -> SeqEnum[ModFrmHilDElt]
+  {
+    input:
+      Mk: A space of HMFs 
+      // TODO abhijitm describe the optional parameters
+    returns: 
+      If N is the level of Mk, returns the inclusions of forms of level
+      N' | N into Mk. These will always be linearly independent
+      (in fact, orthogonal w/r/t the Petersson inner product),
+      so we can take them as a basis directly.
+  }
+  if not assigned Mk`OldCuspFormBasis then
+    M := Parent(Mk);
+    N := Level(Mk);
+    k := Weight(Mk);
+    
+    Mk`OldCuspFormBasis := [];
+    divisors := Exclude(Divisors(N), N);
+    for D in divisors do
+      Mk_D := HMFSpace(M, D, k);
+      Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : IdealClassesSupport := IdealClassesSupport, Symmetric := Symmetric, GaloisDescent := GaloisDescent)];
+    end for;
+  end if;
+  return SubBasis(Mk`OldCuspFormBasis, IdealClassesSupport, Symmetric);
+end intrinsic;
 
 intrinsic EisensteinBasis(
   Mk::ModFrmHilD
