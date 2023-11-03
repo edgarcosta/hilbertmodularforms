@@ -23,6 +23,8 @@ declare attributes ModFrmHilD:
   EisensteinDimension, //RngIntElt
   EisensteinAdmissibleCharacterPairs, // List of pairs of primitive characters
   Ambient, // BoolElt
+  IsCuspidal, // BoolElt
+  IsNew, // BoolElt
   MagmaSpace, //ModFrmHil
   MagmaNewformDecomposition, // List
   MagmaNewCuspForms, // SeqEnum[ModFrmHilElt]
@@ -36,6 +38,9 @@ intrinsic Print(Mk::ModFrmHilD, level::MonStgElt)
   {}
   M := Parent(Mk);
   if level in ["Default", "Minimal", "Maximal"] then
+    if Mk`IsCuspidal then
+	printf "Cuspidal subspace of ";
+    end if;
     printf "Space of Hilbert modular forms over %o\n", BaseField(M);
     printf "Precision: %o\n", Precision(M);
     printf "Weight: %o\n", Weight(Mk);
@@ -89,6 +94,15 @@ intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   return Mk`Character;
 end intrinsic;
 
+intrinsic IsCuspidal(Mk::ModFrmHilD) -> BoolElt
+{}
+  return Mk`IsCuspidal;
+end intrinsic;
+
+intrinsic IsNew(Mk::ModFrmHilD) -> BoolElt
+{}
+  return Mk`IsNew;
+end intrinsic;
 
 intrinsic UnitCharacters(Mk::ModFrmHilD) -> Assoc
   {}
@@ -199,6 +213,8 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`Weight := k;
   Mk`Level := N;
   Mk`Ambient := true;
+  Mk`IsCuspidal := false;
+  Mk`IsNew := false;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
   // Right now when k[i] = 1, we don't want to restrict to compatible weights.
   if 1 notin k then
@@ -261,6 +277,8 @@ intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
   Mk`MagmaSpace := HeckeCharacterSubspace(NewSubspace(HilbertCuspForms(M), N), M`Character);
   Mk`EisensteinDimension := 0;
   Mk`Ambient := false;
+  Mk`IsCuspidal := true;
+  Mk`IsNew := true;
   return Mk;
 end intrinsic;
 
@@ -531,4 +549,21 @@ intrinsic TraceCorrectionFactorFlag(Mk::ModFrmHilD) -> Assoc
   return Mk`TraceCorrectionFactorFlag;
 end intrinsic;
 
+// I found it useful to have this function when we want to restrict to cuspidal subspaces
 
+intrinsic CuspidalSubspace(M::ModFrmHilD) -> ModFrmHilD
+{The cuspidal subspace of M.}
+
+  Mk := ModFrmHilDInitialize();
+  Mk`Parent := M`Parent;
+  Mk`Weight := M`Weight;
+  Mk`Level := M`Level;
+  Mk`Character := M`Character;
+  Mk`MagmaSpace := HeckeCharacterSubspace(HilbertCuspForms(M), M`Character);
+  Mk`EisensteinDimension := 0;
+  Mk`Ambient := false;
+  Mk`UnitCharacters := M`UnitCharacters;
+  Mk`IsCuspidal := true;
+  Mk`IsNew := false;
+  return Mk;  
+end intrinsic;

@@ -52,6 +52,16 @@ intrinsic CuspFormBasis(
     N := Level(Mk);
     k := Weight(Mk);
 
+    // If a new subspace return only the newforms
+    if IsNew(Mk) then
+	Mk`CuspFormBasis := NewCuspForms(Mk : GaloisDescent:=GaloisDescent);
+	if #Mk`CuspFormBasis gt 0 then
+            dim := &+[Degree(CoefficientRing(f)) : f in Mk`CuspFormBasis];
+	end if;
+	require CuspDimension(Mk) eq dim : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
+	return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
+    end if;
+    
     if k[1] ge 2 then
       Mk`CuspFormBasis := [];
       // This only works for trivial character, as we rely on the magma functionality
@@ -87,9 +97,13 @@ intrinsic EisensteinBasis(
   ) -> SeqEnum[ModFrmHilDElt]
   { return a basis for the complement to the cuspspace of Mk }
   if not assigned Mk`EisensteinBasis then
-    pairs := EisensteinAdmissibleCharacterPairs(Mk);
-    eisensteinbasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
-    Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
+    if IsCuspidal(Mk) then
+	Mk`EisensteinBasis := [];
+    else
+	pairs := EisensteinAdmissibleCharacterPairs(Mk);
+	eisensteinbasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
+	Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
+    end if;
     require #Mk`EisensteinBasis eq EisensteinDimension(Mk) : "#Mk`EisensteinBasis = %o != %o = EisensteinDimension(Mk)", #Mk`EisensteinBasis, EisensteinDimension(Mk);
   end if;
 
