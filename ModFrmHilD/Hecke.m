@@ -16,6 +16,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := fa
   k := Weight(f);
   k0 := Max(k);
   chi := Character(Mk);
+  K := CoefficientRing(f);
 
   coeffsTmmf := AssociativeArray();
   prec := AssociativeArray();
@@ -41,7 +42,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := fa
       for aa in Divisors(ZF!!(nn + mm)) do
         if nn eq 0*ZF then
           //takes care if the coefficients for the zero ideal are different
-          c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[NarrowClassRepresentative(M, bb*mm/aa^2)][ZF!0];
+          c +:= StrongMultiply(K, [* chi(aa), Norm(aa)^(k0 - 1), Coefficients(f)[NarrowClassRepresentative(M, bb*mm/aa^2)][ZF!0] *]);
         else
           b, cf := IsCoefficientDefined(f, ZF!!(aa^(-2) * nn * mm));
           if not b then
@@ -50,7 +51,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := fa
             prec[bb] := t-1;
             break; // breaks loop on aa
           else
-            c +:= chi(aa) * Norm(aa)^(k0 - 1) * cf;
+            c +:= StrongMultiply(K, [* chi(aa),  Norm(aa)^(k0 - 1), cf *]);
           end if;
         end if;
       end for;
