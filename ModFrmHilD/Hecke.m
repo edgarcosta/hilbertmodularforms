@@ -65,7 +65,8 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
   // This is not very efficient, as it does not remember the underlying vector space, but it works.
   if (assigned Mk`Basis) or MaximalPrecision then
       B := Basis(Mk);
-      mats := [];
+      // These have different numbers of columns
+      mats := [* *];
       vec := [];
       for bb in Keys(coeffsTnnf) do
 	  nus := Keys(coeffsTnnf[bb]);
@@ -73,7 +74,12 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
 	  Append(~mats, mat);
 	  vec cat:= [coeffsTnnf[bb][nu] : nu in nus];
       end for;
-      mat := HorizontalJoin(mats);
+      // This does not work with a list
+      // mat := HorizontalJoin(mats);
+      mat := mats[1];
+      for comp_idx in [2..#mats] do
+	  mat := HorizontalJoin(mat, mats[comp_idx]);
+      end for;
       // If the matrix is invertible, there will be a unique solutions, and we can use it.
       if Rank(mat) eq #B then
 	  vec_sol := Solution(mat, Vector(vec));
@@ -84,4 +90,31 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
   
   g := HMF(Mk, coeffsTnnf : CoeffsByIdeals:=false, prec:=prec);
   return g;
+end intrinsic;
+
+// I add this function, even though it is worse than HeckeOp in Trace.m because it is a straight-forward approach that can be used to check ourselves. I started by doing this manually, but it is useful to have.
+
+intrinsic HeckeOperator(Mk::ModFrmHilD, nn::RngOrdIdl) -> ModMatFldElt
+{Returns the Hecke operator T(nn) on Mk with respecto to the basis Basis(Mk).
+ This implementation uses action of Hecke operators on q-expansions.}
+
+   basis := Basis(Mk);
+   hecke_basis := [HeckeOperator(f, nn) : f in basis];
+   mat, indices := CoefficientsMatrix(basis);
+   Tmat, Tindices := CoefficientsMatrix(hecke_basis);
+   // Need to account for precision loss in different components
+   num_inds := [#x : x in indices];
+   num_inds_T := [#x : x in Tindices];
+   assert not IsEmpty(num_inds_T); // should have at least one component
+   mat_join := Submatrix(mat,1,1,Nrows(mat), num_inds_T[1]);
+   start_col := 1;
+   for comp_idx in [2..#num_inds] do
+       start_col +:= num_inds[comp_idx-1];
+       ncols := num_inds_T[comp_idx];
+       submat := Submatrix(mat,1,start_col,Nrows(mat),ncols);
+       mat_join := HorizontalJoin(mat_join, submat);
+   end for;
+   require Rank(mat_join) eq Nrows(mat) : "Not enough precision!";
+   T := Solution(mat_join, Tmat);
+   return T;
 end intrinsic;
