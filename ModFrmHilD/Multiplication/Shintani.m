@@ -147,7 +147,17 @@ intrinsic ShintaniWalls(F::FldNum) -> Any
   {returns lower and upper walls of the Shintani domain}
   require Degree(F) eq 2: "only implemented for quadratic fields";
   places := InfinitePlaces(F);
-  eps := FundamentalUnitTotPos(F);
+  eps := TotallyPositiveUnitsGenerators(F)[1];
+  
+  // TODO abhijitm the function FundamentalUnitTotPos used to
+  // return an eps which was less than 1 with respect to
+  // the first real place. This is a stopgap to preserve
+  // the old behavior until commit ee2be7d et al
+  // (the rewrite of multiplication) land. 
+  if Evaluate(eps, RealPlaces(F)[1]) gt 1 then
+    eps := eps^-1;
+  end if;
+
   eps1 := Evaluate(eps, places[1]);
   eps2 := Evaluate(eps, places[2]);
   return Explode(Sort([Sqrt(eps1/eps2), Sqrt(eps2/eps1)]));
@@ -253,7 +263,17 @@ intrinsic ReduceShintaniMinimizeTrace(nu::RngElt : Precision := 100) -> Tup
   require Degree(F) eq 2: "Shintani domains only implemented for quadratic fields";
 
   // Fundamental unit
-  eps := FundamentalUnitTotPos(F);
+  eps := TotallyPositiveUnitsGenerators(F)[1];
+ 
+  // TODO abhijitm the function FundamentalUnitTotPos used to
+  // return an eps which was less than 1 with respect to
+  // the first real place. This is a stopgap to preserve
+  // the old behavior until commit ee2be7d et al
+  // (the rewrite of multiplication) land. 
+  if Evaluate(eps, RealPlaces(F)[1]) gt 1 then
+    eps := eps^-1;
+  end if;
+
   eps_RR := EmbedNumberFieldElement(eps : Precision := Precision);
 
   slope_eps := Slope(eps : Precision := Precision);
@@ -288,7 +308,19 @@ intrinsic ReduceShintaniMinimizeDistance(nu::FldNumElt : Precision := 100, Squar
   if nu eq 0 then
     return Parent(nu)!0, 1;
   end if;
-  eps := Squares select FundamentalUnitSquare(F) else FundamentalUnitTotPos(F);
+  eps := Squares select FundamentalUnitSquare(F) else TotallyPositiveUnitsGenerators(F)[1];
+ 
+  // TODO abhijitm the function FundamentalUnitTotPos used to
+  // return an eps which was less than 1 with respect to
+  // the first real place. This is a stopgap to preserve
+  // the old behavior until commit ee2be7d et al
+  // (the rewrite of multiplication) land. 
+  if not Squares then
+    if Evaluate(eps, RealPlaces(F)[1]) gt 1 then
+      eps := eps^-1;
+    end if;
+  end if;
+
   eps_RR := EmbedNumberFieldElement(eps : Precision := Precision);
   nu_RR := EmbedNumberFieldElement(nu : Precision := Precision);
   r := 1/(2*(Log(eps_RR[1])-Log(eps_RR[2])))*(Log(-(nu_RR[2]^2/nu_RR[1]^2)*(Log(eps_RR[2])/Log(eps_RR[1]))));

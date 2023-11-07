@@ -9,7 +9,7 @@ NN := 3*ZF;
 //NN := 21*ZF;
 P1 := CuspQuadruples(NN, bb : GammaType := "Gamma0");
 C1 := Cusps(NN, bb : GammaType := "Gamma0");
-//eps := FundamentalUnitTotPos(F);
+//eps := TotallyPositiveUnitsGenerators(F)[1];
 //eps_RR := [Evaluate(eps,pl) : pl in InfinitePlaces(F)];
 //bb := 1*ZF;
 //ss := (1/nu)*ZF;
