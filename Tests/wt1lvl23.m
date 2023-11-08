@@ -7,7 +7,7 @@ N:= 23*ZF;
 H := HeckeCharacterGroup(N, [1,2]);
 chi := H.1^11; // (H.1^11); // aka 11 mod 22
 M1chi := HMFSpace(M, N, [1,1], chi);
-Space := Weight1CuspBasis(M1chi : prove := false);
+Space := HeckeStabilityCuspBasis(M1chi : prove := false);
 f := Space[1];
 f := f/Coefficient(f, 1*ZF);
 
@@ -353,6 +353,6 @@ N:= 23*ZF;
 H := HeckeCharacterGroup(N, [1,2]);
 chi := H.1^11*H.2*H.3; 
 M1chi := HMFSpace(M, N, [1,1], chi);
-Space := Weight1CuspBasis(M1chi : prove := false);
+Space := HeckeStabilityCuspBasis(M1chi : prove := false);
 assert #Space eq 4;
 

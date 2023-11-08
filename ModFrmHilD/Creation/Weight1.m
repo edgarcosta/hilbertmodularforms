@@ -201,18 +201,6 @@ intrinsic HeckeStabilityCuspBasis(
     return [];
 end intrinsic;
 
-// Computes a basis of cuspidal weight 1 forms.
-intrinsic Weight1CuspBasis(
-  Mk::ModFrmHilD
-  :
-  prove := true
-  ) -> SeqEnum[ModFrmHilDElt]
-  {Compute the basis of cuspidal parallel weight 1 forms using the Hecke stability method.
-   - The optional parameter prove is true or false. If true, we verify that we had enough precision to check the equality of the potentially meromorphic form with a holomorphic one.
-  }
-  return HeckeStabilityCuspBasis(Mk : prove := prove);
-end intrinsic;
-
 ///////////// Eigenbasis computation ////////////////
 
 // This code computes an eigenbasis for a Hecke-stable space 
