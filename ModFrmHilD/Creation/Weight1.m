@@ -102,7 +102,7 @@ intrinsic HeckeStabilityCuspBasis(
     // this Eisenstein series should be nonzero at the cusp at infinity in
     // every component. Thus, we should be able to divide by it
     // and obtain something with nebentypus character chi. 
-    myarray := EisensteinConstantCoefficient(M, par_wt_1, chi_prim^-1, triv_char);
+    myarray, _ := EisensteinConstantCoefficient(M, par_wt_1, chi_prim^-1, triv_char);
     require &*[myarray[key] : key in Keys(myarray)] ne 0 : "The Eisenstein series you've chosen is 0 at some cusps at infinity";
     
     // TODO abhijitm there's something annoying going on here
