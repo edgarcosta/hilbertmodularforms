@@ -93,16 +93,18 @@ intrinsic HeckeStabilityCuspBasis(
     ZF := Integers(M);
     n := Degree(F);
 
-    par_wt_1 := [1 : _ in [1 .. n]];
-    MEis := HMFSpace(M, N, par_wt_1, chi^-1);
-    triv_char := HeckeCharacterGroup(1*ZF, [1,2]).0;
-    MEis := HMFSpace(M, N, par_wt_1, chi^-1);
+    par_wt_k := func<k | [k : _ in [1 .. n]]>;
+    eis_k := (N ne 1*ZF) select 1 else 3;
+    eis_wt := par_wt_k(eis_k);
+    MEis := HMFSpace(M, N, eis_wt, chi^-1);
+
     triv_char := HeckeCharacterGroup(1*ZF, [1 .. n]).0;
+
     // By Proposition 2.1 in DDP11 (https://annals.math.princeton.edu/wp-content/uploads/annals-v174-n1-p12-s.pdf)
     // this Eisenstein series should be nonzero at the cusp at infinity in
     // every component. Thus, we should be able to divide by it
     // and obtain something with nebentypus character chi. 
-    myarray, _ := EisensteinConstantCoefficient(M, par_wt_1, chi_prim^-1, triv_char);
+    myarray, _ := EisensteinConstantCoefficient(M, eis_wt, chi_prim^-1, triv_char);
     require &*[myarray[key] : key in Keys(myarray)] ne 0 : "The Eisenstein series you've chosen is 0 at some cusps at infinity";
     
     // TODO abhijitm there's something annoying going on here
@@ -114,10 +116,10 @@ intrinsic HeckeStabilityCuspBasis(
     //
     // We take the primitive character 
     Eis := EisensteinSeries(MEis, chi_prim^-1, triv_char);
-        
-    //Load space of Cusp forms of weight [k1 + 1, ..., kn + 1], level N, and trivial character
-    vprintf HilbertModularForms: "Computing basis of cusp forms of weight %o, level %o\n", [k[i] + 1 : i in [1 .. n]], N;
-    Mkl := HMFSpace(M, N, [k[i] + 1 : i in [1 .. n]]);
+
+    //Load space of Cusp forms of weight [k1 + eis_k, ..., kn + eis_k], level N, and trivial character
+    vprintf HilbertModularForms: "Computing basis of cusp forms of weight %o, level %o\n", [k[i] + eis_k : i in [1 .. n]], N;
+    Mkl := HMFSpace(M, N, [k[i] + eis_k : i in [1 .. n]]);
     Bkl := CuspFormBasis(Mkl);
     vprintf HilbertModularForms: "Size of basis is %o.\n", #Bkl;
     
