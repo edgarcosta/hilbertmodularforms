@@ -27,11 +27,6 @@ function test(M, k, correct : level := 1, chi := 1)
   for bb in NarrowClassGroupReps(M) do
     uc :=  Mk`UnitCharacters[bb];
     for eps in TotallyPositiveUnitsGenerators(F) do
-
-      if k eq [3,2] then
-        K := UnitCharField(F, k);
-      end if;
-
       computed := Evaluate(uc, eps);
       actual := correct[bb][eps];
       if computed ne actual then
@@ -96,10 +91,10 @@ K := UnitCharField(F, k);
                 
 // eps_1^(k_1/2) * eps_2^(k_2/2) = eps_1^(3/2) * eps_2 = eps_1^(1/2)
 // The coefficient we store should thus be the positive square root
-// of eps_1. eps = mu^2 for mu = +/- (1+sqrt(5))/2 (under v_1, say).
-// We want the one which is positive under v_1, so (1+sqrt(5))/2.
+// of eps_1. eps = mu^2 for mu = +/- (1-sqrt(5))/2 (under v_1, say).
+// We want the one which is positive under v_1, so -(1-sqrt(5))/2.
 v_0 := DistinguishedPlace(K);
-correct[bb][eps] := K!ZF.2;
+correct[bb][eps] := K!(ZF.2-1);
 test(M, k, correct : level:=N, chi:=chi);
 
 ////********************** Q(sqrt(3) **********************////

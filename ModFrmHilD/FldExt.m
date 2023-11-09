@@ -2,9 +2,10 @@
 declare attributes FldAlg:
   TotallyPositiveUnits,
   TotallyPositiveUnitsMap,
+  TotallyPositiveUnitsGenerators,
+  TotallyPositiveUnitsGeneratorsOrients,
   FundamentalUnitSquare,
   ClassGroupReps,
-  TotallyPositiveUnitsGenerators,
   DistinguishedPlace,
   Extensions,
   Restrictions,
@@ -80,16 +81,45 @@ intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   end if;
 
   if not assigned F`TotallyPositiveUnitsGenerators then
+    PU, mPU := TotallyPositiveUnits(F);
+    tpugs_unorient := [Integers(F)!mPU(gen) : gen in Generators(PU)];
 
-    if not assigned F`TotallyPositiveUnits or not assigned F`TotallyPositiveUnitsMap then
-      _ := TotallyPositiveUnits(F);
-    end if;
+    v := InfinitePlaces(F)[1];
+    F`TotallyPositiveUnitsGenerators := [];
+    F`TotallyPositiveUnitsGeneratorsOrients := [];
 
-    F`TotallyPositiveUnitsGenerators := [Integers(F)!F`TotallyPositiveUnitsMap(gen) : gen in Generators(F`TotallyPositiveUnits)];
+    // The algorithm for producing generators is nondeterministic, so we need to "orient" 
+    // our chosen generators to avoid randomness. This particular choice remains
+    // consistent with the existing behavior of FundamentalUnitTotPos
+    //
+    // We keep track of which generators are inverted with respect to the 
+    // Generators(F`TotallyPositiveUnits) because we need to solve the word
+    // problem in the unit generators code and it solves it there with respect
+    // to Generators(F`TotallyPositiveUnits).
+    for eps in tpugs_unorient do
+      if Evaluate(eps, v) lt 1 then
+        Append(~F`TotallyPositiveUnitsGenerators, eps);
+        Append(~F`TotallyPositiveUnitsGeneratorsOrients, 1);
+      else
+        Append(~F`TotallyPositiveUnitsGenerators, eps^-1);
+        Append(~F`TotallyPositiveUnitsGeneratorsOrients, -1);
+      end if;
+    end for;
   end if;
   return F`TotallyPositiveUnitsGenerators;
 end intrinsic;
 
+intrinsic TotallyPositiveUnitsGeneratorsOrients(F::FldNum) -> SeqEnum
+  {
+    Returns a sequence whose ith entry e is such that the 
+    ith element of SetToSequence(Generators(TotallyPositiveUnits)) is the
+    ith element of F`TotallyPositiveUnitsGenerators raised to the eth power.
+
+    Here, e will either be 1 or -1. 
+  }
+  _ := TotallyPositiveUnitsGenerators(F);
+  return F`TotallyPositiveUnitsGeneratorsOrients;
+end intrinsic;
 
 intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
   {return the fundamental unit totally positive}
@@ -110,7 +140,6 @@ intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
   end if;
   return F`FundamentalUnitSquare;
 end intrinsic;
-
 
 intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
 {Find a totally positive field element a such that qI is an integral ideal coprime to J;
