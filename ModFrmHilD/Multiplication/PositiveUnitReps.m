@@ -18,7 +18,6 @@ intrinsic FunDomainRep(nu::FldNumElt : lattice := "tot_pos", Precision := 100) -
     log-embedding of nu into the balanced fundamental parallelepiped 
     spanned by the log-positive units. 
   }
-
   F := NumberField(Parent(nu));
 
   if IsZero(nu) then
@@ -164,6 +163,141 @@ intrinsic RepIdealConversion(M::ModFrmHilDGRng) -> Assoc, Assoc
   end for;
 
   return M`RepToIdeal, M`IdealToRep;
+end intrinsic;
+
+intrinsic FunDomainReps(M::ModFrmHilDGRng) -> Assoc
+  {getter}
+  return M`FunDomainReps;
+end intrinsic;
+
+intrinsic FunDomainRepsOfNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt) -> SeqEnum
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+      bb: An ideal class representative of M
+      x: An integer norm
+    returns:
+      The fundamental domain representatives nu such that the integral ideal
+      nn associated to nu has norm x.
+  }
+  return FunDomainRepsOfNorm(M)[bb][x];
+end intrinsic;
+
+intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt) -> SeqEnum
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+      bb: An ideal class representative of M
+      x: An integer norm
+    returns:
+      The fundamental domain representatives nu such that the integral ideal
+      nn associated to nu has norm at most x.
+  }
+  return FunDomainRepsUpToNorm(M)[bb][x];
+end intrinsic;
+
+intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng) -> Assoc
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+    returns:
+      A 2D associative arrays, M`FunDomainRepsUpToNorm,
+      keyed by narrow class group representatives bb (these are fractional ideals)
+      and nonnegative integers up to prec with values 
+      FunDomainIdlReps[bb][x] a SeqEnum.
+
+      The elements of FunDomainRepsOfNorm[bb][x] are the nu corresponding
+      to integral ideals nn with norm up to x lying in the narrow class
+      of [bbp]^-1, i.e. such that nn * bbp = (nu) for some 
+      integral ideal nn of norm at most x.
+  }
+  PopulateFunDomainRepsArrays(M);
+  return M`FunDomainRepsUpToNorm;
+end intrinsic;
+
+intrinsic FunDomainRepsOfNorm(M::ModFrmHilDGRng) -> Assoc
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+    returns:
+      A 2D associative arrays, M`FunDomainRepsUpToNorm,
+      keyed by narrow class group representatives bb (these are fractional ideals)
+      and nonnegative integers up to prec with values 
+      FunDomainIdlReps[bb][x] a SeqEnum.
+
+      The elements of FunDomainRepsOfNorm[bb][x] are the nu corresponding
+      to integral ideals nn with norm up to x lying in the narrow class
+      of [bbp]^-1, i.e. such that nn * bbp = (nu) for some 
+      integral ideal nn of norm equal to x.
+  }
+  PopulateFunDomainRepsArrays(M);
+  return M`FunDomainRepsOfNorm;
+end intrinsic;
+
+intrinsic PopulateFunDomainRepsArrays(M::ModFrmHilDGRng)
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+    returns:
+      A 2D associative arrays, M`FunDomainRepsUpToNorm,
+      keyed by narrow class group representatives bb (these are fractional ideals)
+      and nonnegative integers up to prec with values 
+      FunDomainIdlReps[bb][x] a SeqEnum.
+
+      The elements of FunDomainRepsOfNorm[bb][x] are the nu corresponding
+      to integral ideals nn with norm up to x lying in the narrow class
+      of [bbp]^-1, i.e. such that nn * bbp = (nu) for some 
+      integral ideal nn of norm equal to x.
+  }
+
+  if (assigned M`FunDomainRepsOfNorm) and (assigned M`FunDomainRepsUpToNorm) then
+    return;
+  end if;
+
+  F := BaseField(M);
+  ZF := Integers(M);
+  dd := Different(ZF);
+
+  M`FunDomainRepsOfNorm := AssociativeArray();
+  M`FunDomainRepsUpToNorm := AssociativeArray();
+  
+  for bb in NarrowClassGroupReps(M) do
+    M`FunDomainRepsOfNorm[bb] := AssociativeArray();
+    M`FunDomainRepsUpToNorm[bb] := AssociativeArray();
+    // since IdealsUpTo doesn't include 1
+    M`FunDomainRepsOfNorm[bb][0] := [F!0];
+    M`FunDomainRepsUpToNorm[bb][0] := [F!0];
+  end for;
+
+  // In this loop, we have FunDomainRepsOfNorm[bb][x]
+  // store the reps of norm x (rather than up to x). 
+  // We will update it with the correct values afterwards.
+  //
+  // TODO abhijitm this can be improved, but I figured
+  // the looping wasn't the expensive part and wrote it this way for
+  // readability. If it matters, I can make it faster instead.
+  for nn in IdealsUpTo(M`Precision, ZF) do
+    bb := IdealToNarrowClassRep(M, nn);
+    nu := M`IdealToRep[bb][nn];
+
+    if IsDefined(M`FunDomainRepsOfNorm[bb], Norm(nn)) then 
+      Append(~M`FunDomainRepsOfNorm[bb][Norm(nn)], nu);
+    else
+      M`FunDomainRepsOfNorm[bb][Norm(nn)] := [nu];
+    end if;
+  end for;
+
+  for x in [1 .. M`Precision] do
+    for bb in NarrowClassGroupReps(M) do
+      // It's already defined if there were some nus associated to nn of this norm
+      if IsDefined(M`FunDomainRepsOfNorm[bb], x) then
+        M`FunDomainRepsUpToNorm[bb][x] := M`FunDomainRepsUpToNorm[bb][x-1] cat M`FunDomainRepsOfNorm[bb][x];
+      else
+        M`FunDomainRepsUpToNorm[bb][x] := M`FunDomainRepsUpToNorm[bb][x-1];
+        M`FunDomainRepsOfNorm[bb][x] := [];
+      end if;
+    end for;
+  end for;
 end intrinsic;
 
 /////// **************** HELPER FUNCTIONS **************** /////// 

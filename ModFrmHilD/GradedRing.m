@@ -23,6 +23,12 @@ declare attributes ModFrmHilDGRng:
   // RepToIdeal and IdealToRep cache the conversion nn <-> nu
   RepToIdeal, // RepToIdeal[bb][nu] := nn
   IdealToRep, // IdealToRep[bb][nn] := nu
+  FunDomainReps, // FunDomainReps[bb] stores the list of nu in the bb component 
+                 // corresponding to nn of norm at most M`Precision
+  FunDomainRepsUpToNorm, // FunDomainRepsUpToNorm[bb][x] stores the list of nu in the bb component 
+                         // corresponding to nn of norm at most x
+  FunDomainRepsOfNorm, // FunDomainRepsOfNorm[bb][x] stores the list of nu in the bb component
+                       // corresponding to nn of norm x
   ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
   // ShintaniRepsIdeal and IdealShitaniReps cache the conversion nn <-> nu
   // where nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
@@ -354,6 +360,26 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
 
   // This function sets the M`RepToIdeal and M`IdealToRep assocs.
   M`RepToIdeal, M`IdealToRep := RepIdealConversion(M);
+
+  // The associative arrays FunDomainIdlReps and
+  // FunDomainEltReps are keyed by narrow class group 
+  // This function sets the M`FunDomainRepsUpToNorm assocs.
+  //
+  // The associative array FunDomainRepsUpToNorm is keyed by narrow class group 
+  // representatives bb (these are integral ideals)
+  // and nonnegative integers up to prec with values 
+  // FunDomainRepsUpToNorm[bb][x]. 
+  //
+  // The elements of FunDomainReps[bb][x] are the nu corresponding
+  // to integral ideals nn with norm up to x lying in the narrow class
+  // of [bbp]^-1, i.e. such that nn * bbp = (nu) for some 
+  // integral ideal nn of norm up to x.
+  PopulateFunDomainRepsArrays(M);
+
+  M`FunDomainReps := AssociativeArray();
+  for bb in M`NarrowClassGroupReps do
+    M`FunDomainReps[bb] := M`FunDomainRepsUpToNorm[bb][M`Precision];
+  end for;
 
   // positive element reps and Shintani reps for each class group rep
   // up to trace bound prec
