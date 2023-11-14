@@ -348,6 +348,19 @@ intrinsic '/'(M1::ModFrmHilD, M2::ModFrmHilD) ->ModFrmHilD
                     : unitcharacters:=unitcharacters);
 end intrinsic;
 
+intrinsic '^'(M::ModFrmHilD, n::RngIntElt) -> ModFrmHilD
+  {return M^n with the same level}
+  unitcharacters := AssociativeArray();
+  for bb in Keys(UnitCharacters(M)) do
+    unitcharacters[bb] := UnitCharacters(M)[bb]^n;
+  end for;
+  return HMFSpace(Parent(M),
+                    Level(M),
+                    [n * Weight(M)[i] : i in [1..#Weight(M)] ],
+                    Character(M)^n
+                    : unitcharacters:=unitcharacters);
+end intrinsic;
+
 intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   {Returns the number of cusps for Gamma_0(N)}
   // at the moment Corollary 5.1.27 in the paper
