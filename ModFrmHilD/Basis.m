@@ -46,48 +46,77 @@ intrinsic CuspFormBasis(
   GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
-  require #SequenceToSet(Weight(Mk)) eq 1: "We only support parallel weight.";
+  require IsParallel(Weight(Mk)) : "not yet implemented for parallel weight";
 
-  if not assigned Mk`CuspFormBasis then
-    N := Level(Mk);
-    k := Weight(Mk);
-
-    // If a new subspace return only the newforms
-    if IsNew(Mk) then
-	Mk`CuspFormBasis := NewCuspForms(Mk : GaloisDescent:=GaloisDescent);
-	if #Mk`CuspFormBasis gt 0 then
-            dim := &+[Degree(CoefficientRing(f)) : f in Mk`CuspFormBasis];
-	end if;
-	require CuspDimension(Mk) eq dim : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
-	return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
-    end if;
-    
-    if k[1] ge 2 then
-      Mk`CuspFormBasis := [];
-      // This only works for trivial character, as we rely on the magma functionality
-      require IsTrivial(DirichletRestriction(Character(Mk))): "We only support CuspFormBasis for characters with trivial dirichlet restriction, as we rely on the magma functionality";
-      for dd in Divisors(N) do
-        Mkdd := HMFSpace(Parent(Mk), dd, k);
-        if CuspDimension(Mkdd) gt 0 then
-          if dd eq N then
-            Mk`CuspFormBasis cat:= NewCuspForms(Mk : GaloisDescent:=GaloisDescent);
-          else
-            Mk`CuspFormBasis cat:= OldCuspForms(Mkdd, Mk : GaloisDescent:=GaloisDescent);
-          end if;
-        end if;
-      end for;
-      dim := 0;
-      if #Mk`CuspFormBasis gt 0 then
-        dim := &+[Degree(CoefficientRing(f)) : f in Mk`CuspFormBasis];
-      end if;
-      require CuspDimension(Mk) eq dim : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
-    else
-      Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
-    end if;
+  if assigned Mk`CuspFormBasis then
+    return Mk`CuspFormBasis;
   end if;
+
+  k := Weight(Mk);
+
+  // Weight 1 forms cannot be computed using Jacquet-Langlands transfer
+  // The Magma functionality doesn't currently support nebentypus characters with nontrivial
+  // Dirichlet restrictions, so that is also handled here. 
+  if not &and[x ge 2 : x in k] or not IsTrivial(DirichletRestriction(Character(Mk))) then
+    Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
+  end if;
+
+  Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent := GaloisDescent) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
+  // The contents of Mk`CuspFormBasis should be a basis for the space of cuspforms
+  require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
   return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
+intrinsic NewCuspFormBasis(
+  Mk::ModFrmHilD 
+  : 
+  IdealClassesSupport := false,
+  Symmetric := false,
+  GaloisDescent := true) -> SeqEnum[ModFrmHilDElt]
+  {
+    input:
+      Mk: A space of HMFs
+      // TODO abhijitm describe the optional parameters 
+    returns: 
+      A list of forms spanning the space of new cusp forms
+  }
+  if not assigned Mk`NewCuspFormBasis then
+    Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := GaloisDescent);
+  end if;
+
+  return SubBasis(Mk`NewCuspFormBasis, IdealClassesSupport, Symmetric);
+end intrinsic;
+  
+intrinsic OldCuspFormBasis(
+  Mk::ModFrmHilD 
+  : 
+  IdealClassesSupport := false,
+  Symmetric := false,
+  GaloisDescent := true) -> SeqEnum[ModFrmHilDElt]
+  {
+    input:
+      Mk: A space of HMFs 
+      // TODO abhijitm describe the optional parameters
+    returns: 
+      If N is the level of Mk, returns the inclusions of forms of level
+      N' | N into Mk. These will always be linearly independent
+      (in fact, orthogonal w/r/t the Petersson inner product),
+      so we can take them as a basis directly.
+  }
+  if not assigned Mk`OldCuspFormBasis then
+    M := Parent(Mk);
+    N := Level(Mk);
+    k := Weight(Mk);
+    
+    Mk`OldCuspFormBasis := [];
+    divisors := Exclude(Divisors(N), N);
+    for D in divisors do
+      Mk_D := HMFSpace(M, D, k);
+      Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : IdealClassesSupport := IdealClassesSupport, Symmetric := Symmetric, GaloisDescent := GaloisDescent)];
+    end for;
+  end if;
+  return SubBasis(Mk`OldCuspFormBasis, IdealClassesSupport, Symmetric);
+end intrinsic;
 
 intrinsic EisensteinBasis(
   Mk::ModFrmHilD
