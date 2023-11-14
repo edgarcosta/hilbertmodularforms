@@ -92,29 +92,108 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
   return g;
 end intrinsic;
 
-// I add this function, even though it is worse than HeckeOp in Trace.m because it is a straight-forward approach that can be used to check ourselves. I started by doing this manually, but it is useful to have.
 
-intrinsic HeckeOperator(Mk::ModFrmHilD, nn::RngOrdIdl) -> ModMatFldElt
-{Returns the Hecke operator T(nn) on Mk with respecto to the basis Basis(Mk).
- This implementation uses action of Hecke operators on q-expansions.}
+///////////// Eigenbasis computation ////////////////
 
-   basis := Basis(Mk);
-   hecke_basis := [HeckeOperator(f, nn) : f in basis];
-   mat, indices := CoefficientsMatrix(basis);
-   Tmat, Tindices := CoefficientsMatrix(hecke_basis);
-   // Need to account for precision loss in different components
-   num_inds := [#x : x in indices];
-   num_inds_T := [#x : x in Tindices];
-   assert not IsEmpty(num_inds_T); // should have at least one component
-   mat_join := Submatrix(mat,1,1,Nrows(mat), num_inds_T[1]);
-   start_col := 1;
-   for comp_idx in [2..#num_inds] do
-       start_col +:= num_inds[comp_idx-1];
-       ncols := num_inds_T[comp_idx];
-       submat := Submatrix(mat,1,start_col,Nrows(mat),ncols);
-       mat_join := HorizontalJoin(mat_join, submat);
-   end for;
-   require Rank(mat_join) eq Nrows(mat) : "Not enough precision!";
-   T := Solution(mat_join, Tmat);
-   return T;
+// This code computes an eigenbasis for a Hecke-stable space 
+// of meromorphic ModFrmHilDElt objects by examining the action
+// on the Fourier coefficients. 
+//
+// For most applications, the ModFrmHil/ or Trace.m code should be used. 
+
+intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> SeqEnum[ModFrmHilDElt]
+  {
+    inputs:
+      M: A space of forms on which the Hecke algebra acts by
+           commuting self-adjoint operators.
+      basis: A sequence of linearly independent ModFrmHilDElts
+             whose span is preserved by all the Hecke operators.
+      P: The largest norm of a prime ideal we check to establish a simultaneous eigenbasis
+    returns:
+      A sequence of HMFs which are an eigenbasis for the Hecke operators of primes
+      up to P. The forms are normalized where possible.
+  }
+  
+  MGRng := Parent(M);
+  F := MGRng`BaseField;
+  ZF := Integers(F);
+  dd := Different(ZF);
+  hecke_matrices := [];
+
+  for pp in PrimesUpTo(P, F) do
+    Append(~hecke_matrices, HeckeMatrix(basis, pp));
+  end for;
+
+  // B stores a matrix such that B * M * B^-1 is
+  // diagonal for every Hecke matrix M. 
+  // If e_i denotes the ith standard basis vector
+  // and v_i denotes the ith eigenvector in the 
+  // given basis, then this means that B^-1 e_i = v_i. 
+  // Therefore, the ith column of B^-1 is v_i.
+  _, B := Diagonalization(hecke_matrices);
+  Binv := B^-1;
+
+  eigs := [];
+
+  // the columns of P should be the coefficients
+  // of linear combinations of basis vectors giving
+  // rise to eigenvectors
+  // TODO is there really no way to get the columns of an AlgMatElt? 
+  for v in Rows(Transpose(Binv)) do
+    Append(~eigs, &+[v[i] * basis[i] : i in [1 .. #basis]]);
+  end for;
+
+  frob_traces := AssociativeArray();
+  for eig in eigs do
+    frob_traces[eig] := AssociativeArray(); 
+    bb_1 := NarrowClassRepresentative(MGRng, dd);
+    a_1 := Coefficients(eig)[bb_1][MGRng`IdealShitaniReps[bb_1][ideal<ZF|1>]];
+
+    for nn in IdealsUpTo(P, F) do
+      bb := NarrowClassRepresentative(MGRng, nn^-1 * dd);
+      frob_traces[eig][nn] := Coefficients(eig)[bb][MGRng`IdealShitaniReps[bb][nn]] / a_1;
+    end for;
+  end for;
+  return eigs, frob_traces;
+end intrinsic;
+
+intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
+  {
+    inputs:
+      basis: A sequence of linearly independent ModFrmHilDElts
+             whose span is preserved by all the Hecke operators.
+      nn: An integral ideal indexing the Hecke operator
+    returns:
+      A matrix over corresponding to the action of the Hecke operator on
+      this space. 
+  }
+
+  assert #LinearDependence(basis) eq 0;
+  rows := [];
+
+  for f in basis do
+    g := HeckeOperator(f, nn);
+    lindep := LinearDependence(basis cat [g]);
+    assert #lindep eq 1;
+    lindep := lindep[1];
+    // We will transpose at the end. 
+    // For now, each row stores the
+    // coefficients of the linear combination 
+    // of basis vectors which give rise to g
+    Append(~rows, [-1 * lindep[i] / lindep[#basis + 1] : i in [1 .. #basis]]);
+  end for;
+
+  return Transpose(Matrix(rows));
+end intrinsic;
+
+intrinsic HeckeMatrix(Mk::ModFrmHilD, nn::RngOrdIdl) -> Mtrx
+  {
+    inputs:
+      Mk: A space of HMFs
+      nn: An integral ideal indexing the Hecke operator
+    returns:
+      A matrix over corresponding to the action of the Hecke operator on
+      this space. 
+  }
+  return HeckeMatrix(Basis(Mk));
 end intrinsic;
