@@ -74,8 +74,6 @@ intrinsic EisensteinConstantCoefficient(
   psiinv := psi^-1;
   SetTargetRing(~eta, z);
   SetTargetRing(~psi, z);
-  SetTargetRing(~etainv, z);
-  SetTargetRing(~psiinv, z);
 
   // deal with L-values
   if IsOne(aa) then // aa = 1
@@ -100,9 +98,12 @@ intrinsic EisensteinConstantCoefficient(
   for bb in bbs do
     constant_term[bb] := AssociativeArray();
     // zero term for bb, equation (49) and (50)
+    // their tt_lambda is our bbp
     bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
-    tt_lambda := bbp;
-    constant_term[bb] := 2^(-n)*( etainv(tt_lambda)*c0aa +  psiinv(tt_lambda)*c0bb );
+    etainv_of_bbp := (IsDisjoint(Support(bbp), Support(Conductor(eta)))) select eta(bbp)^-1 else 0;
+    psiinv_of_bbp := (IsDisjoint(Support(bbp), Support(Conductor(psi)))) select psi(bbp)^-1 else 0;
+
+    constant_term[bb] := 2^(-n)*(etainv_of_bbp * c0aa + psiinv_of_bbp * c0bb );
   end for;
 
 
