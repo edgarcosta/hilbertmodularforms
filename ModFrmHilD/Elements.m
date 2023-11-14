@@ -989,12 +989,8 @@ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
   for bb->fbb in Components(f) do
     comp[bb] := fbb^n;
   end for;
-  return HMFSumComponents(Parent(Values(comp)[1]), comp);
+  return HMFSumComponents(Parent(f)^n, comp);
 end intrinsic;
-
-
-
-
 
 intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {return a sequence of ModFrmHilDElt where the coefficient ring is the compositum of field of all the fraction fields of the coeffient rings}
