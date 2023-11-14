@@ -82,7 +82,7 @@ intrinsic CuspFormBasis(
       end if;
       require CuspDimension(Mk) eq dim : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
     else
-      Mk`CuspFormBasis := Weight1CuspBasis(Mk);
+      Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
     end if;
   end if;
   return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
