@@ -502,8 +502,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
   k := [0 : i in Weight(Mk)];
-  uc := UnitCharacters(Mk);
-  M0 := HMFSpace(M, N, k, chi: unitcharacters:=uc);
+  M0 := HMFSpace(M, N, k, chi);
   coeffs := AssociativeArray();
   for nu in ShintaniReps(M)[bb] do
     if IsZero(nu) then
