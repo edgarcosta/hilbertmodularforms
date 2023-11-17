@@ -8,7 +8,7 @@ intrinsic TraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
-    for nu->nn in ShintaniRepsIdeal(M)[bb] do
+    for nu->nn in RepToIdeal(M)[bb] do
       coeffs[bb][nu] := Q!Trace(Mk, nn : precomp := true);
     end for;
   end for;
@@ -24,7 +24,7 @@ intrinsic TraceForm(Mk::ModFrmHilD, mm::RngOrdIdl) -> ModFrmHilDElt
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffs[bb] := AssociativeArray();
-    for nu->nn in ShintaniRepsIdeal(M)[bb] do
+    for nu->nn in RepToIdeal(M)[bb] do
       coeffs[bb][nu] := TraceRecurse(Mk, nn, mm);
     end for;
   end for;

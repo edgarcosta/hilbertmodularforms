@@ -1,5 +1,49 @@
 /////// **************** PUBLIC FUNCTIONS **************** /////// 
 
+intrinsic FunDomainRep(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::FldNumElt : Precision := 100) -> FldNumElt, FldNumElt
+  {
+    inputs:
+      M: A graded ring of HMFs
+      bb: A narrow class representative
+      nu: Number field element
+    returns: 
+      An element nu' in the fundamental domain and a 
+      totally positive unit eps such that nu = eps * nu'
+
+    Prefer this version of FunDomainRep because it checks to see
+    if nu is already known to be a fundamental domain 
+    representative before attempting to reduce.
+  }
+
+  F := NumberField(Parent(nu));
+  if nu in FunDomainReps(M)[bb] then
+    // TODO abhijitm is it safe to just return 1
+    // instead of F!1? 
+    return nu, F!1;
+  else
+    return FunDomainRep(nu : Precision := Precision);
+  end if;
+end intrinsic;
+
+intrinsic FunDomainRep(M::ModFrmHilDGRng, bb::RngOrdFracIdl, nu::FldOrdElt : Precision := 100) -> FldNumElt, FldNumElt
+  {
+    inputs:
+      M: A graded ring of HMFs
+      bb: A narrow class representative
+      nu: Element of ring of integers of a field
+    returns: 
+      An element nu' in the fundamental domain and a 
+      totally positive unit eps such that nu = eps * nu'
+
+    Prefer this version of FunDomainRep because it checks to see
+    if nu is already known to be a fundamental domain 
+    representative before attempting to reduce.
+  }
+
+  F := NumberField(Parent(nu));
+  return FunDomainRep(M, bb, F!nu);
+end intrinsic;
+
 intrinsic FunDomainRep(nu::FldNumElt : lattice := "tot_pos", Precision := 100) -> FldNumElt, FldNumElt
   {
     inputs:
@@ -86,7 +130,9 @@ intrinsic IdealToRep(M::ModFrmHilDGRng, nn::RngOrdIdl) -> FldNumElt
     return BaseField(M)!0;
   end if;
 
-  bb := IdealToNarrowClassRep(nn);
+  require Norm(nn) le Precision(M) : "Beyond known precision, sorry!";
+
+  bb := IdealToNarrowClassRep(M, nn);
   return M`IdealToRep[bb][nn];
 end intrinsic;
 
@@ -193,6 +239,20 @@ intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntE
       The fundamental domain representatives nu such that the integral ideal
       nn associated to nu has norm at most x.
   }
+  return FunDomainRepsUpToNorm(M)[bb][x];
+end intrinsic;
+
+intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt) -> SetEnum
+  {
+    inputs:
+      M: A graded ring of Hilbert modular forms
+      bb: An ideal class representative of M
+      x: An integer norm
+    returns:
+      The fundamental domain representatives nu such that the integral ideal
+      nn associated to nu has norm at most x.
+  }
+  
   return FunDomainRepsUpToNorm(M)[bb][x];
 end intrinsic;
 
@@ -453,7 +513,7 @@ intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
   return shadows_bb;
 end intrinsic;
 
-intrinsic ComputeMPairs_NEW(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
+intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
   {temporary function, just to ensure compatibility}
 
   MPairs_bb := AssociativeArray();
@@ -486,16 +546,16 @@ intrinsic ComputeShadows(M::ModFrmHilDGRng) -> Assoc
   return M`Shadows;
 end intrinsic;
 
-intrinsic ComputeMPairs_NEW(M::ModFrmHilDGRng) -> Any
+intrinsic ComputeMPairs(M::ModFrmHilDGRng) -> Any
   {temporary function, just to test}
   if not assigned M`MPairs then
     M`MPairs := AssociativeArray();
     for bb in M`NarrowClassGroupReps do
-      M`MPairs_NEW[bb] := ComputeMPairs_NEW(M, bb);
+      M`MPairs[bb] := ComputeMPairs(M, bb);
     end for;
   end if;
 
-  return M`MPairs_NEW;
+  return M`MPairs;
 end intrinsic;
 
 /////// **************** HELPER FUNCTIONS **************** /////// 

@@ -45,7 +45,7 @@ intrinsic EisensteinSeries(
 
     coeff_rings[bb] := coeff_ring;
     // All other coefficients, equation (48)
-    for nu->nn in ShintaniRepsIdeal(M)[ddbb] do
+    for nu->nn in RepToIdeal(M)[ddbb] do
       if not IsZero(nu) then
         mm := nn*ddinv;
         if IsIntegral(mm) then

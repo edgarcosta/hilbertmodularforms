@@ -19,47 +19,33 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := fa
   K := CoefficientRing(f);
 
   coeffsTmmf := AssociativeArray();
-  prec := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     coeffsTmmf[bb] := AssociativeArray();
-    prec[bb] := 0;
+    prec := Precision(Components(f)[bb]);
   end for;
+  new_prec := prec div Norm(mm);
 
   for bb in NarrowClassGroupReps(M) do
     bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     bbpinv := bbp^(-1);
 
-    for nu in ShintaniRepsUpToTrace(M, bb, Precision(M)) do //they come sorted
-      nn := nu*bbpinv;  // already call mm the ideal for the Hecke operator
+    for nu in FunDomainRepsUpToNorm(M, bb, new_prec) do //they come sorted
+      nn := nu*bbpinv;  // already call nn the ideal for the Hecke operator
       c := 0;
-      t := Integers()!Trace(nu);
-
 
       // loop over divisors
       // Formula 2.23 in Shimura - The Special Values
       // of the zeta functions associated with Hilbert Modular Forms
-      // If a coefficient in the sum is not defined we will set prec[bb] := Trace(nu) - 1;
       for aa in Divisors(ZF!!(nn + mm)) do
         if nn eq 0*ZF then
           //takes care if the coefficients for the zero ideal are different
           c +:= StrongMultiply(K, [* chi(aa), Norm(aa)^(k0 - 1), Coefficients(f)[NarrowClassRepresentative(M, bb*mm/aa^2)][ZF!0] *]);
         else
-          b, cf := IsCoefficientDefined(f, ZF!!(aa^(-2) * nn * mm));
-          if not b then
-            // stop looping through divisors if coefficient for at least one divisor
-            // is not defined (if trace (aa^(-2) * (nn*mm)) is greater than precision)
-            prec[bb] := t-1;
-            break; // breaks loop on aa
-          else
-            c +:= StrongMultiply(K, [* chi(aa),  Norm(aa)^(k0 - 1), cf *]);
-          end if;
+          cf := Coefficient(f, ZF!!(aa^(-2) * nn * mm));
+          c +:= StrongMultiply(K, [* chi(aa), Norm(aa)^(k0 - 1), cf *]);
         end if;
       end for;
-      if prec[bb] ne 0 then // the loop on aa didn't finish
-        break; // breaks loop on nu
-      else
-        coeffsTmmf[bb][nu] := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]));
-      end if;
+      coeffsTmmf[bb][nu] := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]));
     end for;
   end for;
 
@@ -90,7 +76,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := fa
       end if;
   end if;
   
-  g := HMF(Mk, coeffsTmmf : CoeffsByIdeals:=false, prec:=prec);
+  g := HMF(Mk, coeffsTmmf : CoeffsByIdeals:=false, prec:=new_prec);
   return g;
 end intrinsic;
 
@@ -149,11 +135,11 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   for eig in eigs do
     frob_traces[eig] := AssociativeArray(); 
     bb_1 := NarrowClassRepresentative(MGRng, dd);
-    a_1 := Coefficients(eig)[bb_1][MGRng`IdealShitaniReps[bb_1][ideal<ZF|1>]];
+    a_1 := Coefficients(eig)[bb_1][MGRng`IdealToRep[bb_1][ideal<ZF|1>]];
 
     for nn in IdealsUpTo(P, F) do
       bb := NarrowClassRepresentative(MGRng, nn^-1 * dd);
-      frob_traces[eig][nn] := Coefficients(eig)[bb][MGRng`IdealShitaniReps[bb][nn]] / a_1;
+      frob_traces[eig][nn] := Coefficients(eig)[bb][MGRng`IdealToRep[bb][nn]] / a_1;
     end for;
   end for;
   return eigs, frob_traces;

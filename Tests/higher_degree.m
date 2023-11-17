@@ -101,7 +101,7 @@ assert BaseField(M) eq F;
 bbs := M`NarrowClassGroupReps;
 
 shadows := ComputeShadows(M);
-mpairs_new := ComputeMPairs_NEW(M);
+mpairs_new := ComputeMPairs(M);
 
 // hardcoding the old output of MPairs
 

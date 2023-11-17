@@ -16,6 +16,7 @@
   Hecke.m
   Labels.m
   LinearAlgebra.m
+  PositiveUnitReps.m
   RationalFunctionsTools.m
   Restriction.m
   Space.m
@@ -26,13 +27,6 @@
   VDGTable.m
   Verbose.m
   Workspace.m
-}
-
-Multiplication
-{
-   Multiplication.m
-   Shintani.m
-   PositiveUnitReps.m
 }
 
 Creation

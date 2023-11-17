@@ -107,7 +107,7 @@ intrinsic ThetaSeries(M::ModFrmHilDGRng, GM::AlgMatElt) -> ModFrmHilDElt
   require NarrowClassNumber(K) eq 1: "Theta Series only impliemented with narrow class number one";
   for bb in reps do
     coeffs[bb] := AssociativeArray();
-    for nu in ShintaniRepsUpToTrace(M, bb, Precision(M)) do
+    for nu in FunDomainReps(M)[bb] do
       if IsZero(nu) then
         coeffs[bb][nu] := 1;
       else

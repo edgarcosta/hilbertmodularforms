@@ -25,24 +25,23 @@ intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
     Mk := Parent(f);
     M := Parent(Mk);
     k := Weight(Mk);
-    working_prec := Precision(f);
+    prec := Precision(f);
     coeffs := Coefficients(f);
     N := Level(Mk);
     if level ne "Minimal" then
-      printf "Component of Hilbert modular form expansion with precision %o.\n", working_prec;
+      printf "Component of Hilbert modular form expansion with precision %o.\n", prec;
       printf "Parent: %o\n", Mk;
     end if;
     bb := ComponentIdeal(f);
     printf "Coefficients for component ideal class bb = %o\n", bb;
-    coeffs_bb := Coefficients(f);
-    printf "\n\t(Trace, nu)  |--->   a_nu";
+    printf "\n\t(Norm, nu)  |--->   a_nu";
     count := 0;
-    for nu in ShintaniReps(M)[bb] do
-      t := Trace(nu);
+    for nu in FunDomainRepsUpToNorm(M, bb, prec) do
+      t := CorrectNorm(RepToIdeal(M)[bb][nu]);
       printf "\n\t(%o, %o)  |--->   %o", t,  nu, coeffs[nu];
       count +:= 1;
 
-      if t ge working_prec then
+      if t ge prec then
         printf "\n \t Cannot print more coefficients; precision is too small", num_coeffs;
         break;
       end if;
@@ -170,38 +169,13 @@ intrinsic Coefficient(f::ModFrmHilDEltComp, nu::RngElt) -> Any
   return Coefficients(f)[nu];
 end intrinsic;
 
-
-intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngElt
-  {}
-
-  require not IsZero(nn) : "The zero coefficient exists on each component";
-
-  M := GradedRing(f);
-  Mk := Parent(f);
-  if not nn in Ideals(M) then
-    return false, _;
-  end if;
-  F := BaseField(M);
-  ZF := Integers(F);
-  ddF := Different(ZF);
-  //mCl := NarrowClassGroupMap(M);
-  // nn = nu*bbp^-1 = nu*ddF*bb^-1
-  bb := NarrowClassRepresentative(M, (nn^-1*ddF));
-  assert bb in NarrowClassGroupReps(M);
-  _, nu := IsNarrowlyPrincipal(nn*ddF^-1*bb);
-  nu := ReduceShintaniMinimizeTrace(nu)[1];
-  if not nu in ShintaniReps(M)[bb] then
-    return false, _;
-  end if;
-  c := Coefficients(f)[bb][nu];
-  return true, EltCoeffToIdlCoeff(c, nu, f);
-end intrinsic;
-
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
   {}
-  b, c := IsCoefficientDefined(f, nn);
-  require b: "Beyond known precision, sorry!";
-  return c;
+  require not IsZero(nn) : "The zero coefficient exists on each component";
+  M := Parent(Parent(f));
+  nu := IdealToRep(M, nn);
+  bb := IdealToNarrowClassRep(M, nn);
+  return EltCoeffToIdlCoeff(Coefficient(f, bb, nu), nu, f);
 end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDEltComp) -> Any
@@ -477,7 +451,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     // first convert according to
     // nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
     coeffsnu := AssociativeArray();
-    for nn->nu in IdealShitaniReps(M)[bb] do // mapping nn->nu, where nu \in bb' = bb*diff^-1
+    for nn->nu in IdealToRep(M)[bb] do // mapping nn->nu, where nu \in bb' = bb*diff^-1
       if IsDefined(coeffs, nn) then
         coeffsnu[nu] := coeffs[nn];
       end if;
@@ -488,7 +462,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   f`Coefficients := AssociativeArray();
   f`CoefficientRing := coeff_ring;
 
-  for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
+  for nu in FunDomainRepsUpToNorm(M, bb, f`Precision) do
     b, c := IsDefined(coeffs, nu);
     require b : "Coefficients should be defined for each representative in the Shintani cone up to precision";
     // coerce all the coefficents into the coefficient ring
@@ -597,7 +571,7 @@ intrinsic HMFZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   {create zero ModFrmHilDEltComp of weight k.}
   M := Parent(Mk);
   coeffs := AssociativeArray();
-  for nu in ShintaniReps(M)[bb] do
+  for nu in FunDomainReps(M)[bb] do
     coeffs[nu] := 0;
   end for;
   return HMFComp(Mk, bb, coeffs);
@@ -632,7 +606,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   k := [0 : i in Weight(Mk)];
   M0 := HMFSpace(M, N, k, chi);
   coeffs := AssociativeArray();
-  for nu in ShintaniReps(M)[bb] do
+  for nu in FunDomainReps(M)[bb] do
     if IsZero(nu) then
       coeffs[nu] := 1;
     else
@@ -945,7 +919,7 @@ intrinsic '+'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   require Ff eq Fg : "We only support addition of HMFs with the same coefficient ring";
 
   coeffs_h := AssociativeArray(); // h := f+g
-  for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
+  for nu in FunDomainRepsUpToNorm(GradedRing(f), ComponentIdeal(f), prec) do
     coeffs_h[nu] := coeffs_f[nu] + coeffs_g[nu];
   end for;
   return HMFComp(Parent(f), ComponentIdeal(f), coeffs_h : coeff_ring := Ff, prec:=prec);
@@ -1007,14 +981,14 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
 
   M := Parent(Parent(f));
   evaluate_bool := not IsOne(char_f) or not IsOne(char_g);
-  for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
+  for nu in FunDomainRepsUpToNorm(GradedRing(f), ComponentIdeal(f), prec) do
     c := F!0;
     for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
       xpair, ypair := Explode(pair); // pair := [<s(mu1), epsilon1>, <s(mu2), epsilon2>]
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
       if evaluate_bool then
-        c +:= StrongMultiply(F, [* Evaluate(char_f, epsilon1^(-1)), coeffs_f[smu1], Evaluate(char_g, epsilon2^(-1)), coeffs_g[smu2] *]);
+        c +:= StrongMultiply(F, [* Evaluate(char_f, epsilon1), coeffs_f[smu1], Evaluate(char_g, epsilon2), coeffs_g[smu2] *]);
       else
         c +:= StrongMultiply(F, [* coeffs_f[smu1], coeffs_g[smu2] *]);
       end if;
@@ -1076,7 +1050,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
 
   evaluate_bool := not IsOne(char_g) or not IsOne(char_h);
 
-  for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec)  do
+  for nu in FunDomainRepsUpToNorm(GradedRing(f), ComponentIdeal(f), prec)  do
     sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
     count := 0;
     for pair in table[nu] do // [[<s(mu1), epsilon1>, <s(mu2), epsilon2>] :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu]
@@ -1091,7 +1065,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
         count +:= 1;
       else
         if evaluate_bool then
-          sum +:= StrongMultiply(F, [* Evaluate(char_g, epsilon1^(-1)), coeffs_g[smu1], Evaluate(char_h, epsilon2^(-1)), F!coeffs_h[smu2] *]);
+          sum +:= StrongMultiply(F, [* Evaluate(char_g, epsilon1), coeffs_g[smu1], Evaluate(char_h, epsilon2), F!coeffs_h[smu2] *]);
         else
           sum +:= StrongMultiply(F, [* coeffs_g[smu1],  F!coeffs_h[smu2] *]);
         end if;
@@ -1221,11 +1195,11 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
   mmbb := NarrowClassRepresentative(M, mm*bb);
 
   mminv := mm^-1;
-  for nn -> nu in IdealShitaniReps(M)[mmbb] do
+  for nn -> nu in IdealToRep(M)[mmbb] do
     if IsIntegral(nn*mminv) then
       // set b_nn = a_{nn/mm}
       // in terms of shintani reps
-      coeff[nu] := coeff_f[IdealToShintaniRepresentative(M, bb, ZF!!(nn*mminv))];
+      coeff[nu] := coeff_f[IdealToRep(M, bb, ZF!!(nn*mminv))];
     else
       coeff[nu] := 0;
     end if;
@@ -1256,35 +1230,6 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   return [Inclusion(f, Mk, dd) : dd in Divisors(N2/N1)];
 end intrinsic;
 
-intrinsic TraceBoundInclusion(MkN1::ModFrmHilD, MkN2::ModFrmHilD) -> RngIntElt
-  {Gives absolute initial trace precision bound to be able to include f(dd*z) into Mk}
-  require Weight(MkN1) eq Weight(MkN2) : "the weights must match";
-  require BaseField(MkN1) eq BaseField(MkN2) : "the base fields must match";
-  M := Parent(MkN1);
-  F := BaseField(M);
-  ZF := Integers(F);
-  N1 := Level(MkN1);
-  N2 := Level(MkN2);
-  require N2 subset N1: "the level of the first argument must divide the level of the second argument";
-  if N1 eq N2 then
-    return Precision(M);
-  end if;
-  absTraceBound := Precision(M);
-  ideals := Ideals(M);
-  for dd in Divisors(N2/N1) do
-    for nn in ideals do
-      if (not nn/dd in ideals) and IsIntegral(nn/dd) then
-        nu:=IdealToShintaniRepresentative(M, nn/dd);
-        tnu:=Trace(nu);
-        if tnu gt absTraceBound then
-          absTraceBound:=tnu;
-        end if;
-      end if;
-    end for;
-  end for;
-  return absTraceBound;
-end intrinsic;
-
 ////////// ModFrmHilDElt: swap map //////////
 
 function AutomorphismAct(f, sigma)
@@ -1308,7 +1253,7 @@ function AutomorphismAct(f, sigma)
   coeff := AssociativeArray();
   for nu->c in Coefficients(f) do
     nubar := F!((sigma^(-1))(nu));
-    snubar, epsilon := ReduceShintani(M, bbbar, nubar);
+    snubar, epsilon := FunDomainRep(M, bbbar, nubar);
     //coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c; // TODO: check the codomain of the unit character. So far, requiring unit char to be trivial so the evaluation is 1
     coeff[snubar] := c;
   end for;
