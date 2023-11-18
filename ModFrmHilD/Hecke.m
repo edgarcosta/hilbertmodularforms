@@ -5,8 +5,8 @@
 ///////////////////////////////////////////////////
 
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
-intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := false) -> ModFrmHilDElt
-  {Returns T(nn)(f) for the character chi modulo the level of f}
+intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := false) -> ModFrmHilDElt
+  {Returns T(mm)(f) for the character chi modulo the level of f}
 
   Mk := Parent(f);
   M := Parent(Mk);
@@ -16,10 +16,10 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
   k0 := Max(Weight(f));
   chi := Character(Mk);
 
-  coeffsTnnf := AssociativeArray();
+  coeffsTmmf := AssociativeArray();
   prec := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
-    coeffsTnnf[bb] := AssociativeArray();
+    coeffsTmmf[bb] := AssociativeArray();
     prec[bb] := 0;
   end for;
 
@@ -28,7 +28,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
     bbpinv := bbp^(-1);
 
     for nu in ShintaniRepsUpToTrace(M, bb, Precision(M)) do //they come sorted
-      I := nu*bbpinv;  // already call nn the ideal for the Hecke operator
+      nn := nu*bbpinv;  // already call mm the ideal for the Hecke operator
       c := 0;
       t := Integers()!Trace(nu);
 
@@ -37,15 +37,15 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
       // Formula 2.23 in Shimura - The Special Values
       // of the zeta functions associated with Hilbert Modular Forms
       // If a coefficient in the sum is not defined we will set prec[bb] := Trace(nu) - 1;
-      for aa in Divisors(ZF!!(I + nn)) do
-        if I eq 0*ZF then
+      for aa in Divisors(ZF!!(nn + mm)) do
+        if nn eq 0*ZF then
           //takes care if the coefficients for the zero ideal are different
-          c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[NarrowClassRepresentative(M, bb*nn/aa^2)][ZF!0];
+          c +:= chi(aa) * Norm(aa)^(k0 - 1) * Coefficients(f)[NarrowClassRepresentative(M, bb*mm/aa^2)][ZF!0];
         else
-          b, cf := IsCoefficientDefined(f, ZF!!(aa^(-2) * (I*nn)));
+          b, cf := IsCoefficientDefined(f, ZF!!(aa^(-2) * nn * mm));
           if not b then
             // stop looping through divisors if coefficient for at least one divisor
-            // is not defined (if trace (aa^(-2) * (I*nn)) is greater than precision)
+            // is not defined (if trace (aa^(-2) * (nn*mm)) is greater than precision)
             prec[bb] := t-1;
             break; // breaks loop on aa
           else
@@ -56,7 +56,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
       if prec[bb] ne 0 then // the loop on aa didn't finish
         break; // breaks loop on nu
       else
-        coeffsTnnf[bb][nu] := c;
+        coeffsTmmf[bb][nu] := c;
       end if;
     end for;
   end for;
@@ -68,11 +68,11 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
       // These have different numbers of columns
       mats := [* *];
       vec := [];
-      for bb in Keys(coeffsTnnf) do
-	  nus := Keys(coeffsTnnf[bb]);
+      for bb in Keys(coeffsTmmf) do
+	  nus := Keys(coeffsTmmf[bb]);
 	  mat := Matrix([[Coefficients(f)[bb][nu] : nu in nus] : f in B]);
 	  Append(~mats, mat);
-	  vec cat:= [coeffsTnnf[bb][nu] : nu in nus];
+	  vec cat:= [coeffsTmmf[bb][nu] : nu in nus];
       end for;
       // This does not work with a list
       // mat := HorizontalJoin(mats);
@@ -88,7 +88,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : MaximalPrecision := fa
       end if;
   end if;
   
-  g := HMF(Mk, coeffsTnnf : CoeffsByIdeals:=false, prec:=prec);
+  g := HMF(Mk, coeffsTmmf : CoeffsByIdeals:=false, prec:=prec);
   return g;
 end intrinsic;
 

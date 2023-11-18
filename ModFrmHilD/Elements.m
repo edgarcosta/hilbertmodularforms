@@ -350,33 +350,32 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     coeffs := coeffsnu;  // goodbye old data!
   end if;
 
-  CoefficientSequence := []; // to assert all coefficients have the same parent
-  RecastKeys := []; //some coeffs might be of type RngIntElt and might need recasting later on
-  newcoeffs := AssociativeArray();
+  // some coefficients might be defined over the integers instead
+  // of over the actual coefficient ring so we want to cast everything
+  // appropriately
+  f`Coefficients := AssociativeArray();
+
+  // the default coefficient ring
+  R := Integers();
+
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
     b, c := IsDefined(coeffs, nu);
     require b : "Coefficients should be defined for each representative in the Shintani cone up to precision";
-    if Type(c) eq RngIntElt then
-      Append(~RecastKeys, nu);
-    else
-      Append(~CoefficientSequence, c); // if value of coeffs[nu] differs then error here trying to append
+    // we set R to be the parent of the first non-integral coefficient we see
+    // TODO can we not just directly cast to R? 
+    if Type(c) ne RngIntElt then
+      if R cmpeq Integers() then
+        R := Parent(c);
+      end if;
     end if;
-
-    newcoeffs[nu] := c;
   end for;
 
-  f`Coefficients := newcoeffs;
-  if #CoefficientSequence gt 0 then
-    R := Parent(CoefficientSequence[1]);
-  else
-    R := Integers();
-  end if;
   f`CoefficientRing := R;
-  if R cmpne Integers() then
-    for nu in RecastKeys do
-      newcoeffs[nu] := R!newcoeffs[nu];
-    end for;
-  end if;
+
+  for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
+    f`Coefficients[nu] := R!coeffs[nu];
+  end for;
+
   return f;
 end intrinsic;
 
@@ -990,12 +989,8 @@ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
   for bb->fbb in Components(f) do
     comp[bb] := fbb^n;
   end for;
-  return HMFSumComponents(Parent(Values(comp)[1]), comp);
+  return HMFSumComponents(Parent(f)^n, comp);
 end intrinsic;
-
-
-
-
 
 intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {return a sequence of ModFrmHilDElt where the coefficient ring is the compositum of field of all the fraction fields of the coeffient rings}
