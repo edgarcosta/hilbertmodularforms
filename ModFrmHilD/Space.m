@@ -20,6 +20,8 @@ declare attributes ModFrmHilD:
   EllipticBasis, // SeqEnum[ModFrmHilDElt]
   NewCuspFormBasis, // SeqEnum[ModFrmHilDElt] - basis for new cusp forms
   OldCuspFormBasis, // SeqEnum[ModFrmHilDElt] - basis for old cusp forms
+  NewEisensteinBasis, // SeqEnum[ModFrmHilDElt] - basis for new Eisenstein series
+  OldEisensteinBasis, // SeqEnum[ModFrmHilDElt] - basis for old Eisenstein series
   Dimension, // RngIntElt
   CuspDimension, //RngIntElt
   EisensteinDimension, //RngIntElt
@@ -462,18 +464,34 @@ end intrinsic;
 intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   {return the dimension of E(Mk)}
   if not assigned Mk`EisensteinDimension then
+    new_eisenstein_dim := NewEisensteinDimension(Mk);
+
+    M := Parent(Mk);
     N := Level(Mk);
-    newforms_levels := AssociativeArray();
-    for pair in EisensteinAdmissibleCharacterPairs(Mk) do
-      lvl := Conductor(pair[1]) * Conductor(pair[2]);
-      if not IsDefined(newforms_levels, lvl) then
-        newforms_levels[lvl] := 0;
-      end if;
-      newforms_levels[lvl] +:= ExactQuotient(EulerPhi(LCM([Order(e) : e in pair])), EulerPhi(Order(Character(Mk))));
+    k := Weight(Mk);
+    chi := Character(Mk);
+
+    old_eisenstein_dim := 0;
+    divisors := [D : D in Divisors(N) | (D ne N) and (D subset Conductor(chi))];
+    for D in divisors do
+      chi_D := Restrict(chi, D, [1,2]);
+      Mk_D := HMFSpace(M, D, k, chi_D);
+      old_eisenstein_dim +:= #Divisors(N/D) * NewEisensteinDimension(Mk_D);
     end for;
-    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*rel_dim : mm->rel_dim in newforms_levels];
+
+    Mk`EisensteinDimension := new_eisenstein_dim + old_eisenstein_dim;
   end if;
   return Mk`EisensteinDimension;
+end intrinsic;
+
+intrinsic NewEisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
+  {returns the dimension of the space of new Eisenstein series of Mk}
+  new_eisenstein_dim_scaled := 0;
+  for pair in EisensteinAdmissibleCharacterPairs(Mk) do
+    new_eisenstein_dim_scaled +:= EulerPhi(LCM([Order(e) : e in pair]));
+  end for;
+  new_eisenstein_dim := ExactQuotient(new_eisenstein_dim_scaled, EulerPhi(Order(Character(Mk))));
+  return new_eisenstein_dim;
 end intrinsic;
 
 // Coprime class group representatives

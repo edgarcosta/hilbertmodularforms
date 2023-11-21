@@ -362,7 +362,6 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
     b, c := IsDefined(coeffs, nu);
     require b : "Coefficients should be defined for each representative in the Shintani cone up to precision";
-
     // coerce all the coefficents into the coefficient ring
     f`Coefficients[nu] := (f`CoefficientRing)!coeffs[nu];
   end for;

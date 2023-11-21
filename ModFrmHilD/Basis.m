@@ -124,24 +124,85 @@ intrinsic EisensteinBasis(
   IdealClassesSupport:=false,
   Symmetric:=false
   ) -> SeqEnum[ModFrmHilDElt]
-  { return a basis for the complement to the cuspspace of Mk }
-  if not assigned Mk`EisensteinBasis then
-    if IsCuspidal(Mk) then
-	Mk`EisensteinBasis := [];
-    else
-	pairs := EisensteinAdmissibleCharacterPairs(Mk);
-	eisensteinbasis := &cat[EisensteinInclusions(Mk, p[1], p[2]) : p in pairs];
-	Mk`EisensteinBasis := &cat[GaloisOrbitDescent(f) : f in eisensteinbasis];
-    end if;
-    require #Mk`EisensteinBasis eq EisensteinDimension(Mk) : "#Mk`EisensteinBasis = %o != %o = EisensteinDimension(Mk)", #Mk`EisensteinBasis, EisensteinDimension(Mk);
+  {returns a basis for the space of Eisenstein series of Mk of }
+
+  if assigned Mk`EisensteinBasis then
+    return Mk`EisensteinBasis;
   end if;
 
-  // this handles the optional parameters
+  if not IsParallel(Weight(Mk)) then
+    Mk`EisensteinBasis := [];
+  end if;
+
+  k := Weight(Mk)[1];
+  Mk`EisensteinBasis := NewEisensteinBasis(Mk) cat OldEisensteinBasis(Mk);
+  require #Mk`EisensteinBasis eq EisensteinDimension(Mk) : "#Mk`EisensteinBasis = %o != %o = EisensteinDimension(Mk)", #Mk`EisensteinBasis, EisensteinDimension(Mk);
   return SubBasis(Mk`EisensteinBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
+intrinsic NewEisensteinBasis(
+  Mk::ModFrmHilD
+  :
+  IdealClassesSupport:=false,
+  Symmetric:=false
+  ) -> SeqEnum[ModFrmHilDElt]
+  {
+    input:
+      Mk: A space of HMFs
+      // TODO abhijitm describe the optional parameters 
+    returns: 
+      A list of forms spanning the space of new Eisenstein series
+  }
 
+  if assigned Mk`NewEisensteinBasis then
+	  return Mk`NewEisensteinBasis;
+  else
+    pairs := EisensteinAdmissibleCharacterPairs(Mk);
+    Mk`NewEisensteinBasis := &cat[GaloisOrbitDescent(EisensteinSeries(Mk, pair[1], pair[2])) : pair in pairs];
+  end if;
 
+  // this handles the optional parameters
+  return SubBasis(Mk`NewEisensteinBasis, IdealClassesSupport, Symmetric);
+end intrinsic;
+  
+intrinsic OldEisensteinBasis(
+  Mk::ModFrmHilD 
+  : 
+  IdealClassesSupport := false,
+  Symmetric := false
+  ) -> SeqEnum[ModFrmHilDElt]
+  {
+    input:
+      Mk: A space of HMFs 
+      // TODO abhijitm describe the optional parameters
+    returns: 
+      If N is the level of Mk, returns the inclusions of forms of level
+      N' | N into Mk. These will always be linearly independent
+      (in fact, orthogonal w/r/t the Petersson inner product),
+      so we can take them as a basis directly.
+  }
+  
+  if not assigned Mk`OldEisensteinBasis then
+    M := Parent(Mk);
+    N := Level(Mk);
+    k := Weight(Mk);
+    chi := Character(Mk);
+
+    Mk`OldEisensteinBasis := [];
+
+    // We want to iterate through divisors D of N from which an 
+    // Eisenstein series with nebentypus chi could arise.
+    // This means that we need Cond(chi) | D. We also exclude
+    // D = N because we want oldforms.
+    divisors := [D : D in Divisors(N) | (D ne N) and (D subset Conductor(chi))];
+    for D in divisors do
+      chi_D := Restrict(chi, D, [1,2]);
+      Mk_D := HMFSpace(M, D, k, chi_D);
+      Mk`OldEisensteinBasis cat:= &cat[Inclusion(f, Mk) : f in NewEisensteinBasis(Mk_D : IdealClassesSupport := IdealClassesSupport, Symmetric := Symmetric)];
+    end for;
+  end if;
+  return SubBasis(Mk`OldEisensteinBasis, IdealClassesSupport, Symmetric);
+end intrinsic;
 
 intrinsic Basis(
   Mk::ModFrmHilD

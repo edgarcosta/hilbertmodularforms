@@ -20,7 +20,6 @@ intrinsic EisensteinSeries(
   require IsParallel(k): "the weight is not parallel, there are no Eisenstein Series in this case";
   k := k[1];
 
-
   ZF := Integers(M);
   ddinv := dd^-1;
   if Coefficients cmpeq false then
@@ -212,18 +211,6 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
   return val;
 end intrinsic;
 
-
-intrinsic EisensteinInclusions(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> SeqEnum[ModFrmHilDElt]
-  {return E(eta, psi)(dd*zz) for dd in divisors of Level(Mk)/(Conductor(psi) * Conductor(eta))}
-  require IsPrimitive(eta) and IsPrimitive(psi): "We expect eta and psi to be primitive";
-  M := Parent(Mk);
-  divisors := Divisors(Level(Mk)/(Conductor(psi) * Conductor(eta)));
-  ZF := Integers(M);
-  ideals := &cat[[ZF !! (nn*ddinv) : nn in Ideals(M) | IsIntegral(nn*ddinv)] where ddinv := dd^-1 : dd in divisors];
-  coeffs := EisensteinCoefficients(M, Weight(Mk), eta, psi, ideals);
-  return [EisensteinSeries(Mk, eta, psi: dd:=dd, Coefficients:=coeffs) : dd in divisors];
-end intrinsic;
-
 intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> List
   {
     input: 
@@ -239,7 +226,7 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> List
   F := BaseField(Parent(Mk));
   H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
 
-  check_n_chi := func<eta, psi | (eta * psi eq chi) and (N subset Conductor(eta) * Conductor(psi))>;
+  check_n_chi := func<eta, psi | (eta * psi eq chi) and (N eq Conductor(eta) * Conductor(psi))>;
   pairs := &join{{<eta, psi> : psi in Elements(H) | check_n_chi(eta, psi)} : eta in Elements(H)};
 
   mth_power := func<pair, m | <pair[1]^m, pair[2]^m>>;

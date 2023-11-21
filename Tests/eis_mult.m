@@ -1,8 +1,5 @@
 // Tests that the product of E(1,chi) * E(1, chi^-1) 
 // has rational coefficients. 
-// TODO abhijitm - the Eisenstein basis code is still broken
-// I think, but once it's fixed this test should also verify
-// that the product is also an Eisenstein series
 
 F := QuadraticField(5);
 ZF := Integers(F);
@@ -27,7 +24,7 @@ f := E * Einv;
 f := ChangeCoefficientRing(f, Rationals());
 assert CoefficientRing(f) eq Rationals();
 
-// M22 := HMFSpace(M, N, [2,2]);
-// E22 := EisensteinBasis(M22);
-// assert #LinearDependence(Append(E22, f)) eq 1;
+M22 := HMFSpace(M, N, [2,2]);
+B22 := Basis(M22);
+assert #LinearDependence(Append(B22, f)) eq 1;
 
