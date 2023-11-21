@@ -214,3 +214,44 @@ intrinsic EisensteinInclusions(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeEl
   coeffs := EisensteinCoefficients(M, Weight(Mk), eta, psi, ideals);
   return [EisensteinSeries(Mk, eta, psi: dd:=dd, Coefficients:=coeffs) : dd in divisors];
 end intrinsic;
+
+intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> List
+  {
+    input: 
+      A space of Hilbert modular forms, say of level N, weight k, and nebentypus chi.
+    returns:
+      A SetEnum of pairs <eta, psi>, where eta and psi are primitive characters
+      associated to ray class characters of conductor (M, [1,2])
+  }  
+  require IsParallel(Mk`Weight) : "Eisenstein series don't exist in nonparallel weight";
+  N := Mk`Level;
+  k := Mk`Weight[1];
+  chi := Character(Mk);
+  F := BaseField(Parent(Mk));
+  H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
+
+  check_n_chi := func<eta, psi | (eta * psi eq chi) and (N subset Conductor(eta) * Conductor(psi))>;
+  pairs := &join{{<eta, psi> : psi in Elements(H) | check_n_chi(eta, psi)} : eta in Elements(H)};
+
+  mth_power := func<pair, m | <pair[1]^m, pair[2]^m>>;
+  n := Exponent(AbelianGroup(H));
+
+  coprime_to_n := [m : m in [1 .. n] | IsCoprime(m, n)];
+
+  pairs_up_to_galois := {};
+  while #pairs gt 0 do
+    pair := Rep(pairs);
+    Include(~pairs_up_to_galois, pair);
+    for m in coprime_to_n do
+      Exclude(~pairs, mth_power(pair, m));
+    end for;
+
+    if k eq 1 then
+      Exclude(~pairs, <pair[2], pair[1]>);
+    end if;
+  end while;
+
+  APC := func<pair | <AssociatedPrimitiveCharacter(pair[1]), AssociatedPrimitiveCharacter(pair[2])>>;
+  Mk`EisensteinAdmissibleCharacterPairs := [* APC(pair) : pair in pairs_up_to_galois *];
+  return Mk`EisensteinAdmissibleCharacterPairs;
+end intrinsic;
