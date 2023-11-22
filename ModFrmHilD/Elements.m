@@ -667,15 +667,14 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   return result;
 end intrinsic;
 
-
 intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return Trace(f)}
-
+  K := DefaultCoefficientRing(Parent(f));
   new_coeffs := AssociativeArray(Universe(Coefficients(f)));
   for nu->anu in Coefficients(f) do
-    new_coeffs[nu] := Trace(anu);
+    new_coeffs[nu] := (K eq Rationals()) select Trace(anu) else Trace(anu, K);
   end for;
-  return HMFComp(Parent(f), ComponentIdeal(f), new_coeffs: prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), new_coeffs : coeff_ring := K, prec:=Precision(f));
 end intrinsic;
 
 intrinsic Trace(f::ModFrmHilDElt) -> ModFrmHilDElt
@@ -688,18 +687,29 @@ intrinsic Trace(f::ModFrmHilDElt) -> ModFrmHilDElt
   return HMFSumComponents(Parent(f), nC);
 end intrinsic;
 
-
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
-  {returns the full Galois orbit of a modular form over Q}
+  {
+    Given an HMF element f of a HMFSpace Mk with coefficients in a field L
+    containing the default coefficient ring K of Mk, returns a K-basis
+    for the subspace of Mk spanned by the Gal(L/K)-conjugates of f. 
+  }
+  
+  if CoefficientRing(f) eq DefaultCoefficientRing(Parent(f)) then
+    return [f];
+  end if;
+
+  if DefaultCoefficientRing(Parent(f)) eq Rationals() then
+    L := CoefficientRing(f);
+  else
+    L := RelativeField(CoefficientRing(f), DefaultCoefficientRing(Parent(f)));
+  end if;
 
   result := [Parent(f) | ];
-  for b in Basis(CoefficientRing(f)) do
+  for b in Basis(L) do
     Append(~result, Trace(b * f));
   end for;
   return result;
 end intrinsic;
-
-
 
 ////////// ModFrmHilDElt: Arithmetic //////////
 

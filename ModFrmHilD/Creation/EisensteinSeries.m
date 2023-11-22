@@ -31,11 +31,20 @@ intrinsic EisensteinSeries(
   constant_term, coeffs_ideals := Explode(Coefficients);
   coeffs := AssociativeArray();
   n := Degree(BaseField(M));
+
+  coeff_rings := AssociativeArray();
+  m := Order(Character(Mk));
+  l := LCM(Order(eta), Order(psi));
+
+  // We would prefer to put it in the default coefficient ring of Mk
+  coeff_ring := (IsDivisibleBy(m, l)) select DefaultCoefficientRing(Mk) else CyclotomicField(l);
+
   for bb in NarrowClassGroupReps(M) do
     ddbb := NarrowClassRepresentative(M,dd*bb);
     coeffs[ddbb] := AssociativeArray();
     coeffs[ddbb][0] := constant_term[bb];
 
+    coeff_rings[bb] := coeff_ring;
     // All other coefficients, equation (48)
     for nu->nn in ShintaniRepsIdeal(M)[ddbb] do
       if not IsZero(nu) then
@@ -49,7 +58,7 @@ intrinsic EisensteinSeries(
       end if;
     end for;
   end for;
-  E := HMF(Mk, coeffs);
+  E := HMF(Mk, coeffs : coeff_rings := coeff_rings);
   return E;
 end intrinsic;
 

@@ -469,7 +469,7 @@ intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
       if not IsDefined(newforms_levels, lvl) then
         newforms_levels[lvl] := 0;
       end if;
-      newforms_levels[lvl] +:= EulerPhi(LCM([Order(e) : e in pair]));
+      newforms_levels[lvl] +:= ExactQuotient(EulerPhi(LCM([Order(e) : e in pair])), EulerPhi(Order(Character(Mk))));
     end for;
     Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*rel_dim : mm->rel_dim in newforms_levels];
   end if;
@@ -612,8 +612,7 @@ intrinsic DefaultCoefficientRing(Mk::ModFrmHilD) -> FldNum
   // TODO abhijitm is there an advantage to not just using RationalsAsNumberField()
   // by default throughout this codebase rather than having to waffle?
   d := Order(Mk`Character);
-  NebCharField := (d eq 1) select Rationals() else CyclotomicField(Order(Mk`Character));
+  NebCharField := (d le 2) select Rationals() else CyclotomicField(Order(Mk`Character));
   Mk`DefaultCoefficientRing := Compositum(NebCharField, UnitCharField);
   return Mk`DefaultCoefficientRing;
 end intrinsic;
-
