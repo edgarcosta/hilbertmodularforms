@@ -211,7 +211,7 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
   return val;
 end intrinsic;
 
-intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> List
+intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD : IdentifyConjugates := true, NewformsOnly := true) -> List
   {
     input: 
       A space of Hilbert modular forms, say of level N, weight k, and nebentypus chi.
@@ -226,28 +226,39 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> List
   F := BaseField(Parent(Mk));
   H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
 
-  check_n_chi := func<eta, psi | (eta * psi eq chi) and (N eq Conductor(eta) * Conductor(psi))>;
-  pairs := &join{{<eta, psi> : psi in Elements(H) | check_n_chi(eta, psi)} : eta in Elements(H)};
+  check_chi := func<eta, psi | (eta * psi eq chi)>;
+  
+  // By default we only produce pairs of characters corresponding to newforms,
+  // i.e. such that Cond(eta) * Cond(psi) = N, but for backwards compatibility
+  // and testing it is useful to be able to produce the pairs corresponding to
+  // all the Eisenstein series.
+  check_n := func<eta, psi, exact |\
+    (exact) select (N eq Conductor(eta) * Conductor(psi)) else (N subset Conductor(eta) * Conductor(psi))>;
+
+  pairs := &join{{<eta, psi> : psi in Elements(H) |\
+    check_chi(eta, psi) and check_n(eta, psi, NewformsOnly)} : eta in Elements(H)};
 
   mth_power := func<pair, m | <pair[1]^m, pair[2]^m>>;
   n := Exponent(AbelianGroup(H));
-
   coprime_to_n := [m : m in [1 .. n] | IsCoprime(m, n)];
 
-  pairs_up_to_galois := {};
-  while #pairs gt 0 do
-    pair := Rep(pairs);
-    Include(~pairs_up_to_galois, pair);
-    for m in coprime_to_n do
-      Exclude(~pairs, mth_power(pair, m));
-    end for;
+  if IdentifyConjugates then
+    pairs_up_to_galois := {};
+    while #pairs gt 0 do
+      pair := Rep(pairs);
+      Include(~pairs_up_to_galois, pair);
+      for m in coprime_to_n do
+        Exclude(~pairs, mth_power(pair, m));
+      end for;
 
-    if k eq 1 then
-      Exclude(~pairs, <pair[2], pair[1]>);
-    end if;
-  end while;
+      if k eq 1 then
+        Exclude(~pairs, <pair[2], pair[1]>);
+      end if;
+    end while;
+    pairs := pairs_up_to_galois;
+  end if;
 
   APC := func<pair | <AssociatedPrimitiveCharacter(pair[1]), AssociatedPrimitiveCharacter(pair[2])>>;
-  Mk`EisensteinAdmissibleCharacterPairs := [* APC(pair) : pair in pairs_up_to_galois *];
+  Mk`EisensteinAdmissibleCharacterPairs := [* APC(pair) : pair in pairs *];
   return Mk`EisensteinAdmissibleCharacterPairs;
 end intrinsic;
