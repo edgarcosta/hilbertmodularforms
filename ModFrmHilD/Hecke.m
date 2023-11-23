@@ -5,7 +5,7 @@
 ///////////////////////////////////////////////////
 
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
-intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := false) -> ModFrmHilDElt
+intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
   {Returns T(mm)(f) for the character chi modulo the level of f}
 
   Mk := Parent(f);
@@ -49,34 +49,22 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := fa
     end for;
   end for;
 
+  g := HMF(Mk, coeffsTmmf : CoeffsByIdeals:=false, prec:=new_prec);
+
   // Attempting to increase precision using a basis
   // This is not very efficient, as it does not remember the underlying vector space, but it works.
-  if (assigned Mk`Basis) or MaximalPrecision then
-      B := Basis(Mk);
-      // These have different numbers of columns
-      mats := [* *];
-      vec := [];
-      for bb in Keys(coeffsTmmf) do
-	  nus := Keys(coeffsTmmf[bb]);
-	  mat := Matrix([[Coefficients(f)[bb][nu] : nu in nus] : f in B]);
-	  Append(~mats, mat);
-	  vec cat:= [coeffsTmmf[bb][nu] : nu in nus];
-      end for;
-      // This does not work with a list
-      // mat := HorizontalJoin(mats);
-      mat := mats[1];
-      for comp_idx in [2..#mats] do
-	  mat := HorizontalJoin(mat, mats[comp_idx]);
-      end for;
-      // If the matrix is invertible, there will be a unique solutions, and we can use it.
-      if Rank(mat) eq #B then
-	  vec_sol := Solution(mat, Vector(vec));
-	  g := &+[vec_sol[i]*B[i] : i in [1..#B]];
-	  return g;
-      end if;
+  if assigned Mk`Basis then
+    basis := Basis(Mk);
+    lindep := LinearDependence(basis cat [g]);
+
+    // if the linear dependence of g with the basis is not 1
+    // then we cannot use the basis to increase precision
+    if #lindep eq 1 then
+      lindep := lindep[1];
+      g := &+[-1 * lindep[i] * basis[i] / lindep[#basis + 1] : i in [1 .. #basis]];
+    end if;
   end if;
   
-  g := HMF(Mk, coeffsTmmf : CoeffsByIdeals:=false, prec:=new_prec);
   return g;
 end intrinsic;
 
