@@ -15,10 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         if: ${{ github.event_name == 'push' }}
+
       - uses: actions/checkout@v2
         if: ${{ github.event_name == 'pull_request_target' }}
-        with: 
+        with:
           ref: ${{ github.event.pull_request.head.sha }}
+
       - id: set-matrix
         run: |
           matrix=$((
@@ -71,7 +73,6 @@ jobs:
   printjob:
     name: print event
     runs-on: ubuntu-latest
-    if: false
     steps:
       - name: dump github context
         env:
