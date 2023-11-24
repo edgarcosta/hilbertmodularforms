@@ -16,7 +16,6 @@ end intrinsic;
 intrinsic IdealOneLine(I::RngOrdIdl) -> MonStgElt
   {}
   K<w> := NumberField(Order(I));
-  assert Degree(K) le 2;
   OK := Order(I);
 //  OK<w> := OK;
   str := "";
