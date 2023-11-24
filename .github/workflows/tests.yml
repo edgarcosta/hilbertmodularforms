@@ -21,12 +21,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: dump github context
-        env:
-          github_context: ${{ tojson(github) }}
-        run: |
-          echo "$github_context"
-
       - id: set-matrix
         run: |
           matrix=$((
@@ -79,6 +73,7 @@ jobs:
   printjob:
     name: print event
     runs-on: ubuntu-latest
+    if: false
     steps:
       - name: dump github context
         env:
