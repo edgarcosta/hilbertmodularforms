@@ -1,5 +1,5 @@
 printf "Testing Eisenstein series over Q(sqrt(3))..."; //use printf with no \n
-prec := 10;
+prec := 125;
 D := 12;
 F:=QuadraticField(D);
 ZF := Integers(F);

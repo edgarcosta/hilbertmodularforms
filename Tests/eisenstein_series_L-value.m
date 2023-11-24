@@ -1,7 +1,7 @@
 printf "Testing that the Eisenstein series code works when image of character is not codomain..."; //use printf with no \n
 // Create the graded ring
 F:=QuadraticField(5);
-prec:=10;
+prec:=125;
 M:=GradedRingOfHMFs(F, prec);
 
 // Create the Eisenstein series

@@ -5,7 +5,7 @@
 
 F := QuadraticField(5);
 ZF := Integers(F);
-prec := 11;
+prec := 140;
 pp := 2*ZF;
 M := GradedRingOfHMFs(F, prec);
 triv_char := HeckeCharacterGroup(1*ZF, [1,2]).0;

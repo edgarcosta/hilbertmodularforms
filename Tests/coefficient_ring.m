@@ -22,7 +22,7 @@ function TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, tes
 
   for bb in bbs do
     coeffs[bb] := AssociativeArray();
-    reps := ShintaniRepsUpToTrace(M, bb, prec);
+    reps := FunDomainRepsUpToNorm(M, bb, prec);
     for rep in reps do
       coeffs[bb][rep] := coeffs_gen(bb);
     end for;
@@ -54,7 +54,7 @@ end function;
 F<a> := QuadraticField(5);
 R<x> := PolynomialRing(F);
 ZF := Integers(F);
-prec := 8;
+prec := 80;
 M := GradedRingOfHMFs(F, prec);
 coeff_fields := AssociativeArray();
 ground_truth := AssociativeArray();
@@ -146,7 +146,7 @@ TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, test_name);
 F<a> := QuadraticField(3);
 R<x> := PolynomialRing(F);
 ZF := Integers(F);
-prec := 8;
+prec := 80;
 U, mU := UnitGroup(F);
 M := GradedRingOfHMFs(F, prec);
 bbs := NarrowClassGroupReps(M);

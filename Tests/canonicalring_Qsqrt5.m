@@ -3,7 +3,7 @@ printf "Testing the computation of the Canonical ring for Q(sqrt(5))...";
 F<nu> := QuadraticField(5);
 ZF := Integers(F);
 N := ideal<ZF|[1]>;
-prec := 10;
+prec := 125;
 R := GradedRingOfHMFs(F, prec);
 B := AssociativeArray();
 M := AssociativeArray();

@@ -1,6 +1,6 @@
 printf "Testing Eisenstein series of weight 1...";
 F:=QuadraticField(5);
-prec:=20;
+prec:=500;
 M:=GradedRingOfHMFs(F, prec);
 ZF:=Integers(F);
 N:= 31*ZF;

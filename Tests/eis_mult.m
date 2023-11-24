@@ -3,7 +3,7 @@
 
 F := QuadraticField(5);
 ZF := Integers(F);
-prec := 10;
+prec := 100;
 M := GradedRingOfHMFs(F, prec);
 N := 14*ZF;
 

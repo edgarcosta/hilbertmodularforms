@@ -1100,7 +1100,7 @@ function check(d)
     printf "%o ", d;
     F := QuadraticField(d);
     ZF := Integers(F);
-    prec := 5;
+    prec := 50;
     R := GradedRingOfHMFs(F, prec);
     trs := [[Trace( HMFSpace(R, n*ZF, [k,k]), m*ZF : precomp := true) : m in heckes] : k in weights, n in levels];
     assert traces[d] eq trs;

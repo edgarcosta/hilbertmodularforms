@@ -3,7 +3,7 @@
 // respectively, checks that S_22*f is the Hecke stable subspace of
 // S_44/f
 
-PREC := 12;
+PREC := 150;
 F := QuadraticField(5);
 ZF := Integers(F);
 

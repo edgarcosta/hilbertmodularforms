@@ -1199,7 +1199,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
     if IsIntegral(nn*mminv) then
       // set b_nn = a_{nn/mm}
       // in terms of shintani reps
-      coeff[nu] := coeff_f[IdealToRep(M, bb, ZF!!(nn*mminv))];
+      coeff[nu] := coeff_f[IdealToRep(M)[bb][ZF!!(nn*mminv)]];
     else
       coeff[nu] := 0;
     end if;

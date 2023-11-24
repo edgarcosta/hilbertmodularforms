@@ -34,7 +34,7 @@ end function;
 
 F := QuadraticField(5);
 ZF := Integers(F);
-prec := 14;
+prec := 200;
 M := GradedRingOfHMFs(F, prec);
 nns := Ideals(M);
 
@@ -51,10 +51,10 @@ bb := 1*ZF;
 f1_elt_coeffs[bb] := AssociativeArray();
 f2_elt_coeffs[bb] := AssociativeArray();
 
-reps := ShintaniRepsUpToTrace(M, bb, prec);
+reps := FunDomainRepsUpToNorm(M, bb, prec);
 
 for nn in Ideals(M) do
-  nu := IdealShitaniReps(M)[bb][nn];
+  nu := IdealToRep(M)[bb][nn];
   f1_idl_coeff := Trace(K!hecke_eigs_dict[nn]);
   f2_idl_coeff := Trace(K.1 * hecke_eigs_dict[nn]);
   if nu eq 0 then
