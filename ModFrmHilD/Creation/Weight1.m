@@ -1,6 +1,6 @@
 intrinsic HeckeStableSubspace(
     V::SeqEnum,
-    pp::RngQuadIdl
+    pp::RngOrdIdl
     ) -> SeqEnum
     {
     Given a sequence of forms V and an ideal pp, compute a basis of the subspace of span(V) that is stable under the Hecke operator T_pp. 
