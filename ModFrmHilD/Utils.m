@@ -225,3 +225,19 @@ intrinsic WriteStderr(e::Err)
 { write to stderr }
   WriteStderr(Sprint(e) cat "\n");
 end intrinsic;
+
+// Iterated compositums
+
+intrinsic Compositum(A::List) -> FldNum
+  {
+    input: 
+      A: A list of number fields
+    returns:
+      The compositum of all the number fields.
+  }
+  K := A[1];
+  for i in [2 .. #A] do
+    K := Compositum(K, A[i]);
+  end for;
+  return K;
+end intrinsic;

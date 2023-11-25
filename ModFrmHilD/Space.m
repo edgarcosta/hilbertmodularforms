@@ -20,6 +20,8 @@ declare attributes ModFrmHilD:
   EllipticBasis, // SeqEnum[ModFrmHilDElt]
   NewCuspFormBasis, // SeqEnum[ModFrmHilDElt] - basis for new cusp forms
   OldCuspFormBasis, // SeqEnum[ModFrmHilDElt] - basis for old cusp forms
+  NewEisensteinBasis, // SeqEnum[ModFrmHilDElt] - basis for new Eisenstein series
+  OldEisensteinBasis, // SeqEnum[ModFrmHilDElt] - basis for old Eisenstein series
   Dimension, // RngIntElt
   CuspDimension, //RngIntElt
   EisensteinDimension, //RngIntElt
@@ -31,7 +33,9 @@ declare attributes ModFrmHilD:
   MagmaNewformDecomposition, // List
   MagmaNewCuspForms, // SeqEnum[ModFrmHilElt]
   CoprimeClassGroupRepresentatives, // Assoc
-  TraceCorrectionFactorFlag; // boo
+  TraceCorrectionFactorFlag, // boo
+  DefaultCoefficientRing; // FldNum
+
 
 
 ////////// ModFrmHilD fundamental intrinsics //////////
@@ -260,6 +264,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   end if;
   Mk`Character := chi;
   Mk`UnitCharacters := unitcharacters;
+  Mk`DefaultCoefficientRing := DefaultCoefficientRing(Mk);
   require Type(Mk`UnitCharacters) eq Assoc: "we expect the unitcharacters keyword to be an associative array";
   require Keys(Mk`UnitCharacters) eq SequenceToSet(NarrowClassGroupReps(M)) :"we expect the keys of the associative array to be narrow class group reprsentatives";
   require {Type(v): k->v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
@@ -459,103 +464,34 @@ end intrinsic;
 intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
   {return the dimension of E(Mk)}
   if not assigned Mk`EisensteinDimension then
+    new_eisenstein_dim := NewEisensteinDimension(Mk);
+
+    M := Parent(Mk);
     N := Level(Mk);
-    newforms_levels := AssociativeArray();
-    for pair in EisensteinAdmissibleCharacterPairs(Mk) do
-      lvl := Conductor(pair[1]) * Conductor(pair[2]);
-      if not IsDefined(newforms_levels, lvl) then
-        newforms_levels[lvl] := 0;
-      end if;
-      newforms_levels[lvl] +:= EulerPhi(LCM([Order(e) : e in pair]));
+    k := Weight(Mk);
+    chi := Character(Mk);
+
+    old_eisenstein_dim := 0;
+    divisors := [D : D in Divisors(N) | (D ne N) and (D subset Conductor(chi))];
+    for D in divisors do
+      chi_D := Restrict(chi, D, [1,2]);
+      Mk_D := HMFSpace(M, D, k, chi_D);
+      old_eisenstein_dim +:= #Divisors(N/D) * NewEisensteinDimension(Mk_D);
     end for;
-    Mk`EisensteinDimension := &+[Integers()| #Divisors(N/mm)*rel_dim : mm->rel_dim in newforms_levels];
+
+    Mk`EisensteinDimension := new_eisenstein_dim + old_eisenstein_dim;
   end if;
   return Mk`EisensteinDimension;
 end intrinsic;
 
-// copy pasted from ModSym/dirichlet.m
-intrinsic GaloisConjugacyRepresentatives(S::[GrpHeckeElt]) -> SeqEnum
-{Representatives for the Gal(Qbar/Q)-conjugacy classes of Dirichlet characters 
- contained in the given sequence S}  
-   
-   G := Universe(S);
-
-if #S eq 0 then
-//   or Type(BaseRing(G)) eq FldRat then 
-     return S;
-   end if;
-
-  // require ISA(Type(BaseRing(G)), FldAlg) :
-    //      "The base ring of argument 1 must be a number field.";
-
-   n := Exponent(AbelianGroup(G));     
-if n eq 1 then return S; end if;
-   i := 1;
-   U := [k : k in [1..n-1] | GCD(k,n) eq 1]; // Steve changed this, was [2..n-1]
-   while i lt #S do
-      x := S[i];
-      for m in U do
-         y := x^m;
-         R := [j : j in [i+1..#S] | S[j]`Element eq y`Element];
-         for j in Reverse(R) do    // important to reverse.
-            Remove(~S,j);
-         end for;
-      end for;
-      i +:= 1;
-   end while;
-   return S;
-end intrinsic;
-
-intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
-  {returns a list of all the primitive pairs <chi1, chi2> such that
-  chi1*chi2 = Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk)
-  If the weight is 1, we only return pairs up to permutation}
-  if not assigned Mk`EisensteinAdmissibleCharacterPairs then
-    N := Level(Mk);
-    k := Weight(Mk);
-    if not IsParallel(k) then
-      // there are no Eisenstein series in nonparallel weight
-      Mk`EisensteinAdmissibleCharacterPairs := [* *];
-      return Mk`EisensteinAdmissibleCharacterPairs;
-    end if;
-    k := k[1];
-    chi := Character(Mk);
-    M := Parent(Mk);
-    X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
-    assert X eq Parent(chi);
-    chis := Elements(X);
-    chis_reps := Set(GaloisConjugacyRepresentatives(chis));
-    chis_reps_index := {i : i->c in chis | c in chis_reps};
-    chiscond := [Conductor(c) : c in chis];
-    chisdict := AssociativeArray();
-    for i->c in chis do
-      chisdict[c] := i;
-    end for;
-    // [i, j] pairs st chis[i]*chis[j] = chi
-    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis | i in chis_reps_index ];
-    // filter based on conductor
-    pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];
-    if k eq 1 then
-      // only keep one of the pairs [i, j], [j, i]
-      // we E(chi, psi) = E(psi, chi)
-      newpairs := [];
-      for k0->p in pairs do
-	i, j := Explode(p);
-	// this might be zero, as we forced i to be galois representative 
-        k1 := Index(pairs, [j, i]);
-        if k1 le k0 then // nonetheless, k0 > 0
-          Append(~newpairs, p);
-        end if;
-      end for;
-      pairs := newpairs;
-    end if;
-    prims := AssociativeArray();
-    for i in SequenceToSet(&cat pairs) do
-      prims[i] := AssociatedPrimitiveCharacter(chis[i]);
-    end for;
-    Mk`EisensteinAdmissibleCharacterPairs := [* <prims[p[1]], prims[p[2]]> : p in pairs *];
-  end if;
-  return Mk`EisensteinAdmissibleCharacterPairs;
+intrinsic NewEisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
+  {returns the dimension of the space of new Eisenstein series of Mk}
+  new_eisenstein_dim_scaled := 0;
+  for pair in EisensteinAdmissibleCharacterPairs(Mk) do
+    new_eisenstein_dim_scaled +:= EulerPhi(LCM([Order(e) : e in pair]));
+  end for;
+  new_eisenstein_dim := ExactQuotient(new_eisenstein_dim_scaled, EulerPhi(Order(Character(Mk))));
+  return new_eisenstein_dim;
 end intrinsic;
 
 // Coprime class group representatives
@@ -637,11 +573,64 @@ end intrinsic;
 
 intrinsic IsParallel(k::SeqEnum[RngIntElt]) -> BoolElt
   {
-    input: 
-      k: The weight of the HMF
-    returns:
       true when k is parallel (all components are equal)
       false otherwise
   }
   return #SequenceToSet(k) eq 1;
+end intrinsic;
+
+intrinsic DefaultCoefficientRing(Mk::ModFrmHilD) -> FldNum
+  {
+    input:
+      Mk: A space of HMFs
+    returns:
+      The smallest extension
+      that the Fourier coefficients of a form with this weight
+      and character can live in. 
+
+      In parallel weight, this is Q.
+
+      In nonparallel paritious weight, this is
+      the compositum of the splitting field of F 
+      and the nebentypus field (the cyclotomic field 
+      Q(zeta_d) where d the order of the nebentypus).
+
+      (TODO abhijitm we can do a little bit better
+      than this by replacing Spl(F) by what Shimura calls
+      Phi \subseteq Spl(F). For quadratic fields
+      Phi = Spl(F) in nonparallel paritious weight).
+
+            
+      If k is non-paritious, we return the compositum
+      of the splitting field of F and 
+      the field generated by the polynomials 
+      x^2-eps_i for [eps_1, .., eps_(n-1)]
+      a set of generators for the group of totally positive 
+      units of F. 
+
+      (TODO abhijitm this should change if/when
+       the normalization of the Hecke operator is changed)
+
+      We set this as a default for the entire space 
+      to avoid any sort of compatibility/coercion
+      issues when doing arithmetic with different forms.
+      As of this writing (10/2023), every method we have
+      of creating forms chooses coefficients lying in 
+      the DefaultCoefficientRing.
+
+      If you want to do something more, you can choose a custom
+      coefficient ring in the HMF constructor.
+  }
+
+  if assigned Mk`DefaultCoefficientRing then
+    return Mk`DefaultCoefficientRing;
+  end if;
+
+  UnitCharField := UnitCharField(BaseField(Mk), Weight(Mk));
+  // TODO abhijitm is there an advantage to not just using RationalsAsNumberField()
+  // by default throughout this codebase rather than having to waffle?
+  d := Order(Mk`Character);
+  NebCharField := (d le 2) select Rationals() else CyclotomicField(Order(Mk`Character));
+  Mk`DefaultCoefficientRing := Compositum(NebCharField, UnitCharField);
+  return Mk`DefaultCoefficientRing;
 end intrinsic;

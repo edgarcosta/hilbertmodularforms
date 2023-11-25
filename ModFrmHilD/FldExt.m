@@ -4,7 +4,11 @@ declare attributes FldAlg:
   TotallyPositiveUnitsMap,
   FundamentalUnitSquare,
   ClassGroupReps,
-  TotallyPositiveUnitsGenerators
+  TotallyPositiveUnitsGenerators,
+  DistinguishedPlace,
+  Extensions,
+  Restrictions,
+  UnitCharFieldsByWeight
   ;
 
 
@@ -134,4 +138,254 @@ intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
     if d eq 1 then return z*q; end if;
     b := ExactQuotient(NJ, d);
     return (1 + b * z)*q;
+end intrinsic;
+
+/////////////////////// DistinguishedPlace and strong coercion ///////////////////////////
+
+intrinsic DistinguishedPlace(K::FldNum) -> PlcNumElt
+  {
+    input:
+      K: a number field
+    returns:
+      A distinguished infinite place of K.
+      By default, this is the first infinite place.
+
+    This function is here so that whenever
+    we choose a distinguished place of K,
+    we make the same choice. 
+  }
+  if assigned K`DistinguishedPlace then
+    return K`DistinguishedPlace;
+  end if;
+  K`DistinguishedPlace := InfinitePlaces(K)[1];
+  return K`DistinguishedPlace;
+end intrinsic;
+
+intrinsic StrongCoerce(L::Fld, x::RngElt) -> FldElt
+  {
+    input: 
+      L - FldNum, FldQuad, FldCyc, or FldRat
+      x - An element of the ring of integers of one of the above
+    returns:
+      StrongCoerce applied to x coerced into its field of fractions.
+  }
+
+  K := FieldOfFractions(Parent(x));
+  return StrongCoerce(L, K!x);
+end intrinsic;
+
+intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
+  {
+    input: 
+      L - FldNum, FldQuad, FldCyc, or FldRat
+      x - An element of one of the above 
+    returns:
+      Returns x as an element of L, such that evaluation at 
+      the distinguished place of the Parent of x is equal to
+      evaluation of StrongCoerce(L, x) at the distinguished place
+      of L.
+
+    Write K for the parent number field of x. There are two cases.
+
+    If K is a subfield of L and K_prim is a primitive
+    element of K, we fix an inclusion iota of K into L and find an automorphism
+    aut of K such that 
+
+    w(L!(aut(K_prim))) = v(K_prim).
+
+    Equivalently, we choose an inclusion of K into L which commutes with evaluation
+    under the distinguished places.
+    
+    If K contains L, then we choose a primitive element L_prim of L and
+    find an automorphism aut of K such that
+
+    w(L!aut(K!L_prim)) = v(K!L_prim),
+
+    Equivalently, we choose an automorphism of K so that restriction to L commutes 
+    with evaluation under the distinguished places.
+  }
+
+  CC_THRESHOLD := 10^-10;
+  require Type(x) in [FldNumElt, FldRatElt, FldQuadElt, FldCycElt] : "%o is not a valid type for strong coercion", Type(x);
+
+  K := Parent(x);
+
+  // If K = QQ then all embeddings are the same,
+  // We do this case separately because Rationals() 
+  // does not have an Extensions attribute.
+  if K eq Rationals() then
+    return L!x;
+  end if;
+
+  // If L = QQ then all restrictions are the same.
+  if L eq Rationals() then
+    return Rationals()!x;
+  end if;
+
+  if not assigned K`Extensions then
+    K`Extensions := AssociativeArray(PowerStructure(FldNum));
+  end if;
+  if not assigned K`Restrictions then
+    K`Restrictions := AssociativeArray(PowerStructure(FldNum));
+  end if;
+
+  require IsNormal(K) and IsNormal(L) : "Strong coercion is not yet implemented\
+      for non-Galois fields";
+
+  // if K = QQ then all embeddings are the same
+  if K eq Rationals() then
+    K`Extensions[L] := Automorphisms(Rationals())[1];
+  end if;
+
+  // if L = QQ then all restrictions are the same
+  if L eq Rationals() then
+    K`Restrictions[L] := Automorphisms(K)[1];
+  end if;
+
+  if IsDefined(K`Extensions, L) then
+    phi := K`Extensions[L];
+    return L!phi(x);
+  elif IsDefined(K`Restrictions, L) then
+    phi := K`Restrictions[L];
+    return L!phi(x);
+  end if;
+
+  v := DistinguishedPlace(K);
+  w := DistinguishedPlace(L);
+
+  if IsSubfield(K, L) then
+    a := PrimitiveElement(K);
+    a_eval := ComplexField()!Evaluate(a, v);
+    auts := Automorphisms(K);
+    for aut in auts do
+      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
+        K`Extensions[L] := aut;
+        return StrongCoerce(L, x);
+      end if;
+    end for;
+    require 0 eq 1 : "This should not be possible. Something has gone wrong.";
+  elif IsSubfield(L, K) then
+    auts := Automorphisms(K);
+    a := K!PrimitiveElement(L);
+    a_eval := ComplexField()!Evaluate(a, v);
+    for aut in auts do
+      // TODO abhijitm - This currently fails to coerce an element of a cyclotomic
+      // field extended from a number field back into that number field 
+      // For exmaple, if x is in K and L is a cyclotomic field containing K, then
+      // L!x will succeed but K!(L!x) will fail. This case is not important right
+      // now so I'm leaving it to future me (or present you!) to fix it. 
+      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
+        K`Restrictions[L] := aut;
+        return StrongCoerce(L, x);
+      end if;
+    end for;
+    require 0 eq 1 : "This should not be possible. Something has gone wrong.";
+  else
+    require 0 eq 1 : "The Parent of K neither contains nor is contained in L";
+  end if;
+end intrinsic;
+
+intrinsic StrongMultiply(K::Fld, A::List) -> FldElt
+  {
+    input:
+      K - A field of type FldRat, FldCyc, FldNum, or FldQuad
+      A - A list of elements (strong) coercible into K, not necessarily
+        from the same parent field.
+    returns:
+      The product of the elements in A, as an element of K.
+  }
+
+  // perform normal multiplication if all the objects 
+  // are of the same type
+  if &and[Parent(x) cmpeq Parent(A[1]) : x in A] then
+    return &*[x : x in A];
+  end if;
+      
+  prod := K!1;
+  for x in A do
+    y := (Type(x) in [FldRatElt, RngIntElt]) select x else StrongCoerce(K, x);
+    prod *:= y;
+  end for;
+  return prod;
+end intrinsic;
+
+/////////////////////// coefficient ring ///////////////////////////
+
+intrinsic NonSquareTotPosUnitsGens(F::FldNum) -> SeqEnum[RngOrdElt]
+  {
+    inputs:
+      F: A totally real number field
+    returns:
+      The subsequence of TotallyPositiveUnitsGenerators(F) which 
+      are not squares. These elements generate the group
+      of totally positive units modulo the squares.
+  }
+  R<x> := PolynomialRing(F);
+  for eps in TotallyPositiveUnitsGenerators(F) do
+    out := [];
+    if IsIrreducible(x^2-eps) then
+      Append(~out, eps);
+    end if;
+  end for;
+  return out;
+end intrinsic;
+
+intrinsic UnitCharField(F::FldNum, k::SeqEnum[RngIntElt]) -> FldNum
+  {
+    input:
+      F: The base number field of the HMF.
+      k: The weight of the HMF
+    returns:
+      The extension in which the output of the unit character lives.
+  }
+  return UnitCharFieldsByWeight(F, k);
+end intrinsic;
+
+intrinsic UnitCharFieldsByWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> FldNum
+  {
+    input:
+      F: The base number field of the HMF.
+      k: The weight of the HMF
+    returns:
+      The extension in which the output of the unit character lives.
+
+      If k is paritious, the output of the unit charactere
+      lies in the splitting field of F.
+      TODO abhijitm can do a little bit better
+      than this (Phi \subseteq Spl(F) as Shimura calls it),
+      but this is certainly true.
+
+      If k is non-paritious, we return the compositum
+      of the splitting field of F and
+      the field generated by the polynomials
+      x^2-eps_i for [eps_1, .., eps_(n-1)]
+      a set of generators for the group of totally positive
+      units of F.
+
+      This is cached by (F, k) pair to reduce compatibility issues.
+  }
+  if assigned F`UnitCharFieldsByWeight then
+    if IsDefined(F`UnitCharFieldsByWeight, k) then
+      return F`UnitCharFieldsByWeight[k];
+    end if;
+  else
+    F`UnitCharFieldsByWeight := AssociativeArray();
+  end if;
+
+  R<x> := PolynomialRing(F);
+  if #SequenceToSet(k) eq 1 then
+    // if the weight is parallel, the unit character is trivial
+    L := Rationals();
+  elif IsParitious(k) then
+    L := SplittingField(F);
+  else
+    polys := [];
+    for eps in NonSquareTotPosUnitsGens(F) do
+      Append(~polys, x^2-eps);
+    end for;
+    K := (#polys eq 0) select F else AbsoluteField(ext<F | polys>);
+    L := SplittingField(K);
+  end if;
+  F`UnitCharFieldsByWeight[k] := L;
+  return L;
 end intrinsic;

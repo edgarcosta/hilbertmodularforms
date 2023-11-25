@@ -20,7 +20,6 @@ intrinsic EisensteinSeries(
   require IsParallel(k): "the weight is not parallel, there are no Eisenstein Series in this case";
   k := k[1];
 
-
   ZF := Integers(M);
   ddinv := dd^-1;
   if Coefficients cmpeq false then
@@ -31,11 +30,20 @@ intrinsic EisensteinSeries(
   constant_term, coeffs_ideals := Explode(Coefficients);
   coeffs := AssociativeArray();
   n := Degree(BaseField(M));
+
+  coeff_rings := AssociativeArray();
+  m := Order(Character(Mk));
+  l := LCM(Order(eta), Order(psi));
+
+  // We would prefer to put it in the default coefficient ring of Mk
+  coeff_ring := (IsDivisibleBy(m, l)) select DefaultCoefficientRing(Mk) else CyclotomicField(l);
+
   for bb in NarrowClassGroupReps(M) do
     ddbb := NarrowClassRepresentative(M,dd*bb);
     coeffs[ddbb] := AssociativeArray();
     coeffs[ddbb][0] := constant_term[bb];
 
+    coeff_rings[bb] := coeff_ring;
     // All other coefficients, equation (48)
     for nu->nn in ShintaniRepsIdeal(M)[ddbb] do
       if not IsZero(nu) then
@@ -49,7 +57,7 @@ intrinsic EisensteinSeries(
       end if;
     end for;
   end for;
-  E := HMF(Mk, coeffs);
+  E := HMF(Mk, coeffs : coeff_rings := coeff_rings);
   return E;
 end intrinsic;
 
@@ -203,14 +211,54 @@ intrinsic LValue_Recognized(M::ModFrmHilDGRng, k::RngIntElt, psi::GrpHeckeElt) -
   return val;
 end intrinsic;
 
+intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD : IdentifyConjugates := true, NewformsOnly := true) -> List
+  {
+    input: 
+      A space of Hilbert modular forms, say of level N, weight k, and nebentypus chi.
+    returns:
+      A SetEnum of pairs <eta, psi>, where eta and psi are primitive characters
+      associated to ray class characters of conductor (M, [1,2])
+  }  
+  require IsParallel(Mk`Weight) : "Eisenstein series don't exist in nonparallel weight";
+  N := Mk`Level;
+  k := Mk`Weight[1];
+  chi := Character(Mk);
+  F := BaseField(Parent(Mk));
+  H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
 
-intrinsic EisensteinInclusions(Mk::ModFrmHilD, eta::GrpHeckeElt, psi::GrpHeckeElt) -> SeqEnum[ModFrmHilDElt]
-  {return E(eta, psi)(dd*zz) for dd in divisors of Level(Mk)/(Conductor(psi) * Conductor(eta))}
-  require IsPrimitive(eta) and IsPrimitive(psi): "We expect eta and psi to be primitive";
-  M := Parent(Mk);
-  divisors := Divisors(Level(Mk)/(Conductor(psi) * Conductor(eta)));
-  ZF := Integers(M);
-  ideals := &cat[[ZF !! (nn*ddinv) : nn in Ideals(M) | IsIntegral(nn*ddinv)] where ddinv := dd^-1 : dd in divisors];
-  coeffs := EisensteinCoefficients(M, Weight(Mk), eta, psi, ideals);
-  return [EisensteinSeries(Mk, eta, psi: dd:=dd, Coefficients:=coeffs) : dd in divisors];
+  check_chi := func<eta, psi | (eta * psi eq chi)>;
+  
+  // By default we only produce pairs of characters corresponding to newforms,
+  // i.e. such that Cond(eta) * Cond(psi) = N, but for backwards compatibility
+  // and testing it is useful to be able to produce the pairs corresponding to
+  // all the Eisenstein series.
+  check_n := func<eta, psi, exact |\
+    (exact) select (N eq Conductor(eta) * Conductor(psi)) else (N subset Conductor(eta) * Conductor(psi))>;
+
+  pairs := &join{{<eta, psi> : psi in Elements(H) |\
+    check_chi(eta, psi) and check_n(eta, psi, NewformsOnly)} : eta in Elements(H)};
+
+  mth_power := func<pair, m | <pair[1]^m, pair[2]^m>>;
+  n := Exponent(AbelianGroup(H));
+  coprime_to_n := [m : m in [1 .. n] | IsCoprime(m, n)];
+
+  if IdentifyConjugates then
+    pairs_up_to_galois := {};
+    while #pairs gt 0 do
+      pair := Rep(pairs);
+      Include(~pairs_up_to_galois, pair);
+      for m in coprime_to_n do
+        Exclude(~pairs, mth_power(pair, m));
+      end for;
+
+      if k eq 1 then
+        Exclude(~pairs, <pair[2], pair[1]>);
+      end if;
+    end while;
+    pairs := pairs_up_to_galois;
+  end if;
+
+  APC := func<pair | <AssociatedPrimitiveCharacter(pair[1]), AssociatedPrimitiveCharacter(pair[2])>>;
+  Mk`EisensteinAdmissibleCharacterPairs := [* APC(pair) : pair in pairs *];
+  return Mk`EisensteinAdmissibleCharacterPairs;
 end intrinsic;

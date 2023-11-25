@@ -611,11 +611,3 @@ intrinsic PrecomputeTraceForms(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   A := SetToSequence({ ii * aa : ii in Ideals(M), aa in L }); // Set of ideals
   HMFTracePrecomputation(M,A);
 end intrinsic;
-
-
-
-
-
-
-
-

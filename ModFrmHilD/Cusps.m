@@ -412,7 +412,7 @@ intrinsic CuspGetEisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
 {return the dimension of E(Mk)}
     N := Level(Mk);
     newforms_levels := AssociativeArray();
-    for pair in CuspEisensteinAdmissibleCharacterPairs(Mk) do
+    for pair in EisensteinAdmissibleCharacterPairs(Mk : IdentifyConjugates := false, NewformsOnly := false) do
         lvl := Conductor(pair[1]) * Conductor(pair[2]);
         if not IsDefined(newforms_levels, lvl) then
             newforms_levels[lvl] := 0;
@@ -424,36 +424,3 @@ intrinsic CuspGetEisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
     //print partial_dims;
     return &+partial_dims;
 end intrinsic;
-
-intrinsic CuspEisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD) -> SeqEnum
-{returns a list of all the primitive pairs <chi1, chi2> such that chi1*chi2 =
-Character(Mk) and Conductor(chi1)*Conductor(chi2) | Level(Mk) If the weight is
-1, we only return pairs up to permutation}
-    N := Level(Mk);
-    k := Weight(Mk);
-    assert k eq [2,2];
-    k := k[1];
-    chi := Character(Mk);
-    M := Parent(Mk);
-    X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
-    assert X eq Parent(chi);
-    chis := Elements(X);
-    chis_reps := Set(chis); //Set(GaloisConjugacyRepresentatives(chis));
-    chis_reps_index := {i : i->c in chis | c in chis_reps};
-    chiscond := [Conductor(c) : c in chis];
-    chisdict := AssociativeArray();
-    for i->c in chis do
-        chisdict[c] := i;
-    end for;
-    // [i, j] pairs st chis[i]*chis[j] = chi
-    pairs := [ [i, chisdict[chi*c^-1]] : i->c in chis | i in chis_reps_index ];
-    // filter based on conductor
-    pairs := [ p : p in pairs | N subset chiscond[p[1]] * chiscond[p[2]] ];
-    // k=2, so ignore special weight 1 case
-    prims := AssociativeArray();
-    for i in SequenceToSet(&cat pairs) do
-        prims[i] := AssociatedPrimitiveCharacter(chis[i]);
-    end for;
-    return [* <prims[p[1]], prims[p[2]]> : p in pairs *];
-end intrinsic;
-
