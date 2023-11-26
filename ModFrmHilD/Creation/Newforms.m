@@ -228,7 +228,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
             // so we treat this case separately
             CoeffsArray[i][bb][nu] := R!0;
           else
-            CoeffsArray[i][bb][nu] := R!(bool select IdlCoeffToEltCoeff(a_nn, nu, k, R, F) else 0);
+            CoeffsArray[i][bb][nu] := R!(bool select IdlCoeffToEltCoeff(a_nn, nu, k, R) else 0);
           end if;
         end for;
       end for;

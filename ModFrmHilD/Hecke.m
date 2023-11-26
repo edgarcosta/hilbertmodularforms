@@ -58,7 +58,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := fa
       if prec[bb] ne 0 then // the loop on aa didn't finish
         break; // breaks loop on nu
       else
-        coeffsTmmf[bb][nu] := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]), F);
+        coeffsTmmf[bb][nu] := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]));
       end if;
     end for;
   end for;

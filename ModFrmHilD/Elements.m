@@ -194,7 +194,7 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
     return false, _;
   end if;
   c := Coefficients(f)[bb][nu];
-  return true, EltCoeffToIdlCoeff(c, nu, Weight(Mk), CoefficientRing(Components(f)[bb]), F);
+  return true, EltCoeffToIdlCoeff(c, nu, f);
 end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
@@ -218,7 +218,7 @@ intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   return coeffs;
 end intrinsic;
 
-intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldNumElt, k::SeqEnum[RngIntElt], K::Fld, F::Fld) -> FldElt
+intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K::Fld) -> FldElt
   {
     inputs:
       a_nn: An element of a number field (usually the splitting field of 
@@ -226,7 +226,9 @@ intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldNumElt, k::SeqEnum[RngIntElt],
               representing the "Frobenius trace" at nn. 
               // TODO abhijitm phrase better, not exactly true
       nu: A totally positive element of a number field (the base field of the HMF)
-      f: A component of a Hilbert modular form
+      k: A weight
+      K: The field in which the output should live. Usually this will be
+        the coefficient field. 
     returns:
       The Fourier coefficient at nu of the HMF, the coefficient field.
 
@@ -264,79 +266,83 @@ intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldNumElt, k::SeqEnum[RngIntElt],
       the *technically incorrect* formula
 
       a_(nu) := a_(nn) * nu^((k-k_0)/2)
+
+      Thus, each component will be off by a factor of N(bbp)^(k_0/2). 
+      // TODO abhijitm I think this is actually broken... but I also
+      // think the existing code should be broken and it doesn't seem
+      // to be so idk. 
     }
 
   if nu eq 0 then
-    return K!a_nn;
+    return StrongCoerce(K, a_nn);
   end if;
 
-  // TODO abhijitm I think this is straight up wrong when 
-  // the narrow class number is bigger than 1, but I'm 
-  // leaving it as is to stay consistent with existing
-  // behavior. 
-  //
-  // This might cause problems in the nonparitious case as
-  // written, 
+  // TODO abhijitm there's some chance that this is wrong
+  // the narrow class number is bigger than 1, but I think
+  // it's alright... although it might cause problems in 
+  // the nonparitious case as written
 
-  return K!a_nn * K!EltToShiftedHalfWeight(nu, k)^(-1);
+  return StrongMultiply(K, [* a_nn, EltToShiftedHalfWeight(nu, k)^(-1) *]);
 end intrinsic;
 
-intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldOrdElt, k::SeqEnum[RngIntElt], K::Fld, F::Fld) -> FldElt
-  {
-    inputs:
-      a_nn: An element of a number field (usually the splitting field of 
-              the base field of the HMF if GaloisDescent has been performed)
-              representing the "Frobenius trace" at nn. 
-              // TODO abhijitm phrase better, not exactly true
-      nu: A totally positive element of a number field (the base field of the HMF)
-      f: A component of a Hilbert modular form
-    returns:
-      The Fourier coefficient at nu of the HMF, the coefficient field.
-
-      See the called function for details.
-  }
-  return IdlCoeffToEltCoeff(a_nn, F!nu, k, K, F);
-end intrinsic;
-
-intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldNumElt, k::SeqEnum[RngIntElt], K::Any, F::Any) -> FldElt
+intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K::Fld) -> FldElt
   {
     inputs:
       a_nu: An element of a number field (usually the splitting field 
               of the base field of the HMF if GaloisDescent has been performed)
               representing the Fourier coefficient at nu.
       nu: A totally positive element of a number field (the base field of the HMF)
-
+      k: A weight
+      K: The field in which the output should live. Usually this will be
+        the coefficient field. 
     returns:
       The "Frobenius trace" at nn of the HMF, the coefficient field.
 
       Reversing the formula in IdlCoeffToEltCoeff (explanation provided
       in that function), we compute
 
-      a_(nn) := a_(nu) * N(bbp)^(-k_0/2) * N(nu)^((k_0-k_i)/2)
+      a_(nn) := a_(nu) * N(nu)^((k_0-k_i)/2)
   }
 
   if nu eq 0 then
-    return K!a_nu;
+    return StrongCoerce(K, a_nu);
   end if;
 
-  k0 := Max(k);
-  return K!a_nu * K!EltToShiftedHalfWeight(nu, k);
+  return StrongMultiply(K, [* a_nu, K!EltToShiftedHalfWeight(nu, k) *]);
 end intrinsic;
 
-intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldOrdElt, k::SeqEnum[RngIntElt], K::Fld, F::Fld) -> FldElt
+intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt
   {
     inputs:
       a_nu: An element of a number field (usually the splitting field 
               of the base field of the HMF if GaloisDescent has been performed)
               representing the Fourier coefficient at nu.
       nu: A totally positive element of a number field (the base field of the HMF)
-      f: A component of a Hilbert modular form
+      f: An element of an HMF Space.
     returns:
-      The "Frobenius trace" at nn of the HMF, the coefficient field.
+      The "Frobenius trace" a_nn at the ideal nn corresponding to nu. 
+      See the called function for details.
+  }
+  return EltCoeffToIdlCoeff(a_nu, nu, Weight(Parent(f)), CoefficientRing(f));
+end intrinsic;
+
+intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt
+  {
+    inputs:
+      a_nn: An element of a number field (usually the splitting field of 
+              the base field of the HMF if GaloisDescent has been performed)
+              representing the "Frobenius trace" at nn. 
+              // TODO abhijitm phrase better, not exactly true
+      nu: A totally positive element of a number field (the base field of the HMF),
+        which we expect to be (but do not check) a generator for nn * bbp for some bb.
+      f: An element of an HMF Space.
+    returns:
+      The Fourier coefficient at the totally positive element nu
 
       See the called function for details.
   }
-  return EltCoeffToIdlCoeff(a_nu, F!nu, k, K, F);
+
+  return IdlCoeffToEltCoeff(a_nn, nu, Weight(Parent(f)), CoefficientRing(f));
 end intrinsic;
 
 intrinsic CoefficientRing(f::ModFrmHilDEltComp) -> Any

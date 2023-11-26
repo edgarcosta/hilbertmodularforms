@@ -468,7 +468,8 @@ intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
     assert Norm(x) eq 1;
   end if;
 
-  F := Parent(x);
+  // extra NumberField to deal with when x is FldOrdElt
+  F := NumberField(Parent(x));
   K := UnitCharField(F, k);
   k0 := Max(k);
 
