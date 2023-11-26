@@ -28,4 +28,12 @@ B_22 := CuspFormBasis(M_22);
 // on V. 
 V := [f/eis^2 : f in B_44];
 W := HeckeStableSubspace(V, pp);
-assert #LinearDependence(W cat B_22) eq #B_22;
+
+// TODO abhijitm I have absolutely no clue why U cat W does
+// work but it doesn't seem to so here we are.
+WcatB22 := W;
+for b in B_22 do
+  Append(~WcatB22, b);
+end for;
+
+assert #LinearDependence(WcatB22) eq #B_22;

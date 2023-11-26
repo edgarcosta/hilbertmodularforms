@@ -501,8 +501,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
   k := [0 : i in Weight(Mk)];
-  uc := UnitCharacters(Mk);
-  M0 := HMFSpace(M, N, k, chi: unitcharacters:=uc);
+  M0 := HMFSpace(M, N, k, chi);
   coeffs := AssociativeArray();
   for nu in ShintaniReps(M)[bb] do
     if IsZero(nu) then
@@ -886,7 +885,7 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
       if evaluate_bool then
-        c +:= StrongMultiply(F, [* Evaluate(char_f, epsilon1), coeffs_f[smu1], Evaluate(char_g, epsilon2), coeffs_g[smu2] *]);
+        c +:= StrongMultiply(F, [* Evaluate(char_f, epsilon1^(-1)), coeffs_f[smu1], Evaluate(char_g, epsilon2^(-1)), coeffs_g[smu2] *]);
       else
         c +:= StrongMultiply(F, [* coeffs_f[smu1], coeffs_g[smu2] *]);
       end if;
@@ -917,7 +916,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   require ComponentIdeal(f) eq ComponentIdeal(g): "we only support division with the same component";
 
   LandingSpace := Parent(f)/Parent(g);
-  char_f := UnitCharacter(f);
+  char_g := UnitCharacter(g);
   char_h := UnitCharacters(LandingSpace)[ComponentIdeal(f)];
 
   coeffs_f := Coefficients(f);
@@ -946,7 +945,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
-  evaluate_bool := not IsOne(char_f) or not IsOne(char_h);
+  evaluate_bool := not IsOne(char_g) or not IsOne(char_h);
 
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec)  do
     sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
@@ -963,7 +962,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
         count +:= 1;
       else
         if evaluate_bool then
-          sum +:= StrongMultiply(F, [* Evaluate(char_f, epsilon1), coeffs_g[smu1], Evaluate(char_h, epsilon2), F!coeffs_h[smu2] *]);
+          sum +:= StrongMultiply(F, [* Evaluate(char_g, epsilon1^(-1)), coeffs_g[smu1], Evaluate(char_h, epsilon2^(-1)), F!coeffs_h[smu2] *]);
         else
           sum +:= StrongMultiply(F, [* coeffs_g[smu1],  F!coeffs_h[smu2] *]);
         end if;

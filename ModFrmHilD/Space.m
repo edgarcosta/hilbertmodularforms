@@ -232,21 +232,21 @@ end intrinsic;
 intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt : unitcharacters:=false) -> ModFrmHilD
   {}
   spaces := Spaces(M);
+  F := BaseField(M);
   if unitcharacters cmpeq false then
     unitcharacters := AssociativeArray();
     for bb in NarrowClassGroupReps(M) do
-      unitcharacters[bb] := TrivialUnitCharacter(BaseField(M));
+      unitcharacters[bb] := WeightUnitCharacter(F, k);
     end for;
   end if;
 
   uc_values := &cat[ValuesOnGens(unitcharacters[bb]) : bb in NarrowClassGroupReps(M)];
-
   if IsDefined(spaces, N) then
     if IsDefined(spaces[N], <k, chi, uc_values>) then
       return spaces[N][<k, chi, uc_values>];
     end if;
   else
-    M`Spaces[N] := AssociativeArray();
+    M`Spaces[N] := AssociativeArray(PowerStructure(Tup));
   end if;
   Mk := ModFrmHilDInitialize();
   Mk`Parent := M;
