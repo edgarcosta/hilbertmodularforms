@@ -46,8 +46,6 @@ intrinsic CuspFormBasis(
   GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
-  require IsParallel(Weight(Mk)) : "not yet implemented for parallel weight";
-
   if assigned Mk`CuspFormBasis then
     return Mk`CuspFormBasis;
   end if;
@@ -132,11 +130,11 @@ intrinsic EisensteinBasis(
 
   if not IsParallel(Weight(Mk)) then
     Mk`EisensteinBasis := [];
+  else
+    k := Weight(Mk)[1];
+    Mk`EisensteinBasis := NewEisensteinBasis(Mk) cat OldEisensteinBasis(Mk);
+    require #Mk`EisensteinBasis eq EisensteinDimension(Mk) : "#Mk`EisensteinBasis = %o != %o = EisensteinDimension(Mk)", #Mk`EisensteinBasis, EisensteinDimension(Mk);
   end if;
-
-  k := Weight(Mk)[1];
-  Mk`EisensteinBasis := NewEisensteinBasis(Mk) cat OldEisensteinBasis(Mk);
-  require #Mk`EisensteinBasis eq EisensteinDimension(Mk) : "#Mk`EisensteinBasis = %o != %o = EisensteinDimension(Mk)", #Mk`EisensteinBasis, EisensteinDimension(Mk);
   return SubBasis(Mk`EisensteinBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
