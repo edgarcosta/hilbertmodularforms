@@ -57,12 +57,12 @@ function test(F, K, k, bbps, idl_to_elt, elt_to_idl : bound := BOUND)
     if not (a eq 0 or nu eq 0) then
       // TODO abhijitm decide whether or not there's a bbp dependence,
       // if not remove the bbp's everywhere in this test.
-      x := IdlCoeffToEltCoeff(a, nu, k, K, F);
-      y := EltCoeffToIdlCoeff(a, nu, k, K, F);
+      x := IdlCoeffToEltCoeff(a, nu, k, K);
+      y := EltCoeffToIdlCoeff(a, nu, k, K);
       assert_eq(x, idl_to_elt(a, nu, bbp));
       assert_eq(y, elt_to_idl(a, nu, bbp));
-      assert_eq(EltCoeffToIdlCoeff(x, nu, k, K, F), a);
-      assert_eq(IdlCoeffToEltCoeff(y, nu, k, K, F), a);
+      assert_eq(EltCoeffToIdlCoeff(x, nu, k, K), a);
+      assert_eq(IdlCoeffToEltCoeff(y, nu, k, K), a);
     end if;
   end for;
   print "Passed test!";
