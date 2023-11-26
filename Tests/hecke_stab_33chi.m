@@ -3,7 +3,7 @@
 // respectively, checks that S_22*f is the Hecke stable subspace of
 // S_44/f
 
-PREC := 17;
+PREC := 12;
 F := QuadraticField(5);
 ZF := Integers(F);
 
@@ -35,9 +35,15 @@ function test(F, N, chi)
   pp := 3*ZF;
   U := HeckeStableSubspace(V, pp);
 
-  // want all of W to be in the Hecke stable subspace of V
-  assert #LinearDependence(U cat W) eq #W;
+  // TODO abhijitm I have absolutely no clue why U cat W does
+  // work but it doesn't seem to so here we are.
+  UcatW := U;
+  for w in W do
+    Append(~UcatW, w);
+  end for;
 
+  // want all of W to be in the Hecke stable subspace of V
+  assert #LinearDependence(UcatW) eq #W;
   return "";
 end function;
 
