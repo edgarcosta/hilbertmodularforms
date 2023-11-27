@@ -26,8 +26,35 @@ intrinsic ClassGroupReps(F::FldAlg) -> SeqEnum
   return F`ClassGroupReps;
 end intrinsic;
 
+intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
+{Find a totally positive field element a such that qI is an integral ideal coprime to J;
+ I and J must be defined over the same maximal order.}
 
-/////////////////////// Totally positive associate /////////////////
+    K := NumberField(Order(I));
+    q := CoprimeRepresentative(I, J);
+
+    // Nothing to do if K is imaginary or we already chose a good element.
+    if Signature(q) eq [1,1] or Discriminant(K) lt 0 then return q; end if;
+    if Signature(q) eq [-1,-1] then return -q; end if;
+
+    // Otherwise, we have chosen a bad element, so must correct the signs.
+    z := Sqrt(K!Discriminant(Integers(K)));
+    require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
+    assert IsIntegral(z);
+    
+    if Signature(z) ne Signature(q) then
+	z := -z;
+    end if;
+
+    NJ := Norm(J);
+    d := GCD(Integers() ! Norm(z), NJ);
+
+    if d eq 1 then return z*q; end if;
+    b := ExactQuotient(NJ, d);
+    return (1 + b * z)*q;
+end intrinsic;
+
+/////////////////////// Units and totally positive units /////////////////
 
 intrinsic Signature(a::RngOrdElt) -> SeqEnum
   {}
@@ -161,34 +188,6 @@ intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
     F`FundamentalUnitSquare := eps;
   end if;
   return F`FundamentalUnitSquare;
-end intrinsic;
-
-intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
-{Find a totally positive field element a such that qI is an integral ideal coprime to J;
- I and J must be defined over the same maximal order.}
-
-    K := NumberField(Order(I));
-    q := CoprimeRepresentative(I, J);
-
-    // Nothing to do if K is imaginary or we already chose a good element.
-    if Signature(q) eq [1,1] or Discriminant(K) lt 0 then return q; end if;
-    if Signature(q) eq [-1,-1] then return -q; end if;
-
-    // Otherwise, we have chosen a bad element, so must correct the signs.
-    z := Sqrt(K!Discriminant(Integers(K)));
-    require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
-    assert IsIntegral(z);
-    
-    if Signature(z) ne Signature(q) then
-	z := -z;
-    end if;
-
-    NJ := Norm(J);
-    d := GCD(Integers() ! Norm(z), NJ);
-
-    if d eq 1 then return z*q; end if;
-    b := ExactQuotient(NJ, d);
-    return (1 + b * z)*q;
 end intrinsic;
 
 /////////////////////// DistinguishedPlace and strong coercion ///////////////////////////
