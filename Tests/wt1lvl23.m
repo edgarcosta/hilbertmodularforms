@@ -1,3 +1,4 @@
+///////////////////  Q(\sqrt{5}) /////////////////// 
 F:=QuadraticField(5);
 prec:=20;
 M:=GradedRingOfHMFs(F, prec);
@@ -6,7 +7,7 @@ N:= 23*ZF;
 H := HeckeCharacterGroup(N, [1,2]);
 chi := H.1^11; // (H.1^11); // aka 11 mod 22
 M1chi := HMFSpace(M, N, [1,1], chi);
-Space := Weight1CuspBasis(M1chi : prove := false);
+Space := HeckeStabilityCuspBasis(M1chi : prove := false);
 f := Space[1];
 f := f/Coefficient(f, 1*ZF);
 
@@ -340,3 +341,18 @@ for p in PrimesUpTo(20) do
     end if;
     i := i+1;
 end for;
+
+
+///////////////////  Q(\sqrt{3}) /////////////////// 
+
+F:=QuadraticField(3);
+prec:=25;
+M:=GradedRingOfHMFs(F, prec);
+ZF:=Integers(F);
+N:= 23*ZF;
+H := HeckeCharacterGroup(N, [1,2]);
+chi := H.1^11*H.2*H.3; 
+M1chi := HMFSpace(M, N, [1,1], chi);
+Space := HeckeStabilityCuspBasis(M1chi : prove := false);
+assert #Space eq 4;
+

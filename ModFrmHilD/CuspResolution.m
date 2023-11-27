@@ -381,7 +381,7 @@ intrinsic CuspResolutionV(W::RngOrdIdl, W2::RngOrdIdl, qq::RngOrdIdl:
     F := NumberField(ZF);
 
     //Get totally positive unit generating V
-    v := FundamentalUnitTotPos(F);
+    v := TotallyPositiveUnitsGenerators(F)[1];
     if GroupType eq "GL2+" and GammaType eq "Gamma1" then
         //Use qq
         w := FundamentalUnit(F);
@@ -647,7 +647,7 @@ intrinsic SamplesOfLevelSubgroup(b::RngOrdFracIdl, n::RngOrdIdl:
     end if;
 
     if GroupType eq "GL2+" then
-        u := FundamentalUnitTotPos(F);
+        u := TotallyPositiveUnitsGenerators(F)[1];
         if GammaType eq "Gamma0" or GammaType eq "Gamma1" then
             Append(~list, Matrix(F, [[1,0],[0,u]]));
         else

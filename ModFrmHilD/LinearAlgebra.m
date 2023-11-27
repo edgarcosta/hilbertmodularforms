@@ -49,19 +49,18 @@ intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false,
   else
     bbs := IdealClasses;
   end if;
-  require #bbs gt 0: "at least on ideal class must be specified";
+  require #bbs gt 0: "at least one ideal class must be specified";
+  // make it a SeqEnum
+  bbs := [bb : bb in bbs];
 
   if prec cmpeq false then
     prec := Min([Precision(Components(f)[bb]): f in list, bb in bbs]);
   end if;
 
   nus := [ShintaniRepsUpToTrace(M, bb, prec) : bb in bbs];
-  mat := Matrix([
-    &cat[
-      &cat[Eltseq(Coefficients(Components(f)[bb])[nu]) : nu in nus[i]]
-      : i->bb in bbs]
-    : f in list]);
-  assert Ncols(mat) eq &+[#elt : elt in nus]*Degree(CoefficientRing(list[1]));
+
+  mat := Matrix([&cat[[Coefficients(Components(f)[bb])[nu] : nu in nus[i]] : i->bb in bbs] : f in list]);
+  assert Ncols(mat) eq &+[#elt : elt in nus];
   assert Nrows(mat) eq #list;
   return mat, nus, bbs;
 end intrinsic;
@@ -73,9 +72,21 @@ intrinsic ShortLinearDependence(M::Mtrx) -> SeqEnum[RngIntElt]
     If none can be found return 0.
   }
   // in case M is defined over the rationals
-  M := ChangeRing(Denominator(M)*M, Integers());
+  if CanChangeRing(M, Rationals()) then
+    M := ChangeRing(Denominator(M)*M, Integers());
+  end if;
+  
   B := Basis(Kernel(M));
-  if #B ne 0 then return [Eltseq(i) : i in Rows(Matrix(LLL(B)))]; else return []; end if;
+
+  if #B eq 0 then
+    return [];
+  elif CanChangeRing(M, Rationals()) then
+    kernel_basis_vectors := Rows(Matrix(LLL(B)));
+  else 
+    kernel_basis_vectors := B;
+  end if;
+  // return a SeqEnum of SeqEnums instead of a SeqEnum of vectors
+  return [Eltseq(v) : v in kernel_basis_vectors];
 end intrinsic;
 
 

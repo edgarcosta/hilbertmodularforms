@@ -177,6 +177,7 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   require not IsZero(nn) : "The zero coefficient exists on each component";
 
   M := GradedRing(f);
+  Mk := Parent(f);
   if not nn in Ideals(M) then
     return false, _;
   end if;
@@ -192,7 +193,8 @@ intrinsic IsCoefficientDefined(f::ModFrmHilDElt, nn::RngOrdIdl) -> BoolElt, RngE
   if not nu in ShintaniReps(M)[bb] then
     return false, _;
   end if;
-  return true, Coefficients(f)[bb][nu];
+  c := Coefficients(f)[bb][nu];
+  return true, EltCoeffToIdlCoeff(c, nu, f);
 end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
@@ -214,6 +216,133 @@ intrinsic Coefficients(f::ModFrmHilDElt) -> Any
     coeffs[bb] := Coefficients(Components(f)[bb]);
   end for;
   return coeffs;
+end intrinsic;
+
+intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K::Fld) -> FldElt
+  {
+    inputs:
+      a_nn: An element of a number field (usually the splitting field of 
+              the base field of the HMF if GaloisDescent has been performed)
+              representing the "Frobenius trace" at nn. 
+              // TODO abhijitm phrase better, not exactly true
+      nu: A totally positive element of a number field (the base field of the HMF)
+      k: A weight
+      K: The field in which the output should live. Usually this will be
+        the coefficient field. 
+    returns:
+      The Fourier coefficient at nu of the HMF, the coefficient field.
+
+      The coefficients of an HMF are naturally indexed by totally positive elements
+      nu. However, after ExtendsMultiplicatively and GaloisDescent, we have coefficients
+      indexed by ideals nn. Fix a set of narrow class representatives. Based on the 
+      narrow class of nn, there is a narrow class representative bbp such that 
+      nn * bbp is a principal ideal. (In our code we
+      call this the ideal dual of a narrow class group representative but this distinction
+      isn't important here). 
+
+      However, the choice of generator nu such that bbp * nn = (nu) 
+      is not canonical, and by the modular transformation law,
+      two candidate generators nu and eps * nu -- for some totally positive unit eps -- 
+      should have Fourier coefficients related by 
+
+      a_(nu) = \prod_i eps_i^(k_i) a_(eps*nu),
+
+      where eps_i is the image of eps under the ith real embedding. 
+      When the weight is parallel (k_1 = ... = k_n) then we have
+      a_nu = a_(eps*nu) but in general this is not the case.
+
+      Shimura (Duke 78 Vol 45 No. 3) then writes
+
+      a_(nu) := a_(nn) * N(bbp)^(k_0/2) * nu^((k-k_0)/2)
+
+      where k_0 is the largest entry of k and nu_i is the image of nu under the ith
+      real embedding. This definition is compatible with the earlier transformation law.
+
+      This definition is canonical once we fix the normalization of each
+      Hecke operator, since we want the a_nn to be eigenvalues. In our case, the normalization
+      comes fixed because it comes from the Hecke code in ModFrmHil.
+
+      To reduce the degree of the number fields we need to work with, we use
+      the *technically incorrect* formula
+
+      a_(nu) := a_(nn) * nu^((k-k_0)/2)
+
+      Thus, each component will be off by a factor of N(bbp)^(k_0/2). 
+      // TODO abhijitm I think this is actually broken... but I also
+      // think the existing code should be broken and it doesn't seem
+      // to be so idk. 
+    }
+
+  if nu eq 0 then
+    return StrongCoerce(K, a_nn);
+  end if;
+
+  // TODO abhijitm there's some chance that this is wrong
+  // the narrow class number is bigger than 1, but I think
+  // it's alright... although it might cause problems in 
+  // the nonparitious case as written
+
+  return StrongMultiply(K, [* a_nn, EltToShiftedHalfWeight(nu, k)^(-1) *]);
+end intrinsic;
+
+intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K::Fld) -> FldElt
+  {
+    inputs:
+      a_nu: An element of a number field (usually the splitting field 
+              of the base field of the HMF if GaloisDescent has been performed)
+              representing the Fourier coefficient at nu.
+      nu: A totally positive element of a number field (the base field of the HMF)
+      k: A weight
+      K: The field in which the output should live. Usually this will be
+        the coefficient field. 
+    returns:
+      The "Frobenius trace" at nn of the HMF, the coefficient field.
+
+      Reversing the formula in IdlCoeffToEltCoeff (explanation provided
+      in that function), we compute
+
+      a_(nn) := a_(nu) * N(nu)^((k_0-k_i)/2)
+  }
+
+  if nu eq 0 then
+    return StrongCoerce(K, a_nu);
+  end if;
+
+  return StrongMultiply(K, [* a_nu, K!EltToShiftedHalfWeight(nu, k) *]);
+end intrinsic;
+
+intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt
+  {
+    inputs:
+      a_nu: An element of a number field (usually the splitting field 
+              of the base field of the HMF if GaloisDescent has been performed)
+              representing the Fourier coefficient at nu.
+      nu: A totally positive element of a number field (the base field of the HMF)
+      f: An element of an HMF Space.
+    returns:
+      The "Frobenius trace" a_nn at the ideal nn corresponding to nu. 
+      See the called function for details.
+  }
+  return EltCoeffToIdlCoeff(a_nu, nu, Weight(Parent(f)), CoefficientRing(f));
+end intrinsic;
+
+intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt
+  {
+    inputs:
+      a_nn: An element of a number field (usually the splitting field of 
+              the base field of the HMF if GaloisDescent has been performed)
+              representing the "Frobenius trace" at nn. 
+              // TODO abhijitm phrase better, not exactly true
+      nu: A totally positive element of a number field (the base field of the HMF),
+        which we expect to be (but do not check) a generator for nn * bbp for some bb.
+      f: An element of an HMF Space.
+    returns:
+      The Fourier coefficient at the totally positive element nu
+
+      See the called function for details.
+  }
+
+  return IdlCoeffToEltCoeff(a_nn, nu, Weight(Parent(f)), CoefficientRing(f));
 end intrinsic;
 
 intrinsic CoefficientRing(f::ModFrmHilDEltComp) -> Any
@@ -309,6 +438,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
                   :
+                  coeff_ring := DefaultCoefficientRing(Mk),
                   CoeffsByIdeals := false,
                   prec := 0) -> ModFrmHilDEltComp
   {
@@ -320,6 +450,11 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     for all nu in the Shintani cone, unless CoeffsByIdeals is true
     (to allow backwards compatibility), in which case
     coeffs[nn] = a_nn as above (and we assign according to Shintani rep).
+
+    The coefficients are assumed to lie in Mk`DefaultCoefficientRing
+    unless the optional argument coeff_ring is passed, in which
+    case we require that coeff_ring contain Mk`DefaultCoefficientRing
+    and that all the input coefficients can be coerced into coeff_ring.
   }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
@@ -350,33 +485,15 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     coeffs := coeffsnu;  // goodbye old data!
   end if;
 
-  CoefficientSequence := []; // to assert all coefficients have the same parent
-  RecastKeys := []; //some coeffs might be of type RngIntElt and might need recasting later on
-  newcoeffs := AssociativeArray();
+  f`Coefficients := AssociativeArray();
+  f`CoefficientRing := coeff_ring;
+
   for nu in ShintaniRepsUpToTrace(M, bb, f`Precision) do
     b, c := IsDefined(coeffs, nu);
     require b : "Coefficients should be defined for each representative in the Shintani cone up to precision";
-    if Type(c) eq RngIntElt then
-      Append(~RecastKeys, nu);
-    else
-      Append(~CoefficientSequence, c); // if value of coeffs[nu] differs then error here trying to append
-    end if;
-
-    newcoeffs[nu] := c;
+    // coerce all the coefficents into the coefficient ring
+    f`Coefficients[nu] := (f`CoefficientRing)!coeffs[nu];
   end for;
-
-  f`Coefficients := newcoeffs;
-  if #CoefficientSequence gt 0 then
-    R := Parent(CoefficientSequence[1]);
-  else
-    R := Integers();
-  end if;
-  f`CoefficientRing := R;
-  if R cmpne Integers() then
-    for nu in RecastKeys do
-      newcoeffs[nu] := R!newcoeffs[nu];
-    end for;
-  end if;
   return f;
 end intrinsic;
 
@@ -405,6 +522,7 @@ intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
               :
               CoeffsByIdeals:=false,
+              coeff_rings:=false, // Assoc RngFracIdl -> FldNum
               prec := 0) -> ModFrmHilDElt
   {
     Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
@@ -414,6 +532,10 @@ intrinsic HMF(Mk::ModFrmHilD,
     Explicitly, coeffs is an double associative array
     coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb')^-1
     for all nu in the Shintani cone.
+
+    The optional argument coeff_rings is an associative array
+    which takes narrow class group reps to the coefficient field
+    of their component. 
   }
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
@@ -436,8 +558,11 @@ intrinsic HMF(Mk::ModFrmHilD,
     require Type(prec) eq Assoc: "prec must be either an integer or a AssociativeArray";
   end if;
   require Keys(prec) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
+
+
   for bb in bbs do
-    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: CoeffsByIdeals:=CoeffsByIdeals, prec:=prec[bb]);
+    coeff_ring := (coeff_rings cmpeq false) select Mk`DefaultCoefficientRing else coeff_rings[bb];
+    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: CoeffsByIdeals:=CoeffsByIdeals, coeff_ring := coeff_ring, prec:=prec[bb]);
   end for;
   return f;
 end intrinsic;
@@ -505,8 +630,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   X := HeckeCharacterGroup(N, [1..Degree(BaseField(M))]);
   chi := X!1;
   k := [0 : i in Weight(Mk)];
-  uc := UnitCharacters(Mk);
-  M0 := HMFSpace(M, N, k, chi: unitcharacters:=uc);
+  M0 := HMFSpace(M, N, k, chi);
   coeffs := AssociativeArray();
   for nu in ShintaniReps(M)[bb] do
     if IsZero(nu) then
@@ -530,6 +654,26 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
 end intrinsic;
 
 
+///////// ModFrmHilDElt and ModFrmHilDComp: CoefficientRing ///////////
+
+intrinsic HasDefaultCoeffRing(f::ModFrmHilDEltComp) -> bool
+  {
+    returns true if f has coefficient ring equal to the default
+    coefficient ring for its weight and base field.
+  }
+  return f`CoefficientRing eq DefaultCoefficientRing(Parent(f));
+end intrinsic;
+
+intrinsic HasDefaultCoeffRing(f::ModFrmHilDElt) -> bool
+  {
+    returns true if every component of f has coefficient ring equal 
+    to the default coefficient ring for its weight and base field.
+  }
+  
+  bbs := NarrowClassGroupReps(Parent(Parent(f)));
+  return &and[HasDefaultCoeffRing(Components(f)[bb]) : bb in bbs];
+end intrinsic;
+
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
 
 //FIXME: this does nto agree with MAGMA standards
@@ -541,9 +685,9 @@ intrinsic ChangeCoefficientRing(f::ModFrmHilDEltComp, R::Rng) -> ModFrmHilDEltCo
   coeffs := Coefficients(f);
   new_coeffs := AssociativeArray(Universe(coeffs));
   for nu->anu in coeffs do
-    new_coeffs[nu] := R!anu;
+    new_coeffs[nu] := StrongCoerce(R, anu);
   end for;
-  return HMFComp(Parent(f), bb, new_coeffs: prec:=Precision(f));
+  return HMFComp(Parent(f), bb, new_coeffs: coeff_ring := R, prec:=Precision(f));
 end intrinsic;
 
 
@@ -650,15 +794,14 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   return result;
 end intrinsic;
 
-
 intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return Trace(f)}
-
+  K := DefaultCoefficientRing(Parent(f));
   new_coeffs := AssociativeArray(Universe(Coefficients(f)));
   for nu->anu in Coefficients(f) do
-    new_coeffs[nu] := Trace(anu);
+    new_coeffs[nu] := (K eq Rationals()) select Trace(anu) else Trace(StrongCoerce(K, anu), K);
   end for;
-  return HMFComp(Parent(f), ComponentIdeal(f), new_coeffs: prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), new_coeffs : coeff_ring := K, prec:=Precision(f));
 end intrinsic;
 
 intrinsic Trace(f::ModFrmHilDElt) -> ModFrmHilDElt
@@ -671,18 +814,29 @@ intrinsic Trace(f::ModFrmHilDElt) -> ModFrmHilDElt
   return HMFSumComponents(Parent(f), nC);
 end intrinsic;
 
-
 intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
-  {returns the full Galois orbit of a modular form over Q}
+  {
+    Given an HMF element f of a HMFSpace Mk with coefficients in a field L
+    containing the default coefficient ring K of Mk, returns a K-basis
+    for the subspace of Mk spanned by the Gal(L/K)-conjugates of f. 
+  }
+  
+  if CoefficientRing(f) eq DefaultCoefficientRing(Parent(f)) then
+    return [f];
+  end if;
+
+  if DefaultCoefficientRing(Parent(f)) eq Rationals() then
+    L := CoefficientRing(f);
+  else
+    L := RelativeField(CoefficientRing(f), DefaultCoefficientRing(Parent(f)));
+  end if;
 
   result := [Parent(f) | ];
-  for b in Basis(CoefficientRing(f)) do
+  for b in Basis(L) do
     Append(~result, Trace(b * f));
   end for;
   return result;
 end intrinsic;
-
-
 
 ////////// ModFrmHilDElt: Arithmetic //////////
 
@@ -739,9 +893,9 @@ intrinsic '*'(c::Any, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   new_coeffs := AssociativeArray();
   coeffs := Coefficients(f);
   for nu in Keys(coeffs) do
-    coeffs[nu] := F!(c * coeffs[nu]);
+    coeffs[nu] := StrongCoerce(F, c) * coeffs[nu];
   end for;
-  return HMFComp(Parent(f), ComponentIdeal(f), coeffs: prec:=Precision(f));
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs: coeff_ring := F, prec:=Precision(f));
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDEltComp, c::Any) -> ModFrmHilDEltComp
@@ -785,13 +939,16 @@ intrinsic '+'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec := Minimum(prec_f, prec_g);
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
-  coeffs_f := Coefficients(f);
-  coeffs_g := Coefficients(g);
+
+  Ff := CoefficientRing(f);
+  Fg := CoefficientRing(g);
+  require Ff eq Fg : "We only support addition of HMFs with the same coefficient ring";
+
   coeffs_h := AssociativeArray(); // h := f+g
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec) do
     coeffs_h[nu] := coeffs_f[nu] + coeffs_g[nu];
   end for;
-  return HMFComp(Parent(f), ComponentIdeal(f), coeffs_h : prec:=prec);
+  return HMFComp(Parent(f), ComponentIdeal(f), coeffs_h : coeff_ring := Ff, prec:=prec);
 end intrinsic;
 
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -823,14 +980,23 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
   coeffs_h := AssociativeArray(); // h := f*g
-  // Compute the new CoefficientRing
+  
+  LandingSpace := Parent(f) * Parent(g);
+
   Ff := CoefficientRing(f);
   Fg := CoefficientRing(g);
   if Ff eq Fg then
     F := Ff;
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
+    // We try to put things in their default coefficient rings
+    // wherever possible
+    K := DefaultCoefficientRing(LandingSpace);
+    if IsSubfield(F, K) then
+      F := K;
+    end if;
   end if;
+
   table := MPairs(GradedRing(f))[ComponentIdeal(f)];
 
   // TODO: improve precision?
@@ -848,14 +1014,14 @@ intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
       smu1, epsilon1 := Explode(xpair); // <s(mu1), epsilon1>
       smu2, epsilon2 := Explode(ypair); // <s(mu2), epsilon2>
       if evaluate_bool then
-        c +:= F!Evaluate(char_f, epsilon1) * F!coeffs_f[smu1] *  F!Evaluate(char_g, epsilon2) * F!coeffs_g[smu2];
+        c +:= StrongMultiply(F, [* Evaluate(char_f, epsilon1^(-1)), coeffs_f[smu1], Evaluate(char_g, epsilon2^(-1)), coeffs_g[smu2] *]);
       else
-        c +:= F!coeffs_f[smu1] * F!coeffs_g[smu2];
+        c +:= StrongMultiply(F, [* coeffs_f[smu1], coeffs_g[smu2] *]);
       end if;
     end for;
     coeffs_h[nu] := c;
   end for;
-  return HMFComp(Parent(f)*Parent(g), ComponentIdeal(f), coeffs_h : prec:=prec);
+  return HMFComp(Parent(f)*Parent(g), ComponentIdeal(f), coeffs_h : coeff_ring := F, prec:=prec);
 end intrinsic;
 
 intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -879,23 +1045,27 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   require ComponentIdeal(f) eq ComponentIdeal(g): "we only support division with the same component";
 
   LandingSpace := Parent(f)/Parent(g);
-  char_f := UnitCharacter(f);
+  char_g := UnitCharacter(g);
   char_h := UnitCharacters(LandingSpace)[ComponentIdeal(f)];
 
   coeffs_f := Coefficients(f);
   coeffs_g := Coefficients(g);
   coeffs_h := AssociativeArray(); // h := f/g
-  // Compute the new CoefficientRing
+                                  
   Ff := CoefficientRing(f);
   Fg := CoefficientRing(g);
   if Ff eq Fg then
     F := Ff;
-    if not IsField(F) and not IsInvertible(coeffs_g)[0] then
-      F := NumberField(F);
-    end if;
   else
     F := Compositum(NumberField(Ff), NumberField(Fg));
+    // We try to put elements in the default coefficient rings 
+    // of their spaces wherever possible
+    K := DefaultCoefficientRing(LandingSpace);
+    if IsSubfield(F, K) then
+      F := K;
+    end if;
   end if;
+
   table := MPairs(GradedRing(f))[ComponentIdeal(f)];
 
   // TODO: improve precision?
@@ -904,7 +1074,7 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   prec_g := Precision(g);
   prec := Minimum(prec_f, prec_g);
 
-  evaluate_bool := not IsOne(char_f) or not IsOne(char_h);
+  evaluate_bool := not IsOne(char_g) or not IsOne(char_h);
 
   for nu in ShintaniRepsUpToTrace(GradedRing(f), ComponentIdeal(f), prec)  do
     sum := F!0; // will record sum_{mu + mu' = nu, mu != 0} a(g)_mu a(h)_mu'
@@ -921,18 +1091,18 @@ intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
         count +:= 1;
       else
         if evaluate_bool then
-          sum +:= F!Evaluate(char_f, epsilon1) * F!coeffs_g[smu1] *  F!Evaluate(char_h, epsilon2) * F!coeffs_h[smu2];
+          sum +:= StrongMultiply(F, [* Evaluate(char_g, epsilon1^(-1)), coeffs_g[smu1], Evaluate(char_h, epsilon2^(-1)), F!coeffs_h[smu2] *]);
         else
-          sum +:= F!coeffs_g[smu1] * F!coeffs_h[smu2];
+          sum +:= StrongMultiply(F, [* coeffs_g[smu1],  F!coeffs_h[smu2] *]);
         end if;
       end if;
     end for;
     //FIXME: this asserts should be moved to the creation of MPairs
     assert count eq 1;
-    coeffs_h[nu] := (F!coeffs_f[nu] - sum)/F!coeffs_g[0];
+    coeffs_h[nu] := (StrongCoerce(F, coeffs_f[nu]) - sum)/StrongCoerce(F, coeffs_g[0]);
   end for;
 
-  return HMFComp(LandingSpace, ComponentIdeal(f), coeffs_h : prec:=prec);
+  return HMFComp(LandingSpace, ComponentIdeal(f), coeffs_h : coeff_ring := F, prec:=prec);
 end intrinsic;
 
 intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
@@ -990,12 +1160,8 @@ intrinsic '^'(f::ModFrmHilDElt, n::RngIntElt) -> ModFrmHilDElt
   for bb->fbb in Components(f) do
     comp[bb] := fbb^n;
   end for;
-  return HMFSumComponents(Parent(Values(comp)[1]), comp);
+  return HMFSumComponents(Parent(f)^n, comp);
 end intrinsic;
-
-
-
-
 
 intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {return a sequence of ModFrmHilDElt where the coefficient ring is the compositum of field of all the fraction fields of the coeffient rings}
@@ -1042,6 +1208,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
   chif := Character(Mk_f);
   mf, pf := Modulus(chif);
   ZF := Integers(M);
+  coeff_ring := f`CoefficientRing;
 
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
   require chif eq Restrict(chi, mf, pf): "Character(f) is not equal to Character(Mk)";
@@ -1064,7 +1231,7 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqE
     end if;
   end for;
 
-  return HMFComp(Mk, mmbb, coeff : prec:=Precision(f));
+  return HMFComp(Mk, mmbb, coeff : coeff_ring := coeff_ring, prec:=Precision(f));
 end intrinsic;
 
 intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
@@ -1120,19 +1287,19 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: swap map //////////
 
-
-intrinsic Swap(SwappedMk::ModFrmHilD, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
-  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+function AutomorphismAct(f, sigma)
+  // given a component f and sigma an automorphisms of the base field F, returns the component sigma(f)
   M := GradedRing(f);
   Mk := Parent(f);
   F := BaseField(M);
   ZF := Integers(F);
-  require Degree(F) eq 2: "only defined for quadratic fields";
-  sigma := hom<F -> F| Trace(F.1) - F.1>;
   NN := Level(f);
   NNbar := ideal<ZF | [sigma(x) : x in Generators(NN)]>;
-  require NN eq NNbar: "only implemented for Galois stable level";
-  require IsTrivial(Character(Mk)): "only implemented for trivial character";
+  for bb->u in UnitCharacters(Mk) do
+    assert u`trivial; // only implemented for trivial unit character
+  end for;
+  assert NN eq NNbar; // only implemented for Galois stable level
+  assert IsTrivial(Character(Mk)); // only implemented for trivial character
 
   //chibar := ??
   //Mkbar := HMFSpace(M, NNbar, Weight(f), chibar);
@@ -1140,37 +1307,77 @@ intrinsic Swap(SwappedMk::ModFrmHilD, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   bbbar := NarrowClassRepresentative(M, ideal<ZF | [sigma(x) : x in Generators(bb)]>);
   coeff := AssociativeArray();
   for nu->c in Coefficients(f) do
-    nubar := F!sigma(nu);
+    nubar := F!((sigma^(-1))(nu));
     snubar, epsilon := ReduceShintani(M, bbbar, nubar);
-    coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c;
+    //coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c; // TODO: check the codomain of the unit character. So far, requiring unit char to be trivial so the evaluation is 1
+    coeff[snubar] := c;
   end for;
-  ucbar := UnitCharacter(F, [sigma(v) : v in ValuesOnGens(UnitCharacter(f))]);
-  return HMFComp(Mk, bbbar, coeff: unitchar:=ucbar, prec:=Precision(f));
-end intrinsic;
+  return HMFComp(Mk, bbbar, coeff: prec:=Precision(f));
+end function;
 
-intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+intrinsic AutomorphismMap(f::ModFrmHilDElt, sigma::Map) -> ModFrmHilDElt
+  {given a hilbert modular form f and sigma an automorphisms of the base field F of f, returns the form sigma(f), where sigma permutes the nu_1, nu_2, ..., nu_n}
   M := GradedRing(f);
   Mk := Parent(f);
   F := BaseField(M);
   ZF := Integers(F);
-  require Degree(F) eq 2: "only defined for quadratic fields";
-  sigma := hom<F -> F| Trace(F.1) - F.1>;
   NN := Level(f);
   NNbar := ideal<ZF | [sigma(x) : x in Generators(NN)]>;
   require NN eq NNbar: "only implemented for Galois stable level";
   require IsTrivial(Character(Mk)): "only implemented for trivial character";
 
-  new_unitcharacters := AssociativeArray();
-  for bb->c in UnitCharacters(Mk) do
-    new_unitcharacters[bb] := UnitCharacter(F, [sigma(v) : v in ValuesOnGens(c)]);
+  for bb->u in UnitCharacters(Mk) do
+    require u`trivial: "only implemented for trivial unit character";
   end for;
-  LandingSpace := HMFSpace(M, NN, Weight(Mk), Character(Mk): unitcharacters:=new_unitcharacters);
+  //new_unitcharacters := AssociativeArray();
+  //for bb->c in UnitCharacters(Mk) do
+  //  new_unitcharacters[bb] := UnitCharacter(F, [v: v in ValuesOnGens(c)]);
+  //end for;
+  LandingSpace := HMFSpace(M, NN, Weight(Mk), Character(Mk): unitcharacters:=UnitCharacters(Mk));
 
   comp := AssociativeArray();
-  for fbb in Components(f) do
-    sfbb := Swap(LandingSpace, fbb);
+  for k->fbb in Components(f) do
+    sfbb := AutomorphismAct(fbb, sigma);
     comp[ComponentIdeal(fbb)] := sfbb;
   end for;
   return HMFSumComponents(LandingSpace, comp);
  end intrinsic;
+
+
+
+intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {given a hilbert modular form f(z_1, z_2), returns the swapped form f(z_2,z_1)}
+  M := GradedRing(f);
+  F := BaseField(M);
+  require Degree(F) eq 2: "only defined for quadratic fields";
+  sigma := hom<F -> F| Trace(F.1) - F.1>;
+  return AutomorphismMap(f, sigma);
+ end intrinsic;
+
+
+
+ intrinsic Symmetrize(f::ModFrmHilDElt) -> ModFrmHilDElt
+   {given a hilbert modular form f, returns the symmetric form 1/#Aut(F|Q)*sum_(sigma in Aut) sigma(f)}
+   M := GradedRing(f);
+   F := BaseField(M);
+   Mk := Parent(f);
+   A:=Automorphisms(F);
+   r:=#A;
+   g:=Mk!0;
+   for sigma in A do
+    g+:=AutomorphismMap(f, sigma);
+   end for;
+   return g;
+  end intrinsic;
+
+ intrinsic IsSymmetric(f::ModFrmHilDElt) -> ModFrmHilDElt
+   {given a hilbert modular form f, returns if it is invariant under all the automorphisms of its base field F}
+   M := GradedRing(f);
+   F := BaseField(M);
+   A:=Automorphisms(F);
+   for sigma in A do
+    if not f eq AutomorphismMap(f, sigma) then return false; end if;
+   end for;
+   return true;
+  end intrinsic;
+

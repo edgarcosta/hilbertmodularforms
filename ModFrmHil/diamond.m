@@ -144,6 +144,7 @@ function DiamondOperatorDefiniteBig(M, J)
     vprintf HilbertModularForms, 1 :
 	"Constructing the big representation matrix...\n";
     for I_src_idx in [1..hh] do
+	if (nCFD[I_src_idx] eq 0) then continue; end if;
 	vprintf HilbertModularForms, 1 :
 	    "Working on O(1)-right ideal class representative no. %o.\n", I_src_idx;
 	I_dest_idx := perm_inv[I_src_idx];

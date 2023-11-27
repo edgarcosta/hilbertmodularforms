@@ -251,7 +251,7 @@ end intrinsic;
 
 intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
   {}
-  return &+[#elt : elt in ShintaniReps(M)];
+  return &+[#elt : bb->elt in ShintaniReps(M)];
 end intrinsic;
 
 intrinsic TracePrecomputation(M::ModFrmHilDGRng) -> Assoc
@@ -611,11 +611,3 @@ intrinsic PrecomputeTraceForms(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   A := SetToSequence({ ii * aa : ii in Ideals(M), aa in L }); // Set of ideals
   HMFTracePrecomputation(M,A);
 end intrinsic;
-
-
-
-
-
-
-
-

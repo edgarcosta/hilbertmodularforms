@@ -159,7 +159,7 @@ minimal resolution of the Hilbert Modular Surface for the Hilbert Modular Group.
 end intrinsic;
 
 intrinsic ArithmeticGenus(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the Arithmetic Genus of the resulting Hilbert modular 
+{Given a congruence subgroup, computes the Arithmetic Genus of the resulting Hilbert modular
 surface.}
   chi := K2(Gamma) + EulerNumber(Gamma);
   assert chi mod 12 eq 0;
@@ -173,13 +173,13 @@ intrinsic Irregularity(Gamma::GrpHilbert) -> RngIntElt
 end intrinsic;
 
 intrinsic GeometricGenus(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the Geometric Genus of the resulting Hilbert modular 
+{Given a congruence subgroup, computes the Geometric Genus of the resulting Hilbert modular
 surface.}
   return ArithmeticGenus(Gamma)-1;
 end intrinsic;
 
 intrinsic HodgeDiamond(Gamma::GrpHilbert) -> RngIntElt
-{Given a congruence subgroup, computes the Hodge Diamond of the resulting Hilbert modular 
+{Given a congruence subgroup, computes the Hodge Diamond of the resulting Hilbert modular
 surface.}
   h_0 := [1];
   q := Irregularity(Gamma);
@@ -194,7 +194,7 @@ surface.}
 end intrinsic;
 
 intrinsic TestArithmeticGenus(F::FldNum, NN::RngOrdIdl) -> Any
-  {Compute the arithmetic genus as (1/12)*(K^2 + e), summed over all components, and as 
+  {Compute the arithmetic genus as (1/12)*(K^2 + e), summed over all components, and as
   dim(S_2) + #Cl^+(F); return true if these are equal. Currently only for GL+ type.}
 
   NCl, mp := NarrowClassGroup(F);
@@ -218,7 +218,7 @@ end intrinsic;
 
 // TODO
 intrinsic KodairaDimension(Gamma::GrpHilbert) -> MonStgElt
-  {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma. 
+  {Returns the Kodaira dimension of the Hilbert modular surface associated to Gamma.
   Currently just returns -100}
     error "Not Implemented";
   return -100; // FIXME
@@ -226,7 +226,7 @@ end intrinsic;
 
 // Could be improved in the future.
 intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
-{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to 
+{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to
  Gamma, based on the arithmetic genus. When the level is 1, it
  gives a more refined list based on K^2. Currently only implemented for Gamma0.}
 
@@ -237,6 +237,7 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
   chi := ArithmeticGenus(Gamma);
 
   if (Level(Gamma) eq 1*ZF) then //In level 1, we have the RationalityCriterion and we know the value of K2 of the minimal model exactly.
+      // This is not true! We know the value of K2 exactly only if the surface is not rational!
     k2 := K2(Gamma) + getHZExceptionalNum(Gamma);
     if (k2 eq 0) then
         if (chi ge 3) then
@@ -246,12 +247,14 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
         end if;
     else // k2 > 0
         if (chi eq 1) then
+	    // Eran: We need to allow also for the case of the surface being rational
             if RationalityCriterion(Gamma) then
                 return [-1];
-            elif (k2 eq 8) or (k2 eq 9) then
-                return [-1, 2];
-            else 
-                return [2];
+            // elif (k2 eq 8) or (k2 eq 9) then
+            //     return [-1, 2];
+            else
+                // return [2];
+		return [-1,2];
             end if;
         else // chi not 1
             return [2];
@@ -263,10 +266,10 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
         if (chi eq 1) then
             if (k2 ge 10) then
                 return [2];
-            else 
+            else
                 return [-1,2];
             end if;
-        else 
+        else
             return [2];
         end if;
     else // k2 is smaller then 0, so the lower bound is useless
@@ -278,13 +281,13 @@ intrinsic KodairaDimensionPossibilities(Gamma::GrpHilbert) -> MonStgElt
             return [0,1,2];
         end if;
     end if;
-  
+
   end if;
 end intrinsic;
 
 // Could be improved in the future.
 intrinsic KodairaDimensionPossibilitiesWithHZ(Gamma::GrpHilbert) -> MonStgElt
-{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to 
+{Returns a list of possible Kodaira dimensions of the Hilbert modular surface associated to
  Gamma, based on the arithmetic genus and the rationality criterion. When the level is 1, it
  gives a more refined list based on K^2. Currently only implemented for Gamma0.}
 
@@ -463,63 +466,7 @@ intrinsic RationalityCriterion(Gamma) -> BoolElt
     return false;
 end intrinsic;
 
-// IO
-intrinsic WriteGeometricInvariantsToRow(Gamma::GrpHilbert) -> MonStgElt
-{Script for writing geometric invariants to data table row. 
-Format is label:[h^[2,0], h^[1,1]]:K^2:chi.}
-  h2 := HodgeDiamond(Gamma)[3];
-  return StripWhiteSpace(Join([
-        LMFDBLabel(Gamma),
-        //Sprint(KodairaDimension(Gamma)),
-        Sprint(h2[1..2]),
-        Sprint(K2(Gamma)),
-        Sprint(ArithmeticGenus(Gamma))
-  ], ":"));
-end intrinsic;
 
-intrinsic WriteLMFDBRow(Gamma::GrpHilbert) -> MonStgElt
-{Script for writing information about the surface to table row.
-Format is
-label:field_label:field_discr:narrow_class_nb:level_label:level_norm:component_label:is_pp:group_type:gamma_type:h20:h11:K2:chi:number_of_cusps:kposs
-where is_pp is true iff component is the inverse different of the quadratic field.}
-    F_label, N_label, b_label, group_type, gamma_type := Explode(Split(LMFDBLabel(Gamma), "-"));
-    F := BaseField(Gamma);
-    N := Level(Gamma);
-    b := ComponentIdeal(Gamma);
-    h2 := HodgeDiamond(Gamma)[3];
-    is_pp := IsNarrowlyPrincipal(Different(Integers(F)) * Component(Gamma));
-    Ngens := [Eltseq(x): x in Generators(N)];
-    bgens := [Eltseq(x): x in Generators(b)];
-    return StripWhiteSpace(Join([LMFDBLabel(Gamma),
-                                 F_label,
-                                 b_label,
-                                 gamma_type,
-                                 group_type,
-                                 N_label,
-                                 Sprint(Ngens),
-                                 Sprint(bgens),
-                                 Sprint(KodairaDimensionPossibilities(Gamma)),
-                                 Sprint(K2(Gamma)),
-                                 Sprint(ArithmeticGenus(Gamma)),
-                                 Sprint(h2[1]),
-                                 Sprint(h2[2]),
-                                 Sprint(NarrowClassNumber(F)),
-                                 Sprint(Norm(N)),
-                                 Sprint(NumberOfCusps(Gamma)),                                 
-                                 Sprint(Discriminant(F)),
-                                 Sprint(NumberOfEllipticPoints(Gamma)),
-                                 Sprint(NumberOfEllipticPoints(Gamma, 2)),
-                                 Sprint(NumberOfEllipticPoints(Gamma, 3)),
-                                 Sprint(NumberOfEllipticPoints(Gamma, 4)),
-                                 Sprint(NumberOfEllipticPoints(Gamma, 5)),
-                                 Sprint(NumberOfEllipticPoints(Gamma, 6)),
-                                 Sprint(LengthOfCuspResolutions(Gamma)),
-                                 Sprint(LengthOfEllipticPointResolutions(Gamma)),
-                                 Sprint(LengthOfResolutions(Gamma)),
-                                 Sprint(EulerNumber(Gamma)),
-                                 Sprint(is_pp)
-                                ], ":"));                               
-end intrinsic;
 
 /*
 // is this still right even when we haven't blown down?
@@ -547,12 +494,12 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
   if (k eq 2) then
       return ArithmeticGenus(Gamma) - 1;
   end if;
-  
+
   vol := VolumeOfFundamentalDomain(Gamma);
-  
+
   dim := ((k-1)^2 / 4) * vol;
   m := k div 2;
-  
+
   // get elliptic points contribution
   a := CountEllipticPoints(Gamma);
 
@@ -566,13 +513,13 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
     q_inv := rot_tup[3];
     _, q, _ := XGCD(q_inv,n);
     Qn<zeta> := CyclotomicField(n);
-    cont := &+[zeta^(i*(q+1)*m)/(n*(1-zeta^i)*(1-zeta^(i*q))) 
+    cont := &+[zeta^(i*(q+1)*m)/(n*(1-zeta^i)*(1-zeta^(i*q)))
 	       : i in [1..n-1]];
     elliptic +:= cont*a[rot_factor];
   end for;
 
   dim +:= elliptic;
-  
+
   // get cusp contribution
   cusps := CuspsWithResolution(Gamma);
 
@@ -585,8 +532,8 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
 	chi +:= n/12*&+[3+b : b in L];
     end if;
   end for;
-  
+
   dim +:= chi;
-  
+
   return dim;
 end intrinsic;
