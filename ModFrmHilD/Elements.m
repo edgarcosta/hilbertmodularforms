@@ -799,7 +799,7 @@ intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   K := DefaultCoefficientRing(Parent(f));
   new_coeffs := AssociativeArray(Universe(Coefficients(f)));
   for nu->anu in Coefficients(f) do
-    new_coeffs[nu] := (K eq Rationals()) select Trace(anu) else Trace(anu, K);
+    new_coeffs[nu] := (K eq Rationals()) select Trace(anu) else Trace(StrongCoerce(K, anu), K);
   end for;
   return HMFComp(Parent(f), ComponentIdeal(f), new_coeffs : coeff_ring := K, prec:=Precision(f));
 end intrinsic;
