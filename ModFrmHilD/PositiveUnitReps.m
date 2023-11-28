@@ -229,19 +229,6 @@ intrinsic FunDomainRepsOfNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt
   return FunDomainRepsOfNorm(M)[bb][x];
 end intrinsic;
 
-intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt) -> SeqEnum
-  {
-    inputs:
-      M: A graded ring of Hilbert modular forms
-      bb: An ideal class representative of M
-      x: An integer norm
-    returns:
-      The fundamental domain representatives nu such that the integral ideal
-      nn associated to nu has norm at most x.
-  }
-  return FunDomainRepsUpToNorm(M)[bb][x];
-end intrinsic;
-
 intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt) -> SetEnum
   {
     inputs:
@@ -597,21 +584,6 @@ intrinsic ForgetTraceLogBasis(F::FldNum, A::SeqEnum[FldReElt], epses::SeqEnum[Rn
   v := Vector(A) * B^-1;
 
   return Prune([v[i] : i in [1 .. Dimension(Parent(v))]]);
-end intrinsic;
-
-intrinsic ForgetTraceLogEmbed(nu::RngOrdElt, epses::SeqEnum[RngOrdElt] : Precision := 100) -> SeqEnum[ModTupFldElt]
-  {
-    input:
-      nu: an element of ZF for F a totally real number field of degree n
-      epses: a sequence of (n-1) totally positive units which span a lattice
-        in the trace-zero hyperplane of Log-Minkowski space
-    returns:
-      If n is the degree of F, the (n-1)-dimensional vector corresponding to 
-      taking the log-Minkowski embedding of nu and applying ForgetTraceLogBasis.
-  }
-  R := Parent(nu);
-  F := NumberField(R);
-  return ForgetTraceLogBasis(F, [Log(x) : x in EmbedNumberFieldElement(F!nu : Precision := Precision)], epses : Precision := Precision);
 end intrinsic;
 
 intrinsic ForgetTraceLogEmbed(nu::FldNumElt, epses::SeqEnum[RngOrdElt] : Precision := 100) -> SeqEnum[ModTupFldElt]
