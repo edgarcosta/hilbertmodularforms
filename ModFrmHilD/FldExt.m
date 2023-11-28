@@ -243,6 +243,26 @@ intrinsic DistinguishedPlace(K::FldNum) -> PlcNumElt
   return K`DistinguishedPlace;
 end intrinsic;
 
+intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
+  {
+    input:
+      L - FldNum, FldQuad, FldCyc, or FldRat
+      x - Any, but can return true only on a FldElt or RngElt
+    returns:
+      false if x cannot be coerced into L. 
+      true if x can be coerced into L, along with
+        the strong coercion of x into L.
+  }
+
+  // strong coercion is possible if and only if
+  // regular coercion is possible
+  if IsCoercible(L, x) then
+    return true, StrongCoerce(L, x);
+  else
+    return false;
+  end if;
+end intrinsic;
+
 intrinsic StrongCoerce(L::Fld, x::RngElt) -> FldElt
   {
     input: 
