@@ -64,11 +64,6 @@ intrinsic FunDomainRep(nu::FldNumElt : lattice := "tot_pos", Precision := 100) -
   }
   F := NumberField(Parent(nu));
 
-  if IsZero(nu) then
-    return F!0, F!1;
-  end if;
-
-  n := Degree(F);
   if lattice eq "tot_pos" then
     epses := TotallyPositiveUnitsGenerators(F);
   elif lattice eq "squares" then
@@ -77,7 +72,12 @@ intrinsic FunDomainRep(nu::FldNumElt : lattice := "tot_pos", Precision := 100) -
     require 0 eq 1 : "Invalid option for lattice - the options are 'tot_pos' and 'squares'.";
   end if;
 
-  log_nu := ForgetTraceLogEmbed(nu, epses : Precision := Precision);
+  if IsZero(nu) then
+    return F!0, F!1;
+  end if;
+
+  n := Degree(F);
+  log_nu := ForgetTraceLogEmbed(nu : lattice := lattice, Precision := Precision);
 
   THRESHOLD := 10^-10;
   nu_prime := nu;
@@ -383,7 +383,6 @@ intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
   RR := RealField(RR_PREC);
 
   F := BaseField(M);
-  epses := TotallyPositiveUnitsGenerators(F);
   ZF := Integers(F);
   n := Degree(F);
   places := InfinitePlaces(F);
@@ -429,7 +428,7 @@ intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
     // after projecting onto the trace-zero hyperplane 
     // (i.e. forgetting the trace)
     // this will be n points in (n-1)-dimensional space
-    Append(~nm_splx_vtxs, Rationalize(ForgetTraceLogBasis(F, ElementToSequence(v), epses)));
+    Append(~nm_splx_vtxs, Rationalize(ForgetTraceLogBasis(F, ElementToSequence(v))));
   end for;
 
   epses := TotallyPositiveUnitsGenerators(F);
@@ -447,8 +446,8 @@ intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
       end if;
       splx := nm_splx;
       // center the simplex at nu 
-      P := Polyhedron([Rationalize(ForgetTraceLogEmbed(nu^-1, epses))]);
-      splx +:= Polyhedron([Rationalize(ForgetTraceLogEmbed(nu^-1, epses))]);
+      P := Polyhedron([Rationalize(ForgetTraceLogEmbed(nu^-1))]);
+      splx +:= Polyhedron([Rationalize(ForgetTraceLogEmbed(nu^-1))]);
 
       // process each point
       for pt in Points(splx) do
@@ -559,34 +558,39 @@ intrinsic EmbedNumberFieldElement(nu::RngOrdElt : Precision := 100) -> SeqEnum
   return [Evaluate(F!nu, place : Precision := Precision) : place in InfinitePlaces(F)];
 end intrinsic;
 
-intrinsic ForgetTraceLogBasis(F::FldNum, A::SeqEnum[FldReElt], epses::SeqEnum[RngOrdElt] : Precision := 100) -> SeqEnum
+intrinsic ForgetTraceLogBasis(F::FldNum, A::SeqEnum[FldReElt] : lattice := "tot_pos") -> SeqEnum
   {
     input: 
       A: A sequence of real numbers [a_1, ..., a_n],
          thought of as a point in log-Minkowski space
            of the field F. 
-      epses: A sequence of (n-1) totally positive units which span a lattice
-        in the trace-zero hyperplane of log-Minkowski space
-    returns: 
-      The first (n-1) coordinates of the A 
-      after writing it in the basis spanned by
-      the log-Minkowski embeddings of eps_1, eps_2, ..., eps_(n-1),
-      and [1, 1, ..., 1, 1], where eps_i is the ith 
-      generator of the group totally positive units. 
+      lattice: A string describing the lattice to use as a basis 
+        of the trace-zero hyperplane of log-Minkowski space.
+        should be either "tot_pos" or "squares".
+      returns: 
+        The first (n-1) coordinates of the A 
+        after writing it in the basis spanned by
+        the log-Minkowski embeddings of eps_1, eps_2, ..., eps_(n-1),
+        and [1, 1, ..., 1, 1], where eps_i is the ith 
+        generator of the group totally positive units. 
       
       Essentially, we forget about the trace of A
       and write the 'trace zero' part using the given
       units as a basis. 
   }
-  B_rows := [[Log(x) : x in EmbedNumberFieldElement(eps : Precision := Precision)] : eps in epses];
-  Append(~B_rows, [1 : i in [1 .. #A]]);
-  B := Matrix(B_rows);
-  v := Vector(A) * B^-1;
+  if lattice eq "tot_pos" then
+    epses_mtrx_inv := TotallyPositiveUnitsBasisMatrixInverse(F);
+  elif lattice eq "squares" then
+    epses_mtrx_inv := SquaredUnitsBasisMatrixInverse(F);
+  else
+    require 0 eq 1 : "Invalid option for lattice - the options are 'tot_pos' and 'squares'.";
+  end if;
 
+  v := Vector(A) * epses_mtrx_inv;
   return Prune([v[i] : i in [1 .. Dimension(Parent(v))]]);
 end intrinsic;
 
-intrinsic ForgetTraceLogEmbed(nu::FldNumElt, epses::SeqEnum[RngOrdElt] : Precision := 100) -> SeqEnum[ModTupFldElt]
+intrinsic ForgetTraceLogEmbed(nu::FldNumElt : lattice := "tot_pos", Precision := 100) -> SeqEnum[ModTupFldElt]
   {
     input:
       nu: a totally positive element of a totally real number field F.
@@ -597,7 +601,7 @@ intrinsic ForgetTraceLogEmbed(nu::FldNumElt, epses::SeqEnum[RngOrdElt] : Precisi
       taking the log-Minkowski embedding of nu and applying ForgetTraceLogBasis.
   }
   F := Parent(nu);
-  return ForgetTraceLogBasis(F, [Log(x) : x in EmbedNumberFieldElement(F!nu : Precision := Precision)], epses);
+  return ForgetTraceLogBasis(F, [Log(x) : x in EmbedNumberFieldElement(F!nu)] : lattice := lattice);
 end intrinsic;
 
 intrinsic IsDominatedBy(alpha::FldNumElt, beta::FldNumElt) -> BoolElt

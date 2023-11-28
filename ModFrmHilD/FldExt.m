@@ -4,6 +4,8 @@ declare attributes FldAlg:
   TotallyPositiveUnitsMap,
   TotallyPositiveUnitsGenerators,
   TotallyPositiveUnitsGeneratorsOrients,
+  TotallyPositiveUnitsBasisMatrixInverse,
+  SquaredUnitsBasisMatrixInverse,
   FundamentalUnitSquare,
   ClassGroupReps,
   DistinguishedPlace,
@@ -188,6 +190,36 @@ intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
     F`FundamentalUnitSquare := eps;
   end if;
   return F`FundamentalUnitSquare;
+end intrinsic;
+
+intrinsic BasisMatrixInverse(F::FldNum, epses::SeqEnum[RngOrdElt] : Precision := 100) -> AlgMatElt
+  {
+    returns a change of basis matrix transforming a point in log-Minkowski
+    space of F into the basis given the (n-1) totally positive units and 
+    the all-ones vector. 
+  }
+  B_rows := [[Log(x) : x in EmbedNumberFieldElement(eps : Precision := Precision)] : eps in epses];
+  Append(~B_rows, [1 : i in [1 .. (#epses + 1)]]);
+  B := Matrix(B_rows);
+  return B^-1;
+end intrinsic;
+
+intrinsic TotallyPositiveUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  { returns BasisMatrixInverse for the totally positive units}
+  if not assigned F`TotallyPositiveUnitsBasisMatrixInverse then
+    epses := TotallyPositiveUnitsGenerators(F);
+    F`TotallyPositiveUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
+  end if;
+  return F`TotallyPositiveUnitsBasisMatrixInverse;
+end intrinsic;
+
+intrinsic SquaredUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  { returns BasisMatrixInverse for the squares of units }
+  if not assigned F`SquaredUnitsBasisMatrixInverse then
+    epses := [eps^2 : eps in UnitsGenerators(F)];
+    F`SquaredUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
+  end if;
+  return F`SquaredUnitsBasisMatrixInverse;
 end intrinsic;
 
 /////////////////////// DistinguishedPlace and strong coercion ///////////////////////////
