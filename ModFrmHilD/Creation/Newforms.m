@@ -203,7 +203,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
       for i in [1..Nrows(Tzeta)] do
         CoeffsArray[i][bb] := AssociativeArray();
       end for;
-      for nu->nn in ShintaniRepsIdeal(M)[bb] do
+      for nu->nn in RepToIdeal(M)[bb] do
         nnddinv := nn * ddinv;
         if IsIntegral(nnddinv) then
           nnddinv := ZF !! nnddinv;

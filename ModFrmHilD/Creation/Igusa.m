@@ -28,7 +28,7 @@ return values;
 end intrinsic;
 
 intrinsic ConvertBasis(nu::RngOrdElt) -> Any
-    {given a Shintani rep gives [a,b] such that a e_1+ b e_2=nu for  e_1=1, e_2=(D+sqrt(D))/2}
+    {given a fundamental domain rep gives [a,b] such that a e_1+ b e_2=nu for  e_1=1, e_2=(D+sqrt(D))/2}
     ZF:=Parent(nu);
     D:=Discriminant(ZF);
     assert (D mod 4 eq 0) or (D mod 4 eq 1);
@@ -113,7 +113,7 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> 
   fpluscoeffs := AssociativeArray();
   fminuscoeffs := AssociativeArray();
   eta := unitmp(G.1);
-  elts := ShintaniReps(M)[bb]; //elements in bb/Different(ZF), totally positive. We need them in ZF>>0, therefore we will multiply by factors
+  elts := FunDomainReps(M)[bb]; //elements in bb/Different(ZF), totally positive. We need them in ZF>>0, therefore we will multiply by factors
   for j := 1 to #elts do
     elt := ZF!(elts[j]*factors);
     anuplus := Coeff(elt, k[1]);

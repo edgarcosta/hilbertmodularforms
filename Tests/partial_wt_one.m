@@ -5,7 +5,7 @@
 ****************************************************************/
 
 F := QuadraticField(5);
-prec := 17;
+prec := 200;
 ZF := Integers(F);
 M := GradedRingOfHMFs(F, prec);
 N := Factorization(41*ZF)[1][1];
@@ -28,7 +28,7 @@ assert #B13chi eq 1;
 
 F := QuadraticField(5);
 ZF := Integers(F);
-prec := 25;
+prec := 550;
 M := GradedRingOfHMFs(F, prec);
 N := 14*ZF;
 H := HeckeCharacterGroup(N, [1,2]);

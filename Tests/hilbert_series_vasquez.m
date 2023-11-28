@@ -8,7 +8,7 @@ for D in Ds do
     F := QuadraticField(D);
     ZF := Integers(F);
     level := 1*ZF;
-    M := GradedRingOfHMFs(F, 0);
+    M := GradedRingOfHMFs(F, 1);
     M2 := HMFSpace(M, level, [2,2]);
     HC := HilbertSeriesCusp(M, level);
     R<T> := Parent(HC);

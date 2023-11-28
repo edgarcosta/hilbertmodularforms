@@ -21,8 +21,9 @@ intrinsic Evaluate(omega::GrpCharUnitTotElt, x::RngElt) -> RngElt
     b, c := IsDefined(omega`cachedvalues, F!x);
     if not b then
       U, mU := TotallyPositiveUnits(F);
+      orients := TotallyPositiveUnitsGeneratorsOrients(F);
       vals := omega`vals;
-      c := &*[vals[i]^a[i] : i in [1..#vals]] where a := Eltseq(U!(x@@mU));
+      c := &*[vals[i]^(a[i]*orients[i]) : i in [1..#vals]] where a := Eltseq(U!(x@@mU));
       omega`cachedvalues[F!x] := c;
     end if;
     return c;

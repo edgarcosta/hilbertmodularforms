@@ -2,9 +2,12 @@
 declare attributes FldAlg:
   TotallyPositiveUnits,
   TotallyPositiveUnitsMap,
+  TotallyPositiveUnitsGenerators,
+  TotallyPositiveUnitsGeneratorsOrients,
+  TotallyPositiveUnitsBasisMatrixInverse,
+  SquaredUnitsBasisMatrixInverse,
   FundamentalUnitSquare,
   ClassGroupReps,
-  TotallyPositiveUnitsGenerators,
   DistinguishedPlace,
   Extensions,
   Restrictions,
@@ -25,8 +28,35 @@ intrinsic ClassGroupReps(F::FldAlg) -> SeqEnum
   return F`ClassGroupReps;
 end intrinsic;
 
+intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
+{Find a totally positive field element a such that qI is an integral ideal coprime to J;
+ I and J must be defined over the same maximal order.}
 
-/////////////////////// Totally positive associate /////////////////
+    K := NumberField(Order(I));
+    q := CoprimeRepresentative(I, J);
+
+    // Nothing to do if K is imaginary or we already chose a good element.
+    if Signature(q) eq [1,1] or Discriminant(K) lt 0 then return q; end if;
+    if Signature(q) eq [-1,-1] then return -q; end if;
+
+    // Otherwise, we have chosen a bad element, so must correct the signs.
+    z := Sqrt(K!Discriminant(Integers(K)));
+    require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
+    assert IsIntegral(z);
+    
+    if Signature(z) ne Signature(q) then
+	z := -z;
+    end if;
+
+    NJ := Norm(J);
+    d := GCD(Integers() ! Norm(z), NJ);
+
+    if d eq 1 then return z*q; end if;
+    b := ExactQuotient(NJ, d);
+    return (1 + b * z)*q;
+end intrinsic;
+
+/////////////////////// Units and totally positive units /////////////////
 
 intrinsic Signature(a::RngOrdElt) -> SeqEnum
   {}
@@ -66,6 +96,14 @@ intrinsic FundamentalUnit(F::FldNum) -> FldElt
   return phi(FundamentalUnit(K));
 end intrinsic;
 
+// The algorithm for producing generators is nondeterministic, so we need to "orient" 
+// our chosen generators to avoid randomness. This particular choice remains
+// consistent with the existing behavior of FundamentalUnitTotPos
+function orient(F, eps)
+  v := InfinitePlaces(F)[1];
+  return (Abs(Evaluate(eps, v)) lt 1) select eps else eps^-1;
+end function;
+
 intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   {
     parameters:
@@ -80,16 +118,59 @@ intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   end if;
 
   if not assigned F`TotallyPositiveUnitsGenerators then
+    PU, mPU := TotallyPositiveUnits(F);
+    tpugs_unorient := [Integers(F)!mPU(gen) : gen in Generators(PU)];
 
-    if not assigned F`TotallyPositiveUnits or not assigned F`TotallyPositiveUnitsMap then
-      _ := TotallyPositiveUnits(F);
-    end if;
+    v := InfinitePlaces(F)[1];
+    F`TotallyPositiveUnitsGenerators := [];
+    F`TotallyPositiveUnitsGeneratorsOrients := [];
 
-    F`TotallyPositiveUnitsGenerators := [Integers(F)!F`TotallyPositiveUnitsMap(gen) : gen in Generators(F`TotallyPositiveUnits)];
+    // The algorithm for producing generators is nondeterministic, so we need to "orient" 
+    // our chosen generators to avoid randomness. This particular choice remains
+    // consistent with the existing behavior of FundamentalUnitTotPos
+    //
+    // We keep track of which generators are inverted with respect to the 
+    // Generators(F`TotallyPositiveUnits) because we need to solve the word
+    // problem in the unit generators code and it solves it there with respect
+    // to Generators(F`TotallyPositiveUnits).
+    for eps in tpugs_unorient do
+      if Evaluate(eps, v) lt 1 then
+        Append(~F`TotallyPositiveUnitsGenerators, eps);
+        Append(~F`TotallyPositiveUnitsGeneratorsOrients, 1);
+      else
+        Append(~F`TotallyPositiveUnitsGenerators, eps^-1);
+        Append(~F`TotallyPositiveUnitsGeneratorsOrients, -1);
+      end if;
+    end for;
   end if;
   return F`TotallyPositiveUnitsGenerators;
 end intrinsic;
 
+intrinsic TotallyPositiveUnitsGeneratorsOrients(F::FldNum) -> SeqEnum
+  {
+    Returns a sequence whose ith entry e is such that the 
+    ith element of SetToSequence(Generators(TotallyPositiveUnits)) is the
+    ith element of F`TotallyPositiveUnitsGenerators raised to the eth power.
+
+    Here, e will either be 1 or -1. 
+  }
+  _ := TotallyPositiveUnitsGenerators(F);
+  return F`TotallyPositiveUnitsGeneratorsOrients;
+end intrinsic;
+
+intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
+  {
+    parameters:
+      F: a number field
+    returns:
+      A sequence of elements of the ring of integers
+      which generate the group of units.
+  }
+
+  U, mU := UnitGroup(F);
+  ugs_unorient := [mU(gen) : gen in Exclude(Generators(U), U.1)];
+  return [orient(F, eps) : eps in ugs_unorient];
+end intrinsic;
 
 intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
   {return the fundamental unit totally positive}
@@ -111,33 +192,34 @@ intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
   return F`FundamentalUnitSquare;
 end intrinsic;
 
+intrinsic BasisMatrixInverse(F::FldNum, epses::SeqEnum[RngOrdElt] : Precision := 100) -> AlgMatElt
+  {
+    returns a change of basis matrix transforming a point in log-Minkowski
+    space of F into the basis given the (n-1) totally positive units and 
+    the all-ones vector. 
+  }
+  B_rows := [[Log(x) : x in EmbedNumberFieldElement(eps : Precision := Precision)] : eps in epses];
+  Append(~B_rows, [1 : i in [1 .. (#epses + 1)]]);
+  B := Matrix(B_rows);
+  return B^-1;
+end intrinsic;
 
-intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
-{Find a totally positive field element a such that qI is an integral ideal coprime to J;
- I and J must be defined over the same maximal order.}
+intrinsic TotallyPositiveUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  { returns BasisMatrixInverse for the totally positive units}
+  if not assigned F`TotallyPositiveUnitsBasisMatrixInverse then
+    epses := TotallyPositiveUnitsGenerators(F);
+    F`TotallyPositiveUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
+  end if;
+  return F`TotallyPositiveUnitsBasisMatrixInverse;
+end intrinsic;
 
-    K := NumberField(Order(I));
-    q := CoprimeRepresentative(I, J);
-
-    // Nothing to do if K is imaginary or we already chose a good element.
-    if Signature(q) eq [1,1] or Discriminant(K) lt 0 then return q; end if;
-    if Signature(q) eq [-1,-1] then return -q; end if;
-
-    // Otherwise, we have chosen a bad element, so must correct the signs.
-    z := Sqrt(K!Discriminant(Integers(K)));
-    require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
-    assert IsIntegral(z);
-    
-    if Signature(z) ne Signature(q) then
-	z := -z;
-    end if;
-
-    NJ := Norm(J);
-    d := GCD(Integers() ! Norm(z), NJ);
-
-    if d eq 1 then return z*q; end if;
-    b := ExactQuotient(NJ, d);
-    return (1 + b * z)*q;
+intrinsic SquaredUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  { returns BasisMatrixInverse for the squares of units }
+  if not assigned F`SquaredUnitsBasisMatrixInverse then
+    epses := [eps^2 : eps in UnitsGenerators(F)];
+    F`SquaredUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
+  end if;
+  return F`SquaredUnitsBasisMatrixInverse;
 end intrinsic;
 
 /////////////////////// DistinguishedPlace and strong coercion ///////////////////////////

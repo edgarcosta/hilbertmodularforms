@@ -4,7 +4,7 @@ printf "Testing restriction to diagonal in Q(sqrt(5))...";
 // s6 = 67·(25 ·33 ·52)−1 ·(g23 −g6),
 F:=QuadraticField(5);
 ZF:=Integers(F);
-prec := 10;
+prec := 100;
 M:=GradedRingOfHMFs(F, prec);
 M2:=HMFSpace(M, [2,2]);
 M6:=HMFSpace(M, [6,6]);
@@ -17,7 +17,7 @@ E2:=EisensteinSeries(M2, triv, triv);
 E6:=EisensteinSeries(M6, triv, triv);
 
 f := 67*(2^5*3^3*5^2)^(-1)*(E2^3-E6);
-delta:= RestrictionToDiagonal(f,M,1*ZF:prec:=prec);
+delta:= RestrictionToDiagonal(f,M,1*ZF);
 
 modForms := ModularForms(Gamma0(1),12);
 R<q> := PowerSeriesRing(Rationals());

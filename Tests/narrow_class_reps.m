@@ -83,6 +83,6 @@ A[Polynomial([ -11, 0, 1 ])] := [ Strings() | "1.1", "2.1" ];
 
 
 for f->v in A do
-  M := GradedRingOfHMFs(NumberField(f), 0);
+  M := GradedRingOfHMFs(NumberField(f), 1);
   assert v eq [LMFDBLabel(elt) : elt in NarrowClassGroupReps(M)];
 end for;

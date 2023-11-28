@@ -5,7 +5,7 @@ ZK := MaximalOrder(K);
 P  := Factorization(31*ZK)[1][1];
 
 // Construct the HMF Mothership.
-prec := 10;
+prec := 125;
 R := GradedRingOfHMFs(K, prec);
 
 // Compute the space of 2-forms and pick a single 4-form.

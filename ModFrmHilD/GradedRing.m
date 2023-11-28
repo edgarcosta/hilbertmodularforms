@@ -20,22 +20,24 @@ declare attributes ModFrmHilDGRng:
   DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
   Places, // SeqEnum : Real places for the field F
   Precision, // RngIntElt : trace bound for all expansions with this parent
-  ShintaniReps, // ShintaniReps[bb] = [nu in Shintani with trace at most Precision(M)]
-  // ShintaniRepsIdeal and IdealShitaniReps cache the conversion nn <-> nu
-  // where nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
-  // note [nn][bb'] = 1
-  ShintaniRepsIdeal, // ShintaniReps[bb][nu] := nn
-  IdealShitaniReps, // ShintaniReps[bb][nn] :=  nu
-  ShintaniRepsByTrace, // ShintaniReps[bb][t] = [nu in Shintani with trace t]
-  ReduceIdealToShintaniRep, // ReduceIdealToShintaniRep[bb][nn] = nu, such that nu is Shintani reduced
+  // RepToIdeal and IdealToRep cache the conversion nn <-> nu
+  RepToIdeal, // RepToIdeal[bb][nu] := nn
+  IdealToRep, // IdealToRep[bb][nn] := nu
+  FunDomainReps, // FunDomainReps[bb] stores the list of nu in the bb component 
+                 // corresponding to nn of norm at most M`Precision
+  FunDomainRepsUpToNorm, // FunDomainRepsUpToNorm[bb][x] stores the list of nu in the bb component 
+                         // corresponding to nn of norm at most x
+  FunDomainRepsOfNorm, // FunDomainRepsOfNorm[bb][x] stores the list of nu in the bb component
+                       // corresponding to nn of norm x
   IdealsByNarrowClassGroup, // list of all ideals nn with [nn] = [bb]
   Ideals, // List of all ideals for all bb ordered by norm
   IdealsFactored, // a supset of Ideals, where we cache the object so that further Factorization calls are free
   PrimeIdeals, // List of all prime ideals showing as factors of an element of Ideals
-  MPairs, // Assoc: mapping nu to the sequence
-  // [(<s(mu), epsilon>, <s(mu'), epsilon'>) :  mu = epsilon s(mu), mu' = epsilon' s(mu'), mu + mu' = nu],
-  // where nu is Shintani reduced, i.e., s(nu) = s(nu')
-  // M stands for monoid, multiplication, and mangling
+  MPairs, // Assoc: just for testing, will be replaced soon TODO abhijitm
+  Shadows, // Shadows[bb][x] is a SetEnum of <nu, eps> pairs such that the coefficient of nu*eps
+           // needs to be included when performing multiplication.
+           // Such nu*eps are totally positive elements which are dominated (<= in every real embedding)
+           // by some fundamental domain representative.
   PrecomputationforTrace, // Precomputed orders for the Trace formula
   ClassNumbersPrecomputation, // Precomputed class numbers for Trace formula
   // HMFPrecomputation, // Precomputed quantities for the Trace formula (Old)
@@ -162,6 +164,22 @@ intrinsic NarrowClassRepresentative(M::ModFrmHilDGRng, I::RngOrdFracIdl) -> RngO
   return NarrowClassGroupRepsMap(M)[I @@ NarrowClassGroupMap(M)];
 end intrinsic;
 
+intrinsic IdealToNarrowClassRep(M::ModFrmHilDGRng, nn::RngOrdIdl) -> RngOrdIdl
+    {
+      Given an integral ideal nn, returns the narrow class bb representing
+      the component on which the corresponding nu lives. 
+    }
+    
+    require not IsZero(nn) : "The zero ideal lives on every component.";
+    dd := Different(Integers(M));
+
+    // nn should be in the class of bbp^-1 = bb^-1 * dd,
+    // so the class of the bb corresponding to nn
+    // is that of nn^-1 * dd
+    bb_class := (nn^-1 * dd) @@ M`NarrowClassGroupMap;
+    return M`NarrowClassGroupRepsMap[bb_class];
+end intrinsic;
+
 intrinsic UnitGroup(M::ModFrmHilDGRng) -> Any
   {}
   return M`UnitGroup;
@@ -189,38 +207,6 @@ end intrinsic;
 intrinsic Precision(M::ModFrmHilDGRng) -> RngIntElt
   {The Precision of the space M of Hilbert modular forms.}
   return M`Precision;
-end intrinsic;
-
-intrinsic ShintaniReps(M::ModFrmHilDGRng) -> Assoc
-  {}
-  return M`ShintaniReps;
-end intrinsic;
-
-intrinsic ShintaniRepsByTrace(M::ModFrmHilDGRng) -> Assoc
-  {}
-  return M`ShintaniRepsByTrace;
-end intrinsic;
-
-intrinsic ShintaniRepsUpToTrace(M::ModFrmHilDGRng, bb::RngOrdFracIdl, t::RngIntElt) -> SeqEnum
-  {}
-  shintani_reps := [];
-  assert t le Precision(M);
-  return &cat[ShintaniRepsByTrace(M)[bb][i] : i in [0..t]];
-end intrinsic;
-
-intrinsic ReduceIdealToShintaniRep(M::ModFrmHilDGRng) -> Any
-  {}
-  return M`ReduceIdealToShintaniRep;
-end intrinsic;
-
-intrinsic ShintaniRepsIdeal(M::ModFrmHilDGRng) -> Assoc
-  {}
-  return M`ShintaniRepsIdeal;
-end intrinsic;
-
-intrinsic IdealShitaniReps(M::ModFrmHilDGRng) -> Assoc
-  {}
-  return M`IdealShitaniReps;
 end intrinsic;
 
 intrinsic IdealsByNarrowClassGroup(M::ModFrmHilDGRng) -> Any
@@ -251,7 +237,7 @@ end intrinsic;
 
 intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
   {}
-  return &+[#elt : bb->elt in ShintaniReps(M)];
+  return &+[#elt : bb->elt in FunDomainReps(M)];
 end intrinsic;
 
 intrinsic TracePrecomputation(M::ModFrmHilDGRng) -> Assoc
@@ -332,40 +318,40 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // TODO: see above 2 lines
   // prec
   M`Precision := prec;
-  // positive element reps and Shintani reps for each class group rep
-  // up to trace bound prec
-  M`ShintaniReps := AssociativeArray();
-  M`ShintaniRepsIdeal := AssociativeArray();
-  M`IdealShitaniReps := AssociativeArray();
-  M`ShintaniRepsByTrace := AssociativeArray();
-  M`ReduceIdealToShintaniRep := AssociativeArray();
+
+  // This function sets the M`RepToIdeal and M`IdealToRep assocs.
+  M`RepToIdeal, M`IdealToRep := RepIdealConversion(M);
+
+  // The associative arrays FunDomainIdlReps and
+  // FunDomainEltReps are keyed by narrow class group 
+  // This function sets the M`FunDomainRepsUpToNorm assocs.
+  //
+  // The associative array FunDomainRepsUpToNorm is keyed by narrow class group 
+  // representatives bb (these are integral ideals)
+  // and nonnegative integers up to prec with values 
+  // FunDomainRepsUpToNorm[bb][x]. 
+  //
+  // The elements of FunDomainReps[bb][x] are the nu corresponding
+  // to integral ideals nn with norm up to x lying in the narrow class
+  // of [bbp]^-1, i.e. such that nn * bbp = (nu) for some 
+  // integral ideal nn of norm up to x.
+  PopulateFunDomainRepsArrays(M);
+
+  M`FunDomainReps := AssociativeArray();
+  for bb in M`NarrowClassGroupReps do
+    M`FunDomainReps[bb] := M`FunDomainRepsUpToNorm[bb][M`Precision];
+  end for;
+
   M`IdealsByNarrowClassGroup := AssociativeArray();
   M`PrecomputationforTrace := AssociativeArray();
   M`ClassNumbersPrecomputation := AssociativeArray();
-  // Elements and Shintani domains
   // instanciate all associative arrays
-  for bb in M`NarrowClassGroupReps do
-    M`ShintaniRepsByTrace[bb] := AssociativeArray();
-    M`ReduceIdealToShintaniRep[bb] := AssociativeArray();
-    M`ShintaniRepsIdeal[bb] := AssociativeArray();
-    M`IdealShitaniReps[bb] := AssociativeArray();
-  end for;
   for bb in M`NarrowClassGroupReps do
     bbp := M`NarrowClassGroupRepsToIdealDual[bb];
     bbpinv := bbp^-1;
-    for t := 0 to prec do
-      M`ShintaniRepsByTrace[bb][t] := ShintaniRepsOfTrace(bbp, t);
-    end for;
-    M`ShintaniReps[bb] := ShintaniRepsUpToTrace(M, bb, prec);
-    for nu in M`ShintaniReps[bb] do
-      M`ReduceIdealToShintaniRep[bb][ideal<Integers(F)|nu>] := nu;
-      nn := NicefyIdeal(nu*bbpinv); // [nn] = [bbpinv] which might differ from [bb]
-      M`ShintaniRepsIdeal[bb][nu] := nn;
-      M`IdealShitaniReps[bb][nn] := nu;
-    end for;
     // the ideals generated in the previous for loop are not in bb class, but in bbpinv's class.
     repbbpinv := NarrowClassRepresentative(M, bbpinv);
-    M`IdealsByNarrowClassGroup[repbbpinv] := SetToSequence(Keys(M`IdealShitaniReps[bb]));
+    M`IdealsByNarrowClassGroup[repbbpinv] := SetToSequence(Keys(M`IdealToRep[bb]));
     norms := [CorrectNorm(nn) : nn in M`IdealsByNarrowClassGroup[repbbpinv]];
     ParallelSort(~norms, ~M`IdealsByNarrowClassGroup[repbbpinv]);
   end for;
@@ -418,7 +404,7 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   M`MPairs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
     // Populates M`Mpairs[bb]
-    ComputeMPairs(bb, M);
+    M`MPairs[bb] := ComputeMPairs(M, bb);
   end for;
 end intrinsic;
 
@@ -452,7 +438,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   //
   // *  Phase 1: Pick a unique representative for the square class of [d] in F*/F*2. Write the discriminant as d * ZF = mm * aa^2 with mm squarefree. Fix a set of representatives for the class group,
   //             and let bb = [ aa ] be the ideal representing the class of aa in CL(F). Then [aa * bb^(-1)] = (x) for some x in ZF so d * ZF = mm * bb^2 * (x)^2. Let d0 := d / x^2. 
-  //             Thus a unique representative for the square class of d can be picked as the "reduced shintani generator" for -d0 with respect the square of the fundamental unit.
+  //             Thus a unique representative for the square class of d can be picked as the "reduced fundamental domain rep generator" for -d0 with respect the square of the fundamental unit.
   // 
   // *  Phase 2: Let s : F -> F be the nontrivial automorphism of the quadratic field F. The fields F[x]/(x^2 - d) and F/(x^2 - s(d)) are isomorphic over QQ. We pick a unique 
   //             representative w by selecting either d0 or s(d0) based on which one has the larger embedding in the first real place. We record whether we took d0 or s(d0) 
@@ -466,7 +452,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
     for bb in Creps do
       boo, x := IsPrincipal( aa * bb^(-1) );
       if boo then
-        elt := ReduceShintaniMinimizeDistance( -d / x^2 : Squares := true);
+        elt := FunDomainRep( -d / x^2 : lattice := "squares");
         D := ZF ! -elt;
         break;
       end if;
@@ -610,4 +596,70 @@ intrinsic PrecomputeTraceForms(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   {Given a list of ideals L = [aa,bb, ...], precomputes values to generate traceforms t_aa, t_bb, ... }
   A := SetToSequence({ ii * aa : ii in Ideals(M), aa in L }); // Set of ideals
   HMFTracePrecomputation(M,A);
+end intrinsic;
+
+//////////////// Enumeration of Totally Positive Elements ////////////////
+
+intrinsic ElementsInABox(M::ModFrmHilDGRng, aa::RngOrdFracIdl,
+                         XLBound::Any, YLBound::Any, XUBound::Any, YUBound::Any) -> SeqEnum
+  {Enumerates all elements c in aa with XLBound <= c_1 <= XUBound and  YLBound <= c_2 <= YUBound}
+
+  for bnd in [XUBound, YUBound, XLBound, YLBound] do
+    require ISA(Type(bnd),FldReElt) : "Bounds must be coercible to real numbers";
+  end for;
+  basis := TraceBasis(aa);
+  F := BaseField(M);
+  ZF := Integers(M);
+  places := Places(M);
+
+  //if Evaluate(basis[2],places[1]) lt 0 then
+  //  basis := [basis[1], -basis[2]];
+  //end if;
+
+
+  // Precomputationss
+  a_1 := Evaluate(basis[1], places[1]);
+  a_2 := Evaluate(basis[1], places[2]);
+  b_1 := Evaluate(basis[2], places[1]);
+  b_2 := Evaluate(basis[2], places[2]);
+  assert b_1 lt 0 and b_2 gt 0; // if this assumption changes, the inequalities get swapped
+
+  // List of all Elements
+  T := [];
+  trLBound := Ceiling(XLBound+YLBound);
+  trUBound := Floor(XUBound+YUBound);
+  for i in [trLBound..trUBound] do
+    // at place 1, i*a2 + j*b2 <= XUBound => j >= (XUBound -i*a1)/b1
+    // at place 2, i*a2 + j*b2 >= YLBound => j >= (YLBound -i*a2)/b2
+    lBound := Ceiling(Max((XUBound-i*a_1)/b_1, (YLBound-i*a_2)/b_2));
+    uBound := Floor(Min((XLBound-i*a_1)/b_1, (YUBound-i*a_2)/b_2));
+    for j in [lBound..uBound] do
+      Append(~T, i*basis[1] + j*basis[2]);
+    end for;
+  end for;
+
+  return T;
+end intrinsic;
+
+// Rearranges the basis for an ideal so that the second basis vector has trace 0
+intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
+  {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
+   where Trace(a) = n > 0 and Trace(b) = 0}
+
+  // Preliminaries
+  B := Basis(aa);
+  ZF := Parent(B[2]);
+  places := InfinitePlaces(NumberField(ZF));
+
+  // Change of basis
+  trMat := Matrix([[Integers()!Trace(B[i])] : i in [1..#B]]);
+  _, Q := HermiteForm(trMat);
+  B := Eltseq(Vector(B)*Transpose(ChangeRing(Q,ZF)));
+  assert Trace(B[1]) gt 0;
+  assert Trace(B[2]) eq 0;
+  // Orienting B
+  if Evaluate(B[2], places[2]) lt 0 then
+    B := [B[1], -B[2]];
+  end if;
+  return B;
 end intrinsic;

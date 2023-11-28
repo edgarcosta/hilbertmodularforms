@@ -4,7 +4,7 @@ function test(F, N, k, true_old_dim)
   // k : SeqEnum[RngIntElt] - A weight
   // true_old_dim : int - The dimension of the 
   //     space of old cusp forms for this F, N, k
-  prec := 15;
+  prec := 250;
   bound := 50;
   M := GradedRingOfHMFs(F, prec);
   Mk := HMFSpace(M, N, k);
