@@ -347,7 +347,7 @@ intrinsic PopulateFunDomainRepsArrays(M::ModFrmHilDGRng)
   end for;
 end intrinsic;
 
-intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
+intrinsic Shadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
   {
     inputs:
       M: A graded ring of Hilbert modular forms
@@ -515,7 +515,7 @@ intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
   {temporary function, just to ensure compatibility}
 
   MPairs_bb := AssociativeArray();
-  shadows_bb := ComputeShadows(M, bb)[M`Precision];
+  shadows_bb := Shadows(M, bb)[M`Precision];
   for nu in FunDomainRepsUpToNorm(M)[bb][M`Precision] do
     MPairs_bb[nu] := [];
     for nu_1eps_1 in shadows_bb do
@@ -532,12 +532,12 @@ intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
   return MPairs_bb;
 end intrinsic;
 
-intrinsic ComputeShadows(M::ModFrmHilDGRng) -> Assoc
+intrinsic Shadows(M::ModFrmHilDGRng) -> Assoc
   {}
   if not assigned M`Shadows then
     M`Shadows := AssociativeArray();
     for bb in M`NarrowClassGroupReps do
-      M`Shadows[bb] := ComputeShadows(M, bb);
+      M`Shadows[bb] := Shadows(M, bb);
     end for;
   end if;
 
