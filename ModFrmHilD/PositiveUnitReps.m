@@ -433,12 +433,24 @@ intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
 
   epses := TotallyPositiveUnitsGenerators(F);
   nm_splx := Polyhedron(nm_splx_vtxs);
+  nm_splx_0 := nm_splx;
 
   prev_x := min_norm;
   cand_shadows_bb := {<F!0, F!1>};
+  ct := 0;
+  REGEN_EVERY := 50;
   for x in nu_norms do 
     // rescale nm_splx for this x
-    nm_splx := BestApproximation(Log(max_coord^n / x) / Log(max_coord^n / prev_x), 10^100) * nm_splx; 
+    //
+    // Because this rescaling procedure increases the height each iteration
+    // we periodically recreate the simplex 
+    ct +:= 1;
+    if ct mod REGEN_EVERY ne 0 then
+      nm_splx := BestApproximation(Log(max_coord^n / x) / Log(max_coord^n / prev_x), 10^100) * nm_splx; 
+    else
+      nm_splx := BestApproximation(Log(max_coord^n / x) / Log(max_coord^n / min_norm), 10^100) * nm_splx_0;
+    end if;
+
     nn_norm := Integers()!(Norm(x)/Norm(bbp));
     for nu in FunDomainRepsOfNorm(M, bb, nn_norm) do
       if IsZero(nu) then
