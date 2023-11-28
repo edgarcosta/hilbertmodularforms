@@ -659,7 +659,7 @@ intrinsic ComputePrecisionFromHilbertSeries(NN::RngOrdIdl, B::RngIntElt) -> RngI
   F := NumberField(Order(NN));
   H := HilbertSeries(F,NN);
   Pow<T> := PowerSeriesRing(Rationals());
-  return Integers()!Coefficient(Pow!H, B);
+  return 10*Integers()!Coefficient(Pow!H, B) + 10;
 end intrinsic;
 
 intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
