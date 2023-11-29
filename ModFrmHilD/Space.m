@@ -292,17 +292,6 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]: unitc
   return HMFSpace(M, N, k, chi: unitcharacters:=unitcharacters);
 end intrinsic;
 
-intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
-  {new instance of ModFrmHilD.}
-  M1k := ModFrmHilDInitialize();
-  for attr in GetAttributes(Type(Mk)) do
-    if assigned Mk``attr then
-      M1k``attr := Mk``attr;
-    end if;
-  end for;
-  return M1k;
-end intrinsic;
-
 // !! TODO - this currently only cuts out the magma space of newforms,
 // and throws out the Eisenstein series
 // and if there are other properties that we care about.

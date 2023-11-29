@@ -368,28 +368,6 @@ intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
   return f;
 end intrinsic;
 
-intrinsic ModFrmHilDEltCompCopy(f::ModFrmHilDEltComp) -> ModFrmHilDElt
-  {new instance of ModFrmHilDEltComp.}
-  g := ModFrmHilDEltCompInitialize();
-  for attr in GetAttributes(Type(f)) do
-    if assigned f``attr then
-      g``attr := f``attr;
-    end if;
-  end for;
-  return g;
-end intrinsic;
-
-intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {new instance of ModFrmHilDElt.}
-  g := ModFrmHilDEltInitialize();
-  for attr in GetAttributes(Type(f)) do
-    if assigned f``attr then
-      g``attr := f``attr;
-    end if;
-  end for;
-  return g;
-end intrinsic;
-
 intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
@@ -469,7 +447,7 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
     require ComponentIdeal(f_bb) eq bb: "Components mismatch";
     require Type(f_bb) eq ModFrmHilDEltComp: "The values of components need to be ModFrmHilDEltComp";
     require Mk eq Parent(f_bb): "The parents of the components should be all the same";
-    f`Components[bb] := ModFrmHilDEltCompCopy(f_bb);
+    f`Components[bb] := Copy(f_bb);
   end for;
   return f;
 end intrinsic;
@@ -545,7 +523,7 @@ end intrinsic;
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
   {f = fbb}
   f := HMFZero(Parent(fbb));
-  f`Components[ComponentIdeal(fbb)] := ModFrmHilDEltCompCopy(fbb);
+  f`Components[ComponentIdeal(fbb)] := Copy(fbb);
   return f;
 end intrinsic;
 
@@ -631,7 +609,7 @@ intrinsic ChangeCoefficientRing(f::ModFrmHilDElt, R::Rng) -> ModFrmHilDElt
   M := GradedRing(f);
   bbs := NarrowClassGroupReps(M);
   // first make a copy
-  f := ModFrmHilDEltCopy(f);
+  f := Copy(f);
   // then change ring
   components := Components(f);
   for bb->fbb in components do

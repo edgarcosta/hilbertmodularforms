@@ -373,18 +373,6 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   return M;
 end intrinsic;
 
-
-intrinsic ModFrmHilDGRngCopy(M::ModFrmHilDGRng) -> ModFrmHilDGRng
-  {new instance of ModFrmHilDGRng.}
-  M1 := ModFrmHilDGRngInitialize();
-  for attr in GetAttributes(Type(M)) do
-    if assigned M``attr then
-      M1``attr := M``attr;
-    end if;
-  end for;
-  return M1;
-end intrinsic;
-
 ///////////////////////////////////////////////////
 //                                               //
 //        Precomputations: Multiplication        //
