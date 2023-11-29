@@ -35,7 +35,6 @@ declare attributes HMFSerPuisElt:
   Space, // ModFrmHilD - the HMF space that this HMFSerPuisElt is a component in
   ComponentIdeal; // RngOrdIdl
 
-  
 /////////////////// HMFSerPuis constructor /////////////////// 
 
 intrinsic cHMFSerPuis(GRng::ModFrmHilDGRng, K::Fld) -> HMFSerPuis
@@ -276,6 +275,13 @@ intrinsic Coefficient(f_ser::RngSerPuisElt, depth::RngIntElt, nu::FldElt) -> Fld
     f_ser := Coefficient(f_ser, InTraceBasis(nu)[i]);
   end for;
   return f_ser;
+end intrinsic;
+
+intrinsic NumberOfCoefficients(f::HMFSerPuisElt) -> RngIntElt
+  {}
+  M := Parent(f)`GRng;
+  bb := ComponentIdeal(f);
+  return #FunDomainReps(M)[bb][f`Precision];
 end intrinsic;
 
 /////////////////// HMFSerPuisElt Setters /////////////////// 
