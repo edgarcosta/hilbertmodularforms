@@ -123,7 +123,7 @@ intrinsic cHMFSerPuisElt(
   R := GetHMFSerPuis(M, coeff_ring);
 
   f_ser := PuiseuxRing(R)!0;
-  for nu in FunDomainReps(M)[bb] do
+  for nu in FunDomainRepsUpToNorm(M, bb, prec) do
     f_ser +:= RngSerPuisMonomial(R, nu, coeffs_by_nu[nu]);
   end for;
 
@@ -137,6 +137,8 @@ intrinsic RngSerPuisMonomial(R::HMFSerPuis, nu::FldElt, a_nu::FldElt) -> RngSerP
     coefficient field K associated to R and the b_i are rational numbers.
     What we actually construct is the monomial a_nu * \prod_i x_i^a_i.
   }
+  b, a_nu := IsStrongCoercible(CoefficientRing(R), a_nu);
+  require b : "a_nu is not strong coercible into the coefficient field of R";
   F := IndexField(R);
   tb_nu := InTraceBasis(F!nu);
   f_ser := a_nu;
@@ -151,7 +153,19 @@ intrinsic RngSerPuisMonomial(Mk::ModFrmHilD, nu::FldElt, a_nu::FldElt) -> RngSer
   M := Parent(Mk);
   R := GetHMFSerPuis(M, Parent(a_nu));
   return RngSerPuisMonomial(R, nu, a_nu);
- end intrinsic;
+end intrinsic;
+
+intrinsic RngSerPuisMonomial(R::HMFSerPuis, nu::FldElt, a_nu::RngElt) -> RngSerPuisElt
+  {}
+  a_nu := FieldOfFractions(Parent(a_nu))!(a_nu);
+  return RngSerPuisMonomial(R, nu, a_nu);
+end intrinsic;
+
+intrinsic RngSerPuisMonomial(Mk::ModFrmHilD, nu::FldElt, a_nu::RngElt) -> RngSerPuisElt
+  {}
+  a_nu := FieldOfFractions(Parent(a_nu))!(a_nu);
+  return RngSerPuisMonomial(Mk, nu, a_nu);
+end intrinsic;
 
 intrinsic HMFSerPuisZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> HMFSerPuisElt
   {
@@ -173,6 +187,13 @@ intrinsic HMFSerPuisIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> HMFSerPuisElt
   }
   R := GetHMFSerPuis(Parent(Mk), Rationals());
   return cHMFSerPuisElt(Mk, bb, PuiseuxRing(R)!1);
+end intrinsic;
+
+intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> HMFSerPuisElt
+  {}
+  M := Parent(Mk);
+  R := GetHMFSerPuis(M, Rationals());
+  return HMFSerPuisIdentity(R, bb);
 end intrinsic;
 
 /////////////////// HMFSerPuis and HMFSerPuisElt Access /////////////////// 
@@ -236,7 +257,12 @@ end intrinsic;
 
 intrinsic Weight(f::HMFSerPuisElt) -> SeqEnum[RngIntElt]
   {}
-  return Weight(Parent(f`Element));
+  return Weight(Space(f));
+end intrinsic;
+
+intrinsic Level(f::HMFSerPuisElt) -> RngOrdIdl
+  {}
+  return Level(Space(f));
 end intrinsic;
 
 intrinsic Precision(f::HMFSerPuisElt) -> RngIntElt
@@ -251,6 +277,11 @@ intrinsic Space(f::HMFSerPuisElt) -> ModFrmHilDElt
   else
     return f`Space;
   end if;
+end intrinsic;
+
+intrinsic GradedRing(f::HMFSerPuisElt) -> ModFrmHilDGRng
+  {}
+  return Parent(f)`GRng;
 end intrinsic;
 
 /////////////////// HMFSerPuisElt - Coefficient Access /////////////////// 
@@ -277,11 +308,27 @@ intrinsic Coefficient(f_ser::RngSerPuisElt, depth::RngIntElt, nu::FldElt) -> Fld
   return f_ser;
 end intrinsic;
 
+intrinsic Coefficients(f::HMFSerPuisElt) -> Assoc
+  {Temporary function to transition out of ModFrmHilDEltComp}
+  M := Parent(f)`GRng;
+  bb := ComponentIdeal(f);
+  coeffs := AssociativeArray();
+  for nu in FunDomainRepsUpToNorm(M, bb, f`Precision) do
+    coeffs[nu] := Coefficient(f, nu);
+  end for;
+  return coeffs;
+end intrinsic;
+
 intrinsic NumberOfCoefficients(f::HMFSerPuisElt) -> RngIntElt
   {}
   M := Parent(f)`GRng;
   bb := ComponentIdeal(f);
-  return #FunDomainReps(M)[bb][f`Precision];
+  return #FunDomainRepsUpToNorm(M)[bb][f`Precision];
+end intrinsic;
+
+intrinsic IsZero(f::HMFSerPuisElt) -> BoolElt
+  {}
+  return IsZero(Series(f));
 end intrinsic;
 
 /////////////////// HMFSerPuisElt Setters /////////////////// 
@@ -534,7 +581,7 @@ intrinsic ShadowSeries(f::HMFSerPuisElt) -> RngSerPuisElt
     R := Parent(f);
     bb := f`ComponentIdeal;
     space := Space(f);
-    uc := UnitCharacters(f`Space)[bb];
+    uc := UnitCharacters(space)[bb];
     for shadow in Shadows(Parent(f)`GRng)[bb][Precision(f)] do
       nu, eps := Explode(shadow);
       a_shadow := StrongMultiply(K, [* Coefficient(f, nu), Evaluate(uc, eps) *]);
@@ -557,4 +604,73 @@ intrinsic Series(f_ser::RngSerPuisElt, R::HMFSerPuis, bb::RngOrdIdl, prec::RngIn
     g_ser +:= RngSerPuisMonomial(R, nu, a_nu);
   end for;
   return g_ser;
+end intrinsic;
+
+/////////////////// HMFSerPuisElt helpers /////////////////// 
+
+intrinsic Trace(f::HMFSerPuisElt) -> HMFSerPuisElt 
+  {return Trace(f)}
+  K := DefaultCoefficientRing(Space(f));
+  M := Parent(f)`GRng;
+  R := GetHMFSerPuis(M, K);
+  bb := ComponentIdeal(f);
+
+  g_ser := RngSerPuisZero(R);
+  for nu in FunDomainRepsUpToNorm(M, bb, f`Precision) do
+    a_nu := Coefficient(f, nu);
+    b_nu := (K eq Rationals()) select Trace(a_nu) else Trace(a_nu, K);
+    g_ser +:= RngSerPuisMonomial(R, nu, b_nu);
+  end for;
+  return cHMFSerPuisElt(Space(f), ComponentIdeal(f), g_ser : coeff_ring := K, prec:=Precision(f));
+end intrinsic;
+
+intrinsic MapCoefficients(m::Map, f::HMFSerPuisElt) -> HMFSerPuisElt
+  {return the ModFrmHilDEltComp where the map acts on the coefficients}
+  R := Parent(f);
+  M := Parent(f)`GRng;
+  g_ser := RngSerPuisZero(R);
+  for nu in FunDomainRepsUpToNorm(M, ComponentIdeal(f), Precision(f)) do
+    a_nu := Coefficient(f, nu);
+    g_ser +:= RngSerPuisMonomial(R, nu, m(a_nu));
+  end for;
+  return cHMFSerPuisElt(Space(f), ComponentIdeal(f), g_ser : coeff_ring := CoefficientRing(f), prec:=Precision(f));
+end intrinsic;
+
+intrinsic Inclusion(f::HMFSerPuisElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> HMFSerPuisElt
+  {Takes a form f(z) and produces f(mm*z) in Mk (of level NN) with component ideal class [mm*bb]}
+
+  coeff_f := Coefficients(f);
+  Mk_f := Space(f);
+  M_f := Parent(Mk_f);
+  M := Parent(Mk);
+  N1 := Level(Mk_f);
+  N2 := Level(Mk);
+  chi := Character(Mk);
+  chif := Character(Mk_f);
+  mf, pf := Modulus(chif);
+  ZF := Integers(M);
+  coeff_ring := CoefficientRing(f);
+
+  require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
+  require chif eq Restrict(chi, mf, pf): "Character(f) is not equal to Character(Mk)";
+  require UnitCharacters(Mk_f) eq UnitCharacters(Mk): "UnitCharacters(f) is not equal to UnitCharacters(Mk)";
+  require N2 subset N1: "Level of f does not divide level of Mk";
+  require N2 subset mm: "Ideal mm does not divide level of Mk";
+
+  coeff := AssociativeArray();
+  bb := ComponentIdeal(f);
+  mmbb := NarrowClassRepresentative(M, mm*bb);
+
+  mminv := mm^-1;
+  for nn -> nu in IdealToRep(M)[mmbb] do
+    if IsIntegral(nn*mminv) then
+      // set b_nn = a_{nn/mm}
+      // in terms of shintani reps
+      coeff[nu] := coeff_f[IdealToRep(M)[bb][ZF!!(nn*mminv)]];
+    else
+      coeff[nu] := 0;
+    end if;
+  end for;
+
+  return cHMFSerPuisElt(Mk, mmbb, coeff : coeff_ring := coeff_ring, prec:=Precision(f));
 end intrinsic;

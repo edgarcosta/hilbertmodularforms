@@ -35,14 +35,14 @@ function TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, tes
   end if;
 
   for bb in bbs do
-    if not IsIsomorphic((Components(f)[bb])`CoefficientRing, ground_truth[bb]) then
+    if not IsIsomorphic(CoefficientRing(Components(f)[bb]), ground_truth[bb]) then
       printf "Failure at component %o\n", IdealOneLine(bb);
       printf "The level is %o, and the nebentypus was %o\n", IdealOneLine(N), chi;
-      printf "The computed coefficient ring is %o\n", (Components(f)[bb])`CoefficientRing;
+      printf "The computed coefficient ring is %o\n", CoefficientRing(Components(f)[bb]);
       printf "The expected coefficient ring is %o\n", ground_truth[bb];
     end if;
 
-    assert IsIsomorphic((Components(f)[bb])`CoefficientRing, ground_truth[bb]);
+    assert IsIsomorphic(CoefficientRing(Components(f)[bb]), ground_truth[bb]);
   end for;
   printf "coefficient_ring: Passed %o\n", test_name;
   // because functions need a return value apparently
