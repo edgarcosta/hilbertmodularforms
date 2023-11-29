@@ -390,24 +390,6 @@ intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
   return g;
 end intrinsic;
 
-
-//FIXME: change this to EmbeddComponent?
-// ModFrmHilDEltComp -> ModFrmHilDElt
-intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
- {given an associative array with coefficients on one component, set all other coefficients to be zero}
- print("DEPRECATED: first create the f an ModFrmHilDEltComp and then HMF(f) to get a ModFrmHilDElt");
-  reps:= NarrowClassGroupReps(M);
-  for bb in reps do
-    if not bb in Keys(coeffs) then
-      coeffs[bb] := AssociativeArray();
-      for nn in IdealsByNarrowClassGroup(M)[bb] do // Edgar: are you sure?
-        coeffs[bb][nn] := 0;
-      end for;
-    end if;
-  end for;
-  return coeffs;
-end intrinsic;
-
 intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
@@ -627,27 +609,6 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
   return HMFSumComponents(M0, C);
 end intrinsic;
 
-
-///////// ModFrmHilDElt and ModFrmHilDComp: CoefficientRing ///////////
-
-intrinsic HasDefaultCoeffRing(f::ModFrmHilDEltComp) -> bool
-  {
-    returns true if f has coefficient ring equal to the default
-    coefficient ring for its weight and base field.
-  }
-  return f`CoefficientRing eq DefaultCoefficientRing(Parent(f));
-end intrinsic;
-
-intrinsic HasDefaultCoeffRing(f::ModFrmHilDElt) -> bool
-  {
-    returns true if every component of f has coefficient ring equal 
-    to the default coefficient ring for its weight and base field.
-  }
-  
-  bbs := NarrowClassGroupReps(Parent(Parent(f)));
-  return &and[HasDefaultCoeffRing(Components(f)[bb]) : bb in bbs];
-end intrinsic;
-
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
 
 //FIXME: this does nto agree with MAGMA standards
@@ -683,8 +644,8 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   {}
   if Type(f) eq RngIntElt and IsZero(f) then
     return true, HMFZero(Mk);
-  elif Type(f) notin [ModFrmHilDElt, ModFrmHilDEltComp] then
-    return false, "f not of type ModFrmHilDElt or ModFrmHilDEltComp";
+  elif Type(f) notin [ModFrmHilDElt] then
+    return false, "f not of type ModFrmHilDElt";
   else // f is an HMF so has a chance to be coercible
     M := Parent(Mk); // graded ring associated to Mk
     Mkf := Parent(f); // space of HMFs associated to f
@@ -697,10 +658,6 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       test3 := Character(Mk) eq Character(Mkf);
       test4 := UnitCharacters(Mk) eq UnitCharacters(Mkf);
       if test1 and test2 and test3 and test4 then // all tests must be true to coerce
-        if Type(f) eq ModFrmHilDEltComp then
-          A := TotallyPositiveUnits(M);
-          return true, HMFComp(Mk, ComponentIdeal(f), Coefficients(f): prec:=Precision(f));
-        end if;
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
           fbb := Components(f)[bb];
