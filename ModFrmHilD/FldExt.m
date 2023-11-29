@@ -324,11 +324,17 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     return Rationals()!x;
   end if;
 
+  // We trust Magma's coercion if K and L have the same
+  // defining polynomial
+  if DefiningPolyCoeffs(K) eq DefiningPolyCoeffs(L) then
+    return L!x;
+  end if;
+
   if not assigned K`Extensions then
-    K`Extensions := AssociativeArray(PowerStructure(FldNum));
+    K`Extensions := AssociativeArray();
   end if;
   if not assigned K`Restrictions then
-    K`Restrictions := AssociativeArray(PowerStructure(FldNum));
+    K`Restrictions := AssociativeArray();
   end if;
 
   require IsNormal(K) and IsNormal(L) : "Strong coercion is not yet implemented\
@@ -336,19 +342,19 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
 
   // if K = QQ then all embeddings are the same
   if K eq Rationals() then
-    K`Extensions[L] := Automorphisms(Rationals())[1];
+    K`Extensions[DefiningPolyCoeffs(L)] := Automorphisms(Rationals())[1];
   end if;
 
   // if L = QQ then all restrictions are the same
   if L eq Rationals() then
-    K`Restrictions[L] := Automorphisms(K)[1];
+    K`Restrictions[DefiningPolyCoeffs(L)] := Automorphisms(K)[1];
   end if;
 
-  if IsDefined(K`Extensions, L) then
-    phi := K`Extensions[L];
+  if IsDefined(K`Extensions, DefiningPolyCoeffs(L)) then
+    phi := K`Extensions[DefiningPolyCoeffs(L)];
     return L!phi(x);
-  elif IsDefined(K`Restrictions, L) then
-    phi := K`Restrictions[L];
+  elif IsDefined(K`Restrictions, DefiningPolyCoeffs(L)) then
+    phi := K`Restrictions[DefiningPolyCoeffs(L)];
     return L!phi(x);
   end if;
 
@@ -361,7 +367,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     auts := Automorphisms(K);
     for aut in auts do
       if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
-        K`Extensions[L] := aut;
+        K`Extensions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
     end for;
@@ -377,7 +383,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
       // L!x will succeed but K!(L!x) will fail. This case is not important right
       // now so I'm leaving it to future me (or present you!) to fix it. 
       if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
-        K`Restrictions[L] := aut;
+        K`Restrictions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
     end for;
@@ -627,4 +633,12 @@ intrinsic NormToHalfWeight(I::RngFracIdl, k0::RngIntElt, K::FldNum) -> FldNumElt
   }
   Nm := K!Norm(I);
   return (k0 mod 2 eq 0) select Nm^(ExactQuotient(k0, 2)) else Nm^(k0/2);
+end intrinsic;
+
+intrinsic DefiningPolyCoeffs(K::Fld) -> SeqEnum
+  {}
+  if K eq Rationals() then
+    K := RationalsAsNumberField();
+  end if;
+  return Coefficients(DefiningPolynomial(K));
 end intrinsic;
