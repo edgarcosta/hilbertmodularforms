@@ -130,12 +130,6 @@ end intrinsic;
 
 ////////// ModFrmHilD creation and multiplication functions //////////
 
-intrinsic ModFrmHilDInitialize() -> ModFrmHilD
-  {Create an empty ModFrmHilD object.}
-  M := New(ModFrmHilD);
-  return M;
-end intrinsic;
-
 intrinsic IsGamma1EisensteinWeight(chi::GrpHeckeElt, k::SeqEnum[RngIntElt]) -> BoolElt, RngIntElt
 {Check if the character chi is compatible with the weight k, i.e. the parity
 is the same at all infinite places. If it fails, returns the index of the first infinite
@@ -248,7 +242,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   else
     M`Spaces[N] := AssociativeArray(PowerStructure(Tup));
   end if;
-  Mk := ModFrmHilDInitialize();
+  Mk := New(ModFrmHilD);
   Mk`Parent := M;
   Mk`Weight := k;
   Mk`Level := N;
@@ -299,7 +293,7 @@ end intrinsic;
 intrinsic NewSubspace(M::ModFrmHilD, N::RngOrdIdl) -> ModFrmHilD
 {Returns the subspace of forms which are N-new.}
 
-  Mk := ModFrmHilDInitialize();
+  Mk := New(ModFrmHilD);
   Mk`Parent := M`Parent;
   Mk`Weight := M`Weight;
   Mk`Level := M`Level;
@@ -541,7 +535,7 @@ end intrinsic;
 intrinsic CuspidalSubspace(M::ModFrmHilD) -> ModFrmHilD
 {The cuspidal subspace of M.}
 
-  Mk := ModFrmHilDInitialize();
+  Mk := New(ModFrmHilD);
   Mk`Parent := M`Parent;
   Mk`Weight := M`Weight;
   Mk`Level := M`Level;

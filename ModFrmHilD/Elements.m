@@ -355,19 +355,6 @@ end intrinsic;
 
 ////////// ModFrmHilDElt and ModFrmHilDEltComp creation functions //////////
 
-
-intrinsic ModFrmHilDEltCompInitialize() -> ModFrmHilDElt
-  {Create an empty ModFrmHilDEltComp object.}
-  f := New(ModFrmHilDEltComp);
-  return f;
-end intrinsic;
-
-intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
-  {Create an empty ModFrmHilDElt object.}
-  f := New(ModFrmHilDElt);
-  return f;
-end intrinsic;
-
 intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
@@ -395,7 +382,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   require bb in bbs: "bb should be among the chosen representatives of the narrow class group";
 
   // make the HMF
-  f := ModFrmHilDEltCompInitialize();
+  f := New(ModFrmHilDEltComp);
 
   if prec eq 0 then
     f`Precision := Precision(M);
@@ -439,7 +426,7 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   bbs := NarrowClassGroupReps(M);
   require Keys(components) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
-  f := ModFrmHilDEltInitialize();
+  f := New(ModFrmHilDElt);
   f`Parent := Mk;
   f`Components := AssociativeArray();
   for bb in bbs do
@@ -475,7 +462,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   bbs := NarrowClassGroupReps(M);
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
-  f := ModFrmHilDEltInitialize();
+  f := New(ModFrmHilDElt);
   f`Parent := Mk;
   f`Components := AssociativeArray();
 
