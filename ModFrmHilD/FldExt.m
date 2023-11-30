@@ -310,14 +310,14 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
   CC_THRESHOLD := 10^-10;
   require Type(x) in [FldNumElt, FldRatElt, FldQuadElt, FldCycElt] : "%o is not a valid type for strong coercion", Type(x);
 
-  K := Parent(x);
-
-  // If K = QQ then all embeddings are the same,
+  // If x is rational then all embeddings are the same,
   // We do this case separately because Rationals() 
   // does not have an Extensions attribute.
-  if K eq Rationals() then
+  if x in Rationals() then
     return L!x;
   end if;
+
+  K := Parent(x);
 
   // If L = QQ then all restrictions are the same.
   if L eq Rationals() then
