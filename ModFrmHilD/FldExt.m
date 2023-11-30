@@ -389,7 +389,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     end for;
     require 0 eq 1 : "This should not be possible. Something has gone wrong.";
   else
-    require 0 eq 1 : "The Parent of K neither contains nor is contained in L";
+    require 0 eq 1 : "The parent of x neither contains nor is contained in L", K, L;
   end if;
 end intrinsic;
 
@@ -481,7 +481,7 @@ intrinsic UnitCharFieldsByWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> FldNum
   end if;
 
   R<x> := PolynomialRing(F);
-  if #SequenceToSet(k) eq 1 then
+  if IsParallel(k) then
     // if the weight is parallel, the unit character is trivial
     L := Rationals();
   elif IsParitious(k) then
