@@ -233,7 +233,6 @@ intrinsic HMFComp(Mk::ModFrmHilD,
                   coeffs::Assoc
                   :
                   coeff_ring := DefaultCoefficientRing(Mk),
-                  CoeffsByIdeals := false,
                   prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component ideal bb, the fourier coefficients
@@ -241,9 +240,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     Explicitly, coeffs is an associative array where
     coeffs[nu] = a_(bb, nu) = a_nn
         where nn = nu*(bb')^-1 and bb' = bb^(-1)*dd_F
-    for all nu in the Shintani cone, unless CoeffsByIdeals is true
-    (to allow backwards compatibility), in which case
-    coeffs[nn] = a_nn as above (and we assign according to Shintani rep).
+    for all nu in the Shintani cone
 
     The coefficients are assumed to lie in Mk`DefaultCoefficientRing
     unless the optional argument coeff_ring is passed, in which
@@ -266,18 +263,6 @@ intrinsic HMFComp(Mk::ModFrmHilD,
 
   f`Parent := Mk;
   f`ComponentIdeal := bb;
-
-  if CoeffsByIdeals then
-    // first convert according to
-    // nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
-    coeffsnu := AssociativeArray();
-    for nn->nu in IdealToRep(M)[bb] do // mapping nn->nu, where nu \in bb' = bb*diff^-1
-      if IsDefined(coeffs, nn) then
-        coeffsnu[nu] := coeffs[nn];
-      end if;
-    end for;
-    coeffs := coeffsnu;  // goodbye old data!
-  end if;
 
   f`Coefficients := AssociativeArray();
   f`CoefficientRing := coeff_ring;
@@ -315,7 +300,6 @@ end intrinsic;
 intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
               :
-              CoeffsByIdeals:=false,
               coeff_rings:=false, // Assoc RngFracIdl -> FldNum
               prec := 0) -> ModFrmHilDElt
   {
@@ -356,7 +340,7 @@ intrinsic HMF(Mk::ModFrmHilD,
 
   for bb in bbs do
     coeff_ring := (coeff_rings cmpeq false) select Mk`DefaultCoefficientRing else coeff_rings[bb];
-    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: CoeffsByIdeals:=CoeffsByIdeals, coeff_ring := coeff_ring, prec:=prec[bb]);
+    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: coeff_ring := coeff_ring, prec:=prec[bb]);
   end for;
   return f;
 end intrinsic;
