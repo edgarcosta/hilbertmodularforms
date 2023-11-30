@@ -8,6 +8,7 @@
   Export.m
   FldExt.m
   Formatting.m
+  IdlCoeffEltCoeffConversion.m
   GradedPoly.m
   GradedRing.m
   HJ-CFrac.m
