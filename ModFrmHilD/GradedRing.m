@@ -628,26 +628,3 @@ intrinsic ElementsInABox(M::ModFrmHilDGRng, aa::RngOrdFracIdl,
 
   return T;
 end intrinsic;
-
-// Rearranges the basis for an ideal so that the second basis vector has trace 0
-intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
-  {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
-   where Trace(a) = n > 0 and Trace(b) = 0}
-
-  // Preliminaries
-  B := Basis(aa);
-  ZF := Parent(B[2]);
-  places := InfinitePlaces(NumberField(ZF));
-
-  // Change of basis
-  trMat := Matrix([[Integers()!Trace(B[i])] : i in [1..#B]]);
-  _, Q := HermiteForm(trMat);
-  B := Eltseq(Vector(B)*Transpose(ChangeRing(Q,ZF)));
-  assert Trace(B[1]) gt 0;
-  assert Trace(B[2]) eq 0;
-  // Orienting B
-  if Evaluate(B[2], places[2]) lt 0 then
-    B := [B[1], -B[2]];
-  end if;
-  return B;
-end intrinsic;

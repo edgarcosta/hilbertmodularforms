@@ -7,6 +7,7 @@ declare attributes FldAlg:
   TotallyPositiveUnitsBasisMatrixInverse,
   SquaredUnitsBasisMatrixInverse,
   FundamentalUnitSquare,
+  TraceBasisMatrixInverse,
   ClassGroupReps,
   DistinguishedPlace,
   Extensions,
@@ -641,4 +642,69 @@ intrinsic DefiningPolyCoeffs(K::Fld) -> SeqEnum
     K := RationalsAsNumberField();
   end if;
   return Coefficients(DefiningPolynomial(K));
+end intrinsic;
+
+intrinsic TraceBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  {
+    Given an ideal aa, with standard basis Basis(aa) = [e_1, ..., e_n],
+    returns a matrix M whose ith row vector is (a_1, ..., a_n) 
+    such that a_1 * e_1 + ... + a_n * e_n = f_i,
+    where [f_1, ..., f_n] is a Z-basis of aa such that
+    Tr(f_1) > 0 and Tr(f_i) = 0 for i > 1.
+  }
+
+  if not assigned F`TraceBasisMatrixInverse then
+    B := Basis(F);
+    // a column vector whose ith element is the trace of
+    // the ith element of B
+    traces := Matrix([[Trace(B[i])] : i in [1..#B]]);
+
+    // Q is a matrix such that Q * traces is a column
+    // vector whose topmost entry is a positive rational
+    // and the rest are all 0 (which is what the Hermite 
+    // form of any column vector looks like).
+    _, Q := EchelonForm(traces);
+    F`TraceBasisMatrixInverse := Q^-1;
+  end if;
+  return F`TraceBasisMatrixInverse;
+end intrinsic;
+
+intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
+  {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
+   where Trace(a) = n > 0 and Trace(b) = 0}
+
+  // Preliminaries
+  B := Basis(aa);
+  ZF := Parent(B[2]);
+  v := InfinitePlaces(NumberField(ZF))[2];
+
+  // Change of basis
+  traces := Matrix([[Integers()!Trace(B[i])] : i in [1..#B]]);
+  _, Q := HermiteForm(traces);
+
+  TB := Eltseq(Vector(B)*Transpose(ChangeRing(Q,ZF)));
+  assert Trace(TB[1]) gt 0;
+  assert &and[Trace(TB[i]) eq 0 : i in [2 .. #TB]];
+
+  // Orienting the basis
+  for i in [2 .. #TB] do
+    if Evaluate(TB[i], v) lt 0 then
+      TB[i] *:= -1;
+    end if;
+  end for;
+  return TB;
+end intrinsic;
+
+intrinsic InTraceBasis(nu::FldNumElt) -> SeqEnum
+  {
+    input: 
+      A number field element, generally of the base field F of the HMF
+    returns:
+      A SeqEnum[FldRatElt] [b_1, ..., b_n] such that, if [f_1, ..., f_n]
+      is a TraceBasis for O_F, nu = b_1 * f_1 + ... + b_n * f_n.
+  }
+  F := Parent(nu);
+  // vector expressing nu in terms of Basis(F) (a Q-basis for F)
+  nu_vector := Vector(Eltseq(nu));
+  return Eltseq(nu_vector * TraceBasisMatrixInverse(F));
 end intrinsic;
