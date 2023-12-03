@@ -100,7 +100,7 @@ M := GradedRingOfHMFs(F, prec);
 assert BaseField(M) eq F;
 bbs := M`NarrowClassGroupReps;
 
-shadows := ComputeShadows(M);
+shadows := Shadows(M);
 mpairs_new := ComputeMPairs(M);
 
 // hardcoding the old output of MPairs

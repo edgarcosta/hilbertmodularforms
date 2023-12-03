@@ -7,6 +7,7 @@ declare attributes FldAlg:
   TotallyPositiveUnitsBasisMatrixInverse,
   SquaredUnitsBasisMatrixInverse,
   FundamentalUnitSquare,
+  TraceBasisMatrixInverse,
   ClassGroupReps,
   DistinguishedPlace,
   Extensions,
@@ -243,6 +244,26 @@ intrinsic DistinguishedPlace(K::FldNum) -> PlcNumElt
   return K`DistinguishedPlace;
 end intrinsic;
 
+intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
+  {
+    input:
+      L - FldNum, FldQuad, FldCyc, or FldRat
+      x - Any, but can return true only on a FldElt or RngElt
+    returns:
+      false if x cannot be coerced into L. 
+      true if x can be coerced into L, along with
+        the strong coercion of x into L.
+  }
+
+  // strong coercion is possible if and only if
+  // regular coercion is possible
+  if IsCoercible(L, x) then
+    return true, StrongCoerce(L, x);
+  else
+    return false;
+  end if;
+end intrinsic;
+
 intrinsic StrongCoerce(L::Fld, x::RngElt) -> FldElt
   {
     input: 
@@ -290,25 +311,31 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
   CC_THRESHOLD := 10^-10;
   require Type(x) in [FldNumElt, FldRatElt, FldQuadElt, FldCycElt] : "%o is not a valid type for strong coercion", Type(x);
 
-  K := Parent(x);
-
-  // If K = QQ then all embeddings are the same,
+  // If x is rational then all embeddings are the same,
   // We do this case separately because Rationals() 
   // does not have an Extensions attribute.
-  if K eq Rationals() then
+  if x in Rationals() then
     return L!x;
   end if;
+
+  K := Parent(x);
 
   // If L = QQ then all restrictions are the same.
   if L eq Rationals() then
     return Rationals()!x;
   end if;
 
+  // We trust Magma's coercion if K and L have the same
+  // defining polynomial
+  if DefiningPolyCoeffs(K) eq DefiningPolyCoeffs(L) then
+    return L!x;
+  end if;
+
   if not assigned K`Extensions then
-    K`Extensions := AssociativeArray(PowerStructure(FldNum));
+    K`Extensions := AssociativeArray();
   end if;
   if not assigned K`Restrictions then
-    K`Restrictions := AssociativeArray(PowerStructure(FldNum));
+    K`Restrictions := AssociativeArray();
   end if;
 
   require IsNormal(K) and IsNormal(L) : "Strong coercion is not yet implemented\
@@ -316,19 +343,19 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
 
   // if K = QQ then all embeddings are the same
   if K eq Rationals() then
-    K`Extensions[L] := Automorphisms(Rationals())[1];
+    K`Extensions[DefiningPolyCoeffs(L)] := Automorphisms(Rationals())[1];
   end if;
 
   // if L = QQ then all restrictions are the same
   if L eq Rationals() then
-    K`Restrictions[L] := Automorphisms(K)[1];
+    K`Restrictions[DefiningPolyCoeffs(L)] := Automorphisms(K)[1];
   end if;
 
-  if IsDefined(K`Extensions, L) then
-    phi := K`Extensions[L];
+  if IsDefined(K`Extensions, DefiningPolyCoeffs(L)) then
+    phi := K`Extensions[DefiningPolyCoeffs(L)];
     return L!phi(x);
-  elif IsDefined(K`Restrictions, L) then
-    phi := K`Restrictions[L];
+  elif IsDefined(K`Restrictions, DefiningPolyCoeffs(L)) then
+    phi := K`Restrictions[DefiningPolyCoeffs(L)];
     return L!phi(x);
   end if;
 
@@ -341,7 +368,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     auts := Automorphisms(K);
     for aut in auts do
       if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
-        K`Extensions[L] := aut;
+        K`Extensions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
     end for;
@@ -357,13 +384,13 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
       // L!x will succeed but K!(L!x) will fail. This case is not important right
       // now so I'm leaving it to future me (or present you!) to fix it. 
       if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
-        K`Restrictions[L] := aut;
+        K`Restrictions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
     end for;
     require 0 eq 1 : "This should not be possible. Something has gone wrong.";
   else
-    require 0 eq 1 : "The Parent of K neither contains nor is contained in L";
+    require 0 eq 1 : "The parent of x neither contains nor is contained in L", K, L;
   end if;
 end intrinsic;
 
@@ -455,7 +482,7 @@ intrinsic UnitCharFieldsByWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> FldNum
   end if;
 
   R<x> := PolynomialRing(F);
-  if #SequenceToSet(k) eq 1 then
+  if IsParallel(k) then
     // if the weight is parallel, the unit character is trivial
     L := Rationals();
   elif IsParitious(k) then
@@ -607,4 +634,77 @@ intrinsic NormToHalfWeight(I::RngFracIdl, k0::RngIntElt, K::FldNum) -> FldNumElt
   }
   Nm := K!Norm(I);
   return (k0 mod 2 eq 0) select Nm^(ExactQuotient(k0, 2)) else Nm^(k0/2);
+end intrinsic;
+
+intrinsic DefiningPolyCoeffs(K::Fld) -> SeqEnum
+  {}
+  if K eq Rationals() then
+    K := RationalsAsNumberField();
+  end if;
+  return Coefficients(DefiningPolynomial(K));
+end intrinsic;
+
+intrinsic TraceBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  {
+    Given an ideal aa, with standard basis Basis(aa) = [e_1, ..., e_n],
+    returns a matrix M whose ith row vector is (a_1, ..., a_n) 
+    such that a_1 * e_1 + ... + a_n * e_n = f_i,
+    where [f_1, ..., f_n] is a Z-basis of aa such that
+    Tr(f_1) > 0 and Tr(f_i) = 0 for i > 1.
+  }
+
+  if not assigned F`TraceBasisMatrixInverse then
+    B := Basis(F);
+    // a column vector whose ith element is the trace of
+    // the ith element of B
+    traces := Matrix([[Trace(B[i])] : i in [1..#B]]);
+
+    // Q is a matrix such that Q * traces is a column
+    // vector whose topmost entry is a positive rational
+    // and the rest are all 0 (which is what the Hermite 
+    // form of any column vector looks like).
+    _, Q := EchelonForm(traces);
+    F`TraceBasisMatrixInverse := Q^-1;
+  end if;
+  return F`TraceBasisMatrixInverse;
+end intrinsic;
+
+intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
+  {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
+   where Trace(a) = n > 0 and Trace(b) = 0}
+
+  // Preliminaries
+  B := Basis(aa);
+  ZF := Parent(B[2]);
+  v := InfinitePlaces(NumberField(ZF))[2];
+
+  // Change of basis
+  traces := Matrix([[Integers()!Trace(B[i])] : i in [1..#B]]);
+  _, Q := HermiteForm(traces);
+
+  TB := Eltseq(Vector(B)*Transpose(ChangeRing(Q,ZF)));
+  assert Trace(TB[1]) gt 0;
+  assert &and[Trace(TB[i]) eq 0 : i in [2 .. #TB]];
+
+  // Orienting the basis
+  for i in [2 .. #TB] do
+    if Evaluate(TB[i], v) lt 0 then
+      TB[i] *:= -1;
+    end if;
+  end for;
+  return TB;
+end intrinsic;
+
+intrinsic InTraceBasis(nu::FldNumElt) -> SeqEnum
+  {
+    input: 
+      A number field element, generally of the base field F of the HMF
+    returns:
+      A SeqEnum[FldRatElt] [b_1, ..., b_n] such that, if [f_1, ..., f_n]
+      is a TraceBasis for O_F, nu = b_1 * f_1 + ... + b_n * f_n.
+  }
+  F := Parent(nu);
+  // vector expressing nu in terms of Basis(F) (a Q-basis for F)
+  nu_vector := Vector(Eltseq(nu));
+  return Eltseq(nu_vector * TraceBasisMatrixInverse(F));
 end intrinsic;

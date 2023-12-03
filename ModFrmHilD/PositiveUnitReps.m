@@ -347,7 +347,7 @@ intrinsic PopulateFunDomainRepsArrays(M::ModFrmHilDGRng)
   end for;
 end intrinsic;
 
-intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
+intrinsic Shadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
   {
     inputs:
       M: A graded ring of Hilbert modular forms
@@ -436,7 +436,7 @@ intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
   nm_splx_0 := nm_splx;
 
   prev_x := min_norm;
-  cand_shadows_bb := {<F!0, F!1>};
+  cand_shadows_bb := {};
   ct := 0;
   REGEN_EVERY := 50;
   for x in nu_norms do 
@@ -461,8 +461,13 @@ intrinsic ComputeShadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
       P := Polyhedron([Rationalize(ForgetTraceLogEmbed(nu^-1))]);
       splx +:= Polyhedron([Rationalize(ForgetTraceLogEmbed(nu^-1))]);
 
+      points := Points(splx);
+      // remove the zero point, since Shadows(M)
+      // should *not* contain any actual representatives
+      Exclude(~points, LatticeVector([0 : _ in [1 .. n-1]]));
+
       // process each point
-      for pt in Points(splx) do
+      for pt in points do
         v := Vector(pt);
         eps := ZF!1;
         for i in [1 .. n-1] do
@@ -513,9 +518,10 @@ end intrinsic;
 
 intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
   {temporary function, just to ensure compatibility}
-
   MPairs_bb := AssociativeArray();
-  shadows_bb := ComputeShadows(M, bb)[M`Precision];
+  shadows_bb := Shadows(M)[bb][M`Precision];
+  F := BaseField(M);
+
   for nu in FunDomainRepsUpToNorm(M)[bb][M`Precision] do
     MPairs_bb[nu] := [];
     for nu_1eps_1 in shadows_bb do
@@ -523,8 +529,14 @@ intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
       if IsDominatedBy(eps_1*nu_1, nu) then
         nu_2eps_2 := nu - eps_1*nu_1;
         nu_2, eps_2 := FunDomainRep(nu_2eps_2);
-        assert <nu_2, eps_2> in shadows_bb;
         Append(~MPairs_bb[nu], [<nu_1, eps_1>, <nu_2, eps_2>]);
+      end if;
+    end for;
+    for nu_1 in FunDomainRepsUpToNorm(M)[bb][M`Precision] do
+      if IsDominatedBy(nu_1, nu) then
+        nu_2eps_2 := nu - nu_1;
+        nu_2, eps_2 := FunDomainRep(nu_2eps_2);
+        Append(~MPairs_bb[nu], [<nu_1, F!1>, <nu_2, eps_2>]);
       end if;
     end for;
   end for;
@@ -532,12 +544,12 @@ intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
   return MPairs_bb;
 end intrinsic;
 
-intrinsic ComputeShadows(M::ModFrmHilDGRng) -> Assoc
+intrinsic Shadows(M::ModFrmHilDGRng) -> Assoc
   {}
   if not assigned M`Shadows then
     M`Shadows := AssociativeArray();
     for bb in M`NarrowClassGroupReps do
-      M`Shadows[bb] := ComputeShadows(M, bb);
+      M`Shadows[bb] := Shadows(M, bb);
     end for;
   end if;
 

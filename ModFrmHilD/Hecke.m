@@ -49,7 +49,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
     end for;
   end for;
 
-  g := HMF(Mk, coeffsTmmf : CoeffsByIdeals:=false, prec:=new_prec);
+  g := HMF(Mk, coeffsTmmf : prec:=new_prec);
 
   // Attempting to increase precision using a basis
   // This is not very efficient, as it does not remember the underlying vector space, but it works.

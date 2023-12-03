@@ -192,133 +192,6 @@ intrinsic Coefficients(f::ModFrmHilDElt) -> Any
   return coeffs;
 end intrinsic;
 
-intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K::Fld) -> FldElt
-  {
-    inputs:
-      a_nn: An element of a number field (usually the splitting field of 
-              the base field of the HMF if GaloisDescent has been performed)
-              representing the "Frobenius trace" at nn. 
-              // TODO abhijitm phrase better, not exactly true
-      nu: A totally positive element of a number field (the base field of the HMF)
-      k: A weight
-      K: The field in which the output should live. Usually this will be
-        the coefficient field. 
-    returns:
-      The Fourier coefficient at nu of the HMF, the coefficient field.
-
-      The coefficients of an HMF are naturally indexed by totally positive elements
-      nu. However, after ExtendsMultiplicatively and GaloisDescent, we have coefficients
-      indexed by ideals nn. Fix a set of narrow class representatives. Based on the 
-      narrow class of nn, there is a narrow class representative bbp such that 
-      nn * bbp is a principal ideal. (In our code we
-      call this the ideal dual of a narrow class group representative but this distinction
-      isn't important here). 
-
-      However, the choice of generator nu such that bbp * nn = (nu) 
-      is not canonical, and by the modular transformation law,
-      two candidate generators nu and eps * nu -- for some totally positive unit eps -- 
-      should have Fourier coefficients related by 
-
-      a_(nu) = \prod_i eps_i^(k_i) a_(eps*nu),
-
-      where eps_i is the image of eps under the ith real embedding. 
-      When the weight is parallel (k_1 = ... = k_n) then we have
-      a_nu = a_(eps*nu) but in general this is not the case.
-
-      Shimura (Duke 78 Vol 45 No. 3) then writes
-
-      a_(nu) := a_(nn) * N(bbp)^(k_0/2) * nu^((k-k_0)/2)
-
-      where k_0 is the largest entry of k and nu_i is the image of nu under the ith
-      real embedding. This definition is compatible with the earlier transformation law.
-
-      This definition is canonical once we fix the normalization of each
-      Hecke operator, since we want the a_nn to be eigenvalues. In our case, the normalization
-      comes fixed because it comes from the Hecke code in ModFrmHil.
-
-      To reduce the degree of the number fields we need to work with, we use
-      the *technically incorrect* formula
-
-      a_(nu) := a_(nn) * nu^((k-k_0)/2)
-
-      Thus, each component will be off by a factor of N(bbp)^(k_0/2). 
-      // TODO abhijitm I think this is actually broken... but I also
-      // think the existing code should be broken and it doesn't seem
-      // to be so idk. 
-    }
-
-  if nu eq 0 then
-    return StrongCoerce(K, a_nn);
-  end if;
-
-  // TODO abhijitm there's some chance that this is wrong
-  // the narrow class number is bigger than 1, but I think
-  // it's alright... although it might cause problems in 
-  // the nonparitious case as written
-
-  return StrongMultiply(K, [* a_nn, EltToShiftedHalfWeight(nu, k)^(-1) *]);
-end intrinsic;
-
-intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K::Fld) -> FldElt
-  {
-    inputs:
-      a_nu: An element of a number field (usually the splitting field 
-              of the base field of the HMF if GaloisDescent has been performed)
-              representing the Fourier coefficient at nu.
-      nu: A totally positive element of a number field (the base field of the HMF)
-      k: A weight
-      K: The field in which the output should live. Usually this will be
-        the coefficient field. 
-    returns:
-      The "Frobenius trace" at nn of the HMF, the coefficient field.
-
-      Reversing the formula in IdlCoeffToEltCoeff (explanation provided
-      in that function), we compute
-
-      a_(nn) := a_(nu) * N(nu)^((k_0-k_i)/2)
-  }
-
-  if nu eq 0 then
-    return StrongCoerce(K, a_nu);
-  end if;
-
-  return StrongMultiply(K, [* a_nu, K!EltToShiftedHalfWeight(nu, k) *]);
-end intrinsic;
-
-intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt
-  {
-    inputs:
-      a_nu: An element of a number field (usually the splitting field 
-              of the base field of the HMF if GaloisDescent has been performed)
-              representing the Fourier coefficient at nu.
-      nu: A totally positive element of a number field (the base field of the HMF)
-      f: An element of an HMF Space.
-    returns:
-      The "Frobenius trace" a_nn at the ideal nn corresponding to nu. 
-      See the called function for details.
-  }
-  return EltCoeffToIdlCoeff(a_nu, nu, Weight(Parent(f)), CoefficientRing(f));
-end intrinsic;
-
-intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt
-  {
-    inputs:
-      a_nn: An element of a number field (usually the splitting field of 
-              the base field of the HMF if GaloisDescent has been performed)
-              representing the "Frobenius trace" at nn. 
-              // TODO abhijitm phrase better, not exactly true
-      nu: A totally positive element of a number field (the base field of the HMF),
-        which we expect to be (but do not check) a generator for nn * bbp for some bb.
-      f: An element of an HMF Space.
-    returns:
-      The Fourier coefficient at the totally positive element nu
-
-      See the called function for details.
-  }
-
-  return IdlCoeffToEltCoeff(a_nn, nu, Weight(Parent(f)), CoefficientRing(f));
-end intrinsic;
-
 intrinsic CoefficientRing(f::ModFrmHilDEltComp) -> Any
   {}
   return f`CoefficientRing;
@@ -355,65 +228,11 @@ end intrinsic;
 
 ////////// ModFrmHilDElt and ModFrmHilDEltComp creation functions //////////
 
-
-intrinsic ModFrmHilDEltCompInitialize() -> ModFrmHilDElt
-  {Create an empty ModFrmHilDEltComp object.}
-  f := New(ModFrmHilDEltComp);
-  return f;
-end intrinsic;
-
-intrinsic ModFrmHilDEltInitialize() -> ModFrmHilDElt
-  {Create an empty ModFrmHilDElt object.}
-  f := New(ModFrmHilDElt);
-  return f;
-end intrinsic;
-
-intrinsic ModFrmHilDEltCompCopy(f::ModFrmHilDEltComp) -> ModFrmHilDElt
-  {new instance of ModFrmHilDEltComp.}
-  g := ModFrmHilDEltCompInitialize();
-  for attr in GetAttributes(Type(f)) do
-    if assigned f``attr then
-      g``attr := f``attr;
-    end if;
-  end for;
-  return g;
-end intrinsic;
-
-intrinsic ModFrmHilDEltCopy(f::ModFrmHilDElt) -> ModFrmHilDElt
-  {new instance of ModFrmHilDElt.}
-  g := ModFrmHilDEltInitialize();
-  for attr in GetAttributes(Type(f)) do
-    if assigned f``attr then
-      g``attr := f``attr;
-    end if;
-  end for;
-  return g;
-end intrinsic;
-
-
-//FIXME: change this to EmbeddComponent?
-// ModFrmHilDEltComp -> ModFrmHilDElt
-intrinsic CompleteCoeffsZeros(M::ModFrmHilDGRng, coeffs::Assoc) -> Assoc
- {given an associative array with coefficients on one component, set all other coefficients to be zero}
- print("DEPRECATED: first create the f an ModFrmHilDEltComp and then HMF(f) to get a ModFrmHilDElt");
-  reps:= NarrowClassGroupReps(M);
-  for bb in reps do
-    if not bb in Keys(coeffs) then
-      coeffs[bb] := AssociativeArray();
-      for nn in IdealsByNarrowClassGroup(M)[bb] do // Edgar: are you sure?
-        coeffs[bb][nn] := 0;
-      end for;
-    end if;
-  end for;
-  return coeffs;
-end intrinsic;
-
 intrinsic HMFComp(Mk::ModFrmHilD,
                   bb::RngOrdIdl,
                   coeffs::Assoc
                   :
                   coeff_ring := DefaultCoefficientRing(Mk),
-                  CoeffsByIdeals := false,
                   prec := 0) -> ModFrmHilDEltComp
   {
     Return the ModFrmHilDEltComp with parent Mk, component ideal bb, the fourier coefficients
@@ -421,9 +240,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
     Explicitly, coeffs is an associative array where
     coeffs[nu] = a_(bb, nu) = a_nn
         where nn = nu*(bb')^-1 and bb' = bb^(-1)*dd_F
-    for all nu in the Shintani cone, unless CoeffsByIdeals is true
-    (to allow backwards compatibility), in which case
-    coeffs[nn] = a_nn as above (and we assign according to Shintani rep).
+    for all nu in the Shintani cone
 
     The coefficients are assumed to lie in Mk`DefaultCoefficientRing
     unless the optional argument coeff_ring is passed, in which
@@ -435,7 +252,7 @@ intrinsic HMFComp(Mk::ModFrmHilD,
   require bb in bbs: "bb should be among the chosen representatives of the narrow class group";
 
   // make the HMF
-  f := ModFrmHilDEltCompInitialize();
+  f := New(ModFrmHilDEltComp);
 
   if prec eq 0 then
     f`Precision := Precision(M);
@@ -446,18 +263,6 @@ intrinsic HMFComp(Mk::ModFrmHilD,
 
   f`Parent := Mk;
   f`ComponentIdeal := bb;
-
-  if CoeffsByIdeals then
-    // first convert according to
-    // nn = nu*(bb')^-1 where bb' = dd_F*bb^(-1)
-    coeffsnu := AssociativeArray();
-    for nn->nu in IdealToRep(M)[bb] do // mapping nn->nu, where nu \in bb' = bb*diff^-1
-      if IsDefined(coeffs, nn) then
-        coeffsnu[nu] := coeffs[nn];
-      end if;
-    end for;
-    coeffs := coeffsnu;  // goodbye old data!
-  end if;
 
   f`Coefficients := AssociativeArray();
   f`CoefficientRing := coeff_ring;
@@ -479,7 +284,7 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   bbs := NarrowClassGroupReps(M);
   require Keys(components) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
-  f := ModFrmHilDEltInitialize();
+  f := New(ModFrmHilDElt);
   f`Parent := Mk;
   f`Components := AssociativeArray();
   for bb in bbs do
@@ -487,7 +292,7 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
     require ComponentIdeal(f_bb) eq bb: "Components mismatch";
     require Type(f_bb) eq ModFrmHilDEltComp: "The values of components need to be ModFrmHilDEltComp";
     require Mk eq Parent(f_bb): "The parents of the components should be all the same";
-    f`Components[bb] := ModFrmHilDEltCompCopy(f_bb);
+    f`Components[bb] := Copy(f_bb);
   end for;
   return f;
 end intrinsic;
@@ -495,7 +300,6 @@ end intrinsic;
 intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
               :
-              CoeffsByIdeals:=false,
               coeff_rings:=false, // Assoc RngFracIdl -> FldNum
               prec := 0) -> ModFrmHilDElt
   {
@@ -515,7 +319,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   bbs := NarrowClassGroupReps(M);
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
   // make the HMF
-  f := ModFrmHilDEltInitialize();
+  f := New(ModFrmHilDElt);
   f`Parent := Mk;
   f`Components := AssociativeArray();
 
@@ -536,7 +340,7 @@ intrinsic HMF(Mk::ModFrmHilD,
 
   for bb in bbs do
     coeff_ring := (coeff_rings cmpeq false) select Mk`DefaultCoefficientRing else coeff_rings[bb];
-    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: CoeffsByIdeals:=CoeffsByIdeals, coeff_ring := coeff_ring, prec:=prec[bb]);
+    f`Components[bb] := HMFComp(Mk, bb, coeffs[bb]: coeff_ring := coeff_ring, prec:=prec[bb]);
   end for;
   return f;
 end intrinsic;
@@ -563,7 +367,7 @@ end intrinsic;
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
   {f = fbb}
   f := HMFZero(Parent(fbb));
-  f`Components[ComponentIdeal(fbb)] := ModFrmHilDEltCompCopy(fbb);
+  f`Components[ComponentIdeal(fbb)] := Copy(fbb);
   return f;
 end intrinsic;
 
@@ -627,27 +431,6 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
   return HMFSumComponents(M0, C);
 end intrinsic;
 
-
-///////// ModFrmHilDElt and ModFrmHilDComp: CoefficientRing ///////////
-
-intrinsic HasDefaultCoeffRing(f::ModFrmHilDEltComp) -> bool
-  {
-    returns true if f has coefficient ring equal to the default
-    coefficient ring for its weight and base field.
-  }
-  return f`CoefficientRing eq DefaultCoefficientRing(Parent(f));
-end intrinsic;
-
-intrinsic HasDefaultCoeffRing(f::ModFrmHilDElt) -> bool
-  {
-    returns true if every component of f has coefficient ring equal 
-    to the default coefficient ring for its weight and base field.
-  }
-  
-  bbs := NarrowClassGroupReps(Parent(Parent(f)));
-  return &and[HasDefaultCoeffRing(Components(f)[bb]) : bb in bbs];
-end intrinsic;
-
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
 
 //FIXME: this does nto agree with MAGMA standards
@@ -670,7 +453,7 @@ intrinsic ChangeCoefficientRing(f::ModFrmHilDElt, R::Rng) -> ModFrmHilDElt
   M := GradedRing(f);
   bbs := NarrowClassGroupReps(M);
   // first make a copy
-  f := ModFrmHilDEltCopy(f);
+  f := Copy(f);
   // then change ring
   components := Components(f);
   for bb->fbb in components do
@@ -683,8 +466,8 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
   {}
   if Type(f) eq RngIntElt and IsZero(f) then
     return true, HMFZero(Mk);
-  elif Type(f) notin [ModFrmHilDElt, ModFrmHilDEltComp] then
-    return false, "f not of type ModFrmHilDElt or ModFrmHilDEltComp";
+  elif Type(f) notin [ModFrmHilDElt] then
+    return false, "f not of type ModFrmHilDElt";
   else // f is an HMF so has a chance to be coercible
     M := Parent(Mk); // graded ring associated to Mk
     Mkf := Parent(f); // space of HMFs associated to f
@@ -697,10 +480,6 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
       test3 := Character(Mk) eq Character(Mkf);
       test4 := UnitCharacters(Mk) eq UnitCharacters(Mkf);
       if test1 and test2 and test3 and test4 then // all tests must be true to coerce
-        if Type(f) eq ModFrmHilDEltComp then
-          A := TotallyPositiveUnits(M);
-          return true, HMFComp(Mk, ComponentIdeal(f), Coefficients(f): prec:=Precision(f));
-        end if;
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
           fbb := Components(f)[bb];
