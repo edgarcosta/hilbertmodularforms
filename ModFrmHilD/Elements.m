@@ -574,14 +574,17 @@ intrinsic GaloisOrbitDescent(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
     for the subspace of Mk spanned by the Gal(L/K)-conjugates of f. 
   }
   
-  if CoefficientRing(f) eq DefaultCoefficientRing(Parent(f)) then
+  K := DefaultCoefficientRing(Parent(f));
+  if CoefficientRing(f) eq K then
     return [f];
+  elif IsIsomorphic(CoefficientRing(f), K) then
+    return [ChangeCoefficientRing(f, K)];
   end if;
 
-  if DefaultCoefficientRing(Parent(f)) eq Rationals() then
+  if K eq Rationals() then
     L := CoefficientRing(f);
   else
-    L := RelativeField(CoefficientRing(f), DefaultCoefficientRing(Parent(f)));
+    L := RelativeField(CoefficientRing(f), K);
   end if;
 
   result := [Parent(f) | ];
