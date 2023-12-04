@@ -59,7 +59,7 @@ intrinsic CoefficientsMatrix(list::SeqEnum[ModFrmHilDElt] : IdealClasses:=false,
 
   nus := [FunDomainRepsUpToNorm(M)[bb][prec] : bb in bbs];
 
-  mat := Matrix([&cat[[Coefficients(Components(f)[bb])[nu] : nu in nus[i]] : i->bb in bbs] : f in list]);
+  mat := Matrix([&cat[[Coefficient(Components(f)[bb], nu) : nu in nus[i]] : i->bb in bbs] : f in list]);
   assert Ncols(mat) eq &+[#elt : elt in nus];
   assert Nrows(mat) eq #list;
   return mat, nus, bbs;
