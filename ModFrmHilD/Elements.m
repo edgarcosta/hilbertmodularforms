@@ -109,6 +109,18 @@ intrinsic NumberOfCoefficients(f::ModFrmHilDElt) -> Any
   return &+[NumberOfCoefficients(fcomp): fcomp in Components(f)];
 end intrinsic;
 
+intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
+  {}
+  bbs := NarrowClassGroupReps(Parent(Parent(f)));
+  prec := Precision(Components(f)[bbs[1]]);
+
+  // we require all component precisions to be the same
+  for bb in bbs do
+    assert prec eq Precision(Components(f)[bb]);
+  end for;
+  return prec;
+end intrinsic;
+
 ////////// ModFrmHilDElt creation functions //////////
 
 intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
