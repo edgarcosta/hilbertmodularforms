@@ -91,8 +91,26 @@ intrinsic cHMFSerPuisElt(
   M := Parent(Mk);
   R := GetHMFSerPuis(M, coeff_ring);
  
-  require Parent(f_ser) eq PuiseuxRing(R) : "The parent of f needs to be\
-    the multivariate Puiseux series ring associated to R";
+  if not Parent(f_ser) eq PuiseuxRing(R) then
+    // We allow the fields to be inequal as long as they
+    // have the same defining polynomial, and in this case
+    // we trust that Magma's automatic coercion does the right thing.
+    require DefiningPolyCoeffs(CoefficientRing(f_ser)) eq DefiningPolyCoeffs(CoefficientRing(R)) :
+      "The parent of f needs to be the multivariate Puiseux series ring, associated to R";
+
+    // Since the fields have the same defining polynomial, 
+    // we trust that Magma's automatic coercion does the 
+    // right thing when it works.
+    b, g_ser := IsCoercible(PuiseuxRing(R), f_ser);
+    
+    // We strong coerce if the automatic coercion fails
+    if not b then
+      b_2, g_ser := IsStrongCoercible(R, f_ser, prec, bb);
+      require b_2 : "Something has gone wrong, this shouldn't happen!";
+    end if;
+    f_ser := g_ser;
+  end if;
+
   f_HMF := New(HMFSerPuisElt);
   f_HMF`Space := Mk;
   f_HMF`Parent := R;
@@ -245,6 +263,18 @@ intrinsic CoefficientRing(R::HMFSerPuis) -> Fld
   return R`CoefficientRing;
 end intrinsic;
 
+intrinsic CoefficientRing(f_ser::RngSerPuisElt) -> Fld
+  {
+    Returns the field in which the coefficients of f live.
+  }
+  coeff_ring := Parent(f_ser);
+  // TODO abhijitm probably a cleaner way to say "not a power series ring"
+  while not (IsNumberField(coeff_ring) or coeff_ring cmpeq Rationals()) do
+    coeff_ring := CoefficientRing(coeff_ring);
+  end while;
+  return coeff_ring;
+end intrinsic;
+
 intrinsic ComponentIdeal(f::HMFSerPuisElt) -> RngOrdIdl
   {}
   return f`ComponentIdeal;
@@ -302,6 +332,9 @@ intrinsic Coefficient(f_ser::RngSerPuisElt, depth::RngIntElt, nu::FldElt) -> Fld
   {
     Returns the coefficient a_nu of q^nu in the Fourier series. 
   }
+  // TODO abhijitm this function probably doesn't need
+  // to take depth as an argument, and should have some
+  // error handling.
   for i in [1 .. depth] do
     f_ser := Coefficient(f_ser, InTraceBasis(nu)[i]);
   end for;
@@ -377,18 +410,35 @@ intrinsic IsCoercible(S::HMFSerPuis, f::.) -> BoolElt, HMFSerPuisElt
   L := S`CoefficientRing;
 
   bb := f`ComponentIdeal;
+
+  f_ser := Series(f);
+  b, g_ser := IsStrongCoercible(S, f_ser, Precision(f), bb);
+  if not b then
+    return false, _;
+  end if;
+  
+  return true, cHMFSerPuisElt(Space(f), bb, g_ser : coeff_ring := L, prec := Precision(f));
+end intrinsic;
+
+// TODO abhijitm this function should really not need to take prec and bb 
+// at all, since it's just a matter of going through monomials one by one,
+// but it's annoying to implement this so for now we're doing it this way
+intrinsic IsStrongCoercible(S::HMFSerPuis, f_ser::RngSerPuisElt, prec::RngIntElt, bb::RngOrdIdl) -> BoolElt, RngSerPuisElt
+  {}
   g_ser := RngSerPuisZero(S);
-  for nu in FunDomainRepsUpToNorm(S`GRng, bb, Precision(f)) do
-    a_nu := Coefficient(f, nu);
-    b, b_nu := IsStrongCoercible(L, a_nu);
+  L := S`CoefficientRing;
+  for nu in FunDomainRepsUpToNorm(S`GRng, bb, prec) do
+    a_nu := Coefficient(f_ser, Depth(S), nu);
+    b_nu := StrongCoerce(L, a_nu);
+    // b, b_nu := IsStrongCoercible(L, a_nu);
+    b := true;
     if not b then
-      return false;
+      return false, _;
     else
       g_ser +:= RngSerPuisMonomial(S, nu, b_nu);
     end if;
   end for;
-
-  return true, cHMFSerPuisElt(Space(f), bb, g_ser : coeff_ring := L, prec := Precision(f));
+  return true, g_ser;
 end intrinsic;
 
 intrinsic 'in'(f::., R::HMFSerPuis) -> BoolElt
