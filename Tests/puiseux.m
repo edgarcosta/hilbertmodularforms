@@ -25,7 +25,7 @@ for nu in reps do
   Append(~true_coeffs, a);
   f_ser +:= RngSerPuisMonomial(R, nu, a);
 end for;
-f := cHMFSerPuisElt(M22, bb, f_ser);
+f := cModFrmHilDEltComp(M22, bb, f_ser);
 
 // test coefficient access
 fourier_coeffs := [];
@@ -40,7 +40,7 @@ g_ser := RngSerPuisZero(S);
 for nu in reps do
   g_ser +:= RngSerPuisMonomial(S, nu, Random(K2, 10));
 end for;
-g := cHMFSerPuisElt(M22, bb, g_ser : coeff_ring := K2);
+g := cModFrmHilDEltComp(M22, bb, g_ser : coeff_ring := K2);
 
 // test coercion
 f_S := S!f;
@@ -53,15 +53,15 @@ f_cmp := Components(S22[1])[bb];
 g_cmp := Components(E22[1])[bb];
 h_cmp := f_cmp / g_cmp;
 
-iden := HMFSerPuisIdentity(M22, bb);
+iden := ModFrmHilDEltCompIdentity(M22, bb);
 f_true_coeffs := Coefficients(f_cmp); 
 g_true_coeffs := Coefficients(g_cmp);
 
-f := cHMFSerPuisElt(M22, bb, f_true_coeffs);
-g := cHMFSerPuisElt(M22, bb, g_true_coeffs);
+f := cModFrmHilDEltComp(M22, bb, f_true_coeffs);
+g := cModFrmHilDEltComp(M22, bb, g_true_coeffs);
 
 function test(f, reps, true_coeffs)
-  // f::HMFSerPuisElt
+  // f::ModFrmHilDEltComp
   // reps::SeqEnum[FldElt]
   // true_coeffs::SeqEnum[FldElt] 
   for i in [1 .. #reps] do
@@ -100,6 +100,6 @@ h := f / g;
 true_coeffs := [ 0, 1, -120, -244, 13565, 42357, 42357, -1499884, -6466680, -6466680 ];
 test(h, first_ten_reps, true_coeffs);
 
-assert g / g eq HMFSerPuisIdentity(M22, bb);
-assert g * g^-1 eq HMFSerPuisIdentity(M22, bb);
-assert f - f eq HMFSerPuisZero(M22, bb);
+assert g / g eq ModFrmHilDEltCompIdentity(M22, bb);
+assert g * g^-1 eq ModFrmHilDEltCompIdentity(M22, bb);
+assert f - f eq ModFrmHilDEltCompZero(M22, bb);

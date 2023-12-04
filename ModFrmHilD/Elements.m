@@ -3,7 +3,7 @@
 
 declare attributes ModFrmHilDElt:
   Parent,
-  Components; // Assoc: bb --> f_bb, each f_bb of type HMFSerPuisElt
+  Components; // Assoc: bb --> f_bb, each f_bb of type ModFrmHilDEltComp
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
@@ -137,7 +137,7 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   for bb in bbs do
     f_bb := components[bb];
     require ComponentIdeal(f_bb) eq bb: "Components mismatch";
-    require Type(f_bb) eq HMFSerPuisElt: "The components need to be HMFSerPuisElts";
+    require Type(f_bb) eq ModFrmHilDEltComp: "The components need to be ModFrmHilDEltComps";
     require Mk eq Space(f_bb): "The parents of the components should be all the same";
     f`Components[bb] := Copy(f_bb);
   end for;
@@ -186,7 +186,7 @@ intrinsic HMF(Mk::ModFrmHilD,
 
   for bb in bbs do
     coeff_ring := (coeff_rings cmpeq false) select Mk`DefaultCoefficientRing else coeff_rings[bb];
-    f`Components[bb] := cHMFSerPuisElt(Mk, bb, coeffs[bb] : coeff_ring := coeff_ring, prec:=prec[bb]);
+    f`Components[bb] := cModFrmHilDEltComp(Mk, bb, coeffs[bb] : coeff_ring := coeff_ring, prec:=prec[bb]);
   end for;
   return f;
 end intrinsic;
@@ -210,7 +210,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   return HMF(Mk, coeffs);
 end intrinsic;
 
-intrinsic HMF(fbb::HMFSerPuisElt) -> ModFrmHilDElt
+intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
   {f = fbb}
   f := HMFZero(Parent(fbb));
   f`Components[ComponentIdeal(fbb)] := Copy(fbb);
@@ -222,7 +222,7 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   M := Parent(Mk);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
-    coeffs[bb] := HMFSerPuisZero(Mk, bb);
+    coeffs[bb] := ModFrmHilDEltCompZero(Mk, bb);
   end for;
   return HMFSumComponents(Mk, coeffs);
 end intrinsic;
@@ -238,7 +238,7 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
   C := AssociativeArray();
   R := GetHMFSerPuis(M, Rationals());
   for bb in NarrowClassGroupReps(M) do
-    C[bb] := HMFSerPuisIdentity(R, bb);
+    C[bb] := ModFrmHilDEltCompIdentity(R, bb);
   end for;
   M0 := Parent(C[1*Integers(M)]);
   return HMFSumComponents(M0, C);
@@ -281,7 +281,7 @@ intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
         components := AssociativeArray();
         for bb in Keys(Components(f)) do
           fbb := Components(f)[bb];
-          components[bb] := cHMFSerPuisElt(Mk, bb, Coefficients(fbb): prec:=Precision(fbb));
+          components[bb] := cModFrmHilDEltComp(Mk, bb, Coefficients(fbb): prec:=Precision(fbb));
         end for;
         return true, HMFSumComponents(Mk, components);
       else
@@ -545,7 +545,7 @@ function AutomorphismAct(f, sigma)
     //coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c; // TODO: check the codomain of the unit character. So far, requiring unit char to be trivial so the evaluation is 1
     coeff[snubar] := c;
   end for;
-  return cHMFSerPuisElt(Mk, bbbar, coeff: prec:=Precision(f));
+  return cModFrmHilDEltComp(Mk, bbbar, coeff: prec:=Precision(f));
 end function;
 
 intrinsic AutomorphismMap(f::ModFrmHilDElt, sigma::Map) -> ModFrmHilDElt

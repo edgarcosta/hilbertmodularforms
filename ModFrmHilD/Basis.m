@@ -299,7 +299,7 @@ intrinsic SaveBasis(savefile_name::MonStgElt,
     We store the sequence B into the file at savefile_path
     
     Writing f_i^1, ..., f_i^(h+) for the components of f_i,
-    each f_i^bb is an HMFSerPuisElt with an associated 
+    each f_i^bb is an ModFrmHilDEltComp with an associated 
     multivariate Puiseux series.
 
     What we actually store is the 
@@ -342,7 +342,7 @@ intrinsic LoadBasis(loadfile_name::MonStgElt,
       f_bb_ser := saved_f_cmp[2];
       K := saved_f_cmp[3];
       prec := saved_f_cmp[4];
-      f_bbs[bb] := cHMFSerPuisElt(Mk, bb, f_bb_ser : coeff_ring := K, prec := prec);
+      f_bbs[bb] := cModFrmHilDEltComp(Mk, bb, f_bb_ser : coeff_ring := K, prec := prec);
     end for;
     Append(~B, HMFSumComponents(Mk, f_bbs));
   end for;

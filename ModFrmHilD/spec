@@ -1,5 +1,6 @@
 {
   Basis.m
+  Components.m
   CongruenceSubgroup.m
   CuspResolution.m
   Cusps.m
@@ -12,7 +13,6 @@
   GradedPoly.m
   GradedRing.m
   HJ-CFrac.m
-  HMFSerPuis.m
   HZCuspIntersection.m
   HZDivisors.m
   Hecke.m

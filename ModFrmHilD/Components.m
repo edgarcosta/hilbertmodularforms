@@ -9,7 +9,7 @@
 * Multivariate Puiseux series are implemented as towers of Puiseux series rings, 
 * and arithmetic operations within a ring work just as usual. 
 *
-* An HMFSerPuisElt f is mainly a wrapper around two (multivariate) Puiseux series.
+* An ModFrmHilDEltComp f is mainly a wrapper around two (multivariate) Puiseux series.
 * - Series(f) is a Puiseux series with monomials indexed by FunDomainReps(M), 
 *   where M is the graded ring attached to the parent of f
 * - ShadowSeries(f) is a Puiseux series with monomials indexed by the 
@@ -17,22 +17,22 @@
 * ShadowSeries(f) is used exclusively in multiplication and division, and 
 * at all other points Series(f) is used. 
 *
-* The HMFSerPuisElt class essentially replaces the ModFrmHilDEltComp class which 
+* The ModFrmHilDEltComp class essentially replaces the ModFrmHilDEltComp class which 
 * used to exist. 
 ******************************************************************************/
 
-declare type HMFSerPuis [HMFSerPuisElt];
+declare type HMFSerPuis [ModFrmHilDEltComp];
 declare attributes HMFSerPuis:
   CoefficientRing, // FldAlg - field K of degree n := Degree(K) in which the coefficients live
   GRng, // ModFrmHilDGradedRing - graded ring of HMFs
   RngSerPuiss; // Assoc: RngIntElt -> RngSerPuis
                
-declare attributes HMFSerPuisElt:
+declare attributes ModFrmHilDEltComp:
   Parent, // HMFSerPuis
   Series, // RngSerPuisElt[RngSerPuis[...[RngSerPuis]]...]
   ShadowSeries, // RngSerPuis[RngSerPuis[...[RngSerPuis]]...]
   Precision, // RngIntElt - the maximum norm of nn for which coefficients are stored
-  Space, // ModFrmHilD - the HMF space that this HMFSerPuisElt is a component in
+  Space, // ModFrmHilD - the HMF space that this ModFrmHilDEltComp is a component in
   ComponentIdeal; // RngOrdIdl
 
 /////////////////// HMFSerPuis constructor /////////////////// 
@@ -69,18 +69,18 @@ intrinsic GetHMFSerPuis(M::ModFrmHilDGRng, coeff_ring::Fld) -> HMFSerPuis
   return R;
 end intrinsic;
 
-/////////////////// HMFSerPuisElt constructors /////////////////// 
+/////////////////// ModFrmHilDEltComp constructors /////////////////// 
  
-intrinsic cHMFSerPuisElt(
+intrinsic cModFrmHilDEltComp(
     Mk::ModFrmHilD,
     bb::RngOrdIdl,
     f_ser::RngSerPuisElt :
     coeff_ring := DefaultCoefficientRing(Mk),
     prec := Parent(Mk)`Precision,
     prune := false
-  ) -> HMFSerPuisElt
+  ) -> ModFrmHilDEltComp
   { 
-    Constructs an HMFSerPuisElt in R whose associated series is f. 
+    Constructs an ModFrmHilDEltComp in R whose associated series is f. 
     This requires that f is in the multivariate Puiseux series ring
     attached to R -- coercion is handled separately.
 
@@ -111,7 +111,7 @@ intrinsic cHMFSerPuisElt(
     f_ser := g_ser;
   end if;
 
-  f_HMF := New(HMFSerPuisElt);
+  f_HMF := New(ModFrmHilDEltComp);
   f_HMF`Space := Mk;
   f_HMF`Parent := R;
   f_HMF`ComponentIdeal := bb;
@@ -124,13 +124,13 @@ intrinsic cHMFSerPuisElt(
   return f_HMF;
 end intrinsic;
 
-intrinsic cHMFSerPuisElt(
+intrinsic cModFrmHilDEltComp(
     Mk::ModFrmHilD,
     bb::RngOrdIdl,
     coeffs_by_nu::Assoc :
     coeff_ring := DefaultCoefficientRing(Mk),
     prec := Parent(Mk)`Precision
-  ) -> HMFSerPuisElt
+  ) -> ModFrmHilDEltComp
   {
     Given a parent an n-variate HMF Puiseux series ring and an associative 
     array of coefficients keyed by n-tuples of integers, creates a multivariate
@@ -145,7 +145,7 @@ intrinsic cHMFSerPuisElt(
     f_ser +:= RngSerPuisMonomial(R, nu, coeffs_by_nu[nu]);
   end for;
 
-  return cHMFSerPuisElt(Mk, bb, f_ser : coeff_ring := coeff_ring, prec := prec);
+  return cModFrmHilDEltComp(Mk, bb, f_ser : coeff_ring := coeff_ring, prec := prec);
 end intrinsic;
 
 intrinsic RngSerPuisMonomial(R::HMFSerPuis, nu::FldElt, a_nu::FldElt) -> RngSerPuisElt
@@ -185,12 +185,12 @@ intrinsic RngSerPuisMonomial(Mk::ModFrmHilD, nu::FldElt, a_nu::RngElt) -> RngSer
   return RngSerPuisMonomial(Mk, nu, a_nu);
 end intrinsic;
 
-intrinsic HMFSerPuisZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> HMFSerPuisElt
+intrinsic ModFrmHilDEltCompZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   {
     Returns the zero element in R at the bb component.
   }
   R := GetHMFSerPuis(Parent(Mk), Rationals());
-  return cHMFSerPuisElt(Mk, bb, RngSerPuisZero(R));
+  return cModFrmHilDEltComp(Mk, bb, RngSerPuisZero(R));
 end intrinsic;
 
 intrinsic RngSerPuisZero(R::HMFSerPuis) -> RngSerPuisElt
@@ -199,22 +199,22 @@ intrinsic RngSerPuisZero(R::HMFSerPuis) -> RngSerPuisElt
   return PuiseuxRing(R)!0;
 end intrinsic;
 
-intrinsic HMFSerPuisIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> HMFSerPuisElt
+intrinsic ModFrmHilDEltCompIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   {
     Returns the identity element in R.
   }
   R := GetHMFSerPuis(Parent(Mk), Rationals());
-  return cHMFSerPuisElt(Mk, bb, PuiseuxRing(R)!1);
+  return cModFrmHilDEltComp(Mk, bb, PuiseuxRing(R)!1);
 end intrinsic;
 
-intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> HMFSerPuisElt
+intrinsic HMFIdentity(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   {}
   M := Parent(Mk);
   R := GetHMFSerPuis(M, Rationals());
-  return HMFSerPuisIdentity(R, bb);
+  return ModFrmHilDEltCompIdentity(R, bb);
 end intrinsic;
 
-/////////////////// HMFSerPuis and HMFSerPuisElt Access /////////////////// 
+/////////////////// HMFSerPuis and ModFrmHilDEltComp Access /////////////////// 
 
 intrinsic PuiseuxRing(R::HMFSerPuis) -> RngSerPuis
   {
@@ -232,7 +232,7 @@ intrinsic IndexField(R::HMFSerPuis) -> Fld
   return BaseField(R`GRng);
 end intrinsic;
 
-intrinsic IndexField(f::HMFSerPuisElt) -> Fld
+intrinsic IndexField(f::ModFrmHilDEltComp) -> Fld
   {
     Returns the field which indexes the coefficients of 
     Hilbert Fourier series in this space.
@@ -249,7 +249,7 @@ intrinsic Depth(R::HMFSerPuis) -> RngIntElt
   return Degree(BaseField(R`GRng));
 end intrinsic;
 
-intrinsic CoefficientRing(f::HMFSerPuisElt) -> Fld
+intrinsic CoefficientRing(f::ModFrmHilDEltComp) -> Fld
   {
     Returns the field in which the coefficients of f live.
   }
@@ -275,32 +275,32 @@ intrinsic CoefficientRing(f_ser::RngSerPuisElt) -> Fld
   return coeff_ring;
 end intrinsic;
 
-intrinsic ComponentIdeal(f::HMFSerPuisElt) -> RngOrdIdl
+intrinsic ComponentIdeal(f::ModFrmHilDEltComp) -> RngOrdIdl
   {}
   return f`ComponentIdeal;
 end intrinsic;
 
-intrinsic UnitCharacter(f::HMFSerPuisElt) -> GrpCharUnitTotElt
+intrinsic UnitCharacter(f::ModFrmHilDEltComp) -> GrpCharUnitTotElt
   {}
   return UnitCharacter(Space(f));
 end intrinsic;
 
-intrinsic Weight(f::HMFSerPuisElt) -> SeqEnum[RngIntElt]
+intrinsic Weight(f::ModFrmHilDEltComp) -> SeqEnum[RngIntElt]
   {}
   return Weight(Space(f));
 end intrinsic;
 
-intrinsic Level(f::HMFSerPuisElt) -> RngOrdIdl
+intrinsic Level(f::ModFrmHilDEltComp) -> RngOrdIdl
   {}
   return Level(Space(f));
 end intrinsic;
 
-intrinsic Precision(f::HMFSerPuisElt) -> RngIntElt
+intrinsic Precision(f::ModFrmHilDEltComp) -> RngIntElt
   {}
   return f`Precision;
 end intrinsic;
 
-intrinsic Space(f::HMFSerPuisElt) -> ModFrmHilDElt
+intrinsic Space(f::ModFrmHilDEltComp) -> ModFrmHilDElt
   {}
   if not assigned f`Space then
     return false;
@@ -309,14 +309,14 @@ intrinsic Space(f::HMFSerPuisElt) -> ModFrmHilDElt
   end if;
 end intrinsic;
 
-intrinsic GradedRing(f::HMFSerPuisElt) -> ModFrmHilDGRng
+intrinsic GradedRing(f::ModFrmHilDEltComp) -> ModFrmHilDGRng
   {}
   return Parent(f)`GRng;
 end intrinsic;
 
-/////////////////// HMFSerPuisElt - Coefficient Access /////////////////// 
+/////////////////// ModFrmHilDEltComp - Coefficient Access /////////////////// 
 
-intrinsic Coefficient(f::HMFSerPuisElt, nu::FldElt) -> FldElt
+intrinsic Coefficient(f::ModFrmHilDEltComp, nu::FldElt) -> FldElt
   {
     Returns the coefficient a_nu of q^nu in the Fourier series. 
   }
@@ -341,7 +341,7 @@ intrinsic Coefficient(f_ser::RngSerPuisElt, depth::RngIntElt, nu::FldElt) -> Fld
   return f_ser;
 end intrinsic;
 
-intrinsic Coefficients(f::HMFSerPuisElt) -> Assoc
+intrinsic Coefficients(f::ModFrmHilDEltComp) -> Assoc
   {Temporary function to transition out of ModFrmHilDEltComp}
   M := Parent(f)`GRng;
   bb := ComponentIdeal(f);
@@ -352,21 +352,21 @@ intrinsic Coefficients(f::HMFSerPuisElt) -> Assoc
   return coeffs;
 end intrinsic;
 
-intrinsic NumberOfCoefficients(f::HMFSerPuisElt) -> RngIntElt
+intrinsic NumberOfCoefficients(f::ModFrmHilDEltComp) -> RngIntElt
   {}
   M := Parent(f)`GRng;
   bb := ComponentIdeal(f);
   return #FunDomainRepsUpToNorm(M)[bb][f`Precision];
 end intrinsic;
 
-intrinsic IsZero(f::HMFSerPuisElt) -> BoolElt
+intrinsic IsZero(f::ModFrmHilDEltComp) -> BoolElt
   {}
   return IsZero(Series(f));
 end intrinsic;
 
-/////////////////// HMFSerPuisElt Setters /////////////////// 
+/////////////////// ModFrmHilDEltComp Setters /////////////////// 
 
-intrinsic SetSpace(f::HMFSerPuisElt, space::ModFrmHilD)
+intrinsic SetSpace(f::ModFrmHilDEltComp, space::ModFrmHilD)
   {}
   f`Space := space;
 end intrinsic;
@@ -388,13 +388,13 @@ intrinsic 'eq'(R::HMFSerPuis, S::HMFSerPuis) -> BoolElt
     IndexField(R) eq IndexField(S);
 end intrinsic;
 
-intrinsic IsCoercible(S::HMFSerPuis, f::.) -> BoolElt, HMFSerPuisElt
+intrinsic IsCoercible(S::HMFSerPuis, f::.) -> BoolElt, ModFrmHilDEltComp
   {
-    If f is an HMFSerPuisElt whose parent is an HMFSerPuis R with coefficient field
+    If f is an ModFrmHilDEltComp whose parent is an HMFSerPuis R with coefficient field
     and place (K, v) and S is an HMFSerPuis (L, w), then attempts to return
     f as an element of S.
   }
-  require Type(f) eq HMFSerPuisElt : "Cannot coerce an object of type %o into an HMFSerPuis space", Type(f);
+  require Type(f) eq ModFrmHilDEltComp : "Cannot coerce an object of type %o into an HMFSerPuis space", Type(f);
 
   R := Parent(f);
 
@@ -417,7 +417,7 @@ intrinsic IsCoercible(S::HMFSerPuis, f::.) -> BoolElt, HMFSerPuisElt
     return false, _;
   end if;
   
-  return true, cHMFSerPuisElt(Space(f), bb, g_ser : coeff_ring := L, prec := Precision(f));
+  return true, cModFrmHilDEltComp(Space(f), bb, g_ser : coeff_ring := L, prec := Precision(f));
 end intrinsic;
 
 // TODO abhijitm this function should really not need to take prec and bb 
@@ -443,16 +443,16 @@ end intrinsic;
 
 intrinsic 'in'(f::., R::HMFSerPuis) -> BoolElt
   {}
-  if Type(f) ne HMFSerPuisElt then
-    return false, "The first argument should be a HMFSerPuisElt";
+  if Type(f) ne ModFrmHilDEltComp then
+    return false, "The first argument should be a ModFrmHilDEltComp";
   else
     return Parent(f) eq R;
   end if;
 end intrinsic;
 
-/////////////////// HMFSerPuisElt fundamental intrinsics /////////////////// 
+/////////////////// ModFrmHilDEltComp fundamental intrinsics /////////////////// 
 
-intrinsic Print(f::HMFSerPuisElt, level::MonStgElt : num_coeffs := 10)
+intrinsic Print(f::ModFrmHilDEltComp, level::MonStgElt : num_coeffs := 10)
   {}
   if level in ["Default", "Minimal", "Maximal"] then
     prec := Precision(f);
@@ -485,12 +485,12 @@ intrinsic Print(f::HMFSerPuisElt, level::MonStgElt : num_coeffs := 10)
 end intrinsic;
 
 
-intrinsic Parent(f::HMFSerPuisElt) -> HMFSerPuis
+intrinsic Parent(f::ModFrmHilDEltComp) -> HMFSerPuis
   {}
   return f`Parent;
 end intrinsic;
 
-intrinsic 'eq'(f::HMFSerPuisElt, g::HMFSerPuisElt) -> BoolElt
+intrinsic 'eq'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> BoolElt
   {}
   return (Parent(f) eq Parent(g) and Series(f) eq Series(g));
 end intrinsic;
@@ -519,9 +519,9 @@ intrinsic Compositum(R::HMFSerPuis, S::HMFSerPuis) -> HMFSerPuis
   return GetHMFSerPuis(GRng, M);
 end intrinsic;
 
-/////////////////// HMFSerPuisElt arithmetic /////////////////// 
+/////////////////// ModFrmHilDEltComp arithmetic /////////////////// 
 
-intrinsic '+'(f::HMFSerPuisElt, g::HMFSerPuisElt) -> HMFSerPuisElt
+intrinsic '+'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {}
   R := f`Parent;
   space := Space(f);
@@ -545,11 +545,11 @@ intrinsic '+'(f::HMFSerPuisElt, g::HMFSerPuisElt) -> HMFSerPuisElt
   require bb eq g`ComponentIdeal : "We cannot add\
     HMF series associated to different components";
 
-  return cHMFSerPuisElt(space, bb, Series(f) + Series(g) : 
+  return cModFrmHilDEltComp(space, bb, Series(f) + Series(g) : 
     coeff_ring := R`CoefficientRing, prec := prec, prune := prune);
 end intrinsic;
 
-intrinsic '*'(c::FldElt, f::HMFSerPuisElt) -> HMFSerPuisElt
+intrinsic '*'(c::FldElt, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {}
   R := f`Parent;
   K := R`CoefficientRing;
@@ -558,11 +558,11 @@ intrinsic '*'(c::FldElt, f::HMFSerPuisElt) -> HMFSerPuisElt
   require b : "We cannot scale an HMF by a scalar not coercible into\
     its coefficient field";
 
-  return cHMFSerPuisElt(Space(f), f`ComponentIdeal, c_K * Series(f) : 
+  return cModFrmHilDEltComp(Space(f), f`ComponentIdeal, c_K * Series(f) : 
     coeff_ring := K, prec := Precision(f));
 end intrinsic;
 
-intrinsic '*'(c::RngElt, f::HMFSerPuisElt) -> HMFSerPuisElt
+intrinsic '*'(c::RngElt, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {}
   R := f`Parent;
   K := R`CoefficientRing;
@@ -572,13 +572,13 @@ intrinsic '*'(c::RngElt, f::HMFSerPuisElt) -> HMFSerPuisElt
   return c_K * f;
 end intrinsic;
 
-intrinsic '-'(f::HMFSerPuisElt, g::HMFSerPuisElt) -> HMFSerPuisElt
+intrinsic '-'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {}
   K := f`Parent`CoefficientRing;
   return f + K!(-1) * g;
 end intrinsic;
 
-intrinsic '*'(f::HMFSerPuisElt, g::HMFSerPuisElt) -> HMFSerPuisElt
+intrinsic '*'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {}
   R := f`Parent;
   S := g`Parent;
@@ -591,17 +591,17 @@ intrinsic '*'(f::HMFSerPuisElt, g::HMFSerPuisElt) -> HMFSerPuisElt
   require bb eq g`ComponentIdeal : "We cannot multiply\
     HMF series associated to different components";
 
-  return cHMFSerPuisElt(Space(f) * Space(g), bb, ShadowSeries(f) * ShadowSeries(g) : 
+  return cModFrmHilDEltComp(Space(f) * Space(g), bb, ShadowSeries(f) * ShadowSeries(g) : 
     coeff_ring := T`CoefficientRing, prec := prec, prune := true);
 end intrinsic;
 
-intrinsic '^'(f::HMFSerPuisElt, n::RngIntElt) -> HMFSerPuisElt
+intrinsic '^'(f::ModFrmHilDEltComp, n::RngIntElt) -> ModFrmHilDEltComp
   {}
-  return cHMFSerPuisElt(Space(f)^n, f`ComponentIdeal, ShadowSeries(f)^n : 
+  return cModFrmHilDEltComp(Space(f)^n, f`ComponentIdeal, ShadowSeries(f)^n : 
     coeff_ring := CoefficientRing(f), prec := Precision(f), prune := true);
 end intrinsic;
 
-intrinsic '/'(f::HMFSerPuisElt, g::HMFSerPuisElt) -> HMFSerPuisElt
+intrinsic '/'(f::ModFrmHilDEltComp, g::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {}
 
   require Coefficient(g, IndexField(g)!0) ne 0 : "Cannot divide by a form which is\
@@ -617,13 +617,13 @@ intrinsic '/'(f::HMFSerPuisElt, g::HMFSerPuisElt) -> HMFSerPuisElt
   require bb eq g`ComponentIdeal : "We cannot divide\
   HMF series associated to different components";
 
-  return cHMFSerPuisElt(Space(f) / Space(g), bb, ShadowSeries(f) / ShadowSeries(g) : 
+  return cModFrmHilDEltComp(Space(f) / Space(g), bb, ShadowSeries(f) / ShadowSeries(g) : 
     coeff_ring := T`CoefficientRing, prec := prec, prune := true);
 end intrinsic;
 
-/////////////////// HMFSerPuisElt arithmetic helpers /////////////////// 
+/////////////////// ModFrmHilDEltComp arithmetic helpers /////////////////// 
 
-intrinsic ShadowSeries(f::HMFSerPuisElt) -> RngSerPuisElt
+intrinsic ShadowSeries(f::ModFrmHilDEltComp) -> RngSerPuisElt
   {TODO}
   if not assigned f`ShadowSeries then
     f`ShadowSeries := f`Series; 
@@ -641,7 +641,7 @@ intrinsic ShadowSeries(f::HMFSerPuisElt) -> RngSerPuisElt
   return f`ShadowSeries;
 end intrinsic;
 
-intrinsic Series(f::HMFSerPuisElt) -> RngSerPuisElt
+intrinsic Series(f::ModFrmHilDEltComp) -> RngSerPuisElt
   {TODO}
   return f`Series;
 end intrinsic;
@@ -656,9 +656,9 @@ intrinsic Series(f_ser::RngSerPuisElt, R::HMFSerPuis, bb::RngOrdIdl, prec::RngIn
   return g_ser;
 end intrinsic;
 
-/////////////////// HMFSerPuisElt helpers /////////////////// 
+/////////////////// ModFrmHilDEltComp helpers /////////////////// 
 
-intrinsic Trace(f::HMFSerPuisElt) -> HMFSerPuisElt 
+intrinsic Trace(f::ModFrmHilDEltComp) -> ModFrmHilDEltComp 
   {return Trace(f)}
   K := DefaultCoefficientRing(Space(f));
   M := Parent(f)`GRng;
@@ -671,10 +671,10 @@ intrinsic Trace(f::HMFSerPuisElt) -> HMFSerPuisElt
     b_nu := (K eq Rationals()) select Trace(a_nu) else Trace(a_nu, K);
     g_ser +:= RngSerPuisMonomial(R, nu, b_nu);
   end for;
-  return cHMFSerPuisElt(Space(f), ComponentIdeal(f), g_ser : coeff_ring := K, prec:=Precision(f));
+  return cModFrmHilDEltComp(Space(f), ComponentIdeal(f), g_ser : coeff_ring := K, prec:=Precision(f));
 end intrinsic;
 
-intrinsic MapCoefficients(m::Map, f::HMFSerPuisElt) -> HMFSerPuisElt
+intrinsic MapCoefficients(m::Map, f::ModFrmHilDEltComp) -> ModFrmHilDEltComp
   {return the ModFrmHilDEltComp where the map acts on the coefficients}
   R := Parent(f);
   M := Parent(f)`GRng;
@@ -683,10 +683,10 @@ intrinsic MapCoefficients(m::Map, f::HMFSerPuisElt) -> HMFSerPuisElt
     a_nu := Coefficient(f, nu);
     g_ser +:= RngSerPuisMonomial(R, nu, m(a_nu));
   end for;
-  return cHMFSerPuisElt(Space(f), ComponentIdeal(f), g_ser : coeff_ring := CoefficientRing(f), prec:=Precision(f));
+  return cModFrmHilDEltComp(Space(f), ComponentIdeal(f), g_ser : coeff_ring := CoefficientRing(f), prec:=Precision(f));
 end intrinsic;
 
-intrinsic Inclusion(f::HMFSerPuisElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> HMFSerPuisElt
+intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> ModFrmHilDEltComp
   {Takes a form f(z) and produces f(mm*z) in Mk (of level NN) with component ideal class [mm*bb]}
 
   coeff_f := Coefficients(f);
@@ -722,5 +722,5 @@ intrinsic Inclusion(f::HMFSerPuisElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> HMFSerPu
     end if;
   end for;
 
-  return cHMFSerPuisElt(Mk, mmbb, coeff : coeff_ring := coeff_ring, prec:=Precision(f));
+  return cModFrmHilDEltComp(Mk, mmbb, coeff : coeff_ring := coeff_ring, prec:=Precision(f));
 end intrinsic;
