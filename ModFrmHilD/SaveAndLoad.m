@@ -61,10 +61,7 @@ intrinsic SaveBasis(savefile_name::MonStgElt, B::SeqEnum[ModFrmHilDElt])
     Note that this will OVERWRITE the contents of savedir/savefile_name.
   }
   savefile := Open(savefile_name, "w+");
-  M := Parent(Parent(B[1]));
-  bbs := NarrowClassGroupReps(M);
   saveobj := [ElementToCoeffLists(f) : f in B];
-  // saveobj := [[<bb, Series(Components(f)[bb]), CoefficientRing(f), Precision(f)> : bb in bbs] : f in B];
   WriteObject(savefile, saveobj);
   // reassigning the variable closes the file
   savefile := 0;
