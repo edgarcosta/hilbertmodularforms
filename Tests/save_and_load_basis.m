@@ -2,7 +2,7 @@ function test(Mk, basis, correct_prefix)
   prefix := SaveFilePrefix(Mk);
   assert prefix eq correct_prefix;
 
-  filename := prefix cat ".m";
+  filename := prefix;
   SaveBasis(filename, basis);
   basis_load := LoadBasis(filename, Mk);
   if not basis eq basis_load then
@@ -43,6 +43,8 @@ S24 := CuspFormBasis(M24);
 correct_prefix := "2.5-49.1-2.4-0";
 test(M24, S24, correct_prefix);
 
+// TODO abhijitm uncomment once the cubic
+// field code is working properly
 /*
 print "thing 4";
 R<x> := PolynomialRing(Rationals());
