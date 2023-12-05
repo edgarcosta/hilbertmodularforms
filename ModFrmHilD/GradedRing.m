@@ -38,6 +38,7 @@ declare attributes ModFrmHilDGRng:
            // needs to be included when performing multiplication.
            // Such nu*eps are totally positive elements which are dominated (<= in every real embedding)
            // by some fundamental domain representative.
+  PuiseuxSeriesRings, // PuiseuxSeriesRings[K] stores the HMFSerPuis associated to M with coeff ring K
   PrecomputationforTrace, // Precomputed orders for the Trace formula
   ClassNumbersPrecomputation, // Precomputed class numbers for Trace formula
   // HMFPrecomputation, // Precomputed quantities for the Trace formula (Old)
@@ -341,6 +342,9 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   for bb in M`NarrowClassGroupReps do
     M`FunDomainReps[bb] := M`FunDomainRepsUpToNorm[bb][M`Precision];
   end for;
+
+  M`PuiseuxSeriesRings := AssociativeArray();
+  M`PuiseuxSeriesRings[Coefficients(DefiningPolynomial(RationalsAsNumberField()))] := cHMFSerPuis(M, Rationals());
 
   M`IdealsByNarrowClassGroup := AssociativeArray();
   M`PrecomputationforTrace := AssociativeArray();

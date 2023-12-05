@@ -18,18 +18,16 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
   chi := Character(Mk);
   K := CoefficientRing(f);
 
-  coeffsTmmf := AssociativeArray();
-  for bb in NarrowClassGroupReps(M) do
-    coeffsTmmf[bb] := AssociativeArray();
-    prec := Precision(Components(f)[bb]);
-  end for;
-  new_prec := prec div Norm(mm);
+  R := GetHMFSerPuis(M, K);
+  prec := Precision(f) div Norm(mm);
+  Tmmf_bbs := AssociativeArray();
 
   for bb in NarrowClassGroupReps(M) do
     bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     bbpinv := bbp^(-1);
 
-    for nu in FunDomainRepsUpToNorm(M, bb, new_prec) do //they come sorted
+    Tmmf_bb_ser := RngSerPuisZero(R);
+    for nu in FunDomainRepsUpToNorm(M, bb, prec) do //they come sorted
       nn := nu*bbpinv;  // already call nn the ideal for the Hecke operator
       c := 0;
 
@@ -45,11 +43,13 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
           c +:= StrongMultiply(K, [* chi(aa), Norm(aa)^(k0 - 1), cf *]);
         end if;
       end for;
-      coeffsTmmf[bb][nu] := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]));
+      a_nu := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb])); 
+      Tmmf_bb_ser +:= RngSerPuisMonomial(R, nu, a_nu);
     end for;
+    Tmmf_bbs[bb] := Tmmf_bb_ser;
   end for;
 
-  g := HMF(Mk, coeffsTmmf : prec:=new_prec);
+  g := HMF(Mk, Tmmf_bbs : prec:=prec);
 
   // Attempting to increase precision using a basis
   // This is not very efficient, as it does not remember the underlying vector space, but it works.

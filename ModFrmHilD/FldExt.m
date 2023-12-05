@@ -260,7 +260,7 @@ intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
   if IsCoercible(L, x) then
     return true, StrongCoerce(L, x);
   else
-    return false;
+    return false, _;
   end if;
 end intrinsic;
 
@@ -328,6 +328,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
   // We trust Magma's coercion if K and L have the same
   // defining polynomial
   if DefiningPolyCoeffs(K) eq DefiningPolyCoeffs(L) then
+    require IsIsomorphic(K, L) : "This should never happen, something is quite wrong";
     return L!x;
   end if;
 
