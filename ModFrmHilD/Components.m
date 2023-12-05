@@ -700,7 +700,6 @@ end intrinsic;
 intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> ModFrmHilDEltComp
   {Takes a form f(z) and produces f(mm*z) in Mk (of level NN) with component ideal class [mm*bb]}
 
-  coeff_f := Coefficients(f);
   Mk_f := Space(f);
   M_f := Parent(Mk_f);
   M := Parent(Mk);
@@ -711,27 +710,26 @@ intrinsic Inclusion(f::ModFrmHilDEltComp, Mk::ModFrmHilD, mm::RngOrdIdl) -> ModF
   mf, pf := Modulus(chif);
   ZF := Integers(M);
   coeff_ring := CoefficientRing(f);
-
   require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
   require chif eq Restrict(chi, mf, pf): "Character(f) is not equal to Character(Mk)";
   require UnitCharacters(Mk_f) eq UnitCharacters(Mk): "UnitCharacters(f) is not equal to UnitCharacters(Mk)";
   require N2 subset N1: "Level of f does not divide level of Mk";
   require N2 subset mm: "Ideal mm does not divide level of Mk";
 
-  coeff := AssociativeArray();
   bb := ComponentIdeal(f);
   mmbb := NarrowClassRepresentative(M, mm*bb);
 
   mminv := mm^-1;
+  R := GetHMFSerPuis(M, coeff_ring);
+  g_ser := RngSerPuisZero(R);
   for nn -> nu in IdealToRep(M)[mmbb] do
     if IsIntegral(nn*mminv) then
       // set b_nn = a_{nn/mm}
       // in terms of shintani reps
-      coeff[nu] := coeff_f[IdealToRep(M)[bb][ZF!!(nn*mminv)]];
-    else
-      coeff[nu] := 0;
+      a_nu := Coefficient(f, IdealToRep(M)[bb][ZF!!(nn*mminv)]);
+      g_ser +:= RngSerPuisMonomial(R, nu, a_nu);
     end if;
   end for;
 
-  return cModFrmHilDEltComp(Mk, mmbb, coeff : coeff_ring := coeff_ring, prec:=Precision(f));
+  return cModFrmHilDEltComp(Mk, mmbb, g_ser: coeff_ring := coeff_ring, prec:=Precision(f));
 end intrinsic;
