@@ -5,7 +5,8 @@ function test(Mk, basis, correct_prefix)
   save_dir := "./Precomputations/";
   filename := save_dir cat prefix cat "_test";
   SaveBasis(filename, basis);
-  basis_load := LoadBasis(filename, Mk);
+  b, basis_load := LoadBasis(filename, Mk);
+  assert b;
   if not basis eq basis_load then
     print "------------- Original basis -------------";
     print basis;

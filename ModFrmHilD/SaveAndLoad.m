@@ -61,6 +61,16 @@ intrinsic SaveBasis(savefile_name::MonStgElt, B::SeqEnum[ModFrmHilDElt])
     Note that this will OVERWRITE the contents of savedir/savefile_name.
   }
   savefile := Open(savefile_name, "w+");
+
+  if #B eq 0 then
+    // some absurdly large value;
+    save_prec := 10000;
+  else
+    save_prec := Min([Precision(f) : f in B]);
+    assert &and[save_prec eq Precision(f) : f in B];
+  end if;
+  WriteObject(savefile, save_prec);
+
   saveobj := [ElementToCoeffLists(f) : f in B];
   WriteObject(savefile, saveobj);
   // reassigning the variable closes the file
@@ -73,8 +83,13 @@ intrinsic LoadBasis(loadfile_name::MonStgElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmH
   }
   bbs := NarrowClassGroupReps(Parent(Mk));
   loadfile := Open(loadfile_name, "r");
-  A := ReadObject(loadfile);
-  return [CoeffListsToElement(Mk, f_coeff_lists) : f_coeff_lists in A];
+  saved_prec := ReadObject(loadfile);
+  if saved_prec ge Precision(Parent(Mk)) then
+    A := ReadObject(loadfile);
+    return true, [CoeffListsToElement(Mk, f_coeff_lists) : f_coeff_lists in A];
+  else
+    return false, _;
+  end if;
 end intrinsic;
 
 intrinsic ElementToCoeffLists(f::ModFrmHilDElt) -> Tup
@@ -111,6 +126,8 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
   F := BaseField(M);
   coeff_ring_and_prec, coeffs_at_infty, coeffs_by_idl := Explode(coeff_lists);
   K, prec := Explode(coeff_ring_and_prec);
+  require prec ge Precision(M) : "The loaded coeff_lists have insufficient\
+      precision for this space of HMFs";
 
   // create a power series for each component
   components := AssociativeArray();
@@ -123,9 +140,19 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
 
   // iterate through ideals and add monomials 
   // to the appropriate component
-  for i->nn in IdealsUpTo(prec, F) do
+  //
+  // we populate a dictionary first because
+  // IdealsUpTo seems to be nondeterministic when 
+  // ordering ideals of the same norm
+  coeffs_by_idl_dict := AssociativeArray();
+  nonzero_ideals := Exclude(Ideals(M), 0*Integers(F));
+  for i in [1 .. #nonzero_ideals] do
     nn_label, a_nn := Explode(coeffs_by_idl[i]);
-    assert LMFDBLabel(nn) eq nn_label;
+    coeffs_by_idl_dict[nn_label] := a_nn;
+  end for;
+    
+  for nn in nonzero_ideals do
+    a_nn := coeffs_by_idl_dict[LMFDBLabel(nn)];
     bb := IdealToNarrowClassRep(M, nn);
     a_nn := StrongCoerce(K, a_nn);
     components[bb] +:= RngSerPuisMonomial(Mk, nn, a_nn);
@@ -134,7 +161,7 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
   // Could contract this into the earlier loop over bbs
   for bb in NarrowClassGroupReps(M) do
     components[bb] := cModFrmHilDEltComp(Mk, bb, components[bb] : 
-        coeff_ring := K, prec := prec);
+        coeff_ring := K, prec := Precision(M));
   end for;
        
   return HMFSumComponents(Mk, components);

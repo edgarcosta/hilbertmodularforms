@@ -86,9 +86,15 @@ intrinsic NewCuspFormBasis(
     // the Precomputations/ folder
     if SaveAndLoad and GaloisDescent then
       loadfile_name := SaveDir cat SaveFilePrefix(Mk) cat "_cusp_newspace";
-       
-      if OpenTest(loadfile_name, "r") then
-        Mk`NewCuspFormBasis := LoadBasis(loadfile_name, Mk);
+      is_saved, loadfile := OpenTest(loadfile_name, "r");
+      loaded := false;
+      if is_saved then
+        loaded, newform_basis := LoadBasis(loadfile_name, Mk);
+      end if;
+      // loaded is false if the file was not saved or if
+      // the precision of the stored basis wasn't high enough
+      if loaded then
+        Mk`NewCuspFormBasis := newform_basis;
       else
         Mk`NewCuspFormBasis := NewCuspForms(Mk);
         SaveBasis(loadfile_name, Mk`NewCuspFormBasis);
