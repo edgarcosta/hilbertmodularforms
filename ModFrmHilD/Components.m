@@ -635,7 +635,16 @@ end intrinsic;
 /////////////////// ModFrmHilDEltComp arithmetic helpers /////////////////// 
 
 intrinsic ShadowSeries(f::ModFrmHilDEltComp) -> RngSerPuisElt
-  {TODO}
+  {
+    Given a component with associated series f_ser -- which is indexed
+    by FDReps up to the precision of f, returns the series obtained by 
+    adding to f_ser monomials corresponding to the shadows
+    (see PositiveUnitReps.m) up to that precision.
+
+    Given a shadow (eps, nu), where eps is a t.p. unit and nu is a 
+    representative, a_(eps*nu) = a_nu * psi(eps), where psi is the
+    unit character associated to f.
+  }
   if not assigned f`ShadowSeries then
     f`ShadowSeries := f`Series; 
     K := CoefficientRing(f);
@@ -653,12 +662,16 @@ intrinsic ShadowSeries(f::ModFrmHilDEltComp) -> RngSerPuisElt
 end intrinsic;
 
 intrinsic Series(f::ModFrmHilDEltComp) -> RngSerPuisElt
-  {TODO}
+  {}
   return f`Series;
 end intrinsic;
 
 intrinsic Series(f_ser::RngSerPuisElt, R::HMFSerPuis, bb::RngOrdIdl, prec::RngIntElt) -> RngSerPuisElt
-  {TODO}
+  {
+    Given a RngSerPuisElt which has monomials
+    corresponding to every nu in FunDomainRepsUpToNorm(R`GRng, bb, prec),
+    returns the RngSerPuisElt with only those monomials.
+  }
   g_ser := RngSerPuisZero(R);
   for nu in FunDomainRepsUpToNorm(R`GRng, bb, prec) do
     a_nu := Coefficient(f_ser, Depth(R), nu); // this will be assigned if f`Series isn't
