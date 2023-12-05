@@ -38,10 +38,7 @@ intrinsic SaveFilePrefix(Mk::ModFrmHilD) -> MonStgElt
   return Join([F_label, N_label, k_label, chi_label], "-");
 end intrinsic;
 
-intrinsic SaveBasis(savefile_name::MonStgElt,
-                    B::SeqEnum[ModFrmHilDElt] :
-                    savedir := GetCurrentDirectory() cat "/Precomputations/"
-                    )
+intrinsic SaveBasis(savefile_name::MonStgElt, B::SeqEnum[ModFrmHilDElt])
   {
     input:
       savefile_name: The file to which we will write
@@ -63,9 +60,7 @@ intrinsic SaveBasis(savefile_name::MonStgElt,
 
     Note that this will OVERWRITE the contents of savedir/savefile_name.
   }
-  savepath := savedir cat savefile_name;
-  print "savepath", savepath;
-  savefile := Open(savedir cat savefile_name, "w+");
+  savefile := Open(savefile_name, "w+");
   M := Parent(Parent(B[1]));
   bbs := NarrowClassGroupReps(M);
   saveobj := [ElementToCoeffLists(f) : f in B];
@@ -75,16 +70,12 @@ intrinsic SaveBasis(savefile_name::MonStgElt,
   savefile := 0;
 end intrinsic;
 
-intrinsic LoadBasis(loadfile_name::MonStgElt,
-                    Mk::ModFrmHilD :
-                    loaddir := GetCurrentDirectory() cat "/Precomputations/"
-                   ) -> SeqEnum[ModFrmHilDElt]
+intrinsic LoadBasis(loadfile_name::MonStgElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {
     We recover a basis from a file written to by SaveBasis.
   }
   bbs := NarrowClassGroupReps(Parent(Mk));
-
-  loadfile := Open(loaddir cat loadfile_name, "r");
+  loadfile := Open(loadfile_name, "r");
   A := ReadObject(loadfile);
   return [CoeffListsToElement(Mk, f_coeff_lists) : f_coeff_lists in A];
 end intrinsic;

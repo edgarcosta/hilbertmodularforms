@@ -2,7 +2,8 @@ function test(Mk, basis, correct_prefix)
   prefix := SaveFilePrefix(Mk);
   assert prefix eq correct_prefix;
 
-  filename := prefix;
+  save_dir := "./Precomputations/";
+  filename := save_dir cat prefix cat "_test";
   SaveBasis(filename, basis);
   basis_load := LoadBasis(filename, Mk);
   if not basis eq basis_load then
