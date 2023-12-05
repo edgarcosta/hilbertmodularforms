@@ -185,6 +185,17 @@ intrinsic RngSerPuisMonomial(Mk::ModFrmHilD, nu::FldElt, a_nu::RngElt) -> RngSer
   return RngSerPuisMonomial(Mk, nu, a_nu);
 end intrinsic;
 
+intrinsic RngSerPuisMonomial(Mk::ModFrmHilD, nn::RngOrdIdl, a_nn::FldElt) -> RngSerPuisElt
+  {}
+  M := Parent(Mk);
+  // We require that the parent of every coefficient be an element of the coefficient field
+  K := Parent(a_nn);
+  R := GetHMFSerPuis(M, K);
+  nu := IdealToRep(M, nn);
+  a_nu := IdlCoeffToEltCoeff(a_nn, nu, Weight(Mk), K);
+  return RngSerPuisMonomial(R, nu, a_nu);
+end intrinsic;
+
 intrinsic ModFrmHilDEltCompZero(Mk::ModFrmHilD, bb::RngOrdIdl) -> ModFrmHilDEltComp
   {
     Returns the zero element in R at the bb component.
