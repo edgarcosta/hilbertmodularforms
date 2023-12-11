@@ -5,7 +5,7 @@ OK := Integers(K);
 P  := Factorization(31*OK)[1][1];
 
 // Construct the HMF Mothership.
-prec := 15;
+prec := 250;
 R := GradedRingOfHMFs(K, prec);
 
 // Look at the image of 2-forms in weight 6, and compute its complement.

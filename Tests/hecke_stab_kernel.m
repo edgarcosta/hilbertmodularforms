@@ -1,6 +1,6 @@
 F := QuadraticField(5);
 ZF := Integers(F);
-prec := 13;
+prec := 150;
 pp := 2*ZF;
 M := GradedRingOfHMFs(F, prec);
 triv_char := HeckeCharacterGroup(1*ZF, [1,2]).0;

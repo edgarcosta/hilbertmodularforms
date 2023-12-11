@@ -187,12 +187,12 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   // the best we can do is the field over 
   // which the Hecke operators are defined.
   // This field is always contained within 
-  // the UnitCharField(F, k)
+  // the default coefficient ring of Mk.
   //
   // If not, then nothing changes and we use the
   // field over which the eigenforms themselves
   // are defined
-  R := GaloisDescent select UnitCharField(F, k) else HeckeEigenvalueField(S);
+  R := GaloisDescent select DefaultCoefficientRing(Mk) else HeckeEigenvalueField(S);
   res := [];
 
   for dd in divisors do
@@ -203,7 +203,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
       for i in [1..Nrows(Tzeta)] do
         CoeffsArray[i][bb] := AssociativeArray();
       end for;
-      for nu->nn in ShintaniRepsIdeal(M)[bb] do
+      for nu->nn in RepToIdeal(M)[bb] do
         nnddinv := nn * ddinv;
         if IsIntegral(nnddinv) then
           nnddinv := ZF !! nnddinv;

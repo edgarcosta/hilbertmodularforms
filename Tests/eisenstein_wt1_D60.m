@@ -2,7 +2,7 @@ printf "Testing Eisenstein series of weight 1...";
 D := 60;
 F := QuadraticField(D);
 ZF := Integers(F);
-prec := 3; // 62 coeffs
+prec := 35; // 62 coeffs
 M := GradedRingOfHMFs(F, prec);
 N := 1*ZF;
 X := HeckeCharacterGroup(N, [1,2]);

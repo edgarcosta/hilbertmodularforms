@@ -4,7 +4,7 @@ function check(D)
     printf "%o ", D;
     F := QuadraticField(D);
     ZF := Integers(F);
-    prec := 1;
+    prec := 3;
     M := GradedRingOfHMFs(F, prec);
     N := 1*ZF;
     X := HeckeCharacterGroup(N, [1,2]);

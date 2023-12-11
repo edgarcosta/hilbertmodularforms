@@ -241,3 +241,19 @@ intrinsic Compositum(A::List) -> FldNum
   end for;
   return K;
 end intrinsic;
+
+// Copy object
+
+intrinsic Copy(obj::.) -> Any
+  {
+    returns a copy of obj
+  }
+  obj_type := Type(obj);
+  obj_copy := New(obj_type);
+  for attr in GetAttributes(obj_type) do
+    if assigned obj``attr then
+      obj_copy``attr := obj``attr;
+    end if;
+  end for;
+  return obj_copy;
+end intrinsic;

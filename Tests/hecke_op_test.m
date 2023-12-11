@@ -14,8 +14,7 @@ g:=B[2];
 L:=LinearDependence([HeckeOperator(f, 2*ZF), 65*f]);
 assert L eq [[1, -1]]; // f is an Eisenstein series and is indeed an eigenvalue
 for x:=2 to 7 do
-  b, c := IsCoefficientDefined(g, I[x]);
-  assert b;
+  c := Coefficient(g, I[x]);
   Lx:=LinearDependence([HeckeOperator(g, I[x]), c*g]);
   assert Lx eq [[1, -1]];
 end for;

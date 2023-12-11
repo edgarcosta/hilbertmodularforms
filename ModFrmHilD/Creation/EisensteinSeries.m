@@ -41,18 +41,18 @@ intrinsic EisensteinSeries(
   for bb in NarrowClassGroupReps(M) do
     ddbb := NarrowClassRepresentative(M,dd*bb);
     coeffs[ddbb] := AssociativeArray();
-    coeffs[ddbb][0] := constant_term[bb];
+    coeffs[ddbb][0] := StrongCoerce(coeff_ring, constant_term[bb]);
 
     coeff_rings[bb] := coeff_ring;
     // All other coefficients, equation (48)
-    for nu->nn in ShintaniRepsIdeal(M)[ddbb] do
+    for nu->nn in RepToIdeal(M)[ddbb] do
       if not IsZero(nu) then
         mm := nn*ddinv;
         if IsIntegral(mm) then
           mm := ZF !! mm;
-          coeffs[ddbb][nu] := coeffs_ideals[mm];
+          coeffs[ddbb][nu] := StrongCoerce(coeff_ring, coeffs_ideals[mm]);
         else
-          coeffs[ddbb][nu] := 0;
+          coeffs[ddbb][nu] := coeff_ring!0;
         end if;
       end if;
     end for;

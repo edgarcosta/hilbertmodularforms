@@ -3,7 +3,7 @@ OK := Integers(K);
 P  := Factorization(31*OK)[1][1];
 
 // Construct the HMF Mothership.
-prec := 5;
+prec := 50;
 R := GradedRingOfHMFs(K, prec);
 
 W := HMFSpace(R, P, [2,2]);

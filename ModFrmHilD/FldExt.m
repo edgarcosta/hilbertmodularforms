@@ -2,9 +2,13 @@
 declare attributes FldAlg:
   TotallyPositiveUnits,
   TotallyPositiveUnitsMap,
-  FundamentalUnitSquare,
-  ClassGroupReps,
   TotallyPositiveUnitsGenerators,
+  TotallyPositiveUnitsGeneratorsOrients,
+  TotallyPositiveUnitsBasisMatrixInverse,
+  SquaredUnitsBasisMatrixInverse,
+  FundamentalUnitSquare,
+  TraceBasisMatrixInverse,
+  ClassGroupReps,
   DistinguishedPlace,
   Extensions,
   Restrictions,
@@ -25,8 +29,35 @@ intrinsic ClassGroupReps(F::FldAlg) -> SeqEnum
   return F`ClassGroupReps;
 end intrinsic;
 
+intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
+{Find a totally positive field element a such that qI is an integral ideal coprime to J;
+ I and J must be defined over the same maximal order.}
 
-/////////////////////// Totally positive associate /////////////////
+    K := NumberField(Order(I));
+    q := CoprimeRepresentative(I, J);
+
+    // Nothing to do if K is imaginary or we already chose a good element.
+    if Signature(q) eq [1,1] or Discriminant(K) lt 0 then return q; end if;
+    if Signature(q) eq [-1,-1] then return -q; end if;
+
+    // Otherwise, we have chosen a bad element, so must correct the signs.
+    z := Sqrt(K!Discriminant(Integers(K)));
+    require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
+    assert IsIntegral(z);
+    
+    if Signature(z) ne Signature(q) then
+	z := -z;
+    end if;
+
+    NJ := Norm(J);
+    d := GCD(Integers() ! Norm(z), NJ);
+
+    if d eq 1 then return z*q; end if;
+    b := ExactQuotient(NJ, d);
+    return (1 + b * z)*q;
+end intrinsic;
+
+/////////////////////// Units and totally positive units /////////////////
 
 intrinsic Signature(a::RngOrdElt) -> SeqEnum
   {}
@@ -66,6 +97,14 @@ intrinsic FundamentalUnit(F::FldNum) -> FldElt
   return phi(FundamentalUnit(K));
 end intrinsic;
 
+// The algorithm for producing generators is nondeterministic, so we need to "orient" 
+// our chosen generators to avoid randomness. This particular choice remains
+// consistent with the existing behavior of FundamentalUnitTotPos
+function orient(F, eps)
+  v := InfinitePlaces(F)[1];
+  return (Abs(Evaluate(eps, v)) lt 1) select eps else eps^-1;
+end function;
+
 intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   {
     parameters:
@@ -80,16 +119,59 @@ intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   end if;
 
   if not assigned F`TotallyPositiveUnitsGenerators then
+    PU, mPU := TotallyPositiveUnits(F);
+    tpugs_unorient := [Integers(F)!mPU(gen) : gen in Generators(PU)];
 
-    if not assigned F`TotallyPositiveUnits or not assigned F`TotallyPositiveUnitsMap then
-      _ := TotallyPositiveUnits(F);
-    end if;
+    v := InfinitePlaces(F)[1];
+    F`TotallyPositiveUnitsGenerators := [];
+    F`TotallyPositiveUnitsGeneratorsOrients := [];
 
-    F`TotallyPositiveUnitsGenerators := [Integers(F)!F`TotallyPositiveUnitsMap(gen) : gen in Generators(F`TotallyPositiveUnits)];
+    // The algorithm for producing generators is nondeterministic, so we need to "orient" 
+    // our chosen generators to avoid randomness. This particular choice remains
+    // consistent with the existing behavior of FundamentalUnitTotPos
+    //
+    // We keep track of which generators are inverted with respect to the 
+    // Generators(F`TotallyPositiveUnits) because we need to solve the word
+    // problem in the unit generators code and it solves it there with respect
+    // to Generators(F`TotallyPositiveUnits).
+    for eps in tpugs_unorient do
+      if Evaluate(eps, v) lt 1 then
+        Append(~F`TotallyPositiveUnitsGenerators, eps);
+        Append(~F`TotallyPositiveUnitsGeneratorsOrients, 1);
+      else
+        Append(~F`TotallyPositiveUnitsGenerators, eps^-1);
+        Append(~F`TotallyPositiveUnitsGeneratorsOrients, -1);
+      end if;
+    end for;
   end if;
   return F`TotallyPositiveUnitsGenerators;
 end intrinsic;
 
+intrinsic TotallyPositiveUnitsGeneratorsOrients(F::FldNum) -> SeqEnum
+  {
+    Returns a sequence whose ith entry e is such that the 
+    ith element of SetToSequence(Generators(TotallyPositiveUnits)) is the
+    ith element of F`TotallyPositiveUnitsGenerators raised to the eth power.
+
+    Here, e will either be 1 or -1. 
+  }
+  _ := TotallyPositiveUnitsGenerators(F);
+  return F`TotallyPositiveUnitsGeneratorsOrients;
+end intrinsic;
+
+intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
+  {
+    parameters:
+      F: a number field
+    returns:
+      A sequence of elements of the ring of integers
+      which generate the group of units.
+  }
+
+  U, mU := UnitGroup(F);
+  ugs_unorient := [mU(gen) : gen in Exclude(Generators(U), U.1)];
+  return [orient(F, eps) : eps in ugs_unorient];
+end intrinsic;
 
 intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
   {return the fundamental unit totally positive}
@@ -111,33 +193,34 @@ intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
   return F`FundamentalUnitSquare;
 end intrinsic;
 
+intrinsic BasisMatrixInverse(F::FldNum, epses::SeqEnum[RngOrdElt] : Precision := 100) -> AlgMatElt
+  {
+    returns a change of basis matrix transforming a point in log-Minkowski
+    space of F into the basis given the (n-1) totally positive units and 
+    the all-ones vector. 
+  }
+  B_rows := [[Log(x) : x in EmbedNumberFieldElement(eps : Precision := Precision)] : eps in epses];
+  Append(~B_rows, [1 : i in [1 .. (#epses + 1)]]);
+  B := Matrix(B_rows);
+  return B^-1;
+end intrinsic;
 
-intrinsic CoprimeNarrowRepresentative(I::RngOrdIdl, J::RngOrdIdl) -> RngOrdElt
-{Find a totally positive field element a such that qI is an integral ideal coprime to J;
- I and J must be defined over the same maximal order.}
+intrinsic TotallyPositiveUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  { returns BasisMatrixInverse for the totally positive units}
+  if not assigned F`TotallyPositiveUnitsBasisMatrixInverse then
+    epses := TotallyPositiveUnitsGenerators(F);
+    F`TotallyPositiveUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
+  end if;
+  return F`TotallyPositiveUnitsBasisMatrixInverse;
+end intrinsic;
 
-    K := NumberField(Order(I));
-    q := CoprimeRepresentative(I, J);
-
-    // Nothing to do if K is imaginary or we already chose a good element.
-    if Signature(q) eq [1,1] or Discriminant(K) lt 0 then return q; end if;
-    if Signature(q) eq [-1,-1] then return -q; end if;
-
-    // Otherwise, we have chosen a bad element, so must correct the signs.
-    z := Sqrt(K!Discriminant(Integers(K)));
-    require Norm(z) lt 0 : "Chosen generator of quadratic field is totally positive.";
-    assert IsIntegral(z);
-    
-    if Signature(z) ne Signature(q) then
-	z := -z;
-    end if;
-
-    NJ := Norm(J);
-    d := GCD(Integers() ! Norm(z), NJ);
-
-    if d eq 1 then return z*q; end if;
-    b := ExactQuotient(NJ, d);
-    return (1 + b * z)*q;
+intrinsic SquaredUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  { returns BasisMatrixInverse for the squares of units }
+  if not assigned F`SquaredUnitsBasisMatrixInverse then
+    epses := [eps^2 : eps in UnitsGenerators(F)];
+    F`SquaredUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
+  end if;
+  return F`SquaredUnitsBasisMatrixInverse;
 end intrinsic;
 
 /////////////////////// DistinguishedPlace and strong coercion ///////////////////////////
@@ -159,6 +242,26 @@ intrinsic DistinguishedPlace(K::FldNum) -> PlcNumElt
   end if;
   K`DistinguishedPlace := InfinitePlaces(K)[1];
   return K`DistinguishedPlace;
+end intrinsic;
+
+intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
+  {
+    input:
+      L - FldNum, FldQuad, FldCyc, or FldRat
+      x - Any, but can return true only on a FldElt or RngElt
+    returns:
+      false if x cannot be coerced into L. 
+      true if x can be coerced into L, along with
+        the strong coercion of x into L.
+  }
+
+  // strong coercion is possible if and only if
+  // regular coercion is possible
+  if IsCoercible(L, x) then
+    return true, StrongCoerce(L, x);
+  else
+    return false, _;
+  end if;
 end intrinsic;
 
 intrinsic StrongCoerce(L::Fld, x::RngElt) -> FldElt
@@ -208,25 +311,32 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
   CC_THRESHOLD := 10^-10;
   require Type(x) in [FldNumElt, FldRatElt, FldQuadElt, FldCycElt] : "%o is not a valid type for strong coercion", Type(x);
 
-  K := Parent(x);
-
-  // If K = QQ then all embeddings are the same,
+  // If x is rational then all embeddings are the same,
   // We do this case separately because Rationals() 
   // does not have an Extensions attribute.
-  if K eq Rationals() then
+  if x in Rationals() then
     return L!x;
   end if;
+
+  K := Parent(x);
 
   // If L = QQ then all restrictions are the same.
   if L eq Rationals() then
     return Rationals()!x;
   end if;
 
+  // We trust Magma's coercion if K and L have the same
+  // defining polynomial
+  if DefiningPolyCoeffs(K) eq DefiningPolyCoeffs(L) then
+    require IsIsomorphic(K, L) : "This should never happen, something is quite wrong";
+    return L!x;
+  end if;
+
   if not assigned K`Extensions then
-    K`Extensions := AssociativeArray(PowerStructure(FldNum));
+    K`Extensions := AssociativeArray();
   end if;
   if not assigned K`Restrictions then
-    K`Restrictions := AssociativeArray(PowerStructure(FldNum));
+    K`Restrictions := AssociativeArray();
   end if;
 
   require IsNormal(K) and IsNormal(L) : "Strong coercion is not yet implemented\
@@ -234,19 +344,19 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
 
   // if K = QQ then all embeddings are the same
   if K eq Rationals() then
-    K`Extensions[L] := Automorphisms(Rationals())[1];
+    K`Extensions[DefiningPolyCoeffs(L)] := Automorphisms(Rationals())[1];
   end if;
 
   // if L = QQ then all restrictions are the same
   if L eq Rationals() then
-    K`Restrictions[L] := Automorphisms(K)[1];
+    K`Restrictions[DefiningPolyCoeffs(L)] := Automorphisms(K)[1];
   end if;
 
-  if IsDefined(K`Extensions, L) then
-    phi := K`Extensions[L];
+  if IsDefined(K`Extensions, DefiningPolyCoeffs(L)) then
+    phi := K`Extensions[DefiningPolyCoeffs(L)];
     return L!phi(x);
-  elif IsDefined(K`Restrictions, L) then
-    phi := K`Restrictions[L];
+  elif IsDefined(K`Restrictions, DefiningPolyCoeffs(L)) then
+    phi := K`Restrictions[DefiningPolyCoeffs(L)];
     return L!phi(x);
   end if;
 
@@ -259,7 +369,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     auts := Automorphisms(K);
     for aut in auts do
       if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
-        K`Extensions[L] := aut;
+        K`Extensions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
     end for;
@@ -275,13 +385,13 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
       // L!x will succeed but K!(L!x) will fail. This case is not important right
       // now so I'm leaving it to future me (or present you!) to fix it. 
       if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
-        K`Restrictions[L] := aut;
+        K`Restrictions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
     end for;
     require 0 eq 1 : "This should not be possible. Something has gone wrong.";
   else
-    require 0 eq 1 : "The Parent of K neither contains nor is contained in L";
+    require 0 eq 1 : "The parent of x neither contains nor is contained in L", K, L;
   end if;
 end intrinsic;
 
@@ -373,7 +483,7 @@ intrinsic UnitCharFieldsByWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> FldNum
   end if;
 
   R<x> := PolynomialRing(F);
-  if #SequenceToSet(k) eq 1 then
+  if IsParallel(k) then
     // if the weight is parallel, the unit character is trivial
     L := Rationals();
   elif IsParitious(k) then
@@ -525,4 +635,77 @@ intrinsic NormToHalfWeight(I::RngFracIdl, k0::RngIntElt, K::FldNum) -> FldNumElt
   }
   Nm := K!Norm(I);
   return (k0 mod 2 eq 0) select Nm^(ExactQuotient(k0, 2)) else Nm^(k0/2);
+end intrinsic;
+
+intrinsic DefiningPolyCoeffs(K::Fld) -> SeqEnum
+  {}
+  if K eq Rationals() then
+    K := RationalsAsNumberField();
+  end if;
+  return Coefficients(DefiningPolynomial(K));
+end intrinsic;
+
+intrinsic TraceBasisMatrixInverse(F::FldNum) -> AlgMatElt
+  {
+    Given an ideal aa, with standard basis Basis(aa) = [e_1, ..., e_n],
+    returns a matrix M whose ith row vector is (a_1, ..., a_n) 
+    such that a_1 * e_1 + ... + a_n * e_n = f_i,
+    where [f_1, ..., f_n] is a Z-basis of aa such that
+    Tr(f_1) > 0 and Tr(f_i) = 0 for i > 1.
+  }
+
+  if not assigned F`TraceBasisMatrixInverse then
+    B := Basis(F);
+    // a column vector whose ith element is the trace of
+    // the ith element of B
+    traces := Matrix([[Trace(B[i])] : i in [1..#B]]);
+
+    // Q is a matrix such that Q * traces is a column
+    // vector whose topmost entry is a positive rational
+    // and the rest are all 0 (which is what the Hermite 
+    // form of any column vector looks like).
+    _, Q := EchelonForm(traces);
+    F`TraceBasisMatrixInverse := Q^-1;
+  end if;
+  return F`TraceBasisMatrixInverse;
+end intrinsic;
+
+intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
+  {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
+   where Trace(a) = n > 0 and Trace(b) = 0}
+
+  // Preliminaries
+  B := Basis(aa);
+  ZF := Parent(B[2]);
+  v := InfinitePlaces(NumberField(ZF))[2];
+
+  // Change of basis
+  traces := Matrix([[Integers()!Trace(B[i])] : i in [1..#B]]);
+  _, Q := HermiteForm(traces);
+
+  TB := Eltseq(Vector(B)*Transpose(ChangeRing(Q,ZF)));
+  assert Trace(TB[1]) gt 0;
+  assert &and[Trace(TB[i]) eq 0 : i in [2 .. #TB]];
+
+  // Orienting the basis
+  for i in [2 .. #TB] do
+    if Evaluate(TB[i], v) lt 0 then
+      TB[i] *:= -1;
+    end if;
+  end for;
+  return TB;
+end intrinsic;
+
+intrinsic InTraceBasis(nu::FldNumElt) -> SeqEnum
+  {
+    input: 
+      A number field element, generally of the base field F of the HMF
+    returns:
+      A SeqEnum[FldRatElt] [b_1, ..., b_n] such that, if [f_1, ..., f_n]
+      is a TraceBasis for O_F, nu = b_1 * f_1 + ... + b_n * f_n.
+  }
+  F := Parent(nu);
+  // vector expressing nu in terms of Basis(F) (a Q-basis for F)
+  nu_vector := Vector(Eltseq(nu));
+  return Eltseq(nu_vector * TraceBasisMatrixInverse(F));
 end intrinsic;

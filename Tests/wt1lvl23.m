@@ -1,6 +1,6 @@
 ///////////////////  Q(\sqrt{5}) /////////////////// 
 F:=QuadraticField(5);
-prec:=20;
+prec := 500;
 M:=GradedRingOfHMFs(F, prec);
 ZF:=Integers(F);
 N:= 23*ZF;
@@ -346,7 +346,7 @@ end for;
 ///////////////////  Q(\sqrt{3}) /////////////////// 
 
 F:=QuadraticField(3);
-prec:=25;
+prec := 500;
 M:=GradedRingOfHMFs(F, prec);
 ZF:=Integers(F);
 N:= 23*ZF;

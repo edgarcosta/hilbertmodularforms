@@ -411,11 +411,12 @@ intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl : pre
   end for;
   vprintf HMFTrace: "Done %o\n", #TotallyPositiveUnits;
 
-  vprintf HMFTrace, 2: "Reducing shintani...";
+  vprintf HMFTrace, 2: "Reducing modulo totally positive units...";
   // Finding a totally positive generator for mm
   bool, a := IsNarrowlyPrincipal(mm*aa^2);
   require bool : Sprintf("Ideal %o is not narrowly principal", IdealOneLine(mm));
-  a := ReduceShintaniMinimizeTrace(a)[1];
+  a, _ := FunDomainRep(a);
+  a := IsCoercible(ZF, a) select ZF!a else a;
   vprintf HMFTrace, 2: "Done\n";
 
   vprintf HMFTrace, 2: "Computing Indexforsum...";

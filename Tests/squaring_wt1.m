@@ -1,6 +1,6 @@
 printf "Testing squaring of weight one forms...";
 F:=QuadraticField(5);
-prec:=10;
+prec:=125;
 M:=GradedRingOfHMFs(F, prec);
 ZF:=Integers(F);
 N:= 23*ZF;

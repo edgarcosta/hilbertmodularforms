@@ -22,7 +22,7 @@ function TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, tes
 
   for bb in bbs do
     coeffs[bb] := AssociativeArray();
-    reps := ShintaniRepsUpToTrace(M, bb, prec);
+    reps := FunDomainRepsUpToNorm(M, bb, prec);
     for rep in reps do
       coeffs[bb][rep] := coeffs_gen(bb);
     end for;
@@ -35,14 +35,14 @@ function TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, tes
   end if;
 
   for bb in bbs do
-    if not IsIsomorphic((Components(f)[bb])`CoefficientRing, ground_truth[bb]) then
+    if not IsIsomorphic(CoefficientRing(Components(f)[bb]), ground_truth[bb]) then
       printf "Failure at component %o\n", IdealOneLine(bb);
       printf "The level is %o, and the nebentypus was %o\n", IdealOneLine(N), chi;
-      printf "The computed coefficient ring is %o\n", (Components(f)[bb])`CoefficientRing;
+      printf "The computed coefficient ring is %o\n", CoefficientRing(Components(f)[bb]);
       printf "The expected coefficient ring is %o\n", ground_truth[bb];
     end if;
 
-    assert IsIsomorphic((Components(f)[bb])`CoefficientRing, ground_truth[bb]);
+    assert IsIsomorphic(CoefficientRing(Components(f)[bb]), ground_truth[bb]);
   end for;
   printf "coefficient_ring: Passed %o\n", test_name;
   // because functions need a return value apparently
@@ -54,7 +54,7 @@ end function;
 F<a> := QuadraticField(5);
 R<x> := PolynomialRing(F);
 ZF := Integers(F);
-prec := 8;
+prec := 80;
 M := GradedRingOfHMFs(F, prec);
 coeff_fields := AssociativeArray();
 ground_truth := AssociativeArray();
@@ -146,7 +146,7 @@ TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, test_name);
 F<a> := QuadraticField(3);
 R<x> := PolynomialRing(F);
 ZF := Integers(F);
-prec := 8;
+prec := 80;
 U, mU := UnitGroup(F);
 M := GradedRingOfHMFs(F, prec);
 bbs := NarrowClassGroupReps(M);

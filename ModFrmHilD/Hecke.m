@@ -5,7 +5,7 @@
 ///////////////////////////////////////////////////
 
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
-intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := false) -> ModFrmHilDElt
+intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
   {Returns T(mm)(f) for the character chi modulo the level of f}
 
   Mk := Parent(f);
@@ -18,79 +18,53 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : MaximalPrecision := fa
   chi := Character(Mk);
   K := CoefficientRing(f);
 
-  coeffsTmmf := AssociativeArray();
-  prec := AssociativeArray();
-  for bb in NarrowClassGroupReps(M) do
-    coeffsTmmf[bb] := AssociativeArray();
-    prec[bb] := 0;
-  end for;
+  R := GetHMFSerPuis(M, K);
+  prec := Precision(f) div Norm(mm);
+  Tmmf_bbs := AssociativeArray();
 
   for bb in NarrowClassGroupReps(M) do
     bbp := NarrowClassGroupRepsToIdealDual(M)[bb];
     bbpinv := bbp^(-1);
 
-    for nu in ShintaniRepsUpToTrace(M, bb, Precision(M)) do //they come sorted
-      nn := nu*bbpinv;  // already call mm the ideal for the Hecke operator
+    Tmmf_bb_ser := RngSerPuisZero(R);
+    for nu in FunDomainRepsUpToNorm(M, bb, prec) do //they come sorted
+      nn := nu*bbpinv;  // already call nn the ideal for the Hecke operator
       c := 0;
-      t := Integers()!Trace(nu);
-
 
       // loop over divisors
       // Formula 2.23 in Shimura - The Special Values
       // of the zeta functions associated with Hilbert Modular Forms
-      // If a coefficient in the sum is not defined we will set prec[bb] := Trace(nu) - 1;
       for aa in Divisors(ZF!!(nn + mm)) do
         if nn eq 0*ZF then
           //takes care if the coefficients for the zero ideal are different
           c +:= StrongMultiply(K, [* chi(aa), Norm(aa)^(k0 - 1), Coefficients(f)[NarrowClassRepresentative(M, bb*mm/aa^2)][ZF!0] *]);
         else
-          b, cf := IsCoefficientDefined(f, ZF!!(aa^(-2) * nn * mm));
-          if not b then
-            // stop looping through divisors if coefficient for at least one divisor
-            // is not defined (if trace (aa^(-2) * (nn*mm)) is greater than precision)
-            prec[bb] := t-1;
-            break; // breaks loop on aa
-          else
-            c +:= StrongMultiply(K, [* chi(aa),  Norm(aa)^(k0 - 1), cf *]);
-          end if;
+          cf := Coefficient(f, ZF!!(aa^(-2) * nn * mm));
+          c +:= StrongMultiply(K, [* chi(aa), Norm(aa)^(k0 - 1), cf *]);
         end if;
       end for;
-      if prec[bb] ne 0 then // the loop on aa didn't finish
-        break; // breaks loop on nu
-      else
-        coeffsTmmf[bb][nu] := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]));
-      end if;
+      a_nu := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb])); 
+      Tmmf_bb_ser +:= RngSerPuisMonomial(R, nu, a_nu);
     end for;
+    Tmmf_bbs[bb] := Tmmf_bb_ser;
   end for;
+
+  g := HMF(Mk, Tmmf_bbs : prec:=prec);
 
   // Attempting to increase precision using a basis
   // This is not very efficient, as it does not remember the underlying vector space, but it works.
-  if (assigned Mk`Basis) or MaximalPrecision then
-      B := Basis(Mk);
-      // These have different numbers of columns
-      mats := [* *];
-      vec := [];
-      for bb in Keys(coeffsTmmf) do
-	  nus := Keys(coeffsTmmf[bb]);
-	  mat := Matrix([[Coefficients(f)[bb][nu] : nu in nus] : f in B]);
-	  Append(~mats, mat);
-	  vec cat:= [coeffsTmmf[bb][nu] : nu in nus];
-      end for;
-      // This does not work with a list
-      // mat := HorizontalJoin(mats);
-      mat := mats[1];
-      for comp_idx in [2..#mats] do
-	  mat := HorizontalJoin(mat, mats[comp_idx]);
-      end for;
-      // If the matrix is invertible, there will be a unique solutions, and we can use it.
-      if Rank(mat) eq #B then
-	  vec_sol := Solution(mat, Vector(vec));
-	  g := &+[vec_sol[i]*B[i] : i in [1..#B]];
-	  return g;
-      end if;
+  if assigned Mk`Basis then
+    basis := Basis(Mk);
+    lindep := LinearDependence(basis cat [g]);
+
+    // if the linear dependence of g with the basis is not 1
+    // then we cannot use the basis to increase precision
+    if #lindep eq 1 then
+      lindep := lindep[1];
+      g := &+[-1 * lindep[i] * basis[i] / lindep[#basis + 1] : i in [1 .. #basis]];
+    end if;
   end if;
   
-  g := HMF(Mk, coeffsTmmf : CoeffsByIdeals:=false, prec:=prec);
   return g;
 end intrinsic;
 
@@ -149,11 +123,11 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   for eig in eigs do
     frob_traces[eig] := AssociativeArray(); 
     bb_1 := NarrowClassRepresentative(MGRng, dd);
-    a_1 := Coefficients(eig)[bb_1][MGRng`IdealShitaniReps[bb_1][ideal<ZF|1>]];
+    a_1 := Coefficients(eig)[bb_1][MGRng`IdealToRep[bb_1][ideal<ZF|1>]];
 
     for nn in IdealsUpTo(P, F) do
       bb := NarrowClassRepresentative(MGRng, nn^-1 * dd);
-      frob_traces[eig][nn] := Coefficients(eig)[bb][MGRng`IdealShitaniReps[bb][nn]] / a_1;
+      frob_traces[eig][nn] := Coefficients(eig)[bb][MGRng`IdealToRep[bb][nn]] / a_1;
     end for;
   end for;
   return eigs, frob_traces;
