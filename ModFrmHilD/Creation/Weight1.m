@@ -94,7 +94,7 @@ intrinsic HeckeStabilityCuspBasis(
     n := Degree(F);
 
     par_wt_k := func<k | [k : _ in [1 .. n]]>;
-    eis_k := (N ne 1*ZF) select 1 else 3;
+    eis_k := (Conductor(chi) ne 1*ZF) select 1 else 3;
     eis_wt := par_wt_k(eis_k);
     MEis := HMFSpace(M, N, eis_wt, chi^-1);
 
@@ -193,8 +193,8 @@ intrinsic HeckeStabilityCuspBasis(
         
         if prove then
             vprintf HilbertModularForms: "Need to verify that the precision is large enough to compute the space larger space\n";
-
-            Vcheck := Basis(HMFSpace(M, N, [2*k[1] + 2,2*k[2] + 2]));
+            
+            Vcheck := Basis(HMFSpace(M, N, [d*(k[i] + eis_k) : i in [1 .. n]]));
             assert #LinearDependence(Vcheck) eq 0;
         end if;
 
