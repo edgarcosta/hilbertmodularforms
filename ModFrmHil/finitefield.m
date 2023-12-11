@@ -204,28 +204,26 @@ function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Ma
       M2K:=MatrixRing(K, M`weight_dimension);
 
       if hack then
-	  // hack begins
-	  if Type(p) eq RngIntElt then
-              pp := PrimeIdealsOverPrime(K, p)[1];
-	  else
-              bool, iso := IsIsomorphic(NumberField(Order(p)), K);
-              assert bool;
-              pp := ideal<Integers(K) | [iso(K!g) : g in Generators(p)]>;
-	  end if;
-	  FF, OKtoFF := ResidueClassField(pp);
-	  KtoFF := map<K->FF | x :-> OKtoFF(x*d)/FF!d where d:= Denominator(x)>;
-	  splitting_seq_FF := [];
-	  M2KtoFF := hom<MatrixRing(K, 2) -> MatrixRing(FF, 2) | KtoFF>;
-	  splitting_seq_FF := [s*M2KtoFF : s in splitting_seq];
-	  
-	  M2FF:=MatrixRing(FF, M`weight_dimension);
-	  M`weight_rep:=map<H -> M2FF|q :-> weight_map_arch(q, splitting_seq_FF, FF, m, n)>;
-	  M`weight_base_field := FF;
-	  // hack ends
+        // hack begins
+        if Type(p) eq RngIntElt then
+          pp := PrimeIdealsOverPrime(K, p)[1];
+        else
+          bool, iso := IsIsomorphic(NumberField(Order(p)), K);
+          assert bool;
+          pp := ideal<Integers(K) | [iso(K!g) : g in Generators(p)]>;
+        end if;
+        FF, OKtoFF := ResidueClassField(pp);
+        KtoFF := map<K->FF | x :-> OKtoFF(x*d)/FF!d where d:= Denominator(x)>;
+        splitting_seq_FF := [];
+        M2KtoFF := hom<MatrixRing(K, 2) -> MatrixRing(FF, 2) | KtoFF>;
+        splitting_seq_FF := [s*M2KtoFF : s in splitting_seq];
+        M2FF:=MatrixRing(FF, M`weight_dimension);
+        M`weight_rep:=map<H -> M2FF|q :-> weight_map_arch(q, splitting_seq_FF, FF, m, n)>;
+        M`weight_base_field := FF;
+        // hack ends
       else
-	  M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
+        M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
       end if;
-	
     end if;
     return M`weight_rep, M`weight_dimension, M`weight_base_field;
   end if;
