@@ -1,6 +1,6 @@
 printf "Testing Universal Igusa over Q(sqrt(d)) with h = 1 for... d="; //use printf with no \n
 
-function TestIgusa(D : prec:=5)
+function TestIgusa(D : prec:=50)
   if not IsFundamentalDiscriminant(D) then return true; end if;
   F := QuadraticField(D);
   ZF := Integers(F);
