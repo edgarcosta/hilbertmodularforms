@@ -234,10 +234,10 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
     end for;
   end if;
 
-  uc_values := &cat[ValuesOnGens(unitcharacters[bb]) : bb in NarrowClassGroupReps(M)];
+  ucs := [unitcharacters[bb] : bb in NarrowClassGroupReps(M)];
   if IsDefined(spaces, N) then
-    if IsDefined(spaces[N], <k, chi, uc_values>) then
-      return spaces[N][<k, chi, uc_values>];
+    if IsDefined(spaces[N], <k, chi, ucs>) then
+      return spaces[N][<k, chi, ucs>];
     end if;
   else
     M`Spaces[N] := AssociativeArray();
@@ -263,7 +263,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   require Keys(Mk`UnitCharacters) eq SequenceToSet(NarrowClassGroupReps(M)) :"we expect the keys of the associative array to be narrow class group reprsentatives";
   require {Type(v): k->v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
   require &and[BaseField(v) eq BaseField(M): k->v in Mk`UnitCharacters]: "we expect all the unit characters to have the same base field";
-  M`Spaces[N][<k, chi, uc_values>] := Mk;
+  M`Spaces[N][<k, chi, ucs>] := Mk;
   return Mk;
 end intrinsic;
 
