@@ -68,7 +68,7 @@ intrinsic EisensteinConstantCoefficient(
     psi::GrpHeckeElt
     ) -> Tup
   {return an associative array with constant coefficients indexed by bb}
-    
+  require IsPrimitive(eta) and IsPrimitive(psi): "characters need to be primitive";
   // We are following the notation in Section 2.2 of Dasgupta, Darmon, Pollack - Hilbert Modular Forms and the Gross-Stark Conjecture
   aa := Modulus(eta); // aa := Conductor(eta);
   bb := Modulus(psi); // bb := Conductor(psi);
