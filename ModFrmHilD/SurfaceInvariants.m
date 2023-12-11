@@ -207,7 +207,7 @@ intrinsic TestArithmeticGenus(F::FldNum, NN::RngOrdIdl) -> Any
   end for;
   vprintf HilbertModularForms: "(1/12)*(K^2 + e) = %o\n", chi1;
 
-  M := GradedRingOfHMFs(F, 0);
+  M := GradedRingOfHMFs(F, 1);
   h := HilbertSeriesCusp(M, NN);
   //h := HilbertSeriesCusp(G);
   Pow<x> := PowerSeriesRing(Rationals());

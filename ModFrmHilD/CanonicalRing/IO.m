@@ -90,7 +90,7 @@ intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filenam
 
   label := LMFDBLabel(G);
   if filename eq "" then
-    filename := Sprintf("../hilbertmodularsurfacesdata/CanonicalRingEquations/%o.m", ConvertLabel(label));
+    filename := Sprintf("CanonicalRingEquations/%o.m", ConvertLabel(label));
   end if;
 
   tt1 := Cputime();
