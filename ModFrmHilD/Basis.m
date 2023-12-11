@@ -59,7 +59,12 @@ intrinsic CuspFormBasis(
     Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
   end if;
 
-  Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent := GaloisDescent) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
+  if IsParallel(Weight(Mk)) and GaloisDescent then
+    Mk`CuspFormBasis := CuspFormBasisViaTrace(Mk : IdealClassesSupport:=IdealClassesSupport);
+  else
+    Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent := GaloisDescent) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
+  end if;
+
   // The contents of Mk`CuspFormBasis should be a basis for the space of cuspforms
   require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
   return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
@@ -124,7 +129,7 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
   ZF := Integers(F);
   C := NarrowClassGroupReps(M);
   dim := CuspDimension(Mk); // Change this to : version := "trace" later
-  Ideals := IdealsUpTo(500,F); // Ideals for traceforms
+  Ideals := IdealsUpTo(500, F); // Ideals for traceforms
   _, ii := Modulus(chi); // Modulus
 
   // Components
