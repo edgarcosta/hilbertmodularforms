@@ -9,6 +9,7 @@ intrinsic EisensteinSeries(
   {Return the Eisenstein series E_k(eta,psi)(dd*z) in M_k(N, eta*psi), where aa*bb*dd | N and aa, bb is the modulus of eta, psi, respectively.
   One may pass the coefficients matchng the output of EisensteinCoefficients, to skip calling it.
   }
+  require IsPrimitive(eta) and IsPrimitive(psi): "characters need to be primitive";
   M := Parent(Mk);
   k := Weight(Mk);
   N := Level(Mk);
@@ -68,7 +69,6 @@ intrinsic EisensteinConstantCoefficient(
     psi::GrpHeckeElt
     ) -> Tup
   {return an associative array with constant coefficients indexed by bb}
-  require IsPrimitive(eta) and IsPrimitive(psi): "characters need to be primitive";
   // We are following the notation in Section 2.2 of Dasgupta, Darmon, Pollack - Hilbert Modular Forms and the Gross-Stark Conjecture
   aa := Modulus(eta); // aa := Conductor(eta);
   bb := Modulus(psi); // bb := Conductor(psi);
