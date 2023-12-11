@@ -43,7 +43,8 @@ intrinsic CuspFormBasis(
   :
   IdealClassesSupport:=false,
   Symmetric:=false,
-  GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
+  GaloisDescent:=true,
+  ViaTraceForm:=true) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
   if assigned Mk`CuspFormBasis then
@@ -58,8 +59,8 @@ intrinsic CuspFormBasis(
   if not &and[x ge 2 : x in k] or not IsTrivial(DirichletRestriction(Character(Mk))) then
     Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
   end if;
-
-  if IsParallel(Weight(Mk)) and GaloisDescent then
+  ViaTraceForm and:= IsParallel(Weight(Mk)) and GaloisDescent;
+  if ViaTraceForm then
     Mk`CuspFormBasis := CuspFormBasisViaTrace(Mk : IdealClassesSupport:=IdealClassesSupport);
   else
     Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent := GaloisDescent) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
@@ -313,13 +314,14 @@ intrinsic Basis(
   Mk::ModFrmHilD
   :
   IdealClassesSupport:=false,
-  Symmetric:=false
+  Symmetric:=false,
+  ViaTraceForm:=true
   ) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   if not assigned Mk`Basis then
     vprintf HilbertModularForms: "Computing basis for space of parallel weight %o with precision %o\n", Weight(Mk)[1], Precision(Parent(Mk));
     // Cuspforms
-    CB := CuspFormBasis(Mk);
+    CB := CuspFormBasis(Mk : ViaTraceForm:=ViaTraceForm);
     //Eisenstein Series
     EB := EisensteinBasis(Mk);
     Mk`Basis := EB cat CB;
