@@ -9,7 +9,7 @@ intrinsic EisensteinSeries(
   {Return the Eisenstein series E_k(eta,psi)(dd*z) in M_k(N, eta*psi), where aa*bb*dd | N and aa, bb is the modulus of eta, psi, respectively.
   One may pass the coefficients matchng the output of EisensteinCoefficients, to skip calling it.
   }
-  require &and[Conductor(c) eq Modulus(c) : c in [eta, psi]]: "characters need to be primitive";
+  require &and[Conductor(c) eq Modulus(c) : c in [* eta, psi *]]: "characters need to be primitive";
   M := Parent(Mk);
   k := Weight(Mk);
   N := Level(Mk);
