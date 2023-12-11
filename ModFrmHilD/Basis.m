@@ -173,6 +173,8 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
     B := (#B ne 0) select Basis(B) else B;
     if d eq (dim - #B) then
       fails +:=1;
+    else:
+      fails := 0;
     end if;
     require fails lt fail_counter : "Hit %o fails. Need more precision for graded ring", fails;
   end while;
