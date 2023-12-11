@@ -123,8 +123,8 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> 
   end for;
 
   // creates an HMF only supported at bb
-  fplus := HMF(HMFComp(Mkplus, bb, fpluscoeffs));
-  fminus := HMF(HMFComp(Mkminus, bb, fminuscoeffs));
+  fplus := HMF(cModFrmHilDEltComp(Mkplus, bb, fpluscoeffs));
+  fminus := HMF(cModFrmHilDEltComp(Mkminus, bb, fminuscoeffs));
   return fplus, fminus;
 end intrinsic;
 
