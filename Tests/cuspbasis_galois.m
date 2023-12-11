@@ -5,7 +5,7 @@ M:=GradedRingOfHMFs(F, prec);
 ZF:=Integers(F);
 N:= 23*ZF;
 M2 := HMFSpace(M, N, [2,2]);
-time C2 := CuspFormBasis(M2 : ViaTraceForm:=false);
+C2 := CuspFormBasis(M2 : ViaTraceForm:=false);
 delete M2`CuspFormBasis;
 // recompute without GaloisDescent
-time noC2 := CuspFormBasis(M2 : GaloisDescent:=false);
+noC2 := CuspFormBasis(M2 : GaloisDescent:=false);
