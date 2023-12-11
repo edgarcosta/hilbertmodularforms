@@ -1,3 +1,4 @@
+// [ [StringToInteger(Split(elt[1], ".")[3]), elt[2,1], elt[2,2]] : elt in data]; // downloaded from lmfdb
 data := [
 [5,-1,-1],
 [8,-2,0],
