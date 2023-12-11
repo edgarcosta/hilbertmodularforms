@@ -38,6 +38,19 @@ procedure test_sqrt13()
     PolynomialList := [X4^3 - X6*Y6, X8^2 - (256*X2^5*X6 - 128*X2^4*X4^2 + 16*X2^3*X4*Y6 -656*X2^3*X4*X6 +776*X2^2*X4^3 -261*X2*X4^2*Y6 + 27*X4*Y6^2 -27*X2^2*X6^2 +495/2*X2*X4^2*X6 -947/16*X4^4 +54*X4*X6^2)];
     S_vdG := Scheme(P_wtd, PolynomialList);
     assert IsIsomorphic(S, S_vdG);
+    // The old stored equation
+    StoredAmbient<[x]> := ProjectiveSpace(Rationals(), [1,2,3,3,4]);
+    storedEquations := [
+	-x[2]^3 + x[1]*x[2]*x[4] + 4*x[3]*x[4] - 4*x[4]^2,
+	-x[1]^4*x[2]^2 + 4*x[1]^3*x[2]*x[3] + 816*x[1]*x[2]^2*x[3] - 16*x[1]^2*x[3]^2 - 3456*x[2]*x[3]^2 + x[1]^5*x[4] - 4*x[1]^3*x[2]*x[4] + 2932*x[1]*x[2]^2*x[4] - 784*x[1]^2*x[3]*x[4] - 9872*x[2]*x[3]*x[4] - 2948*x[1]^2*x[4]^2 + 11600*x[2]*x[4]^2 - 912*x[2]^2*x[5] + 64*x[1]*x[3]*x[5] + 912*x[1]*x[4]*x[5] - 64*x[5]^2];
+    storedS := Scheme(StoredAmbient, storedEquations);
+    assert IsIsomorphic(S, storedS);
+    // The new equations
+    storedEquations := [
+     x[2]^3 - x[1]*x[2]*x[4] - 4*x[3]*x[4] + 4*x[4]^2,
+     x[1]^4*x[2]^2 - 4*x[1]^3*x[2]*x[3] - 176*x[1]*x[2]^2*x[3] + 16*x[1]^2*x[3]^2 + 3456*x[2]*x[3]^2 - x[1]^5*x[4] + 4*x[1]^3*x[2]*x[4] - 212*x[1]*x[2]^2*x[4] + 144*x[1]^2*x[3]*x[4] - 1008*x[2]*x[3]*x[4] + 228*x[1]^2*x[4]^2 - 720*x[2]*x[4]^2 - 368*x[2]^2*x[5] - 64*x[1]*x[3]*x[5] + 368*x[1]*x[4]*x[5] + 64*x[5]^2];
+    storedS := Scheme(StoredAmbient, storedEquations);
+    assert IsIsomorphic(S, storedS);
 end procedure;
 
 printf "testing D=5 ";
