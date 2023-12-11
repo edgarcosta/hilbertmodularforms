@@ -212,7 +212,7 @@ end intrinsic;
 
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
   {f = fbb}
-  f := HMFZero(Parent(fbb));
+  f := HMFZero(Space(fbb));
   f`Components[ComponentIdeal(fbb)] := Copy(fbb);
   return f;
 end intrinsic;
