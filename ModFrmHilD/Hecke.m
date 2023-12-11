@@ -150,7 +150,7 @@ intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
   for f in basis do
     g := HeckeOperator(f, nn);
     lindep := LinearDependence(basis cat [g]);
-    assert #lindep eq 1;
+    require #lindep eq 1 : "Try increasing precision";
     lindep := lindep[1];
     // We will transpose at the end. 
     // For now, each row stores the
