@@ -240,7 +240,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
       return spaces[N][<k, chi, uc_values>];
     end if;
   else
-    M`Spaces[N] := AssociativeArray(PowerStructure(Tup));
+    M`Spaces[N] := AssociativeArray();
   end if;
   Mk := New(ModFrmHilD);
   Mk`Parent := M;
