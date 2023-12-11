@@ -54,7 +54,7 @@ intrinsic CuspFormBasis(
 
   // Weight 1 forms cannot be computed using Jacquet-Langlands transfer
   // The Magma functionality doesn't currently support nebentypus characters with nontrivial
-  // Dirichlet restrictions, so that is also handled here. 
+  // Dirichlet restrictions, so that is also handled here.
   if not &and[x ge 2 : x in k] or not IsTrivial(DirichletRestriction(Character(Mk))) then
     Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
   end if;
@@ -66,8 +66,8 @@ intrinsic CuspFormBasis(
 end intrinsic;
 
 intrinsic NewCuspFormBasis(
-  Mk::ModFrmHilD 
-  : 
+  Mk::ModFrmHilD
+  :
   IdealClassesSupport := false,
   Symmetric := false,
   GaloisDescent := true,
@@ -77,8 +77,8 @@ intrinsic NewCuspFormBasis(
   {
     input:
       Mk: A space of HMFs
-      // TODO abhijitm describe the optional parameters 
-    returns: 
+      // TODO abhijitm describe the optional parameters
+    returns:
       A list of forms spanning the space of new cusp forms
   }
   if not assigned Mk`NewCuspFormBasis then
@@ -112,7 +112,7 @@ end intrinsic;
 
 intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fail_counter := 10) -> SeqEnum[ModFrmHilDElt]
   {Returns a cuspform basis for the space Mk. Optional parameters: IdealClassesSupport - Compute a basis of forms on just a single component}
-  /* Notes: Ben - We select the first n ideals (n = dimension of cusp space) ordered by norm for the traceforms. I tried ordering by trace as well, 
+  /* Notes: Ben - We select the first n ideals (n = dimension of cusp space) ordered by norm for the traceforms. I tried ordering by trace as well,
   but did not see a noticeable difference in the running times. Is there a good way to pick ideals for the traceforms? */
 
   // Initialize
@@ -124,13 +124,13 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
   ZF := Integers(F);
   C := NarrowClassGroupReps(M);
   dim := CuspDimension(Mk); // Change this to : version := "trace" later
-  Ideals := IdealsUpTo(500,F); // Ideals for traceforms 
+  Ideals := IdealsUpTo(500,F); // Ideals for traceforms
   _, ii := Modulus(chi); // Modulus
 
   // Components
-  /* This is for computing trace forms that are only supported on a single component of the narrow class group. This is only relevent when the narrow class group is nontrivial. This can be ignored if IdealClassesSupport == False. 
-  IdealClassesSupport := (IdealClassesSupport cmpeq false) select C else IdealClassesSupport; 
-  if IdealClassesSupport ne C then 
+  /* This is for computing trace forms that are only supported on a single component of the narrow class group. This is only relevent when the narrow class group is nontrivial. This can be ignored if IdealClassesSupport == False.
+  IdealClassesSupport := (IdealClassesSupport cmpeq false) select C else IdealClassesSupport;
+  if IdealClassesSupport ne C then
     require #IdealClassesSupport eq 1 and IdealClassesSupport[1] in C: "IdealClassesSupport should be a single narrow class group representatives";
     require dim mod #C eq 0: "Narrow class group components do not have the same dimension!";
     require IsTrivial(chi): "Traceforms for nontrivial characters are not on a single component";
@@ -150,24 +150,24 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
     chidd := Restrict(chi, dd, ii);
     Mkdd  := HMFSpace(M, dd, k, chidd);
     B cat:= &cat[ Inclusion(f,Mk) : f in $$(Mkdd : IdealClassesSupport:=IdealClassesSupport) ];
-    // Remove linear dependent forms 
+    // Remove linear dependent forms
     B := (#B ne 0) select Basis(B) else B;
   end for;
 
   /* We add one new trace forms one at a time. Remark: PrecomputeTraceForms(M,[aa]) checks if the computation has been done before. If the precomputation has not been done, it only computes class numbers that have not been precomputed */
   t := #B + 1;
-  fails := 0; 
+  fails := 0;
   while #B lt dim do
 
     d := dim - #B;
     aas := Ideals[t..t+d];
     t +:= d;
-    
+
     // Compute new ideal
     aa := Ideals[t];
-    vprintf HilbertModularForms: "Computing %o new traceforms.\n Fail counter: %o\n Ideals: %o\n", d, fails, [ IdealOneLine(aa) : aa in aas]; 
+    vprintf HilbertModularForms: "Computing %o new traceforms.\n Fail counter: %o\n Ideals: %o\n", d, fails, [ IdealOneLine(aa) : aa in aas];
     PrecomputeTraceForms(M, aas);
-    
+
     // Check for linear dependence
     B cat:= [TraceForm(Mk,aa) : aa in aas];
     B := (#B ne 0) select Basis(B) else B;
@@ -186,18 +186,18 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
 end intrinsic;
 
 
-  
+
 intrinsic OldCuspFormBasis(
-  Mk::ModFrmHilD 
-  : 
+  Mk::ModFrmHilD
+  :
   IdealClassesSupport := false,
   Symmetric := false,
   GaloisDescent := true) -> SeqEnum[ModFrmHilDElt]
   {
     input:
-      Mk: A space of HMFs 
+      Mk: A space of HMFs
       // TODO abhijitm describe the optional parameters
-    returns: 
+    returns:
       If N is the level of Mk, returns the inclusions of forms of level
       N' | N into Mk. These will always be linearly independent
       (in fact, orthogonal w/r/t the Petersson inner product),
@@ -207,7 +207,7 @@ intrinsic OldCuspFormBasis(
     M := Parent(Mk);
     N := Level(Mk);
     k := Weight(Mk);
-    
+
     Mk`OldCuspFormBasis := [];
     divisors := Exclude(Divisors(N), N);
     for D in divisors do
@@ -249,8 +249,8 @@ intrinsic NewEisensteinBasis(
   {
     input:
       Mk: A space of HMFs
-      // TODO abhijitm describe the optional parameters 
-    returns: 
+      // TODO abhijitm describe the optional parameters
+    returns:
       A list of forms spanning the space of new Eisenstein series
   }
 
@@ -264,24 +264,24 @@ intrinsic NewEisensteinBasis(
   // this handles the optional parameters
   return SubBasis(Mk`NewEisensteinBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
-  
+
 intrinsic OldEisensteinBasis(
-  Mk::ModFrmHilD 
-  : 
+  Mk::ModFrmHilD
+  :
   IdealClassesSupport := false,
   Symmetric := false
   ) -> SeqEnum[ModFrmHilDElt]
   {
     input:
-      Mk: A space of HMFs 
+      Mk: A space of HMFs
       // TODO abhijitm describe the optional parameters
-    returns: 
+    returns:
       If N is the level of Mk, returns the inclusions of forms of level
       N' | N into Mk. These will always be linearly independent
       (in fact, orthogonal w/r/t the Petersson inner product),
       so we can take them as a basis directly.
   }
-  
+
   if not assigned Mk`OldEisensteinBasis then
     M := Parent(Mk);
     N := Level(Mk);
@@ -290,7 +290,7 @@ intrinsic OldEisensteinBasis(
 
     Mk`OldEisensteinBasis := [];
 
-    // We want to iterate through divisors D of N from which an 
+    // We want to iterate through divisors D of N from which an
     // Eisenstein series with nebentypus chi could arise.
     // This means that we need Cond(chi) | D. We also exclude
     // D = N because we want oldforms.
