@@ -51,8 +51,8 @@ end intrinsic;
 
 // TODO: should support all ambient types and Gamma types
 // Need to add to HilbertModularVariety (requires unit character?)
-intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filename := "", Alg := "Standard") -> MonStgElt
-  {Given a quadratic field and a level, write down equations for the Hilbert modular variety to file (including all components)}
+intrinsic WriteCanonicalRingComputationToString(F::FldNum, NN::RngOrdIdl : Alg := "Standard") -> MonStgElt
+  {Given a quadratic field and a level, return a string containing equations for the Hilbert modular variety (including all components) as well as computational details}
 
   tt0 := Cputime();
   s := Sprintf("// Computing for quadratic field %o\n", LMFDBLabel(F));
@@ -87,16 +87,29 @@ intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filenam
     s *:= Sprintf("// series from trace formula = %o\n", H_trace);
     s *:= Sprintf("// computed series = %o\n", H_test);
   end if;
-
   label := LMFDBLabel(G);
+  tt1 := Cputime();
+  s *:= Sprintf("// Total computation for all components took %o seconds\n", tt1-tt0);
+  return s, label;
+end intrinsic;
+
+intrinsic WriteCanonicalRingComputationToString(F_lab::MonStgElt, NN_lab::MonStgElt : Alg := "Standard") -> MonStgElt
+  {Given a quadratic field and a level, return a string containing equations for the Hilbert modular variety (including all components) as well as computational details}
+
+  F := LMFDBField(F_lab);
+  NN := LMFDBIdeal(F, NN_lab);
+  return WriteCanonicalRingComputationToString(F, NN: Alg := Alg);
+end intrinsic;
+
+intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filename := "", Alg := "Standard") -> MonStgElt
+  {Given a quadratic field and a level, write down equations for the Hilbert modular variety to file (including all components)}
+
+  s, label := WriteCanonicalRingComputationToString(F, NN);
   if filename eq "" then
     filename := Sprintf("Verification/CanonicalRingEquations/%o.m", ConvertLabel(label));
   end if;
-
-  tt1 := Cputime();
-  s *:= Sprintf("// Total computation for all components took %o seconds\n", tt1-tt0);
   Write(filename, s);
-  return Sprintf("Canonical ring equations written to %o\n", filename);
+  return Sprintf("Canonical ring equations written to %o", filename);
 end intrinsic;
 
 intrinsic WriteCanonicalRingComputationToFile(F_lab::MonStgElt, NN_lab::MonStgElt : filename := "", Alg := "Standard") -> MonStgElt
