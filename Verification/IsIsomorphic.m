@@ -1,7 +1,45 @@
+intrinsic EliminateRedundantGenerators(I::RngMPol) -> RngMPol
+  {Given an ideal I, try to eliminate redundant generators. Return the list of these non-redundant generators.}
+  R := Generic(I);
+  gens := Generators(I);
+  //gens_red := gens;
+  done := false;
+  while not done do
+    //print "top of while loop";
+    new := false;
+    for i := 1 to #gens do
+      gens_i := gens[1..i-1] cat gens[i+1..#gens];
+      I_i := ideal< R | gens_i >;
+      if gens[i] in I_i then
+        //printf "redudant gen found! i=%o, f=%o\n", i, gens[i];
+        gens := gens_i;
+        new := true;
+        break i;
+      end if;
+    end for;
+    if not new then
+      done := true;
+    end if;
+  end while;
+  assert ideal< R | gens > eq I;
+  return gens;
+end intrinsic;
+
+intrinsic EliminateRedundantGenerators(L::SeqEnum[RngMPolElt]) -> RngMPol
+  {Given a sequence of polynomials, return a non-redundant subsequence generating the same ideal.}
+  if #L eq 0 then
+    return L;
+  end if;
+  I := ideal< Parent(L[1]) | L >;
+  return EliminateRedundantGenerators(I);
+end intrinsic;
+
 intrinsic IsIsomorphic(S1::Sch, S2::Sch) -> BoolElt
 {Return true if S1 is isomorphic to S2. False is inconclusive!}
-  eqns_S1 := Sort(DefiningEquations(S1));
-  eqns_S2 := Sort(DefiningEquations(S2));
+  eqns_S1 := EliminateRedundantGenerators(DefiningEquations(S1));
+  eqns_S2 := EliminateRedundantGenerators(DefiningEquations(S2));
+  eqns_S1 := Sort(eqns_S1);
+  eqns_S2 := Sort(eqns_S2);
   P := CoordinateRing(Ambient(S1));
   wts := Grading(P);
   mons := [MonomialsOfWeightedDegree(P, d) : d in wts];

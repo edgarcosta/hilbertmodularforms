@@ -150,7 +150,7 @@ the congruence subgroup `G`.}
     if (NarrowClassNumber(F) eq 1) and (Norm(level) eq 1) then
         return HilbertSeriesVasquez(F);
     end if;
-    M := GradedRingOfHMFs(F, 0);
+    M := GradedRingOfHMFs(F, 1);
     M2 := HMFSpace(M, level, [2,2]);
     HC := HilbertSeriesCusp(M, level);
     R<T> := Parent(HC);
@@ -163,7 +163,7 @@ end intrinsic;
 intrinsic HilbertSeriesCusp(F::FldNum, level::RngOrdIdl : prec:=false) -> FldFunRatUElt
 {Return the Hilbert series for the space of cusp Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
-    M := GradedRingOfHMFs(F, 0);
+    M := GradedRingOfHMFs(F, 1);
     return HilbertSeriesCusp(M, level : prec:=prec);
 end intrinsic;
 
