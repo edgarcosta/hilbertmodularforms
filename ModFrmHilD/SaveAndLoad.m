@@ -14,7 +14,7 @@ intrinsic SaveFilePrefix(Mk::ModFrmHilD) -> MonStgElt
   // TODO abhijitm this is really bad, but it works for me
   // for now. 
   F := BaseField(Mk);
-  F_label := Join([IntegerToString(n) : n in [Degree(F), Discriminant(F)]], ".");
+  F_label := Join([IntegerToString(a) : a in DefiningPolyCoeffs(F)], ".");
 
   // Use the LMFDB label for N
   N := Level(Mk);

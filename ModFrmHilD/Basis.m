@@ -106,6 +106,100 @@ intrinsic NewCuspFormBasis(
 
   return SubBasis(Mk`NewCuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
+
+
+
+
+intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fail_counter := 10) -> SeqEnum[ModFrmHilDElt]
+  {Returns a cuspform basis for the space Mk. Optional parameters: IdealClassesSupport - Compute a basis of forms on just a single component}
+  /* Notes: Ben - We select the first n ideals (n = dimension of cusp space) ordered by norm for the traceforms. I tried ordering by trace as well, 
+  but did not see a noticeable difference in the running times. Is there a good way to pick ideals for the traceforms? */
+
+  // Initialize
+  M := Parent(Mk);
+  NN := Level(Mk);
+  k := Weight(Mk);
+  chi := Character(Mk);
+  F := BaseField(Mk);
+  ZF := Integers(F);
+  C := NarrowClassGroupReps(M);
+  dim := CuspDimension(Mk); // Change this to : version := "trace" later
+  m,p := Conductor(chi);
+  _, ii := Modulus(chi); // Modulus
+
+  // Requirements 
+  require m eq 1*ZF: "Only supports characters with trivial conductor";
+  if #p ne 0 then print "Warning : Narrow ray class groups have not been tested yet"; end if;
+  require #Set(k) eq 1: "Not implemented for nonparallel weights";
+  require (k[1] mod 2) eq 0: "Not implemented for odd weights";
+
+  // Ideal bound 
+  bound := 500;
+  Ideals := IdealsUpTo(bound, F); // Ideals for traceforms 
+
+  // Components
+  /* This is for computing trace forms that are only supported on a single component of the narrow class group. This is only relevent when the narrow class group is nontrivial. This can be ignored if IdealClassesSupport == False. 
+  IdealClassesSupport := (IdealClassesSupport cmpeq false) select C else IdealClassesSupport; 
+  if IdealClassesSupport ne C then 
+    require #IdealClassesSupport eq 1 and IdealClassesSupport[1] in C: "IdealClassesSupport should be a single narrow class group representatives";
+    require dim mod #C eq 0: "Narrow class group components do not have the same dimension!";
+    require IsTrivial(chi): "Traceforms for nontrivial characters are not on a single component";
+    dim div:= #C;
+    bb := IdealClassesSupport[1];
+    DD := Different(ZF);
+    bbsharp := (bb * DD)^(-1);
+    Ideals := [i : i in Ideals | IsNarrowlyPrincipal(i * bbsharp)];
+  end if;
+  */
+
+  // Oldforms
+  /* FIXME - This does not support components yet. Ben - If we are trying to compute forms on a specific component bb of Mk(NN,chi), I believe that we need to compute forms supported on a **different component bb'** of Mk(dd,chi) where dd | NN such that it maps to the correct component under the inclusion map. */
+  B := [];
+  Old := [ dd : dd in Divisors(NN) | dd ne NN ];
+  for dd in Old do
+    chidd := Restrict(chi, dd, ii);
+    Mkdd  := HMFSpace(M, dd, k, chidd);
+    B cat:= &cat[ Inclusion(f,Mk) : f in $$(Mkdd : IdealClassesSupport:=IdealClassesSupport) ];
+    // Remove linear dependent forms 
+    B := (#B ne 0) select Basis(B) else B;
+  end for;
+
+  /* We add one new trace forms one at a time. Remark: PrecomputeTraceForms(M,[aa]) checks if the computation has been done before. If the precomputation has not been done, it only computes class numbers that have not been precomputed */
+  t := #B + 1;
+  fails := 0; 
+  while #B lt dim do
+
+    d := dim - #B;
+    if bound lt t + d then
+      bound *:= 2;
+      Ideals := IdealsUpTo(bound, F);
+    end if;
+    aas := Ideals[t..t+d];
+    t +:= d;
+    
+    // Compute new ideal
+    aa := Ideals[t];
+    vprintf HilbertModularForms: "Computing %o new traceforms.\n Fail counter: %o\n Ideals: %o\n", d, fails, [ IdealOneLine(aa) : aa in aas]; 
+    PrecomputeTraceForms(M, aas);
+    
+    // Check for linear dependence
+    B cat:= [TraceForm(Mk,aa) : aa in aas];
+    B := (#B ne 0) select Basis(B) else B;
+    if d eq (dim - #B) then
+      fails +:=1;
+    else
+      fails := 0;
+    end if;
+    require fails lt fail_counter : "Too many fails. Need more precision for graded ring";
+  end while;
+
+  // sanity check
+  assert #B eq dim;
+
+  return B;
+end intrinsic;
+
+
   
 intrinsic OldCuspFormBasis(
   Mk::ModFrmHilD 
