@@ -80,7 +80,7 @@ for NN in ideals do
     end if;
   end for;
   if assigned testarithmeticgenus and not skipping and [ambient, gamma] eq ["GL+", "Gamma0"] then
-    M := GradedRingOfHMFs(F, 0);
+    M := GradedRingOfHMFs(F, 1);
     h := HilbertSeriesCusp(M, NN);
     chi2 := Coefficient(PowerSeriesRing(Rationals())!h,2) + #NCl;
     if not chisum eq chi2 then
