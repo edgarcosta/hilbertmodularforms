@@ -186,6 +186,8 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
     // Compute new ideal
     aa := Ideals[t];
     vprintf HilbertModularForms: "Computing %o new traceforms.\n Fail counter: %o\n Ideals: %o\n", d, fails, [ IdealOneLine(aa) : aa in aas];
+    vprintf HilbertModularForms: "PrecomputeTraceForms(M, aas)...";
+    vtime HilbertModularForms:
     PrecomputeTraceForms(M, aas);
 
     // Check for linear dependence
