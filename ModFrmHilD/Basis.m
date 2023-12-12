@@ -159,7 +159,7 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
   for dd in Old do
     chidd := Restrict(chi, dd, ii);
     Mkdd  := HMFSpace(M, dd, k, chidd);
-    B cat:= &cat[ Inclusion(f,Mk) : f in $$(Mkdd : IdealClassesSupport:=IdealClassesSupport) ];
+    B cat:= &cat[ Inclusion(f,Mk) : f in CuspFormBasis(Mkdd) ];
     // Remove linear dependent forms 
     B := (#B ne 0) select Basis(B) else B;
   end for;
