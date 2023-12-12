@@ -99,7 +99,7 @@ intrinsic EisensteinConstantCoefficient(
   else
     c0bb := 0;
   end if;
-
+  
   constant_term := AssociativeArray();
   n := Degree(BaseField(M));
   bbs := NarrowClassGroupReps(M);
