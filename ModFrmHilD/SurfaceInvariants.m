@@ -537,3 +537,69 @@ intrinsic DimensionOfCuspForms(Gamma::GrpHilbert, k::RngIntElt) -> RngIntElt
 
   return dim;
 end intrinsic;
+
+intrinsic HilbertSeries(Gamma::GrpHilbert) -> FldFunRatUElt
+{Compute the Hilbert series of a Hilbert modular surface. }
+  // R<k> := PolynomialRing(Rationals());
+  R<t> := FunctionField(Rationals());
+  
+  vol := VolumeOfFundamentalDomain(Gamma);
+
+  hilb := vol*(2*t^2/(1-t)^3 + 1/(4*(1-t)) - 1/4*(1+t));
+  
+  // dim := ((2*k-1)^2 / 4) * vol;
+  
+  // get cusp contribution
+  cusps := CuspsWithResolution(Gamma);
+
+  chi := 0;
+  for cusp in cusps do
+    _, _, L, n := Explode(cusp);
+    if (n eq 1) and (#L eq 1) then
+        chi +:= 1/12*(1+L[1]);
+    else
+	chi +:= n/12*&+[3+b : b in L];
+    end if;
+  end for;
+
+  hilb +:= chi*t^2/(1-t);
+  // dim +:= chi;
+  
+  modulus := LCM({Tuple(k)[1] : k in Keys(EllipticPointData(Gamma))});
+    
+  // get elliptic points contribution
+  a := CountEllipticPoints(Gamma);
+
+  elliptic := [CyclotomicField(modulus) | 0 : m in [0..modulus-1]];
+  for m in [0..modulus-1] do
+      for rot_factor in Keys(a) do
+	  rot_tup := IntegerTuple(rot_factor);
+	  n := rot_tup[1];
+	  // normalize to type (q,1)
+	  assert rot_tup[2] eq 1;
+	  // q := rot_tup[2] * rot_tup[3]^(-1) mod n;
+	  q_inv := rot_tup[3];
+	  _, q, _ := XGCD(q_inv,n);
+	  Qn<zeta> := CyclotomicField(n);
+	  cont := &+[zeta^(i*(q+1)*m)/(n*(1-zeta^i)*(1-zeta^(i*q)))
+		     : i in [1..n-1]];
+	  elliptic[m+1] +:= cont*a[rot_factor];
+      end for;
+  end for;
+  
+  elliptic := [Rationals()!e : e in elliptic];
+
+  hilb +:= &+[elliptic[m+1]*t^m : m in [0..modulus-1]] / (1-t^modulus);
+  hilb -:= elliptic[1] + elliptic[2]*t;
+  
+  // adding cups (Eisenstein series) contribution
+  
+  hilb +:= #cusps*t/(1-t);
+  
+  // finally adding the first two terms
+  
+  hilb +:= 1 + DimensionOfCuspForms(Gamma,2)*t;
+  
+  return hilb;    
+end intrinsic;
+    
