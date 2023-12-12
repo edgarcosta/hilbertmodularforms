@@ -226,6 +226,10 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD : IdentifyConjugates
   F := BaseField(Parent(Mk));
   H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
 
+  if (not IsGamma1EisensteinWeight(chi,k)) then
+      return [* *];
+  end if;
+  
   check_chi := func<eta, psi | (eta * psi eq chi)>;
   
   // By default we only produce pairs of characters corresponding to newforms,
