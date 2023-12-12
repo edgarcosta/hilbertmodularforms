@@ -130,8 +130,18 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
   ZF := Integers(F);
   C := NarrowClassGroupReps(M);
   dim := CuspDimension(Mk); // Change this to : version := "trace" later
-  Ideals := IdealsUpTo(500, F); // Ideals for traceforms
+  m,p := Conductor(chi);
   _, ii := Modulus(chi); // Modulus
+
+  // Requirements
+  require m eq 1*ZF: "Only supports characters with trivial conductor";
+  if #p ne 0 then print "Warning : Narrow ray class groups have not been tested yet"; end if;
+  require #Set(k) eq 1: "Not implemented for nonparallel weights";
+  require (k[1] mod 2) eq 0: "Not implemented for odd weights";
+
+  // Ideal bound 
+  bound := 500;
+  Ideals := IdealsUpTo(bound, F); // Ideals for traceforms
 
   // Components
   /* This is for computing trace forms that are only supported on a single component of the narrow class group. This is only relevent when the narrow class group is nontrivial. This can be ignored if IdealClassesSupport == False.
@@ -166,6 +176,10 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
   while #B lt dim do
 
     d := dim - #B;
+    if bound lt t + d then
+      bound *:= 2;
+      Ideals := IdealsUpTo(bound, F);
+    end if;
     aas := Ideals[t..t+d];
     t +:= d;
 
@@ -182,7 +196,7 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
     else
       fails := 0;
     end if;
-    require fails lt fail_counter : "Hit %o fails. Need more precision for graded ring", fails;
+    require fails lt fail_counter : "Too many fails. Need more precision for graded ring";
   end while;
 
   // sanity check

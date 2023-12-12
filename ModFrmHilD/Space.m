@@ -250,12 +250,8 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`IsCuspidal := false;
   Mk`IsNew := false;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
-  // Right now when k[i] = 1, we don't want to restrict to compatible weights.
-  if 1 notin k then
-      is_compat, i := IsCompatibleWeight(chi, k);
-      // require is_compat : Sprintf("The parity of the character at the infinite place %o does not match the parity of the weight", i);
-      require is_compat : Sprintf("The parity of the character at the infinite places does not match the parity of the weight at the unit %o", i);
-  end if;
+  is_compat, i := IsCompatibleWeight(chi, k);
+  require is_compat : Sprintf("The parity of the character at the infinite places does not match the parity of the weight at the unit %o", i);
   Mk`Character := chi;
   Mk`UnitCharacters := unitcharacters;
   Mk`DefaultCoefficientRing := DefaultCoefficientRing(Mk);
