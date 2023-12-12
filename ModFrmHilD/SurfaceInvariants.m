@@ -598,8 +598,8 @@ intrinsic HilbertSeries(Gamma::GrpHilbert) -> FldFunRatUElt
   
   // finally adding the first two terms
   
-  hilb +:= 1 + DimensionOfCuspForms(Gamma,2);
+  hilb +:= 1 + DimensionOfCuspForms(Gamma,2)*t;
   
   return hilb;    
-end function;
+end intrinsic;
     
