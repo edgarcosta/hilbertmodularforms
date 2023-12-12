@@ -90,7 +90,7 @@ intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filenam
 
   label := LMFDBLabel(G);
   if filename eq "" then
-    filename := Sprintf("CanonicalRingEquations/%o.m", ConvertLabel(label));
+    filename := Sprintf("Verification/CanonicalRingEquations/%o.m", ConvertLabel(label));
   end if;
 
   tt1 := Cputime();
