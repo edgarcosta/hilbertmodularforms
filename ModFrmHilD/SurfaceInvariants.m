@@ -594,7 +594,7 @@ intrinsic HilbertSeries(Gamma::GrpHilbert) -> FldFunRatUElt
   
   // adding cups (Eisenstein series) contribution
   
-  hilb +:= #cusps/(1-t) - 1;
+  hilb +:= #cusps*t/(1-t);
   
   // finally adding the first two terms
   

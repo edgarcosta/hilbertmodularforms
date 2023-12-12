@@ -60,3 +60,5 @@ procedure test_level_1_up_to(D)
     end for;
     return;
 end procedure;
+
+test_level_1_up_to(500);
