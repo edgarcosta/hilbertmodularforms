@@ -59,7 +59,7 @@ intrinsic CuspFormBasis(
   if not &and[x ge 2 : x in k] or not IsTrivial(DirichletRestriction(Character(Mk))) then
     Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
   end if;
-  ViaTraceForm and:= IsParallel(Weight(Mk)) and GaloisDescent and k mod 2 eq 0 and k gt 2 where k:=Weight(Mk)[1];
+  ViaTraceForm and:= IsParallel(Weight(Mk)) and GaloisDescent and (k mod 2) eq 0 and k gt 2 where k:=Weight(Mk)[1];
   if ViaTraceForm then
     Mk`CuspFormBasis := CuspFormBasisViaTrace(Mk : IdealClassesSupport:=IdealClassesSupport);
   else
