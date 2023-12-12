@@ -295,7 +295,7 @@ and dim ne 1 // beware recursion
 
     vprintf ModFrmHil: "Characteristic polynomial of Hecke algebra generator: ";
     vtime ModFrmHil:
-    if hack then 
+    if hack then
 	// hack starts
 	if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K) then
 	    // hack ends
@@ -320,8 +320,8 @@ and dim ne 1 // beware recursion
     end if;
 
     if (not hack) or not IsFinite(K) then
-	// decomposition should be over the true hecke field (= Q for parallel weight)
-	chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
+      // decomposition should be over the true hecke field (= Q for parallel weight)
+      chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
     end if;
 
     vprintf ModFrmHil: "Factoring the polynomial: ";
@@ -569,49 +569,48 @@ METHOD := M`HeckeMethod;
 
 if METHOD lt 3 then
 
-     // Old way: determine the Hecke algebra of this newform space
+    // Old way: determine the Hecke algebra of this newform space
 
-     T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
+    T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
 
-     vprintf ModFrmHil: "CharacteristicPolynomial: ";
-     vtime ModFrmHil:
-     chi := CharacteristicPolynomial(t);
-     K := BaseRing(t);
-     if (not hack) or not IsFinite(K) then
-	 chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
-     end if;
-     require IsIrreducible(chi) :
-            "The space M is not an irreducible module under the Hecke action";
+    vprintf ModFrmHil: "CharacteristicPolynomial: ";
+    vtime ModFrmHil:
+    chi := CharacteristicPolynomial(t);
+    K := BaseRing(t);
+    hack and:= IsFinite(K); // the goal of the hack is to enable computations over finite fields
+    if (not hack) then
+      // working around a bug arising from
+      //chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
+      chi := ChangeRing(chi, hecke_matrix_field(M));
+    end if;
+    require IsIrreducible(chi) :
+           "The space M is not an irreducible module under the Hecke action";
 
-     if Degree(chi) eq 1 then
-       E := BaseRing(chi);
-       e := t[1][1];
-     else
-	 if hack then
-	     // begin hack
-	     E := ext<BaseRing(chi)|chi>; e:=E.1;
-	     // end hack
-	 else
-	     E := NumberField(chi); e:=E.1;
-	 end if;
-     end if;
-     nf`BaseField := E;
+    if Degree(chi) eq 1 then
+      E := BaseRing(chi);
+      e := t[1][1];
+    else
+      if hack then
+        // begin hack
+        E := ext<BaseRing(chi)|chi>; e:=E.1;
+        // end hack
+      else
+        E := NumberField(chi); e:=E.1;
+      end if;
+    end if;
+    nf`BaseField := E;
 
-     K := BaseRing(t);
-     if hack then
-	 //begin hack
-	 if K eq E then
-	     EK := K;
-	 else	 
-	     if IsFinite(E) then
-		 EK := ext<E| DefiningPolynomial(K)>;
-	     else
-		 EK := CompositeFields(K, E)[1];
-	     end if;
-	 end if;
-	 // end hack
-     else
-	  EK := CompositeFields(K, E)[1];
+    K := BaseRing(t);
+    if hack then
+      //begin hack
+      if K eq E then
+        EK := K;
+      else
+        EK := ext<E| DefiningPolynomial(K)>;
+      end if;
+      // end hack
+    else
+       EK := CompositeFields(K, E)[1];
      end if;
 
      tEK := ChangeRing(t, EK);
