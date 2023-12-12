@@ -9,6 +9,7 @@ intrinsic EisensteinSeries(
   {Return the Eisenstein series E_k(eta,psi)(dd*z) in M_k(N, eta*psi), where aa*bb*dd | N and aa, bb is the modulus of eta, psi, respectively.
   One may pass the coefficients matchng the output of EisensteinCoefficients, to skip calling it.
   }
+  require &and[Conductor(c) eq Modulus(c) : c in [* eta, psi *]]: "characters need to be primitive";
   M := Parent(Mk);
   k := Weight(Mk);
   N := Level(Mk);
@@ -68,7 +69,6 @@ intrinsic EisensteinConstantCoefficient(
     psi::GrpHeckeElt
     ) -> Tup
   {return an associative array with constant coefficients indexed by bb}
-    
   // We are following the notation in Section 2.2 of Dasgupta, Darmon, Pollack - Hilbert Modular Forms and the Gross-Stark Conjecture
   aa := Modulus(eta); // aa := Conductor(eta);
   bb := Modulus(psi); // bb := Conductor(psi);
@@ -99,7 +99,7 @@ intrinsic EisensteinConstantCoefficient(
   else
     c0bb := 0;
   end if;
-
+  
   constant_term := AssociativeArray();
   n := Degree(BaseField(M));
   bbs := NarrowClassGroupReps(M);
@@ -226,6 +226,10 @@ intrinsic EisensteinAdmissibleCharacterPairs(Mk::ModFrmHilD : IdentifyConjugates
   F := BaseField(Parent(Mk));
   H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
 
+  if (not IsGamma1EisensteinWeight(chi,k)) then
+      return [* *];
+  end if;
+  
   check_chi := func<eta, psi | (eta * psi eq chi)>;
   
   // By default we only produce pairs of characters corresponding to newforms,

@@ -15,7 +15,7 @@ intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
     MF := HilbertCuspForms(Mk);
     vprintf HilbertModularForms: "new ";
     New := NewSubspace(MF);
-    SetRationalBasis(New);
+    // SetRationalBasis(New);
     vprintf HilbertModularForms: "hecke character subspace ";
     S := HeckeCharacterSubspace(New, Character(Mk));
     vprintf HilbertModularForms: "decomposition...";
