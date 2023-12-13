@@ -634,3 +634,8 @@ intrinsic IncreasePrecisionWithBasis(g::ModFrmHilDElt, basis::SeqEnum[ModFrmHilD
   end if;
   return g;
 end intrinsic;
+
+intrinsic IncreasePrecisionWithBasis(subspace::SeqEnum[ModFrmHilDElt], basis::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
+  {}
+  return [IncreasePrecisionWithBasis(g, basis) : g in subspace];
+end intrinsic;
