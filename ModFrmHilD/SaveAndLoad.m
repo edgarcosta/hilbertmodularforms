@@ -190,7 +190,12 @@ intrinsic LoadOrBuildAndSave(
   is_saved, loadfile := OpenTest(loadfile_name, "r");
   loaded := false;
   if is_saved then
-    loaded, basis := LoadBasis(loadfile_name, Mk);
+    try
+      loaded, basis := LoadBasis(loadfile_name, Mk);
+    catch e
+      Write("/dev/stderr", Sprintf("Failed to load %o:\n%o", loadfile_name, e));
+      loaded := false;
+    end try;
   end if;
   // loaded is false if the file was not saved or if
   // the precision of the stored basis wasn't high enough
