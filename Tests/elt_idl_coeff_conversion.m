@@ -43,7 +43,7 @@ function assert_eq(x, y)
   return "";
 end function;
 
-function test(F, K, k, bbps, idl_to_elt, elt_to_idl : bound := BOUND)
+procedure test(F, K, k, bbps, idl_to_elt, elt_to_idl : bound := BOUND)
   // F: FldNum - number field
   // k: SeqEnum[RngIntElt] - weight (sequence of nonnegative integers)
   // idl_to_elt: UserProgram - a function taking a_nn and nu and computing a_nu
@@ -65,9 +65,9 @@ function test(F, K, k, bbps, idl_to_elt, elt_to_idl : bound := BOUND)
       assert_eq(IdlCoeffToEltCoeff(y, nu, k, K), a);
     end if;
   end for;
-  print "Passed test!";
-  return "";
-end function;
+//  print "Passed test!";
+//  return "";
+end procedure;
 
 /////// NARROW CLASS NUMBER 1
 

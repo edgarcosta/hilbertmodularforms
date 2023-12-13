@@ -18,7 +18,7 @@ function find_level_and_chi(F, k)
   end for;
 end function;
 
-function test(F, k)
+procedure test(F, k)
   // F: A number field
   // k: A weight
   
@@ -37,8 +37,7 @@ function test(F, k)
     // test that the ith automorphism aut_i in auts satisfies v_1(aut_i(a)) = v_i(a)
     assert Abs(Evaluate(auts[i](a), v_0) - Evaluate(a, places[i])) lt THRESHOLD;
   end for;
-  return "";
-end function;
+end procedure;
 
 R<x> := PolynomialRing(Rationals());
 
