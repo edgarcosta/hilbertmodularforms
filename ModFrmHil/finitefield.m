@@ -296,7 +296,7 @@ and dim ne 1 // beware recursion
     vprintf ModFrmHil: "Characteristic polynomial of Hecke algebra generator: ";
     vtime ModFrmHil:
     if hack then
-	// hack starts
+	// hack starts, by adding "or IsFinite(K)"
 	if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K) then
 	    // hack ends
 	    chi := CharacteristicPolynomial(t);
@@ -579,12 +579,12 @@ if METHOD lt 3 then
     K := BaseRing(t);
     hack and:= IsFinite(K); // the goal of the hack is to enable computations over finite fields
     if (not hack) then
-      // working around a bug arising from
-      //chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
-      chi := ChangeRing(chi, hecke_matrix_field(M));
+      // FIXME, this descent cant lead to wrong results
+      chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
     end if;
     require IsIrreducible(chi) :
-           "The space M is not an irreducible module under the Hecke action";
+         "The space M is not an irreducible module under the Hecke action";
+
 
     if Degree(chi) eq 1 then
       E := BaseRing(chi);
