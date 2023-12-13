@@ -1,6 +1,7 @@
 {
   Basis.m
   Components.m
+  NewComponents.m
   CongruenceSubgroup.m
   CuspResolution.m
   Cusps.m
@@ -19,6 +20,7 @@
   Labels.m
   LinearAlgebra.m
   PositiveUnitReps.m
+  NewPositiveUnitReps.m
   RationalFunctionsTools.m
   Restriction.m
   SaveAndLoad.m

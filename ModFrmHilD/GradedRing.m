@@ -19,7 +19,9 @@ declare attributes ModFrmHilDGRng:
   UnitGroupMap, // Map : GrpAb -> Units of ZF
   DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
   Places, // SeqEnum : Real places for the field F
-  Precision, // RngIntElt : trace bound for all expansions with this parent
+  InverseLogMinkowski, // Mtrx: inverse of eps_i -> LogMinkowski(eps_i) where eps_i is the totally positive unit basis of F
+  InverseLogMinkowskiPrec, // RngIntElt: real precision at which InverseMinkowski is computed
+  Precision, // RngIntElt : norm bound for all expansions with this parent
   // RepToIdeal and IdealToRep cache the conversion nn <-> nu
   RepToIdeal, // RepToIdeal[bb][nu] := nn
   IdealToRep, // IdealToRep[bb][nn] := nu
@@ -38,7 +40,10 @@ declare attributes ModFrmHilDGRng:
            // needs to be included when performing multiplication.
            // Such nu*eps are totally positive elements which are dominated (<= in every real embedding)
            // by some fundamental domain representative.
+  NewShadows, // NewShadows[bb][nu] is a SeqEnum of units eps such that nu*eps is a shadow
   PuiseuxSeriesRings, // PuiseuxSeriesRings[K] stores the HMFSerPuis associated to M with coeff ring K
+  NuToExpMatrices, // Assoc: NuToExpMatrices[bb] stores a matrix M such that M*Eltseq(nu) always consists of nonnegative integers
+  ExpToNuMatrices, // Assoc: ExpToNuMatrices[bb] is inverse to NuToExpMatrices[bb]
   PrecomputationforTrace, // Precomputed orders for the Trace formula
   ClassNumbersPrecomputation, // Precomputed class numbers for Trace formula
   // HMFPrecomputation, // Precomputed quantities for the Trace formula (Old)
@@ -400,6 +405,69 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   end for;
 end intrinsic;
 
+intrinsic NewShadows(M :: ModFrmHilDGRng) -> Assoc
+
+{Returns NewShadows of M as an associative array indexed by component ideals: for
+each reduced nu such that Norm(nu*bbpinv) <= Precision(M), NewShadows(M)[bb][nu]
+contains the list of totally positive units eps such that eps*nu is a shadow.}
+
+    if not assigned M`NewShadows then
+        M`NewShadows := AssociativeArray();
+        for bb in NarrowClassGroupReps(M) do
+            M`NewShadows[bb] := AssociativeArray();
+        end for;
+        HMFPopulateShadowArrays(M);
+    end if;
+
+    return M`NewShadows;
+end intrinsic;
+
+intrinsic ExpToNuMatrices(M :: ModFrmHilDGRng) -> Assoc
+
+{Returns an associative array indexed by component ideals: for each bb,
+ExpToNuMatrices(M)[bb] is the inverse of NuToExpMatrices(M)[bb]}
+
+    if not assigned M`NuToExpMatrices then
+        M`ExpToNuMatrices := AssociativeArray();
+        for bb in NarrowClassGroupReps(M) do
+            a := TotallyPositiveBasis(bb^(-1));
+            e := DualBasis(a);
+            M`ExpToNuMatrices[bb] := Matrix(Rationals(), [Eltseq(x): x in e]);
+        end for;
+    end if;
+
+    return M`ExpToNuMatrices;
+end intrinsic;
+
+intrinsic NuToExpMatrices(M :: ModFrmHilDGRng) -> Assoc
+
+{Returns an associative array indexed by component ideals: for each bb,
+NuToExpMatrices(M)[bb] contains a matrix m such that for each totally positive
+nu in bbpinv, m*Eltseq(nu) has integral, nonnegative entries.}
+
+    if not assigned M`NuToExpMatrices then
+        invs := ExpToNuMatrices(M);
+        M`NuToExpMatrices := AssociativeArray();
+        for bb in NarrowClassGroupReps(M) do
+            M`NuToExpMatrices[bb] := invs[bb]^(-1);
+        end for;
+    end if;
+
+    return M`NuToExpMatrices;
+end intrinsic;
+
+intrinsic TotallyPositiveBasis(bb :: RngOrdIdl) -> SeqEnum[FldNumElt]
+
+{Returns a QQ-basis of elements of F that belong to bb and are totally
+positive.}
+
+end intrinsic;
+
+intrinsic DualBasis(a :: SeqEnum[FldNumElt]) -> SeqEnum[FldNumElt]
+
+{Given a QQ-basis a of F, returns its dual basis for the trace pairing}
+
+end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
