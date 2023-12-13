@@ -33,15 +33,14 @@ end function;
 // The usual Magma assert statement doesn't tell you
 // what the two values were when an assertion fails. 
 // This is an attempt to remedy that.
-function assert_eq(x, y)
+procedure assert_eq(x, y)
   // x: Any
   // y: Any
   if x cmpne y then
     print "Failure! %o is not equal to %o \n", x, y;
     assert x eq y;
   end if;
-  return "";
-end function;
+end procedure;
 
 procedure test(F, K, k, bbps, idl_to_elt, elt_to_idl : bound := BOUND)
   // F: FldNum - number field
