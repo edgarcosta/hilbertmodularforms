@@ -578,7 +578,11 @@ if METHOD lt 3 then
      chi := CharacteristicPolynomial(t);
      K := BaseRing(t);
      if (not hack) or not IsFinite(K) then
-	 chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
+	 Kmin := minimal_hecke_matrix_field(M);
+	 assert IsSubfield(Kmin, K);
+	 t := ChangeRing(t, Kmin);
+	 chi := CharacteristicPolynomial(t);
+	 // chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
      end if;
      require IsIrreducible(chi) :
             "The space M is not an irreducible module under the Hecke action";
