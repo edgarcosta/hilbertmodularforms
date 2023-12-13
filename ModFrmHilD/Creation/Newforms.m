@@ -15,7 +15,8 @@ intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
     MF := HilbertCuspForms(Mk);
     vprintf HilbertModularForms: "new ";
     New := NewSubspace(MF);
-    // SetRationalBasis(New);
+    // FIXME: this prevents a downstream bug in Magma related to descending to the minimal_hecke_matrix_field
+    SetRationalBasis(New);
     vprintf HilbertModularForms: "hecke character subspace ";
     S := HeckeCharacterSubspace(New, Character(Mk));
     vprintf HilbertModularForms: "decomposition...";

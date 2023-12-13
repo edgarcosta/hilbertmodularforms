@@ -60,15 +60,14 @@ g_true_coeffs := Coefficients(g_cmp);
 f := cModFrmHilDEltComp(M22, bb, f_true_coeffs);
 g := cModFrmHilDEltComp(M22, bb, g_true_coeffs);
 
-function test(f, reps, true_coeffs)
+procedure test(f, reps, true_coeffs)
   // f::ModFrmHilDEltComp
   // reps::SeqEnum[FldElt]
   // true_coeffs::SeqEnum[FldElt] 
   for i in [1 .. #reps] do
     assert Coefficient(f, reps[i]) eq true_coeffs[i];
   end for;
-  return "";
-end function;
+end procedure;
 
 // test arithmetic operations
 
