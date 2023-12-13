@@ -7,6 +7,8 @@
 
   Then run the following command in the directory hilbertmodularforms
 
+  parallel -j 16 --joblog joblog --eta --colsep ' ' -a input.txt magma-2.28-3 -b F_lab:={1} NN_lab:={2} ModFrmHilD/CanonicalRing/CanonicalRingsScript.m
+
   parallel -j 16 --joblog joblog --eta --colsep ' ' -a input.txt magma -b F_lab:={1} NN_lab:={2} ModFrmHilD/CanonicalRing/CanonicalRingsScript.m
 */
 

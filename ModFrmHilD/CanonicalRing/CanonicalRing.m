@@ -658,7 +658,7 @@ intrinsic ComputePrecisionFromHilbertSeries(NN::RngOrdIdl, B::RngIntElt) -> RngI
   {Compute the number of q-expansion coefficients needed from the coefficients of the Hilbert series}
   F := NumberField(Order(NN));
   H := HilbertSeries(F,NN);
-  Pow<T> := PowerSeriesRing(Rationals());
+  Pow<T> := PowerSeriesRing(Rationals(), B+1);
   return 10*Integers()!Coefficient(Pow!H, B) + 10;
 end intrinsic;
 
