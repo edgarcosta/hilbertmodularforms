@@ -44,7 +44,7 @@ intrinsic CuspFormBasis(
   IdealClassesSupport:=false,
   Symmetric:=false,
   GaloisDescent:=true,
-  ViaTraceForm:=true,
+  ViaTraceForm:=false,
   SaveAndLoad:=false
   ) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
@@ -318,7 +318,7 @@ intrinsic Basis(
   :
   IdealClassesSupport:=false,
   Symmetric:=false,
-  ViaTraceForm:=true
+  ViaTraceForm:=false
   ) -> SeqEnum[ModFrmHilDElt]
   { returns a Basis for the space }
   if not assigned Mk`Basis then
