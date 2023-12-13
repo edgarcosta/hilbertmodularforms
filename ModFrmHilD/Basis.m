@@ -71,8 +71,7 @@ intrinsic NewCuspFormBasis(
   IdealClassesSupport := false,
   Symmetric := false,
   GaloisDescent := true,
-  SaveAndLoad := false,
-  SaveDir := "./Precomputations/"
+  SaveAndLoad := false
   ) -> SeqEnum[ModFrmHilDElt]
   {
     input:
@@ -82,33 +81,15 @@ intrinsic NewCuspFormBasis(
       A list of forms spanning the space of new cusp forms
   }
   if not assigned Mk`NewCuspFormBasis then
-    // if SaveAndLoad is true, we try to load the new cusp basis from
-    // the Precomputations/ folder
-    if SaveAndLoad and GaloisDescent then
-      loadfile_name := SaveDir cat SaveFilePrefix(Mk) cat "_cusp_newspace";
-      is_saved, loadfile := OpenTest(loadfile_name, "r");
-      loaded := false;
-      if is_saved then
-        loaded, newform_basis := LoadBasis(loadfile_name, Mk);
-      end if;
-      // loaded is false if the file was not saved or if
-      // the precision of the stored basis wasn't high enough
-      if loaded then
-        Mk`NewCuspFormBasis := newform_basis;
-      else
-        Mk`NewCuspFormBasis := NewCuspForms(Mk);
-        SaveBasis(loadfile_name, Mk`NewCuspFormBasis);
-      end if;
+    if GaloisDescent then
+      Mk`NewCuspFormBasis := LoadOrBuildAndSave(Mk, NewCuspForms, "_cusp_newspace");
     else
-      Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := GaloisDescent);
+      Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := false);
     end if;
   end if;
 
   return SubBasis(Mk`NewCuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
-
-
-
 
 intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fail_counter := 10) -> SeqEnum[ModFrmHilDElt]
   {Returns a cuspform basis for the space Mk. Optional parameters: IdealClassesSupport - Compute a basis of forms on just a single component}
