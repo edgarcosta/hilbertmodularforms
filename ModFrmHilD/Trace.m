@@ -551,8 +551,10 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
   // M ModFrmHilDGRng (carries field F, ring of integers ZF, and unit group + unit group map UF, mUF)
   // aa ideal for the diamond operator
   //
-  // Notes: The key obtained from discriminant hash (key) represents either the square class of D or sigma(D) (here sigma : F -> F is the nontrivial field automorphism ) 
-  // based on whether c = 0 or 1. By setting d = key if c = 0 and d = Conjugate(key) if c = 1 and then running LocalSquare(M,d,pp[1]) instead of LocalSquare(M,D,pp[1]),
+  // Notes: The key obtained from discriminant hash (key) represents a square class that is conjugate to D. We recover the square class of d (and the discriminant DD)
+  // from the automorphism f = M`Aut[c] which satifies f(key) = d and f(DD) = disc(d). 
+  //
+  // Following is old and not in use. By setting d = key if c = 0 and d = Conjugate(key) if c = 1 and then running LocalSquare(M,d,pp[1]) instead of LocalSquare(M,D,pp[1]), 
   // we reduce the number of computations for LocalSquare() to 1/3 of its orginal size. However, this seems like an unnecessary and confusing simplification.
   //
   // d := (c eq 1) select Conjugate(key) else key; 
@@ -562,7 +564,8 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
   ZF := Integers(M);
   t, n, key, c := Explode(data);
   h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]); // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*]
-  DD := (c eq 1) select Conjugate(DD) else DD; // DD = discriminant of maximal order
+  f := M`Automorphisms[ Integers()!c ]; // automorphism for converting discriminant
+  DD := ZF !! f(DD); // DD = discriminant of maximal order
   D := t^2 - 4*n; // Discriminant of order
   hw := h / w; // Computes h/w where h = class number of K and w = unit index of 2 * [ZK^* : ZF^*]
   ff := Sqrt((D*ZF)/DD); // Conductor
@@ -765,7 +768,7 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, ZF::RngQuad, hplus::RngIntElt) -> Any
+intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngOrdElt, ZF::RngOrd, hplus::RngIntElt) -> Any
   {Returns the class number and the unit index 2[Z_K^* : Z_F^*] = #mu_K [Z_K^* : mu_K Z_F^*]}
   /* This takes as input
         - K/F = a number field defined as a degree 2 extension of a totally real field F
