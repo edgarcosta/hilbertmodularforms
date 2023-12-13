@@ -571,6 +571,7 @@ if METHOD lt 3 then
 
      // Old way: determine the Hecke algebra of this newform space
 
+     SetRationalBasis(M);
      T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
 
      vprintf ModFrmHil: "CharacteristicPolynomial: ";
@@ -579,7 +580,6 @@ if METHOD lt 3 then
      K := BaseRing(t);
      if (not hack) or not IsFinite(K) then
 	 Kmin := minimal_hecke_matrix_field(M);
-	 assert IsSubfield(Kmin, K);
 	 t := ChangeRing(t, Kmin);
 	 chi := CharacteristicPolynomial(t);
 	 // chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
