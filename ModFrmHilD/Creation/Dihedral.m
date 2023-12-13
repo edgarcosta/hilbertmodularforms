@@ -112,37 +112,44 @@ intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
     return true;
 end intrinsic;
 
-intrinsic PossibleHeckeCharacters(F::FldNum, N::RngOrdIdl, K::FldNum) -> SeqEnum[GrpHeckeElt]
+//intrinsic PossibleHeckeCharacters(F::FldNum, N::RngOrdIdl, K::FldNum) -> SeqEnum[GrpHeckeElt]
+//{
+//Given a totally real field F, an ideal N of F, and a quadratic extension K of discriminant dividing N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N/disc(K).
+//}
+//
+//    ZK := Integers(K);
+//    Disc := Discriminant(ZK);
+//
+//    M := N/Disc;
+//    M := Integers(AbsoluteField(K)) !! M;
+//    H := HeckeCharacterGroup(M); //Is this correct or do I allow ramification at infinite places?
+//    
+//
+//    ans := [];
+//
+//    for chi in Elements(H) do
+//        if Norm(ZK !! Conductor(chi))*Disc eq N and not IsSelfConjugate(K, chi) then
+//            Append(~ans, chi);
+//        end if;
+//    end for;
+//
+//    return ans;
+//    
+//end intrinsic;
+
+
+intrinsic PossibleHeckeCharacters(
+    F::FldNum, 
+    N::RngOrdIdl, 
+    K::FldNum, 
+    chi::GrpHeckeElt
+    : 
+    prune := true
+    ) -> SeqEnum[GrpHeckeElt]
 {
-Given a totally real field F, an ideal N of F, and a quadratic extension K of discriminant dividing N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N/disc(K).
+Given a totally real field F, an ideal N of F, a character chi of modulus N, and a quadratic extension K of discriminant dividing N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N/disc(K) whose restriction is chi.
+If the optional parameter prune is true, we only keep on copy of chi and  the conjugate of chi, since both of these lift to the same Hilbert modular form.
 }
-
-    ZK := Integers(K);
-    Disc := Discriminant(ZK);
-
-    M := N/Disc;
-    M := Integers(AbsoluteField(K)) !! M;
-    H := HeckeCharacterGroup(M); //Is this correct or do I allow ramification at infinite places?
-    
-
-    ans := [];
-
-    for chi in Elements(H) do
-        if Norm(ZK !! Conductor(chi))*Disc eq N and not IsSelfConjugate(K, chi) then
-            Append(~ans, chi);
-        end if;
-    end for;
-
-    return ans;
-    
-end intrinsic;
-
-
-intrinsic PossibleHeckeCharactersNew(F::FldNum, N::RngOrdIdl, K::FldNum) -> SeqEnum[GrpHeckeElt]
-{
-Given a totally real field F, an ideal N of F, and a quadratic extension K of discriminant dividing N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N/disc(K).
-}
-
     ZK := Integers(K);
     Disc := Discriminant(ZK);
 
@@ -152,19 +159,69 @@ Given a totally real field F, an ideal N of F, and a quadratic extension K of di
     H := HeckeCharacterGroup(M); //Is this correct or do I allow ramification at infinite places?
     G, m := RayClassGroup(M);
 
+    GF, mF := RayClassGroup(N);
+
     ans := [];
 
-    for chi in Elements(H) do
-        if Norm(ZK !! Conductor(chi))*Disc eq N then
+    for psi in Elements(H) do
+        if Norm(ZK !! Conductor(psi))*Disc eq N then
+            ok := false;
             for g in Generators(G) do
-                if not chi( Integers(AbsoluteField(K)) !! ConjugateIdeal(K, m(g))  ) eq chi(m(g)) then
-                    Append(~ans, chi);
+                if not psi( Integers(AbsoluteField(K)) !! ConjugateIdeal(K, m(g))  ) eq psi(m(g)) then
+                    ok := true;
                     break g;
                 end if;
             end for;
+            
+            okk := true;
+            if ok then
+                for g in Generators(GF) do
+                    if not chi(mF(g)) eq psi(Integers(AbsoluteField(K)) !! mF(g)) then
+                        ok := false;
+                    end if;
+                end for;
+                if okk then
+                    Append(~ans, psi);
+                end if;
+            end if;
         end if;
     end for;
-
+    
+    if prune then
+        newlist := []; //New list of characters
+        pairlist := []; //List of paired characters, to be thrown away
+        
+        for i in [1 .. #ans] do //Loop over possible characters
+            psi := ans[i];
+            if i in pairlist then //This character was already paired
+                continue;
+            else 
+                Append(~newlist, i); //It wasn't in the list of paired characters, so add it to the new lsit of characters.
+            end if;
+            
+            for j in [1 .. #ans] do //Find the pair of psi
+                if j eq i then
+                    continue; //Skip i
+                end if;
+                
+                psiconj := true; 
+                for g in Generators(G) do
+                    if psi( Integers(AbsoluteField(K)) !! ConjugateIdeal(K, m(g)) ) eq ans[j](m(g)) then
+                        continue;
+                    else 
+                        psiconj := false;
+                    end if;
+                end for;
+                if psiconj then
+                    Append(~pairlist, j);
+                    break j;
+                end if;
+            end for;
+        end for;
+        assert #newlist eq #pairlist;
+        ans := [newlist[i] : i in newlist];
+    end if;
+    
     return ans;
     
 end intrinsic;
