@@ -20,11 +20,16 @@ declare attributes NewModFrmHilDEltComp: Series, // RngMPolElt or RngUPolElt[...
 
 /* Access to attributes */
 
+intrinsic GradedRing(f :: NewModFrmHilDEltComp) -> ModFrmHilDGRng
+{}
+    return Parent(f`Space);
+end intrinsic;
+
 intrinsic Series(f :: NewModFrmHilDEltComp) -> RngElt
 {}
     if not assigned f`Series then
         if assigned f`ShadowSeries then
-            f`Series := HMFSeriesFromShadow(f`ShadowSeries);
+            HMFGetSeriesFromShadow(f);
         else
             error "HMF series not assigned";
         end if;
@@ -37,7 +42,7 @@ intrinsic ShadowSeries(f :: NewModFrmHilDEltComp) -> RngElt
 {}
     if not assigned f`ShadowSeries then
         if assigned f`Series then
-            f`ShadowSeries := HMFShadowFromSeries(f`Series);
+            HMFGetShadowFromSeries(f);
         else
             error "HMF series not assigned";
         end if;
@@ -69,6 +74,206 @@ end intrinsic;
 intrinsic BaseField(f :: NewModFrmHilDEltComp) -> FldNum
 {}
     return BaseField(Space(f));
+end intrinsic;
+
+/* Access to coefficients */
+
+intrinsic NuToExp(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> SeqEnum[RngIntElt]
+
+{Internal function: get exponent in Fourier expansion attached to nu}
+
+    exp := Eltseq(nu) * NuToExpMatrices(M)[bb];
+    return := [Integers() ! exp[i]: i in [1..n]];
+end intrinsic;
+
+intrinsic Coefficient(f :: NewModFrmHilDEltComp, nu :: FldNumElt
+                      : Checks =: true, InFunDomain := false) -> RngElt
+
+{Returns the coefficient of nu in the Fourier series}
+
+    M := GradedRing(f);
+    bb := ComponentIdeal(f);
+    n := Degree(BaseField(M));
+
+    if Checks then // check if nu is in fundamental domain, has small norm
+        if InFunDomain and not nu in FunDomainReps(M)[bb] then
+            error "Not in fundamental domain";
+        end if;
+        bbp := M`NarrowClassGroupRepsToIdealDual[bb];
+        if Norm(nu) gt Precision(f) * Norm(bbp) then
+            error "Not enough precision, sorry!";
+        end if;
+    end if;
+
+    if not InFunDomain then
+        nu, eps := FunDomainRep(M, bb, nu);
+    end if;
+    a :=  HMFSeriesCoefficient(Series(f), NuToExp(M, bb, nu));
+    if not InFunDomain then
+        uc := UnitCharacters(Space(f))[bb];
+        a := a * Evaluate(uc, eps);
+    end if;
+
+    return a;
+end intrinsic;
+
+// specify two functions of HMFSeriesCoefficient for multivariate and univariate.
+// if we choose only one of these implementations, can remove duplicate
+intrinsic HMFSeriesCoefficient(f :: RngUPolElt, exp :: SeqEnum[RngIntElt]) -> RngElt
+
+{Internal function: get coefficient of f with the given exponent}
+
+    n := #exp;
+    g := f;
+    for i in [0..(n-1)] do
+        g := Coefficient(g, exp[n - i]);
+    end for;
+    return g;
+end intrinsic;
+
+intrinsic HMFSeriesCoefficient(f :: RngMPolElt, exp :: SeqEnum[RngIntElt]) -> RngElt
+
+{Internal function: get coefficient of f with the given exponent}
+
+    P := Parent(f);
+    mon := Monomial(P, exp);
+    return MonomialCoefficient(f, mon);
+end intrinsic;
+
+/* Converting between series and shadow series */
+
+intrinsic FunDomainRepsUpToPrec(M :: ModFrmHilDGRng, bb :: RngOrdIdl, prec :: RngIntElt
+    ) -> SeqEnum[FldNumElt]
+
+{Returns the list of fundamental domain representatives on the component
+indexed by bb at precision prec}
+
+    if prec gt Precision(M) then
+        error "Not enough precision, sorry!";
+    elif prec eq Precision(M) then
+        return FunDomainReps(M)[bb];
+    else
+        bbp := M`NarrowClassGroupRepsToIdealDual[bb];
+        bound := Precision(f) * Norm(bbp);
+        return [nu: nu in FunDomainReps(M)[bb] | Norm(nu) le bound];
+    end if;
+end intrinsic;
+
+intrinsic HMFGetSeriesFromShadow(f :: NewModFrmHilDEltComp)
+
+{Internal function: compute f`Series from f`ShadowSeries}
+
+    M := GradedRing(f);
+    bb := ComponentIdeal(f);
+    list := FunDomainRepsUpToPrec(M, bb, Precision(f));
+    exps := [NuToExp(M, bb, nu): nu in list];
+    f`Series := HMFSeriesSubset(f`ShadowSeries, exps);
+end intrinsic;
+
+intrinsic HMFSeriesSubset(f :: RngMPolElt, exps :: SeqEnum) -> RngMPolElt
+
+{Internal function: extract only the specified exponents from the series}
+
+    R := Parent(f);
+    mons := [Monomial(R, e): e in exps];
+    coeffs := [MonomialCoefficient(f, mon): mon in mons];
+    return Polynomial(coeffs, mons);
+end intrinsic;
+
+intrinsic HMFSeriesSubset(f :: RngUPolElt, exps :: SeqEnum) -> RngUPolElt
+
+{Internal function: extract only the specified exponents from the series}
+
+    if #exps eq 0 then
+        return Parent(f) ! 0;
+    end if;
+
+    n := #exps[1];
+    P := Parent(f);
+    last_entries := [e[n]: e in exps];
+    new_coefs := [0: i in [0..Max(last_entries)]];
+
+    if n eq 1 then
+        for e in exps do
+            new_coefs[e[1]] := Coefficient(f, e[1]);
+        end for;
+    else
+        last_entries := SetToSequence(SequenceToSet(last_entries));
+        for d in last_entries do
+            rec_exps := [e[1..(n-1)]: e in exps | e[n] eq d];
+            new_coefs[d] := HMFSeriesSubset(Coefficient(f, d), rec_exps);
+        end for;
+    end if;
+
+    return P ! new_coefs;
+end intrinsic;
+
+intrinsic HMFGetShadowFromSeries(f :: NewModFrmHilDEltComp)
+
+{Internal function: compute f`ShadowSeries from f`Series}
+
+    M := GradedRing(f);
+    bb := ComponentIdeal(f);
+
+    nus := [];
+    coefs := [];
+    nuprimes := FunDomainRepsUpToPrec(M, bb, Precision(f));
+    uc := UnitCharacters(Space(f))[bb];
+    for nuprime in nuprimes do
+        a := Coefficient(f, nuprime: Checks := false, InFunDomain := true);
+        for eps in NewShadows(M)[bb][nuprime] do
+            Append(~nus, nuprime * eps);
+            Append(~coefs, a * Evaluate(uc, eps));
+        end for;
+    end for;
+    exps := [NuToExp(M, bb, nu): nu in nus];
+    f`ShadowSeries := HMFConstructSeries(Parent(f`Series), exps, coefs);
+end intrinsic;
+
+intrinsic HMFConstructSeries(R :: RngMPol, exps :: SeqEnum, coefs :: SeqEnum[RngElt]
+    ) -> RngMPolElt
+
+{Internal function: construct the Fourier expansion with the specified
+coefficients as an element of R}
+
+    mons := [Monomial(R, e): e in exps];
+    return Polynomial(coefs, mons);
+end intrinsic;
+
+intrinsic HMFConstructSeries(R :: RngUPol, exps :: SeqEnum, coefs :: SeqEnum[RngElt]
+    ) -> RngUPolElt
+
+{Internal function: construct the Fourier expansion with the specified
+coefficients as an element of R}
+
+    if #exps eq 0 then
+        return R!0;
+    end if;
+
+    n := #exps[1];
+    last_entries := [e[n]: e in exps];
+    pol_coefs := [0: i in [0..Max(last_entries)]];
+    if n eq 1 then
+        for i in [1..#exps] do
+            pol_coefs[exps[i][1]] := coefs[i];
+        end for;
+    else
+        last_entries := SetToSequence(SequenceToSet(last_entries));
+        for d in last_entries do
+            rec_exps := [];
+            rec_coefs := [];
+            for i in [1..#exps] do
+                e := exps[i];
+                if e[n] eq d then
+                    Append(~rec_exps, e[1..(n-1)]);
+                    Append(~rec_coefs, coefs[i]);
+                end if;
+            end for;
+            pol_coefs[d] := HMFConstructSeries(BaseRing(R), rec_exps, rec_coefs);
+        end for;
+    end if;
+
+    return R ! pol_coefs;
 end intrinsic;
 
 /* Constructors */
