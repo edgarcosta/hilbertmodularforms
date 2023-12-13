@@ -56,7 +56,7 @@ intrinsic CuspFormBasis(
   // The Magma functionality doesn't currently support nebentypus characters with nontrivial
   // Dirichlet restrictions, so that is also handled here. 
   if not &and[x ge 2 : x in k] or not IsTrivial(DirichletRestriction(Character(Mk))) then
-    Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
+    Mk`CuspFormBasis := LoadOrBuildAndSave(Mk, HeckeStabilityCuspBasis, "_cusp");
   end if;
 
   Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent := GaloisDescent) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
