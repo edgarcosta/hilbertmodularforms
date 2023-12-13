@@ -768,7 +768,7 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic ClassNumberandUnitIndex(K::FldNum, D::RngOrdElt, ZF::RngOrd, hplus::RngIntElt) -> Any
+intrinsic ClassNumberandUnitIndex(ZF::RngOrd, D::RngOrdElt, hplus::RngIntElt) -> Any
   {Returns the class number and the unit index 2[Z_K^* : Z_F^*] = #mu_K [Z_K^* : mu_K Z_F^*]}
   /* This takes as input
         - K/F = a number field defined as a degree 2 extension of a totally real field F
@@ -777,7 +777,10 @@ intrinsic ClassNumberandUnitIndex(K::FldNum, D::RngOrdElt, ZF::RngOrd, hplus::Rn
         - hplus = the narrow class number of F ** Note : that this is not critical for this function, can removed or or set to optional parameter **
   */
 
+
   // Preliminaries //
+  K := ext<NumberField(ZF) | Polynomial([-D,0,1]) >; // Field K/F x^2 - D
+  DD := Discriminant(Integers(K)); // Discriminant
   // Magma requires absolute extensions for class number and units
   Kabs := AbsoluteField(K);
 
@@ -822,7 +825,7 @@ intrinsic ClassNumberandUnitIndex(K::FldNum, D::RngOrdElt, ZF::RngOrd, hplus::Rn
   end if; //////////
 
   // return
-  return h, unitindex;
+  return h, unitindex, DD;
 end intrinsic;
 
 

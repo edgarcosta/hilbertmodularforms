@@ -519,11 +519,8 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   vprintf HilbertModularForms, 1 : "Pass 2 finished at %o. Now computing class numbers and unit indices for %o fields. \n", Cputime(), #NK;
 
   for D in NK do
-    K := ext<F | x^2 - D >; // Field K/F
-    ZK := Integers(K); // Ring of Integers
-    DD := Discriminant(ZK); // Discriminant
     hplus := NarrowClassNumber(M); // Narrow class number
-    h,w := ClassNumberandUnitIndex(K, D, ZF, hplus); // Class group of K and Hasse Unit index
+    h,w,DD := ClassNumberandUnitIndex(ZF, D, hplus); // Class group of K and Hasse Unit index
     B[D] := [* h, w, DD *];
   end for;
 
