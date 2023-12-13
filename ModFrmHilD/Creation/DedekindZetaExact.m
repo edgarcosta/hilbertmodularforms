@@ -167,13 +167,13 @@ intrinsic ExtensionToHeckeCharacter(E)-> Any
   return h;
 end intrinsic;
 
-intrinsic myEval(K, z, Relative)-> Any
-{}
+
+function myEval(K, z, Relative)
   if IsOdd(z) then
     k:= 1-z;
     if Type(K) eq FldRat then
       return BernoulliNumber(k)/-k;
-    elif Type(K) eq FldQuad then
+    elif Degree(K) eq 2 then
       d:= Discriminant(Integers(K));
       if d gt 1 then
         return BernoulliNumber(k) * BernoulliNumber(k, KroneckerCharacter(d, Rationals())) / k^2;
@@ -188,6 +188,7 @@ intrinsic myEval(K, z, Relative)-> Any
     //    K:= OptimizedRepresentation(AbsoluteField(K));
     //    L:= LSeries(K : Method:= Degree(F) ge 5 select "Direct" else "Default") / LSeries(F);
   else
+    print "ben";
     L:= LSeries(K);
   end if;
 
@@ -208,7 +209,7 @@ intrinsic myEval(K, z, Relative)-> Any
   //    assert Abs(Real(Evaluate(LSeries(H), z)) - X) le 10^-10;
   //  end if;
   return X;
-end intrinsic;
+end function;
 
 
 intrinsic DedekindZetaExact(K::FldNum, z::RngIntElt : Relative := false) -> Any
