@@ -1,9 +1,8 @@
-import "copypaste/definite.m" : HilbertModularSpaceDirectFactors,
-                                WeightRepresentation;
+import "copypaste/definite.m" : HilbertModularSpaceDirectFactors;
 
 import "copypaste/hackobj.m" : HMF0, IsBianchi, TopAmbient;
 
-import "hecke_field.m" : hecke_matrix_field;
+import "hecke_field.m" : hecke_matrix_field, WeightRepresentation;
 
 /**************** New Attributes **********************/
 

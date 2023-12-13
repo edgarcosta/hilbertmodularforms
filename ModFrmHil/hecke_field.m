@@ -1,3 +1,21 @@
+import "copypaste/hackobj.m" : HMF0, IsBianchi, TopAmbient;
+
+import "copypastefunctions.m" : random_large_split_prime_using_max_order,
+                                random_large_split_prime,
+                                reduction,
+                                dimension_lower_bound,
+                                hecke_algebra_dimension,
+                                hecke_algebra,
+                                CharacteristicPolynomialViaCRT,
+                                NewformsOfDegree1Implemented,
+                                basis_is_honest,
+                                pseudo_inverse,
+                                red_eigenvector,
+                                get_red_vector,
+                                Ambient,
+                                BMF_with_ambient,
+                                weight_map_arch;
+
 /**************** New Attributes **********************/
 
 declare attributes ModFrmHil : minimal_hecke_field_emb,
@@ -42,7 +60,8 @@ function minimal_hecke_matrix_field(M : hack := true)
   elif IsParallelWeight(M) then
      H := Rationals();
      if hack then
-	 M`minimal_hecke_field_emb := hom<H->M`hecke_matrix_field|>;
+	 K := hecke_matrix_field(M);
+	 M`minimal_hecke_field_emb := hom<H->K|>;
      end if;
   else
     vprintf ModFrmHil: "Figuring out the \'Hecke matrix field\' ... "; 
