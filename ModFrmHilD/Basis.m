@@ -44,7 +44,9 @@ intrinsic CuspFormBasis(
   IdealClassesSupport:=false,
   Symmetric:=false,
   GaloisDescent:=true,
-  ViaTraceForm:=true) -> SeqEnum[ModFrmHilDElt]
+  ViaTraceForm:=true,
+  SaveAndLoad:=false
+  ) -> SeqEnum[ModFrmHilDElt]
   {returns a basis for cuspspace of M of weight k}
 
   if assigned Mk`CuspFormBasis then
@@ -57,13 +59,17 @@ intrinsic CuspFormBasis(
   // The Magma functionality doesn't currently support nebentypus characters with nontrivial
   // Dirichlet restrictions, so that is also handled here.
   if not &and[x ge 2 : x in k] or not IsTrivial(DirichletRestriction(Character(Mk))) then
-    Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
+    if SaveAndLoad then
+      Mk`CuspFormBasis := LoadOrBuildAndSave(Mk, HeckeStabilityCuspBasis, "_cusp");
+    else
+      Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
+    end if;
   end if;
   ViaTraceForm and:= IsParallel(Weight(Mk)) and GaloisDescent and (k mod 2) eq 0 and k gt 2 where k:=Weight(Mk)[1];
   if ViaTraceForm then
     Mk`CuspFormBasis := CuspFormBasisViaTrace(Mk : IdealClassesSupport:=IdealClassesSupport);
   else
-    Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent := GaloisDescent) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
+    Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
   end if;
 
   // The contents of Mk`CuspFormBasis should be a basis for the space of cuspforms
@@ -77,8 +83,7 @@ intrinsic NewCuspFormBasis(
   IdealClassesSupport := false,
   Symmetric := false,
   GaloisDescent := true,
-  SaveAndLoad := false,
-  SaveDir := "./Precomputations/"
+  SaveAndLoad := false
   ) -> SeqEnum[ModFrmHilDElt]
   {
     input:
@@ -88,33 +93,15 @@ intrinsic NewCuspFormBasis(
       A list of forms spanning the space of new cusp forms
   }
   if not assigned Mk`NewCuspFormBasis then
-    // if SaveAndLoad is true, we try to load the new cusp basis from
-    // the Precomputations/ folder
-    if SaveAndLoad and GaloisDescent then
-      loadfile_name := SaveDir cat SaveFilePrefix(Mk) cat "_cusp_newspace";
-      is_saved, loadfile := OpenTest(loadfile_name, "r");
-      loaded := false;
-      if is_saved then
-        loaded, newform_basis := LoadBasis(loadfile_name, Mk);
-      end if;
-      // loaded is false if the file was not saved or if
-      // the precision of the stored basis wasn't high enough
-      if loaded then
-        Mk`NewCuspFormBasis := newform_basis;
-      else
-        Mk`NewCuspFormBasis := NewCuspForms(Mk);
-        SaveBasis(loadfile_name, Mk`NewCuspFormBasis);
-      end if;
+    if GaloisDescent then
+      Mk`NewCuspFormBasis := LoadOrBuildAndSave(Mk, NewCuspForms, "_cusp_newspace");
     else
-      Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := GaloisDescent);
+      Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := false);
     end if;
   end if;
 
   return SubBasis(Mk`NewCuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
-
-
-
 
 intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fail_counter := 10) -> SeqEnum[ModFrmHilDElt]
   {Returns a cuspform basis for the space Mk. Optional parameters: IdealClassesSupport - Compute a basis of forms on just a single component}
@@ -165,8 +152,8 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
   for dd in Old do
     chidd := Restrict(chi, dd, ii);
     Mkdd  := HMFSpace(M, dd, k, chidd);
-    B cat:= &cat[ Inclusion(f,Mk) : f in $$(Mkdd : IdealClassesSupport:=IdealClassesSupport) ];
-    // Remove linear dependent forms
+    B cat:= &cat[ Inclusion(f,Mk) : f in CuspFormBasis(Mkdd) ];
+    // Remove linear dependent forms 
     B := (#B ne 0) select Basis(B) else B;
   end for;
 
