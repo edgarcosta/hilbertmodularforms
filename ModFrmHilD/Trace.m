@@ -768,7 +768,7 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngOrdElt, ZF::RngOrd, hplus::RngIntElt) -> Any
+intrinsic ClassNumberandUnitIndex(K::FldNum, D::RngOrdElt, ZF::RngOrd, hplus::RngIntElt) -> Any
   {Returns the class number and the unit index 2[Z_K^* : Z_F^*] = #mu_K [Z_K^* : mu_K Z_F^*]}
   /* This takes as input
         - K/F = a number field defined as a degree 2 extension of a totally real field F
