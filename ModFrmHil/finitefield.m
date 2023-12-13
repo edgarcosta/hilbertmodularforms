@@ -16,10 +16,10 @@ import "copypastefunctions.m" : random_large_split_prime_using_max_order,
                                 Ambient,
                                 BMF_with_ambient,
                                 HMF0,
-                                weight_map_arch,
-				minimal_hecke_matrix_field;
+                                weight_map_arch;
 
-import "diamond.m" : hecke_matrix_field;
+import "hecke_field.m" : hecke_matrix_field,
+                         minimal_hecke_matrix_field;
 
 
 forward WeightRepresentationFiniteField;
@@ -181,6 +181,10 @@ function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Ma
       K := AbsoluteField(K);
       K := OptimizedRepresentation(K);
       embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
+      	 if hack then
+	     Fspl := F`SplittingField[1];
+	     M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
+	 end if;
       M`weight_base_field:=K;
       vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
       vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
@@ -571,7 +575,9 @@ if METHOD lt 3 then
 
      // Old way: determine the Hecke algebra of this newform space
 
-     SetRationalBasis(M);
+    if hack then
+	SetRationalBasis(M);
+    end if;
      T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
 
      vprintf ModFrmHil: "CharacteristicPolynomial: ";
@@ -580,7 +586,8 @@ if METHOD lt 3 then
      K := BaseRing(t);
      if (not hack) or not IsFinite(K) then
 	 Kmin := minimal_hecke_matrix_field(M);
-	 t := ChangeRing(t, Kmin);
+	 t := ChangeRing(t, M`minimal_hecke_field_emb);
+	 // t := ChangeRing(t, Kmin);
 	 chi := CharacteristicPolynomial(t);
 	 // chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
      end if;

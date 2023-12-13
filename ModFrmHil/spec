@@ -2,4 +2,5 @@
   diamond.m
   finitefield.m
   hackobj.m
+  hecke_field.m
 }

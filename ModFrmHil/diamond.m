@@ -3,6 +3,8 @@ import "copypaste/definite.m" : HilbertModularSpaceDirectFactors,
 
 import "copypaste/hackobj.m" : HMF0, IsBianchi, TopAmbient;
 
+import "hecke_field.m" : hecke_matrix_field;
+
 /**************** New Attributes **********************/
 
 declare attributes ModFrmHil : Diamond;
@@ -15,24 +17,6 @@ intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
 end intrinsic;
 
 /********************************************************/
-
-// originally from hecke.m
-
-function hecke_matrix_field(M : hack := true)
-  if assigned M`hecke_matrix_field then
-    return M`hecke_matrix_field;
-  elif IsBianchi(M) or not IsDefinite(M) then
-    return Rationals();
-  else
-      if hack then
-	  // hack begins
-	  return TopAmbient(M)`weight_base_field;
-	  // hack ends
-      else
-	  return Ambient(M)`weight_base_field;
-      end if;
-  end if;
-end function;
 
 // we compute a Hecke operator to force magma to compute the space
 procedure forceSpaceComputation(M)
