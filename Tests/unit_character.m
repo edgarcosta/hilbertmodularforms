@@ -63,7 +63,7 @@ K := UnitCharField(F, k);
 // in parallel weight the unit character 
 // should be trivial
 correct[bb][eps] := K!1;
-test(M, k, correct);
+_ := test(M, k, correct);
 
 //////////////////////// k = [2,4] /////////////////////////
 // nonparallel weight
@@ -78,7 +78,7 @@ auts := AutsReppingEmbeddingsOfF(F, k);
 // v_1(sigma_2(eps)). The coefficient we store internally should be
 // sigma_2(eps). 
 correct[bb][eps] := auts[2](eps);
-test(M, k, correct);
+_ := test(M, k, correct);
 
 //////////////////////// k = [3,2] /////////////////////////
 // nonparitious weight
@@ -95,7 +95,7 @@ K := UnitCharField(F, k);
 // We want the one which is positive under v_1, so -(1-sqrt(5))/2.
 v_0 := DistinguishedPlace(K);
 correct[bb][eps] := K!(ZF.2-1);
-test(M, k, correct : level:=N, chi:=chi);
+_ := test(M, k, correct : level:=N, chi:=chi);
 
 ////********************** Q(sqrt(3) **********************////
 
@@ -116,7 +116,7 @@ K := UnitCharField(F, k);
 for bb in M`NarrowClassGroupReps do
   correct[bb][eps] := K!1;
 end for;
-test(M, k, correct);
+_ := test(M, k, correct);
 
 ////********************** Galois cubic with discriminant 49 **********************////
 
