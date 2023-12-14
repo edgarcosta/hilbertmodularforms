@@ -93,10 +93,10 @@ intrinsic NewCuspFormBasis(
       A list of forms spanning the space of new cusp forms
   }
   if not assigned Mk`NewCuspFormBasis then
-    if GaloisDescent then
+    if SaveAndLoad and GaloisDescent then
       Mk`NewCuspFormBasis := LoadOrBuildAndSave(Mk, NewCuspForms, "_cusp_newspace");
     else
-      Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := false);
+      Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := GaloisDescent);
     end if;
   end if;
 
