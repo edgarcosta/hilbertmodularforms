@@ -16,10 +16,10 @@ import "copypastefunctions.m" : random_large_split_prime_using_max_order,
                                 Ambient,
                                 BMF_with_ambient,
                                 HMF0,
-                                weight_map_arch,
-				minimal_hecke_matrix_field;
+                                weight_map_arch;
 
-import "diamond.m" : hecke_matrix_field;
+import "hecke_field.m" : hecke_matrix_field,
+                         minimal_hecke_matrix_field;
 
 
 forward WeightRepresentationFiniteField;
@@ -155,6 +155,10 @@ function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Ma
       M`weight_rep := map< H -> Mat1 | q :-> I >;
       M`weight_base_field := Rationals();
       M`weight_dimension := 1;
+      if hack then
+	  QQ := Rationals();
+	  M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
+      end if;
     else
       // define weight_base_field = extension K/F containing Galois closure of F and
       // containing a root of every conjugate of the minimal polynomial of H.1
@@ -181,6 +185,10 @@ function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Ma
       K := AbsoluteField(K);
       K := OptimizedRepresentation(K);
       embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
+      	 if hack then
+	     Fspl := F`SplittingField[1];
+	     M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
+	 end if;
       M`weight_base_field:=K;
       vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
       vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
@@ -571,7 +579,9 @@ if METHOD lt 3 then
 
     // Old way: determine the Hecke algebra of this newform space
 
-    SetRationalBasis(M);
+    if hack then
+      SetRationalBasis(M);
+    end if;
     T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
 
     vprintf ModFrmHil: "CharacteristicPolynomial: ";
@@ -580,15 +590,17 @@ if METHOD lt 3 then
     K := BaseRing(t);
     hack and:= IsFinite(K); // the goal of the hack is to enable computations over finite fields
     if (not hack) then
-	    Kmin := minimal_hecke_matrix_field(M);
-      t := ChangeRing(t, Kmin);
+      Kmin := minimal_hecke_matrix_field(M);
+      t_K := t;
+      t := ChangeRing(t_K, Kmin);
+      // Verifying that the coercion is compatible
+      assert t_K eq ChangeRing(t, M`minimal_hecke_field_emb);
       chi := CharacteristicPolynomial(t);
       // the descent below cant lead to wrong results
 	    // chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
     end if;
     require IsIrreducible(chi) :
          "The space M is not an irreducible module under the Hecke action";
-
 
     if Degree(chi) eq 1 then
       E := BaseRing(chi);

@@ -2,7 +2,7 @@
 freeze;
 
 import "copypaste/hackobj.m" : HMF;
-/*
+
 function HMF0(F, N, Nnew, Chi, k, C : hack := true)
   M := New(ModFrmHil);
   M`Field := F;
@@ -21,9 +21,9 @@ function HMF0(F, N, Nnew, Chi, k, C : hack := true)
   M`DegDown1 := AssociativeArray();
   M`DegDownp := AssociativeArray();
   // hack begins
-//  if hack then
-//      M`Diamond := AssociativeArray();
-//  end if;
+  if hack then
+      M`Diamond := AssociativeArray();
+  end if;
   // hack ends
   if forall{w : w in k | w eq 2} then
     M`hecke_matrix_field := Rationals();
@@ -33,7 +33,6 @@ function HMF0(F, N, Nnew, Chi, k, C : hack := true)
   end if;
   return M;
 end function;
-*/
 
 intrinsic HilbertCuspForms(F::FldNum, N::RngOrdIdl, chi::GrpHeckeElt,
 			   k::SeqEnum[RngIntElt] : 
