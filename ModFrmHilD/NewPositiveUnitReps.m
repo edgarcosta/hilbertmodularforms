@@ -1,5 +1,8 @@
-
-/* The log Minkowski embedding */
+///////////////////////////////////////////////////
+//                                               //
+//         The log Minkowski embedding           //
+//                                               //
+///////////////////////////////////////////////////
 
 intrinsic LogMinkowski(M :: ModFrmHilDGrng, nu :: FldNumElt, prec :: RngIntElt
     ) -> SeqEnum
@@ -28,11 +31,18 @@ log-Minkowski values of the totally positive unit basis of F, whose last line is
     return M`InverseLowMinkowskiPrec;
 end intrinsic;
 
-/* Fundamental domain representatives. In the future, we may want these
-   functions to take a subgroup of totally positive units as input. */
+///////////////////////////////////////////////////
+//                                               //
+//         The fundamental domain                //
+//                                               //
+///////////////////////////////////////////////////
+
+/* In the future, we may want these functions to take a subgroup of totally
+   positive units as input. */
 
 intrinsic FunDomainRep(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl, nu :: FldNumElt
-    : CheckIfPresent := true, Precision := 100) -> FldNumElt, FldNumElt
+                       : CheckIfPresent := true, Precision := 100
+    ) -> FldNumElt, FldNumElt
 
 {Returns an element nu' in the fundamental domain and a totally positive unit
 eps such that nu = eps * nu'. If CheckIfPresent is true (default), the function
@@ -50,7 +60,7 @@ will check whether nu is listed in FunDomainReps(M)[bb].}
     end if;
 
     /* Get nu' such that Log(nu') = x(1,..,1) + \sum \lambda_i Log(\eps_i) with
-    -1/2 <= \lambda_i <= 1/2. We use inexact arithmetic and pray for the best */
+       -1/2 <= \lambda_i <= 1/2. We use inexact arithmetic and pray for the best */
     epses := TotallyPositiveUnitsGenerators(F);
     prec := Precision;
     THRESHOLD := 10^-10;
@@ -74,7 +84,8 @@ will check whether nu is listed in FunDomainReps(M)[bb].}
 end intrinsic;
 
 intrinsic FunDomainRep(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl, nu :: FldOrdElt
-    : CheckIfPresent := true) -> FldNumElt, FldNumElt
+                       : CheckIfPresent := true
+    ) -> FldNumElt, FldNumElt
 
 {Returns an element nu' in the fundamental domain and a totally positive unit
 eps such that nu = eps * nu'. This version of FunDomainRep is a no-op if nu is
@@ -83,7 +94,86 @@ part of FunDomainReps(M)[bb].}
     return FunDomainRep(M, bb, BaseField(M)!nu : CheckIfPresent := CheckIfPresent);
 end intrinsic;
 
-/* Converting nus to exponents and precisions */
+///////////////////////////////////////////////////
+//                                               //
+//         Computing exponents                   //
+//                                               //
+///////////////////////////////////////////////////
+
+intrinsic ExpToNuMatrices(M :: ModFrmHilDGRng) -> Assoc
+
+{Returns an associative array indexed by component ideals: for each bb,
+ExpToNuMatrices(M)[bb] is the inverse of NuToExpMatrices(M)[bb]}
+
+    if not assigned M`NuToExpMatrices then
+        M`ExpToNuMatrices := AssociativeArray();
+        for bb in NarrowClassGroupReps(M) do
+            a := TotallyPositiveBasis(bb^(-1));
+            e := DualBasis(a);
+            M`ExpToNuMatrices[bb] := Matrix(Rationals(), [Eltseq(x): x in e]);
+        end for;
+    end if;
+
+    return M`ExpToNuMatrices;
+end intrinsic;
+
+intrinsic NuToExpMatrices(M :: ModFrmHilDGRng) -> Assoc
+
+{Returns an associative array indexed by component ideals: for each bb,
+NuToExpMatrices(M)[bb] contains a matrix m such that for each totally positive
+nu in bbpinv, m*Eltseq(nu) has integral, nonnegative entries.}
+
+    if not assigned M`NuToExpMatrices then
+        invs := ExpToNuMatrices(M);
+        M`NuToExpMatrices := AssociativeArray();
+        for bb in NarrowClassGroupReps(M) do
+            M`NuToExpMatrices[bb] := invs[bb]^(-1);
+        end for;
+    end if;
+
+    return M`NuToExpMatrices;
+end intrinsic;
+
+intrinsic TotallyPositiveBasis(M :: ModFrmHilDGRng, bb :: RngOrdIdl
+                               : bound := 20
+    ) -> SeqEnum[FldNumElt]
+
+{Returns a QQ-basis of elements of F that belong to bb and are totally
+positive.}
+
+    // Other idea: use reduced basis for trace form, then add multiples of 1?
+    F := BaseField(M);
+    map := (M`NarrowClassGroupMap)^(-1); //Ideals -> Narrow class group
+    target := map(bb)^(-1);
+    idls := IdealsUpTo(bound, F);
+    gens := [];
+    for nn in idls do
+        if map(nn) eq target then
+            nu := TotallyPositiveGenerator(nn * bb);
+            Append(~gens, nu);
+        end if;
+    end for;
+    mat := Matrix(Rationals(), [Eltseq(nu): nu in gen]);
+    if Rank(mat) lt n then
+        //try a higher bound
+        return TotallyPositiveBasis(M, bb : bound := 2 * bound);
+    end if;
+    return [gens[i]: i in PivotRows(mat)];
+
+end intrinsic;
+
+intrinsic DualBasis(a :: SeqEnum[FldNumElt]) -> SeqEnum[FldNumElt]
+
+{Given a QQ-basis a of F, returns its dual basis for the trace pairing.}
+
+    F := Parent(a[1]);
+    n := Degree(F);
+    qform := TraceMatrix(F);
+    lat := LatticeWithBasis(n, &cat[Eltseq(x): x in a], qform);
+    dual_basis := Basis(DualBasisLattice(lat));
+    return [F ! Eltseq(x): x in dual_basis];
+
+end intrinsic;
 
 intrinsic Exponent(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> SeqEnum[RngIntElt]
 
@@ -93,56 +183,92 @@ intrinsic Exponent(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> SeqE
     return [Integers() ! exp[i]: i in [1..n]];
 end intrinsic;
 
-intrinsic Precision(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> RngIntElt
-
-{Returns the precision attached to nu as an index of Fourier expansions on the
-component bb: this is the norm of the ideal nu * bbpinv}
-
-end intrinsic;
-
-/* Populating FunDomainRep arrays */
+///////////////////////////////////////////////////
+//                                               //
+//         Populate FunDomainReps array          //
+//                                               //
+///////////////////////////////////////////////////
 
 intrinsic NewPopulateFunDomainRepsArrays(M :: ModFrmHilDGRng)
 
 {Internal function: populate M`FunDomainReps}
 
-    prec := M`Precision;
+    // Get ideals
+    prec := Precision(M);
     F := BaseField(M);
+    n := Degree(F);
     ZF := Integers(F);
     dd := Different(ZF);
-    idls := IdealsUpTo(prec, ZF);
+    idls := IdealsUpTo(prec, ZF); //TODO: use M`Ideals (already computed?)
+    idl_info := AssociativeArray();
 
-    // The zero ideal lies in every component
-    for bb in NarrowClassGroupReps(M) do
-        M`FunDomainReps[bb] := [F!0];
+    // Initialize empty arrays
+    M`FunDomainReps := AssociativeArray();
+    M`FunDomainRepsPrecisions := AssociativeArray();
+    for bb in M`NarrowClassGroupReps do
+        M`FunDomainReps[bb] := AssociativeArray();
+        M`FunDomainRepsPrecisions[bb] := [0];
     end for;
 
+    // Collect precisions
     for nn in idls do
         bb := IdealToNarrowClassRep(M, nn);
-        bbp := bb * dd^-1;
+        p := Norm(nn);
+        idl_info[nn] := <bb, p>;
+        if not p in M`FunDomainRepsPrecisions[bb] then
+            Append(~(M`FunDomainRepsPrecisions[bb]), p);
+        end if;
+    end for;
+
+    // Initialize arrays in FunDomainReps with zero ideal
+    for bb in M`NarrowClassGroupReps do
+        for p in M`FunDomainRepsPrecisions[bb] do
+            M`FunDomainReps[bb][p] := AssociativeArray();
+        end for;
+        M`FunDomainReps[bb][0][F ! 0] := [0: i in [1..n]];
+    end for;
+
+    // Collect representatives and exponents
+    for nn in idls do
+        bb, p := idl_info[nn];
+        bbp := M`NarrowClassGroupRepsToIdealDual[bb];
         _, nu := IsNarrowlyPrincipal(nn * bbp);
         nu, _ := FunDomainRep(M, bb, nu : CheckIfPresent := false);
-        Append(M`FunDomainReps[bb], nu);
+        M`FunDomainReps[bb][p][nu] := Exponent(M, bb, nu);
     end for;
 
 end intrinsic;
 
-/* Populating shadow arrays */
+///////////////////////////////////////////////////
+//                                               //
+//         Populate Shadow array                 //
+//                                               //
+///////////////////////////////////////////////////
 
-intrinsic HMFPopulateShadowArrays(M :: ModFrmHilGRng : Precision := 100)
+intrinsic PopulateShadowArray(M :: ModFrmHilGRng : Precision := 100)
 
 {Internal function: populate M`Shadows}
 
+    M`NewShadows := AssociativeArray();
+    for bb in M`NarrowClassGroupReps do
+        M`NewShadows[bb] := AssociativeArray();
+        for p in M`PrecisionsByComponent[bb] do
+            for nu->exp in M`FunDomainReps[bb][p] do
+                M`NewShadows[bb][nu] := AssociativeArray();
+            end for;
+        end for;
+    end for;
+
     n := Degree(BaseField(F));
     if n eq 2 then
-        HMFPopulateShadowArrayQuadratic(M : Precision := Precision);
+        PopulateShadowArrayQuadratic(M : Precision := Precision);
     else
-        HMFPopulateShadowArrayGen(M : Precision := Precision);
+        PopulateShadowArrayGen(M : Precision := Precision);
     end if;
 
 end intrinsic;
 
-intrinsic HMFPopulateShadowArraysQuadratic(M :: ModFrmHilGRng : Precision := 100)
+intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilGRng : Precision := 100)
 {}
     prec := Precision;
     F := BaseField(M);
@@ -155,35 +281,36 @@ intrinsic HMFPopulateShadowArraysQuadratic(M :: ModFrmHilGRng : Precision := 100
     THRESHOLD = 10^(-10);
 
     for bb in NarrowClassGroupReps(M) do
-        // Compute real embeddings
-        values := AssociativeArray();
-        for nu in FunDomainReps(M)[bb] do
-            values[nu] := [Evaluate(nu, pl : Precision := Precision): pl in Places(M)];
-        end for;
         m1 := 0;
         m2 := 0;
-        // Compute log(M1), log(M2)
-        for nu in FunDomainReps(M)[bb] do
-            m1 := Max(m1, values[nu][1]);
-            m2 := Max(m2, values[nu][2]);
+        // Compute real embeddings, m1, m2
+        for p in M`PrecisionsByComponent[bb] do
+            values := AssociativeArray();
+            for nu in FunDomainReps(M)[bb][p] do
+                values[nu] := [Evaluate(nu, pl : Precision := Precision): pl in Places(M)];
+                m1 := Max(m1, values[nu][1]);
+                m2 := Max(m2, values[nu][2]);
+            end for;
         end for;
         logm1 := Log(m1);
         logm2 := Log(m2);
         // Enumerate units
-        for nu in FunDomainReps(M)[bb] do
-            lbound := (- logm2 + Log(values[nu][2])) / logv - THRESHOLD;
-            ubound := (logm1 - Log(values[nu][1])) / logv + THRESHOLD;
-            if Log(-lbound)/Log(10) gt prec / 2 or Log(ubound)/Log(10) gt prec / 2 then
-                error "Insufficient precision in HMFPopulateShadowArraysQuadratic";
-            end if;
-            jmax := Floor(ubound);
-            jmin := Ceil(lbound);
-            M`NewShadows[bb][nu] := [eps^j : j in [jmin..jmax]];
+        for p in M`PrecisionsByComponent[bb] do
+            for nu in FunDomainReps(M)[bb][p] do
+                lbound := (- logm2 + Log(values[nu][2])) / logv - THRESHOLD;
+                ubound := (logm1 - Log(values[nu][1])) / logv + THRESHOLD;
+                if Log(-lbound)/Log(10) gt prec / 2 or Log(ubound)/Log(10) gt prec / 2 then
+                    error "Insufficient precision";
+                end if;
+                for j in [Ceil(lbound)..Floor(ubound)] do
+                    M`NewShadows[bb][nu][eps^j] := Exponent(M, bb, nu * eps^j);
+                end for;
+            end for;
         end for;
     end for;
 end intrinsic;
 
-intrinsic HMFPopulateShadowArraysGen(M :: ModFrmHilGRng : Precision := 100)
+intrinsic PopulateShadowArrayGen(M :: ModFrmHilGRng : Precision := 100)
 {}
     prec := Precision;
     RR := RealField(prec);
@@ -210,38 +337,39 @@ intrinsic HMFPopulateShadowArraysGen(M :: ModFrmHilGRng : Precision := 100)
     logb := Log(RR ! B);
 
     for bb in NarrowClassGroupReps(M) do
-        for nu in FunDomainReps(M)[bb] do
-            M`NewShadows[bb][nu] := [];
-            // Construct points in polytope
-            points := [];
-            lognu := Log(RR ! Norm(nu));
-            pt0 := 1/n * V ! [logb : i in [1..n]];
-            pt0 := pt0 - V ! LogMinkowski(M, nu, prec);
-            for eta in etas do
-                pt1 := pt0 - (logb - lognu) * eta;
-                for lambda in lambdas do
-                    pt := pt0;
-                    for i in [1..(n-1)] do
-                        pt := pt + (1 + THRESHOLD) * lambda[i] * log_epses[i];
+        for p in M`PrecisionsByComponent[bb] do
+            for nu in FunDomainReps(M)[bb][p] do
+                // Construct points in polytope
+                points := [];
+                lognu := Log(RR ! Norm(nu));
+                pt0 := 1/n * V ! [logb : i in [1..n]];
+                pt0 := pt0 - V ! LogMinkowski(M, nu, prec);
+                for eta in etas do
+                    pt1 := pt0 - (logb - lognu) * eta;
+                    for lambda in lambdas do
+                        pt := pt1;
+                        for i in [1..(n-1)] do
+                            pt := pt + (1 + THRESHOLD) * lambda[i] * log_epses[i];
+                        end for;
+                        Append(~points, pt);
                     end for;
-                    Append(~points, pt);
                 end for;
-            end for;
-            // Construct polytope
-            vertices := [];
-            for pt in points do
-                vertex := pt * InverseLogMinkowski(M);
-                vertex := Eltseq(vertex)[1..(n-1)];
-                Append(~vertices, Rationalize(vertex));
-            end for;
-            P := Polytope(vertices);
-            // Get units
-            for pt in Points(P) do
-                unit := F!1;
-                for i in [1..(n-1)] do
-                    unit := unit * epses[i] ^ pt[i];
+                // Construct polytope
+                vertices := [];
+                for pt in points do
+                    vertex := pt * InverseLogMinkowski(M);
+                    vertex := Eltseq(vertex)[1..(n-1)];
+                    Append(~vertices, Rationalize(vertex));
                 end for;
-                Append(~M`NewShadows[bb][nu], unit);
+                P := Polytope(vertices);
+                // Get units
+                for pt in Points(P) do
+                    unit := F!1;
+                    for i in [1..(n-1)] do
+                        unit := unit * epses[i] ^ pt[i];
+                    end for;
+                    M`NewShadows[bb][nu][unit] := Exponent(M, bb, unit * nu);
+                end for;
             end for;
         end for;
     end for;

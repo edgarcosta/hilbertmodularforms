@@ -242,11 +242,6 @@ intrinsic PrimeIdeals(M::ModFrmHilDGRng) -> SeqEnum
   return M`PrimeIdeals;
 end intrinsic;
 
-intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
-  {}
-  return &+[#elt : bb->elt in FunDomainReps(M)];
-end intrinsic;
-
 intrinsic TracePrecomputation(M::ModFrmHilDGRng) -> Assoc
   {}
   return M`PrecomputationforTrace;
@@ -343,11 +338,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // of [bbp]^-1, i.e. such that nn * bbp = (nu) for some 
   // integral ideal nn of norm up to x.
   PopulateFunDomainRepsArrays(M);
-
-  M`FunDomainReps := AssociativeArray();
-  for bb in M`NarrowClassGroupReps do
-    M`FunDomainReps[bb] := M`FunDomainRepsUpToNorm[bb][M`Precision];
-  end for;
+  PopulateShadowArray(M);
 
   M`PuiseuxSeriesRings := AssociativeArray();
   M`PuiseuxSeriesRings[Coefficients(DefiningPolynomial(RationalsAsNumberField()))] := cHMFSerPuis(M, Rationals());
@@ -406,69 +397,6 @@ intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
   end for;
 end intrinsic;
 
-intrinsic NewShadows(M :: ModFrmHilDGRng) -> Assoc
-
-{Returns NewShadows of M as an associative array indexed by component ideals: for
-each reduced nu such that Norm(nu*bbpinv) <= Precision(M), NewShadows(M)[bb][nu]
-contains the list of totally positive units eps such that eps*nu is a shadow.}
-
-    if not assigned M`NewShadows then
-        M`NewShadows := AssociativeArray();
-        for bb in NarrowClassGroupReps(M) do
-            M`NewShadows[bb] := AssociativeArray();
-        end for;
-        HMFPopulateShadowArrays(M);
-    end if;
-
-    return M`NewShadows;
-end intrinsic;
-
-intrinsic ExpToNuMatrices(M :: ModFrmHilDGRng) -> Assoc
-
-{Returns an associative array indexed by component ideals: for each bb,
-ExpToNuMatrices(M)[bb] is the inverse of NuToExpMatrices(M)[bb]}
-
-    if not assigned M`NuToExpMatrices then
-        M`ExpToNuMatrices := AssociativeArray();
-        for bb in NarrowClassGroupReps(M) do
-            a := TotallyPositiveBasis(bb^(-1));
-            e := DualBasis(a);
-            M`ExpToNuMatrices[bb] := Matrix(Rationals(), [Eltseq(x): x in e]);
-        end for;
-    end if;
-
-    return M`ExpToNuMatrices;
-end intrinsic;
-
-intrinsic NuToExpMatrices(M :: ModFrmHilDGRng) -> Assoc
-
-{Returns an associative array indexed by component ideals: for each bb,
-NuToExpMatrices(M)[bb] contains a matrix m such that for each totally positive
-nu in bbpinv, m*Eltseq(nu) has integral, nonnegative entries.}
-
-    if not assigned M`NuToExpMatrices then
-        invs := ExpToNuMatrices(M);
-        M`NuToExpMatrices := AssociativeArray();
-        for bb in NarrowClassGroupReps(M) do
-            M`NuToExpMatrices[bb] := invs[bb]^(-1);
-        end for;
-    end if;
-
-    return M`NuToExpMatrices;
-end intrinsic;
-
-intrinsic TotallyPositiveBasis(bb :: RngOrdIdl) -> SeqEnum[FldNumElt]
-
-{Returns a QQ-basis of elements of F that belong to bb and are totally
-positive.}
-
-end intrinsic;
-
-intrinsic DualBasis(a :: SeqEnum[FldNumElt]) -> SeqEnum[FldNumElt]
-
-{Given a QQ-basis a of F, returns its dual basis for the trace pairing}
-
-end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
