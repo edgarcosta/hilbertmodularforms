@@ -24,7 +24,6 @@
   SaveAndLoad.m
   Space.m
   SurfaceInvariants.m
-  Trace.m
   UnitChar.m
   Utils.m
   VDGTable.m
@@ -53,4 +52,9 @@ CanonicalRing
   HilbertSeries.m
   IntersectionRing.m
   IO.m
+}
+
+Trace
+{
+  +spec
 }
