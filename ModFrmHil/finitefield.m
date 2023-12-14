@@ -580,7 +580,7 @@ if METHOD lt 3 then
     // Old way: determine the Hecke algebra of this newform space
 
     if hack then 
-	SetRationalBasis(M);
+	    SetRationalBasis(M);
     end if;
     T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
 
@@ -590,12 +590,12 @@ if METHOD lt 3 then
     K := BaseRing(t);
     hack and:= IsFinite(K); // the goal of the hack is to enable computations over finite fields
     if (not hack) then
-	Kmin := minimal_hecke_matrix_field(M);
-	t_K := t;
-	t := ChangeRing(t_K, Kmin);
-	// Verifying that the coercion is compatible
-	assert t_K eq ChangeRing(t, M`minimal_hecke_field_emb);
-	chi := CharacteristicPolynomial(t);
+      Kmin := minimal_hecke_matrix_field(M);
+      t_K := t;
+      t := ChangeRing(t_K, Kmin);
+      // Verifying that the coercion is compatible
+      assert t_K eq ChangeRing(t, M`minimal_hecke_field_emb);
+      chi := CharacteristicPolynomial(t);
       // the descent below cant lead to wrong results
 	    // chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
     end if;
