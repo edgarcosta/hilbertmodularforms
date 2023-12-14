@@ -768,7 +768,7 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic ClassNumberandUnitIndex(ZF::RngOrd, D::RngOrdElt, hplus::RngIntElt) -> Any
+intrinsic ClassNumberandUnitIndex(ZF::RngOrd, d::RngOrdElt, hplus::RngIntElt) -> Any
   {Returns the class number and the unit index 2[Z_K^* : Z_F^*] = #mu_K [Z_K^* : mu_K Z_F^*]}
   /* This takes as input
         - K/F = a number field defined as a degree 2 extension of a totally real field F
@@ -779,7 +779,7 @@ intrinsic ClassNumberandUnitIndex(ZF::RngOrd, D::RngOrdElt, hplus::RngIntElt) ->
 
 
   // Preliminaries //
-  K := ext<NumberField(ZF) | Polynomial([-D,0,1]) >; // Field K/F x^2 - D
+  K := ext<NumberField(ZF) | Polynomial([-d,0,1]) >; // Field K/F x^2 - d
   // Magma requires absolute extensions for class number and units
   Kabs := AbsoluteField(K);
 
@@ -799,7 +799,7 @@ intrinsic ClassNumberandUnitIndex(ZF::RngOrd, D::RngOrdElt, hplus::RngIntElt) ->
     // Now we set the element B
     twopower := 2^Valuation(w,2);
     if twopower eq 2 then
-      B := D;
+      B := d;
     else
       // We now create a generator for mu_K(2) the 2-power roots of unity
       g := mu_K.1;
