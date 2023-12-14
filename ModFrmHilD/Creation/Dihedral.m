@@ -36,15 +36,12 @@ intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
     end if;
 
     Fact := Factorization(ZK !! N); 
-//    print Fact;
     Fact_Conj := [];
 
     for foo in Fact do
         P := foo[1];
         PF := P meet ZF;
-//        print PF;
         FactPF := Factorization(ZK !! PF);
-//        print FactPF;
         if #FactPF eq 2 then //PF is split in PK
             p1 := FactPF[1][1];
             p2 := FactPF[2][1];
@@ -143,7 +140,7 @@ end intrinsic;
 //end intrinsic;
 
 
-intrinsic PossibleHeckeCharacters(
+intrinsic PossibleHeckeCharactersOfK(
     F::FldNum, 
     N::RngOrdIdl, 
     K::FldNum, 
@@ -164,7 +161,7 @@ If the optional parameter prune is true, we only keep on copy of chi and  the co
     H := HeckeCharacterGroup(M); //Is this correct or do I allow ramification at infinite places? I think I should allow ramification and and check some compatibility of the character with the weight [1,1]... 
     G, m := RayClassGroup(M);
 
-    GF, mF := RayClassGroup(N);
+    GF, mF := RayClassGroup(N, [1,2]);
 
     ans := [];
 
@@ -194,7 +191,7 @@ If the optional parameter prune is true, we only keep on copy of chi and  the co
                         end if;
                     end for;
                     if not chi(I) eq psi(Integers(AbsoluteField(K)) !! I)*(-1)^(sum_inert) then
-                        ok := false;
+                        okk := false;
                     end if;
                 end for;
                 if okk then
@@ -236,9 +233,29 @@ If the optional parameter prune is true, we only keep on copy of chi and  the co
             end for;
         end for;
         assert #newlist eq #pairlist; //The characters should pair up since we removed conjugation-invariant ones.
-        ans := [newlist[i] : i in newlist];
+        ans := [ans[i] : i in newlist];
     end if;
     
     return ans;
     
+end intrinsic;
+
+
+intrinsic PossibleHeckeCharacters(
+    F::FldNum, 
+    N::RngOrdIdl,
+    chi::GrpHeckeElt
+    : 
+    prune := true
+    ) -> SeqEnum[GrpHeckeElt]
+{
+Given a totally real field F, an ideal N of F, and a character chi of modulus N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N whose restriction is chi.
+}
+    ans := [];
+    fields := QuadraticExtensionsWithConductor(N, [1,2]);
+    for K in fields do
+        ans := ans cat PossibleHeckeCharactersOfK(F, N, K, chi);
+    end for;
+
+    return ans;
 end intrinsic;
