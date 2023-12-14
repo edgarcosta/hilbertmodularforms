@@ -43,7 +43,7 @@ nu_prime, eps_prime := FunDomainRep(nu);
 assert nu_prime eq nu / eps;
 
 
-function test_reps_to_norm(F, bbs, nus, norms)
+procedure test_reps_to_norm(F, bbs, nus, norms)
   ZF := Integers(F);
   dd := Different(ZF);
 
@@ -79,8 +79,8 @@ function test_reps_to_norm(F, bbs, nus, norms)
     end for;
   end for;
 
-  return "";
-end function;
+  //return "";
+end procedure;
 
 norms := AssociativeArray();
 nus := AssociativeArray();
