@@ -155,6 +155,10 @@ function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Ma
       M`weight_rep := map< H -> Mat1 | q :-> I >;
       M`weight_base_field := Rationals();
       M`weight_dimension := 1;
+      if hack then
+	  QQ := Rationals();
+	  M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
+      end if;
     else
       // define weight_base_field = extension K/F containing Galois closure of F and
       // containing a root of every conjugate of the minimal polynomial of H.1

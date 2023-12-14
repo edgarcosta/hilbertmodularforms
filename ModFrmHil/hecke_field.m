@@ -1,20 +1,26 @@
-import "copypaste/hackobj.m" : HMF0, IsBianchi, TopAmbient;
-
-import "copypastefunctions.m" : random_large_split_prime_using_max_order,
-                                random_large_split_prime,
-                                reduction,
-                                dimension_lower_bound,
-                                hecke_algebra_dimension,
-                                hecke_algebra,
-                                CharacteristicPolynomialViaCRT,
-                                NewformsOfDegree1Implemented,
-                                basis_is_honest,
-                                pseudo_inverse,
-                                red_eigenvector,
-                                get_red_vector,
-                                Ambient,
-                                BMF_with_ambient,
+import "copypaste/definite.m" : _ResidueMatrixRing,
+			        HMSDF,
                                 weight_map_arch;
+			   
+import "copypaste/hackobj.m" : Ambient,
+                               BMF_with_ambient,
+                               HMF0, 
+			       IsBianchi, 
+			       TopAmbient;
+
+import "copypaste/hecke.m" : random_large_split_prime_using_max_order,
+                             random_large_split_prime,
+			     reduction,
+			     dimension_lower_bound,
+			     hecke_algebra_dimension,
+			     hecke_algebra,
+			     CharacteristicPolynomialViaCRT,
+			     NewformsOfDegree1Implemented,
+			     basis_is_honest,
+			     pseudo_inverse,
+			     rational_basis,
+			     red_eigenvector,
+			     get_red_vector;
 
 /**************** New Attributes **********************/
 
@@ -88,6 +94,8 @@ function minimal_hecke_matrix_field(M : hack := true)
     // add here the field embedding once we fix that
     is_sub, emb_fixed := IsSubfield(H, Kgal);
     assert is_sub;
+    assert assigned M`weight_rep;
+    assert assigned M`splitting_field_emb_weight_base_field; // WeightRepresentation should set it
     M`minimal_hecke_field_emb := M`splitting_field_emb_weight_base_field * emb_fixed;
 
     // Making sure we composed in the right order
@@ -97,6 +105,8 @@ function minimal_hecke_matrix_field(M : hack := true)
   end if;
   return H;
 end function;
+
+// from definite.m
 
 function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the 
@@ -119,6 +129,10 @@ function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
          M`weight_rep := map< H -> Mat1 | q :-> I >;
          M`weight_base_field := Rationals();
          M`weight_dimension := 1; 
+	 if hack then
+	     QQ := Rationals();
+	     M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
+	 end if;
       else
          // define weight_base_field = extension K/F containing Galois closure of F and 
          // containing a root of every conjugate of the minimal polynomial of H.1

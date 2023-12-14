@@ -12,7 +12,7 @@ freeze;
 
 import "hackobj.m" : Ambient, 
                      TopAmbient,
-                     HMF0, 
+                     // HMF0, 
                      IsBianchi, 
                      BMF_with_ambient,
                      set_quaternion_order;
@@ -23,6 +23,12 @@ import "definite.m" : BasisMatrixDefinite,
                       AtkinLehnerDefiniteBig,
                       DegeneracyDown1DefiniteBig,
                       DegeneracyDownpDefiniteBig;
+// hack begins
+import "../hackobj.m" : HMF0; 
+import "../hecke_field.m" : hecke_matrix_field,
+                            minimal_hecke_matrix_field;
+// hack ends
+  
 
 debug := false;
 
@@ -66,6 +72,7 @@ end function;
 // M`hecke_matrix_field is not always assigned; when it is not,
 // HeckeOperator returns matrices over the weight_base_field.
 
+/*
 function hecke_matrix_field(M)
   if assigned M`hecke_matrix_field then
     return M`hecke_matrix_field;
@@ -75,9 +82,10 @@ function hecke_matrix_field(M)
     return Ambient(M)`weight_base_field;
   end if;
 end function;
+*/
 
 // The natural field over which Hecke operators can be expressed.
-
+/*
 function minimal_hecke_matrix_field(M)
   bool, minimal := HasAttribute(M, "hecke_matrix_field_is_minimal");
   if bool and minimal then
@@ -113,6 +121,7 @@ function minimal_hecke_matrix_field(M)
   end if;
   return H;
 end function;
+*/
 
 function basis_is_honest(M)
   return assigned M`basis_is_honest and M`basis_is_honest
