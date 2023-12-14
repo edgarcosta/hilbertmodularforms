@@ -90,7 +90,7 @@ intrinsic Exponent(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> SeqE
 {Internal function: get exponent in Fourier expansion attached to nu}
 
     exp := Eltseq(nu) * NuToExpMatrices(M)[bb];
-    return := [Integers() ! exp[i]: i in [1..n]];
+    return [Integers() ! exp[i]: i in [1..n]];
 end intrinsic;
 
 intrinsic Precision(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> RngIntElt

@@ -267,7 +267,7 @@ intrinsic HMFGetShadowFromSeries(f :: NewModFrmHilDEltComp)
     exps := [];
     coeffs := [];
     for prec in M`PrecisionsByComponent[bb] do
-        if prec le Precision(f) do
+        if prec le Precision(f) then
             for nuprime->exp_nuprime in M`FunDomainReps[bb][prec] do
                 a := Coefficient(f, nuprime: IsFunDomain := true);
                 for eps->exp_nu in M`NewShadows[bb][nu] do
@@ -366,7 +366,7 @@ intrinsic HMFPruneShadowSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt
     precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
     for p in precs do
         for nu->exp_nu in M`FunDomainReps[bb][p] do
-            exps := exps cat Values(M`NewShadows[bb][nu])
+            exps := exps cat Values(M`NewShadows[bb][nu]);
         end for;
     end for;
     return HMFSeriesSubset(f, exps);
@@ -666,7 +666,7 @@ intrinsic '/'(f :: NewModFrmHilDEltComp, g :: NewModFrmHilDEltComp) -> NewModFrm
     inv := HMFPruneShadowSeries(inv : Precision := prec);
 
     return HMFComponent(Space(f) / Space(g), bb, inv, prec :
-                        Shadow := true, Prune := false)
+                        Shadow := true, Prune := false);
 end intrinsic;
 
 ///////////////////////////////////////////////////
