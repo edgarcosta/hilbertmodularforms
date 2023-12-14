@@ -24,12 +24,17 @@
   SaveAndLoad.m
   Space.m
   SurfaceInvariants.m
-  Trace.m
   UnitChar.m
   Utils.m
   VDGTable.m
   Verbose.m
   Workspace.m
+}
+
+Trace
+{
+  Precomputation.m
+  Trace.m
 }
 
 Creation
