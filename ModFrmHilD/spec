@@ -37,6 +37,7 @@ Creation
    EisensteinSeries.m
    EllipticCurve.m
    Dihedral.m
+   CuspFormFromEigs.m
    HeckeStability.m
    Igusa.m
    Newforms.m
