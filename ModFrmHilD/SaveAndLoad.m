@@ -7,7 +7,7 @@
 
 function default_dir()
   path_to_this_filename := Split(Split([l : l in Split(Sprint(LoadBasis, "Maximal")) | "Defined" in l][1],":")[2],",")[1];
-  package_dir := Join(s[1..#s-2], "/") where s := Split(path_to_this_filename, "/");
+  package_dir := "/" cat Join(s[2..#s-2], "/") where s := Split(path_to_this_filename, "/");
   return package_dir cat "/Precomputations/";
 end function;
 
