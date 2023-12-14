@@ -42,6 +42,7 @@ Creation
    DedekindZetaExact.m
    EisensteinSeries.m
    EllipticCurve.m
+   Dihedral.m
    HeckeStability.m
    Igusa.m
    Newforms.m

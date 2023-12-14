@@ -169,6 +169,7 @@ end intrinsic;
 
 
 function myEval(K, z, Relative)
+
   if IsOdd(z) then
     k:= 1-z;
     if Type(K) eq FldRat then
@@ -181,6 +182,10 @@ function myEval(K, z, Relative)
     end if;
   end if;
 
+  // FIXME: working around magma slowness for TraceForm
+  // make a copy of K
+  K := NumberField(DefiningPolynomial(K));
+
   if Relative then
     H:= ExtensionToHeckeCharacter(K);
     L:= LSeries(H);
@@ -188,7 +193,6 @@ function myEval(K, z, Relative)
     //    K:= OptimizedRepresentation(AbsoluteField(K));
     //    L:= LSeries(K : Method:= Degree(F) ge 5 select "Direct" else "Default") / LSeries(F);
   else
-    print "ben";
     L:= LSeries(K);
   end if;
 
@@ -200,7 +204,7 @@ function myEval(K, z, Relative)
     end if;
     x:= Evaluate(L, z);
     if Type(x) eq FldComElt and Im(x) le 10^-20 then x:= Re(x); end if;
-    X:= Type(x) eq FldReElt select { BestApproximation(x, 10^i) : i in [12, 14, 16, 18] } else [];
+      X:= Type(x) eq FldReElt select { BestApproximation(x, 10^i) : i in [12, 14, 16, 18] } else [];
     i +:= 1;
   until #X eq 1;
   X:= Rep(X);
