@@ -591,7 +591,10 @@ if METHOD lt 3 then
     hack and:= IsFinite(K); // the goal of the hack is to enable computations over finite fields
     if (not hack) then
 	Kmin := minimal_hecke_matrix_field(M);
-	t := ChangeRing(t, M`minimal_hecke_field_emb);
+	t_K := t;
+	t := ChangeRing(t_K, Kmin);
+	// Verifying that the coercion is compatible
+	assert t_K eq ChangeRing(t, M`minimal_hecke_field_emb);
 	chi := CharacteristicPolynomial(t);
       // the descent below cant lead to wrong results
 	    // chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
