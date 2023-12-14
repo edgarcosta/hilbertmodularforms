@@ -37,14 +37,14 @@ Creation
    DedekindZetaExact.m
    EisensteinSeries.m
    EllipticCurve.m
+   Dihedral.m
+   HeckeStability.m
    Igusa.m
    Newforms.m
    Recognize.m
    Siegel.m
    ThetaSeries.m
    TraceForm.m
-   Weight1.m
-   Dihedral.m
 }
 
 CanonicalRing
