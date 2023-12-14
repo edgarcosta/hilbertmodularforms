@@ -144,6 +144,9 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl] : Save
   hplus := NarrowClassNumber(M); // Narrow class number
   for d in NK do
     h, w, DD := ClassNumberandUnitIndex(ZF, d, hplus); // Class group of K and Hasse Unit index
+    // K = F(sqrt(-d))
+    // h = h(K)
+    // DD = disc(K)
     B[d] := <h, w, DD>;
   end for;
 
