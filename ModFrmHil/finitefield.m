@@ -579,6 +579,9 @@ if METHOD lt 3 then
 
     // Old way: determine the Hecke algebra of this newform space
 
+    if hack then
+      SetRationalBasis(M);
+    end if;
     T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
 
     vprintf ModFrmHil: "CharacteristicPolynomial: ";
