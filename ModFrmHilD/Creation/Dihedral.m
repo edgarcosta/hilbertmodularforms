@@ -137,6 +137,11 @@ end intrinsic;
 //    
 //end intrinsic;
 
+//intrinsic QuadraticCharacter(F::FldNum, K::FldNum
+//) --> RngIntElt
+//{}
+//end intrinsic;
+
 
 intrinsic PossibleHeckeCharacters(
     F::FldNum, 
@@ -156,7 +161,7 @@ If the optional parameter prune is true, we only keep on copy of chi and  the co
     M := N/Disc;
     assert IsIntegral(M);
     M := Integers(AbsoluteField(K)) !! M;
-    H := HeckeCharacterGroup(M); //Is this correct or do I allow ramification at infinite places?
+    H := HeckeCharacterGroup(M); //Is this correct or do I allow ramification at infinite places? I think I should allow ramification and and check some compatibility of the character with the weight [1,1]... 
     G, m := RayClassGroup(M);
 
     GF, mF := RayClassGroup(N);
@@ -176,12 +181,24 @@ If the optional parameter prune is true, we only keep on copy of chi and  the co
             okk := true;
             if ok then
                 for g in Generators(GF) do
-                    if not chi(mF(g)) eq psi(Integers(AbsoluteField(K)) !! mF(g)) then
+                    I := mF(g);
+                    // A short interlude to evaluate the character associated with K/F at I. This will be (-1) to the number of inert primes in the factorization.
+                    Fact := Factorization(I); 
+                    sum_inert := 0;
+                    for foo in Fact do
+                        P := foo[1];
+                        PK := ZK !! P;
+                        FactPK := Factorization(PK);
+                        if #FactPK eq 1 and FactPK[1][2] eq 1 then // P is inert in K
+                            sum_inert := sum_inert + foo[2];
+                        end if;
+                    end for;
+                    if not chi(I) eq psi(Integers(AbsoluteField(K)) !! I)*(-1)^(sum_inert) then
                         ok := false;
                     end if;
                 end for;
                 if okk then
-                    Append(~ans, psi);
+                    Append(~ans, psi); 
                 end if;
             end if;
         end if;
@@ -218,7 +235,7 @@ If the optional parameter prune is true, we only keep on copy of chi and  the co
                 end if;
             end for;
         end for;
-        assert #newlist eq #pairlist;
+        assert #newlist eq #pairlist; //The characters should pair up since we removed conjugation-invariant ones.
         ans := [newlist[i] : i in newlist];
     end if;
     
