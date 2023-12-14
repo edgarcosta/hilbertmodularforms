@@ -780,12 +780,9 @@ intrinsic ClassNumberandUnitIndex(ZF::RngOrd, D::RngOrdElt, hplus::RngIntElt) ->
 
   // Preliminaries //
   K := ext<NumberField(ZF) | Polynomial([-D,0,1]) >; // Field K/F x^2 - D
-  DD := Discriminant(Integers(K)); // Discriminant
   // Magma requires absolute extensions for class number and units
   Kabs := AbsoluteField(K);
 
-  // Class group
-  h := ClassNumber(Kabs);
 
   // Roots of unity
   mu_K, mapmu_K := TorsionUnitGroup(Kabs); // roots of unity
@@ -823,6 +820,12 @@ intrinsic ClassNumberandUnitIndex(ZF::RngOrd, D::RngOrdElt, hplus::RngIntElt) ->
       end if;
     end if;
   end if; //////////
+
+  // Class group
+  h := ClassNumber(Kabs);
+
+  // Discriminant
+  DD := Discriminant(Integers(K)); // Discriminant
 
   // return
   return h, unitindex, DD;
