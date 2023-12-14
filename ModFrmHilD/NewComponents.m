@@ -276,7 +276,7 @@ coefficients as an element of R}
     return R ! pol_coefs;
 end intrinsic;
 
-/* Constructors */
+/* Constructors (TODO: fixme) */
 
 intrinsic HMFComponent(M :: ModFrmHilD, b :: RngOrdIdl, f :: RngElt
                        : multivariate := true,
@@ -324,55 +324,35 @@ afterwards.}
     return comp;
 end intrinsic;
 
-/* Pruning */
+/* Arithmetic operations */
 
-intrinsic HMFCompPrune(f :: NewModFrmHilDEltComp : shadow := false)
+intrinsic '+'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
+{}
+    require Space(f) eq Space(g) : "Cannot add HMF components from different spaces";
+    require ComponentIdeal(f) eq ComponentIdeal(g): "Cannot add HMF components attached to different narrow class group representatives";
 
-{Prune the Series of f in-place. If shadow is set to true, prune the shadow
-series instead}
-
-    if IsMultivariate(f) then
-        
-    else
-
-    end if;
-
+    bb := ComponentIdeal(f);
+    prec := Min(Precision(f), Precision(g));
+    series := Series(f) + Series(g);
+    exps := FunDomainExpsUpToNorm(GradedRing(f), bb, prec);
+    series := HMFSeriesSubset(series, exps);
+    return HMFComponent(Space(f), bb, f : coeff_ring := CoefficientRing(f), prec := prec);
 end intrinsic;
 
+intrinsic '*'(c :: RngElt, f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
+{}
+    R := CoefficientRing(f);
+    b, c_K := IsStrongCoercible(K, c);
 
-/* Coefficient access */
+    require b : "We cannot scale an HMF by a scalar not coercible into its coefficient field";
 
-intrinsic CoordinatesInIndexBasis(f :: ModFrmHilDEltComp, nu :: FldElt) -> RngIntElt
-
-{Return a tuple of integers (e_1,...,e_n) such that q^nu corresponds to the
-monomial x_1^e_1 ... x_n^e_n}
-
-    row = Matrix(Rationals(), Eltseq(nu));
-    return Eltseq(row * NuToExpMatrix(f));
-
+    return HMFComponent(Space(f), ComponentIdeal(f), c_K * Series(f)
+                        : coeff_ring := CoefficientRing(f), prec := Precision(f));
 end intrinsic;
 
-intrinsic Coefficient(f :: ModFrmHilDEltComp, seq :: SeqEnum[RngIntElt]) -> FldElt
-
-{Return the coefficient of f attached to the given sequence of integers}
-
-    if IsMultivariate(f) then
-        m := Monomial(Parent(f), seq);
-        return MonomialCoefficient(f, m);
-    else
-        n := Degree(BaseField(f));
-        g := f;
-        for i in [1..n] do
-            g := Coefficient(g, seq[n + 1 - i]);
-        end for;
-        return g;
-    end if;
+intrinsic '-'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
+{}
+    R := CoefficientRing(f);
+    return f + R!(-1) * g;
 end intrinsic;
 
-intrinsic Coefficient(f :: ModFrmHilDEltComp, nu :: FldElt) -> FldElt
-
-{Return the coefficient of f attached to the field element nu}
-
-    seq := CoordinatesInIndexBasis(f, nu);
-    return Coefficient(f, seq);
-end intrinsic;
