@@ -12,7 +12,8 @@
 
 declare type NewModFrmHilDEltComp;
 
-declare attributes NewModFrmHilDEltComp: Series, // RngMPolElt or RngUPolElt[...]
+declare attributes NewModFrmHilDEltComp: CoefficientRing, // Rng
+        Series, // RngMPolElt or RngUPolElt[...]
         ShadowSeries, //same
         Precision, // RngIntElt - the maximum norm of nn for which coefficients are stored
         Space, // ModFrmHilD - the HMF space that this ModFrmHilDEltComp is a component in
@@ -25,29 +26,29 @@ intrinsic GradedRing(f :: NewModFrmHilDEltComp) -> ModFrmHilDGRng
     return Parent(f`Space);
 end intrinsic;
 
+intrinsic SeriesRing(f :: NewModFrmHilDEltComp) -> Rng
+{}
+    return Parent(Series(f));
+end intrinsic;
+
+intrinsic CoefficientRing(f :: NewModFrmHilDEltComp) -> Rng
+{}
+    return f`CoefficientRing;
+end intrinsic;
+
 intrinsic Series(f :: NewModFrmHilDEltComp) -> RngElt
 {}
-    if not assigned f`Series then
-        if assigned f`ShadowSeries then
-            HMFGetSeriesFromShadow(f);
-        else
-            error "HMF series not assigned";
-        end if;
+    if not assigned f`Series and assigned f`ShadowSeries then
+        HMFGetSeriesFromShadow(f);
     end if;
-
     return f`Series;
 end intrinsic;
 
 intrinsic ShadowSeries(f :: NewModFrmHilDEltComp) -> RngElt
 {}
-    if not assigned f`ShadowSeries then
-        if assigned f`Series then
-            HMFGetShadowFromSeries(f);
-        else
-            error "HMF series not assigned";
-        end if;
+    if not assigned f`ShadowSeries and assigned f`Series then
+        HMFGetShadowFromSeries(f);
     end if;
-
     return f`ShadowSeries;
 end intrinsic;
 
@@ -66,11 +67,6 @@ intrinsic ComponentIdeal(f :: NewModFrmHilDEltComp) -> RngOrdIdl
     return f`ComponentIdeal;
 end intrinsic;
 
-intrinsic IsMultivariate(f :: NewModFrmHilDEltComp) -> BoolElt
-{}
-    return Type(f`Series) eq RngMPolElt;
-end intrinsic;
-
 intrinsic BaseField(f :: NewModFrmHilDEltComp) -> FldNum
 {}
     return BaseField(Space(f));
@@ -78,16 +74,8 @@ end intrinsic;
 
 /* Access to coefficients */
 
-intrinsic NuToExp(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> SeqEnum[RngIntElt]
-
-{Internal function: get exponent in Fourier expansion attached to nu}
-
-    exp := Eltseq(nu) * NuToExpMatrices(M)[bb];
-    return := [Integers() ! exp[i]: i in [1..n]];
-end intrinsic;
-
 intrinsic Coefficient(f :: NewModFrmHilDEltComp, nu :: FldNumElt
-                      : Checks =: true, InFunDomain := false) -> RngElt
+                      : InFunDomain := false) -> RngElt
 
 {Returns the coefficient of nu in the Fourier series}
 
@@ -95,20 +83,15 @@ intrinsic Coefficient(f :: NewModFrmHilDEltComp, nu :: FldNumElt
     bb := ComponentIdeal(f);
     n := Degree(BaseField(M));
 
-    if Checks then // check if nu is in fundamental domain, has small norm
-        if InFunDomain and not nu in FunDomainReps(M)[bb] then
-            error "Not in fundamental domain";
-        end if;
-        bbp := M`NarrowClassGroupRepsToIdealDual[bb];
-        if Norm(nu) gt Precision(f) * Norm(bbp) then
-            error "Not enough precision, sorry!";
-        end if;
-    end if;
-
     if not InFunDomain then
         nu, eps := FunDomainRep(M, bb, nu);
     end if;
-    a :=  HMFSeriesCoefficient(Series(f), NuToExp(M, bb, nu));
+    b, prec := IsDefined(M`FunDomainRepsPrecisions, nu);
+
+    require b: "Not in fundamental domain";
+    require prec le Precision(M): "Not enough precision";
+
+    a :=  HMFSeriesCoefficient(Series(f), M`FunDomainReps[bb][prec][nu]);
     if not InFunDomain then
         uc := UnitCharacters(Space(f))[bb];
         a := a * Evaluate(uc, eps);
@@ -142,31 +125,22 @@ end intrinsic;
 
 /* Converting between series and shadow series */
 
-intrinsic FunDomainRepsUpToPrec(M :: ModFrmHilDGRng, bb :: RngOrdIdl, prec :: RngIntElt
-    ) -> SeqEnum[FldNumElt]
-
-{Returns the list of fundamental domain representatives on the component
-indexed by bb at precision prec}
-
-    if prec gt Precision(M) then
-        error "Not enough precision, sorry!";
-    elif prec eq Precision(M) then
-        return FunDomainReps(M)[bb];
-    else
-        bbp := M`NarrowClassGroupRepsToIdealDual[bb];
-        bound := Precision(f) * Norm(bbp);
-        return [nu: nu in FunDomainReps(M)[bb] | Norm(nu) le bound];
-    end if;
-end intrinsic;
-
 intrinsic HMFGetSeriesFromShadow(f :: NewModFrmHilDEltComp)
 
 {Internal function: compute f`Series from f`ShadowSeries}
 
     M := GradedRing(f);
     bb := ComponentIdeal(f);
-    list := FunDomainRepsUpToPrec(M, bb, Precision(f));
-    exps := [NuToExp(M, bb, nu): nu in list];
+
+    exponents := [];
+    for prec in M`PrecisionsByComponent[bb] do
+        if prec le Precision(f) then
+            for nu->exp in M`FunDomainReps[bb][prec] do
+                Append(~exps, exp);
+            end for;
+        end if;
+    end for;
+
     f`Series := HMFSeriesSubset(f`ShadowSeries, exps);
 end intrinsic;
 
@@ -214,20 +188,23 @@ intrinsic HMFGetShadowFromSeries(f :: NewModFrmHilDEltComp)
 
     M := GradedRing(f);
     bb := ComponentIdeal(f);
-
-    nus := [];
-    coefs := [];
-    nuprimes := FunDomainRepsUpToPrec(M, bb, Precision(f));
     uc := UnitCharacters(Space(f))[bb];
-    for nuprime in nuprimes do
-        a := Coefficient(f, nuprime: Checks := false, InFunDomain := true);
-        for eps in NewShadows(M)[bb][nuprime] do
-            Append(~nus, nuprime * eps);
-            Append(~coefs, a * Evaluate(uc, eps));
-        end for;
+
+    exps := [];
+    coefs := [];
+    for prec in M`PrecisionsByComponent[bb] do
+        if prec le Precision(f) do
+            for nuprime->exp_nuprime in M`FunDomainReps[bb][prec] do
+                a := Coefficient(f, nuprime: IsFunDomain := true);
+                for eps->exp_nu in M`NewShadows[bb][nu] do
+                    Append(~coefs, a * Evaluate(uc, eps));
+                    Append(~exps, exp_nu);
+                end for;
+            end for;
+        end if;
     end for;
-    exps := [NuToExp(M, bb, nu): nu in nus];
-    f`ShadowSeries := HMFConstructSeries(Parent(f`Series), exps, coefs);
+
+    f`ShadowSeries := HMFConstructSeries(SeriesRing(f), exps, coefs);
 end intrinsic;
 
 intrinsic HMFConstructSeries(R :: RngMPol, exps :: SeqEnum, coefs :: SeqEnum[RngElt]
@@ -276,52 +253,149 @@ coefficients as an element of R}
     return R ! pol_coefs;
 end intrinsic;
 
-/* Constructors (TODO: fixme) */
+/* Pruning */
 
-intrinsic HMFComponent(M :: ModFrmHilD, b :: RngOrdIdl, f :: RngElt
-                       : multivariate := true,
-                         coeff_ring := DefaultCoefficientRing(Mk),
-                         prec := Parent(Mk)`Precision,
-                         shadow := false
+intrinsic HMFPruneSeries(f :: NewModFrmHilDEltComp)
+
+{Internal function: replace f`Series by pruned version}
+
+    exps := [];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision(f)];
+    for p in precs do
+        exps := exps cat Values(M`FunDomainReps[bb][p]);
+    end for;
+    f`Series := HMFSeriesSubset(f`Series, exps);
+
+end intrinsic;
+
+intrinsic HMFPruneShadowSeries(f :: NewModFrmHilDEltCom)
+
+{Internal function: replace f`ShadowSeries by pruned version}
+
+    exps := [];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision(f)];
+    for p in precs do
+        for nu->exp_nu in M`FunDomainReps[bb][p] do
+            exps := exps cat Values(M`NewShadows[bb][nu])
+        end for;
+    end for;
+    f`ShadowSeries := HMFSeriesSubset(f`ShadowSeries, exps);
+
+end intrinsic;
+
+/* Constructors */
+
+intrinsic HMFComponent(Mk :: ModFrmHilD, bb :: RngOrdIdl, f :: RngElt, prec :: RngIntElt :
+                       Shadow := false, Prune := true
     ) -> NewModFrmHilDEltComp
 
-{Constructs a ModFrmHilDEltComp whose associated polynomial is f, either a
-multivariate polynomial or an element in a tower of univariate polynomials. By
-default, we assume that f is multivariate, that its exactly correspond to the
-Series field of the result up to the ambient precision of the graded ring of
-HMFs, and we coerce the coefficients of f to the DefaultCoefficientRing of Mk.
-
-If 'multivariate' is set to false, assume that f is a univariate polynomial
-instead. If 'shadow' is set to true, assume that f contains the ShadowSeries
-instead. If f is only known to a lower precision, the user should input the
-relevant 'prec' parameter. The user may input a different coefficient ring as
-coeff_ring. If f contains too many coefficients, the user should call HMFPrune
-afterwards.}
+{Internal function: constructs the HMF component whose Fourier series is
+specified by the polynomial f at the given precision. Parent(f) should either
+be a multivariate polynomial ring or a tower of univariate polynomial rings.}
 
     n := Degree(BaseField(Mk));
-    comp := New(NewModFrmHilDEltComp);
-    comp`Space := Mk;
-    comp`Precision := prec;
-    comp`ComponentIdeal := b;
 
-    if multivariate then
-        pol_ring := PolynomialRing(coeff_ring, n);
-        f := pol_ring ! f; /*todo: use StrongCoerce*/
-    else
-        pol_ring := coeff_ring;
+    if Type(f) eq RngMPolElt then
+        R := BaseRing(f);
+    elif Type(f) eq RngUPolElt then
+        R := Parent(f);
         for i in [1..n] do
-            pol_ring := PolynomialRing(pol_ring);
+            R := BaseRing(R);
         end for;
-        f := pol_ring ! f; /*todo: use StrongCoerce*/
-    end if;
-
-    if shadow then
-        comp`ShadowSeries := f;
     else
-        comp`Series := f;
+        error "Unsupported type for Fourier expansions: ", Type(f);
     end if;
 
-    return comp;
+    g := New(NewModFrmHilDEltComp);
+    g`Space := Mk;
+    g`ComponentIdeal := bb;
+    g`CoefficientRing := R;
+    g`Precision := prec;
+    if Shadow then
+        g`ShadowSeries := f;
+    else
+        g`Series := f;
+    end if;
+
+    if Prune then
+        if Shadow then
+            HMFPruneShadowSeries(g);
+        else
+            HMFPruneSeries(g);
+        end if;
+    end if;
+
+end intrinsic;
+
+intrinsic HMFComponent(Mk :: ModFrmHilD, bb :: RngOrdIdl, coeffs :: Assoc, prec :: RngIntElt
+                       : Multivariate := true, CoefficientRing := DefaultCoeffeicientRing(Mk),
+                         Precision := Precision(Parent(M))
+    ) -> NewModFrmHilDEltComp
+
+{Constructs the HMF component to precision prec whose Fourier coefficients are
+specified by the given array indexed by nus in the fundamental domain.
+
+By default, we assume that the coefficient ring is the default coefficient ring
+of Mk, and that coefficients are specified up to the default precision of the
+ambient graded ring. The user may specify another coefficient ring or a lower
+precision instead.}
+
+    M := Parent(Mk);
+    n := Degree(BaseField(Mk));
+
+    // Gather exponents and coefficients
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
+    exps := [];
+    coefs := [];
+    for p in precs do
+        for nu->exp in M`FunDomainReps[bb][p] do
+            b, coef := IsDefined(coeffs, nu);
+            require b: "Coefficient not found for index: ", nu;
+            Append(~exps, exp);
+            Append(~coefs, coef);
+        end for;
+    end for;
+
+    // Construct series ring
+    if Multivariate then
+        R := PolynomialRing(CoefficientRing, n);
+    else
+        R := CoefficientRing;
+        for i in [1..n] do
+            R := PolynomialRing(R);
+        end for;
+    end if;
+
+    f := HMFConstructSeries(R, exps, coefs);
+    return HMFComponent(Mk, bb, f: Shadow := false, Prune := false, Precision := Precision);
+
+end intrinsic;
+
+/* Base change */
+
+intrinsic ChangeRing(f :: ModFrmHilDEltComp, R :: Rng) -> ModFrmHilDEltComp
+
+{Constructs the HMF component that is identical to f, except that its
+coefficient ring is extended to R.}
+
+    Mk := Space(f);
+    n := Degree(BaseField(Mk));
+    bb := ComponentIdeal(f);
+    ser := ShadowSeries(f);
+
+    // Construct larger series ring
+    if Type(ShadowSeries(f)) eq RngMPolElt then
+        S := ChangeRing(Parent(ser), R);
+        ser := S ! ser;
+    else
+        S := R;
+        for i in [1..n] do
+            S := PolynomialRing(S);
+        end for;
+        ser := S ! ser;
+    end if;
+
+    return HMFComponent(Mk, bb, ser, prec : Shadow := true, Prune := false);
 end intrinsic;
 
 /* Arithmetic operations */

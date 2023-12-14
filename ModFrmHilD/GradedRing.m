@@ -25,8 +25,9 @@ declare attributes ModFrmHilDGRng:
   // RepToIdeal and IdealToRep cache the conversion nn <-> nu
   RepToIdeal, // RepToIdeal[bb][nu] := nn
   IdealToRep, // IdealToRep[bb][nn] := nu
-  FunDomainReps, // FunDomainReps[bb] stores the list of nu in the bb component 
-                 // corresponding to nn of norm at most M`Precision
+  PrecisionsByComponent, // Assoc: PrecisionsByComponent[bb] is an ascending SeqEnum[RngIntElt] of p such that there is a coefficient of precision p in the bb component
+  FunDomainReps, // Assoc: FunDomainReps[bb][prec] is an associative array nu->exponent such that nu has precision prec
+  FunDomainRepsPrecisions, // Assoc: FunDomainRepsPrecisions[nu] is the precision of the coefficient nu
   FunDomainRepsUpToNorm, // FunDomainRepsUpToNorm[bb][x] stores the list of nu in the bb component 
                          // corresponding to nn of norm at most x
   FunDomainRepsOfNorm, // FunDomainRepsOfNorm[bb][x] stores the list of nu in the bb component
@@ -40,7 +41,7 @@ declare attributes ModFrmHilDGRng:
            // needs to be included when performing multiplication.
            // Such nu*eps are totally positive elements which are dominated (<= in every real embedding)
            // by some fundamental domain representative.
-  NewShadows, // NewShadows[bb][nu] is a SeqEnum of units eps such that nu*eps is a shadow
+  NewShadows, // NewShadows[bb][nu] is an associative array (eps)->(exponent of nu*exp)
   PuiseuxSeriesRings, // PuiseuxSeriesRings[K] stores the HMFSerPuis associated to M with coeff ring K
   NuToExpMatrices, // Assoc: NuToExpMatrices[bb] stores a matrix M such that M*Eltseq(nu) always consists of nonnegative integers
   ExpToNuMatrices, // Assoc: ExpToNuMatrices[bb] is inverse to NuToExpMatrices[bb]

@@ -83,6 +83,23 @@ part of FunDomainReps(M)[bb].}
     return FunDomainRep(M, bb, BaseField(M)!nu : CheckIfPresent := CheckIfPresent);
 end intrinsic;
 
+/* Converting nus to exponents and precisions */
+
+intrinsic Exponent(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> SeqEnum[RngIntElt]
+
+{Internal function: get exponent in Fourier expansion attached to nu}
+
+    exp := Eltseq(nu) * NuToExpMatrices(M)[bb];
+    return := [Integers() ! exp[i]: i in [1..n]];
+end intrinsic;
+
+intrinsic Precision(M :: ModFrmHilGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> RngIntElt
+
+{Returns the precision attached to nu as an index of Fourier expansions on the
+component bb: this is the norm of the ideal nu * bbpinv}
+
+end intrinsic;
+
 /* Populating FunDomainRep arrays */
 
 intrinsic NewPopulateFunDomainRepsArrays(M :: ModFrmHilDGRng)
