@@ -1,4 +1,4 @@
-function TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, test_name : default_fields := true)
+procedure TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, test_name : default_fields := true)
   // M::ModFrmHilDGRng - Graded ring of HMFs
   // N::RngOrdIdl - Level 
   // k::SeqEnum[RngIntElt] - Weight
@@ -46,8 +46,8 @@ function TestCoefficientRing(M, N, chi, k, prec, coeff_fields, ground_truth, tes
   end for;
   printf "coefficient_ring: Passed %o\n", test_name;
   // because functions need a return value apparently
-  return ""; 
-end function;
+  //return ""; 
+end procedure;
 
 ///////////////////////  "UNIT" TESTS  /////////////////////// 
 

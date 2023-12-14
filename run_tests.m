@@ -8,6 +8,14 @@ if assigned debug then
   SetDebugOnError(true);
 end if;
 load "config.m";
+if assigned verbose then
+  try
+    verbose := StringToInteger(verbose);
+  catch e
+    verbose := 1;
+  end try;
+  SetVerbose("HilbertModularForms", verbose);
+end if;
 failed := [];
 if not assigned target then
   target := "";

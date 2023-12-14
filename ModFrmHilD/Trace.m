@@ -40,7 +40,7 @@ intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   H := CoprimeClassGroupRepresentatives(Mk);
   chi := Character(Mk)^(-1);
   m,p := Conductor(chi);
-  ZK := Parent(chi)`TargetRing; // Coefficient ring 
+  ZK := Parent(chi)`TargetRing; // Coefficient ring
 
   // If mm = 0 then return 0
   if IsZero(mm) then
@@ -84,7 +84,7 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
     return ZK ! 0;
   end if;
 
-  /* The implementation below with Baa and IsBad(t) allows the diamond operator to work with bad primes. 
+  /* The implementation below with Baa and IsBad(t) allows the diamond operator to work with bad primes.
   If this breaks, we can instead pick representative of the class group that are coprime
   to the level of the space and then change the IsBad(t) to record whether Valuation(t,pp) gt 0 */
   Baa := AssociativeArray(); // Store valuations of aa so as not to recompute
@@ -92,11 +92,11 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
     Baa[pp] := Valuation(aa,pp);
   end for;
 
-  // Function: Given an integral element t, check if the ideal t*ZF contains any bad primes 
+  // Function: Given an integral element t, check if the ideal t*ZF contains any bad primes
   function IsBad(t)
     ans := false;
     for pp in BPrimes do
-      if Valuation(t,pp) gt Baa[pp] then 
+      if Valuation(t,pp) gt Baa[pp] then
         ans := true;
         break;
       end if;
@@ -116,7 +116,7 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
       emb := PrecompEmbeddingNumberOverUnitIndex(M, data, NNfact, aa);
       emb := t eq 0 select emb else 2*emb; // Factor of 2 accounts for x^2 +/- bx + a.
     else
-      emb := EmbeddingNumberOverUnitIndex(M, data, NNfact, aa); 
+      emb := EmbeddingNumberOverUnitIndex(M, data, NNfact, aa);
     end if;
     // Adjust for bad primes
     if #BPrimes ne 0 then
@@ -323,12 +323,12 @@ end intrinsic;
 
 
 
-// Correction Factor 
+// Correction Factor
 intrinsic CorrectionFactor(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   {Correction factor for parallel weight 2}
 
-  /* Flag: 
-  - check for parallel weight 2, and 
+  /* Flag:
+  - check for parallel weight 2, and
   - character chi factors through map a -> a^2 from Cl(F) -> Cl+(F) */
   if not TraceCorrectionFactorFlag(Mk) then
     return 0;
@@ -358,16 +358,16 @@ intrinsic CorrectionFactor(Mk::ModFrmHilD, mm::RngOrdIdl) -> Any
   end for;
 
   // No square root - return 0
-  if boo then 
+  if boo then
     return 0;
-  end if; 
+  end if;
 
   //////////////// Computing trace on the Eisenstein Space //////////////////
 
   // 2-torsion subgroup. FIXME: Should this be stored to field F?
-  hplustwo := #[i : i in C | 2*i eq C!0 ]; 
+  hplustwo := #[i : i in C | 2*i eq C!0 ];
 
-  // Write mm = Good * Bad where (Good, NN) = 1 
+  // Write mm = Good * Bad where (Good, NN) = 1
   Bad := &*([1*ZF] cat [ p[1]^Valuation(mm,p[1]) : p in Factorization(NN) ]);
   Good := mm / Bad;
 
@@ -551,18 +551,21 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
   // M ModFrmHilDGRng (carries field F, ring of integers ZF, and unit group + unit group map UF, mUF)
   // aa ideal for the diamond operator
   //
-  // Notes: The key obtained from discriminant hash (key) represents either the square class of D or sigma(D) (here sigma : F -> F is the nontrivial field automorphism ) 
-  // based on whether c = 0 or 1. By setting d = key if c = 0 and d = Conjugate(key) if c = 1 and then running LocalSquare(M,d,pp[1]) instead of LocalSquare(M,D,pp[1]),
+  // Notes: The key obtained from discriminant hash (key) represents a square class that is conjugate to D. We recover the square class of d (and the discriminant DD)
+  // from the automorphism f = M`Aut[c] which satifies f(key) = d and f(DD) = disc(d).
+  //
+  // Following is old and not in use. By setting d = key if c = 0 and d = Conjugate(key) if c = 1 and then running LocalSquare(M,d,pp[1]) instead of LocalSquare(M,D,pp[1]),
   // we reduce the number of computations for LocalSquare() to 1/3 of its orginal size. However, this seems like an unnecessary and confusing simplification.
   //
-  // d := (c eq 1) select Conjugate(key) else key; 
+  // d := (c eq 1) select Conjugate(key) else key;
   //
 
   // Preliminaries
   ZF := Integers(M);
   t, n, key, c := Explode(data);
   h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]); // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*]
-  DD := (c eq 1) select Conjugate(DD) else DD; // DD = discriminant of maximal order
+  f := M`Automorphisms[ Integers()!c ]; // automorphism for converting discriminant
+  DD := ZF !! f(DD); // DD = discriminant of maximal order
   D := t^2 - 4*n; // Discriminant of order
   hw := h / w; // Computes h/w where h = class number of K and w = unit index of 2 * [ZK^* : ZF^*]
   ff := Sqrt((D*ZF)/DD); // Conductor
@@ -576,7 +579,7 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
       pp, e := Explode(pair);
       f := Valuation(bb,pp); // Conductor
       g := Valuation(DD,pp); // Valuation of Discriminant
-      A := (g eq 0) select LocalSquare(M,D,pp) else 0; // Artin Symbol 
+      A := (g eq 0) select LocalSquare(M,D,pp) else 0; // Artin Symbol
       term *:= OptimalEmbeddings(e, 2*f, g, A, pp);
     end for;
     conductorsum +:= term;
@@ -693,11 +696,11 @@ end intrinsic;
 ///////////////////////////////////// Optimal Embeddings ///////////////////////////////////////////////
 
 intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
-  {Computes embedding numbers for x^2 - d * pi^(f) mod pp^e where: 
-  - e is a positive integer, 
-  - f is a positive even integer, 
-  - pp is a prime ideal, 
-  - A = (K/pp) is the artin symbol for the local field K = F_pp[x] / (x^2 - D), and 
+  {Computes embedding numbers for x^2 - d * pi^(f) mod pp^e where:
+  - e is a positive integer,
+  - f is a positive even integer,
+  - pp is a prime ideal,
+  - A = (K/pp) is the artin symbol for the local field K = F_pp[x] / (x^2 - D), and
   - d = disc(ZK) is the fundamental discriminant of the integers of K with g = Valuation(d,pp) }
 
   // Preliminaries
@@ -765,7 +768,7 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, ZF::RngQuad, hplus::RngIntElt) -> Any
+intrinsic ClassNumberandUnitIndex(ZF::RngOrd, D::RngOrdElt, hplus::RngIntElt) -> Any
   {Returns the class number and the unit index 2[Z_K^* : Z_F^*] = #mu_K [Z_K^* : mu_K Z_F^*]}
   /* This takes as input
         - K/F = a number field defined as a degree 2 extension of a totally real field F
@@ -774,7 +777,10 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
         - hplus = the narrow class number of F ** Note : that this is not critical for this function, can removed or or set to optional parameter **
   */
 
+
   // Preliminaries //
+  K := ext<NumberField(ZF) | Polynomial([-D,0,1]) >; // Field K/F x^2 - D
+  DD := Discriminant(Integers(K)); // Discriminant
   // Magma requires absolute extensions for class number and units
   Kabs := AbsoluteField(K);
 
@@ -819,7 +825,7 @@ intrinsic ClassNumberandUnitIndex(M::ModFrmHilDGRng, K::FldNum, D::RngQuadElt, Z
   end if; //////////
 
   // return
-  return h, unitindex;
+  return h, unitindex, DD;
 end intrinsic;
 
 
@@ -900,11 +906,11 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
     return [ bb : bb in C | IsPrincipal(bb*aa^(-1)) ][1];
   end function;
 
-  /* Write T(m) * T(n) as a sum of terms a * T(b) * D(c) indexed by tuples (a,b,c) where 
-    - a is scalar from the hecke recusion (from the norm of an ideal), 
-    - b is the ideal for the hecke operator T, and 
+  /* Write T(m) * T(n) as a sum of terms a * T(b) * D(c) indexed by tuples (a,b,c) where
+    - a is scalar from the hecke recusion (from the norm of an ideal),
+    - b is the ideal for the hecke operator T, and
     - c is the ideal for the diamond operator D */
-  
+
   // Recursion tuples
   tuples := [ [* 1, 1*ZF, 1*ZF *] ];
   for pps in Factorization(mm * nn) do
@@ -927,7 +933,7 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
   for t in tuples do
     // initialize
     a,b,c := Explode(t);
-    // Compute trace of T(b) * D(c) on Mk 
+    // Compute trace of T(b) * D(c) on Mk
     x := (1/#C) * &+[ chi( H[aa] ) * TraceProduct(Mk, b, Classrep(c * aa) : precomp := true) : aa in C ];
     // Eisenstein correction factor
     x +:= CorrectionFactor(Mk, b) * chi( c );

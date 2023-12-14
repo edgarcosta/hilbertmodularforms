@@ -334,10 +334,16 @@ intrinsic Coefficient(f::ModFrmHilDEltComp, nu::FldElt) -> FldElt
   R := Parent(f);
   F := IndexField(R);
 
-  require Parent(nu) eq F : "The coefficient does not lie in the index field";
+  require nu in F : "The coefficient does not lie in the index field";
 
-  return Coefficient(Series(f), Depth(R), nu);
+  return Coefficient(Series(f), Depth(R), F!nu);
 end intrinsic;
+
+intrinsic Coefficient(f::ModFrmHilDEltComp, nu::RngElt) -> FldElt
+  { " //"}
+  return Coefficient(f, FieldOfFractions(Parent(nu))!nu);
+end intrinsic;
+
 
 intrinsic Coefficient(f_ser::RngSerPuisElt, depth::RngIntElt, nu::FldElt) -> FldElt
   {

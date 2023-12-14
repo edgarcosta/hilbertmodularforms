@@ -14,7 +14,7 @@ intrinsic SaveFilePrefix(Mk::ModFrmHilD) -> MonStgElt
   // TODO abhijitm this is really bad, but it works for me
   // for now. 
   F := BaseField(Mk);
-  F_label := Join([IntegerToString(n) : n in [Degree(F), Discriminant(F)]], ".");
+  F_label := Join([IntegerToString(a) : a in DefiningPolyCoeffs(F)], ".");
 
   // Use the LMFDB label for N
   N := Level(Mk);
@@ -165,6 +165,45 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
   end for;
        
   return HMFSumComponents(Mk, components);
+end intrinsic;
+
+intrinsic LoadOrBuildAndSave(
+    Mk::ModFrmHilD,
+    builder::Intrinsic,
+    suffix::MonStgElt :
+    save_dir := "./Precomputations/",
+    prefix := SaveFilePrefix(Mk)
+    ) -> SeqEnum[ModFrmHilDElt]
+  {
+    inputs:
+      Mk - space of HMFs
+      builder - intrinsic which is used to build 
+        the basis if it is not saved  
+      suffix - string suffix where this basis should
+        be saved/loaded from
+      save_dir - directory where precomputed results
+        are saved
+      prefix - prefix string to be used for this load/save
+    returns:
+  }
+  loadfile_name := save_dir cat prefix cat suffix;
+  is_saved, loadfile := OpenTest(loadfile_name, "r");
+  loaded := false;
+  if is_saved then
+    try
+      loaded, basis := LoadBasis(loadfile_name, Mk);
+    catch e
+      Write("/dev/stderr", Sprintf("Failed to load %o:\n%o", loadfile_name, e));
+      loaded := false;
+    end try;
+  end if;
+  // loaded is false if the file was not saved or if
+  // the precision of the stored basis wasn't high enough
+  if not loaded then
+    basis := builder(Mk);
+    SaveBasis(loadfile_name, basis);
+  end if;
+  return basis;
 end intrinsic;
 
 

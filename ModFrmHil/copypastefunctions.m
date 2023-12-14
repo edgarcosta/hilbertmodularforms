@@ -16,7 +16,7 @@ function minimal_hecke_matrix_field(M)
   elif assigned M`Ambient then
     H := minimal_hecke_matrix_field(M`Ambient);
   elif IsParallelWeight(M) then
-    H := Rationals();
+     H := Rationals();
   else
     vprintf ModFrmHil: "Figuring out the \'Hecke matrix field\' ... "; 
     time0 := Cputime();
