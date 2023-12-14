@@ -22,6 +22,8 @@ import "copypaste/hecke.m" : random_large_split_prime_using_max_order,
 			     red_eigenvector,
 			     get_red_vector;
 
+import "copypaste/precompute.m" : get_rids;
+
 /**************** New Attributes **********************/
 
 declare attributes ModFrmHil : minimal_hecke_field_emb,
@@ -107,6 +109,32 @@ function minimal_hecke_matrix_field(M : hack := true)
 end function;
 
 // from definite.m
+
+function DegeneracyMapDomain(M, d)
+   // Given an ambient space M and an integral ideal d such that NewLevel(M) | d | Level(M), 
+   // returns a space of level d and same weight as M, defined using internals that are
+   // compatible with M (same quaternion algebra, same splitting map and weight representation)
+
+   QO:=M`QuaternionOrder;
+   assert NewLevel(M) eq Discriminant(QO);
+   assert IsIntegral(d/NewLevel(M));
+   assert IsIntegral(Level(M)/d); 
+
+   // MUST use identical internal data: in particular, rids and weight_rep.
+   // Call low-level constructor to avoid complications with caching, and don't cache DM
+   // TO DO: use cached spaces, to avoid recomputing ModFrmHilDirFacts (that's the only advantage)
+   DM:=HMF0(BaseField(M), d, NewLevel(M), DirichletCharacter(M), Weight(M), CentralCharacter(M));
+   DM`QuaternionOrder:=QO;
+   DM`rids:=get_rids(M);
+   DM`splitting_map:=M`splitting_map; // can use same splitting_map even though its level is larger than needed
+   DM`weight_base_field:=M`weight_base_field;
+   DM`weight_dimension:=M`weight_dimension;
+   if Seqset(Weight(M)) ne {2} then // nontrivial weight
+      DM`weight_rep:=M`weight_rep;
+      DM`splitting_field_emb_weight_base_field := M`splitting_field_emb_weight_base_field;
+   end if;
+   return DM;
+end function;
 
 function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the 

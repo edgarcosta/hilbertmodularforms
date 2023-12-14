@@ -1226,7 +1226,7 @@ function NewformsOfDegree1Implemented(M)
 end function;
 
 // TO DO: Sort (by default?)
-
+/*
 intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0) -> List
 {Given a new space M of Hilbert modular forms, this decomposes M into subspaces 
  that are irreducible as Hecke modules, and returns this list of new spaces}
@@ -1267,11 +1267,11 @@ intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0) -> List
   elif dim eq 0 then 
     ND := [* *]; 
 
-  /* TO DO
-  elif dim eq 1 then 
-    endow M with the attributes of an eigenspace
-    ND := [* M *]; 
-  */
+  // TO DO
+  //elif dim eq 1 then 
+  //  endow M with the attributes of an eigenspace
+  //  ND := [* M *]; 
+  //
 
   elif Dimensions eq [1] and NewformsOfDegree1Implemented(M)
 and dim ne 1 // beware recursion
@@ -1524,7 +1524,7 @@ end if;
 
   return ND;
 end intrinsic;
-
+*/
 
 // Find an eigenvector of M mod P with eigenvalue e mod P
 // Returns false if eigenspace mod P is not dimension 1
@@ -1546,6 +1546,7 @@ end function;
 
 forward get_red_vector; // temp (TO DO)
 
+/*
 intrinsic Eigenform(M::ModFrmHil) -> ModFrmHilElt
 {An eigenform in the space M of Hilbert modular forms
  (which must be an irreducible module under the Hecke action)}
@@ -1637,13 +1638,13 @@ elif METHOD ge 3 then
        else
          EK := ext< K | fK >;
          Embed(E, EK, EK.1);
-        /*
+        
          // old work around
          // use the absolute field so that coercion works for EK to E 
-         EKrel := ext< K | fK >;
-         EK := AbsoluteField(EKrel);
-         Embed(E, EK, EK!EKrel.1);
-        */
+         //EKrel := ext< K | fK >;
+         //EK := AbsoluteField(EKrel);
+         //Embed(E, EK, EK!EKrel.1);
+        
        end if;
        // Doesn't help to use absolute, optimized EK
      end if;
@@ -1716,6 +1717,7 @@ intrinsic HeckeEigenvalueField(M::ModFrmHil) -> Fld
 
   return BaseField(Eigenform(M));
 end intrinsic;
+*/
 
 procedure get_red_vector(EK, tEK, eEK, ~red_vecs : NUM:=1)
   // TO DO ??? will actually want it in the 'raw' basis ???
