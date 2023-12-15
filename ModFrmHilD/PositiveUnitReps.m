@@ -49,13 +49,13 @@ intrinsic FunDomainRep(M :: ModFrmHilDGRng, nu :: RngElt
 
 {Returns an element nu' in the fundamental domain and a totally positive unit
 eps such that nu = eps * nu'. We first check whether nu is listed in
-FunDomainReps(M)[bb], in which case eps = 1.}
+M`FunDomainReps[bb], in which case eps = 1.}
 
     F := BaseField(M);
     nu := F ! nu;
     if not CheckComponent cmpeq false then
         bb := CheckComponent;
-        if IsDefined(FunDomainReps(M)[bb], nu) then
+        if IsDefined(M`FunDomainReps[bb], nu) then
             return nu, F!1;
         end if;
     elif IsZero(nu) then
@@ -406,8 +406,16 @@ end intrinsic;
 
 
 intrinsic FunDomainReps(M::ModFrmHilDGRng) -> Assoc
-{}
-    return M`FunDomainReps;
+
+{Returns an associative array indexed by component ideals, whose values are
+SetEnums. This is not M`FunDomainReps, which is an associative array of
+associative arrays}
+
+    res := AssociativeArray();
+    for bb in M`NarrowClassGroupReps do
+        res[bb] := [* x: x in Values(M`FunDomainReps[bb]) *];
+    end for;
+    return res;
 end intrinsic;
 
 intrinsic FunDomainRepsOfPrec(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl, prec :: RngIntElt

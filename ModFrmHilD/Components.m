@@ -744,6 +744,8 @@ ideal class [mm*bb].}
         if Norm(nu) * Norm(mmbbpinv) le prec and IsIntegral(nn * mminv) then
             coeffs[nu] := Coefficient(f, IdealToRep(M)[bb][ZF!!(nn*mminv)]
                                      : InFunDomain := true);
+        else
+            coeffs[nu] := coeff_ring ! 0;
         end if;
     end for;
     return HMFComponent(Mk, mmbb, coeffs:
