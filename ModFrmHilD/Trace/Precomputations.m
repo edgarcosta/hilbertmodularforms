@@ -257,11 +257,6 @@ Since the local square computation is performed many times, we store the results
 intrinsic LocalSquare(M::ModFrmHilDGRng, d::RngOrdElt, pp::RngOrdIdl) -> RngIntElt
   {Checks if D is a local square in the completion F_pp}
 
-  // initialize - LocalSquares
-  if not assigned M`LocalSquares then
-    M`LocalSquares := AssociativeArray();
-  end if;
-
   // initialize - LocalSquares[pp]
   if not IsDefined(M`LocalSquares,pp) then
     M`LocalSquares[pp] := AssociativeArray();
