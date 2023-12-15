@@ -1,4 +1,14 @@
-// FIXME: HMFTracePrecomputation - Pass tracebasis to IdealCMextensions instead of computing each time
+
+/////////////// ModFrmHilD: Trace Precomputation ////////////////
+
+
+/*
+This file contains the following routines used for the Trace.m code:
+  - HMFTracePrecomputation: A procedure that does the precomputations for the trace code (stores class number, unit index, and discriminants of rings of integers)
+  - PrecomputeTraceForm: Does precomputations the trace form t
+  - PrecomputeTraceForm: Does precomputations for a series of trace forms T(a_1)t, ..., T(a_n)t specified by a list of ideals [a_1,...,a_n]
+  - LocalSquare: Stores values of local squares - in order to ensure that we don't repeat computations. (This can be removed if we)
+*/
 
 import "../SaveAndLoad.m": default_dir;
 
@@ -27,6 +37,40 @@ function LoadTriples(ZF)
   return B;
 end function;
 
+
+///////////////////////////////////////////////////
+//                                               //
+//      Precomputation: Class Number h,          //
+//      Unit Indices w, and Discriminant DD.     //
+//                                               //
+///////////////////////////////////////////////////
+
+
+/*
+The function below computes and stores the items for the trace formula. Given a CM-extension K / F we store:
+  - h = ClassNumber of K
+  - w = Unit Indices of K/F. Remark: Since K/F is a CM-extension then by Dirichlets unit theorem the rank of ZK^* and ZF^* are the same. 
+        Hence it makes to consider the quantity [ ZK^* : ZF^* ] which can be explained by 
+  - DD = the discriminant of ZK
+This proceedure is done in the following steps:
+  Given the discriminant of an order D in CM-extension K = F( sqrt(D) ) over F, we do the following:
+    
+    - Pass 1: Given an ideal aa, we compute list of elements representing all of the orders O whose class number we need 
+              To compute Tr T(aa). These orders are represented by a single totally negative element D such that O = ZF[ sqrt(D) ].
+    
+    - Pass 2: We run a discriminant hash which computes a unique representative d for each discriminant D up to:
+              (a) the squareclass of D in F* / F*^2
+              (b) the action of automorphisms s : F -> F on D.
+      
+      This gives a ** minimal ** set of discriminants for which we need to compute the class numbers and unit indices
+    
+    - Pass 3: We compute h, w, DD as above for the minimal set of discriminants. These are stored to M`ClassNumbersPrecomputation with d0 -> [h, w, DD]
+    - Pass 4: We remove bad discriminants D which don't satisfy a condition on their conductor (only for Cl(F) > 1). The rest are stored to M`PrecomputationforTrace as aa -> [ [D, d0], ... ]
+  
+  Once this is complete, we can the access all of the information for a discriminant D using the hash key d0 in the associative array ClassNumbersPrecomputation
+*/
+
+// FIXME: HMFTracePrecomputation - Pass tracebasis to IdealCMextensions instead of computing each time
 intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl] : SaveAndLoad:=true)
   {Precomputes class number and unit indices for a list of ideals L}
 
