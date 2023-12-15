@@ -389,15 +389,23 @@ intrinsic HMFSeriesRing(M::ModFrmHilDGRng, K::Rng : Multivariate:=true) -> RngMP
   {return cached PolynomialRing(K, n)}
   n := Degree(BaseField(M));
   if Multivariate then
-    t := Type(K);
-    if not IsDefined(M`RngMPol, t) then
-      M`RngMPol[Type(K)] := AssociativeArray();
-    end if;
-
-    b, R := IsDefined(M`RngMPol[t], K);
+    t := Sprint(Type(K));
+    unique := t in ["FldRat", "RngInt"];
+    b, R := IsDefined(M`RngMPol, t);
     if not b then
-      R := PolynomialRing(K, n);
-      M`RngMPol[t][K] := R;
+      if unique then
+        R := PolynomialRing(K, n);
+        M`RngMPol[t] := R;
+      else
+        M`RngMPol[t] := AssociativeArray();
+      end if;
+    end if;
+    if not unique then // otherwise we already have R
+      b, R := IsDefined(M`RngMPol[t], K);
+      if not b then
+        R := PolynomialRing(K, n);
+        M`RngMPol[t][K] := R;
+      end if;
     end if;
   else
     R := PolynomialRing(K);
