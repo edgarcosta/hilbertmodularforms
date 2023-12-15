@@ -21,6 +21,7 @@ import "hecke.m"              : basis_matrix,
 import "definite.m"           : BasisMatrixDefinite,
                                 InnerProductMatrixBig;
 
+import "../hackobj.m"         : HMF0;
 import "../BianchiNew/hackobj.m" : DimensionBianchi;
 
 QuaternionOrderIntrinsic := QuaternionOrder; 
@@ -459,7 +460,7 @@ function is_cached_hmf(QO, F, N, k)
   end if;
   return false, _;
 end function;
-
+/*
 function HMF0(F, N, Nnew, Chi, k, C)
   M := New(ModFrmHil);
   M`Field := F;
@@ -484,7 +485,7 @@ function HMF0(F, N, Nnew, Chi, k, C)
     M`hecke_matrix_field_is_minimal := false;
   end if;
   return M;
-end function;
+end function;*/
 
 // Constructor used for all spaces with NewLevel = 1
 
