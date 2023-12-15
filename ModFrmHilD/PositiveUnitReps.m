@@ -463,7 +463,7 @@ intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng : Precision := M`Precision) ->
     res := AssociativeArray();
     for bb in M`NarrowClassGroupReps do
         res[bb] := AssociativeArray();
-        for p in [1..Precision] do
+        for p in [0..Precision] do
             res[bb][p] := FunDomainRepsUpToPrec(M, bb, p);
         end for;
     end for;
