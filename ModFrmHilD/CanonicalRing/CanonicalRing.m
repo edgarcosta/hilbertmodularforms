@@ -393,12 +393,10 @@ It is assumed that `forms` are linearly independent.}
         // TODO: This double complement call can surely be optimized away.
         if Rank(coeffs_matrix) eq KnownMkDimension then
             return forms cat ComplementBasis(forms, Basis(moreforms) : Alg := Alg);
-        elif (#TraceFormIdeals ne 0) then 
-            msg := "Not enough TraceForms";
-            error msg;
         end if;
     end if;
 
+    vprintf HilbertModularForms : "Opening Basis! This may be slow";
     // Apply the fallback strategy.
     Basisweightk := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric);
     return forms cat ComplementBasis(forms, Basisweightk: Alg := Alg);
