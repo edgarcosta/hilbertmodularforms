@@ -424,6 +424,7 @@ intrinsic HMFComponent(Mk :: ModFrmHilD, bb :: RngOrdIdl, f :: RngElt, prec :: R
 specified by the polynomial f at the given precision. Parent(f) should either
 be a multivariate polynomial ring or a tower of univariate polynomial rings.}
 
+    M := Parent(Mk);
     n := Degree(BaseField(Mk));
 
     if Type(f) eq RngMPolElt then
@@ -450,9 +451,9 @@ be a multivariate polynomial ring or a tower of univariate polynomial rings.}
 
     if Prune then
         if Shadow then
-            HMFPruneShadowSeries(g);
+            HMFPruneShadowSeries(M, bb, g : prec := prec);
         else
-            HMFPruneSeries(g);
+            HMFPruneSeries(M, bb, g : prec := prec);
         end if;
     end if;
     return g;
@@ -582,6 +583,8 @@ end intrinsic;
 
 intrinsic '*'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
 {}
+    M := GradedRing(f);
+    require M eq GradedRing(g): "Cannot multiply HMF components in different graded rings";
     bb := ComponentIdeal(f);
     Rf := CoefficientRing(f);
     Rg := CoefficientRing(g);
@@ -600,9 +603,9 @@ intrinsic '*'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
 
     prec := Min(Precision(f), Precision(g));
     if Precision(f) gt prec then
-        serf := HMFPruneShadowSeries(serf : Precision := prec);
+        serf := HMFPruneShadowSeries(M, bb, serf : Precision := prec);
     elif Precision(g) gt prec then
-        serg := HMFPruneShadowSeries(serg : Precision := prec);
+        serg := HMFPruneShadowSeries(M, bb, serg : Precision := prec);
     end if;
 
     return HMFComponent(Space(f) * Space(g), bb, serf * serg, prec :
@@ -612,20 +615,21 @@ end intrinsic;
 intrinsic '^'(f :: ModFrmHilDEltComp, n :: RngIntElt) -> ModFrmHilDEltComp
 {}
     require n ge 0: "Cannot compute inverse of HMF component";
+    M := GradedRing(f);
+    bb := ComponentIdeal(f);
     serf := ShadowSeries(f);
     prec := Precision(f);
     g := serf;
-    bits := Reverse(Intseq(n), 2);
+    bits := Intseq(n, 2);
     bits := bits[1..(#bits - 1)];
     for i in bits do
         g := g^2;
-        g := HMFPruneShadowSeries(g : prec := prec);
+        g := HMFPruneShadowSeries(M, bb, g : prec := prec);
         if i eq 1 then
-            g := g * f;
-            g := HMFPruneShadowSeries(g : prec := prec);
+            g := g * serf;
+            g := HMFPruneShadowSeries(M, bb, g : prec := prec);
         end if;
     end for;
-    print g;
 
     return HMFComponent(Space(f)^n, ComponentIdeal(f), g, prec :
                         Shadow := true, Prune := false);
@@ -633,50 +637,55 @@ end intrinsic;
 
 intrinsic '/'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
 {}
+    M := GradedRing(f);
     n := Degree(BaseField(g));
     a0 := HMFSeriesCoefficient(Series(g), [0: i in [1..n]]);
     bb := ComponentIdeal(f);
+    require M eq GradedRing(g): "Cannot divide HMF components in different graded rings";
     require IsInvertible(a0) : "Cannot divide if the constant coefficient is not invertible";
     require bb eq ComponentIdeal(g) : "Cannot divide HMF components on different components";
 
     // Coerce automatically
     Rf := CoefficientRing(f);
     Rg := CoefficientRing(g);
-    if not Rf eq Rg then
+    serf := ShadowSeries(f);
+    serg := ShadowSeries(g);
+    if Rf eq Rg then
+        Rfg := Rf;
+        S := SeriesRing(f);
+    else
         n := Degree(BaseField(f));
         Rfg := Compositum(Rf, Rg);
-        f := ChangeRing(f, Rfg);
-        g := ChangeRing(g, Rfg);
+        S := HMFSeriesRing(M, Rfg);
+        serf := S ! serf;
+        serg := S ! serg;
     end if;
 
     // Reduce to g = 1 + ...
-    a0inv := (Rf ! a0)^(-1);
-    f := a0inv * f;
-    g := a0inv * g;
-    serf := ShadowSeries(f);
-    serg := ShadowSeries(g);
+    a0inv := (Rfg ! a0)^(-1);
+    serf := a0inv * serf;
+    serg := a0inv * serg;
 
     // Get shadow series at minimum precision
     prec := Min(Precision(f), Precision(g));
     if prec lt Precision(f) then
-        serf := HMFPruneShadowSeries(serf : prec := prec);
+        serf := HMFPruneShadowSeries(M, bb, serf : prec := prec);
     elif prec lt Precision(g) then
-        serg := HMFPruneShadowSeries(serg : prec := prec);
+        serg := HMFPruneShadowSeries(M, bb, serg : prec := prec);
     end if;
 
     // Invert
     u := 1 - serg;
-    inv := SeriesRing(g) ! 1;
-    u := HMFPruneShadowSeries(u : prec := prec);
-    inv := 1 + u;
+    inv := S ! 1;
+    u := HMFPruneShadowSeries(M, bb, u : prec := prec);
     while u ne 0 do
         inv := (1 + u) * inv;
-        inv := HMFPruneShadowSeries(inv : prec := prec);
+        inv := HMFPruneShadowSeries(M, bb, inv : prec := prec);
         u := u * u;
-        u := HMFPruneShadowSeries(u : prec := prec);
+        u := HMFPruneShadowSeries(M, bb, u : prec := prec);
     end while;
     inv := serf * inv;
-    inv := HMFPruneShadowSeries(inv : prec := prec);
+    inv := HMFPruneShadowSeries(M, bb, inv : prec := prec);
 
     return HMFComponent(Space(f) / Space(g), bb, inv, prec :
                         Shadow := true, Prune := false);

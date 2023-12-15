@@ -462,7 +462,10 @@ intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng : Precision := M`Precision) ->
 {Deprecated: use FunDomainRepsUpToPrec(M, bb, prec)}
     res := AssociativeArray();
     for bb in M`NarrowClassGroupReps do
-        res[bb] := FunDomainRepsUpToPrec(M, bb, Precision);
+        res[bb] := AssociativeArray();
+        for p in [1..Precision] do
+            res[bb][p] := FunDomainRepsUpToPrec(M, bb, p);
+        end for;
     end for;
     return res;
 end intrinsic;
