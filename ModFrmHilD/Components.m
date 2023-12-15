@@ -173,8 +173,8 @@ intrinsic Print(f :: ModFrmHilDEltComp, level :: MonStgElt : num_coeffs := 10)
         M := GradedRing(f);
         precs := [p: p in M`PrecisionsByComponent[bb] | p le prec];
         printf "Hilbert modular form component for ideal class bb = %o at precision %o\n",
-               bb, prec;
-        printf "Coefficients \n\t(norm, nu)  |--->   a_nu:";
+               IdealOneLine(bb), prec;
+        printf "Coefficients (norm, nu)  |--->   a_nu:";
         count := 0;
         for p in precs do
             for nu->exp in M`FunDomainRepsOfPrec[bb][p] do
@@ -187,7 +187,7 @@ intrinsic Print(f :: ModFrmHilDEltComp, level :: MonStgElt : num_coeffs := 10)
                 break;
             end if;
         end for;
-        printf "\n\n";
+        printf "\n";
 
     elif level eq "Magma" then
         error "not implemented yet!";
@@ -615,6 +615,9 @@ end intrinsic;
 intrinsic '^'(f :: ModFrmHilDEltComp, n :: RngIntElt) -> ModFrmHilDEltComp
 {}
     require n ge 0: "Cannot compute inverse of HMF component";
+    if n eq 0 then
+        return HMFComponentOne(Space(f)^0, ComponentIdeal(f));
+    end if;
     M := GradedRing(f);
     bb := ComponentIdeal(f);
     serf := ShadowSeries(f);

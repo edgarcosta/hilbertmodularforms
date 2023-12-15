@@ -16,10 +16,11 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     k := Weight(Mk);
     N := Level(Mk);
     if level ne "Minimal" then
-      printf "Hilbert modular form expansion: ";
-      printf "Parent: %o\n", Mk;
+        printf "Hilbert modular form in %o\n", Mk;
+        printf "with components:\n";
     end if;
     for bb in bbs do
+        printf "\n";
       Print(Components(f)[bb], level : num_coeffs := num_coeffs);
     end for;
   elif level eq "Magma" then
