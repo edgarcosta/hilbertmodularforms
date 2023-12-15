@@ -213,7 +213,7 @@ end intrinsic;
 
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
   {f = fbb}
-  f := HMFZero(Parent(fbb));
+  f := HMFZero(Space(fbb));
   f`Components[ComponentIdeal(fbb)] := Copy(fbb);
   return f;
 end intrinsic;
@@ -615,3 +615,28 @@ intrinsic Swap(f::ModFrmHilDElt) -> ModFrmHilDElt
    return true;
   end intrinsic;
 
+////////// Miscellaneous //////////
+
+intrinsic IncreasePrecisionWithBasis(g::ModFrmHilDElt, basis::SeqEnum[ModFrmHilDElt]) -> ModFrmHilDElt
+  {
+    inputs:
+      g - a ModFrmHilDElt
+      basis - A sequence f_1, ..., f_n of ModFrmHilDElts
+    returns:
+      g with precision equal to the minimum precision of an f_i, if possible.
+      Otherwise, returns g as is
+  }
+  lindep := LinearDependence(basis cat [g]);
+  // if the linear dependence of g with the basis is not 1
+  // then we cannot use the basis to increase precision
+  if #lindep eq 1 then
+    lindep := lindep[1];
+    g := &+[-1 * lindep[i] * basis[i] / lindep[#basis + 1] : i in [1 .. #basis]];
+  end if;
+  return g;
+end intrinsic;
+
+intrinsic IncreasePrecisionWithBasis(subspace::SeqEnum[ModFrmHilDElt], basis::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
+  {}
+  return [IncreasePrecisionWithBasis(g, basis) : g in subspace];
+end intrinsic;

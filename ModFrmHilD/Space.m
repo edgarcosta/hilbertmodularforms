@@ -234,13 +234,13 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
     end for;
   end if;
 
-  uc_values := &cat[ValuesOnGens(unitcharacters[bb]) : bb in NarrowClassGroupReps(M)];
+  ucs := [unitcharacters[bb] : bb in NarrowClassGroupReps(M)];
   if IsDefined(spaces, N) then
-    if IsDefined(spaces[N], <k, chi, uc_values>) then
-      return spaces[N][<k, chi, uc_values>];
+    if IsDefined(spaces[N], <k, chi, ucs>) then
+      return spaces[N][<k, chi, ucs>];
     end if;
   else
-    M`Spaces[N] := AssociativeArray(PowerStructure(Tup));
+    M`Spaces[N] := AssociativeArray();
   end if;
   Mk := New(ModFrmHilD);
   Mk`Parent := M;
@@ -250,12 +250,8 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   Mk`IsCuspidal := false;
   Mk`IsNew := false;
   require Parent(chi) eq HeckeCharacterGroup(N, [1..Degree(BaseField(M))]) : "The parent of chi should be HeckeCharacterGroup(N, [1..Degree(BaseField(M))])";
-  // Right now when k[i] = 1, we don't want to restrict to compatible weights.
-  if 1 notin k then
-      is_compat, i := IsCompatibleWeight(chi, k);
-      // require is_compat : Sprintf("The parity of the character at the infinite place %o does not match the parity of the weight", i);
-      require is_compat : Sprintf("The parity of the character at the infinite places does not match the parity of the weight at the unit %o", i);
-  end if;
+  is_compat, i := IsCompatibleWeight(chi, k);
+  require is_compat : Sprintf("The parity of the character at the infinite places does not match the parity of the weight at the unit %o", i);
   Mk`Character := chi;
   Mk`UnitCharacters := unitcharacters;
   Mk`DefaultCoefficientRing := DefaultCoefficientRing(Mk);
@@ -263,7 +259,7 @@ intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::
   require Keys(Mk`UnitCharacters) eq SequenceToSet(NarrowClassGroupReps(M)) :"we expect the keys of the associative array to be narrow class group reprsentatives";
   require {Type(v): k->v in Mk`UnitCharacters} eq { GrpCharUnitTotElt } : "we expect the values of the associative array to be of type GrpCharUnitTotElt";
   require &and[BaseField(v) eq BaseField(M): k->v in Mk`UnitCharacters]: "we expect all the unit characters to have the same base field";
-  M`Spaces[N][<k, chi, uc_values>] := Mk;
+  M`Spaces[N][<k, chi, ucs>] := Mk;
   return Mk;
 end intrinsic;
 

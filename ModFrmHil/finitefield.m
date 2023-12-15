@@ -16,10 +16,10 @@ import "copypastefunctions.m" : random_large_split_prime_using_max_order,
                                 Ambient,
                                 BMF_with_ambient,
                                 HMF0,
-                                weight_map_arch,
-				minimal_hecke_matrix_field;
+                                weight_map_arch;
 
-import "diamond.m" : hecke_matrix_field;
+import "hecke_field.m" : hecke_matrix_field,
+                         minimal_hecke_matrix_field;
 
 
 forward WeightRepresentationFiniteField;
@@ -155,6 +155,10 @@ function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Ma
       M`weight_rep := map< H -> Mat1 | q :-> I >;
       M`weight_base_field := Rationals();
       M`weight_dimension := 1;
+      if hack then
+	  QQ := Rationals();
+	  M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
+      end if;
     else
       // define weight_base_field = extension K/F containing Galois closure of F and
       // containing a root of every conjugate of the minimal polynomial of H.1
@@ -181,6 +185,10 @@ function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Ma
       K := AbsoluteField(K);
       K := OptimizedRepresentation(K);
       embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
+      	 if hack then
+	     Fspl := F`SplittingField[1];
+	     M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
+	 end if;
       M`weight_base_field:=K;
       vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
       vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
@@ -204,28 +212,26 @@ function WeightRepresentationFiniteField(M, p : hack := true) // ModFrmHil -> Ma
       M2K:=MatrixRing(K, M`weight_dimension);
 
       if hack then
-	  // hack begins
-	  if Type(p) eq RngIntElt then
-              pp := PrimeIdealsOverPrime(K, p)[1];
-	  else
-              bool, iso := IsIsomorphic(NumberField(Order(p)), K);
-              assert bool;
-              pp := ideal<Integers(K) | [iso(K!g) : g in Generators(p)]>;
-	  end if;
-	  FF, OKtoFF := ResidueClassField(pp);
-	  KtoFF := map<K->FF | x :-> OKtoFF(x*d)/FF!d where d:= Denominator(x)>;
-	  splitting_seq_FF := [];
-	  M2KtoFF := hom<MatrixRing(K, 2) -> MatrixRing(FF, 2) | KtoFF>;
-	  splitting_seq_FF := [s*M2KtoFF : s in splitting_seq];
-	  
-	  M2FF:=MatrixRing(FF, M`weight_dimension);
-	  M`weight_rep:=map<H -> M2FF|q :-> weight_map_arch(q, splitting_seq_FF, FF, m, n)>;
-	  M`weight_base_field := FF;
-	  // hack ends
+        // hack begins
+        if Type(p) eq RngIntElt then
+          pp := PrimeIdealsOverPrime(K, p)[1];
+        else
+          bool, iso := IsIsomorphic(NumberField(Order(p)), K);
+          assert bool;
+          pp := ideal<Integers(K) | [iso(K!g) : g in Generators(p)]>;
+        end if;
+        FF, OKtoFF := ResidueClassField(pp);
+        KtoFF := map<K->FF | x :-> OKtoFF(x*d)/FF!d where d:= Denominator(x)>;
+        splitting_seq_FF := [];
+        M2KtoFF := hom<MatrixRing(K, 2) -> MatrixRing(FF, 2) | KtoFF>;
+        splitting_seq_FF := [s*M2KtoFF : s in splitting_seq];
+        M2FF:=MatrixRing(FF, M`weight_dimension);
+        M`weight_rep:=map<H -> M2FF|q :-> weight_map_arch(q, splitting_seq_FF, FF, m, n)>;
+        M`weight_base_field := FF;
+        // hack ends
       else
-	  M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
+        M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
       end if;
-	
     end if;
     return M`weight_rep, M`weight_dimension, M`weight_base_field;
   end if;
@@ -297,8 +303,8 @@ and dim ne 1 // beware recursion
 
     vprintf ModFrmHil: "Characteristic polynomial of Hecke algebra generator: ";
     vtime ModFrmHil:
-    if hack then 
-	// hack starts
+    if hack then
+	// hack starts, by adding "or IsFinite(K)"
 	if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K) then
 	    // hack ends
 	    chi := CharacteristicPolynomial(t);
@@ -322,8 +328,8 @@ and dim ne 1 // beware recursion
     end if;
 
     if (not hack) or not IsFinite(K) then
-	// decomposition should be over the true hecke field (= Q for parallel weight)
-	chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
+      // decomposition should be over the true hecke field (= Q for parallel weight)
+      chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
     end if;
 
     vprintf ModFrmHil: "Factoring the polynomial: ";
@@ -571,49 +577,56 @@ METHOD := M`HeckeMethod;
 
 if METHOD lt 3 then
 
-     // Old way: determine the Hecke algebra of this newform space
+    // Old way: determine the Hecke algebra of this newform space
 
-     T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
+    if hack then
+      SetRationalBasis(M);
+    end if;
+    T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
 
-     vprintf ModFrmHil: "CharacteristicPolynomial: ";
-     vtime ModFrmHil:
-     chi := CharacteristicPolynomial(t);
-     K := BaseRing(t);
-     if (not hack) or not IsFinite(K) then
-	 chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
-     end if;
-     require IsIrreducible(chi) :
-            "The space M is not an irreducible module under the Hecke action";
+    vprintf ModFrmHil: "CharacteristicPolynomial: ";
+    vtime ModFrmHil:
+    chi := CharacteristicPolynomial(t);
+    K := BaseRing(t);
+    hack and:= IsFinite(K); // the goal of the hack is to enable computations over finite fields
+    if (not hack) then
+      Kmin := minimal_hecke_matrix_field(M);
+      t_K := t;
+      t := ChangeRing(t_K, Kmin);
+      // Verifying that the coercion is compatible
+      assert t_K eq ChangeRing(t, M`minimal_hecke_field_emb);
+      chi := CharacteristicPolynomial(t);
+      // the descent below cant lead to wrong results
+	    // chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
+    end if;
+    require IsIrreducible(chi) :
+         "The space M is not an irreducible module under the Hecke action";
 
-     if Degree(chi) eq 1 then
-       E := BaseRing(chi);
-       e := t[1][1];
-     else
-	 if hack then
-	     // begin hack
-	     E := ext<BaseRing(chi)|chi>; e:=E.1;
-	     // end hack
-	 else
-	     E := NumberField(chi); e:=E.1;
-	 end if;
-     end if;
-     nf`BaseField := E;
+    if Degree(chi) eq 1 then
+      E := BaseRing(chi);
+      e := t[1][1];
+    else
+      if hack then
+        // begin hack
+        E := ext<BaseRing(chi)|chi>; e:=E.1;
+        // end hack
+      else
+        E := NumberField(chi); e:=E.1;
+      end if;
+    end if;
+    nf`BaseField := E;
 
-     K := BaseRing(t);
-     if hack then
-	 //begin hack
-	 if K eq E then
-	     EK := K;
-	 else	 
-	     if IsFinite(E) then
-		 EK := ext<E| DefiningPolynomial(K)>;
-	     else
-		 EK := CompositeFields(K, E)[1];
-	     end if;
-	 end if;
-	 // end hack
-     else
-	  EK := CompositeFields(K, E)[1];
+    K := BaseRing(t);
+    if hack then
+      //begin hack
+      if K eq E then
+        EK := K;
+      else
+        EK := ext<E| DefiningPolynomial(K)>;
+      end if;
+      // end hack
+    else
+       EK := CompositeFields(K, E)[1];
      end if;
 
      tEK := ChangeRing(t, EK);

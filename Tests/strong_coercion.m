@@ -1,6 +1,6 @@
 CC_THRESHOLD := 10^-10;
 
-function test(a, K1, K2)
+procedure test(a, K1, K2)
   // a::FldElt - Element of K1
   // K1::Fld  
   // K2::Fld 
@@ -13,8 +13,7 @@ function test(a, K1, K2)
 
   c := StrongCoerce(K1, b);
   assert c eq a;
-  return "";
-end function;
+end procedure;
 
 
 Q := RationalField();
