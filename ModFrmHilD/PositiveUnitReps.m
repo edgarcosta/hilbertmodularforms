@@ -294,7 +294,6 @@ intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
     THRESHOLD := 10^(-10);
 
     for bb in NarrowClassGroupReps(M) do
-        printf "\nStarting new ideal %o\n", IdealOneLine(bb);
         m1 := 0;
         m2 := 0;
         // Compute real embeddings, m1, m2
@@ -319,7 +318,6 @@ intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
             for j in [Ceiling(lbound)..Floor(ubound)] do
                 M`Shadows[bb][nu][eps^j] := Exponent(M, bb, nu * eps^j);
             end for;
-            printf "Reduced rep %o: found translates %o\n", nu, [nu*eps: eps in Keys(M`Shadows[bb][nu])];
         end for;
     end for;
 end intrinsic;

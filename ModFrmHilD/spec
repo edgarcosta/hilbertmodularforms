@@ -1,7 +1,6 @@
 {
   Basis.m
   Components.m
-  NewComponents.m
   CongruenceSubgroup.m
   CuspResolution.m
   Cusps.m
