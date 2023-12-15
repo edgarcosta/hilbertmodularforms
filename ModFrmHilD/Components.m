@@ -377,20 +377,28 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic HMFSeriesRing(R :: Rng, n :: RngIntElt : Multivariate := true) -> Rng
 
-{Internal function: returns the series ring used in HMF components}
-
-    if Multivariate then
-        S := PolynomialRing(R, n);
-    else
-        S := R;
-        for i in [1..n] do
-            S := PolynomialRing(S);
-        end for;
+intrinsic HMFSeriesRing(M::ModFrmHilDGRng, K::Rng : Multivariate:=true) -> RngMPol
+  {return cached PolynomialRing(K, n)}
+  n := Degree(BaseField(M));
+  if Multivariate then
+    t := Type(K);
+    if not IsDefined(M`RngMPol, t) then
+      M`RngMPol[Type(K)] := AssociativeArray();
     end if;
 
-    return S;
+    b, R := IsDefined(M`RngMPol[t], K);
+    if not b then
+      R := PolynomialRing(K, n);
+      M`RngMPol[t][K] := R;
+    end if;
+  else
+    R := PolynomialRing(K);
+    for i in [1..n] do
+        R := PolynomialRing(R);
+    end for;
+  end if;
+  return R;
 end intrinsic;
 
 intrinsic HMFComponent(Mk :: ModFrmHilD, bb :: RngOrdIdl, f :: RngElt, prec :: RngIntElt :
@@ -464,33 +472,29 @@ precision instead.}
         end for;
     end for;
 
-    R := HMFSeriesRing(CoefficientRing, n : Multivariate := Multivariate);
+    R := HMFSeriesRing(M, CoefficientRing : Multivariate := Multivariate);
     f := HMFConstructSeries(R, exps, coeffs);
     return HMFComponent(Mk, bb, f: Shadow := false, Prune := false, Precision := Precision);
 
 end intrinsic;
 
-intrinsic HMFComponentZero(Mk :: ModFrmHilD, bb :: RngOrdIdl
-                                : Multivariate := true
-    ) -> ModFrmHilDEltComp
+intrinsic HMFComponentZero(Mk::ModFrmHilD, bb::RngOrdIdl : Multivariate := true) -> ModFrmHilDEltComp
 
 {Returns the HMF component that is identically zero on the bb component.}
 
     n := Degree(BaseField(Mk));
     R := DefaultCoefficientRing(Mk);
-    S := HMFSeriesRing(R, n : Multivariate := Multivariate);
+    S := HMFSeriesRing(Parent(Mk), R : Multivariate := Multivariate);
     return HMFComponent(Mk, bb, S ! 0, Precision(Parent(Mk)) : Shadow := true, Prune := false);
 end intrinsic;
 
-intrinsic HMFComponentOne(Mk :: ModFrmHilD, bb :: RngOrdIdl
-                          : Multivariate := true
-    ) -> ModFrmHilDEltComp
+intrinsic HMFComponentOne(Mk :: ModFrmHilD, bb :: RngOrdIdl : Multivariate:=true) -> ModFrmHilDEltComp
 
 {Returns the HMF component that is identically one on the bb component.}
 
     n := Degree(BaseField(Mk));
     R := DefaultCoefficientRing(Mk);
-    S := HMFSeriesRing(R, n : Multivariate := Multivariate);
+    S := HMFSeriesRing(Parent(Mk), R : Multivariate := Multivariate);
     return HMFComponent(Mk, bb, S ! 1, Precision(Parent(Mk)) : Shadow := true, Prune := false);
 end intrinsic;
 
@@ -509,7 +513,7 @@ coefficient ring is extended to R.}
     n := Degree(BaseField(Mk));
     bb := ComponentIdeal(f);
     ser := ShadowSeries(f);
-    S := HMFSeriesRing(R, n : Multivariate := IsMultivariate(f));
+    S := HMFSeriesRing(GradedRing(f), R : Multivariate := IsMultivariate(f));
 
     return HMFComponent(Mk, bb, S ! ser, prec : Shadow := true, Prune := false);
 end intrinsic;
@@ -570,7 +574,7 @@ intrinsic '*'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
         n := Degree(BaseField(f));
         multivariate := (Type(serf) eq RngMPolElt);
         Rf := Compositum(Rf, Rg);
-        S := HMFSeriesRing(Rf, n : Multivariate := multivariate);
+        S := HMFSeriesRing(GradedRing(f), Rf : Multivariate:=multivariate);
         serf := S ! serf;
         serg := S ! serg;
     end if;
@@ -621,7 +625,7 @@ intrinsic '/'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
     if not Rf eq Rg then
         n := Degree(BaseField(f));
         Rf := Compositum(Rf, Rg);
-        S := HMFSeriesRing(Rf, n : Multivariate := IsMultivariate(g));
+        S := HMFSeriesRing(GradedRing(f), Rf : Multivariate := IsMultivariate(g));
         serf := S ! serf;
         serg := S ! serg;
     end if;
@@ -683,7 +687,7 @@ intrinsic MapCoefficients(m :: Map, f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
     M := GradedRing(f);
     n := Degree(BaseField(f));
     new_ring := Codomain(m);
-    new_series_ring := HMFSeriesRing(new_ring, n : Multivariate := IsMultivariate(f));
+    new_series_ring := HMFSeriesRing(GradedRing(f), new_ring : Multivariate := IsMultivariate(f));
 
     precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision(f)];
     exps := [];

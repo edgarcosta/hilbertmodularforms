@@ -54,6 +54,9 @@ declare attributes ModFrmHilDGRng:
   Spaces,
   // Associative array (k, psi) -> L(psi, 1-k)
   LValues,
+  // AssociativeArray Type(K) -> K -> K[x_1, ..., x_n] n = dim(F)
+  // used by HMFSeriesRing, as we always want to use the same RngMPol
+  RngMPol,
   Automorphisms, // Automorphism group of F
   LocalSquares; // Local squares stored for trace
 
@@ -274,6 +277,8 @@ intrinsic Spaces(M::ModFrmHilDGRng) -> Assoc
 end intrinsic;
 
 
+
+
 ////////// ModFrmHilDGRng creation and multiplication functions //////////
 
 intrinsic ModFrmHilDGRngInitialize() -> ModFrmHilD
@@ -368,6 +373,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`IdealsFactored := SetToIndexedSet(SequenceToSet(all_ideals));
   norms := [CorrectNorm(I) : I in M`PrimeIdeals];
   ParallelSort(~norms, ~M`PrimeIdeals);
+
+  M`RngMPol := AssociativeArray();
 
   M`Spaces := AssociativeArray();
   M`LValues := AssociativeArray();
