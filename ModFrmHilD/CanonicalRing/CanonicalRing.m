@@ -382,6 +382,7 @@ It is assumed that `forms` are linearly independent.}
     if KnownMkDimension cmpne false and KnownMkDimension eq #forms then
         return forms;
 
+    vprint HilbertModularForms : "Looking for generators in Eisenstein / Traceforms";
     elif KnownMkDimension cmpne false and KnownMkDimension ne #forms then
         // First try our luck with just Eisenstein series. If that fails, use the fallback.
 
@@ -396,7 +397,7 @@ It is assumed that `forms` are linearly independent.}
         end if;
     end if;
 
-    vprintf HilbertModularForms : "Opening Basis! This may be slow";
+    vprint HilbertModularForms : "Opening Basis! This may be slow";
     // Apply the fallback strategy.
     Basisweightk := Basis(Mk : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric);
     return forms cat ComplementBasis(forms, Basisweightk: Alg := Alg);
