@@ -9,7 +9,7 @@ intrinsic LogMinkowski(M :: ModFrmHilDGRng, nu :: RngElt, prec :: RngIntElt
 
 {Returns the log-Minkowski embedding of nu as a point of R^n}
 
-    return [Log(Evaluate(nu, pl)): pl in Places(M)];
+    return [Log(Evaluate(nu, pl : Precision := prec)): pl in Places(M)];
 end intrinsic;
 
 intrinsic InverseLogMinkowski(M :: ModFrmHilDGRng, prec :: RngIntElt
@@ -26,9 +26,12 @@ log-Minkowski values of the totally positive unit basis of F, whose last line is
         lines := [LogMinkowski(M, eps, prec): eps in epses] cat [[1: i in [1..n]]];
         M`InverseLogMinkowski := Matrix(lines)^(-1);
         M`InverseLogMinkowskiPrec := prec;
+        return M`InverseLogMinkowski;
+    else
+        n := Degree(BaseField(M));
+        return MatrixAlgebra(RealField(prec), n) ! M`InverseLogMinkowski;
     end if;
 
-    return M`InverseLogMinkowski;
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -282,14 +285,16 @@ intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
     F := BaseField(M);
     eps := TotallyPositiveUnitsGenerators(F)[1];
     v := Evaluate(eps, Places(M)[1] : Precision := Precision);
+    //force v > 1
     if v lt 1 then
+        eps := eps^(-1);
         v := v^(-1);
     end if;
     logv := Log(v);
     THRESHOLD := 10^(-10);
 
     for bb in NarrowClassGroupReps(M) do
-        print "\nStarting new ideal\n";
+        printf "\nStarting new ideal %o\n", IdealOneLine(bb);
         m1 := 0;
         m2 := 0;
         // Compute real embeddings, m1, m2
@@ -322,7 +327,7 @@ end intrinsic;
 intrinsic PopulateShadowArrayGen(M :: ModFrmHilDGRng : Precision := 100)
 {}
 
-    B := Precision(M);
+    B := M`Precision;
     F := BaseField(M);
     n := Degree(F);
 
@@ -370,7 +375,7 @@ intrinsic PopulateShadowArrayGen(M :: ModFrmHilDGRng : Precision := 100)
             // Construct polytope
             vertices := [];
             for pt in points do
-                vertex := pt * InverseLogMinkowski(M);
+                vertex := pt * InverseLogMinkowski(M, prec);
                 vertex := Eltseq(vertex)[1..(n-1)];
                 Append(~vertices, Rationalize(vertex));
             end for;
@@ -379,7 +384,7 @@ intrinsic PopulateShadowArrayGen(M :: ModFrmHilDGRng : Precision := 100)
             for pt in Points(P) do
                 unit := F!1;
                 for i in [1..(n-1)] do
-                    unit := unit * epses[i] ^ pt[i];
+                    unit := unit * epses[i] ^ Eltseq(pt)[i];
                 end for;
                 M`Shadows[bb][nu][unit] := Exponent(M, bb, unit * nu);
             end for;

@@ -165,11 +165,17 @@ for bb in bbs do
 end for;
 
 // The cubic number field Q(zeta_7)+. 
+TOLERANCE := 0.01;
+PRECISION := 20;
+
+R<x> := PolynomialRing(RationalField());
 
 F<a> := NumberField(x^3-x^2-2*x+1);
 ZF := Integers(F);
 basis := Basis(ZF);
 places := InfinitePlaces(F);
+M := GradedRingOfHMFs(F, PRECISION);
+bb := NarrowClassGroupReps(M)[1];
 
 gens := TotallyPositiveUnitsGenerators(F);
 assert #(gens) eq 2;
@@ -177,7 +183,7 @@ eps_1 := gens[1];
 eps_2 := gens[2];
 
 nu := 1*basis[1] + 2*basis[2] + 3*basis[3];
-nu_prime, eps_prime := FunDomainRep(nu);
+nu_prime, eps_prime := FunDomainRep(M, bb, nu);
 assert nu_prime eq nu/eps_2;
 //rep_embed := [Evaluate(rep, places[i]) : i in [1, 2, 3]];
 //assert Abs(rep_embed[1] - 12.542876546957239435622233943040328966125486709642126932300421480979986755594803638458377953396537060638970481992397465334397641293479711072585112648823806882758838455) lt TOLERANCE;
