@@ -187,7 +187,7 @@ intrinsic HMF(Mk::ModFrmHilD,
   for bb in bbs do
     coeff_ring := (coeff_rings cmpeq false) select Mk`DefaultCoefficientRing else coeff_rings[bb];
     f`Components[bb] := HMFComponent(Mk, bb, coeffs[bb] :
-                                     CoefficientRing := coeff_ring, Precision := prec[bb]);
+                                     CoefficientRing := coeff_ring, prec := prec[bb]);
   end for;
   return f;
 end intrinsic;
