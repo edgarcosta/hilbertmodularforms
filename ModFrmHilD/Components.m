@@ -102,7 +102,7 @@ intrinsic Coefficient(f :: ModFrmHilDEltComp, nu :: FldNumElt
     R := CoefficientRing(f);
 
     if not InFunDomain then
-        nu, eps := FunDomainRep(M, bb, nu);
+        nu, eps := FunDomainRep(M, nu);
     end if;
     b, prec := IsDefined(M`FunDomainReps[bb], nu);
 

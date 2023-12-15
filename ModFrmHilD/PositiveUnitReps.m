@@ -413,7 +413,7 @@ associative arrays}
 
     res := AssociativeArray();
     for bb in M`NarrowClassGroupReps do
-        res[bb] := [* x: x in Values(M`FunDomainReps[bb]) *];
+        res[bb] := [* x: x in Keys(M`FunDomainReps[bb]) *];
     end for;
     return res;
 end intrinsic;
