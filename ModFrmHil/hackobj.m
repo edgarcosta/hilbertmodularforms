@@ -1,7 +1,15 @@
 // copied from ModFrmHil/hackobj.m and modified
 freeze;
 
+forward HMF0;
+
 import "copypaste/hackobj.m" : HMF;
+
+/**************** New Attributes **********************/
+
+declare attributes ModFrmHil : Diamond;
+
+/********************************************************/
 
 function HMF0(F, N, Nnew, Chi, k, C : hack := true)
   M := New(ModFrmHil);

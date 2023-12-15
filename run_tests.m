@@ -1,5 +1,4 @@
 // usage: magma target:=SUBSTRING exitsignal:=BOOL run_tests.m
-SetQuitOnError(true);
 if assigned filename then
   if "Tests/" eq filename[1..6] then
     filename := filename[7..#filename];

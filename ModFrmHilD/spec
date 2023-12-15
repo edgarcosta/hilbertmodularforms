@@ -33,10 +33,12 @@
 
 Creation
 {
+   BaseChange.m
    DedekindZetaExact.m
    EisensteinSeries.m
    EllipticCurve.m
    Dihedral.m
+   CuspFormFromEigs.m
    HeckeStability.m
    Igusa.m
    Newforms.m
