@@ -285,10 +285,9 @@ intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
     logv := Log(v);
     THRESHOLD := 10^(-10);
 
-    eps := 10^-Precision;
     for bb in NarrowClassGroupReps(M) do
-        m1 := eps;
-        m2 := eps;
+        m1 := 10^-Precision;
+        m2 := 10^-Precision;
         // Compute real embeddings, m1, m2
         values := AssociativeArray();
         for nu->p in M`FunDomainReps[bb] do
