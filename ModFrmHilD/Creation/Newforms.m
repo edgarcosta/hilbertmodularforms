@@ -39,56 +39,6 @@ intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
   return Mk`MagmaNewCuspForms;
 end intrinsic;
 
-
-// Generic extending multiplicatevely
-intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::., prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
-  { set a_nn := prod(a_p^e : (p,e) in factorization(nn) }
-  // TODO: take character into acount
-
-  k0 := Max(k);
-  if factorization cmpeq false then
-    factorization := Factorization;
-  end if;
-
-  // set recursion
-  // ideals must be sorted by Norm
-  max_norm := Norm(ideals[#ideals]);
-  prec := Floor(Log(2, max_norm)) + 1;
-  Q := Rationals();
-  // Power series ring for recursion
-  QX<X, Y> := PolynomialRing(Q, 2);
-  R<T> := PowerSeriesRing(QX : Precision := prec);
-  recursion := Coefficients(1/(1 - X*T + Y*T^2));
-  // If good, then 1/(1 - a_p T + Chi(p)*Norm(p)^{k0-1} T^2) = 1 + a_p T + a_{p^2} T^2 + ...
-  // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
-  for p in prime_ideals do
-    Np := Norm(p);
-    if N subset p then
-      Npk := 0;
-    else
-      Npk := Np^(k0 - 1);
-    end if;
-    pe := p;
-    Npe := Np;
-    for e in [2..Floor(Log(Norm(p), max_norm))] do
-      pe *:= p; // p**e
-      Npe *:= Np;
-      // pe might not be in ideals, but still might show up as a factor
-      if Npe gt max_norm then
-        break;
-      end if;
-      coeffs[pe] := Evaluate(recursion[e+1], [coeffs[p], Npk * chi(p)]);
-    end for;
-  end for;
-  // extend multiplicatively
-  for n in ideals do
-    if not IsDefined(coeffs, n) then
-      coeffs[n] := &*[coeffs[pair[1]^pair[2]] : pair in factorization(n)];
-    end if;
-  end for;
-end intrinsic;
-
-
 // Eigenforms new/old in Mk
 intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
   {
@@ -175,8 +125,6 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
     coeffs[pp] :=  fn(pp);
   end for;
   ZF := Integers(Mk);
-  coeffs[0*ZF] := 0;
-  coeffs[1*ZF] := 1;
 
   ExtendMultiplicatively(~coeffs, N, k, chiH, primes, ideals : factorization:=func<n|Factorization(M, n)>);
 

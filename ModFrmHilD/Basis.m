@@ -62,18 +62,18 @@ intrinsic CuspFormBasis(
     if SaveAndLoad then
       Mk`CuspFormBasis := LoadOrBuildAndSave(Mk, HeckeStabilityCuspBasis, "_cusp");
     else
-      Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk);
+      Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk : prove := false);
     end if;
-  end if;
-  ViaTraceForm and:= IsParallel(Weight(Mk)) and GaloisDescent and (k mod 2) eq 0 and k gt 2 where k:=Weight(Mk)[1];
-  if ViaTraceForm then
-    Mk`CuspFormBasis := CuspFormBasisViaTrace(Mk : IdealClassesSupport:=IdealClassesSupport);
   else
-    Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
+    ViaTraceForm and:= IsParallel(Weight(Mk)) and GaloisDescent and (k mod 2) eq 0;
+    if ViaTraceForm then
+      Mk`CuspFormBasis := CuspFormBasisViaTrace(Mk : IdealClassesSupport:=IdealClassesSupport);
+    else
+      Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
+    end if;
+    // The contents of Mk`CuspFormBasis should be a basis for the space of cuspforms
+    require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
   end if;
-
-  // The contents of Mk`CuspFormBasis should be a basis for the space of cuspforms
-  require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
   return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
