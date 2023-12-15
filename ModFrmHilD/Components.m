@@ -451,9 +451,9 @@ be a multivariate polynomial ring or a tower of univariate polynomial rings.}
 
     if Prune then
         if Shadow then
-            HMFPruneShadowSeries(M, bb, g : prec := prec);
+            HMFPruneShadowSeries(g : prec := prec);
         else
-            HMFPruneSeries(M, bb, g : prec := prec);
+            HMFPruneSeries(g : prec := prec);
         end if;
     end if;
     return g;
