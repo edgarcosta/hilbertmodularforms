@@ -103,12 +103,12 @@ intrinsic Coefficient(f :: NewModFrmHilDEltComp, nu :: FldNumElt
     if not InFunDomain then
         nu, eps := FunDomainRep(M, bb, nu);
     end if;
-    b, prec := IsDefined(M`FunDomainRepsPrecisions, nu);
+    b, prec := IsDefined(M`FunDomainReps[bb], nu);
 
     require b: "Not in fundamental domain";
     require prec le Precision(M): "Not enough precision";
 
-    a :=  HMFSeriesCoefficient(Series(f), M`FunDomainReps[bb][prec][nu]);
+    a :=  HMFSeriesCoefficient(Series(f), M`FunDomainRepsOfPrec[bb][prec][nu]);
     if not InFunDomain then
         uc := UnitCharacters(Space(f))[bb];
         a := a * Evaluate(uc, eps);
@@ -148,7 +148,7 @@ up to Precision(f).}
     coeffs := AssociativeArray();
     precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision(f)];
     for p in precs do
-        for nu->exp in M`FunDomainReps[bb][p] do
+        for nu->exp in M`FunDomainRepsOfPrec[bb][p] do
             coeffs[nu] := HMFSeriesCoefficient(Series(f), exp);
         end for;
     end for;
@@ -174,7 +174,7 @@ intrinsic Print(f :: NewModFrmHilDEltComp, level :: MonStgElt : num_coeffs := 10
         printf "Coefficients \n\t(norm, nu)  |--->   a_nu:";
         count := 0;
         for p in precs do
-            for nu->exp in M`FunDomainReps[bb] do
+            for nu->exp in M`FunDomainRepsOfPrec[bb][p] do
                 printf "\n\t(%o, %o)  |--->   %o", p, nu,
                        HMFSeriesCoefficient(Series(f), exp);
                 count +:= 1;
@@ -195,28 +195,9 @@ end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
-//         Series to shadow and back             //
+//         Pruning the series                    //
 //                                               //
 ///////////////////////////////////////////////////
-
-intrinsic HMFGetSeriesFromShadow(f :: NewModFrmHilDEltComp)
-
-{Internal function: compute f`Series from f`ShadowSeries}
-
-    M := GradedRing(f);
-    bb := ComponentIdeal(f);
-
-    exponents := [];
-    for prec in M`PrecisionsByComponent[bb] do
-        if prec le Precision(f) then
-            for nu->exp in M`FunDomainReps[bb][prec] do
-                Append(~exps, exp);
-            end for;
-        end if;
-    end for;
-
-    f`Series := HMFSeriesSubset(f`ShadowSeries, exps);
-end intrinsic;
 
 intrinsic HMFSeriesSubset(f :: RngMPolElt, exps :: SeqEnum) -> RngMPolElt
 
@@ -256,6 +237,68 @@ intrinsic HMFSeriesSubset(f :: RngUPolElt, exps :: SeqEnum) -> RngUPolElt
     return P ! new_coeffs;
 end intrinsic;
 
+intrinsic HMFPruneSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
+                         Precision := Precision(M)
+    ) -> RngElt
+
+{Internal function: returns a pruned version of the series f}
+
+    exps := [];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
+    for p in precs do
+        exps := exps cat Values(M`FunDomainRepsOfPrec[bb][p]);
+    end for;
+    return HMFSeriesSubset(f, exps);
+
+end intrinsic;
+
+intrinsic HMFPruneSeries(f :: NewModFrmHilDEltComp : Precision := Precision(f))
+
+{Internal function: replace f`Series by pruned version}
+
+    f`Series := HMFPruneSeries(GradedRing(f), ComponentIdeal(f), Series(f) :
+                               Precision := Precision(f));
+end intrinsic;
+
+intrinsic HMFPruneShadowSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
+                               Precision := Precision(M)
+    ) -> RngElt
+
+{Internal function: returns a pruned version of the shadow series f}
+
+    exps := [];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
+    for p in precs do
+        for nu->exp_nu in M`FunDomainRepsOfPrec[bb][p] do
+            exps := exps cat Values(M`NewShadows[bb][nu]);
+        end for;
+    end for;
+    return HMFSeriesSubset(f, exps);
+
+end intrinsic;
+
+intrinsic HMFPruneShadowSeries(f :: NewModFrmHilDEltComp : Precision := Precision(f))
+
+{Internal function: replace f`ShadowSeries by pruned version}
+
+    f`ShadowSeries := HMFPruneShadowSeries(GradedRing(f), ComponentIdeal(f), ShadowSeries(f) :
+                                           Precision := Precision(f));
+end intrinsic;
+
+///////////////////////////////////////////////////
+//                                               //
+//         Series to shadow and back             //
+//                                               //
+///////////////////////////////////////////////////
+
+intrinsic HMFGetSeriesFromShadow(f :: NewModFrmHilDEltComp)
+
+{Internal function: compute f`Series from f`ShadowSeries}
+
+    f`Series := HMFPruneSeries(GradedRing(f), ComponentIdeal(f), f`ShadowSeries :
+                               Precision := Precision(f));
+end intrinsic;
+
 intrinsic HMFGetShadowFromSeries(f :: NewModFrmHilDEltComp)
 
 {Internal function: compute f`ShadowSeries from f`Series}
@@ -266,16 +309,15 @@ intrinsic HMFGetShadowFromSeries(f :: NewModFrmHilDEltComp)
 
     exps := [];
     coeffs := [];
-    for prec in M`PrecisionsByComponent[bb] do
-        if prec le Precision(f) then
-            for nuprime->exp_nuprime in M`FunDomainReps[bb][prec] do
-                a := Coefficient(f, nuprime: IsFunDomain := true);
-                for eps->exp_nu in M`NewShadows[bb][nu] do
-                    Append(~coeffs, a * Evaluate(uc, eps));
-                    Append(~exps, exp_nu);
-                end for;
+    precs := [p : p in M`PrecisionsByComponent[bb] | p le Precision(f)];
+    for prec in precs do
+        for nuprime->exp_nuprime in M`FunDomainRepsOfPrec[bb][prec] do
+            a := HMFSeriesCoefficient(f`Series, exp_nuprime);
+            for eps->exp_nu in M`NewShadows[bb][nu] do
+                Append(~coeffs, a * Evaluate(uc, eps));
+                Append(~exps, exp_nu);
             end for;
-        end if;
+        end for;
     end for;
 
     f`ShadowSeries := HMFConstructSeries(SeriesRing(f), exps, coeffs);
@@ -327,59 +369,7 @@ coefficients as an element of R}
     return R ! pol_coeffs;
 end intrinsic;
 
-///////////////////////////////////////////////////
-//                                               //
-//         Pruning the series                    //
-//                                               //
-///////////////////////////////////////////////////
 
-intrinsic HMFPruneSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
-                         Precision := Precision(M)
-    ) -> RngElt
-
-{Internal function: returns a pruned version of the series f}
-
-    exps := [];
-    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
-    for p in precs do
-        exps := exps cat Values(M`FunDomainReps[bb][p]);
-    end for;
-    return HMFSeriesSubset(f, exps);
-
-end intrinsic;
-
-intrinsic HMFPruneSeries(f :: NewModFrmHilDEltComp : Precision := Precision(f))
-
-{Internal function: replace f`Series by pruned version}
-
-    f`Series := HMFPruneSeries(GradedRing(f), ComponentIdeal(f), Series(f) :
-                               Precision := Precision(f));
-end intrinsic;
-
-intrinsic HMFPruneShadowSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
-                               Precision := Precision(M)
-    ) -> RngElt
-
-{Internal function: returns a pruned version of the shadow series f}
-
-    exps := [];
-    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
-    for p in precs do
-        for nu->exp_nu in M`FunDomainReps[bb][p] do
-            exps := exps cat Values(M`NewShadows[bb][nu]);
-        end for;
-    end for;
-    return HMFSeriesSubset(f, exps);
-
-end intrinsic;
-
-intrinsic HMFPruneShadowSeries(f :: NewModFrmHilDEltComp : Precision := Precision(f))
-
-{Internal function: replace f`ShadowSeries by pruned version}
-
-    f`ShadowSeries := HMFPruneShadowSeries(GradedRing(f), ComponentIdeal(f), ShadowSeries(f) :
-                                           Precision := Precision(f));
-end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
@@ -466,7 +456,7 @@ precision instead.}
     exps := [];
     coeffs := [];
     for p in precs do
-        for nu->exp in M`FunDomainReps[bb][p] do
+        for nu->exp in M`FunDomainRepsOfPrec[bb][p] do
             b, coeff := IsDefined(coeff_array, nu);
             require b: "Coefficient not found for index: ", nu;
             Append(~exps, exp);
@@ -699,7 +689,7 @@ intrinsic MapCoefficients(m :: Map, f :: NewModFrmHilDEltComp) -> NewModFrmHilDE
     exps := [];
     coeffs := [];
     for p in precs do
-        exps_p := Values(M`FunDomainReps[bb][p]);
+        exps_p := Values(M`FunDomainRepsOfPrec[bb][p]);
         exps := exps cat exps_p;
         coeffs := coeffs cat [m(HMFSeriesCoefficient(Series(f), e)): e in exps_p];
     end for;

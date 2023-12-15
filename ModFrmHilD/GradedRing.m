@@ -26,8 +26,8 @@ declare attributes ModFrmHilDGRng:
   RepToIdeal, // RepToIdeal[bb][nu] := nn
   IdealToRep, // IdealToRep[bb][nn] := nu
   PrecisionsByComponent, // Assoc: PrecisionsByComponent[bb] is an ascending SeqEnum[RngIntElt] of p such that there is a coefficient of precision p in the bb component
-  FunDomainReps, // Assoc: FunDomainReps[bb][prec] is an associative array nu->exponent such that nu has precision prec
-  FunDomainRepsPrecisions, // Assoc: FunDomainRepsPrecisions[nu] is the precision of the coefficient nu
+  FunDomainReps, // Assoc: FunDomainReps[bb] is an associative array nu->precision
+  FunDomainRepsOfPrec, // Assoc: FunDomainReps[bb][prec] is an associative array nu->exponent such that nu has precision prec
   FunDomainRepsUpToNorm, // FunDomainRepsUpToNorm[bb][x] stores the list of nu in the bb component 
                          // corresponding to nn of norm at most x
   FunDomainRepsOfNorm, // FunDomainRepsOfNorm[bb][x] stores the list of nu in the bb component
@@ -337,7 +337,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // to integral ideals nn with norm up to x lying in the narrow class
   // of [bbp]^-1, i.e. such that nn * bbp = (nu) for some 
   // integral ideal nn of norm up to x.
-  PopulateFunDomainRepsArrays(M);
+  NewPopulateFunDomainRepsArrays(M);
   PopulateShadowArray(M);
 
   M`PuiseuxSeriesRings := AssociativeArray();
