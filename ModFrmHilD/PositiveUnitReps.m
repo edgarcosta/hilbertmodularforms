@@ -548,14 +548,14 @@ intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
       nu_1, eps_1 := Explode(nu_1eps_1);
       if IsDominatedBy(eps_1*nu_1, nu) then
         nu_2eps_2 := nu - eps_1*nu_1;
-        nu_2, eps_2 := FunDomainRep(M, bb, nu_2eps_2);
+        nu_2, eps_2 := FunDomainRep(M, nu_2eps_2);
         Append(~MPairs_bb[nu], [<nu_1, eps_1>, <nu_2, eps_2>]);
       end if;
     end for;
     for nu_1 in FunDomainRepsUpToNorm(M)[bb][M`Precision] do
       if IsDominatedBy(nu_1, nu) then
         nu_2eps_2 := nu - nu_1;
-        nu_2, eps_2 := FunDomainRep(M, bb, nu_2eps_2);
+        nu_2, eps_2 := FunDomainRep(M, nu_2eps_2);
         Append(~MPairs_bb[nu], [<nu_1, F!1>, <nu_2, eps_2>]);
       end if;
     end for;
