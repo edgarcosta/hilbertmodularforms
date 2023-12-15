@@ -16,7 +16,7 @@ intrinsic Evaluate(omega::GrpCharUnitTotElt, x::RngElt) -> RngElt
 
   F := BaseField(omega);
   if IsOne(omega) then
-    return F!1;
+    return 1;
   else
     b, c := IsDefined(omega`cachedvalues, F!x);
     if not b then

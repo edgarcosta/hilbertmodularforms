@@ -186,7 +186,7 @@ intrinsic HMF(Mk::ModFrmHilD,
 
   for bb in bbs do
     coeff_ring := (coeff_rings cmpeq false) select Mk`DefaultCoefficientRing else coeff_rings[bb];
-    f`Components[bb] := HMFComponent(Mk, bb, coeffs[b] :
+    f`Components[bb] := HMFComponent(Mk, bb, coeffs[bb] :
                                      CoefficientRing := coeff_ring, Precision := prec[bb]);
   end for;
   return f;
@@ -223,7 +223,7 @@ intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
   M := Parent(Mk);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
-    coeffs[bb] := ModFrmHilDEltCompZero(Mk, bb);
+    coeffs[bb] := HMFComponentZero(Mk, bb);
   end for;
   return HMFSumComponents(Mk, coeffs);
 end intrinsic;
@@ -237,12 +237,10 @@ intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
   {create one ModHilFrmDElt of weight zero and trivial character}
   M := Parent(Mk);
   C := AssociativeArray();
-  R := GetHMFSerPuis(M, Rationals());
   for bb in NarrowClassGroupReps(M) do
-    C[bb] := ModFrmHilDEltCompIdentity(R, bb);
+    C[bb] := HMFComponentOne(Mk, bb);
   end for;
-  M0 := Parent(C[1*Integers(M)]);
-  return HMFSumComponents(M0, C);
+  return HMFSumComponents(Mk, C);
 end intrinsic;
 
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
@@ -256,40 +254,25 @@ intrinsic ChangeCoefficientRing(f::ModFrmHilDElt, R::Rng) -> ModFrmHilDElt
   // then change ring
   components := Components(f);
   for bb->fbb in components do
-    components[bb] := GetHMFSerPuis(M, R)!fbb;
+    components[bb] := ChangeRing(components[bb], R);
   end for;
   return HMFSumComponents(Parent(f), components);
 end intrinsic;
 
+//This is just to make Mk!0 work.
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
-  {}
-  if Type(f) eq RngIntElt and IsZero(f) then
-    return true, HMFZero(Mk);
-  elif Type(f) notin [ModFrmHilDElt] then
-    return false, "f not of type ModFrmHilDElt";
-  else // f is an HMF so has a chance to be coercible
-    M := Parent(Mk); // graded ring associated to Mk
-    Mkf := Parent(f); // space of HMFs associated to f
-    Mf := Parent(Mkf); // graded ring associated to f
-    if M ne Mf then
-      return false, "f does not belong to the same graded ring as Mk";
-    else // at least the graded rings match up
-      test1 := Weight(Mk) eq Weight(Mkf);
-      test2 := Level(Mk) eq Level(Mkf);
-      test3 := Character(Mk) eq Character(Mkf);
-      test4 := UnitCharacters(Mk) eq UnitCharacters(Mkf);
-      if test1 and test2 and test3 and test4 then // all tests must be true to coerce
-        components := AssociativeArray();
-        for bb in Keys(Components(f)) do
-          fbb := Components(f)[bb];
-          components[bb] := cModFrmHilDEltComp(Mk, bb, Coefficients(fbb): prec:=Precision(fbb));
-        end for;
-        return true, HMFSumComponents(Mk, components);
-      else
-        return false, "I tried and failed to coerce";
-      end if;
+{}
+    if Type(f) eq RngIntElt and IsZero(f) then
+        return true, HMFZero(Mk);
+    elif Type(f) eq ModFrmHilDElt then
+        if Parent(f) eq Mk then
+            return true, f;
+        else
+            return false, "Not the same parent";
+        end if;
+    else
+        return false, "Not a ModFrmHilDElt";
     end if;
-  end if;
 end intrinsic;
 
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
@@ -546,7 +529,7 @@ function AutomorphismAct(f, sigma)
     //coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c; // TODO: check the codomain of the unit character. So far, requiring unit char to be trivial so the evaluation is 1
     coeff[snubar] := c;
   end for;
-  return cModFrmHilDEltComp(Mk, bbbar, coeff: prec:=Precision(f));
+  return HMFComponent(Mk, bbbar, coeff: prec:=Precision(f));
 end function;
 
 intrinsic AutomorphismMap(f::ModFrmHilDElt, sigma::Map) -> ModFrmHilDElt
