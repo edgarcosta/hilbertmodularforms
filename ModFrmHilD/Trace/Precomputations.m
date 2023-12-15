@@ -49,30 +49,35 @@ end function;
 /*
 The function below computes and stores the items for the trace formula. Given a CM-extension K / F we store:
   - h = ClassNumber of K
-  - w = Unit Indices of K/F. Remark: Since K/F is a CM-extension then by Dirichlets unit theorem the rank of ZK^* and ZF^* are the same. 
-        Hence it makes to consider the quantity [ ZK^* : ZF^* ] which can be explained by 
+  - w = Unit Indices of K/F. Remark: Since K/F is a CM-extension then by Dirichlets unit theorem the rank of ZK^* and ZF^* are the same.
+        Hence it makes to consider the quantity [ ZK^* : ZF^* ] which can be explained by
   - DD = the discriminant of ZK
 This proceedure is done in the following steps:
   Given the discriminant of an order D in CM-extension K = F( sqrt(D) ) over F, we do the following:
-    
-    - Pass 1: Given an ideal aa, we compute list of elements representing all of the orders O whose class number we need 
+
+    - Pass 1: Given an ideal aa, we compute list of elements representing all of the orders O whose class number we need
               To compute Tr T(aa). These orders are represented by a single totally negative element D such that O = ZF[ sqrt(D) ].
-    
+
     - Pass 2: We run a discriminant hash which computes a unique representative d for each discriminant D up to:
               (a) the squareclass of D in F* / F*^2
               (b) the action of automorphisms s : F -> F on D.
-      
+
       This gives a ** minimal ** set of discriminants for which we need to compute the class numbers and unit indices
-    
+
     - Pass 3: We compute h, w, DD as above for the minimal set of discriminants. These are stored to M`ClassNumbersPrecomputation with d0 -> [h, w, DD]
     - Pass 4: We remove bad discriminants D which don't satisfy a condition on their conductor (only for Cl(F) > 1). The rest are stored to M`PrecomputationforTrace as aa -> [ [D, d0], ... ]
-  
+
   Once this is complete, we can the access all of the information for a discriminant D using the hash key d0 in the associative array ClassNumbersPrecomputation
 */
 
 // FIXME: HMFTracePrecomputation - Pass tracebasis to IdealCMextensions instead of computing each time
 intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl] : SaveAndLoad:=true)
   {Precomputes class number and unit indices for a list of ideals L}
+
+  // Do nothing if L is empty
+  if #L eq 0 then
+    return;
+  end if;
 
   // initialize
   F := BaseField(M); // Base Field
@@ -251,11 +256,6 @@ To compute the Artin symbol (K/pp) for the extension K = F[x] / (x^2 - D) and a 
 Since the local square computation is performed many times, we store the results to M to avoid repeating computations */
 intrinsic LocalSquare(M::ModFrmHilDGRng, d::RngOrdElt, pp::RngOrdIdl) -> RngIntElt
   {Checks if D is a local square in the completion F_pp}
-
-  // initialize - LocalSquares
-  if not assigned M`LocalSquares then
-    M`LocalSquares := AssociativeArray();
-  end if;
 
   // initialize - LocalSquares[pp]
   if not IsDefined(M`LocalSquares,pp) then

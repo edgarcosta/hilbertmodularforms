@@ -4,7 +4,6 @@ import "copypaste/definite.m" : _ResidueMatrixRing,
 			   
 import "copypaste/hackobj.m" : Ambient,
                                BMF_with_ambient,
-                               HMF0, 
 			       IsBianchi, 
 			       TopAmbient;
 
@@ -23,6 +22,8 @@ import "copypaste/hecke.m" : random_large_split_prime_using_max_order,
 			     get_red_vector;
 
 import "copypaste/precompute.m" : get_rids;
+
+import "hackobj.m" : HMF0;
 
 /**************** New Attributes **********************/
 
