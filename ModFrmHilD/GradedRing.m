@@ -238,6 +238,11 @@ intrinsic Factorization(M::ModFrmHilDGRng, nn::RngOrdIdl) -> SeqEnum
   end if;
 end intrinsic;
 
+intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
+  {}
+  return &+[#elt : bb->elt in M`FunDomainReps];
+end intrinsic;
+
 intrinsic PrimeIdeals(M::ModFrmHilDGRng) -> SeqEnum
   {}
   return M`PrimeIdeals;
