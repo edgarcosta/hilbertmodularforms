@@ -415,7 +415,7 @@ intrinsic IndexOfSummation(M::ModFrmHilDGRng, mm::RngOrdIdl, aa::RngOrdIdl : pre
   // Finding a totally positive generator for mm
   bool, a := IsNarrowlyPrincipal(mm*aa^2);
   require bool : Sprintf("Ideal %o is not narrowly principal", IdealOneLine(mm));
-  a, _ := FunDomainRep(a);
+  a, _ := FunDomainRep(M, a);
   a := IsCoercible(ZF, a) select ZF!a else a;
   vprintf HMFTrace, 2: "Done\n";
 

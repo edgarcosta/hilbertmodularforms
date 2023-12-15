@@ -10,7 +10,7 @@ clean:
 	rm Precomputations/*
 
 check/%.m: Tests/%.m
-	@magma -b filename:=$< exitsignal:='' run_tests.m
+	magma -b filename:=$< exitsignal:='' run_tests.m
 
 check: $(CHECK_FILES)
 

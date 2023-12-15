@@ -40,7 +40,6 @@ declare attributes ModFrmHilDGRng:
            // Such nu*eps are totally positive elements which are dominated (<= in every real embedding)
            // by some fundamental domain representative.
   Shadows, // Assoc: NewShadows[bb][nu] is an associative array (eps)->(exponent of nu*exp)
-  PuiseuxSeriesRings, // PuiseuxSeriesRings[K] stores the HMFSerPuis associated to M with coeff ring K
   NuToExpMatrices, // Assoc: NuToExpMatrices[bb] stores a matrix M such that M*Eltseq(nu) always consists of nonnegative integers
   ExpToNuMatrices, // Assoc: ExpToNuMatrices[bb] is inverse to NuToExpMatrices[bb]
   PrecomputationforTrace, // Precomputed orders for the Trace formula
@@ -339,9 +338,6 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // to integral ideals nn with norm up to x lying in the narrow class
   // of [bbp]^-1, i.e. such that nn * bbp = (nu) for some
   // integral ideal nn of norm up to x.
-
-  M`PuiseuxSeriesRings := AssociativeArray();
-  M`PuiseuxSeriesRings[Coefficients(DefiningPolynomial(RationalsAsNumberField()))] := cHMFSerPuis(M, Rationals());
 
   M`IdealsByNarrowClassGroup := AssociativeArray();
   M`PrecomputationforTrace := AssociativeArray();

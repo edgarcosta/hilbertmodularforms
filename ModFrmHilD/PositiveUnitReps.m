@@ -43,8 +43,8 @@ end intrinsic;
 /* In the future, we may want these functions to take a subgroup of totally
    positive units as input. */
 
-intrinsic FunDomainRep(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl, nu :: FldNumElt
-                       : Precision := 100, CheckIfPresent := true
+intrinsic FunDomainRep(M :: ModFrmHilDGRng, nu :: RngElt
+                       : Precision := 100, CheckComponent := false
     ) -> FldNumElt, FldNumElt
 
 {Returns an element nu' in the fundamental domain and a totally positive unit
@@ -52,7 +52,9 @@ eps such that nu = eps * nu'. We first check whether nu is listed in
 FunDomainReps(M)[bb], in which case eps = 1.}
 
     F := BaseField(M);
-    if CheckIfPresent then
+    nu := F ! nu;
+    if not CheckComponent cmpeq false then
+        bb := CheckComponent;
         if IsDefined(FunDomainReps(M)[bb], nu) then
             return nu, F!1;
         end if;
@@ -83,18 +85,6 @@ FunDomainReps(M)[bb], in which case eps = 1.}
 
     nuprime := nu/unit;
     return nuprime, unit;
-end intrinsic;
-
-intrinsic FunDomainRep(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl, nu :: FldOrdElt
-                          : Precision := 100, CheckIfPresent := true
-    ) -> FldNumElt, FldNumElt
-
-{Returns an element nu' in the fundamental domain and a totally positive unit
-eps such that nu = eps * nu'. We first check whether nu is listed in
-FunDomainReps(M)[bb], in which case eps = 1.}
-
-    return FunDomainRep(M, bb, BaseField(M)!nu :
-                           CheckIfPresent := CheckIfPresent, Precision := Precision);
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -154,7 +144,7 @@ positive.}
     for nn in idls do
         if map(nn) eq target then
             _, nu := IsNarrowlyPrincipal(nn * bb);
-            Append(~gens, nu);
+            Append(~gens, F ! nu);
         end if;
     end for;
     mat := Matrix(Rationals(), [Eltseq(nu): nu in gens]);
@@ -183,7 +173,9 @@ intrinsic Exponent(M :: ModFrmHilDGRng, bb :: RngOrdIdl, nu :: FldNumElt) -> Seq
 {Internal function: get exponent in Fourier expansion attached to nu}
 
     exp := Vector(Eltseq(nu)) * NuToExpMatrices(M)[bb];
-    return [Integers() ! e: e in Eltseq(exp)];
+    exp := [Integers() ! e: e in Eltseq(exp)];
+    assert &and[x ge 0: x in exp];
+    return exp;
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -239,7 +231,7 @@ intrinsic PopulateFunDomainRepsArrays(M :: ModFrmHilDGRng)
         bb, p := Explode(idl_info[nn]);
         bbp := M`NarrowClassGroupRepsToIdealDual[bb];
         _, nu := IsNarrowlyPrincipal(nn * bbp);
-        nu, _ := FunDomainRep(M, bb, nu : CheckIfPresent := false);
+        nu, _ := FunDomainRep(M, nu);
         M`FunDomainReps[bb][nu] := p;
         M`FunDomainRepsOfPrec[bb][p][nu] := Exponent(M, bb, nu);
     end for;
@@ -689,7 +681,7 @@ intrinsic RepIdealConversion(M::ModFrmHilDGRng) -> Assoc, Assoc
     bb := IdealToNarrowClassRep(M, nn);
     bbp := bb * dd^-1;
     _, nu := IsNarrowlyPrincipal(nn * bbp);
-    nu, _ := FunDomainRep(M, bb, nu);
+    nu, _ := FunDomainRep(M, nu : CheckComponent := bb);
     M`IdealToRep[bb][nn] := nu;
     M`RepToIdeal[bb][nu] := nn;
   end for;
