@@ -271,9 +271,9 @@ intrinsic PopulateShadowArray(M :: ModFrmHilDGRng : Precision := 100)
 
 end intrinsic;
 
+
 intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
 {}
-    prec := Precision;
     F := BaseField(M);
     eps := TotallyPositiveUnitsGenerators(F)[1];
     v := Evaluate(eps, Places(M)[1] : Precision := Precision);
@@ -285,9 +285,10 @@ intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
     logv := Log(v);
     THRESHOLD := 10^(-10);
 
+    eps := 10^-Precision;
     for bb in NarrowClassGroupReps(M) do
-        m1 := 0;
-        m2 := 0;
+        m1 := eps;
+        m2 := eps;
         // Compute real embeddings, m1, m2
         values := AssociativeArray();
         for nu->p in M`FunDomainReps[bb] do
@@ -295,6 +296,8 @@ intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
             m1 := Max(m1, values[nu][1]);
             m2 := Max(m2, values[nu][2]);
         end for;
+        if m1 eq 0 then m1 := eps; end if;
+        if m2 eq 0 then m2 := eps; end if;
         logm1 := Log(m1);
         logm2 := Log(m2);
         // Enumerate units
@@ -304,7 +307,7 @@ intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
             end if;
             lbound := (- logm2 + Log(values[nu][2])) / logv - THRESHOLD;
             ubound := (logm1 - Log(values[nu][1])) / logv + THRESHOLD;
-            if Log(-lbound)/Log(10) gt prec / 2 or Log(ubound)/Log(10) gt prec / 2 then
+            if Log(-lbound)/Log(10) gt Precision / 2 or Log(ubound)/Log(10) gt Precision / 2 then
                 error "Insufficient precision";
             end if;
             for j in [Ceiling(lbound)..Floor(ubound)] do
