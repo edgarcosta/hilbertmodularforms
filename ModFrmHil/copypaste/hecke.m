@@ -24,6 +24,7 @@ import "definite.m" : BasisMatrixDefinite,
                       DegeneracyDown1DefiniteBig,
                       DegeneracyDownpDefiniteBig;
 // hack begins
+import "../diamond.m" : operator;
 import "../hackobj.m" : HMF0; 
 import "../hecke_field.m" : hecke_matrix_field,
                             minimal_hecke_matrix_field;
@@ -336,6 +337,7 @@ function checks(M, _p, op)
   return true, _, p;
 end function;
 
+/*
 function operator(M, p, op)
   assert op in {"Hecke", "AL", "DegDown1", "DegDownp"};
 
@@ -441,6 +443,7 @@ function operator(M, p, op)
 
   return Tp;
 end function;
+*/
 
 intrinsic HeckeOperator(M::ModFrmHil, p::Any) -> Mtrx
 {The Hecke operator T_p on the space M of Hilbert modular forms 

@@ -1,14 +1,21 @@
+import "copypaste/definite.m" : HeckeOperatorDefiniteBig,
+                                AtkinLehnerDefiniteBig,
+				DegeneracyDown1DefiniteBig,
+				DegeneracyDownpDefiniteBig;
+
 import "copypaste/hackobj.m" : IsBianchi, TopAmbient;
 
-import "copypaste/hecke.m" : HilbertModularSpaceDirectFactors;
+import "copypaste/hecke.m" : basis_is_honest,
+                             basis_matrix,
+			     debug,
+			     HilbertModularSpaceDirectFactors,
+			     make_ideal,
+			     please_report,
+			     restriction;
 
 import "hackobj.m" : HMF0;
 import "hecke_field.m" : hecke_matrix_field,
                          WeightRepresentation;
-
-/**************** New Attributes **********************/
-
-declare attributes ModFrmHil : Diamond;
 
 /**************** New intrinsics **********************/
 
@@ -18,6 +25,140 @@ intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
 end intrinsic;
 
 /********************************************************/
+
+forward DiamondOperatorDefiniteBig;
+
+// from hecke.m
+
+function operator(M, p, op : hack := true)
+  if hack then
+      assert op in {"Hecke", "AL", "DegDown1", "DegDownp", "Diamond"};
+  else
+      assert op in {"Hecke", "AL", "DegDown1", "DegDownp"};
+  end if;
+
+  // Check if cached on M
+  cached, Tp := IsDefined(eval "M`"*op, p);
+  if cached then 
+    return Tp;
+  end if;
+
+  if Dimension(M : UseFormula:=false) eq 0 then // gets cached dimension or computes the space
+
+    Tp := ZeroMatrix(Integers(), 0, 0); 
+
+  elif assigned M`basis_matrix_wrt_ambient then 
+
+    // (TO DO: is this always better than getting it directly from the big operator?)
+    bm := M`basis_matrix_wrt_ambient;
+    bmi := M`basis_matrix_wrt_ambient_inv;
+    Tp_amb := operator(M`Ambient, p, op);
+    Tp_amb := ChangeRing(Tp_amb, BaseRing(bm));
+    Tp := bm * Tp_amb * bmi;
+
+    if debug and basis_is_honest(M) and Norm(p + Level(M)) eq 1 then 
+      // check Tp really preserves M as a subspace of M`Ambient
+      assert Rowspace(bm * Tp_amb) subset Rowspace(bm); 
+    end if;
+
+  elif IsBianchi(M) then
+
+    // Always compute and store operator on ambient
+
+    bool, MA := HasAttribute(M, "Ambient");
+
+    if not bool then
+      return HeckeMatrixBianchi(M, p);
+    end if;
+
+    assert not assigned MA`Ambient;
+
+    Tp := HeckeMatrixBianchi(MA, p);
+
+    bm := M`basis_matrix_wrt_ambient;
+    bmi := M`basis_matrix_wrt_ambient_inv;
+    return bm * Tp * bmi;
+
+  elif IsDefinite(M) then 
+
+    MA := TopAmbient(M);
+    if hack then
+	case op:
+	  when "Hecke"   : Tp_big := HeckeOperatorDefiniteBig(MA, p);
+ 	  when "AL"      : Tp_big := AtkinLehnerDefiniteBig(MA, p);
+	  when "DegDown1": Tp_big := DegeneracyDown1DefiniteBig(MA, p);
+	  when "DegDownp": Tp_big := DegeneracyDownpDefiniteBig(MA, p);
+	  when "Diamond" : Tp_big := DiamondOperatorDefiniteBig(MA, p);
+	end case;
+    else
+	case op:
+	  when "Hecke"   : Tp_big := HeckeOperatorDefiniteBig(MA, p);
+	  when "AL"      : Tp_big := AtkinLehnerDefiniteBig(MA, p);
+	  when "DegDown1": Tp_big := DegeneracyDown1DefiniteBig(MA, p);
+	  when "DegDownp": Tp_big := DegeneracyDownpDefiniteBig(MA, p);
+	end case;
+    end if;
+    Tp := restriction(M, Tp_big);
+
+  else // indefinite quat order
+
+    disc := make_ideal(Discriminant(QuaternionOrder(M)));
+    MA := TopAmbient(M);
+    assert disc eq make_ideal(NewLevel(MA));
+    N := Level(M)/disc;
+
+    Gamma := FuchsianGroup(QuaternionOrder(M));
+    case op:
+      when "Hecke" : Tp_big := HeckeMatrix(Gamma, N, p);
+      when "AL"    : Tp_big := HeckeMatrix(Gamma, N, p : UseAtkinLehner);
+    end case;
+    bm, bmi := basis_matrix(M);
+    Tp := restriction(M, Tp_big);
+
+  end if;
+
+  if assigned M`hecke_matrix_field then
+    bool, Tp := CanChangeRing(Tp, M`hecke_matrix_field);
+    error if not bool, 
+         "The hecke_matrix_field seems to be wrong!\n" * please_report;
+  end if;
+
+  if debug then
+    // check commutativity
+    bad := Level(M) / NewLevel(M);
+    new := Minimum(bad) eq 1;
+    for l in Keys(M`Hecke) do 
+      if new or Minimum(l + bad) eq 1 then
+        Tl := M`Hecke[l];
+        assert Tl*Tp eq Tp*Tl; 
+      end if;
+    end for; 
+  end if;
+
+  // Cache
+  // (for definite ambient, big matrix is cached instead)
+// TO DO: hecke_algebra etc checks cache directly
+//if not (IsDefinite(M) and not assigned M`Ambient) then
+  if hack then
+    case op:
+      when "Hecke"    : M`Hecke[p]    := Tp;
+      when "AL"       : M`AL[p]       := Tp;
+      when "DegDown1" : M`DegDown1[p] := Tp;
+      when "DegDownp" : M`DegDownp[p] := Tp;
+      when "Diamond"  : M`Diamond[p]  := Tp;
+    end case; 
+  else
+    case op:
+      when "Hecke"    : M`Hecke[p]    := Tp;
+      when "AL"       : M`AL[p]       := Tp;
+      when "DegDown1" : M`DegDown1[p] := Tp;
+      when "DegDownp" : M`DegDownp[p] := Tp;
+    end case; 
+  end if;
+//end if;
+
+  return Tp;
+end function;
 
 // we compute a Hecke operator to force magma to compute the space
 procedure forceSpaceComputation(M)
@@ -163,6 +304,7 @@ function DiamondOperatorDefiniteBig(M, J)
     return dJ;
 end function;
 
+/*
 // originaly from hecke.m
 function restriction(T, M : hack := true)
     // needs to force computation of basis_matrix
@@ -181,6 +323,7 @@ function restriction(T, M : hack := true)
     end if;
     return TM;
 end function;
+*/
 
 // This function returns the matrix describing the action
 // of the ideal J on the space M of Hilbert modular forms.
@@ -194,7 +337,7 @@ intrinsic DiamondOperator(M::ModFrmHil, J::RngOrdIdl) -> AlgMatElt
     // better - we just make it coprime;
 
     J := CoprimeRepresentative(J, Level(M))*J;
-
+/*
     F_weight := getWeightBaseField(M);
     
     if Dimension(M) eq 0 then
@@ -219,6 +362,8 @@ intrinsic DiamondOperator(M::ModFrmHil, J::RngOrdIdl) -> AlgMatElt
     MA := TopAmbient(M);
     dJ_big := DiamondOperatorDefiniteBig(MA,J);
     return restriction(dJ_big, M);
+*/
+    return operator(M,J, "Diamond");
 end intrinsic;
 
 // Here M is a ModFrmHil (HibertCuspForms(M))
