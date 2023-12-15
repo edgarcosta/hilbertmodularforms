@@ -16,7 +16,7 @@ psi := X!1;
 E2 := EisensteinSeries(M2, eta, psi);
 
 assert [Coefficients(E2)[1*ZF][elt] : elt in FunDomainRepsUpToNorm(M, 1*ZF, 30)] eq
-[ 1, 24, 96, 96, 120, 384, 312, 312, 480, 480, 336, 504, 432, 432, 576, 576, 624, 1248, 960, 960, 1248, 720, 720 ];
+[ 1, 24, 96, 96, 120, 384, 312, 312, 480, 480, 336, 504, 432, 432, 576, 576, 624, 960, 1248, 960, 1248, 720, 720 ];
 
 E2pow2 := E2^2;
 assert [Coefficients(E2pow2)[1*ZF][elt] : elt in FunDomainRepsUpToNorm(M, 1*ZF, 30)] eq

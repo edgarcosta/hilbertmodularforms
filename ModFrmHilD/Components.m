@@ -241,13 +241,13 @@ intrinsic HMFSeriesSubset(f :: RngUPolElt, exps :: SeqEnum) -> RngUPolElt
 end intrinsic;
 
 intrinsic HMFPruneSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
-                         Precision := Precision(M)
+                         prec := Precision(M)
     ) -> RngElt
 
 {Internal function: returns a pruned version of the series f}
 
     exps := [];
-    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le prec];
     for p in precs do
         for nu->e in M`FunDomainRepsOfPrec[bb][p] do
             Append(~exps, e);
@@ -257,22 +257,22 @@ intrinsic HMFPruneSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
 
 end intrinsic;
 
-intrinsic HMFPruneSeries(f :: ModFrmHilDEltComp : Precision := Precision(f))
+intrinsic HMFPruneSeries(f :: ModFrmHilDEltComp : prec := Precision(f))
 
 {Internal function: replace f`Series by pruned version}
 
     f`Series := HMFPruneSeries(GradedRing(f), ComponentIdeal(f), Series(f) :
-                               Precision := Precision(f));
+                               prec := prec);
 end intrinsic;
 
 intrinsic HMFPruneShadowSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
-                               Precision := Precision(M)
+                               prec := Precision(M)
     ) -> RngElt
 
 {Internal function: returns a pruned version of the shadow series f}
 
     exps := [];
-    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le prec];
     for p in precs do
         for nu->exp_nu in M`FunDomainRepsOfPrec[bb][p] do
             for eps->e in M`Shadows[bb][nu] do
@@ -284,12 +284,12 @@ intrinsic HMFPruneShadowSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt
 
 end intrinsic;
 
-intrinsic HMFPruneShadowSeries(f :: ModFrmHilDEltComp : Precision := Precision(f))
+intrinsic HMFPruneShadowSeries(f :: ModFrmHilDEltComp : prec := Precision(f))
 
 {Internal function: replace f`ShadowSeries by pruned version}
 
     f`ShadowSeries := HMFPruneShadowSeries(GradedRing(f), ComponentIdeal(f), ShadowSeries(f) :
-                                           Precision := Precision(f));
+                                           prec := prec);
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -303,7 +303,7 @@ intrinsic HMFGetSeriesFromShadow(f :: ModFrmHilDEltComp)
 {Internal function: compute f`Series from f`ShadowSeries}
 
     f`Series := HMFPruneSeries(GradedRing(f), ComponentIdeal(f), f`ShadowSeries :
-                               Precision := Precision(f));
+                               prec := Precision(f));
 end intrinsic;
 
 intrinsic HMFGetShadowFromSeries(f :: ModFrmHilDEltComp)
@@ -461,7 +461,7 @@ end intrinsic;
 
 intrinsic HMFComponent(Mk :: ModFrmHilD, bb :: RngOrdIdl, coeff_array :: Assoc
                        : Multivariate := true, CoefficientRing := DefaultCoefficientRing(Mk),
-                         Precision := Precision(Parent(Mk))
+                         prec := Precision(Parent(Mk))
     ) -> ModFrmHilDEltComp
 
 {Constructs the HMF component to precision prec whose Fourier coefficients are
@@ -476,7 +476,7 @@ precision instead.}
     n := Degree(BaseField(Mk));
 
     // Gather exponents and coefficients
-    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le prec];
     exps := [];
     coeffs := [];
     for p in precs do
@@ -490,7 +490,7 @@ precision instead.}
 
     R := HMFSeriesRing(M, CoefficientRing : Multivariate := Multivariate);
     f := HMFConstructSeries(R, exps, coeffs);
-    return HMFComponent(Mk, bb, f, Precision: Shadow := false, Prune := false);
+    return HMFComponent(Mk, bb, f, prec: Shadow := false, Prune := false);
 
 end intrinsic;
 
@@ -615,16 +615,17 @@ intrinsic '^'(f :: ModFrmHilDEltComp, n :: RngIntElt) -> ModFrmHilDEltComp
     serf := ShadowSeries(f);
     prec := Precision(f);
     g := serf;
-    bits := Reverse(Intseq(n));
+    bits := Reverse(Intseq(n), 2);
     bits := bits[1..(#bits - 1)];
     for i in bits do
         g := g^2;
-        g := HMFPruneShadowSeries(g : Precision := prec);
+        g := HMFPruneShadowSeries(g : prec := prec);
         if i eq 1 then
             g := g * f;
-            g := HMFPruneShadowSeries(g : Precision := prec);
+            g := HMFPruneShadowSeries(g : prec := prec);
         end if;
     end for;
+    print g;
 
     return HMFComponent(Space(f)^n, ComponentIdeal(f), g, prec :
                         Shadow := true, Prune := false);
@@ -658,24 +659,24 @@ intrinsic '/'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
     // Get shadow series at minimum precision
     prec := Min(Precision(f), Precision(g));
     if prec lt Precision(f) then
-        serf := HMFPruneShadowSeries(serf : Precision := prec);
+        serf := HMFPruneShadowSeries(serf : prec := prec);
     elif prec lt Precision(g) then
-        serg := HMFPruneShadowSeries(serg : Precision := prec);
+        serg := HMFPruneShadowSeries(serg : prec := prec);
     end if;
 
     // Invert
     u := 1 - serg;
     inv := SeriesRing(g) ! 1;
-    u := HMFPruneShadowSeries(u : Precision := prec);
+    u := HMFPruneShadowSeries(u : prec := prec);
     inv := 1 + u;
     while u ne 0 do
         inv := (1 + u) * inv;
-        inv := HMFPruneShadowSeries(inv : Precision := prec);
+        inv := HMFPruneShadowSeries(inv : prec := prec);
         u := u * u;
-        u := HMFPruneShadowSeries(u : Precision := prec);
+        u := HMFPruneShadowSeries(u : prec := prec);
     end while;
     inv := serf * inv;
-    inv := HMFPruneShadowSeries(inv : Precision := prec);
+    inv := HMFPruneShadowSeries(inv : prec := prec);
 
     return HMFComponent(Space(f) / Space(g), bb, inv, prec :
                         Shadow := true, Prune := false);
@@ -762,5 +763,5 @@ ideal class [mm*bb].}
     end for;
     return HMFComponent(Mk, mmbb, coeffs:
                         Multivariate := IsMultivariate(f), CoefficientRing := coeff_ring,
-                        Precision := prec);
+                        prec := prec);
 end intrinsic;

@@ -421,11 +421,25 @@ associative arrays}
 end intrinsic;
 
 intrinsic FunDomainRepsOfPrec(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl, prec :: RngIntElt
-    ) -> SetEnum
+    ) -> SeqEnum
 
 {Returns the set of fundamental domain representatives of precision prec}
 
-    return Keys(M`FunDomainRepsOfPrec[bb][prec]);
+    return SetToSequence(Keys(M`FunDomainRepsOfPrec[bb][prec]));
+end intrinsic;
+
+intrinsic FunDomainRepsUpToPrec(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl, prec :: RngIntElt
+    ) -> SeqEnum
+
+{Returns the list of nus to the specified precision. Deprecated: use
+M`FunDomainReps[bb][p] instead}
+
+    precs := [p : p in M`PrecisionsByComponent[bb] | p le prec];
+    reps := [];
+    for p in precs do
+        reps := reps cat SetToSequence(Keys(M`FunDomainRepsOfPrec[bb][p]));
+    end for;
+    return reps;
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -442,23 +456,6 @@ end intrinsic;
 intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt) -> SetEnum
 {Deprecated: use FunDomainRepsOfPrec instead}
     return FunDomainRepsUpToPrec(M, bb, x);
-end intrinsic;
-
-intrinsic FunDomainRepsUpToPrec(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl, prec :: RngIntElt
-    ) -> Assoc
-{Returns an associative array of pairs nu->prec up to the specified
-precision. Deprecated: use M`FunDomainReps[bb][p] instead}
-    precs := [p : p in M`PrecisionsByComponent[bb] | p le prec];
-    reps := AssociativeArray();
-    for p in [0..Precision(M)] do
-        reps[p] := [];
-        for p2 in precs do
-            if p2 le p then
-                reps[p] := reps[p] cat SetToSequence(Keys(M`FunDomainRepsOfPrec[bb][p2]));
-            end if;
-        end for;
-    end for;
-    return reps;
 end intrinsic;
 
 intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng : Precision := M`Precision) -> Assoc
