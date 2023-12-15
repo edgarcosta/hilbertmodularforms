@@ -7,7 +7,7 @@ PREC := 150;
 F := QuadraticField(5);
 ZF := Integers(F);
 
-function test(F, N, chi)
+procedure test(F, N, chi)
   // F - number field
   // N - level
   // chi - nebentypus, of modulus N
@@ -44,8 +44,8 @@ function test(F, N, chi)
 
   // want all of W to be in the Hecke stable subspace of V
   assert #LinearDependence(UcatW) eq #W;
-  return "";
-end function;
+  // return "";
+end procedure;
 
 N := 14*ZF;
 H := HeckeCharacterGroup(N, [1,2]);

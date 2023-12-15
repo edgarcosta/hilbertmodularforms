@@ -31,7 +31,7 @@ assert IsZero(hecke_h - Coefficient(h, 2*ZF)*h);
 
 
 M4 := HMFSpace(M, [4,4]);
-B4:=Basis(M4);
+time B4 := Basis(M4 : ViaTraceForm:=false);
 assert #B4 eq 2;
 assert {[Coefficients(b)[1*ZF][elt] : elt in FunDomainRepsUpToNorm(M, 1*ZF, 20)]:  b in B4 } eq
 {
@@ -39,3 +39,5 @@ assert {[Coefficients(b)[1*ZF][elt] : elt in FunDomainRepsUpToNorm(M, 1*ZF, 20)]
 [ 0, 1, -1, -1, 7, 1, -26, -26, -7, -7, 52, -15, -45, -45 ]
 };
 assert LinearDependence([E2pow2] cat B4) eq [ [ 29, -29, -1152 ] ];
+time TB4 := Basis(M4 : ViaTraceForm:=true);
+assert #LinearDependence(TB4 cat B4) eq #B4;

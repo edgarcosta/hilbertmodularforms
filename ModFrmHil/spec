@@ -2,4 +2,9 @@
   diamond.m
   finitefield.m
   hackobj.m
+  hecke_field.m
+
+  copypaste/definite.m
+  copypaste/hackobj.m
+  copypaste/hecke.m
 }

@@ -52,17 +52,8 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
   g := HMF(Mk, Tmmf_bbs : prec:=prec);
 
   // Attempting to increase precision using a basis
-  // This is not very efficient, as it does not remember the underlying vector space, but it works.
   if assigned Mk`Basis then
-    basis := Basis(Mk);
-    lindep := LinearDependence(basis cat [g]);
-
-    // if the linear dependence of g with the basis is not 1
-    // then we cannot use the basis to increase precision
-    if #lindep eq 1 then
-      lindep := lindep[1];
-      g := &+[-1 * lindep[i] * basis[i] / lindep[#basis + 1] : i in [1 .. #basis]];
-    end if;
+    g := IncreasePrecisionWithBasis(g, Mk`Basis);
   end if;
   
   return g;
@@ -150,7 +141,7 @@ intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
   for f in basis do
     g := HeckeOperator(f, nn);
     lindep := LinearDependence(basis cat [g]);
-    assert #lindep eq 1;
+    require #lindep eq 1 : "Try increasing precision";
     lindep := lindep[1];
     // We will transpose at the end. 
     // For now, each row stores the

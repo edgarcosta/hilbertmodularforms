@@ -1,4 +1,4 @@
-function test(Mk, basis, correct_prefix)
+procedure test(Mk, basis, correct_prefix)
   prefix := SaveFilePrefix(Mk);
   assert prefix eq correct_prefix;
 
@@ -15,8 +15,7 @@ function test(Mk, basis, correct_prefix)
   end if;
 
   assert basis eq basis_load;
-  return "";
-end function;
+end procedure;
 
 print "thing 1";
 F := QuadraticField(5);

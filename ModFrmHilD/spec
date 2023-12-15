@@ -25,7 +25,6 @@
   SaveAndLoad.m
   Space.m
   SurfaceInvariants.m
-  Trace.m
   UnitChar.m
   Utils.m
   VDGTable.m
@@ -38,13 +37,14 @@ Creation
    DedekindZetaExact.m
    EisensteinSeries.m
    EllipticCurve.m
+   Dihedral.m
+   HeckeStability.m
    Igusa.m
    Newforms.m
    Recognize.m
    Siegel.m
    ThetaSeries.m
    TraceForm.m
-   Weight1.m
 }
 
 CanonicalRing
@@ -53,4 +53,9 @@ CanonicalRing
   HilbertSeries.m
   IntersectionRing.m
   IO.m
+}
+
+Trace
+{
+  +spec
 }
