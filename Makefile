@@ -1,6 +1,9 @@
 TEST_FILES := $(wildcard Tests/*.m)
 CHECK_FILES := $(patsubst Tests/%, check/%, $(TEST_FILES))
 
+
+MAKEFLAGS += -j$(shell nproc || printf 1)
+
 all: check
 
 clean:
