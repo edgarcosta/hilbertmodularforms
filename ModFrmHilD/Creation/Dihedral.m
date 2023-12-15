@@ -25,6 +25,7 @@ intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEn
   return Ks;
 end intrinsic;
 
+//This should be improved to the smarter way of doing it: take generators for the ideal and generate ideal using the Galois conjugates...
 intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
     {Given a quadratic extension K/F and an ideal N, compute the conjugate of the character N.}
     ZK := Integers(K);
@@ -58,42 +59,6 @@ intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
     return &*[ Fact_Conj[i][1]^Fact_Conj[i][2] : i in [1 .. #Fact_Conj] ];
 end intrinsic;
 
-//intrinsic ConjugateIdealNew(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
-//    {Given a quadratic extension K/F and an ideal N, compute the conjugate of the character N.}
-//    ZK := Integers(K);
-//    F := BaseField(K);
-//    ZF := Integers(F);
-//    
-//    if N eq 1*ZK then
-//        return N;
-//    end if;
-//
-//    Fact := Factorization(ZK !! N); 
-////    print Fact;
-//    Fact_Conj := [];
-//
-//    for foo in Fact do
-//        P := foo[1];
-//        PF := P meet ZF;
-////        print PF;
-//        FactPF := Factorization(ZK !! PF);
-////        print FactPF;
-//        if #FactPF eq 2 then //PF is split in PK
-//            p1 := FactPF[1][1];
-//            p2 := FactPF[2][1];
-//            if p1 eq P then
-//                Append(~Fact_Conj, [* p2, foo[2] *]);
-//            else 
-//                Append(~Fact_Conj, [* p1, foo[2] *]);
-//            end if;
-//        else //PF is inert or ramified in PK
-//            Append(~Fact_Conj, [* FactPF[1][1], foo[2] *]);
-//        end if;
-//    end for;
-//
-//    return &*[ Fact_Conj[i][1]^Fact_Conj[i][2] : i in [1 .. #Fact_Conj] ];
-//end intrinsic;
-
 intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
     {Given a quadratic extension K/F and an ideal chi of a ray class field of K, check if chi is equal to its conjugate.}
     
@@ -108,37 +73,6 @@ intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
     end for;
     return true;
 end intrinsic;
-
-//intrinsic PossibleHeckeCharacters(F::FldNum, N::RngOrdIdl, K::FldNum) -> SeqEnum[GrpHeckeElt]
-//{
-//Given a totally real field F, an ideal N of F, and a quadratic extension K of discriminant dividing N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N/disc(K).
-//}
-//
-//    ZK := Integers(K);
-//    Disc := Discriminant(ZK);
-//
-//    M := N/Disc;
-//    M := Integers(AbsoluteField(K)) !! M;
-//    H := HeckeCharacterGroup(M); //Is this correct or do I allow ramification at infinite places?
-//    
-//
-//    ans := [];
-//
-//    for chi in Elements(H) do
-//        if Norm(ZK !! Conductor(chi))*Disc eq N and not IsSelfConjugate(K, chi) then
-//            Append(~ans, chi);
-//        end if;
-//    end for;
-//
-//    return ans;
-//    
-//end intrinsic;
-
-//intrinsic QuadraticCharacter(F::FldNum, K::FldNum
-//) --> RngIntElt
-//{}
-//end intrinsic;
-
 
 intrinsic PossibleHeckeCharactersOfK(
     F::FldNum, 
@@ -258,4 +192,37 @@ Given a totally real field F, an ideal N of F, and a character chi of modulus N,
     end for;
 
     return ans;
+end intrinsic;
+
+intrinsic ThetaSeries(
+  Mk::ModFrmHilD,
+  K::FldNum,
+  psi::GrpHeckeElt
+  ) -> ModFrmHilDElt
+{
+  Given a totally real field F, a quadratic extension K of F, and a finite order Hecke character of K, compute the associated theta series of weight (1,1).
+}
+  M := Parent(Mk);
+  F := BaseField(M);
+  ZF := Integers(F);
+  prec := Precision(M);
+  K := NumberField(Order(Modulus(psi))); 
+  
+  //We create an associative array indexed by prime ideals pp up to Precision(Parent(Mk)) and populate them with traces associated to psi.
+  
+
+  a_pps := AssociativeArray();
+  for pp in PrimeIdeals(M) do
+    fact := Factorization(Integers(K) !! pp);
+    g := #fact;
+    d := InertiaDegree(pp);
+    a_pps[pp] := (g eq 2) // pp is split in K 
+      select psi(fact[1][1]) + psi(fact[2][1]) 
+      else // pp is inert or ramified in K
+        (
+        (fact[1][2] eq 1) select 0 else psi(fact[1][1])
+        );
+  end for;
+
+  return CuspFormFromEigenvalues(Mk, a_pps);
 end intrinsic;
