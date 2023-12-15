@@ -167,7 +167,7 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
 
   // Could contract this into the earlier loop over bbs
   for bb in NarrowClassGroupReps(M) do
-    components[bb] := cModFrmHilDEltComp(Mk, bb, components[bb] :
+    components[bb] := HMFComponent(Mk, bb, components[bb] :
         coeff_ring := K, prec := Precision(M));
   end for;
 
