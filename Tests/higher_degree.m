@@ -11,35 +11,36 @@ ZF := Integers(F);
 basis := Basis(ZF);
 places := InfinitePlaces(F);
 M := GradedRingOfHMFs(F, PRECISION);
-bbs := [ideal<ZF | {1}>, ideal<ZF | {a + 1}>];
+bbs := NarrowClassGroupReps(M);
 
 gens := TotallyPositiveUnitsGenerators(F);
 assert #(gens) eq 1;
 eps := gens[1];
 
 nu := 7*ZF.1 - 4*ZF.2;
-nu_prime, eps_prime := FunDomainRep(nu);
+nu_prime, eps_prime := FunDomainRep(M, bbs[1], nu);
 assert eps_prime eq nu;
 assert nu_prime eq F!1;
 
 nu := 10*ZF.1;
-nu_prime, eps_prime := FunDomainRep(nu);
+nu_prime, eps_prime := FunDomainRep(M, bbs[1], nu);
 assert eps_prime eq F!1;
 assert nu_prime eq nu;
 
 nu := 45*ZF.1 + 23*ZF.2;
-nu_prime, eps_prime := FunDomainRep(nu);
+nu_prime, eps_prime := FunDomainRep(M, bbs[1], nu);
 assert nu_prime eq nu * eps;
 
 // "lower" wall point stay the same
 nu := 2*ZF.1 + 2/3*ZF.2;
-nu_prime, eps_prime := FunDomainRep(nu);
+nu_prime, eps_prime := FunDomainRep(M, bbs[1], nu);
 assert nu_prime eq nu;
 
 // "upper" wall point should be reduced to the lower wall
 assert F.1 eq ZF.2;
 nu := 2*ZF.1 - 2/3*ZF.2;
-nu_prime, eps_prime := FunDomainRep(nu);
+nu_prime, eps_prime := FunDomainRep(M, bbs[1], nu);
+assert not eps_prime eq 1;
 assert nu_prime eq nu / eps;
 
 

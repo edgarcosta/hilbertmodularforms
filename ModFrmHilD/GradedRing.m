@@ -28,20 +28,18 @@ declare attributes ModFrmHilDGRng:
   PrecisionsByComponent, // Assoc: PrecisionsByComponent[bb] is an ascending SeqEnum[RngIntElt] of p such that there is a coefficient of precision p in the bb component
   FunDomainReps, // Assoc: FunDomainReps[bb] is an associative array nu->precision
   FunDomainRepsOfPrec, // Assoc: FunDomainReps[bb][prec] is an associative array nu->exponent such that nu has precision prec
-  FunDomainRepsUpToNorm, // FunDomainRepsUpToNorm[bb][x] stores the list of nu in the bb component 
-                         // corresponding to nn of norm at most x
-  FunDomainRepsOfNorm, // FunDomainRepsOfNorm[bb][x] stores the list of nu in the bb component
-                       // corresponding to nn of norm x
   IdealsByNarrowClassGroup, // list of all ideals nn with [nn] = [bb]
   Ideals, // List of all ideals for all bb ordered by norm
   IdealsFactored, // a supset of Ideals, where we cache the object so that further Factorization calls are free
   PrimeIdeals, // List of all prime ideals showing as factors of an element of Ideals
-  MPairs, // Assoc: just for testing, will be replaced soon TODO abhijitm
-  Shadows, // Shadows[bb][x] is a SetEnum of <nu, eps> pairs such that the coefficient of nu*eps
+  MPairs, // Deprecated
+  //Assoc: just for testing, will be replaced soon TODO abhijitm
+  OldShadows, // Deprecated
+  //Shadows[bb][x] is a SetEnum of <nu, eps> pairs such that the coefficient of nu*eps
            // needs to be included when performing multiplication.
            // Such nu*eps are totally positive elements which are dominated (<= in every real embedding)
            // by some fundamental domain representative.
-  NewShadows, // NewShadows[bb][nu] is an associative array (eps)->(exponent of nu*exp)
+  Shadows, // Assoc: NewShadows[bb][nu] is an associative array (eps)->(exponent of nu*exp)
   PuiseuxSeriesRings, // PuiseuxSeriesRings[K] stores the HMFSerPuis associated to M with coeff ring K
   NuToExpMatrices, // Assoc: NuToExpMatrices[bb] stores a matrix M such that M*Eltseq(nu) always consists of nonnegative integers
   ExpToNuMatrices, // Assoc: ExpToNuMatrices[bb] is inverse to NuToExpMatrices[bb]
@@ -321,6 +319,9 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // prec
   M`Precision := prec;
 
+  PopulateFunDomainRepsArrays(M);
+  PopulateShadowArray(M);
+
   // This function sets the M`RepToIdeal and M`IdealToRep assocs.
   M`RepToIdeal, M`IdealToRep := RepIdealConversion(M);
 
@@ -337,8 +338,6 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // to integral ideals nn with norm up to x lying in the narrow class
   // of [bbp]^-1, i.e. such that nn * bbp = (nu) for some 
   // integral ideal nn of norm up to x.
-  NewPopulateFunDomainRepsArrays(M);
-  PopulateShadowArray(M);
 
   M`PuiseuxSeriesRings := AssociativeArray();
   M`PuiseuxSeriesRings[Coefficients(DefiningPolynomial(RationalsAsNumberField()))] := cHMFSerPuis(M, Rationals());
