@@ -74,6 +74,11 @@ This proceedure is done in the following steps:
 intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl] : SaveAndLoad:=true)
   {Precomputes class number and unit indices for a list of ideals L}
 
+  // Do nothing if L is empty
+  if #L eq 0 then
+    return;
+  end if;
+
   // initialize
   F := BaseField(M); // Base Field
   ZF := Integers(F); // Ring of Integers
