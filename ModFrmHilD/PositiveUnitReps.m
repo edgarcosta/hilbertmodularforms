@@ -12,12 +12,11 @@ intrinsic LogMinkowski(M :: ModFrmHilDGRng, nu :: RngElt, prec :: RngIntElt
     return [Log(Evaluate(nu, pl : Precision := prec)): pl in Places(M)];
 end intrinsic;
 
-intrinsic InverseLogMinkowski(M :: ModFrmHilDGRng, prec :: RngIntElt
-    ) -> Mtrx
+intrinsic InverseLogMinkowski(M :: ModFrmHilDGRng, prec :: RngIntElt) -> Mtrx
 
 {Returns m^(-1), where m is the matrix whose first (n-1) lines are the
-log-Minkowski values of the totally positive unit basis of F, whose last line is
-(1,...,1)}
+log-Minkowski values of the totally positive unit basis of F, and whose last
+line is (1,...,1)}
 
     if not assigned M`InverseLogMinkowski or M`InverseLogMinkowskiPrec lt prec then
         F := BaseField(M);
@@ -34,6 +33,27 @@ log-Minkowski values of the totally positive unit basis of F, whose last line is
 
 end intrinsic;
 
+intrinsic InverseLogMinkowskiSqr(M :: ModFrmHilDGRng, prec :: RngIntElt) -> Mtrx
+
+{Returns m^(-1), where m is the matrix whose first (n-1) lines are the
+log-Minkowski values of a basis of square units in F, and whose last line is
+(1,...,1)}
+
+    if not assigned M`InverseLogMinkowskiSqr or M`InverseLogMinkowskiSqrPrec lt prec then
+        F := BaseField(M);
+        n := Degree(F);
+        epses := [x^2: x in UnitsGenerators(F)];
+        lines := [LogMinkowski(M, eps, prec): eps in epses] cat [[1: i in [1..n]]];
+        M`InverseLogMinkowskiSqr := Matrix(lines)^(-1);
+        M`InverseLogMinkowskiSqrPrec := prec;
+        return M`InverseLogMinkowskiSqr;
+    else
+        n := Degree(BaseField(M));
+        return MatrixAlgebra(RealField(prec), n) ! M`InverseLogMinkowskiSqr;
+    end if;
+
+end intrinsic;
+
 ///////////////////////////////////////////////////
 //                                               //
 //         The fundamental domain                //
@@ -44,7 +64,7 @@ end intrinsic;
    positive units as input. */
 
 intrinsic FunDomainRep(M :: ModFrmHilDGRng, nu :: RngElt
-                       : Precision := 100, CheckComponent := false
+                       : Precision := 100, CheckComponent := false, Squares := false
     ) -> FldNumElt, FldNumElt
 
 {Returns an element nu' in the fundamental domain and a totally positive unit
@@ -64,11 +84,16 @@ M`FunDomainReps[bb], in which case eps = 1.}
 
     /* Get nu' such that Log(nu') = x(1,..,1) + \sum \lambda_i Log(\eps_i) with
        -1/2 <= \lambda_i <= 1/2. We use inexact arithmetic and pray for the best */
-    epses := TotallyPositiveUnitsGenerators(F);
     prec := Precision;
     THRESHOLD := 10^-10;
+    if Squares then
+        epses := [x^2: x in UnitsGenerators(F)];
+        mat := InverseLogMinkowskiSqr(M, prec);
+    else
+        epses := TotallyPositiveUnitsGenerators(F);
+        mat := InverseLogMinkowski(M, prec);
+    end if;
 
-    mat := InverseLogMinkowski(M, prec);
     val := LogMinkowski(M, nu, prec);
     lambdas := Vector(val) * mat;
 

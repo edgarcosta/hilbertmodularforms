@@ -526,7 +526,7 @@ function AutomorphismAct(f, sigma)
   coeff := AssociativeArray();
   for nu->c in Coefficients(f) do
     nubar := F!((sigma^(-1))(nu));
-    snubar, epsilon := FunDomainRep(M, bbbar, nubar);
+    snubar, epsilon := FunDomainRep(M, nubar: CheckComponent := bbbar);
     //coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c; // TODO: check the codomain of the unit character. So far, requiring unit char to be trivial so the evaluation is 1
     coeff[snubar] := c;
   end for;

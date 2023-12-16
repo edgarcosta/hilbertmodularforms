@@ -20,7 +20,9 @@ declare attributes ModFrmHilDGRng:
   DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
   Places, // SeqEnum : Real places for the field F
   InverseLogMinkowski, // Mtrx: inverse of eps_i -> LogMinkowski(eps_i) where eps_i is the totally positive unit basis of F
+  InverseLogMinkowskiSqr, // Mtrx: same with squares of units
   InverseLogMinkowskiPrec, // RngIntElt: real precision at which InverseMinkowski is computed
+  InverseLogMinkowskiSqrPrec, // RngIntElt: same with squares of units
   Precision, // RngIntElt : norm bound for all expansions with this parent
   // RepToIdeal and IdealToRep cache the conversion nn <-> nu
   RepToIdeal, // RepToIdeal[bb][nu] := nn

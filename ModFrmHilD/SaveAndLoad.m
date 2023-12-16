@@ -55,11 +55,10 @@ intrinsic SaveBasis(savefile_name::MonStgElt, B::SeqEnum[ModFrmHilDElt])
     We store the sequence B into the file at savefile_path
 
     Writing f_i^1, ..., f_i^(h+) for the components of f_i,
-    each f_i^bb is an ModFrmHilDEltComp with an associated
-    multivariate Puiseux series.
+    each f_i^bb is an ModFrmHilDEltComp.
 
     What we actually store is the
-    SeqEnum[SeqEnum[Tup[RngSerPuisElt, Fld]]]
+    SeqEnum[SeqEnum[Tup[RngMPolElt, Fld]]]
 
     [[<f_i^bb`Series, K_i^bb>]_(bb in Cl+)]_(1 <= i <= n),
 
@@ -142,7 +141,8 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
     bb_label, a_bb_0 := Explode(coeffs_at_infty[i]);
     assert LMFDBLabel(bb) eq bb_label;
     a_bb_0 := StrongCoerce(K, a_bb_0);
-    components[bb] := RngSerPuisMonomial(Mk, F!0, a_bb_0);
+    components[bb] := AssociativeArray();
+    components[bb][F!0] := a_bb_0;
   end for;
 
   // iterate through ideals and add monomials
@@ -162,7 +162,9 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
     a_nn := coeffs_by_idl_dict[LMFDBLabel(nn)];
     bb := IdealToNarrowClassRep(M, nn);
     a_nn := StrongCoerce(K, a_nn);
-    components[bb] +:= RngSerPuisMonomial(Mk, nn, a_nn);
+    nu := IdealToRep(M, nn);
+    a_nu := IdlCoeffToEltCoeff(a_nn, nu, Weight(Mk), K);
+    components[bb][nu] := a_nu;
   end for;
 
   // Could contract this into the earlier loop over bbs

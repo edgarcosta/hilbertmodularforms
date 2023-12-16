@@ -116,7 +116,7 @@ intrinsic HMFTracePrecomputation(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl] : Save
     for bb in Creps do
       boo, x := IsPrincipal( aa * bb^(-1) );
       if boo then
-        elt := FunDomainRep( -D / x^2 : lattice := "squares");
+        elt := FunDomainRep(M, -D / x^2 : Squares := true);
         d := ZF ! -elt;
         break;
       end if;

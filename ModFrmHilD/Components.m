@@ -39,6 +39,11 @@ intrinsic SeriesRing(f :: ModFrmHilDEltComp) -> Rng
     return Parent(Series(f));
 end intrinsic;
 
+intrinsic Level(f :: ModFrmHilDEltComp) -> RngOrdIdl
+{}
+    return Level(Space(f));
+end intrinsic;
+
 intrinsic IsMultivariate(f :: ModFrmHilDEltComp) -> BoolElt
 {}
     return Type(Series(f)) eq RngMPolElt;
