@@ -241,15 +241,6 @@ intrinsic ConstructGeneratorsAndRelations(
   if IsDefined(PrecomputedGens, minimalGenWeight) then
       basis := PrecomputedGens[minimalGenWeight];
 
-  elif NumberOfTraceForms ne 0 then
-      Mk := HMFSpace(M, N, [minimalGenWeight : i in [1..n]]);
-      B := [ TraceForm(Mk,aa) : aa in TraceFormIdeals ];
-      basis := EisensteinBasis(Mk) cat Basis(B);
-      if #basis lt CuspDimension(Mk) then 
-          msg := "Not enough TraceForms";
-          error msg;
-      end if;
-
   elif ComputeNewGenerators then
       basis := Basis(HMFSpace(M, N, [minimalGenWeight : i in [1..n]]) : IdealClassesSupport := IdealClassesSupport, Symmetric:=Symmetric);
       assert not IsNull(basis);
