@@ -203,24 +203,6 @@ Given a totally real field F, an ideal N of F, and a character chi of modulus N,
     return PossibleHeckeCharacters(BaseField(Parent(Mk)), Level(Mk), Character(Mk));
 end intrinsic;
 
-intrinsic DihedralForms(
-  Mk::ModFrmHilD
-  ) -> SeqEnum[ModFrmHilDElt]
-{
-  Given a space of weight one forms, compute the subspace of dihedral forms.
-} 
-  require IsParallel(Weight(Mk)) and Weight(Mk)[1] eq 1 : "Dihedral forms are only defined for spaces of weight one forms.";
-  
-  ans := [];
-  
-  for psi in PossibleHeckeCharacters(Mk) do
-    Append(~ans, ThetaSeries(Mk, psi));
-  end for;
-  
-  return ans;
-end intrinsic;
-
-
 
 intrinsic ThetaSeries(
   Mk::ModFrmHilD,
@@ -253,3 +235,21 @@ intrinsic ThetaSeries(
 
   return CuspFormFromEigenvalues(Mk, a_pps);
 end intrinsic;
+
+intrinsic DihedralForms(
+  Mk::ModFrmHilD
+  ) -> SeqEnum[ModFrmHilDElt]
+{
+  Given a space of weight one forms, compute the subspace of dihedral forms.
+} 
+  require IsParallel(Weight(Mk)) and Weight(Mk)[1] eq 1 : "Dihedral forms are only defined for spaces of weight one forms.";
+  
+  ans := [];
+  
+  for psi in PossibleHeckeCharacters(Mk) do
+    Append(~ans, ThetaSeries(Mk, psi));
+  end for;
+  
+  return ans;
+end intrinsic;
+
