@@ -18,7 +18,7 @@ declare type ModFrmHilDEltComp;
 
 declare attributes ModFrmHilDEltComp: CoefficientRing, // Rng
         Series, // RngMPolElt or RngUPolElt[...]
-        ShadowSeries, //same
+        LowerSetSeries, //same
         Precision, // RngIntElt - the maximum norm of nn for which coefficients are stored
         Space, // ModFrmHilD - the HMF space that this ModFrmHilDEltComp is a component in
         ComponentIdeal; // RngOrdIdl
@@ -56,18 +56,18 @@ end intrinsic;
 
 intrinsic Series(f :: ModFrmHilDEltComp) -> RngElt
 {}
-    if not assigned f`Series and assigned f`ShadowSeries then
-        HMFGetSeriesFromShadow(f);
+    if not assigned f`Series and assigned f`LowerSetSeries then
+        HMFGetSeriesFromLowerSet(f);
     end if;
     return f`Series;
 end intrinsic;
 
-intrinsic ShadowSeries(f :: ModFrmHilDEltComp) -> RngElt
+intrinsic LowerSetSeries(f :: ModFrmHilDEltComp) -> RngElt
 {}
-    if not assigned f`ShadowSeries and assigned f`Series then
-        HMFGetShadowFromSeries(f);
+    if not assigned f`LowerSetSeries and assigned f`Series then
+        HMFGetLowerSetFromSeries(f);
     end if;
-    return f`ShadowSeries;
+    return f`LowerSetSeries;
 end intrinsic;
 
 intrinsic Precision(f :: ModFrmHilDEltComp) -> RngIntElt
@@ -270,8 +270,8 @@ intrinsic HMFPruneSeries(f :: ModFrmHilDEltComp : prec := Precision(f))
                                prec := prec);
 end intrinsic;
 
-intrinsic HMFPruneShadowSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
-                               prec := Precision(M)
+intrinsic HMFPruneLowerSetSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
+                                 prec := Precision(M)
     ) -> RngElt
 
 {Internal function: returns a pruned version of the shadow series f}
@@ -280,7 +280,7 @@ intrinsic HMFPruneShadowSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt
     precs := [p: p in M`PrecisionsByComponent[bb] | p le prec];
     for p in precs do
         for nu->exp_nu in M`FunDomainRepsOfPrec[bb][p] do
-            for eps->e in M`Shadows[bb][nu] do
+            for eps->e in M`LowerSet[bb][nu] do
                 Append(~exps, e);
             end for;
         end for;
@@ -289,11 +289,11 @@ intrinsic HMFPruneShadowSeries(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt
 
 end intrinsic;
 
-intrinsic HMFPruneShadowSeries(f :: ModFrmHilDEltComp : prec := Precision(f))
+intrinsic HMFPruneLowerSetSeries(f :: ModFrmHilDEltComp : prec := Precision(f))
 
-{Internal function: replace f`ShadowSeries by pruned version}
+{Internal function: replace f`LowerSetSeries by pruned version}
 
-    f`ShadowSeries := HMFPruneShadowSeries(GradedRing(f), ComponentIdeal(f), ShadowSeries(f) :
+    f`LowerSetSeries := HMFPruneLowerSetSeries(GradedRing(f), ComponentIdeal(f), LowerSetSeries(f) :
                                            prec := prec);
 end intrinsic;
 
@@ -303,17 +303,17 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic HMFGetSeriesFromShadow(f :: ModFrmHilDEltComp)
+intrinsic HMFGetSeriesFromLowerSet(f :: ModFrmHilDEltComp)
 
-{Internal function: compute f`Series from f`ShadowSeries}
+{Internal function: compute f`Series from f`LowerSetSeries}
 
-    f`Series := HMFPruneSeries(GradedRing(f), ComponentIdeal(f), f`ShadowSeries :
+    f`Series := HMFPruneSeries(GradedRing(f), ComponentIdeal(f), f`LowerSetSeries :
                                prec := Precision(f));
 end intrinsic;
 
-intrinsic HMFGetShadowFromSeries(f :: ModFrmHilDEltComp)
+intrinsic HMFGetLowerSetFromSeries(f :: ModFrmHilDEltComp)
 
-{Internal function: compute f`ShadowSeries from f`Series}
+{Internal function: compute f`LowerSetSeries from f`Series}
 
     M := GradedRing(f);
     bb := ComponentIdeal(f);
@@ -325,14 +325,14 @@ intrinsic HMFGetShadowFromSeries(f :: ModFrmHilDEltComp)
     for prec in precs do
         for nuprime->exp_nuprime in M`FunDomainRepsOfPrec[bb][prec] do
             a := HMFSeriesCoefficient(f`Series, exp_nuprime);
-            for eps->exp_nu in M`Shadows[bb][nuprime] do
+            for eps->exp_nu in M`LowerSet[bb][nuprime] do
                 Append(~coeffs, a * Evaluate(uc, eps));
                 Append(~exps, exp_nu);
             end for;
         end for;
     end for;
 
-    f`ShadowSeries := HMFConstructSeries(SeriesRing(f), exps, coeffs);
+    f`LowerSetSeries := HMFConstructSeries(SeriesRing(f), exps, coeffs);
 end intrinsic;
 
 intrinsic HMFConstructSeries(R :: RngMPol, exps :: SeqEnum, coeffs :: SeqEnum[RngElt]
@@ -422,7 +422,7 @@ intrinsic HMFSeriesRing(M::ModFrmHilDGRng, K::Rng : Multivariate:=true) -> RngMP
 end intrinsic;
 
 intrinsic HMFComponent(Mk :: ModFrmHilD, bb :: RngOrdIdl, f :: RngElt, prec :: RngIntElt :
-                       Shadow := false, Prune := true
+                       LowerSet := false, Prune := true
     ) -> ModFrmHilDEltComp
 
 {Internal function: constructs the HMF component whose Fourier series is
@@ -448,15 +448,15 @@ be a multivariate polynomial ring or a tower of univariate polynomial rings.}
     g`ComponentIdeal := bb;
     g`CoefficientRing := R;
     g`Precision := prec;
-    if Shadow then
-        g`ShadowSeries := f;
+    if LowerSet then
+        g`LowerSetSeries := f;
     else
         g`Series := f;
     end if;
 
     if Prune then
-        if Shadow then
-            HMFPruneShadowSeries(g : prec := prec);
+        if LowerSet then
+            HMFPruneLowerSetSeries(g : prec := prec);
         else
             HMFPruneSeries(g : prec := prec);
         end if;
@@ -496,7 +496,7 @@ precision instead.}
 
     R := HMFSeriesRing(M, CoefficientRing : Multivariate := Multivariate);
     f := HMFConstructSeries(R, exps, coeffs);
-    return HMFComponent(Mk, bb, f, prec: Shadow := false, Prune := false);
+    return HMFComponent(Mk, bb, f, prec: LowerSet := false, Prune := false);
 
 end intrinsic;
 
@@ -509,7 +509,7 @@ intrinsic HMFComponentZero(Mk::ModFrmHilD, bb::RngOrdIdl :
 
     n := Degree(BaseField(Mk));
     S := HMFSeriesRing(Parent(Mk), coeff_ring : Multivariate := Multivariate);
-    return HMFComponent(Mk, bb, S ! 0, prec : Shadow := true, Prune := false);
+    return HMFComponent(Mk, bb, S ! 0, prec : LowerSet := true, Prune := false);
 end intrinsic;
 
 intrinsic HMFComponentIdentity(Mk :: ModFrmHilD, bb :: RngOrdIdl :
@@ -521,7 +521,7 @@ intrinsic HMFComponentIdentity(Mk :: ModFrmHilD, bb :: RngOrdIdl :
     require &and[w eq 0: w in Weight(Mk)]: "Cannot construct HMF component equal to 1 in nonzero weight";
     n := Degree(BaseField(Mk));
     S := HMFSeriesRing(Parent(Mk), coeff_ring : Multivariate := Multivariate);
-    return HMFComponent(Mk, bb, S ! 1, prec : Shadow := true, Prune := false);
+    return HMFComponent(Mk, bb, S ! 1, prec : LowerSet := true, Prune := false);
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -538,11 +538,11 @@ coefficient ring is extended to R.}
     Mk := Space(f);
     n := Degree(BaseField(Mk));
     bb := ComponentIdeal(f);
-    ser := ShadowSeries(f);
+    ser := LowerSetSeries(f);
     prec := Precision(f);
     S := HMFSeriesRing(GradedRing(f), R : Multivariate := IsMultivariate(f));
 
-    return HMFComponent(Mk, bb, S ! ser, prec : Shadow := true, Prune := false);
+    return HMFComponent(Mk, bb, S ! ser, prec : LowerSet := true, Prune := false);
 end intrinsic;
 
 intrinsic IsZero(f :: ModFrmHilDEltComp) -> BoolElt
@@ -568,7 +568,7 @@ intrinsic '+'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
     prec := Min(Precision(f), Precision(g));
     prune := not (Precision(f) eq Precision(g));
     return HMFComponent(Space(f), ComponentIdeal(f), Series(f) + Series(g), prec
-                        : Shadow := false, Prune := prune);
+                        : LowerSet := false, Prune := prune);
 end intrinsic;
 
 intrinsic '*'(c :: RngElt, f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
@@ -581,7 +581,7 @@ intrinsic '*'(c :: RngElt, f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
     require b : "Cannot scale an HMF by a scalar not coercible into its coefficient field";
 
     return HMFComponent(Space(f), ComponentIdeal(f), c_K * Series(f), Precision(f)
-                        : Shadow := false, Prune := false);
+                        : LowerSet := false, Prune := false);
 end intrinsic;
 
 intrinsic '-'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
@@ -597,8 +597,8 @@ intrinsic '*'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
     bb := ComponentIdeal(f);
     Rf := CoefficientRing(f);
     Rg := CoefficientRing(g);
-    serf := ShadowSeries(f);
-    serg := ShadowSeries(g);
+    serf := LowerSetSeries(f);
+    serg := LowerSetSeries(g);
     require bb eq ComponentIdeal(g): "Cannot multiply HMF components on different components";
 
     if not Rf eq Rg then // coerce automatically
@@ -612,13 +612,13 @@ intrinsic '*'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
 
     prec := Min(Precision(f), Precision(g));
     if Precision(f) gt prec then
-        serf := HMFPruneShadowSeries(M, bb, serf : Precision := prec);
+        serf := HMFPruneLowerSetSeries(M, bb, serf : Precision := prec);
     elif Precision(g) gt prec then
-        serg := HMFPruneShadowSeries(M, bb, serg : Precision := prec);
+        serg := HMFPruneLowerSetSeries(M, bb, serg : Precision := prec);
     end if;
 
     return HMFComponent(Space(f) * Space(g), bb, serf * serg, prec :
-                        Shadow := true, Prune := true);
+                        LowerSet := true, Prune := true);
 end intrinsic;
 
 intrinsic '^'(f :: ModFrmHilDEltComp, n :: RngIntElt) -> ModFrmHilDEltComp
@@ -629,22 +629,22 @@ intrinsic '^'(f :: ModFrmHilDEltComp, n :: RngIntElt) -> ModFrmHilDEltComp
     end if;
     M := GradedRing(f);
     bb := ComponentIdeal(f);
-    serf := ShadowSeries(f);
+    serf := LowerSetSeries(f);
     prec := Precision(f);
     g := serf;
     bits := Intseq(n, 2);
     bits := bits[1..(#bits - 1)];
     for i in bits do
         g := g^2;
-        g := HMFPruneShadowSeries(M, bb, g : prec := prec);
+        g := HMFPruneLowerSetSeries(M, bb, g : prec := prec);
         if i eq 1 then
             g := g * serf;
-            g := HMFPruneShadowSeries(M, bb, g : prec := prec);
+            g := HMFPruneLowerSetSeries(M, bb, g : prec := prec);
         end if;
     end for;
 
     return HMFComponent(Space(f)^n, ComponentIdeal(f), g, prec :
-                        Shadow := true, Prune := false);
+                        LowerSet := true, Prune := false);
 end intrinsic;
 
 intrinsic '/'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
@@ -660,8 +660,8 @@ intrinsic '/'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
     // Coerce automatically
     Rf := CoefficientRing(f);
     Rg := CoefficientRing(g);
-    serf := ShadowSeries(f);
-    serg := ShadowSeries(g);
+    serf := LowerSetSeries(f);
+    serg := LowerSetSeries(g);
     if Rf eq Rg then
         Rfg := Rf;
         S := SeriesRing(f);
@@ -681,26 +681,26 @@ intrinsic '/'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
     // Get shadow series at minimum precision
     prec := Min(Precision(f), Precision(g));
     if prec lt Precision(f) then
-        serf := HMFPruneShadowSeries(M, bb, serf : prec := prec);
+        serf := HMFPruneLowerSetSeries(M, bb, serf : prec := prec);
     elif prec lt Precision(g) then
-        serg := HMFPruneShadowSeries(M, bb, serg : prec := prec);
+        serg := HMFPruneLowerSetSeries(M, bb, serg : prec := prec);
     end if;
 
     // Invert
     u := 1 - serg;
     inv := S ! 1;
-    u := HMFPruneShadowSeries(M, bb, u : prec := prec);
+    u := HMFPruneLowerSetSeries(M, bb, u : prec := prec);
     while u ne 0 do
         inv := (1 + u) * inv;
-        inv := HMFPruneShadowSeries(M, bb, inv : prec := prec);
+        inv := HMFPruneLowerSetSeries(M, bb, inv : prec := prec);
         u := u * u;
-        u := HMFPruneShadowSeries(M, bb, u : prec := prec);
+        u := HMFPruneLowerSetSeries(M, bb, u : prec := prec);
     end while;
     inv := serf * inv;
-    inv := HMFPruneShadowSeries(M, bb, inv : prec := prec);
+    inv := HMFPruneLowerSetSeries(M, bb, inv : prec := prec);
 
     return HMFComponent(Space(f) / Space(g), bb, inv, prec :
-                        Shadow := true, Prune := false);
+                        LowerSet := true, Prune := false);
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -741,7 +741,7 @@ intrinsic MapCoefficients(m :: Map, f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
     end for;
     new_series := HMFConstructSeries(new_series_ring, exps, coeffs);
     return HMFComponent(Space(f), ComponentIdeal(f), new_series, Precision(f):
-                        Shadow := false, Prune := false);
+                        LowerSet := false, Prune := false);
 end intrinsic;
 
 intrinsic Inclusion(f :: ModFrmHilDEltComp, Mk :: ModFrmHilD, mm :: RngOrdIdl

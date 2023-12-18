@@ -209,7 +209,7 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic PopulateFunDomainRepsArrays(M :: ModFrmHilDGRng)
+intrinsic PopulateFunDomainReps(M :: ModFrmHilDGRng)
 
 {Internal function: populate M`FunDomainReps and associated arrays}
 
@@ -265,39 +265,39 @@ end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
-//         Populate Shadow array                 //
+//         Populate LowerSet array               //
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic PopulateShadowArray(M :: ModFrmHilDGRng : Precision := 100)
+intrinsic PopulateLowerSet(M :: ModFrmHilDGRng : Precision := 100)
 
-{Internal function: populate M`Shadows}
+{Internal function: populate M`LowerSet}
 
     F := BaseField(M);
     ZF := Integers(F);
     n := Degree(F);
-    M`Shadows := AssociativeArray();
+    M`LowerSet := AssociativeArray();
     for bb in M`NarrowClassGroupReps do
-        M`Shadows[bb] := AssociativeArray();
+        M`LowerSet[bb] := AssociativeArray();
         for nu->p in M`FunDomainReps[bb] do
-            M`Shadows[bb][nu] := AssociativeArray();
+            M`LowerSet[bb][nu] := AssociativeArray();
         end for;
         //Add zero on each component
-        M`Shadows[bb][F!0] := AssociativeArray();
-        M`Shadows[bb][F!0][ZF!1] := [0: i in [1..n]];
+        M`LowerSet[bb][F!0] := AssociativeArray();
+        M`LowerSet[bb][F!0][ZF!1] := [0: i in [1..n]];
     end for;
 
     n := Degree(BaseField(M));
     if n eq 2 then
-        PopulateShadowArrayQuadratic(M : Precision := Precision);
+        PopulateLowerSetArrayQuadratic(M : Precision := Precision);
     else
-        PopulateShadowArrayGen(M : Precision := Precision);
+        PopulateLowerSetArrayGen(M : Precision := Precision);
     end if;
 
 end intrinsic;
 
 
-intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
+intrinsic PopulateLowerSetArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
 {}
     F := BaseField(M);
     eps := TotallyPositiveUnitsGenerators(F)[1];
@@ -335,13 +335,13 @@ intrinsic PopulateShadowArrayQuadratic(M :: ModFrmHilDGRng : Precision := 100)
                 error "Insufficient precision";
             end if;
             for j in [Ceiling(lbound)..Floor(ubound)] do
-                M`Shadows[bb][nu][eps^j] := Exponent(M, bb, nu * eps^j);
+                M`LowerSet[bb][nu][eps^j] := Exponent(M, bb, nu * eps^j);
             end for;
         end for;
     end for;
 end intrinsic;
 
-intrinsic PopulateShadowArrayGen(M :: ModFrmHilDGRng : Precision := 100)
+intrinsic PopulateLowerSetArrayGen(M :: ModFrmHilDGRng : Precision := 100)
 {}
 
     B := M`Precision;
@@ -403,7 +403,7 @@ intrinsic PopulateShadowArrayGen(M :: ModFrmHilDGRng : Precision := 100)
                 for i in [1..(n-1)] do
                     unit := unit * epses[i] ^ Eltseq(pt)[i];
                 end for;
-                M`Shadows[bb][nu][unit] := Exponent(M, bb, unit * nu);
+                M`LowerSet[bb][nu][unit] := Exponent(M, bb, unit * nu);
             end for;
         end for;
     end for;
@@ -469,50 +469,6 @@ end intrinsic;
 
 ///////////////////////////////////////////////////
 //                                               //
-//         Deprecated access to reps             //
-//                                               //
-///////////////////////////////////////////////////
-
-intrinsic Shadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
-  {
-    inputs:
-      M: A graded ring of Hilbert modular forms
-      bb: Fractional ideal of the ring of integers of the number field underlying M
-    returns: 
-      An associative array shadows_bb keyed by norm x whose values at x is an enumerated set
-      storing pairs (eps, nu), where eps is a totally positive unit and nu
-      a fundamental domain representative, such that the element nu*eps is dominated by 
-      (totally less than) some fundamental domain representative nu' with norm at most x. }
-
-      res := AssociativeArray();
-      for norm in [0..Precision(M)] do
-          res[norm] := { };
-          for p in M`PrecisionsByComponent[bb] do
-              if p le norm then
-                  for nu->exp in M`FunDomainRepsOfPrec[bb][p] do
-                      epses := Keys(M`Shadows[bb][nu]);
-                      res[norm] := res[norm] join SequenceToSet([<nu, eps>: eps in epses]);
-                  end for;
-              end if;
-          end for;
-      end for;
-      return res;
-end intrinsic;
-
-intrinsic Shadows(M::ModFrmHilDGRng) -> Assoc
-  {}
-  if not assigned M`OldShadows then
-    M`OldShadows := AssociativeArray();
-    for bb in M`NarrowClassGroupReps do
-      M`OldShadows[bb] := Shadows(M, bb);
-    end for;
-  end if;
-
-  return M`OldShadows;
-end intrinsic;
-
-///////////////////////////////////////////////////
-//                                               //
 //         Deprecated computation of Mpairs      //
 //                                               //
 ///////////////////////////////////////////////////
@@ -551,7 +507,7 @@ intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
     for nu in Keys(M`FunDomainReps[bb]) do
         MPairs_bb[nu] := [];
         for nu1 in Keys(M`FunDomainReps[bb]) do
-            for eps1 in Keys(M`Shadows[bb][nu1]) do
+            for eps1 in Keys(M`LowerSet[bb][nu1]) do
                 if IsDominatedBy(eps1 * nu1, nu) then
                     nu2eps2 := nu - eps1 * nu1;
                     nu2, eps2 := FunDomainRep(M, nu2eps2);

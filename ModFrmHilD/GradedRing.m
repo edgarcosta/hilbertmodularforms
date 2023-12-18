@@ -35,7 +35,7 @@ declare attributes ModFrmHilDGRng:
   IdealsFactored, // a supset of Ideals, where we cache the object so that further Factorization calls are free
   PrimeIdeals, // List of all prime ideals showing as factors of an element of Ideals
   MPairs, // Assoc: used for testing and performance comparisons
-  Shadows, // Assoc: Shadows[bb][nu] is an associative array (eps)->(exponent of nu*exp)
+  LowerSet, // Assoc: LowerSet[bb][nu] is an associative array (eps)->(exponent of nu*exp)
   NuToExpMatrices, // Assoc: NuToExpMatrices[bb] stores a matrix M such that M*Eltseq(nu) always consists of nonnegative integers
   ExpToNuMatrices, // Assoc: ExpToNuMatrices[bb] is inverse to NuToExpMatrices[bb]
   PrecomputationforTrace, // Precomputed orders for the Trace formula
@@ -333,8 +333,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // prec
   M`Precision := prec;
 
-  PopulateFunDomainRepsArrays(M);
-  PopulateShadowArray(M);
+  PopulateFunDomainReps(M);
+  PopulateLowerSet(M);
   M`RepToIdeal, M`IdealToRep := RepIdealConversion(M);
 
   M`IdealsByNarrowClassGroup := AssociativeArray();
