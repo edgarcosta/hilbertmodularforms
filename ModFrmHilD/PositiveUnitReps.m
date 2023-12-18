@@ -473,28 +473,6 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-intrinsic FunDomainRepsOfNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt) -> SetEnum
-{Deprecated: use FunDomainRepsOfPrec instead}
-    return FunDomainRepsOfPrec(M, bb, x);
-end intrinsic;
-
-intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng, bb::RngOrdFracIdl, x::RngIntElt) -> SetEnum
-{Deprecated: use FunDomainRepsOfPrec instead}
-    return FunDomainRepsUpToPrec(M, bb, x);
-end intrinsic;
-
-intrinsic FunDomainRepsUpToNorm(M::ModFrmHilDGRng : Precision := M`Precision) -> Assoc
-{Deprecated: use FunDomainRepsUpToPrec(M, bb, prec)}
-    res := AssociativeArray();
-    for bb in M`NarrowClassGroupReps do
-        res[bb] := AssociativeArray();
-        for p in [0..Precision] do
-            res[bb][p] := FunDomainRepsUpToPrec(M, bb, p);
-        end for;
-    end for;
-    return res;
-end intrinsic;
-
 intrinsic Shadows(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Assoc
   {
     inputs:
@@ -541,14 +519,14 @@ end intrinsic;
 
 intrinsic EmbedNumberFieldElement(nu::FldNumElt : Precision := 100) -> SeqEnum
 {}
-  F := Parent(nu);
-  return [Evaluate(nu, place : Precision := Precision) : place in InfinitePlaces(F)];
+    F := Parent(nu);
+    return [Evaluate(nu, place : Precision := Precision) : place in InfinitePlaces(F)];
 end intrinsic;
 
 intrinsic EmbedNumberFieldElement(nu::RngOrdElt : Precision := 100) -> SeqEnum
 {}
-  F := Parent(nu);
-  return [Evaluate(F!nu, place : Precision := Precision) : place in InfinitePlaces(F)];
+    F := NumberField(Parent(nu));
+    return EmbedNumberFieldElement(F ! nu : Precision := Precision);
 end intrinsic;
 
 intrinsic IsDominatedBy(alpha::FldNumElt, beta::FldNumElt) -> BoolElt
@@ -561,55 +539,28 @@ intrinsic IsDominatedBy(alpha::FldNumElt, beta::FldNumElt) -> BoolElt
       is less than or equal to corresponding coordinate in the embedding of
       beta in R^n
   }
+  n := Degree(Parent(alpha));
   alpha_embed := EmbedNumberFieldElement(alpha);
   beta_embed := EmbedNumberFieldElement(beta);
-  for i in [1 .. #alpha_embed] do
-    if alpha_embed[i] gt beta_embed[i] then
-      return false;
-    end if;
-  end for;
-  return true;
+  return &and[alpha_embed[i] le beta_embed[i]: i in [1..n]];
 end intrinsic;
 
 intrinsic ComputeMPairs(M::ModFrmHilDGRng, bb::RngOrdFracIdl) -> Any
-  {temporary function, just to ensure compatibility}
-  MPairs_bb := AssociativeArray();
-  shadows_bb := Shadows(M)[bb][M`Precision];
-  F := BaseField(M);
-
-  for nu in FunDomainRepsUpToNorm(M)[bb][M`Precision] do
-    MPairs_bb[nu] := [];
-    for nu_1eps_1 in shadows_bb do
-      nu_1, eps_1 := Explode(nu_1eps_1);
-      if IsDominatedBy(eps_1*nu_1, nu) then
-        nu_2eps_2 := nu - eps_1*nu_1;
-        nu_2, eps_2 := FunDomainRep(M, nu_2eps_2);
-        Append(~MPairs_bb[nu], [<nu_1, eps_1>, <nu_2, eps_2>]);
-      end if;
+{temporary function, just to ensure compatibility}
+    MPairs_bb := AssociativeArray();
+    for nu in Keys(M`FunDomainReps[bb]) do
+        MPairs_bb[nu] := [];
+        for nu1 in Keys(M`FunDomainReps[bb]) do
+            for eps1 in Keys(M`Shadows[bb][nu1]) do
+                if IsDominatedBy(eps1 * nu1, nu) then
+                    nu2eps2 := nu - eps1 * nu1;
+                    nu2, eps2 := FunDomainRep(M, nu2eps2);
+                    Append(~MPairs_bb[nu], [<nu1, eps1>, <nu2, eps2>]);
+                end if;
+            end for;
+        end for;
     end for;
-    for nu_1 in FunDomainRepsUpToNorm(M)[bb][M`Precision] do
-      if IsDominatedBy(nu_1, nu) then
-        nu_2eps_2 := nu - nu_1;
-        nu_2, eps_2 := FunDomainRep(M, nu_2eps_2);
-        Append(~MPairs_bb[nu], [<nu_1, F!1>, <nu_2, eps_2>]);
-      end if;
-    end for;
-  end for;
-
-  return MPairs_bb;
-end intrinsic;
-
-
-intrinsic ComputeMPairs(M::ModFrmHilDGRng) -> Any
-  {temporary function, just to test}
-  if not assigned M`MPairs then
-    M`MPairs := AssociativeArray();
-    for bb in M`NarrowClassGroupReps do
-      M`MPairs[bb] := ComputeMPairs(M, bb);
-    end for;
-  end if;
-
-  return M`MPairs;
+    return MPairs_bb;
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -679,7 +630,7 @@ intrinsic RepIdealConversion(M::ModFrmHilDGRng) -> Assoc, Assoc
       and RepToIdeal[bb][nu] = nn
 
       // TODO we could combine this function into
-      // FunDomainRepsUpToNorm and maybe save a loop
+      // FunDomainRepsUpToPrec and maybe save a loop
       // or two, but because narrow principalizing
       // is probably the most expensive step anyways
       // I figured code readability/cleanliness was

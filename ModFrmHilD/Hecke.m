@@ -26,7 +26,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
     bbpinv := bbp^(-1);
     coeffs[bb] := AssociativeArray();
 
-    for nu in FunDomainRepsUpToNorm(M, bb, prec) do //they come sorted
+    for nu in FunDomainRepsUpToPrec(M, bb, prec) do
       nn := nu*bbpinv;  // already call nn the ideal for the Hecke operator
       c := 0;
 
@@ -44,6 +44,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
       end for;
       a_nu := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]));
       coeffs[bb][nu] := a_nu;
+      assert a_nu in K;
     end for;
   end for;
 

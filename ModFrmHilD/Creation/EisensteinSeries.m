@@ -32,7 +32,6 @@ intrinsic EisensteinSeries(
   coeffs := AssociativeArray();
   n := Degree(BaseField(M));
 
-  coeff_rings := AssociativeArray();
   m := Order(Character(Mk));
   l := LCM(Order(eta), Order(psi));
 
@@ -44,7 +43,6 @@ intrinsic EisensteinSeries(
     coeffs[ddbb] := AssociativeArray();
     coeffs[ddbb][0] := StrongCoerce(coeff_ring, constant_term[bb]);
 
-    coeff_rings[bb] := coeff_ring;
     // All other coefficients, equation (48)
     for nu->nn in RepToIdeal(M)[ddbb] do
       if not IsZero(nu) then
@@ -58,7 +56,7 @@ intrinsic EisensteinSeries(
       end if;
     end for;
   end for;
-  E := HMF(Mk, coeffs : coeff_rings := coeff_rings);
+  E := HMF(Mk, coeffs : coeff_ring := coeff_ring);
   return E;
 end intrinsic;
 

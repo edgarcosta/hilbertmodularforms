@@ -43,66 +43,45 @@ nu_prime, eps_prime := FunDomainRep(M, nu);
 assert not eps_prime eq 1;
 assert nu_prime eq nu / eps;
 
-
-procedure test_reps_to_norm(F, bbs, nus, norms)
-  ZF := Integers(F);
-  dd := Different(ZF);
-
-  TrueFunDomainReps := AssociativeArray();
-  for bb in bbs do
-    TrueFunDomainReps[bb] := AssociativeArray();
-    TrueFunDomainReps[bb][0] := [F!0];
-
-    norms_bb := norms[bb];
-    nus_bb := nus[bb];
-
-    max_norm := Max(norms_bb);
-
-    for x in [1 .. PRECISION] do
-      TrueFunDomainReps[bb][x] := TrueFunDomainReps[bb][x-1];
-
-      // inefficient but it's a test so whatever
-      for i in [1 .. #norms_bb] do
-        if norms_bb[i] eq x then
-          Append(~TrueFunDomainReps[bb][x], nus[bb][i]);
-        end if;
-      end for;
+procedure test_reps_of_prec(M, bbs, nus, precs)
+    nus_by_prec := AssociativeArray();
+    for bb in bbs do
+        nus_by_prec[bb] := AssociativeArray();
+        for i in [1..(#precs[bb])] do
+            p := precs[bb][i];
+            if IsDefined(nus_by_prec[bb], p) then
+                Append(~nus_by_prec[bb][p], nus[bb][i]);
+            else
+                nus_by_prec[bb][p] := [nus[bb][i]];
+            end if;
+        end for;
     end for;
-  end for;
 
-  FunDomainEltReps := FunDomainRepsUpToNorm(M);
-
-  assert Keys(FunDomainEltReps) eq Keys(TrueFunDomainReps);
-  for bb in Keys(FunDomainEltReps) do
-    assert Keys(FunDomainEltReps[bb]) eq Keys(TrueFunDomainReps[bb]);
-    for k in Keys(FunDomainEltReps[bb]) do
-      assert SequenceToSet(FunDomainEltReps[bb][k]) eq SequenceToSet(TrueFunDomainReps[bb][k]);
+    for bb in bbs do
+        assert Keys(M`FunDomainRepsOfPrec[bb]) eq Keys(nus_by_prec[bb]);
+        for p in Keys(M`FunDomainRepsOfPrec[bb]) do
+            assert Keys(M`FunDomainRepsOfPrec[bb][p]) eq SequenceToSet(nus_by_prec[bb][p]);
+        end for;
     end for;
-  end for;
-
-  //return "";
 end procedure;
 
-norms := AssociativeArray();
+precs := AssociativeArray();
 nus := AssociativeArray();
 
-norms[bbs[1]] := [0, 2, 3, 8, 11, 11, 12, 18];
-norms[bbs[2]] := [1, 4, 6, 9, 13, 13, 16];
+precs[bbs[1]] := [0, 2, 3, 8, 11, 11, 12, 18];
+precs[bbs[2]] := [0, 1, 4, 6, 9, 13, 13, 16];
 
 nus[bbs[1]] := [0, 1/6*a + 1/2, 1/2, 1/3*a + 1, 1/6*a + 1, -1/6*a + 1, 1, 1/2*a + 3/2];
-nus[bbs[2]] := [1/6*a + 1/2, 1/3*a + 1, 1, 1/2*a + 3/2, -1/6*a + 3/2, 1/6*a + 3/2, 2/3*a + 2];
+nus[bbs[2]] := [0, 1/6*a + 1/2, 1/3*a + 1, 1, 1/2*a + 3/2, -1/6*a + 3/2, 1/6*a + 3/2, 2/3*a + 2];
 
-test_reps_to_norm(F, bbs, nus, norms);
+test_reps_of_prec(M, bbs, nus, precs);
 
 // testing MPairs
-
 prec := 20;
 M := GradedRingOfHMFs(F, prec);
 assert BaseField(M) eq F;
 bbs := M`NarrowClassGroupReps;
-
-shadows := Shadows(M);
-mpairs_new := ComputeMPairs(M);
+mpairs_new := MPairs(M);
 
 // hardcoding the old output of MPairs
 
@@ -144,7 +123,7 @@ for i in [1 .. #reps_2] do
 end for;
 
 for bb in bbs do
-  reps := FunDomainRepsUpToNorm(M)[bb][M`Precision];
+  reps := FunDomainRepsUpToPrec(M, bb, M`Precision);
   for nu in reps do
     coerced_mpairs_set := {}; // MPairs with all eps and nu coerced into F
     for pair in mpairs[bb][nu] do

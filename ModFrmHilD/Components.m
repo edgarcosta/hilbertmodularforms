@@ -500,24 +500,28 @@ precision instead.}
 
 end intrinsic;
 
-intrinsic HMFComponentZero(Mk::ModFrmHilD, bb::RngOrdIdl : Multivariate := true) -> ModFrmHilDEltComp
+intrinsic HMFComponentZero(Mk::ModFrmHilD, bb::RngOrdIdl :
+                           Multivariate := true, prec := Precision(Parent(Mk)),
+                           coeff_ring := DefaultCoefficientRing(Mk)
+    ) -> ModFrmHilDEltComp
 
 {Returns the HMF component that is identically zero on the bb component.}
 
     n := Degree(BaseField(Mk));
-    R := DefaultCoefficientRing(Mk);
-    S := HMFSeriesRing(Parent(Mk), R : Multivariate := Multivariate);
-    return HMFComponent(Mk, bb, S ! 0, Precision(Parent(Mk)) : Shadow := true, Prune := false);
+    S := HMFSeriesRing(Parent(Mk), coeff_ring : Multivariate := Multivariate);
+    return HMFComponent(Mk, bb, S ! 0, prec : Shadow := true, Prune := false);
 end intrinsic;
 
-intrinsic HMFComponentOne(Mk :: ModFrmHilD, bb :: RngOrdIdl : Multivariate:=true) -> ModFrmHilDEltComp
+intrinsic HMFComponentIdentity(Mk :: ModFrmHilD, bb :: RngOrdIdl :
+                               Multivariate:=true, coeff_ring := DefaultCoefficientRing(Mk),
+                               prec := Precision(Parent(Mk))) -> ModFrmHilDEltComp
 
 {Returns the HMF component that is identically one on the bb component.}
 
+    require &and[w eq 0: w in Weight(Mk)]: "Cannot construct HMF component equal to 1 in nonzero weight";
     n := Degree(BaseField(Mk));
-    R := DefaultCoefficientRing(Mk);
-    S := HMFSeriesRing(Parent(Mk), R : Multivariate := Multivariate);
-    return HMFComponent(Mk, bb, S ! 1, Precision(Parent(Mk)) : Shadow := true, Prune := false);
+    S := HMFSeriesRing(Parent(Mk), coeff_ring : Multivariate := Multivariate);
+    return HMFComponent(Mk, bb, S ! 1, prec : Shadow := true, Prune := false);
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -621,7 +625,7 @@ intrinsic '^'(f :: ModFrmHilDEltComp, n :: RngIntElt) -> ModFrmHilDEltComp
 {}
     require n ge 0: "Cannot compute inverse of HMF component";
     if n eq 0 then
-        return HMFComponentOne(Space(f)^0, ComponentIdeal(f));
+        return HMFComponentIdentity(Space(f)^0, ComponentIdeal(f));
     end if;
     M := GradedRing(f);
     bb := ComponentIdeal(f);
