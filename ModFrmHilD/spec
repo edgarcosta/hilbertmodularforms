@@ -9,6 +9,7 @@
   Export.m
   FldExt.m
   Formatting.m
+  HMFGrossenchar.m
   IdlCoeffEltCoeffConversion.m
   GradedPoly.m
   GradedRing.m
