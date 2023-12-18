@@ -525,30 +525,35 @@ end intrinsic;
 
 /////////////////////// unit character ///////////////////////////
 
-intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision := 50) -> SeqEnum[Map]
+intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) -> SeqEnum[Map]
   { 
     inputs:
-      F: A totally real Galois number field of degree n
-      k: A weight, given as a SeqEnum of n natural numbers
+      F: A number field of degree n
+      K: A Galois number field containing the Galois closure of F.
     returns:
-      Let K be UnitCharField, and v_0 a distinguished real
-      place of K (we choose the first one, but this is arbitrary).
-
       We return a list [sigma_1, ..., sigma_n] 
       of automorphisms of K sorted such that if 
-      [v_1, ..., v_n] is a list of real embeddings of F, 
+      [v_1, ..., v_n] is a list of embeddings of F, 
       then v_i(x) = v_0(sigma_i(x)) for all x in F. 
       Note that when F is not Galois, this list is
       not unique, but our algorithm is deterministic.
   }
-  K := UnitCharField(F, k);
+  require IsSubfield(SplittingField(F), K) : "K must contain the Galois closure of F";
   n := Degree(F);
-  places := RealPlaces(F);
+  places := InfinitePlaces(F);
 
   a := PrimitiveElement(F);
   a_embed_dict := AssociativeArray();
-  for i in [1 .. n] do
-    a_embed_dict[RealField(Precision)!Evaluate(a, places[i])] := i;
+  r, s := Signature(F);
+  for i in [1 .. r] do
+    z_i := ComplexField(Precision)!Evaluate(a, places[i]);
+    a_embed_dict[z_i] := i;
+  end for;
+
+  for i in [r+1 .. r+s] do
+    z_i := ComplexField(Precision)!Evaluate(a, places[i]);
+    a_embed_dict[z_i] := i;
+    a_embed_dict[Conjugate(z_i)] := i + s;
   end for;
 
   // a distinguished place of K 
@@ -557,10 +562,8 @@ intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision 
   v_0 := MarkedEmbedding(K);
   
   aut_dict := AssociativeArray();
-
-  // auts is the automorphisms of K
   for aut in Automorphisms(K) do
-    aut_a_est := RealField(Precision)!Evaluate(aut(a), v_0);
+    aut_a_est := ComplexField(Precision)!Evaluate(aut(a), v_0);
     b, x := IsDefined(a_embed_dict, aut_a_est);
     if b then
       aut_dict[x] := aut;
@@ -570,7 +573,40 @@ intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision 
       end if;
     end if;
   end for;
+
   return [aut_dict[i] : i in [1 .. n]];
+end intrinsic;
+
+intrinsic AutsOfUCFReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision := 50) -> SeqEnum[Map]
+  { 
+    inputs:
+      F: A real Galois number field of degree n
+      k: A weight, given as a SeqEnum of n natural numbers
+    returns:
+      AutsOfKReppingEmbeddingsOfF applied with K equal to
+      the unit character field associated to F and k.
+  }
+  K := UnitCharField(F, k);
+  return AutsOfKReppingEmbeddingsOfF(F, K);
+end intrinsic;
+
+intrinsic ComplexConjugateOfPlace(w::PlcNumElt) -> FldElt
+  {
+    inputs:
+      w: A complex place of a number field K.
+    returns:
+      An automorphism aut of K such that
+      for any x in K, v_0(aut(x)) is the
+      complex conjugate of v_0(x).
+  }
+  K := NumberField(w);
+  require IsNormal(K) : "K is not Galois";
+  require IsComplex(w) : "w is not a complex place";
+
+  auts := AutsOfKReppingEmbeddingsOfF(K, K);
+  w_idx := Index(w, auts);
+  s := Integers()!(Degree(K) / 2);
+  return auts[w_idx + s];
 end intrinsic;
 
 intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
@@ -610,7 +646,7 @@ intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
     return K!1;
   end if;
 
-  auts := AutsReppingEmbeddingsOfF(F, k);
+  auts := AutsOfUCFReppingEmbeddingsOfF(F, k);
   if IsParitious(k) then
     // paritious nonparallel weight
     return &*[auts[i](K!x)^(ExactQuotient(k0 - k[i], 2)) : i in [1 .. #auts]];
