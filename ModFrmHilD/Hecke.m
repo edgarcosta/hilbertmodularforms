@@ -42,13 +42,13 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
           c +:= StrongMultiply(K, [* chi(aa), Norm(aa)^(k0 - 1), cf *]);
         end if;
       end for;
-      a_nu := IdlCoeffToEltCoeff(c, nu, k, CoefficientRing(Components(f)[bb]));
+      a_nu := IdlCoeffToEltCoeff(c, nu, k, K);
       coeffs[bb][nu] := a_nu;
       assert a_nu in K;
     end for;
   end for;
 
-  g := HMF(Mk, coeffs : prec:=prec);
+  g := HMF(Mk, coeffs : prec:=prec, coeff_ring := K);
 
   // Attempting to increase precision using a basis
   if assigned Mk`Basis then
