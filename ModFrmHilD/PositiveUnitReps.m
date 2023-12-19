@@ -152,14 +152,14 @@ nu in bbpinv, m*Eltseq(nu) has integral, nonnegative entries.}
     return M`NuToExpMatrices;
 end intrinsic;
 
-intrinsic TotallyPositiveBasis(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl
-                               : bound := 20
+//Another version of TotallyPositiveBasis, not as good
+intrinsic TotallyPositiveBasisSmallNorm(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl
+                                        : bound := 20
     ) -> SeqEnum[FldNumElt]
 
 {Returns a QQ-basis of elements of F that belong to bb and are totally
 positive.}
 
-    // Other idea: use reduced basis for trace form, then add multiples of 1?
     F := BaseField(M);
     n := Degree(F);
     map := (M`NarrowClassGroupMap)^(-1); //Ideals -> Narrow class group
@@ -179,6 +179,38 @@ positive.}
     end if;
     return [gens[i]: i in PivotRows(mat)];
 
+end intrinsic;
+
+intrinsic TotallyPositiveBasis(M :: ModFrmHilDGRng, bb :: RngOrdFracIdl
+    ) -> SeqEnum[FldNumElt]
+
+{Returns a QQ-basis of elements of F that belong to bb and are totally
+positive.}
+
+    require not IsZero(bb): "Cannot find totally positive basis of zero ideal";
+    F := BaseField(M);
+    n := Degree(F);
+    basis := [F!x : x in Basis(bb)];
+    d := Denominator(bb);
+    a := Norm(d * bb) / d; // lies in bb\cap QQ and is positive
+
+    //arrange that a lies in the basis
+    if not F!a in basis then
+        mat := Matrix(Rationals(), [Eltseq(F ! a)] cat [Eltseq(x) : x in basis]);
+        basis := [F ! mat[i]: i in PivotRows(mat)];
+        assert F!a in basis;
+    end if;
+    //add multiples of a to other basis vectors if needed
+    for i in [1..n] do
+        vec := EmbedNumberFieldElement(basis[i]);
+        m := Ceiling(Min([v/a: v in EmbedNumberFieldElement(basis[i])])) - 1;
+        if m lt 0 then
+            basis[i] := basis[i] - m * a;
+        end if;
+    end for;
+    assert Rank(Matrix(Rationals(), [Eltseq(x) : x in basis])) eq n;
+
+    return basis;
 end intrinsic;
 
 intrinsic DualBasis(F :: FldNum, a :: SeqEnum) -> SeqEnum[FldNumElt]
