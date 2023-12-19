@@ -639,3 +639,11 @@ intrinsic IncreasePrecisionWithBasis(subspace::SeqEnum[ModFrmHilDElt], basis::Se
   {}
   return [IncreasePrecisionWithBasis(g, basis) : g in subspace];
 end intrinsic;
+
+intrinsic Normalize(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {}
+  coeff_mtrx := CoefficientsMatrix([f]);
+  d := Denominator(coeff_mtrx);
+  K := CoefficientRing(f);
+  return f * K!d;
+end intrinsic;
