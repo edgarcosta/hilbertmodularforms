@@ -11,7 +11,7 @@ intrinsic HeckeStableSubspace(
     // because it is also Hecke stable
     TpV := [HeckeOperator(f, pp) : f in V];
     lindep := LinearDependence(TpV);
-    Tp_kernel := [&+[vec[i]*V[i] : i in [1 .. #V]] : vec in lindep];
+    Tp_kernel := [Normalize(&+[vec[i]*V[i] : i in [1 .. #V]]) : vec in lindep];
 
     // removing the kernel before entering the
     // iterative intersection loop
@@ -35,22 +35,8 @@ intrinsic HeckeStableSubspace(
 
         Vnew := [];
         for vec in lindep do
-            f := &+[vec[i]*Vprev[i] : i in [1 .. #Vprev]];
-            M := CoefficientsMatrix([f]);
-            // TODO abhijitm should do something like this in general too,
-            // but clearing denominators seems annoying over number fields.
-            if Parent(M[1][1]) eq Rationals() then
-              d := Denominator(M);
-              M := Matrix(Integers(),d*M);
-              gcd_M := GCD(Eltseq(M));
-              // If the generalization of Schaeffer's theorem to HMFs is true,
-              // then this can never happen
-              require gcd_M ne 0 : "We didn't think this could happen -- you may have found\
-                      an interesting example! Please email TODO.";
-              Append(~Vnew, f/gcd_M);
-            else
-              Append(~Vnew, f);
-            end if;
+          f := Normalize(&+[vec[i]*Vprev[i] : i in [1 .. #Vprev]]);
+          Append(~Vnew, f);
         end for;
 
         // If the iterative intersection process has stabilized,
