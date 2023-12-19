@@ -160,6 +160,26 @@ intrinsic HMF(Mk::ModFrmHilD,
   return HMFSumComponents(Mk, components);
 end intrinsic;
 
+//This is used in the linear algebra code
+intrinsic HMF(Mk::ModFrmHilD,
+              seqcoeffs::SeqEnum,
+              nus::SeqEnum,
+              bbs::SeqEnum
+              ) -> ModFrmHilDElt
+  { Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
+    a sequence of coeff, mathching the sequence of nus and bbs }
+  coeffs := AssociativeArray();
+  for i->bb in bbs do
+    cbb := AssociativeArray();
+    k := &+[Integers() | #elt : elt in nus[1..i-1]];
+    for j->nu in nus[i] do
+      cbb[nu] := seqcoeffs[j + k];
+    end for;
+    coeffs[bb] := cbb;
+  end for;
+  return HMF(Mk, coeffs);
+end intrinsic;
+
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
   {Returns the HMF equal to fbb and zero on other components}
   f := HMFZero(Space(fbb) : coeff_ring := CoefficientRing(fbb), prec := Precision(fbb));

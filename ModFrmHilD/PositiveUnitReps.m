@@ -197,7 +197,7 @@ positive.}
     //arrange that a lies in the basis
     if not F!a in basis then
         mat := Matrix(Rationals(), [Eltseq(F ! a)] cat [Eltseq(x) : x in basis]);
-        basis := [F ! mat[i]: i in PivotRows(mat)];
+        basis := [F ! Eltseq(mat[i]): i in PivotRows(mat)];
         assert F!a in basis;
     end if;
     //add multiples of a to other basis vectors if needed
