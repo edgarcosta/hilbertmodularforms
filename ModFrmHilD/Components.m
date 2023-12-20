@@ -634,7 +634,7 @@ intrinsic '^'(f :: ModFrmHilDEltComp, n :: RngIntElt) -> ModFrmHilDEltComp
     prec := Precision(f);
     g := serf;
     bits := Intseq(n, 2);
-    bits := bits[1..(#bits - 1)];
+    bits := Reverse(bits[1..(#bits - 1)]);
     for i in bits do
         g := g^2;
         g := HMFPruneLowerSetExpansion(M, bb, g : prec := prec);
