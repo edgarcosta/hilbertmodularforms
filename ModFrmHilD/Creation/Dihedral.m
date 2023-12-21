@@ -6,7 +6,6 @@ intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEn
     as in their class field theory machinery.  Use Dividing to allow those with 
     conductor dividing NN*oo.
   }
-
   ZZF := Order(NN);
   F := NumberField(ZZF);
   _<x> := PolynomialRing(F);
@@ -27,38 +26,21 @@ intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEn
   return Ks;
 end intrinsic;
 
-// This should be improved to the smarter way of doing it: take generators for the ideal and generate ideal using the Galois conjugates...
 intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
-  {Given a quadratic extension K/F and an ideal N, compute the conjugate of the character N.}
+  {
+    inputs:
+      K - A relative quadratic extension
+      N - An ideal of K
+    returns
+      The conjugate of N.
+  }
+  require Degree(K) eq 2 : "K is not a quadratic extension of its base field";
   ZK := Integers(K);
-  F := BaseField(K);
-  ZF := Integers(F);
-  
-  if N eq 1*ZK then
-    return N;
-  end if;
 
-  Fact := Factorization(ZK !! N); 
-  Fact_Conj := [];
-
-  for foo in Fact do
-    P := foo[1];
-    PF := P meet ZF;
-    FactPF := Factorization(ZK !! PF);
-    if #FactPF eq 2 then // PF is split in PK
-      p1 := FactPF[1][1];
-      p2 := FactPF[2][1];
-      if p1 eq P then
-        Append(~Fact_Conj, [* p2, foo[2] *]);
-      else 
-        Append(~Fact_Conj, [* p1, foo[2] *]);
-      end if;
-    else // PF is inert or ramified in PK
-      Append(~Fact_Conj, [* FactPF[1][1], foo[2] *]);
-    end if;
-  end for;
-
-  return &*[ Fact_Conj[i][1]^Fact_Conj[i][2] : i in [1 .. #Fact_Conj] ];
+  // the nontrivial automorphism of K
+  aut := Automorphisms(K)[2];
+  conj_gens := [aut(gen) : gen in Generators(N)];
+  return ideal<ZK| conj_gens>;
 end intrinsic;
 
 intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
@@ -66,7 +48,6 @@ intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
     Given a quadratic extension K/F and an ideal chi of a ray class field of K,
     check if chi is equal to its conjugate.
   }
-  
   ZK := Integers(K);
   foo, bar := Modulus(chi);
   G, m := RayClassGroup(Conductor(chi), bar);
