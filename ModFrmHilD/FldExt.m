@@ -12,7 +12,8 @@ declare attributes FldAlg:
   MarkedEmbedding,
   Extensions,
   Restrictions,
-  UnitCharFieldsByWeight
+  UnitCharFieldsByWeight,
+  MinDistBtwnRoots
   ;
 
 
@@ -308,7 +309,6 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     with evaluation under the distinguished places.
   }
 
-  CC_THRESHOLD := 10^-10;
   require Type(x) in [FldNumElt, FldRatElt, FldQuadElt, FldCycElt] : "%o is not a valid type for strong coercion", Type(x);
 
   // If x is rational then all embeddings are the same,
@@ -368,7 +368,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     a_eval := ComplexField()!Evaluate(a, v);
     auts := Automorphisms(K);
     for aut in auts do
-      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
+      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt 0.5 * MinDistBtwnRoots(K) then
         K`Extensions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
@@ -384,7 +384,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
       // For exmaple, if x is in K and L is a cyclotomic field containing K, then
       // L!x will succeed but K!(L!x) will fail. This case is not important right
       // now so I'm leaving it to future me (or present you!) to fix it. 
-      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
+      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt 0.5 * MinDistBtwnRoots(K) then
         K`Restrictions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
@@ -417,6 +417,29 @@ intrinsic StrongMultiply(K::Fld, A::List) -> FldElt
     prod *:= y;
   end for;
   return prod;
+end intrinsic;
+
+intrinsic MinDistBtwnRoots(K::FldAlg) -> FldReElt
+  {
+    Returns the minimum absolute value distance between 
+    two roots of the defining polynomial of K.
+  }
+  if not assigned K`MinDistBtwnRoots then
+    f := DefiningPolynomial(K);
+    roots := [tup[1] : tup in Roots(ChangeRing(f, ComplexField()))];
+    require #roots eq Degree(K) : "Something is wrong,\
+      the multiplicity of every root should be one";
+    require #roots gt 1 : "This shouldn't get called on the rationals";
+
+    min_dist := Abs(roots[1] - roots[2]);
+    for i in [1 .. #roots] do
+      for j in [i+1 .. #roots] do
+        min_dist := Min(Abs(roots[i] - roots[j]), min_dist);
+      end for;
+    end for;
+    K`MinDistBtwnRoots := min_dist;
+  end if;
+  return K`MinDistBtwnRoots;
 end intrinsic;
 
 /////////////////////// coefficient ring ///////////////////////////
