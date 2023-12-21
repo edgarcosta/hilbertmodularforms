@@ -19,26 +19,25 @@ declare attributes ModFrmHilDGRng:
   UnitGroupMap, // Map : GrpAb -> Units of ZF
   DedekindZetatwo, // FldReElt : Value of zeta_F(2) (Old: Precision needs to be computed relative to weight k)
   Places, // SeqEnum : Real places for the field F
-  Precision, // RngIntElt : trace bound for all expansions with this parent
+  InverseLogMinkowski, // Mtrx: inverse of eps_i -> LogMinkowski(eps_i) where eps_i is the totally positive unit basis of F
+  InverseLogMinkowskiSqr, // Mtrx: same with squares of units
+  InverseLogMinkowskiPrec, // RngIntElt: real precision at which InverseMinkowski is computed
+  InverseLogMinkowskiSqrPrec, // RngIntElt: same with squares of units
+  Precision, // RngIntElt : norm bound for all expansions with this parent
   // RepToIdeal and IdealToRep cache the conversion nn <-> nu
   RepToIdeal, // RepToIdeal[bb][nu] := nn
   IdealToRep, // IdealToRep[bb][nn] := nu
-  FunDomainReps, // FunDomainReps[bb] stores the list of nu in the bb component
-                 // corresponding to nn of norm at most M`Precision
-  FunDomainRepsUpToNorm, // FunDomainRepsUpToNorm[bb][x] stores the list of nu in the bb component
-                         // corresponding to nn of norm at most x
-  FunDomainRepsOfNorm, // FunDomainRepsOfNorm[bb][x] stores the list of nu in the bb component
-                       // corresponding to nn of norm x
+  PrecisionsByComponent, // Assoc: PrecisionsByComponent[bb] is an ascending SeqEnum[RngIntElt] of p such that there is a coefficient of precision p in the bb component
+  FunDomainReps, // Assoc: FunDomainReps[bb] is an associative array nu->precision
+  FunDomainRepsOfPrec, // Assoc: FunDomainReps[bb][prec] is an associative array nu->exponent such that nu has precision prec
   IdealsByNarrowClassGroup, // list of all ideals nn with [nn] = [bb]
   Ideals, // List of all ideals for all bb ordered by norm
   IdealsFactored, // a supset of Ideals, where we cache the object so that further Factorization calls are free
   PrimeIdeals, // List of all prime ideals showing as factors of an element of Ideals
-  MPairs, // Assoc: just for testing, will be replaced soon TODO abhijitm
-  Shadows, // Shadows[bb][x] is a SetEnum of <nu, eps> pairs such that the coefficient of nu*eps
-           // needs to be included when performing multiplication.
-           // Such nu*eps are totally positive elements which are dominated (<= in every real embedding)
-           // by some fundamental domain representative.
-  PuiseuxSeriesRings, // PuiseuxSeriesRings[K] stores the HMFSerPuis associated to M with coeff ring K
+  MPairs, // Assoc: used for testing and performance comparisons
+  LowerSet, // Assoc: LowerSet[bb][nu] is an associative array (eps)->(exponent of nu*exp)
+  NuToExpMatrices, // Assoc: NuToExpMatrices[bb] stores a matrix M such that M*Eltseq(nu) always consists of nonnegative integers
+  ExpToNuMatrices, // Assoc: ExpToNuMatrices[bb] is inverse to NuToExpMatrices[bb]
   PrecomputationforTrace, // Precomputed orders for the Trace formula
   ClassNumbersPrecomputation, // Precomputed class numbers for Trace formula
   // HMFPrecomputation, // Precomputed quantities for the Trace formula (Old)
@@ -50,6 +49,9 @@ declare attributes ModFrmHilDGRng:
   Spaces,
   // Associative array (k, psi) -> L(psi, 1-k)
   LValues,
+  // AssociativeArray Type(K) -> K -> K[x_1, ..., x_n] n = dim(F)
+  // used by HMFSeriesRing, as we always want to use the same RngMPol
+  RngMPol,
   Automorphisms, // Automorphism group of F
   LocalSquares; // Local squares stored for trace
 
@@ -232,14 +234,14 @@ intrinsic Factorization(M::ModFrmHilDGRng, nn::RngOrdIdl) -> SeqEnum
   end if;
 end intrinsic;
 
+intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
+  {}
+  return &+[#elt : bb->elt in M`FunDomainReps];
+end intrinsic;
+
 intrinsic PrimeIdeals(M::ModFrmHilDGRng) -> SeqEnum
   {}
   return M`PrimeIdeals;
-end intrinsic;
-
-intrinsic NumberOfCoefficients(M::ModFrmHilDGRng) -> RngIntElt
-  {}
-  return &+[#elt : bb->elt in FunDomainReps(M)];
 end intrinsic;
 
 intrinsic TracePrecomputation(M::ModFrmHilDGRng) -> Assoc
@@ -274,6 +276,16 @@ intrinsic Spaces(M::ModFrmHilDGRng) -> Assoc
   return M`Spaces;
 end intrinsic;
 
+intrinsic MPairs(M::ModFrmHilDGRng) -> Assoc
+{}
+    if not assigned M`MPairs then
+        M`MPairs := AssociativeArray();
+        for bb in NarrowClassGroupReps(M) do
+            M`MPairs[bb] := ComputeMPairs(M, bb);
+        end for;
+    end if;
+    return M`MPairs;
+end intrinsic;
 
 ////////// ModFrmHilDGRng creation and multiplication functions //////////
 
@@ -321,31 +333,9 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   // prec
   M`Precision := prec;
 
-  // This function sets the M`RepToIdeal and M`IdealToRep assocs.
+  PopulateFunDomainReps(M);
+  PopulateLowerSet(M);
   M`RepToIdeal, M`IdealToRep := RepIdealConversion(M);
-
-  // The associative arrays FunDomainIdlReps and
-  // FunDomainEltReps are keyed by narrow class group
-  // This function sets the M`FunDomainRepsUpToNorm assocs.
-  //
-  // The associative array FunDomainRepsUpToNorm is keyed by narrow class group
-  // representatives bb (these are integral ideals)
-  // and nonnegative integers up to prec with values
-  // FunDomainRepsUpToNorm[bb][x].
-  //
-  // The elements of FunDomainReps[bb][x] are the nu corresponding
-  // to integral ideals nn with norm up to x lying in the narrow class
-  // of [bbp]^-1, i.e. such that nn * bbp = (nu) for some
-  // integral ideal nn of norm up to x.
-  PopulateFunDomainRepsArrays(M);
-
-  M`FunDomainReps := AssociativeArray();
-  for bb in M`NarrowClassGroupReps do
-    M`FunDomainReps[bb] := M`FunDomainRepsUpToNorm[bb][M`Precision];
-  end for;
-
-  M`PuiseuxSeriesRings := AssociativeArray();
-  M`PuiseuxSeriesRings[Coefficients(DefiningPolynomial(RationalsAsNumberField()))] := cHMFSerPuis(M, Rationals());
 
   M`IdealsByNarrowClassGroup := AssociativeArray();
   M`PrecomputationforTrace := AssociativeArray();
@@ -373,6 +363,8 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   norms := [CorrectNorm(I) : I in M`PrimeIdeals];
   ParallelSort(~norms, ~M`PrimeIdeals);
 
+  M`RngMPol := AssociativeArray();
+
   M`Spaces := AssociativeArray();
   M`LValues := AssociativeArray();
 
@@ -381,30 +373,6 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
 
   return M;
 end intrinsic;
-
-///////////////////////////////////////////////////
-//                                               //
-//        Precomputations: Multiplication        //
-//                                               //
-///////////////////////////////////////////////////
-
-intrinsic MPairs(M::ModFrmHilDGRng) -> Assoc
-  {return MPairs of M}
-  if not assigned M`MPairs then
-    HMFEquipWithMultiplication(M);
-  end if;
-  return M`MPairs;
-end intrinsic;
-
-intrinsic HMFEquipWithMultiplication(M::ModFrmHilDGRng)
-  {Assign representatives and a dictionary for it to M.}
-  M`MPairs := AssociativeArray();
-  for bb in NarrowClassGroupReps(M) do
-    // Populates M`Mpairs[bb]
-    M`MPairs[bb] := ComputeMPairs(M, bb);
-  end for;
-end intrinsic;
-
 
 //////////////// Enumeration of Totally Positive Elements ////////////////
 

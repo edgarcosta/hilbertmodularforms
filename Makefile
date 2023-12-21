@@ -12,6 +12,9 @@ clean:
 check/%.m: Tests/%.m
 	@magma -b filename:=$< exitsignal:='' run_tests.m
 
+debug/%.m: Tests/%.m
+	@magma -b filename:=$< debug:='' run_tests.m
+
 check: $(CHECK_FILES)
 
 print-%:

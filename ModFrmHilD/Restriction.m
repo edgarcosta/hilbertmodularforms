@@ -21,7 +21,7 @@ intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngQuadId
     tracej := PositiveElementsOfTrace(bb*D^(-1),j);
     coefficient := 0;
     for nu in tracej do
-      nuRed := FunDomainRep(M, bb, nu);
+      nuRed := FunDomainRep(M, nu: CheckComponent := bb);
       has_nuRed, coeffNu := IsDefined(Coefficients(fbb), nuRed);
       if not has_nuRed then
         break j;

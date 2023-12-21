@@ -51,7 +51,7 @@ bb := 1*ZF;
 f1_elt_coeffs[bb] := AssociativeArray();
 f2_elt_coeffs[bb] := AssociativeArray();
 
-reps := FunDomainRepsUpToNorm(M, bb, prec);
+reps := FunDomainRepsUpToPrec(M, bb, prec);
 
 for nn in Ideals(M) do
   nu := IdealToRep(M)[bb][nn];

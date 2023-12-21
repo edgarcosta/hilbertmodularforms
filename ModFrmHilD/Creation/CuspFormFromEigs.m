@@ -81,12 +81,10 @@ intrinsic CuspFormFromEigenvalues(
   // TODO abhijitm once Jean's improvements are in, this construction
   // should be rewritten
   coeffs_by_nu := AssociativeArray();
-  coeff_rings := AssociativeArray();
   
   for bb in NarrowClassGroupReps(M) do
     coeffs_by_nu[bb] := AssociativeArray();
     coeffs_by_nu[bb][F!0] := coeff_ring!0;
-    coeff_rings[bb] := coeff_ring;
   end for;
 
   ideals := Exclude(Ideals(M), ideal<Integers(F) | 0>);
@@ -98,5 +96,5 @@ intrinsic CuspFormFromEigenvalues(
     coeffs_by_nu[bb][nu] := IdlCoeffToEltCoeff(coeff_ring!a_nn, nu, Weight(Mk), coeff_ring);
   end for;
 
-  return HMF(Mk, coeffs_by_nu : coeff_rings := coeff_rings);
+  return HMF(Mk, coeffs_by_nu : coeff_ring := coeff_ring);
 end intrinsic;

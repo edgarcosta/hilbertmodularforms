@@ -2,8 +2,10 @@
 ////////// ModFrmHilDElt attributes //////////
 
 declare attributes ModFrmHilDElt:
-  Parent,
-  Components; // Assoc: bb --> f_bb, each f_bb of type ModFrmHilDEltComp
+  Parent, // ModFrmHilD
+  Components, // Assoc: bb --> f_bb, each f_bb of type ModFrmHilDEltComp
+  CoefficientRing, // Rng: equal for all components
+  Precision; // RngIntElt: equal for all components
 
 ////////// ModFrmHilDElt fundamental intrinsics //////////
 
@@ -16,10 +18,11 @@ intrinsic Print(f::ModFrmHilDElt, level::MonStgElt : num_coeffs := 10)
     k := Weight(Mk);
     N := Level(Mk);
     if level ne "Minimal" then
-      printf "Hilbert modular form expansion: ";
-      printf "Parent: %o\n", Mk;
+        printf "Hilbert modular form in %o\n", Mk;
+        printf "with components:\n";
     end if;
     for bb in bbs do
+        printf "\n";
       Print(Components(f)[bb], level : num_coeffs := num_coeffs);
     end for;
   elif level eq "Magma" then
@@ -88,20 +91,7 @@ end intrinsic;
 
 intrinsic CoefficientRing(f::ModFrmHilDElt) -> Any
   {}
-
-  ZF := Integers(GradedRing(f));
-  R := CoefficientRing(Components(f)[1*ZF]);
-  for bb -> fbb in Components(f) do
-    if CoefficientRing(fbb) ne R then
-      // check that not a subset
-      if R subset CoefficientRing(fbb) then
-        R := CoefficientRing(fbb);
-      else
-        require CoefficientRing(fbb) subset R : "Need all base rings of all components to be equal";
-      end if;
-    end if;
-  end for;
-  return R;
+  return f`CoefficientRing;
 end intrinsic;
 
 intrinsic NumberOfCoefficients(f::ModFrmHilDElt) -> Any
@@ -111,18 +101,12 @@ end intrinsic;
 
 intrinsic Precision(f::ModFrmHilDElt) -> RngIntElt
   {}
-  bbs := NarrowClassGroupReps(Parent(Parent(f)));
-  prec := Precision(Components(f)[bbs[1]]);
-
-  // we require all component precisions to be the same
-  for bb in bbs do
-    assert prec eq Precision(Components(f)[bb]);
-  end for;
-  return prec;
+  return f`Precision;
 end intrinsic;
 
 ////////// ModFrmHilDElt creation functions //////////
 
+// This is called by all HMF creation methods.
 intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   {
     Return the ModFrmHilDElt with parent Mk and Components components.
@@ -130,15 +114,20 @@ intrinsic HMFSumComponents(Mk::ModFrmHilD, components::Assoc) -> ModFrmHilDElt
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
   require Keys(components) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
-  // make the HMF
+
   f := New(ModFrmHilDElt);
   f`Parent := Mk;
   f`Components := AssociativeArray();
+  f`CoefficientRing := CoefficientRing(components[bbs[1]]);
+  f`Precision := Precision(components[bbs[1]]);
+
   for bb in bbs do
     f_bb := components[bb];
-    require ComponentIdeal(f_bb) eq bb: "Components mismatch";
+    require ComponentIdeal(f_bb) eq bb: "Components mismatch ideal representatives";
     require Type(f_bb) eq ModFrmHilDEltComp: "The components need to be ModFrmHilDEltComps";
-    require Mk eq Space(f_bb): "The parents of the components should be all the same";
+    require Mk eq Space(f_bb): "The parents of the components must be all the same";
+    require Precision(f_bb) eq f`Precision: "Components must have the same precision";
+    require CoefficientRing(f_bb) eq f`CoefficientRing: "Components must have the same coefficient ring";
     f`Components[bb] := Copy(f_bb);
   end for;
   return f;
@@ -147,8 +136,8 @@ end intrinsic;
 intrinsic HMF(Mk::ModFrmHilD,
               coeffs::Assoc
               :
-              coeff_rings:=false, // Assoc RngFracIdl -> FldNum
-              prec := 0) -> ModFrmHilDElt
+              coeff_ring := DefaultCoefficientRing(Mk),
+              prec := Precision(Parent(Mk))) -> ModFrmHilDElt
   {
     Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
     a double associative array coeffs
@@ -157,40 +146,21 @@ intrinsic HMF(Mk::ModFrmHilD,
     Explicitly, coeffs is an double associative array
     coeffs[bb][nu] = a_(bb, nu) = a_(nu)*(bb')^-1
     for all nu in the Shintani cone.
-
-    The optional argument coeff_rings is an associative array
-    which takes narrow class group reps to the coefficient field
-    of their component. 
   }
+
   M := Parent(Mk);
   bbs := NarrowClassGroupReps(M);
   require Keys(coeffs) eq SequenceToSet(bbs): "Coefficient array should be indexed by representatives of Narrow class group";
-  // make the HMF
-  f := New(ModFrmHilDElt);
-  f`Parent := Mk;
-  f`Components := AssociativeArray();
 
-  if prec cmpeq 0 then
-    prec := Precision(M);
-  end if;
-  if Type(prec) eq RngIntElt then
-    orig_prec := prec;
-    prec := AssociativeArray();
-    for bb in bbs do
-      prec[bb] := orig_prec;
-    end for;
-  else
-    require Type(prec) eq Assoc: "prec must be either an integer or a AssociativeArray";
-  end if;
-  require Keys(prec) eq SequenceToSet(bbs): "Unit character array should be indexed by representatives of Narrow class group";
-
+  components := AssociativeArray();
   for bb in bbs do
-    coeff_ring := (coeff_rings cmpeq false) select Mk`DefaultCoefficientRing else coeff_rings[bb];
-    f`Components[bb] := cModFrmHilDEltComp(Mk, bb, coeffs[bb] : coeff_ring := coeff_ring, prec:=prec[bb]);
+    components[bb] := HMFComponent(Mk, bb, coeffs[bb] :
+                                   CoefficientRing := coeff_ring, prec := prec);
   end for;
-  return f;
+  return HMFSumComponents(Mk, components);
 end intrinsic;
 
+//This is used in the linear algebra code
 intrinsic HMF(Mk::ModFrmHilD,
               seqcoeffs::SeqEnum,
               nus::SeqEnum,
@@ -211,37 +181,39 @@ intrinsic HMF(Mk::ModFrmHilD,
 end intrinsic;
 
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
-  {f = fbb}
-  f := HMFZero(Space(fbb));
+  {Returns the HMF equal to fbb and zero on other components}
+  f := HMFZero(Space(fbb) : coeff_ring := CoefficientRing(fbb), prec := Precision(fbb));
   f`Components[ComponentIdeal(fbb)] := Copy(fbb);
   return f;
 end intrinsic;
 
-intrinsic HMFZero(Mk::ModFrmHilD) -> ModFrmHilDElt
+intrinsic HMFZero(Mk::ModFrmHilD :
+                  coeff_ring := DefaultCoefficientRing(Mk), prec := Precision(Parent(Mk))
+  ) -> ModFrmHilDElt
   {create zero ModHilFrmDElt of weight k.}
   M := Parent(Mk);
   coeffs := AssociativeArray();
   for bb in NarrowClassGroupReps(M) do
-    coeffs[bb] := ModFrmHilDEltCompZero(Mk, bb);
+    coeffs[bb] := HMFComponentZero(Mk, bb : prec := prec, coeff_ring := coeff_ring);
   end for;
   return HMFSumComponents(Mk, coeffs);
 end intrinsic;
 
 intrinsic IsZero(f::ModFrmHilDElt) -> BoolElt
-  {check if form is identically zero}
+  {check if form is identically zero up to the stored precision}
   return IsZero([f_bb : f_bb in Components(f)]);
 end intrinsic;
 
-intrinsic HMFIdentity(Mk::ModFrmHilD) -> ModFrmHilDElt
+intrinsic HMFIdentity(Mk::ModFrmHilD :
+                      coeff_ring := DefaultCoefficientRing(Mk), prec := Precision(Parent(Mk))) -> ModFrmHilDElt
   {create one ModHilFrmDElt of weight zero and trivial character}
+  require &and[w eq 0: w in Weight(Mk)]: "Cannot construct HMF component equal to 1 in nonzero weight";
   M := Parent(Mk);
   C := AssociativeArray();
-  R := GetHMFSerPuis(M, Rationals());
   for bb in NarrowClassGroupReps(M) do
-    C[bb] := ModFrmHilDEltCompIdentity(R, bb);
+    C[bb] := HMFComponentIdentity(Mk, bb : coeff_ring := coeff_ring, prec := prec);
   end for;
-  M0 := Parent(C[1*Integers(M)]);
-  return HMFSumComponents(M0, C);
+  return HMFSumComponents(Mk, C);
 end intrinsic;
 
 ////////////// ModFrmHilDElt: Coercion /////////////////////////
@@ -255,40 +227,28 @@ intrinsic ChangeCoefficientRing(f::ModFrmHilDElt, R::Rng) -> ModFrmHilDElt
   // then change ring
   components := Components(f);
   for bb->fbb in components do
-    components[bb] := GetHMFSerPuis(M, R)!fbb;
+    components[bb] := ChangeRing(components[bb], R);
   end for;
   return HMFSumComponents(Parent(f), components);
 end intrinsic;
 
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
-  {}
-  if Type(f) eq RngIntElt and IsZero(f) then
-    return true, HMFZero(Mk);
-  elif Type(f) notin [ModFrmHilDElt] then
-    return false, "f not of type ModFrmHilDElt";
-  else // f is an HMF so has a chance to be coercible
-    M := Parent(Mk); // graded ring associated to Mk
-    Mkf := Parent(f); // space of HMFs associated to f
-    Mf := Parent(Mkf); // graded ring associated to f
-    if M ne Mf then
-      return false, "f does not belong to the same graded ring as Mk";
-    else // at least the graded rings match up
-      test1 := Weight(Mk) eq Weight(Mkf);
-      test2 := Level(Mk) eq Level(Mkf);
-      test3 := Character(Mk) eq Character(Mkf);
-      test4 := UnitCharacters(Mk) eq UnitCharacters(Mkf);
-      if test1 and test2 and test3 and test4 then // all tests must be true to coerce
-        components := AssociativeArray();
-        for bb in Keys(Components(f)) do
-          fbb := Components(f)[bb];
-          components[bb] := cModFrmHilDEltComp(Mk, bb, Coefficients(fbb): prec:=Precision(fbb));
-        end for;
-        return true, HMFSumComponents(Mk, components);
-      else
-        return false, "I tried and failed to coerce";
-      end if;
+{}
+    if Type(f) eq RngIntElt then
+        if f eq 0 then
+            return true, HMFZero(Mk);
+        else
+            return true, f * HMFIdentity(Mk); // throws error if weight is not 0
+        end if;
+    elif Type(f) eq ModFrmHilDElt then
+        if Parent(f) eq Mk then
+            return true, f;
+        else
+            return false, "Not the same parent";
+        end if;
+    else
+        return false, "Not a ModFrmHilDElt";
     end if;
-  end if;
 end intrinsic;
 
 intrinsic 'in'(x::., y::ModFrmHilDElt) -> BoolElt
@@ -317,20 +277,12 @@ intrinsic GaloisOrbit(f::ModFrmHilDElt) -> SeqEnum[ModFrmHilDElt]
   k := Weight(f);
   M := GradedRing(f);
   R := CoefficientRing(f);
-  if IsField(R) then
-    K := R;
-  else
-    K := NumberField(R);
-    f := K!f; // HERE
-  end if;
-  G, Pmap, Gmap := AutomorphismGroup(K);
+  require IsNumberField(R) or R eq Rationals(): "Coefficient ring must be a number field";
+
+  G, Pmap, Gmap := AutomorphismGroup(R);
   result := [];
   for g in G do
-    if K eq R then
-      Append(~result, MapCoefficients(Gmap(g), f));
-    else
-      Append(~result, ChangeCoefficientRing(MapCoefficients(Gmap(g), f), R));
-    end if;
+    Append(~result, MapCoefficients(Gmap(g), f));
   end for;
   return result;
 end intrinsic;
@@ -453,7 +405,7 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
 end intrinsic;
 
 intrinsic Inverse(f::ModFrmHilDElt) -> ModFrmHilDElt
- {return 1/f}
+ {return 1/f in case f has weight zero}
  return HMFIdentity(Parent(f))/f;
 end intrinsic;
 
@@ -471,27 +423,17 @@ intrinsic ChangeToCompositumOfCoefficientFields(list::SeqEnum[ModFrmHilDElt]) ->
   require #list ge 1: "first argument must have at least one element";
   differ := false;
   R := CoefficientRing(list[1]);
-  for f in list[2..#list] do
-    if R ne CoefficientRing(f) then
-      differ := true;
-      break;
-    end if;
-  end for;
-  if not differ then
+  if (IsNumberField(R) or R cmpeq Rationals()) and &and[R eq CoefficientRing(f): f in list] then
     return list;
   end if;
+
   K := NumberField(CoefficientRing(list[1]));
-  differ := false;
   for f in list do
     if K ne NumberField(CoefficientRing(f)) then
       K := Compositum(K, NumberField(CoefficientRing(f)));
-      differ := true;
     end if;
   end for;
-  if differ then
-    list :=  [ChangeCoefficientRing(f, K) : f in list];
-  end if;
-  return list;
+  return  [ChangeCoefficientRing(f, K) : f in list];
 end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
@@ -541,11 +483,11 @@ function AutomorphismAct(f, sigma)
   coeff := AssociativeArray();
   for nu->c in Coefficients(f) do
     nubar := F!((sigma^(-1))(nu));
-    snubar, epsilon := FunDomainRep(M, bbbar, nubar);
+    snubar, epsilon := FunDomainRep(M, nubar: CheckComponent := bbbar);
     //coeff[snubar] := Evaluate(UnitCharacter(f), epsilon)*c; // TODO: check the codomain of the unit character. So far, requiring unit char to be trivial so the evaluation is 1
     coeff[snubar] := c;
   end for;
-  return cModFrmHilDEltComp(Mk, bbbar, coeff: prec:=Precision(f));
+  return HMFComponent(Mk, bbbar, coeff: prec:=Precision(f));
 end function;
 
 intrinsic AutomorphismMap(f::ModFrmHilDElt, sigma::Map) -> ModFrmHilDElt
