@@ -594,10 +594,7 @@ end intrinsic;
 intrinsic '*'(c :: RngElt, f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
 {}
     R := CoefficientRing(f);
-    b, c_K := IsCoercible(R, c);
-    if not b then
-        b, c_K := IsStrongCoercible(R, c);
-    end if;
+    b, c_K := IsStrongCoercible(R, c);
     require b : "Cannot scale an HMF by a scalar not coercible into its coefficient field";
 
     return HMFComponent(Space(f), ComponentIdeal(f), c_K * Expansion(f), Precision(f)
