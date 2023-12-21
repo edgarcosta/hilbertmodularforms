@@ -364,13 +364,6 @@ end intrinsic;
 intrinsic '+'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f+g}
   require Parent(f) eq Parent(g): "we only support addition with the same Parent";
-  Rf := CoefficientRing(f);
-  Rg := CoefficientRing(g);
-  if Rf ne Rg then
-    Rfg := Compositum(Rf, Rg);
-    f := ChangeCoefficientRing(f, Rfg);
-    g := ChangeCoefficientRing(g, Rfg);
-  end if;
   comp_f := Components(f);
   comp_g := Components(g);
   comp := AssociativeArray();
