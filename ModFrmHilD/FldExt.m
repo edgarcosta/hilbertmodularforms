@@ -339,8 +339,8 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     K`Restrictions := AssociativeArray();
   end if;
 
-  require IsNormal(K) and IsNormal(L) : "Strong coercion is not yet implemented\
-      for non-Galois fields";
+  require IsNormal(K) : "Strong coercion is not yet implemented\
+      for non-Galois initial fields";
 
   // if K = QQ then all embeddings are the same
   if K eq Rationals() then
