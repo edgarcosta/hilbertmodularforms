@@ -408,10 +408,10 @@ intrinsic HMFExpansionRing(M::ModFrmHilDGRng, K::Rng :
       end if;
     end if;
     if not unique then // otherwise we already have R
-      b, R := IsDefined(M`RngMPol[t], K);
+      b, R := IsDefined(M`RngMPol[t], DefiningPolynomial(K));
       if not b then
         R := PolynomialRing(K, n);
-        M`RngMPol[t][K] := R;
+        M`RngMPol[t][DefiningPolynomial(K)] := R;
       end if;
     end if;
   else
@@ -421,6 +421,20 @@ intrinsic HMFExpansionRing(M::ModFrmHilDGRng, K::Rng :
     end for;
   end if;
   return R;
+end intrinsic;
+
+intrinsic HMFExpansionBaseRing(S :: RngMPol, n :: RngIntElt) -> Rng
+{}
+    return BaseRing(S);
+end intrinsic;
+
+intrinsic HMFExpansionBaseRing(S :: RngUPol, n :: RngIntElt) -> Rng
+{}
+    R := S;
+    for i in [1..n] do
+        R := BaseRing(R);
+    end for;
+    return R;
 end intrinsic;
 
 intrinsic HMFComponent(Mk :: ModFrmHilD, bb :: RngOrdIdl, f :: RngElt, prec :: RngIntElt :
@@ -433,17 +447,7 @@ be a multivariate polynomial ring or a tower of univariate polynomial rings.}
 
     M := Parent(Mk);
     n := Degree(BaseField(Mk));
-
-    if Type(f) eq RngMPolElt then
-        R := BaseRing(Parent(f));
-    elif Type(f) eq RngUPolElt then
-        R := Parent(f);
-        for i in [1..n] do
-            R := BaseRing(R);
-        end for;
-    else
-        error "Unsupported type for Fourier expansions: ", Type(f);
-    end if;
+    R := HMFExpansionBaseRing(Parent(f), n);
 
     g := New(ModFrmHilDEltComp);
     g`Space := Mk;
@@ -545,6 +549,8 @@ coefficient ring is extended to R.}
     n := Degree(BaseField(Mk));
     bb := ComponentIdeal(f);
     precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision(f)];
+    S := HMFExpansionRing(M, R : Multivariate := IsMultivariate(f));
+    R := HMFExpansionBaseRing(S, n); //this may not be R!
     coeffs := [R| ];
     exps := [];
     ser := Expansion(f);
@@ -554,7 +560,6 @@ coefficient ring is extended to R.}
             Append(~exps, exp);
         end for;
     end for;
-    S := HMFExpansionRing(M, R : Multivariate := IsMultivariate(f));
     ser := HMFConstructExpansion(S, exps, coeffs);
     return HMFComponent(Mk, bb, ser, Precision(f) : LowerSet := false, Prune := false);
 
