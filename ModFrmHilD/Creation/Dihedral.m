@@ -1,9 +1,11 @@
 intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEnum[RngIntElt] : Dividing := true)
   -> SeqEnum[FldAlg]
-  {Naive!  Returns the set of quadratic field extensions of conductor equal to NN*oo where 
-   oo is InfinityModulus, indexing a subset of real places (as Magma numbers them)
-   as in their class field theory machinery.  Use Dividing to allow those with 
-   conductor dividing NN*oo.}
+  {
+    Naive!  Returns the set of quadratic field extensions of conductor equal to NN*oo where 
+    oo is InfinityModulus, indexing a subset of real places (as Magma numbers them)
+    as in their class field theory machinery.  Use Dividing to allow those with 
+    conductor dividing NN*oo.
+  }
 
   ZZF := Order(NN);
   F := NumberField(ZZF);
@@ -60,7 +62,10 @@ intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
 end intrinsic;
 
 intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
-  {Given a quadratic extension K/F and an ideal chi of a ray class field of K, check if chi is equal to its conjugate.}
+  {
+    Given a quadratic extension K/F and an ideal chi of a ray class field of K,
+    check if chi is equal to its conjugate.
+  }
   
   ZK := Integers(K);
   foo, bar := Modulus(chi);
@@ -78,14 +83,18 @@ intrinsic PossibleHeckeCharactersOfK(
   F::FldNum, 
   N::RngOrdIdl, 
   K::FldNum, 
-  chi::GrpHeckeElt
-  : 
+  chi::GrpHeckeElt : 
   prune := true
   ) -> SeqEnum[GrpHeckeElt]
-{
-Given a totally real field F, an ideal N of F, a character chi of modulus N, and a quadratic extension K of discriminant dividing N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N/disc(K) whose restriction is chi.
-If the optional parameter prune is true, we only keep on copy of chi and  the conjugate of chi, since both of these lift to the same Hilbert modular form.
-}
+  {
+    Given a totally real field F, an ideal N of F, a character chi of modulus N,
+    and a quadratic extension K of discriminant dividing N, computes all finite 
+    order non-Galois-invariant Hecke characters of conductor dividing N/disc(K) 
+    whose restriction is chi.
+
+    If the optional parameter prune is true, we only keep on copy of chi and  
+    the conjugate of chi, since both of these lift to the same Hilbert modular form.
+  }
   ZK := Integers(K);
   Disc := Discriminant(ZK);
 
@@ -174,7 +183,6 @@ If the optional parameter prune is true, we only keep on copy of chi and  the co
   
 end intrinsic;
 
-
 intrinsic PossibleHeckeCharacters(
   F::FldNum, 
   N::RngOrdIdl,
@@ -182,9 +190,11 @@ intrinsic PossibleHeckeCharacters(
   : 
   prune := true
   ) -> SeqEnum[GrpHeckeElt]
-{
-Given a totally real field F, an ideal N of F, and a character chi of modulus N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N whose restriction is chi.
-}
+  {
+    Given a totally real field F, an ideal N of F, and a character chi of modulus N,
+    computes all finite order non-Galois-invariant Hecke characters of 
+    conductor dividing N whose restriction is chi.
+  }
   ans := [];
   fields := QuadraticExtensionsWithConductor(N, [1,2]);
   for K in fields do
@@ -208,9 +218,11 @@ intrinsic ThetaSeries(
   Mk::ModFrmHilD,
   psi::GrpHeckeElt
   ) -> ModFrmHilDElt
-{
-  Given a totally real field F, a quadratic extension K of F, and a finite order Hecke character of K, compute the associated theta series of weight (1,1).
-}
+  {
+    Given a totally real field F, a quadratic extension K of F,
+    and a finite order Hecke character of K,
+    compute the associated theta series of weight (1,1).
+  }
   M := Parent(Mk);
   F := BaseField(M);
   ZF := Integers(F);
