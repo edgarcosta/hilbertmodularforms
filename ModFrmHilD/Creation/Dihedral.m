@@ -27,7 +27,7 @@ intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEn
   return Ks;
 end intrinsic;
 
-//This should be improved to the smarter way of doing it: take generators for the ideal and generate ideal using the Galois conjugates...
+// This should be improved to the smarter way of doing it: take generators for the ideal and generate ideal using the Galois conjugates...
 intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
   {Given a quadratic extension K/F and an ideal N, compute the conjugate of the character N.}
   ZK := Integers(K);
@@ -45,7 +45,7 @@ intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
     P := foo[1];
     PF := P meet ZF;
     FactPF := Factorization(ZK !! PF);
-    if #FactPF eq 2 then //PF is split in PK
+    if #FactPF eq 2 then // PF is split in PK
       p1 := FactPF[1][1];
       p2 := FactPF[2][1];
       if p1 eq P then
@@ -53,7 +53,7 @@ intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
       else 
         Append(~Fact_Conj, [* p1, foo[2] *]);
       end if;
-    else //PF is inert or ramified in PK
+    else // PF is inert or ramified in PK
       Append(~Fact_Conj, [* FactPF[1][1], foo[2] *]);
     end if;
   end for;
@@ -101,7 +101,7 @@ intrinsic PossibleHeckeCharactersOfK(
   M := N/Disc;
   assert IsIntegral(M);
   M := Integers(AbsoluteField(K)) !! M;
-  H := HeckeCharacterGroup(M); //Is this correct or do I allow ramification at infinite places? I think I should allow ramification and and check some compatibility of the character with the weight [1,1]... 
+  H := HeckeCharacterGroup(M); // Is this correct or do I allow ramification at infinite places? I think I should allow ramification and and check some compatibility of the character with the weight [1,1]... 
   G, m := RayClassGroup(M);
 
   GF, mF := RayClassGroup(N, [1,2]);
@@ -145,20 +145,20 @@ intrinsic PossibleHeckeCharactersOfK(
   end for;
   
   if prune then
-    newlist := []; //New list of characters
-    pairlist := []; //List of paired characters, to be thrown away
+    newlist := []; // New list of characters
+    pairlist := []; // List of paired characters, to be thrown away
     
-    for i in [1 .. #ans] do //Loop over possible characters
+    for i in [1 .. #ans] do // Loop over possible characters
       psi := ans[i];
-      if i in pairlist then //This character was already paired
+      if i in pairlist then // This character was already paired
         continue;
       else 
-        Append(~newlist, i); //It wasn't in the list of paired characters, so add it to the new lsit of characters.
+        Append(~newlist, i); // It wasn't in the list of paired characters, so add it to the new lsit of characters.
       end if;
       
-      for j in [1 .. #ans] do //Find the pair of psi
+      for j in [1 .. #ans] do // Find the pair of psi
         if j eq i then
-          continue; //Skip i
+          continue; // Skip i
         end if;
         
         psiconj := true; 
@@ -175,7 +175,7 @@ intrinsic PossibleHeckeCharactersOfK(
         end if;
       end for;
     end for;
-    assert #newlist eq #pairlist; //The characters should pair up since we removed conjugation-invariant ones.
+    assert #newlist eq #pairlist; // The characters should pair up since we removed conjugation-invariant ones.
     ans := [ans[i] : i in newlist];
   end if;
   
@@ -229,7 +229,7 @@ intrinsic ThetaSeries(
   prec := Precision(M);
   K := NumberField(Order(Modulus(psi))); 
   
-  //We create an associative array indexed by prime ideals pp up to Precision(Parent(Mk)) and populate them with traces associated to psi.
+  // We create an associative array indexed by prime ideals pp up to Precision(Parent(Mk)) and populate them with traces associated to psi.
   
 
   a_pps := AssociativeArray();
