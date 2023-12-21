@@ -79,6 +79,26 @@ intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
   return true;
 end intrinsic;
 
+function QuadraticCharacter(I, K)
+  // I::RngOrdIdl - An ideal of a field F
+  // K::Fld - A quadratic extension of F
+  //
+  // Returns the value of the quadratic character evaluated 
+  // at I. This is equal to (-1)^(#{inert primes factors of I})
+  ZK := Integers(K);
+  Fact := Factorization(I); 
+  sum_inert := 0;
+  for foo in Fact do
+    P := foo[1];
+    PK := ZK !! P;
+    FactPK := Factorization(PK);
+    if #FactPK eq 1 and FactPK[1][2] eq 1 then // P is inert in K
+      sum_inert := sum_inert + foo[2];
+    end if;
+  end for;
+  return (-1)^(sum_inert);
+end function;
+
 intrinsic PossibleHeckeCharactersOfK(
   F::FldNum, 
   N::RngOrdIdl, 
@@ -122,18 +142,7 @@ intrinsic PossibleHeckeCharactersOfK(
       if ok then
         for g in Generators(GF) do
           I := mF(g);
-          // A short interlude to evaluate the character associated with K/F at I. This will be (-1) to the number of inert primes in the factorization.
-          Fact := Factorization(I); 
-          sum_inert := 0;
-          for foo in Fact do
-            P := foo[1];
-            PK := ZK !! P;
-            FactPK := Factorization(PK);
-            if #FactPK eq 1 and FactPK[1][2] eq 1 then // P is inert in K
-              sum_inert := sum_inert + foo[2];
-            end if;
-          end for;
-          if not chi(I) eq psi(Integers(AbsoluteField(K)) !! I)*(-1)^(sum_inert) then
+          if not chi(I) eq psi(Integers(AbsoluteField(K)) !! I) * QuadraticCharacter(I, K) then
             okk := false;
           end if;
         end for;
@@ -180,10 +189,9 @@ intrinsic PossibleHeckeCharactersOfK(
   end if;
   
   return ans;
-  
 end intrinsic;
 
-intrinsic PossibleHeckeCharacters(
+intrinsic PossibleGrossencharacters(
   F::FldNum, 
   N::RngOrdIdl,
   chi::GrpHeckeElt
