@@ -355,7 +355,7 @@ intrinsic HMFConstructExpansion(R :: RngUPol, exps :: SeqEnum, coeffs :: SeqEnum
 coefficients as an element of R}
 
     if #exps eq 0 then
-        return R!0;
+        return R ! 0;
     end if;
 
     n := #exps[1];
@@ -383,8 +383,6 @@ coefficients as an element of R}
 
     return R ! pol_coeffs;
 end intrinsic;
-
-
 
 ///////////////////////////////////////////////////
 //                                               //
@@ -543,13 +541,23 @@ intrinsic ChangeRing(f :: ModFrmHilDEltComp, R :: Rng) -> ModFrmHilDEltComp
 coefficient ring is extended to R.}
 
     Mk := Space(f);
+    M := Parent(Mk);
     n := Degree(BaseField(Mk));
     bb := ComponentIdeal(f);
-    ser := LowerSetExpansion(f);
-    prec := Precision(f);
-    S := HMFExpansionRing(GradedRing(f), R : Multivariate := IsMultivariate(f));
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision(f)];
+    coeffs := [R| ];
+    exps := [];
+    ser := Expansion(f);
+    for p in precs do
+        for nu->exp in M`FunDomainRepsOfPrec[bb][p] do
+            Append(~coeffs, StrongCoerce(R, HMFExpansionCoefficient(ser, exp)));
+            Append(~exps, exp);
+        end for;
+    end for;
+    S := HMFExpansionRing(M, R : Multivariate := IsMultivariate(f));
+    ser := HMFConstructExpansion(S, exps, coeffs);
+    return HMFComponent(Mk, bb, ser, Precision(f) : LowerSet := false, Prune := false);
 
-    return HMFComponent(Mk, bb, S ! ser, prec : LowerSet := true, Prune := false);
 end intrinsic;
 
 intrinsic IsZero(f :: ModFrmHilDEltComp) -> BoolElt
@@ -600,23 +608,18 @@ end intrinsic;
 intrinsic '*'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
 {}
     M := GradedRing(f);
-    require M eq GradedRing(g): "Cannot multiply HMF components in different graded rings";
     bb := ComponentIdeal(f);
+    require M eq GradedRing(g): "Cannot multiply HMF components in different graded rings";
+    require bb eq ComponentIdeal(g): "Cannot multiply HMF components on different components";
     Rf := CoefficientRing(f);
     Rg := CoefficientRing(g);
-    serf := LowerSetExpansion(f);
-    serg := LowerSetExpansion(g);
-    require bb eq ComponentIdeal(g): "Cannot multiply HMF components on different components";
-
-    if not Rf eq Rg then // coerce automatically
-        n := Degree(BaseField(f));
-        multivariate := (Type(serf) eq RngMPolElt);
-        Rf := Compositum(Rf, Rg);
-        S := HMFExpansionRing(GradedRing(f), Rf : Multivariate:=multivariate);
-        serf := S ! serf;
-        serg := S ! serg;
+    if Rf ne Rg then
+        Rfg := Compositum(Rf, Rg);
+        return ChangeRing(f, Rfg) * ChangeRing(g, Rfg);
     end if;
 
+    serf := LowerSetExpansion(f);
+    serg := LowerSetExpansion(g);
     prec := Min(Precision(f), Precision(g));
     if Precision(f) gt prec then
         serf := HMFPruneLowerSetExpansion(M, bb, serf : Precision := prec);
@@ -690,19 +693,13 @@ intrinsic '/'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
     // Coerce automatically
     Rf := CoefficientRing(f);
     Rg := CoefficientRing(g);
-    serf := LowerSetExpansion(f);
-    serg := InverseExpansion(g);
-    if Rf eq Rg then
-        Rfg := Rf;
-        S := ExpansionRing(f);
-    else
+    if Rf ne Rg then
         Rfg := Compositum(Rf, Rg);
-        S := HMFExpansionRing(M, Rfg);
-        serf := S ! serf;
-        serg := S ! serg;
+        return ChangeRing(f, Rfg) / ChangeRing(g, Rfg);
     end if;
 
-    // Get lowerset series at minimum precision
+    serf := LowerSetExpansion(f);
+    serg := InverseExpansion(g);
     prec := Min(Precision(f), Precision(g));
     if prec lt Precision(f) then
         serf := HMFPruneLowerSetExpansion(M, bb, serf : prec := prec);
