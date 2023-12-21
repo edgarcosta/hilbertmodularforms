@@ -7,8 +7,8 @@ procedure test(a, K1, K2)
   assert a in K1;
   b := StrongCoerce(K2, a); 
 
-  a_eval := (K1 ne Rationals()) select Evaluate(a, DistinguishedPlace(K1)) else a;
-  b_eval := (K2 ne Rationals()) select Evaluate(b, DistinguishedPlace(K2)) else b;
+  a_eval := (K1 ne Rationals()) select Evaluate(a, MarkedEmbedding(K1)) else a;
+  b_eval := (K2 ne Rationals()) select Evaluate(b, MarkedEmbedding(K2)) else b;
   assert Abs(a_eval - b_eval) lt CC_THRESHOLD;
 
   c := StrongCoerce(K1, b);
@@ -50,9 +50,9 @@ test(163 + 17*K.1 + 29*K.1^2, K, M);
 // StrongMultiply
 assert StrongMultiply(M, [* K.1, L.1^3, K.1^-1, L.1^-3, 18/41 *]) eq 18/41;
 
-v_K := DistinguishedPlace(K);
-v_L := DistinguishedPlace(L);
-w := DistinguishedPlace(M);
+v_K := MarkedEmbedding(K);
+v_L := MarkedEmbedding(L);
+w := MarkedEmbedding(M);
 a := K.1;
 b := L.1;
 c := StrongMultiply(M, [* a, b *]);

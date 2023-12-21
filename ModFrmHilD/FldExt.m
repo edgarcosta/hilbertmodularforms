@@ -9,10 +9,11 @@ declare attributes FldAlg:
   FundamentalUnitSquare,
   TraceBasisMatrixInverse,
   ClassGroupReps,
-  DistinguishedPlace,
+  MarkedEmbedding,
   Extensions,
   Restrictions,
-  UnitCharFieldsByWeight
+  UnitCharFieldsByWeight,
+  MinDistBtwnRoots
   ;
 
 
@@ -223,9 +224,9 @@ intrinsic SquaredUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
   return F`SquaredUnitsBasisMatrixInverse;
 end intrinsic;
 
-/////////////////////// DistinguishedPlace and strong coercion ///////////////////////////
+/////////////////////// MarkedEmbedding and strong coercion ///////////////////////////
 
-intrinsic DistinguishedPlace(K::FldNum) -> PlcNumElt
+intrinsic MarkedEmbedding(K::FldNum) -> PlcNumElt
   {
     input:
       K: a number field
@@ -237,11 +238,11 @@ intrinsic DistinguishedPlace(K::FldNum) -> PlcNumElt
     we choose a distinguished place of K,
     we make the same choice. 
   }
-  if assigned K`DistinguishedPlace then
-    return K`DistinguishedPlace;
+  if assigned K`MarkedEmbedding then
+    return K`MarkedEmbedding;
   end if;
-  K`DistinguishedPlace := InfinitePlaces(K)[1];
-  return K`DistinguishedPlace;
+  K`MarkedEmbedding := InfinitePlaces(K)[1];
+  return K`MarkedEmbedding;
 end intrinsic;
 
 intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
@@ -308,7 +309,6 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     with evaluation under the distinguished places.
   }
 
-  CC_THRESHOLD := 10^-10;
   require Type(x) in [FldNumElt, FldRatElt, FldQuadElt, FldCycElt] : "%o is not a valid type for strong coercion", Type(x);
 
   // If x is rational then all embeddings are the same,
@@ -339,8 +339,8 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     K`Restrictions := AssociativeArray();
   end if;
 
-  require IsNormal(K) and IsNormal(L) : "Strong coercion is not yet implemented\
-      for non-Galois fields";
+  require IsNormal(K) : "Strong coercion is not yet implemented\
+      for non-Galois initial fields";
 
   // if K = QQ then all embeddings are the same
   if K eq Rationals() then
@@ -360,15 +360,15 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     return L!phi(x);
   end if;
 
-  v := DistinguishedPlace(K);
-  w := DistinguishedPlace(L);
+  v := MarkedEmbedding(K);
+  w := MarkedEmbedding(L);
 
   if IsSubfield(K, L) then
     a := PrimitiveElement(K);
     a_eval := ComplexField()!Evaluate(a, v);
     auts := Automorphisms(K);
     for aut in auts do
-      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
+      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt 0.5 * MinDistBtwnRoots(K) then
         K`Extensions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
@@ -384,7 +384,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
       // For exmaple, if x is in K and L is a cyclotomic field containing K, then
       // L!x will succeed but K!(L!x) will fail. This case is not important right
       // now so I'm leaving it to future me (or present you!) to fix it. 
-      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt CC_THRESHOLD then
+      if Abs(ComplexField()!Evaluate(L!aut(a), w) - a_eval) lt 0.5 * MinDistBtwnRoots(K) then
         K`Restrictions[DefiningPolyCoeffs(L)] := aut;
         return StrongCoerce(L, x);
       end if;
@@ -417,6 +417,29 @@ intrinsic StrongMultiply(K::Fld, A::List) -> FldElt
     prod *:= y;
   end for;
   return prod;
+end intrinsic;
+
+intrinsic MinDistBtwnRoots(K::FldAlg) -> FldReElt
+  {
+    Returns the minimum absolute value distance between 
+    two roots of the defining polynomial of K.
+  }
+  if not assigned K`MinDistBtwnRoots then
+    f := DefiningPolynomial(K);
+    roots := [tup[1] : tup in Roots(ChangeRing(f, ComplexField()))];
+    require #roots eq Degree(K) : "Something is wrong,\
+      the multiplicity of every root should be one";
+    require #roots gt 1 : "This shouldn't get called on the rationals";
+
+    min_dist := Abs(roots[1] - roots[2]);
+    for i in [1 .. #roots] do
+      for j in [i+1 .. #roots] do
+        min_dist := Min(Abs(roots[i] - roots[j]), min_dist);
+      end for;
+    end for;
+    K`MinDistBtwnRoots := min_dist;
+  end if;
+  return K`MinDistBtwnRoots;
 end intrinsic;
 
 /////////////////////// coefficient ring ///////////////////////////
@@ -531,7 +554,7 @@ intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision 
   // a distinguished place of K 
   // if we want to view our HMFs as having coefficients over C,
   // we should apply v_0 to all the coefficients
-  v_0 := DistinguishedPlace(K);
+  v_0 := MarkedEmbedding(K);
   
   aut_dict := AssociativeArray();
 
@@ -593,7 +616,7 @@ intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
     return &*[auts[i](K!x)^(ExactQuotient(k0 - k[i], 2)) : i in [1 .. #auts]];
   else
     // nonparitious weight
-    v_0 := DistinguishedPlace(K);
+    v_0 := MarkedEmbedding(K);
     y := &*[auts[i](Sqrt(K!x))^(k0 - k[i]) : i in [1 .. #auts]];
     return PositiveInPlace(y, v_0);
   end if;
@@ -620,7 +643,7 @@ intrinsic PositiveSqrt(nu::FldNumElt, K::FldNum) -> FldNumElt
       place of K.
   }
   mu := Sqrt(K!nu);
-  v_0 := DistinguishedPlace(K);
+  v_0 := MarkedEmbedding(K);
   return (Evaluate(mu, v_0) ge 0) select mu else -1*mu;
 end intrinsic;
 

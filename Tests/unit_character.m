@@ -92,7 +92,7 @@ K := UnitCharField(F, k);
 // The coefficient we store should thus be the positive square root
 // of eps_1. eps = mu^2 for mu = +/- (1-sqrt(5))/2 (under v_1, say).
 // We want the one which is positive under v_1, so -(1-sqrt(5))/2.
-v_0 := DistinguishedPlace(K);
+v_0 := MarkedEmbedding(K);
 correct[bb][eps] := K!(ZF.2-1);
 test(M, k, correct : level:=N, chi:=chi);
 
