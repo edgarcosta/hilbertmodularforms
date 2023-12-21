@@ -9,7 +9,7 @@ declare attributes FldAlg:
   FundamentalUnitSquare,
   TraceBasisMatrixInverse,
   ClassGroupReps,
-  DistinguishedPlace,
+  MarkedEmbedding,
   Extensions,
   Restrictions,
   UnitCharFieldsByWeight
@@ -223,9 +223,9 @@ intrinsic SquaredUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
   return F`SquaredUnitsBasisMatrixInverse;
 end intrinsic;
 
-/////////////////////// DistinguishedPlace and strong coercion ///////////////////////////
+/////////////////////// MarkedEmbedding and strong coercion ///////////////////////////
 
-intrinsic DistinguishedPlace(K::FldNum) -> PlcNumElt
+intrinsic MarkedEmbedding(K::FldNum) -> PlcNumElt
   {
     input:
       K: a number field
@@ -237,11 +237,11 @@ intrinsic DistinguishedPlace(K::FldNum) -> PlcNumElt
     we choose a distinguished place of K,
     we make the same choice. 
   }
-  if assigned K`DistinguishedPlace then
-    return K`DistinguishedPlace;
+  if assigned K`MarkedEmbedding then
+    return K`MarkedEmbedding;
   end if;
-  K`DistinguishedPlace := InfinitePlaces(K)[1];
-  return K`DistinguishedPlace;
+  K`MarkedEmbedding := InfinitePlaces(K)[1];
+  return K`MarkedEmbedding;
 end intrinsic;
 
 intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
@@ -360,8 +360,8 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     return L!phi(x);
   end if;
 
-  v := DistinguishedPlace(K);
-  w := DistinguishedPlace(L);
+  v := MarkedEmbedding(K);
+  w := MarkedEmbedding(L);
 
   if IsSubfield(K, L) then
     a := PrimitiveElement(K);
@@ -531,7 +531,7 @@ intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision 
   // a distinguished place of K 
   // if we want to view our HMFs as having coefficients over C,
   // we should apply v_0 to all the coefficients
-  v_0 := DistinguishedPlace(K);
+  v_0 := MarkedEmbedding(K);
   
   aut_dict := AssociativeArray();
 
@@ -593,7 +593,7 @@ intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
     return &*[auts[i](K!x)^(ExactQuotient(k0 - k[i], 2)) : i in [1 .. #auts]];
   else
     // nonparitious weight
-    v_0 := DistinguishedPlace(K);
+    v_0 := MarkedEmbedding(K);
     y := &*[auts[i](Sqrt(K!x))^(k0 - k[i]) : i in [1 .. #auts]];
     return PositiveInPlace(y, v_0);
   end if;
@@ -620,7 +620,7 @@ intrinsic PositiveSqrt(nu::FldNumElt, K::FldNum) -> FldNumElt
       place of K.
   }
   mu := Sqrt(K!nu);
-  v_0 := DistinguishedPlace(K);
+  v_0 := MarkedEmbedding(K);
   return (Evaluate(mu, v_0) ge 0) select mu else -1*mu;
 end intrinsic;
 

@@ -27,7 +27,7 @@ procedure test(F, k)
   places := RealPlaces(F);
 
   K := UnitCharField(F, k);
-  v_0 := DistinguishedPlace(K);
+  v_0 := MarkedEmbedding(K);
   a := PrimitiveElement(F);
 
   auts := AutsReppingEmbeddingsOfF(F, k);
