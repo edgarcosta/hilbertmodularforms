@@ -24,6 +24,8 @@ declare attributes ModFrmHilDEltComp: CoefficientRing, // Rng
         Space, // ModFrmHilD - the HMF space that this ModFrmHilDEltComp is a component in
         ComponentIdeal; // RngOrdIdl
 
+HMF_DEFAULT_MULTIVARIATE := false;
+
 ///////////////////////////////////////////////////
 //                                               //
 //         Access to attributes                  //
@@ -229,17 +231,17 @@ intrinsic HMFExpansionSubset(f :: RngUPolElt, exps :: SeqEnum) -> RngUPolElt
     n := #exps[1];
     P := Parent(f);
     last_entries := [e[n]: e in exps];
-    new_coeffs := [0: i in [0..Max(last_entries)]];
+    new_coeffs := [BaseRing(P) ! 0: i in [0..Max(last_entries)]];
 
     if n eq 1 then
         for e in exps do
-            new_coeffs[e[1]] := Coefficient(f, e[1]);
+            new_coeffs[1 + e[1]] := Coefficient(f, e[1]);
         end for;
     else
         last_entries := SetToSequence(SequenceToSet(last_entries));
         for d in last_entries do
             rec_exps := [e[1..(n-1)]: e in exps | e[n] eq d];
-            new_coeffs[d] := HMFExpansionSubset(Coefficient(f, d), rec_exps);
+            new_coeffs[1 + d] := HMFExpansionSubset(Coefficient(f, d), rec_exps);
         end for;
     end if;
 
@@ -358,10 +360,10 @@ coefficients as an element of R}
 
     n := #exps[1];
     last_entries := [e[n]: e in exps];
-    pol_coeffs := [0: i in [0..Max(last_entries)]];
+    pol_coeffs := [BaseRing(R) ! 0: i in [0..Max(last_entries)]];
     if n eq 1 then
         for i in [1..#exps] do
-            pol_coeffs[exps[i][1]] := coeffs[i];
+            pol_coeffs[1 + exps[i][1]] := coeffs[i];
         end for;
     else
         last_entries := SetToSequence(SequenceToSet(last_entries));
@@ -375,7 +377,7 @@ coefficients as an element of R}
                     Append(~rec_coeffs, coeffs[i]);
                 end if;
             end for;
-            pol_coeffs[d] := HMFConstructExpansion(BaseRing(R), rec_exps, rec_coeffs);
+            pol_coeffs[1 + d] := HMFConstructExpansion(BaseRing(R), rec_exps, rec_coeffs);
         end for;
     end if;
 
@@ -391,7 +393,8 @@ end intrinsic;
 ///////////////////////////////////////////////////
 
 
-intrinsic HMFExpansionRing(M::ModFrmHilDGRng, K::Rng : Multivariate:=true) -> RngMPol
+intrinsic HMFExpansionRing(M::ModFrmHilDGRng, K::Rng :
+                           Multivariate := HMF_DEFAULT_MULTIVARIATE) -> RngMPol
   {return cached PolynomialRing(K, n)}
   n := Degree(BaseField(M));
   if Multivariate then
@@ -414,7 +417,7 @@ intrinsic HMFExpansionRing(M::ModFrmHilDGRng, K::Rng : Multivariate:=true) -> Rn
       end if;
     end if;
   else
-    R := PolynomialRing(K);
+    R := K;
     for i in [1..n] do
         R := PolynomialRing(R);
     end for;
@@ -438,7 +441,7 @@ be a multivariate polynomial ring or a tower of univariate polynomial rings.}
     elif Type(f) eq RngUPolElt then
         R := Parent(f);
         for i in [1..n] do
-            R := BaseRing(Parent(R));
+            R := BaseRing(R);
         end for;
     else
         error "Unsupported type for Fourier expansions: ", Type(f);
@@ -467,7 +470,8 @@ be a multivariate polynomial ring or a tower of univariate polynomial rings.}
 end intrinsic;
 
 intrinsic HMFComponent(Mk :: ModFrmHilD, bb :: RngOrdIdl, coeff_array :: Assoc
-                       : Multivariate := true, CoefficientRing := DefaultCoefficientRing(Mk),
+                       : Multivariate := HMF_DEFAULT_MULTIVARIATE,
+                         CoefficientRing := DefaultCoefficientRing(Mk),
                          prec := Precision(Parent(Mk))
     ) -> ModFrmHilDEltComp
 
@@ -502,7 +506,8 @@ precision instead.}
 end intrinsic;
 
 intrinsic HMFComponentZero(Mk::ModFrmHilD, bb::RngOrdIdl :
-                           Multivariate := true, prec := Precision(Parent(Mk)),
+                           Multivariate := HMF_DEFAULT_MULTIVARIATE,
+                           prec := Precision(Parent(Mk)),
                            coeff_ring := DefaultCoefficientRing(Mk)
     ) -> ModFrmHilDEltComp
 
@@ -514,7 +519,8 @@ intrinsic HMFComponentZero(Mk::ModFrmHilD, bb::RngOrdIdl :
 end intrinsic;
 
 intrinsic HMFComponentIdentity(Mk :: ModFrmHilD, bb :: RngOrdIdl :
-                               Multivariate:=true, coeff_ring := DefaultCoefficientRing(Mk),
+                               Multivariate := HMF_DEFAULT_MULTIVARIATE,
+                               coeff_ring := DefaultCoefficientRing(Mk),
                                prec := Precision(Parent(Mk))) -> ModFrmHilDEltComp
 
 {Returns the HMF component that is identically one on the bb component.}
