@@ -395,12 +395,12 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
   end if;
 end intrinsic;
 
-intrinsic StrongMultiply(K::Fld, A::List) -> FldElt
+intrinsic StrongMultiply(A::List : K:=false) -> FldElt
   {
     input:
-      K - A field of type FldRat, FldCyc, FldNum, or FldQuad
       A - A list of elements (strong) coercible into K, not necessarily
         from the same parent field.
+      K - A field of type FldRat, FldCyc, FldNum, or FldQuad
     returns:
       The product of the elements in A, as an element of K.
   }
@@ -409,6 +409,15 @@ intrinsic StrongMultiply(K::Fld, A::List) -> FldElt
   // are of the same type
   if &and[Parent(x) cmpeq Parent(A[1]) : x in A] then
     return &*[x : x in A];
+  end if;
+      
+  // If K is not assigned, it should be the compositum
+  // of all the elements
+  if K cmpeq false then
+    K := RationalsAsNumberField();
+    for x in A do
+      K := Compositum(K, NumberField(Parent(x)));
+    end for;
   end if;
       
   prod := K!1;
