@@ -24,7 +24,7 @@ declare attributes ModFrmHilDEltComp: CoefficientRing, // Rng
         Space, // ModFrmHilD - the HMF space that this ModFrmHilDEltComp is a component in
         ComponentIdeal; // RngOrdIdl
 
-HMF_DEFAULT_MULTIVARIATE := false;
+HMF_DEFAULT_MULTIVARIATE := true;
 
 ///////////////////////////////////////////////////
 //                                               //
