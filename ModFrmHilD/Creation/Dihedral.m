@@ -181,8 +181,8 @@ intrinsic PossibleGrossencharacters(
   ) -> SeqEnum[GrpHeckeElt]
   {
     Given a totally real field F, an ideal N of F, and a character chi of modulus N,
-    computes all finite order non-Galois-invariant Hecke characters of 
-    conductor dividing N whose restriction is chi.
+    computes all finite order non-Galois-invariant Hecke characters of conductor dividing N
+    whose restriction is chi.
   }
   ans := [];
   fields := QuadraticExtensionsWithConductor(N, [1,2]);
@@ -202,15 +202,10 @@ Given a totally real field F, an ideal N of F, and a character chi of modulus N,
     return PossibleHeckeCharacters(BaseField(Parent(Mk)), Level(Mk), Character(Mk));
 end intrinsic;
 
-
-intrinsic ThetaSeries(
-  Mk::ModFrmHilD,
-  psi::GrpHeckeElt
-  ) -> ModFrmHilDElt
+intrinsic ThetaSeries(Mk::ModFrmHilD, K::FldNum, psi::HMFGrossenchar) -> ModFrmHilDElt
   {
     Given a totally real field F, a quadratic extension K of F,
-    and a finite order Hecke character of K,
-    compute the associated theta series of weight (1,1).
+    and a finite order Hecke character of K, compute the associated theta series.
   }
   M := Parent(Mk);
   F := BaseField(M);
@@ -218,9 +213,8 @@ intrinsic ThetaSeries(
   prec := Precision(M);
   K := NumberField(Order(Modulus(psi))); 
   
-  // We create an associative array indexed by prime ideals pp up to Precision(Parent(Mk)) and populate them with traces associated to psi.
-  
-
+  // We create an associative array indexed by prime ideals pp up to 
+  // Precision(Parent(Mk)) and populate them with traces associated to psi.
   a_pps := AssociativeArray();
   for pp in PrimeIdeals(M) do
   fact := Factorization(Integers(K) !! pp);
