@@ -1,3 +1,5 @@
+//////////////////////////////// Compute quadratic extensions with conductor
+
 intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEnum[RngIntElt] : Dividing := true)
   -> SeqEnum[FldAlg]
   {
@@ -25,6 +27,28 @@ intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEn
   end for;
   return Ks;
 end intrinsic;
+
+function QuadraticCharacter(I, K)
+  // I::RngOrdIdl - An ideal of a field F
+  // K::Fld - A quadratic extension of F
+  //
+  // Returns the value of the quadratic character evaluated 
+  // at I. This is equal to (-1)^(#{inert primes factors of I})
+  ZK := Integers(K);
+  Fact := Factorization(I); 
+  sum_inert := 0;
+  for foo in Fact do
+    P := foo[1];
+    PK := ZK !! P;
+    FactPK := Factorization(PK);
+    if #FactPK eq 1 and FactPK[1][2] eq 1 then // P is inert in K
+      sum_inert := sum_inert + foo[2];
+    end if;
+  end for;
+  return (-1)^(sum_inert);
+end function;
+
+//////////////////////////////// Conjugates of Grossencharacters
 
 intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
   {
@@ -60,25 +84,7 @@ intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
   return true;
 end intrinsic;
 
-function QuadraticCharacter(I, K)
-  // I::RngOrdIdl - An ideal of a field F
-  // K::Fld - A quadratic extension of F
-  //
-  // Returns the value of the quadratic character evaluated 
-  // at I. This is equal to (-1)^(#{inert primes factors of I})
-  ZK := Integers(K);
-  Fact := Factorization(I); 
-  sum_inert := 0;
-  for foo in Fact do
-    P := foo[1];
-    PK := ZK !! P;
-    FactPK := Factorization(PK);
-    if #FactPK eq 1 and FactPK[1][2] eq 1 then // P is inert in K
-      sum_inert := sum_inert + foo[2];
-    end if;
-  end for;
-  return (-1)^(sum_inert);
-end function;
+//////////////////////////////// Computing Grossencharacters
 
 intrinsic PossibleHeckeCharactersOfK(
   F::FldNum, 
@@ -201,6 +207,8 @@ Given a totally real field F, an ideal N of F, and a character chi of modulus N,
 }
     return PossibleHeckeCharacters(BaseField(Parent(Mk)), Level(Mk), Character(Mk));
 end intrinsic;
+
+//////////////////////////////// Computing spaces of dihedral forms
 
 intrinsic ThetaSeries(Mk::ModFrmHilD, K::FldNum, psi::HMFGrossenchar) -> ModFrmHilDElt
   {
