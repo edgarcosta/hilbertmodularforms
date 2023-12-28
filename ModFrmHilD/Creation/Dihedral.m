@@ -67,23 +67,6 @@ intrinsic ConjugateIdeal(K::FldNum, N::RngOrdIdl) -> RngOrdIdl
   return ideal<ZK| conj_gens>;
 end intrinsic;
 
-intrinsic IsSelfConjugate(K::FldNum, chi::GrpHeckeElt) -> BoolElt
-  {
-    Given a quadratic extension K/F and an ideal chi of a ray class field of K,
-    check if chi is equal to its conjugate.
-  }
-  ZK := Integers(K);
-  foo, bar := Modulus(chi);
-  G, m := RayClassGroup(Conductor(chi), bar);
-  
-  for g in Generators(G) do
-    if not chi( Integers(AbsoluteField(K)) !! ConjugateIdeal(K, m(g))  ) eq chi(m(g)) then
-      return false;
-    end if;
-  end for;
-  return true;
-end intrinsic;
-
 //////////////////////////////// Computing Grossencharacters
 
 intrinsic PossibleHeckeCharactersOfK(
