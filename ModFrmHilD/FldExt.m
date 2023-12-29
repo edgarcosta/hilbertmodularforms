@@ -341,6 +341,28 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
   end if;
 end intrinsic;
 
+intrinsic ListToStrongCoercedSeq(A::List) -> SeqEnum
+  {
+    input:
+      A - A list of number field elements
+    returns:
+      A sequence containing the elements of the list, strong coerced
+      into a common parent field.
+  }
+  L := Rationals();
+  for a in A do
+    // in case a is a RngElt instead of a FldElt
+    K := NumberField(Parent(a));
+    L := (K eq L) select L else Compositum(L, K);
+  end for;
+
+  B := [];
+  for a in A do
+    Append(~B, StrongCoerce(L, a));
+  end for;
+  return B;
+end intrinsic;
+
 intrinsic StrongMultiply(A::List : K:=false) -> FldElt
   {
     input:

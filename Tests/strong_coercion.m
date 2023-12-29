@@ -57,3 +57,6 @@ a := K.1;
 b := L.1;
 c := StrongMultiply([* a, b *] : K:=M);
 assert Abs(Evaluate(c, w) - Evaluate(a, v_K) * Evaluate(b, v_L)) lt CC_THRESHOLD;
+
+B := ListToStrongCoercedSeq([* 1, 2/3, K.1, L.1 *]);
+assert IsIsomorphic(Parent(B[1]), Compositum(K, L));
