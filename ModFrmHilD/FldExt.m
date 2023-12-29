@@ -4,10 +4,6 @@ declare attributes FldAlg:
   TotallyPositiveUnitsMap,
   TotallyPositiveUnitsGenerators,
   TotallyPositiveUnitsGeneratorsOrients,
-  TotallyPositiveUnitsBasisMatrixInverse,
-  SquaredUnitsBasisMatrixInverse,
-  FundamentalUnitSquare,
-  TraceBasisMatrixInverse,
   ClassGroupReps,
   MarkedEmbedding,
   Extensions,
@@ -172,56 +168,6 @@ intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   U, mU := UnitGroup(F);
   ugs_unorient := [mU(gen) : gen in Exclude(Generators(U), U.1)];
   return [orient(F, eps) : eps in ugs_unorient];
-end intrinsic;
-
-intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
-  {return the fundamental unit totally positive}
-  assert Degree(F) le 2;
-  if Degree(F) eq 1 then
-    return Integers(F)!1;
-  end if;
-  if not assigned F`FundamentalUnitSquare then
-    eps := FundamentalUnit(F)^2;
-    places := InfinitePlaces(F);
-    eps1 := Evaluate(eps, places[1]);
-    if eps1 gt 1 then
-      // eps1*eps2 = Nm(eps) = 1
-      eps := 1/eps;
-    end if;
-    eps := Integers(F)!eps;
-    F`FundamentalUnitSquare := eps;
-  end if;
-  return F`FundamentalUnitSquare;
-end intrinsic;
-
-intrinsic BasisMatrixInverse(F::FldNum, epses::SeqEnum[RngOrdElt] : Precision := 100) -> AlgMatElt
-  {
-    returns a change of basis matrix transforming a point in log-Minkowski
-    space of F into the basis given the (n-1) totally positive units and 
-    the all-ones vector. 
-  }
-  B_rows := [[Log(x) : x in EmbedNumberFieldElement(eps : Precision := Precision)] : eps in epses];
-  Append(~B_rows, [1 : i in [1 .. (#epses + 1)]]);
-  B := Matrix(B_rows);
-  return B^-1;
-end intrinsic;
-
-intrinsic TotallyPositiveUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
-  { returns BasisMatrixInverse for the totally positive units}
-  if not assigned F`TotallyPositiveUnitsBasisMatrixInverse then
-    epses := TotallyPositiveUnitsGenerators(F);
-    F`TotallyPositiveUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
-  end if;
-  return F`TotallyPositiveUnitsBasisMatrixInverse;
-end intrinsic;
-
-intrinsic SquaredUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
-  { returns BasisMatrixInverse for the squares of units }
-  if not assigned F`SquaredUnitsBasisMatrixInverse then
-    epses := [eps^2 : eps in UnitsGenerators(F)];
-    F`SquaredUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
-  end if;
-  return F`SquaredUnitsBasisMatrixInverse;
 end intrinsic;
 
 /////////////////////// MarkedEmbedding and strong coercion ///////////////////////////
@@ -713,31 +659,6 @@ intrinsic DefiningPolyCoeffs(K::Fld) -> SeqEnum
   return Coefficients(DefiningPolynomial(K));
 end intrinsic;
 
-intrinsic TraceBasisMatrixInverse(F::FldNum) -> AlgMatElt
-  {
-    Given an ideal aa, with standard basis Basis(aa) = [e_1, ..., e_n],
-    returns a matrix M whose ith row vector is (a_1, ..., a_n) 
-    such that a_1 * e_1 + ... + a_n * e_n = f_i,
-    where [f_1, ..., f_n] is a Z-basis of aa such that
-    Tr(f_1) > 0 and Tr(f_i) = 0 for i > 1.
-  }
-
-  if not assigned F`TraceBasisMatrixInverse then
-    B := Basis(F);
-    // a column vector whose ith element is the trace of
-    // the ith element of B
-    traces := Matrix([[Trace(B[i])] : i in [1..#B]]);
-
-    // Q is a matrix such that Q * traces is a column
-    // vector whose topmost entry is a positive rational
-    // and the rest are all 0 (which is what the Hermite 
-    // form of any column vector looks like).
-    _, Q := EchelonForm(traces);
-    F`TraceBasisMatrixInverse := Q^-1;
-  end if;
-  return F`TraceBasisMatrixInverse;
-end intrinsic;
-
 intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
   {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
    where Trace(a) = n > 0 and Trace(b) = 0}
@@ -762,18 +683,4 @@ intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
     end if;
   end for;
   return TB;
-end intrinsic;
-
-intrinsic InTraceBasis(nu::FldNumElt) -> SeqEnum
-  {
-    input: 
-      A number field element, generally of the base field F of the HMF
-    returns:
-      A SeqEnum[FldRatElt] [b_1, ..., b_n] such that, if [f_1, ..., f_n]
-      is a TraceBasis for O_F, nu = b_1 * f_1 + ... + b_n * f_n.
-  }
-  F := Parent(nu);
-  // vector expressing nu in terms of Basis(F) (a Q-basis for F)
-  nu_vector := Vector(Eltseq(nu));
-  return Eltseq(nu_vector * TraceBasisMatrixInverse(F));
 end intrinsic;
