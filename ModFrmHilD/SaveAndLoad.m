@@ -42,13 +42,47 @@ intrinsic SaveFilePrefix(Mk::ModFrmHilD) -> MonStgElt
   chi_seq := Eltseq(chi);
   chi_label := Join([IntegerToString(chi_cmp) : chi_cmp in chi_seq], ".");
 
-  return Join([F_label, N_label, k_label, chi_label], "-");
+  quadruple_label := Join([F_label, N_label, k_label, chi_label], "=");
+  M_prec := Precision(Parent(Mk));
+  return Join([quadruple_label, IntegerToString(M_prec)], "_");
 end intrinsic;
 
-intrinsic SaveBasis(savefile_name::MonStgElt, B::SeqEnum[ModFrmHilDElt])
+intrinsic MkFromSavefile(savefile_path::MonStgElt) -> ModFrmHilD
+  {
+    Builds an Mk from a filename beginning with a prefix 
+    constructed by SaveFilePrefix.
+  }
+  split_savefile_path := Split(savefile_path, "/");
+  savefile_name := split_savefile_path[#split_savefile_path];
+  prefix := Split(savefile_name, "_")[1];
+  prec_str := Split(savefile_name, "_")[2];
+  M_prec := StringToInteger(prec_str);
+  F_label, N_label, k_label, chi_label := Explode(Split(prefix, "="));
+
+  R<x> := PolynomialRing(Rationals());
+  def_poly_coeffs := [StringToInteger(x) : x in Split(F_label, ".")];
+  if #def_poly_coeffs eq 3 and def_poly_coeffs[2] eq 0 then
+    F := QuadraticField(-1*def_poly_coeffs[1]);
+  else
+    def_poly := elt<R | def_poly_coeffs>;
+    F := NumberField(def_poly);
+  end if;
+
+  N := LMFDBIdeal(F, N_label);
+  k := [StringToInteger(x) : x in Split(k_label, ".")];
+  chi_seq := [StringToInteger(x) : x in Split(chi_label, ".")];
+  H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
+  chi := H!chi_seq;
+
+  M := GradedRingOfHMFs(F, M_prec);
+
+  return HMFSpace(M, N, k, chi);
+end intrinsic;
+
+intrinsic SaveBasis(savefile_path::MonStgElt, B::SeqEnum[ModFrmHilDElt])
   {
     input:
-      savefile_name: The file to which we will write
+      savefile_path: The file to which we will write
       B: A sequence [f_1, ..., f_n] of ModFrmHilDElts
       savedir:
 
@@ -64,9 +98,9 @@ intrinsic SaveBasis(savefile_name::MonStgElt, B::SeqEnum[ModFrmHilDElt])
 
     where K_i^bb is the coefficient ring of f_i^bb.
 
-    Note that this will OVERWRITE the contents of savedir/savefile_name.
+    Note that this will OVERWRITE the contents of savedir/savefile_path.
   }
-  savefile := Open(savefile_name, "w+");
+  savefile := Open(savefile_path, "w+");
 
   if #B eq 0 then
     // some absurdly large value;
@@ -83,19 +117,30 @@ intrinsic SaveBasis(savefile_name::MonStgElt, B::SeqEnum[ModFrmHilDElt])
   savefile := 0;
 end intrinsic;
 
-intrinsic LoadBasis(loadfile_name::MonStgElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic LoadBasis(savefile_path::MonStgElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {
     We recover a basis from a file written to by SaveBasis.
   }
   bbs := NarrowClassGroupReps(Parent(Mk));
-  loadfile := Open(loadfile_name, "r");
-  saved_prec := ReadObject(loadfile);
+  savefile := Open(savefile_path, "r");
+  saved_prec := ReadObject(savefile);
   if saved_prec ge Precision(Parent(Mk)) then
-    A := ReadObject(loadfile);
+    A := ReadObject(savefile);
     return true, [CoeffListsToElement(Mk, f_coeff_lists) : f_coeff_lists in A];
   else
     return false, _;
   end if;
+end intrinsic;
+
+intrinsic LoadBasis(savefile_path::MonStgElt) -> SeqEnum[ModFrmHilDElt]
+  {
+    Recovers a basis from a file written to by SaveBasis, constructing
+    the parent Mk from the file's name.
+  }
+  Mk := MkFromSavefile(savefile_path);
+  b, B := LoadBasis(savefile_path, Mk);
+  require b : "Something is wrong, the precision should be enough.";
+  return B;
 end intrinsic;
 
 intrinsic ElementToCoeffLists(f::ModFrmHilDElt) -> Tup
@@ -136,13 +181,13 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
       precision for this space of HMFs";
 
   // create a power series for each component
-  components := AssociativeArray();
+  coeffs := AssociativeArray();
   for i->bb in NarrowClassGroupReps(M) do
     bb_label, a_bb_0 := Explode(coeffs_at_infty[i]);
     assert LMFDBLabel(bb) eq bb_label;
     a_bb_0 := StrongCoerce(K, a_bb_0);
-    components[bb] := AssociativeArray();
-    components[bb][F!0] := a_bb_0;
+    coeffs[bb] := AssociativeArray();
+    coeffs[bb][F!0] := a_bb_0;
   end for;
 
   // iterate through ideals and add monomials
@@ -164,16 +209,10 @@ intrinsic CoeffListsToElement(Mk::ModFrmHilD, coeff_lists::Tup) -> ModFrmHilDElt
     a_nn := StrongCoerce(K, a_nn);
     nu := IdealToRep(M, nn);
     a_nu := IdlCoeffToEltCoeff(a_nn, nu, Weight(Mk), K);
-    components[bb][nu] := a_nu;
+    coeffs[bb][nu] := a_nu;
   end for;
 
-  // Could contract this into the earlier loop over bbs
-  for bb in NarrowClassGroupReps(M) do
-    components[bb] := HMFComponent(Mk, bb, components[bb] :
-        coeff_ring := K, prec := Precision(M));
-  end for;
-
-  return HMFSumComponents(Mk, components);
+  return HMF(Mk, coeffs : prec := Precision(M), coeff_ring := K);
 end intrinsic;
 
 intrinsic LoadOrBuildAndSave(
