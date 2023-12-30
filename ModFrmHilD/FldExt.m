@@ -4,10 +4,6 @@ declare attributes FldAlg:
   TotallyPositiveUnitsMap,
   TotallyPositiveUnitsGenerators,
   TotallyPositiveUnitsGeneratorsOrients,
-  TotallyPositiveUnitsBasisMatrixInverse,
-  SquaredUnitsBasisMatrixInverse,
-  FundamentalUnitSquare,
-  TraceBasisMatrixInverse,
   ClassGroupReps,
   MarkedEmbedding,
   Extensions,
@@ -172,56 +168,6 @@ intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   U, mU := UnitGroup(F);
   ugs_unorient := [mU(gen) : gen in Exclude(Generators(U), U.1)];
   return [orient(F, eps) : eps in ugs_unorient];
-end intrinsic;
-
-intrinsic FundamentalUnitSquare(F::FldNum) -> RngQuadElt
-  {return the fundamental unit totally positive}
-  assert Degree(F) le 2;
-  if Degree(F) eq 1 then
-    return Integers(F)!1;
-  end if;
-  if not assigned F`FundamentalUnitSquare then
-    eps := FundamentalUnit(F)^2;
-    places := InfinitePlaces(F);
-    eps1 := Evaluate(eps, places[1]);
-    if eps1 gt 1 then
-      // eps1*eps2 = Nm(eps) = 1
-      eps := 1/eps;
-    end if;
-    eps := Integers(F)!eps;
-    F`FundamentalUnitSquare := eps;
-  end if;
-  return F`FundamentalUnitSquare;
-end intrinsic;
-
-intrinsic BasisMatrixInverse(F::FldNum, epses::SeqEnum[RngOrdElt] : Precision := 100) -> AlgMatElt
-  {
-    returns a change of basis matrix transforming a point in log-Minkowski
-    space of F into the basis given the (n-1) totally positive units and 
-    the all-ones vector. 
-  }
-  B_rows := [[Log(x) : x in EmbedNumberFieldElement(eps : Precision := Precision)] : eps in epses];
-  Append(~B_rows, [1 : i in [1 .. (#epses + 1)]]);
-  B := Matrix(B_rows);
-  return B^-1;
-end intrinsic;
-
-intrinsic TotallyPositiveUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
-  { returns BasisMatrixInverse for the totally positive units}
-  if not assigned F`TotallyPositiveUnitsBasisMatrixInverse then
-    epses := TotallyPositiveUnitsGenerators(F);
-    F`TotallyPositiveUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
-  end if;
-  return F`TotallyPositiveUnitsBasisMatrixInverse;
-end intrinsic;
-
-intrinsic SquaredUnitsBasisMatrixInverse(F::FldNum) -> AlgMatElt
-  { returns BasisMatrixInverse for the squares of units }
-  if not assigned F`SquaredUnitsBasisMatrixInverse then
-    epses := [eps^2 : eps in UnitsGenerators(F)];
-    F`SquaredUnitsBasisMatrixInverse := BasisMatrixInverse(F, epses);
-  end if;
-  return F`SquaredUnitsBasisMatrixInverse;
 end intrinsic;
 
 /////////////////////// MarkedEmbedding and strong coercion ///////////////////////////
@@ -395,12 +341,34 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
   end if;
 end intrinsic;
 
-intrinsic StrongMultiply(K::Fld, A::List) -> FldElt
+intrinsic ListToStrongCoercedSeq(A::List) -> SeqEnum
   {
     input:
-      K - A field of type FldRat, FldCyc, FldNum, or FldQuad
+      A - A list of number field elements
+    returns:
+      A sequence containing the elements of the list, strong coerced
+      into a common parent field.
+  }
+  L := Rationals();
+  for a in A do
+    // in case a is a RngElt instead of a FldElt
+    K := NumberField(Parent(a));
+    L := (K eq L) select L else Compositum(L, K);
+  end for;
+
+  B := [];
+  for a in A do
+    Append(~B, StrongCoerce(L, a));
+  end for;
+  return B;
+end intrinsic;
+
+intrinsic StrongMultiply(A::List : K:=false) -> FldElt
+  {
+    input:
       A - A list of elements (strong) coercible into K, not necessarily
         from the same parent field.
+      K - A field of type FldRat, FldCyc, FldNum, or FldQuad
     returns:
       The product of the elements in A, as an element of K.
   }
@@ -409,6 +377,15 @@ intrinsic StrongMultiply(K::Fld, A::List) -> FldElt
   // are of the same type
   if &and[Parent(x) cmpeq Parent(A[1]) : x in A] then
     return &*[x : x in A];
+  end if;
+      
+  // If K is not assigned, it should be the compositum
+  // of all the elements
+  if K cmpeq false then
+    K := RationalsAsNumberField();
+    for x in A do
+      K := Compositum(K, NumberField(Parent(x)));
+    end for;
   end if;
       
   prod := K!1;
@@ -525,30 +502,35 @@ end intrinsic;
 
 /////////////////////// unit character ///////////////////////////
 
-intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision := 50) -> SeqEnum[Map]
+intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) -> SeqEnum[Map]
   { 
     inputs:
-      F: A totally real Galois number field of degree n
-      k: A weight, given as a SeqEnum of n natural numbers
+      F: A number field of degree n
+      K: A Galois number field containing the Galois closure of F.
     returns:
-      Let K be UnitCharField, and v_0 a distinguished real
-      place of K (we choose the first one, but this is arbitrary).
-
       We return a list [sigma_1, ..., sigma_n] 
       of automorphisms of K sorted such that if 
-      [v_1, ..., v_n] is a list of real embeddings of F, 
+      [v_1, ..., v_n] is a list of embeddings of F, 
       then v_i(x) = v_0(sigma_i(x)) for all x in F. 
       Note that when F is not Galois, this list is
       not unique, but our algorithm is deterministic.
   }
-  K := UnitCharField(F, k);
+  require IsSubfield(SplittingField(F), K) : "K must contain the Galois closure of F";
   n := Degree(F);
-  places := RealPlaces(F);
+  places := InfinitePlaces(F);
 
   a := PrimitiveElement(F);
   a_embed_dict := AssociativeArray();
-  for i in [1 .. n] do
-    a_embed_dict[RealField(Precision)!Evaluate(a, places[i])] := i;
+  r, s := Signature(F);
+  for i in [1 .. r] do
+    z_i := ComplexField(Precision)!Evaluate(a, places[i]);
+    a_embed_dict[z_i] := i;
+  end for;
+
+  for i in [r+1 .. r+s] do
+    z_i := ComplexField(Precision)!Evaluate(a, places[i]);
+    a_embed_dict[z_i] := i;
+    a_embed_dict[Conjugate(z_i)] := i + s;
   end for;
 
   // a distinguished place of K 
@@ -557,10 +539,8 @@ intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision 
   v_0 := MarkedEmbedding(K);
   
   aut_dict := AssociativeArray();
-
-  // auts is the automorphisms of K
   for aut in Automorphisms(K) do
-    aut_a_est := RealField(Precision)!Evaluate(aut(a), v_0);
+    aut_a_est := ComplexField(Precision)!Evaluate(aut(a), v_0);
     b, x := IsDefined(a_embed_dict, aut_a_est);
     if b then
       aut_dict[x] := aut;
@@ -570,7 +550,40 @@ intrinsic AutsReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision 
       end if;
     end if;
   end for;
+
   return [aut_dict[i] : i in [1 .. n]];
+end intrinsic;
+
+intrinsic AutsOfUCFReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision := 50) -> SeqEnum[Map]
+  { 
+    inputs:
+      F: A real Galois number field of degree n
+      k: A weight, given as a SeqEnum of n natural numbers
+    returns:
+      AutsOfKReppingEmbeddingsOfF applied with K equal to
+      the unit character field associated to F and k.
+  }
+  K := UnitCharField(F, k);
+  return AutsOfKReppingEmbeddingsOfF(F, K);
+end intrinsic;
+
+intrinsic ComplexConjugateOfPlace(w::PlcNumElt) -> FldElt
+  {
+    inputs:
+      w: A complex place of a number field K.
+    returns:
+      An automorphism aut of K such that
+      for any x in K, v_0(aut(x)) is the
+      complex conjugate of v_0(x).
+  }
+  K := NumberField(w);
+  require IsNormal(K) : "K is not Galois";
+  require IsComplex(w) : "w is not a complex place";
+
+  auts := AutsOfKReppingEmbeddingsOfF(K, K);
+  w_idx := Index(w, auts);
+  s := Integers()!(Degree(K) / 2);
+  return auts[w_idx + s];
 end intrinsic;
 
 intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
@@ -610,7 +623,7 @@ intrinsic EltToShiftedHalfWeight(x::FldElt, k::SeqEnum[RngIntElt]) -> FldElt
     return K!1;
   end if;
 
-  auts := AutsReppingEmbeddingsOfF(F, k);
+  auts := AutsOfUCFReppingEmbeddingsOfF(F, k);
   if IsParitious(k) then
     // paritious nonparallel weight
     return &*[auts[i](K!x)^(ExactQuotient(k0 - k[i], 2)) : i in [1 .. #auts]];
@@ -668,31 +681,6 @@ intrinsic DefiningPolyCoeffs(K::Fld) -> SeqEnum
   return Coefficients(DefiningPolynomial(K));
 end intrinsic;
 
-intrinsic TraceBasisMatrixInverse(F::FldNum) -> AlgMatElt
-  {
-    Given an ideal aa, with standard basis Basis(aa) = [e_1, ..., e_n],
-    returns a matrix M whose ith row vector is (a_1, ..., a_n) 
-    such that a_1 * e_1 + ... + a_n * e_n = f_i,
-    where [f_1, ..., f_n] is a Z-basis of aa such that
-    Tr(f_1) > 0 and Tr(f_i) = 0 for i > 1.
-  }
-
-  if not assigned F`TraceBasisMatrixInverse then
-    B := Basis(F);
-    // a column vector whose ith element is the trace of
-    // the ith element of B
-    traces := Matrix([[Trace(B[i])] : i in [1..#B]]);
-
-    // Q is a matrix such that Q * traces is a column
-    // vector whose topmost entry is a positive rational
-    // and the rest are all 0 (which is what the Hermite 
-    // form of any column vector looks like).
-    _, Q := EchelonForm(traces);
-    F`TraceBasisMatrixInverse := Q^-1;
-  end if;
-  return F`TraceBasisMatrixInverse;
-end intrinsic;
-
 intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
   {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
    where Trace(a) = n > 0 and Trace(b) = 0}
@@ -717,18 +705,4 @@ intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
     end if;
   end for;
   return TB;
-end intrinsic;
-
-intrinsic InTraceBasis(nu::FldNumElt) -> SeqEnum
-  {
-    input: 
-      A number field element, generally of the base field F of the HMF
-    returns:
-      A SeqEnum[FldRatElt] [b_1, ..., b_n] such that, if [f_1, ..., f_n]
-      is a TraceBasis for O_F, nu = b_1 * f_1 + ... + b_n * f_n.
-  }
-  F := Parent(nu);
-  // vector expressing nu in terms of Basis(F) (a Q-basis for F)
-  nu_vector := Vector(Eltseq(nu));
-  return Eltseq(nu_vector * TraceBasisMatrixInverse(F));
 end intrinsic;

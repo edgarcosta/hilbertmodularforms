@@ -48,12 +48,15 @@ test(16 + 3*L.1 + 17*L.1^2 + 2*L.1^3 + 9*L.1^4, L, H);
 test(163 + 17*K.1 + 29*K.1^2, K, M);
 
 // StrongMultiply
-assert StrongMultiply(M, [* K.1, L.1^3, K.1^-1, L.1^-3, 18/41 *]) eq 18/41;
+assert StrongMultiply([* K.1, L.1^3, K.1^-1, L.1^-3, 18/41 *] : K:=M) eq 18/41;
 
 v_K := MarkedEmbedding(K);
 v_L := MarkedEmbedding(L);
 w := MarkedEmbedding(M);
 a := K.1;
 b := L.1;
-c := StrongMultiply(M, [* a, b *]);
+c := StrongMultiply([* a, b *] : K:=M);
 assert Abs(Evaluate(c, w) - Evaluate(a, v_K) * Evaluate(b, v_L)) lt CC_THRESHOLD;
+
+B := ListToStrongCoercedSeq([* 1, 2/3, K.1, L.1 *]);
+assert IsIsomorphic(Parent(B[1]), Compositum(K, L));

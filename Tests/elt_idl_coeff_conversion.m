@@ -101,7 +101,7 @@ test(F, K, k, bbps, idl_to_elt, elt_to_idl);
 
 k := [6, 2];
 K := UnitCharField(F, k);
-auts := AutsReppingEmbeddingsOfF(F, k);
+auts := AutsOfUCFReppingEmbeddingsOfF(F, k);
 idl_to_elt := func<a, nu, bbp | a*auts[2](nu^(-2))>;
 elt_to_idl := func<a, nu, bbp | a*auts[2](nu^2)>;
 test(F, K, k, bbps, idl_to_elt, elt_to_idl);

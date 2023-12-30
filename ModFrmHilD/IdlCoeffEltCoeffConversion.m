@@ -67,7 +67,7 @@ intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K:
   // it's alright... although it might cause problems in 
   // the nonparitious case as written
 
-  return StrongMultiply(K, [* a_nn, EltToShiftedHalfWeight(nu, k)^(-1) *]);
+  return StrongMultiply([* a_nn, EltToShiftedHalfWeight(nu, k)^(-1) *] : K:=K);
 end intrinsic;
 
 intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K::Fld) -> FldElt
@@ -93,7 +93,7 @@ intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, k::SeqEnum[RngIntElt], K:
     return StrongCoerce(K, a_nu);
   end if;
 
-  return StrongMultiply(K, [* a_nu, K!EltToShiftedHalfWeight(nu, k) *]);
+  return StrongMultiply([* a_nu, K!EltToShiftedHalfWeight(nu, k) *] : K:=K);
 end intrinsic;
 
 intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt

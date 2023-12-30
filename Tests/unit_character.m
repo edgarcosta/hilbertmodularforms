@@ -69,7 +69,7 @@ test(M, k, correct);
 
 k := [2,4];
 K := UnitCharField(F, k);
-auts := AutsReppingEmbeddingsOfF(F, k);
+auts := AutsOfUCFReppingEmbeddingsOfF(F, k);
 
 // eps_1^(k_1/2) * eps_2^(k_2/2) = eps_1 * eps_2^2 = N(eps) * eps_2
 // If [sigma_1, sigma_2] is the output of EmbeddingsIntoUnitCharField and
