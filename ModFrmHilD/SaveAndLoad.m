@@ -42,12 +42,10 @@ intrinsic SaveFilePrefix(Mk::ModFrmHilD) -> MonStgElt
   chi_seq := Eltseq(chi);
   chi_label := Join([IntegerToString(chi_cmp) : chi_cmp in chi_seq], ".");
 
-  quadruple_label := Join([F_label, N_label, k_label, chi_label], "=");
-  M_prec := Precision(Parent(Mk));
-  return Join([quadruple_label, IntegerToString(M_prec)], "_");
+  return Join([F_label, N_label, k_label, chi_label], "=");
 end intrinsic;
 
-intrinsic MkFromSavefile(savefile_path::MonStgElt) -> ModFrmHilD
+intrinsic MkFromSavefile(savefile_path::MonStgElt, saved_prec::RngIntElt) -> ModFrmHilD
   {
     Builds an Mk from a filename beginning with a prefix 
     constructed by SaveFilePrefix.
@@ -55,8 +53,7 @@ intrinsic MkFromSavefile(savefile_path::MonStgElt) -> ModFrmHilD
   split_savefile_path := Split(savefile_path, "/");
   savefile_name := split_savefile_path[#split_savefile_path];
   prefix := Split(savefile_name, "_")[1];
-  prec_str := Split(savefile_name, "_")[2];
-  M_prec := StringToInteger(prec_str);
+
   F_label, N_label, k_label, chi_label := Explode(Split(prefix, "="));
 
   R<x> := PolynomialRing(Rationals());
@@ -74,7 +71,7 @@ intrinsic MkFromSavefile(savefile_path::MonStgElt) -> ModFrmHilD
   H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
   chi := H!chi_seq;
 
-  M := GradedRingOfHMFs(F, M_prec);
+  M := GradedRingOfHMFs(F, saved_prec);
 
   return HMFSpace(M, N, k, chi);
 end intrinsic;
@@ -117,30 +114,27 @@ intrinsic SaveBasis(savefile_path::MonStgElt, B::SeqEnum[ModFrmHilDElt])
   savefile := 0;
 end intrinsic;
 
-intrinsic LoadBasis(savefile_path::MonStgElt, Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+intrinsic LoadBasis(savefile_path::MonStgElt : Mk:=false) -> SeqEnum[ModFrmHilDElt]
   {
     We recover a basis from a file written to by SaveBasis.
   }
-  bbs := NarrowClassGroupReps(Parent(Mk));
   savefile := Open(savefile_path, "r");
   saved_prec := ReadObject(savefile);
-  if saved_prec ge Precision(Parent(Mk)) then
+
+  print Mk;
+  if Mk cmpeq false then
+    Mk := MkFromSavefile(savefile_path, saved_prec);
+    target_prec := saved_prec;
+  else
+    target_prec := Precision(Parent(Mk));
+  end if;
+
+  if saved_prec ge target_prec then
     A := ReadObject(savefile);
     return true, [CoeffListsToElement(Mk, f_coeff_lists) : f_coeff_lists in A];
   else
     return false, _;
   end if;
-end intrinsic;
-
-intrinsic LoadBasis(savefile_path::MonStgElt) -> SeqEnum[ModFrmHilDElt]
-  {
-    Recovers a basis from a file written to by SaveBasis, constructing
-    the parent Mk from the file's name.
-  }
-  Mk := MkFromSavefile(savefile_path);
-  b, B := LoadBasis(savefile_path, Mk);
-  require b : "Something is wrong, the precision should be enough.";
-  return B;
 end intrinsic;
 
 intrinsic ElementToCoeffLists(f::ModFrmHilDElt) -> Tup
@@ -242,7 +236,7 @@ intrinsic LoadOrBuildAndSave(
   loaded := false;
   if is_saved then
     try
-      loaded, basis := LoadBasis(loadfile_name, Mk);
+      loaded, basis := LoadBasis(loadfile_name : Mk:=Mk);
     catch e
       Write("/dev/stderr", Sprintf("Failed to load %o:\n%o", loadfile_name, e));
       loaded := false;

@@ -11,7 +11,7 @@ procedure test(Mk, basis, correct_prefix)
   save_dir := "./Precomputations/";
   filepath := save_dir cat prefix cat "_test";
   SaveBasis(filepath, basis);
-  b, basis_load := LoadBasis(filepath, Mk);
+  b, basis_load := LoadBasis(filepath : Mk:=Mk);
   assert b;
   if not basis eq basis_load then
     print "------------- Original basis -------------";
@@ -21,7 +21,7 @@ procedure test(Mk, basis, correct_prefix)
   end if;
 
   assert basis eq basis_load;
-  basis_load_2 := LoadBasis(filepath);
+  _, basis_load_2 := LoadBasis(filepath);
   assert #basis eq #basis_load_2;
 
   F := BaseField(Mk);
@@ -44,7 +44,7 @@ M := GradedRingOfHMFs(F, prec);
 N := 14*ZF;
 M22 := HMFSpace(M, N, [2, 2]);
 S22 := CuspFormBasis(M22);
-correct_prefix := "-5.0.1=196.1=2.2=0_50";
+correct_prefix := "-5.0.1=196.1=2.2=0";
 test(M22, S22, correct_prefix);
 
 print "thing 2";
@@ -53,7 +53,7 @@ H := HeckeCharacterGroup(N, [1, 2]);
 chi := H.1^2*H.2;
 M11chi := HMFSpace(M, N, [1, 1], chi);
 E11chi := EisensteinBasis(M11chi);
-correct_prefix := "-5.0.1=2500.1=1.1=2.1_50";
+correct_prefix := "-5.0.1=2500.1=1.1=2.1";
 test(M11chi, E11chi, correct_prefix);
 
 
@@ -61,7 +61,7 @@ print "thing 3";
 N := 7*ZF;
 M24 := HMFSpace(M, N, [2, 4]);
 S24 := CuspFormBasis(M24);
-correct_prefix := "-5.0.1=49.1=2.4=0_50";
+correct_prefix := "-5.0.1=49.1=2.4=0";
 test(M24, S24, correct_prefix);
 
 // uncomment once cubic field stuff works without errors
@@ -76,6 +76,6 @@ N := 11*ZK;
 k := [2, 2, 2];
 M222 := HMFSpace(M, N, [2, 2, 2]);
 S222 := CuspFormBasis(M222);
-correct_prefix := "1.-2.-1.1=1331.1=2.2.2=0_50";
+correct_prefix := "1.-2.-1.1=1331.1=2.2.2=0";
 test(M222, S222, correct_prefix);
 */
