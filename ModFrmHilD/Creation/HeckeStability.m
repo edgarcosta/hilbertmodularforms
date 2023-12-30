@@ -57,10 +57,18 @@ end intrinsic;
 intrinsic HeckeStabilityCuspBasis(
     Mk::ModFrmHilD
     :
-    prove := true
+    prove := true,
+    stable_only:=false
     ) -> SeqEnum[ModFrmHilDElt]
-    {Compute the space Mk using the Hecke stability method.
-        - The optional parameter prove is true or false. If true, we verify that we had enough precision to check the equality of the potentially meromorphic form with a holomorphic one.
+    {
+      Compute the space Mk using the Hecke stability method.
+        - The optional parameter prove is true or false.
+          If true, we verify that we had enough precision to check the 
+          equality of the potentially meromorphic form with a holomorphic one.
+        - The optional parameter stable_only is true or false.
+          If true, we return the Hecke stable subspace we find without 
+          raising it to a dth power to ensure that the forms we found 
+          are genuinely holomorphic.
     }
 
     M := Parent(Mk);
@@ -135,7 +143,7 @@ intrinsic HeckeStabilityCuspBasis(
 
     V := HeckeStableSubspace(V, ZF!!pp);
 
-    if #V eq 0 then
+    if #V eq 0 or stable_only then
         return V;
     end if;
 
