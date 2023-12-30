@@ -236,3 +236,31 @@ intrinsic DihedralForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   
   return ans;
 end intrinsic;
+
+intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
+  {returns true if this form could be dihedral, false if it cannot be}
+  Mk := Parent(f);
+  F := BaseField(Mk);
+  N := Level(Mk);
+  k := Weight(Mk);
+  BOUND := 100;
+
+  Ks := QuadraticExtensionsWithConductor(N, [1 .. Degree(F)]);
+  for K in Ks do
+    possibly_dihedral := true;
+    ZK := Integers(K);
+
+    // inert primes stores the inert primes of norm at most BOUND
+    inert_primes := [pp : pp in PrimesUpTo(BOUND, F) | #Factorization(ZK!!pp) eq 1];
+    for pp in inert_primes do
+      if not IsZero(Coefficient(f, pp)) then
+        possibly_dihedral := false;
+        break;
+      end if;
+    end for;
+    if possibly_dihedral then
+      return true;
+    end if;
+  end for;
+  return false;
+end intrinsic;
