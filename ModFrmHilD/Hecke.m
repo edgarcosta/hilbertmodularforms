@@ -99,13 +99,14 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   Binv := B^-1;
 
   // coefficient ring of eigenforms
-  K := Compositum(F, Parent(B[1][1]));
-     
-  basis := [ChangeCoefficientRing(f, K) : f in basis];
+  K := Parent(B[1][1]);
+  // TODO abhijitm there's some assumption here being made 
+  // about the basis being given in default coefficient ring
+  // maybe.
+  require IsSubfield(F, K) : "The eigenbasis coefficient ring\
+    should contain the default coefficient ring";
 
-  // this might not be the same as K because we key
-  // coefficient rings by their defining polynomials
-  K := CoefficientRing(basis[1]);
+  basis := [ChangeCoefficientRing(f, K) : f in basis];
   eigs := [];
 
   // the columns of P should be the coefficients
