@@ -114,14 +114,13 @@ intrinsic SaveBasis(savefile_path::MonStgElt, B::SeqEnum[ModFrmHilDElt])
   savefile := 0;
 end intrinsic;
 
-intrinsic LoadBasis(savefile_path::MonStgElt : Mk:=false) -> SeqEnum[ModFrmHilDElt]
+intrinsic LoadBasis(savefile_path::MonStgElt : Mk:=false) -> BoolElt, SeqEnum[ModFrmHilDElt]
   {
     We recover a basis from a file written to by SaveBasis.
   }
   savefile := Open(savefile_path, "r");
   saved_prec := ReadObject(savefile);
 
-  print Mk;
   if Mk cmpeq false then
     Mk := MkFromSavefile(savefile_path, saved_prec);
     target_prec := saved_prec;
