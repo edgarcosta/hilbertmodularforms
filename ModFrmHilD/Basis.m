@@ -60,7 +60,7 @@ intrinsic CuspFormBasis(
   // Dirichlet restrictions, so that is also handled here.
   if not &and[x ge 2 : x in k] or not IsTrivial(DirichletRestriction(Character(Mk))) then
     if SaveAndLoad then
-      Mk`CuspFormBasis := LoadOrBuildAndSave(Mk, HeckeStabilityCuspBasis, "_cusp");
+      Mk`CuspFormBasis := LoadOrBuildAndSave(Mk, HeckeStabilityCuspBasis, "_cusp_space");
     else
       Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk : prove := false);
     end if;
