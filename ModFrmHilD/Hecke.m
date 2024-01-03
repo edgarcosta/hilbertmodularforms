@@ -79,14 +79,13 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
       A sequence of HMFs which are an eigenbasis for the Hecke operators of primes
       up to P. The forms are normalized where possible.
   }
-  
   MGRng := Parent(M);
-  F := MGRng`BaseField;
+  N := Level(M);
+  F := BaseField(MGRng);
   ZF := Integers(F);
-  dd := Different(ZF);
   hecke_matrices := [];
 
-  for pp in PrimesUpTo(P, F) do
+  for pp in PrimesUpTo(P, F : coprime_to:=N) do
     Append(~hecke_matrices, HeckeMatrix(basis, pp));
   end for;
 
@@ -99,6 +98,14 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   _, B := Diagonalization(hecke_matrices);
   Binv := B^-1;
 
+  // coefficient ring of eigenforms
+  K := Compositum(F, Parent(B[1][1]));
+     
+  basis := [ChangeCoefficientRing(f, K) : f in basis];
+
+  // this might not be the same as K because we key
+  // coefficient rings by their defining polynomials
+  K := CoefficientRing(basis[1]);
   eigs := [];
 
   // the columns of P should be the coefficients
@@ -106,21 +113,18 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   // rise to eigenvectors
   // TODO is there really no way to get the columns of an AlgMatElt? 
   for v in Rows(Transpose(Binv)) do
-    Append(~eigs, &+[v[i] * basis[i] : i in [1 .. #basis]]);
-  end for;
-
-  frob_traces := AssociativeArray();
-  for eig in eigs do
-    frob_traces[eig] := AssociativeArray(); 
-    bb_1 := NarrowClassRepresentative(MGRng, dd);
-    a_1 := Coefficients(eig)[bb_1][MGRng`IdealToRep[bb_1][ideal<ZF|1>]];
-
-    for nn in IdealsUpTo(P, F) do
-      bb := NarrowClassRepresentative(MGRng, nn^-1 * dd);
-      frob_traces[eig][nn] := Coefficients(eig)[bb][MGRng`IdealToRep[bb][nn]] / a_1;
+    eig := &+[v[i] * basis[i] : i in [1 .. #basis]];
+    // normalize by dividing by the first nonzero a_nn
+    // this won't necessarily be a_1 if the form is not new
+    for nn in IdealsUpTo(Norm(N), F) do
+      if not IsZero(Coefficient(eig, nn)) then
+        first_nonzero_a_nn := Coefficient(eig, nn);
+        break;
+      end if;
     end for;
+    Append(~eigs, eig / first_nonzero_a_nn);
   end for;
-  return eigs, frob_traces;
+  return eigs;
 end intrinsic;
 
 intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
@@ -140,7 +144,7 @@ intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
   for f in basis do
     g := HeckeOperator(f, nn);
     lindep := LinearDependence(basis cat [g]);
-    require #lindep eq 1 : "Try increasing precision";
+    require #lindep eq 1 : "Try increasing precision, #lindep was", #lindep;
     lindep := lindep[1];
     // We will transpose at the end. 
     // For now, each row stores the
