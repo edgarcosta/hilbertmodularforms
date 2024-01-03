@@ -174,16 +174,18 @@ intrinsic HeckeStabilityCuspBasis(
     if done then
         vprintf HilbertModularForms: "Found a Hecke stable subspace!\n";
 
-        // We should now remove any Eisenstein series that ended up in this space
-        // so that we are left with only cusp forms
-        eigs := Eigenbasis(Mk, V);
-        V := [];
-        for eig in eigs do
-          // if eig^2 is a cusp form in the upstairs space,
-          if #LinearDependence(Append(Bcusp, eig^d)) ne 0 then
-            Append(~V, eig);
-          end if;
-        end for;
+        if IsParallel(k) then
+          // We should now remove any Eisenstein series that ended up in this space
+          // so that we are left with only cusp forms
+          eigs := Eigenbasis(Mk, V);
+          V := [];
+          for eig in eigs do
+            // if eig^2 is a cusp form in the upstairs space,
+            if #LinearDependence(Append(Bcusp, eig^d)) ne 0 then
+              Append(~V, eig);
+            end if;
+          end for;
+        end if;
 
         if prove then
             vprintf HilbertModularForms: "Need to verify that the precision is large enough to compute the space larger space\n";
