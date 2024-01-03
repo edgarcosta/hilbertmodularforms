@@ -251,7 +251,7 @@ intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
     ZK := Integers(K);
 
     // inert primes stores the inert primes of norm at most BOUND
-    inert_primes := [pp : pp in PrimesUpTo(BOUND, F) | #Factorization(ZK!!pp) eq 1];
+    inert_primes := [pp : pp in PrimesUpTo(BOUND, F : coprime_to:=N) | #Factorization(ZK!!pp) eq 1];
     for pp in inert_primes do
       if not IsZero(Coefficient(f, pp)) then
         possibly_dihedral := false;
