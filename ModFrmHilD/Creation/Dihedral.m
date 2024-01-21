@@ -1,4 +1,4 @@
-//////////////////////////////// Compute quadratic extensions with conductor
+/////////////////////////////// Compute quadratic extensions with conductor
 
 intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEnum[RngIntElt] : Dividing := true)
   -> SeqEnum[FldAlg]
@@ -161,22 +161,22 @@ intrinsic PossibleHeckeCharactersOfK(
   return ans;
 end intrinsic;
 
-intrinsic PossibleGrossencharacters(
+intrinsic PossibleHeckeCharacters(
   F::FldNum, 
   N::RngOrdIdl,
   chi::GrpHeckeElt
   : 
   prune := true
-  ) -> SeqEnum[GrpHeckeElt]
+  ) -> List
   {
     Given a totally real field F, an ideal N of F, and a character chi of modulus N,
     computes all finite order non-Galois-invariant Hecke characters of conductor dividing N
     whose restriction is chi.
   }
-  ans := [];
+  ans := [* *];
   fields := QuadraticExtensionsWithConductor(N, [1,2]);
   for K in fields do
-    ans := ans cat PossibleHeckeCharactersOfK(F, N, K, chi);
+    ans := ans cat [* psi : psi in PossibleHeckeCharactersOfK(F, N, K, chi) *];
   end for;
 
   return ans;
@@ -184,7 +184,7 @@ end intrinsic;
 
 intrinsic PossibleHeckeCharacters(
     Mk::ModFrmHilD
-    ) -> SeqEnum[GrpHeckeElt]
+    ) -> List
 {
 Given a totally real field F, an ideal N of F, and a character chi of modulus N, computes all finite order non-Galois-invariant Hecke characters of conductor dividing N whose restriction is chi.
 }
@@ -193,7 +193,7 @@ end intrinsic;
 
 //////////////////////////////// Computing spaces of dihedral forms
 
-intrinsic ThetaSeries(Mk::ModFrmHilD, K::FldNum, psi::HMFGrossenchar) -> ModFrmHilDElt
+intrinsic ThetaSeries(Mk::ModFrmHilD, psi::GrpHeckeElt) -> ModFrmHilDElt
   {
     Given a totally real field F, a quadratic extension K of F,
     and a finite order Hecke character of K, compute the associated theta series.
@@ -203,6 +203,7 @@ intrinsic ThetaSeries(Mk::ModFrmHilD, K::FldNum, psi::HMFGrossenchar) -> ModFrmH
   ZF := Integers(F);
   prec := Precision(M);
   K := NumberField(Order(Modulus(psi))); 
+  L := CyclotomicField(Order(psi));
   
   // We create an associative array indexed by prime ideals pp up to 
   // Precision(Parent(Mk)) and populate them with traces associated to psi.
@@ -219,7 +220,7 @@ intrinsic ThetaSeries(Mk::ModFrmHilD, K::FldNum, psi::HMFGrossenchar) -> ModFrmH
     );
   end for;
 
-  return CuspFormFromEigenvalues(Mk, a_pps);
+  return CuspFormFromEigenvalues(Mk, a_pps : coeff_ring:=L);
 end intrinsic;
 
 intrinsic DihedralForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
@@ -234,7 +235,7 @@ intrinsic DihedralForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
     Append(~ans, ThetaSeries(Mk, psi));
   end for;
   
-  return ans;
+  return (#ans eq 0) select ans else Basis(ans);
 end intrinsic;
 
 intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
@@ -251,7 +252,8 @@ intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
     ZK := Integers(K);
 
     // inert primes stores the inert primes of norm at most BOUND
-    inert_primes := [pp : pp in PrimesUpTo(BOUND, F : coprime_to:=N) | #Factorization(ZK!!pp) eq 1];
+    inert_primes := [pp : pp in PrimesUpTo(BOUND, F : coprime_to:=Discriminant(ZK))\
+                      | #Factorization(ZK!!pp) eq 1];
     for pp in inert_primes do
       if not IsZero(Coefficient(f, pp)) then
         possibly_dihedral := false;
