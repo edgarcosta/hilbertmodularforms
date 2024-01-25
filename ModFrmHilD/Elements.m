@@ -608,3 +608,17 @@ intrinsic Normalize(f::ModFrmHilDElt) -> ModFrmHilDElt
   K := CoefficientRing(f);
   return f * K!d;
 end intrinsic;
+
+intrinsic ScaleBySmallestNonzeroEig(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {}
+  if IsZero(f) then
+    return f;
+  end if;
+
+  for pp in PrimesUpTo(Precision(f), BaseField(Parent(f))) do
+    if not IsZero(Coefficient(f, pp)) then
+      return f / Coefficient(f, pp);
+    end if;
+  end for;
+  require 0 eq 1 : "Something has gone wrong!";
+end intrinsic;
