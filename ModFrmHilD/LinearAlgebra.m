@@ -113,11 +113,14 @@ end intrinsic;
 intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {returns Basis for the vector space spanned by the inputted forms}
   if #generators eq 0 then return generators; end if;
-  C, nus, bbs := CoefficientsMatrix(generators);
+  M := GradedRing(generators[1]);
+  bbs := NarrowClassGroupReps(M);
+  prec := Min([Precision(Components(f)[bb]): f in generators, bb in bbs]);
+  C, nus, bbs := CoefficientsMatrix(generators : prec:=prec);
   E := EchelonForm(C);
   r := Rank(E);
   Mk := Parent(generators[1]);
-  return [Mk | HMF(Mk, Eltseq(row), nus, bbs) : row in Rows(E)[1..r] ];
+  return [Mk | HMF(Mk, Eltseq(row), nus, bbs : prec:=prec) : row in Rows(E)[1..r] ];
 end intrinsic;
 
 
