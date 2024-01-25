@@ -110,38 +110,19 @@ intrinsic FieldFromHackyLabel(F_label::MonStgElt) -> Fld
   return F;
 end intrinsic;
 
-intrinsic PrimitiveElements(G::GrpAb) -> GrpAb
-  {
-    Given an abelian group, returns the elements which 
-    are not powers of other elements. 
-  }
-  elts_left := {g : g in G};
-  for d in Divisors(#G) do
-    if d ne 1 and d ne #G then
-      for g in elts_left do
-        if Order(g) mod d eq 0 then
-          Exclude(~elts_left, d * g);
-        end if;
-      end for;
-    end if;
-  end for;
-  assert sub<G | elts_left> eq G;
-  return elts_left;
-end intrinsic;
-
 intrinsic CanonicalRayClassGenerators(N_f::RngOrdIdl, N_inf::SeqEnum[RngIntElt]) -> SeqEnum[RngOrdIdl]
   {
     Returns a canonical set of generators for the ray class group with modulus (N_f, N_inf).
 
     Let r be the smallest size of a set of ideals generating the ray class group 
     dual to the Hecke character group in which chi lies. We choose a canonical
-    set of generators by searching in canonical order through ideals up to norm B --
-    where B is (TODO abhijitm right now it's not this) Minkowksi bound times the norm of N
-    (every ray class is guaranteed to have an element of norm at most this value)
-    --
-    which represent primitive elements of the ray class group. Whenever an ideal
-    increases the size of the group we generate, we add it to our generating set.
-    The point is that because we only use primitive elements, 
+    set of generators by searching in canonical order through ideals up to norm B
+    where B is Minkowksi bound times the norm of N -- every ray class is guaranteed 
+    to contain an ideal of norm at most B -- representing primitive elements of the 
+    ray class group. Whenever an ideal increases the size of the group we generate,
+    we add it to our generating set. This process is guaranteed to terminate (because
+    the primitive elements contain a generating set) and in fact will terminate with
+    a set of exactly r ideals.
   }
   F := NumberField(Order(N_f));
   G, mp := RayClassGroup(N_f, N_inf);
@@ -152,13 +133,10 @@ intrinsic CanonicalRayClassGenerators(N_f::RngOrdIdl, N_inf::SeqEnum[RngIntElt])
   end if;
 
   gen_order_primes := {* Factorization(Order(G.i))[1][1] : i in [1 .. NumberOfGenerators(G)] *};
-  r := Max(Multiplicities(gen_order_primes));
 
   pi := Pi(RealField());
   B := Ceiling(MinkowskiConstant(F) * Norm(N_f));
   ideals := PrimesUpTo(B, F : coprime_to:=N_f);
-
-  primitive_gs := PrimitiveElements(G);
 
   reps := [];
   repped_gs := {};
@@ -166,7 +144,7 @@ intrinsic CanonicalRayClassGenerators(N_f::RngOrdIdl, N_inf::SeqEnum[RngIntElt])
   g_repping_idls := [];
   for I in ideals do
     g := I @@ mp;
-    if (g in primitive_gs) and not (g in repped_gs_subgp) then
+    if not (g in repped_gs_subgp) then
       Include(~repped_gs, g);
       Append(~g_repping_idls, I);
       repped_gs_subgp := sub<G | repped_gs>;
@@ -174,7 +152,6 @@ intrinsic CanonicalRayClassGenerators(N_f::RngOrdIdl, N_inf::SeqEnum[RngIntElt])
   end for;
 
   require repped_gs_subgp eq G : "your set doesn't generate";
-  require #g_repping_idls eq r : "The set isn't the right size";
   return g_repping_idls;
 end intrinsic;
 

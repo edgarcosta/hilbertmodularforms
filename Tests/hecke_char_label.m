@@ -45,9 +45,9 @@ assert #sub<G | [gen @@ mp : gen in rcg_gens]> eq #G;
 ZF := Integers(F);
 N := ideal<ZF | -88*ZF.2 - 48>;
 H := HeckeCharacterGroup(N, [1,2]);
-chi := ChiLabelToHeckeChar("6u2.4.1.2u1.2u", N);
-correct_cond := ideal<ZF | 152, 16*$.2 + 64>;
-// fixed "external consistency" check 
+chi := ChiLabelToHeckeChar("6u5.4.4.5u1.2u", N);
+// "external consistency" check 
+correct_cond := ideal<ZF | 76, 8*$.2 + 32>;
 assert Conductor(chi) eq correct_cond;
 
 // test trivial character on nontrivial ray class group
@@ -57,7 +57,6 @@ assert test_chi(H.0) eq "1u0.0.0.0u1.2u";
 N := 1*ZF;
 H := HeckeCharacterGroup(N, []);
 assert test_chi(H.0) eq "1uuu";
-
 
 // random internal consistency check
 for _ in [1 .. NUM_TRIALS] do
