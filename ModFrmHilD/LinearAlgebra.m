@@ -123,7 +123,21 @@ intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   return [Mk | HMF(Mk, Eltseq(row), nus, bbs : prec:=prec) : row in Rows(E)[1..r] ];
 end intrinsic;
 
-
+intrinsic Intersection(V::SeqEnum[ModFrmHilDElt], W::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
+  {}
+  if #V eq 0 or #W eq 0 then
+    return [];
+  end if;
+  V := Basis(V);
+  W := Basis(W);
+  lindep := LinearDependence(V cat W);
+  intersection := [];
+  for v in lindep do
+    f := Normalize(&+[v[i]*V[i] : i in [1 .. #V]]);
+    Append(~intersection, f);
+  end for;
+  return intersection;
+end intrinsic;
 
 
 intrinsic ComplementBasis(
