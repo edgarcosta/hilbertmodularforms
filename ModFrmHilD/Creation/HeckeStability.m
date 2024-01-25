@@ -22,8 +22,8 @@ intrinsic HeckeStableSubspace(
     for _ in [1 .. #V] do
         vprintf HilbertModularForms:  "Current dim = %o\n", dimprev;
         TpVprev := [HeckeOperator(g, pp) : g in Vprev];
-        lindep := LinearDependence(Vprev cat TpVprev);
-        dimnew := #lindep;
+        Vnew := Intersection(Vprev, TpVprev);
+        dimnew := #Vnew;
 
         vprintf HilbertModularForms: "New dim = %o\n", dimnew;
 
@@ -32,12 +32,6 @@ intrinsic HeckeStableSubspace(
         end if;
 
         require dimnew le dimprev: "Something went wrong, probably need to increase precision.";
-
-        Vnew := [];
-        for vec in lindep do
-          f := Normalize(&+[vec[i]*Vprev[i] : i in [1 .. #Vprev]]);
-          Append(~Vnew, f);
-        end for;
 
         // If the iterative intersection process has stabilized,
         // then exit the loop.

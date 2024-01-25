@@ -113,14 +113,31 @@ end intrinsic;
 intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {returns Basis for the vector space spanned by the inputted forms}
   if #generators eq 0 then return generators; end if;
-  C, nus, bbs := CoefficientsMatrix(generators);
+  M := GradedRing(generators[1]);
+  bbs := NarrowClassGroupReps(M);
+  prec := Min([Precision(Components(f)[bb]): f in generators, bb in bbs]);
+  C, nus, bbs := CoefficientsMatrix(generators : prec:=prec);
   E := EchelonForm(C);
   r := Rank(E);
   Mk := Parent(generators[1]);
-  return [Mk | HMF(Mk, Eltseq(row), nus, bbs) : row in Rows(E)[1..r] ];
+  return [Mk | HMF(Mk, Eltseq(row), nus, bbs : prec:=prec) : row in Rows(E)[1..r] ];
 end intrinsic;
 
-
+intrinsic Intersection(V::SeqEnum[ModFrmHilDElt], W::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
+  {}
+  if #V eq 0 or #W eq 0 then
+    return [];
+  end if;
+  V := Basis(V);
+  W := Basis(W);
+  lindep := LinearDependence(V cat W);
+  intersection := [];
+  for v in lindep do
+    f := Normalize(&+[v[i]*V[i] : i in [1 .. #V]]);
+    Append(~intersection, f);
+  end for;
+  return intersection;
+end intrinsic;
 
 
 intrinsic ComplementBasis(
