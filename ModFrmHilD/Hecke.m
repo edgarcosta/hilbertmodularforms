@@ -5,8 +5,13 @@
 ///////////////////////////////////////////////////
 
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
-intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
-  {Returns T(mm)(f) for the character chi modulo the level of f}
+intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : B:=false) -> ModFrmHilDElt
+  {
+    Returns T(mm)(f) for the character chi modulo the level of f.
+    The optional parameter B is a basis which can be used to increase
+    precision. If B is not provided, we attempt to use a basis of the
+    parent space if it's been computed.  
+  }
 
   Mk := Parent(f);
   M := Parent(Mk);
@@ -51,8 +56,24 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl) -> ModFrmHilDElt
   g := HMF(Mk, coeffs : prec:=prec, coeff_ring := K);
 
   // Attempting to increase precision using a basis
-  if assigned Mk`Basis then
-    g := IncreasePrecisionWithBasis(g, Mk`Basis);
+  // TODO abhijitm should probably improve this code
+  basis := false;
+  if B cmpne false then
+    // if a basis is given, we assume that it's
+    // Hecke stable
+    basis := B;
+  elif assigned Mk`CuspFormBasis then
+    // if f is a cusp form
+    if #LinearDependence(Append(Mk`CuspFormBasis, f)) eq 1 then
+      basis := Mk`CuspFormBasis;
+    end if;
+  elif assigned Mk`Basis then
+    basis := Mk`Basis;
+  end if;
+
+  // if there's a basis to increase precision with
+  if basis cmpne false then
+    g := IncreasePrecisionWithBasis(g, basis);
   end if;
   
   return g;
