@@ -31,16 +31,8 @@ intrinsic SaveFilePrefix(Mk::ModFrmHilD) -> MonStgElt
   // the weight label for [a, b, c, ...] is a.b.c_...
   k_label := Join([IntegerToString(k_i) : k_i in k], ".");
 
-  // If H = HeckeCharacterGroup(N, [1 .. n]),
-  // the nebentypus label for H.1^a H.2^b H.3^c ...
-  // is a.b.c_...
-  //
-  // TODO abhijitm this is not canonical and
-  // will become incorrect if Magma changes
-  // e.g. how it computes group generators.
   chi := Character(Mk);
-  chi_seq := Eltseq(chi);
-  chi_label := Join([IntegerToString(chi_cmp) : chi_cmp in chi_seq], ".");
+  chi_label := HeckeCharLabel(chi : full_label:=false);
 
   return Join([F_label, N_label, k_label, chi_label], "=");
 end intrinsic;
@@ -60,9 +52,7 @@ intrinsic MkFromSavefile(savefile_path::MonStgElt, saved_prec::RngIntElt) -> Mod
   
   N := LMFDBIdeal(F, N_label);
   k := [StringToInteger(x) : x in Split(k_label, ".")];
-  chi_seq := [StringToInteger(x) : x in Split(chi_label, ".")];
-  H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
-  chi := H!chi_seq;
+  chi := ChiLabelToHeckeChar(chi_label, N);
 
   M := GradedRingOfHMFs(F, saved_prec);
 
