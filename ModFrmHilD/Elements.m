@@ -165,6 +165,8 @@ intrinsic HMF(Mk::ModFrmHilD,
               seqcoeffs::SeqEnum,
               nus::SeqEnum,
               bbs::SeqEnum
+              :
+              prec := Precision(Parent(Mk))
               ) -> ModFrmHilDElt
   { Return the ModFrmHilDElt with parent Mk, with the fourier coefficients given via a
     a sequence of coeff, mathching the sequence of nus and bbs }
@@ -177,7 +179,7 @@ intrinsic HMF(Mk::ModFrmHilD,
     end for;
     coeffs[bb] := cbb;
   end for;
-  return HMF(Mk, coeffs);
+  return HMF(Mk, coeffs : prec:=prec);
 end intrinsic;
 
 intrinsic HMF(fbb::ModFrmHilDEltComp) -> ModFrmHilDElt
