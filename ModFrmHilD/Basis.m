@@ -313,6 +313,46 @@ intrinsic OldEisensteinBasis(
   return SubBasis(Mk`OldEisensteinBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
+intrinsic NewDihedralBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {Given a space of weight one forms, compute the subspace of dihedral forms.} 
+  require IsParallel(Weight(Mk)) and Weight(Mk)[1] eq 1 : "Dihedral forms are only defined for spaces of weight one forms.";
+  
+  ans := [];
+  for psi in PossibleHeckeCharacters(Mk) do
+    Append(~ans, ThetaSeries(Mk, AssociatedPrimitiveCharacter(psi)));
+  end for;
+  
+  return (#ans eq 0) select ans else Basis(ans);
+end intrinsic;
+
+intrinsic OldDihedralBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
+  {}
+  M := Parent(Mk);
+  N := Level(Mk);
+  k := Weight(Mk);
+  chi := Character(Mk);
+
+  old_dihedrals := [];
+  divisors := [D : D in Divisors(N) | (D ne N) and (D subset Conductor(chi))];
+  for D in divisors do
+    chi_D := Restrict(chi, D, [1,2]);
+    Mk_D := HMFSpace(M, D, k, chi_D);
+    old_dihedrals cat:= &cat[Inclusion(f, Mk) : f in NewDihedralBasis(Mk_D)];
+  end for;
+  return old_dihedrals;
+end intrinsic;
+
+intrinsic DihedralBasis(
+  Mk::ModFrmHilD
+  :
+  IdealClassesSupport:=false,
+  Symmetric:=false
+  ) -> SeqEnum[ModFrmHilDElt]
+  {returns a basis for the space of dihedral forms in Mk}
+  dihedral_basis := NewDihedralBasis(Mk) cat OldDihedralBasis(Mk);
+  return SubBasis(dihedral_basis, IdealClassesSupport, Symmetric);
+end intrinsic;
+
 intrinsic Basis(
   Mk::ModFrmHilD
   :

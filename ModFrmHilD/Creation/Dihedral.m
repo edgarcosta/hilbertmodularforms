@@ -223,21 +223,6 @@ intrinsic ThetaSeries(Mk::ModFrmHilD, psi::GrpHeckeElt) -> ModFrmHilDElt
   return CuspFormFromEigenvalues(Mk, a_pps : coeff_ring:=L);
 end intrinsic;
 
-intrinsic DihedralForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
-  {
-    Given a space of weight one forms, compute the subspace of dihedral forms.
-  } 
-  require IsParallel(Weight(Mk)) and Weight(Mk)[1] eq 1 : "Dihedral forms are only defined for spaces of weight one forms.";
-  
-  ans := [];
-  
-  for psi in PossibleHeckeCharacters(Mk) do
-    Append(~ans, ThetaSeries(Mk, AssociatedPrimitiveCharacter(psi)));
-  end for;
-  
-  return (#ans eq 0) select ans else Basis(ans);
-end intrinsic;
-
 intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
   {returns true if this form could be dihedral, false if it cannot be}
   Mk := Parent(f);
