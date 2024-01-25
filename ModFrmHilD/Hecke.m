@@ -99,14 +99,21 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   Binv := B^-1;
 
   // coefficient ring of eigenforms
-  K := Parent(B[1][1]);
-  // TODO abhijitm there's some assumption here being made 
-  // about the basis being given in default coefficient ring
-  // maybe.
-  require IsSubfield(F, K) : "The eigenbasis coefficient ring\
-    should contain the default coefficient ring";
-
+  L := Parent(B[1][1]);
+  if F eq Rationals() then
+    K := L;
+  elif L eq Rationals() then
+    K := F;
+  elif IsSubfield(F, L) then
+    K := L;
+  elif IsSubfield(L, F) then
+    K := F;
+  else
+    K := Compositum(F, L);
+  end if;
+   
   basis := [ChangeCoefficientRing(f, K) : f in basis];
+  K := CoefficientRing(basis[1]);
   eigs := [];
 
   // the columns of P should be the coefficients
@@ -114,9 +121,7 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   // rise to eigenvectors
   // TODO is there really no way to get the columns of an AlgMatElt? 
   for v in Rows(Transpose(Binv)) do
-    eig := &+[v[i] * basis[i] : i in [1 .. #basis]];
-    // normalize by dividing by the first nonzero a_nn
-    // this won't necessarily be a_1 if the form is not new
+    eig := &+[StrongCoerce(K, v[i]) * basis[i] : i in [1 .. #basis]];
     for nn in IdealsUpTo(Norm(N), F) do
       if not IsZero(Coefficient(eig, nn)) then
         first_nonzero_a_nn := Coefficient(eig, nn);
