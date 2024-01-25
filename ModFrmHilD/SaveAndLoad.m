@@ -21,7 +21,7 @@ intrinsic SaveFilePrefix(Mk::ModFrmHilD) -> MonStgElt
   // TODO abhijitm this is really bad, but it works for me
   // for now.
   F := BaseField(Mk);
-  F_label := Join([IntegerToString(a) : a in DefiningPolyCoeffs(F)], ".");
+  F_label := HackyFieldLabel(F);
 
   // Use the LMFDB label for N
   N := Level(Mk);
@@ -56,15 +56,8 @@ intrinsic MkFromSavefile(savefile_path::MonStgElt, saved_prec::RngIntElt) -> Mod
 
   F_label, N_label, k_label, chi_label := Explode(Split(prefix, "="));
 
-  R<x> := PolynomialRing(Rationals());
-  def_poly_coeffs := [StringToInteger(x) : x in Split(F_label, ".")];
-  if #def_poly_coeffs eq 3 and def_poly_coeffs[2] eq 0 then
-    F := QuadraticField(-1*def_poly_coeffs[1]);
-  else
-    def_poly := elt<R | def_poly_coeffs>;
-    F := NumberField(def_poly);
-  end if;
-
+  F := FieldFromHackyLabel(F_label);
+  
   N := LMFDBIdeal(F, N_label);
   k := [StringToInteger(x) : x in Split(k_label, ".")];
   chi_seq := [StringToInteger(x) : x in Split(chi_label, ".")];
