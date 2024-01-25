@@ -706,3 +706,14 @@ intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
   end for;
   return TB;
 end intrinsic;
+
+intrinsic MinkowskiConstant(F::FldAlg) -> FldReElt
+  {
+    Returns the Minkowski constant of F.
+  }
+  s := #InfinitePlaces(F) - #RealPlaces(F);
+  pi := Pi(RealField());
+  D := Discriminant(Integers(F));
+  n := Degree(F);
+  return Sqrt(Abs(D)) * (4 / pi)^s * n^n / Factorial(n);
+end intrinsic;

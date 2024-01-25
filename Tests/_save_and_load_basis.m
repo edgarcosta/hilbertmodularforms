@@ -44,7 +44,7 @@ M := GradedRingOfHMFs(F, prec);
 N := 14*ZF;
 M22 := HMFSpace(M, N, [2, 2]);
 S22 := CuspFormBasis(M22);
-correct_prefix := "-5.0.1=196.1=2.2=0";
+correct_prefix := "-5.0.1=196.1=2.2=1u0u1.2u";
 test(M22, S22, correct_prefix);
 
 print "thing 2";
@@ -53,7 +53,7 @@ H := HeckeCharacterGroup(N, [1, 2]);
 chi := H.1^2*H.2;
 M11chi := HMFSpace(M, N, [1, 1], chi);
 E11chi := EisensteinBasis(M11chi);
-correct_prefix := "-5.0.1=2500.1=1.1=2.1";
+correct_prefix := "-5.0.1=2500.1=1.1=10u1u1.2u";
 test(M11chi, E11chi, correct_prefix);
 
 
@@ -61,7 +61,7 @@ print "thing 3";
 N := 7*ZF;
 M24 := HMFSpace(M, N, [2, 4]);
 S24 := CuspFormBasis(M24);
-correct_prefix := "-5.0.1=49.1=2.4=0";
+correct_prefix := "-5.0.1=49.1=2.4=1u0u1.2u";
 test(M24, S24, correct_prefix);
 
 // uncomment once cubic field stuff works without errors
