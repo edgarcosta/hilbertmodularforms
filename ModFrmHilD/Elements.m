@@ -565,15 +565,32 @@ intrinsic IncreasePrecisionWithBasis(g::ModFrmHilDElt, basis::SeqEnum[ModFrmHilD
     inputs:
       g - a ModFrmHilDElt
       basis - A sequence f_1, ..., f_n of ModFrmHilDElts
+        over the same coefficient ring.
     returns:
       g with precision equal to the minimum precision of an f_i, if possible.
       Otherwise, returns g as is
   }
+  
+  require #LinearDependence(basis) eq 0 : "The basis isn't a basis!";
   lindep := LinearDependence(basis cat [g]);
   // if the linear dependence of g with the basis is not 1
   // then we cannot use the basis to increase precision
-  if #lindep eq 1 then
+  L := CoefficientRing(basis[1]);
+  if #lindep eq 1 and not IsZero(lindep[1][#basis + 1]) then
     lindep := lindep[1];
+    K := Universe(lindep);
+    // because IsSubfield doesn't work on Rationals() smh
+    if K cmpeq Rationals() or K cmpeq Integers() then
+      K := L;
+    elif L cmpeq Rationals() then
+      K := K;
+    elif IsSubfield(K, L) then
+      K := L;
+    else
+      K := Compositum(L, K);
+    end if;
+    basis := [ChangeCoefficientRing(f, K) : f in basis];
+    
     g := &+[-1 * lindep[i] * basis[i] / lindep[#basis + 1] : i in [1 .. #basis]];
   end if;
   return g;
