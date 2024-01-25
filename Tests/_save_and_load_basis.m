@@ -61,7 +61,7 @@ print "thing 3";
 N := 7*ZF;
 M24 := HMFSpace(M, N, [2, 4]);
 S24 := CuspFormBasis(M24);
-correct_prefix := "-5.0.1=49.1=2.4=1u0u1.2u";
+correct_prefix := "-5.0.1=49.1=2.4=1u0.0u1.2u";
 test(M24, S24, correct_prefix);
 
 // uncomment once cubic field stuff works without errors
