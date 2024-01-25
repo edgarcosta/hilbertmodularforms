@@ -232,7 +232,7 @@ intrinsic DihedralForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   ans := [];
   
   for psi in PossibleHeckeCharacters(Mk) do
-    Append(~ans, ThetaSeries(Mk, psi));
+    Append(~ans, ThetaSeries(Mk, AssociatedPrimitiveCharacter(psi)));
   end for;
   
   return (#ans eq 0) select ans else Basis(ans);
