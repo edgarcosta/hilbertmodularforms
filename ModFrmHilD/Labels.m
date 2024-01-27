@@ -127,6 +127,8 @@ intrinsic CanonicalRayClassGenerators(N_f::RngOrdIdl, N_inf::SeqEnum[RngIntElt])
   pi := Pi(RealField());
   B := Ceiling(MinkowskiConstant(F) * Norm(N_f));
   ideals := PrimesUpTo(B, F : coprime_to:=N_f);
+  labels := [<StringToInteger(c) : c in Split(LMFDBLabel(i), ".")> : i in ideals];
+  ParallelSort(~labels, ~ideals);
 
   reps := [];
   repped_gs := {};
