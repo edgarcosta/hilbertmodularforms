@@ -68,16 +68,6 @@ intrinsic LMFDBCongruenceSubgroup(s::MonStgElt) -> GrpHilbert
     return G;
 end intrinsic;
 
-function sorted_r_tuples(A, r)
-  n := #A;
-  B := [];
-  for i in [0 .. n^r-1] do
-    idxs_minus_one := [Integers()!((i - (i mod n^(j-1))) / (n^(j-1))) mod n: j in [1 .. r]];
-    Append(~B, [A[idxs_minus_one[j] + 1] : j in [1 .. r]]);
-  end for;
-  return B;
-end function;
-
 intrinsic HackyFieldLabel(F::FldNum) -> MonStgElt
   {
     Given a number field, returns the .-separated coefficients of the 
@@ -137,6 +127,8 @@ intrinsic CanonicalRayClassGenerators(N_f::RngOrdIdl, N_inf::SeqEnum[RngIntElt])
   pi := Pi(RealField());
   B := Ceiling(MinkowskiConstant(F) * Norm(N_f));
   ideals := PrimesUpTo(B, F : coprime_to:=N_f);
+  labels := [<StringToInteger(c) : c in Split(LMFDBLabel(i), ".")> : i in ideals];
+  ParallelSort(~labels, ~ideals);
 
   reps := [];
   repped_gs := {};
