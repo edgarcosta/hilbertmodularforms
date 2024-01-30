@@ -104,40 +104,6 @@ intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, k::SeqEnum[RngIntElt] : K
   return StrongMultiply([* a_nu, EltToShiftedHalfWeight(nu, k) *] : K:=K);
 end intrinsic;
 
-intrinsic EltCoeffToIdlCoeff(a_nu::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt
-  {
-    inputs:
-      a_nu: An element of a number field (usually the splitting field 
-              of the base field of the HMF if GaloisDescent has been performed)
-              representing the Fourier coefficient at nu.
-      nu: A totally positive element of a number field (the base field of the HMF)
-      f: An element of an HMF Space.
-    returns:
-      The "Frobenius trace" a_nn at the ideal nn corresponding to nu. 
-      See the called function for details.
-  }
-  return EltCoeffToIdlCoeff(a_nu, nu, Weight(Parent(f)), CoefficientRing(f));
-end intrinsic;
-
-intrinsic IdlCoeffToEltCoeff(a_nn::FldElt, nu::FldElt, f::ModFrmHilDElt) -> FldElt
-  {
-    inputs:
-      a_nn: An element of a number field (usually the splitting field of 
-              the base field of the HMF if GaloisDescent has been performed)
-              representing the "Frobenius trace" at nn. 
-              // TODO abhijitm phrase better, not exactly true
-      nu: A totally positive element of a number field (the base field of the HMF),
-        which we expect to be (but do not check) a generator for nn * bbp for some bb.
-      f: An element of an HMF Space.
-    returns:
-      The Fourier coefficient at the totally positive element nu
-
-      See the called function for details.
-  }
-
-  return IdlCoeffToEltCoeff(a_nn, nu, Weight(Parent(f)), CoefficientRing(f));
-end intrinsic;
-
 intrinsic IdlCoeffToEltCoeff(a_nn::RngElt, nu::FldElt, k::SeqEnum[RngIntElt], K::Fld) -> FldElt
   {}
   a_nn := NumberField(Parent(a_nn))!a_nn;
