@@ -77,7 +77,7 @@ intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
   M := Parent(Parent(f));
   nu := IdealToRep(M, nn);
   bb := IdealToNarrowClassRep(M, nn);
-  return EltCoeffToIdlCoeff(Coefficient(f, bb, nu), nu, f);
+  return EltCoeffToIdlCoeff(Coefficient(f, bb, nu), nu, Weight(Parent(f)) : K:=CoefficientRing(f));
 end intrinsic;
 
 intrinsic Coefficients(f::ModFrmHilDElt) -> Any
