@@ -315,10 +315,9 @@ end intrinsic;
 
 intrinsic NewDihedralBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   {Given a space of weight one forms, compute the subspace of dihedral forms.} 
-  require IsParallel(Weight(Mk)) and Weight(Mk)[1] eq 1 : "Dihedral forms are only defined for spaces of weight one forms.";
   
   ans := [];
-  for psi in PossibleHeckeCharacters(Mk) do
+  for psi in PossibleGrossenchars(Mk) do
     Append(~ans, ThetaSeries(Mk, AssociatedPrimitiveCharacter(psi)));
   end for;
   
