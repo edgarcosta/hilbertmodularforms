@@ -436,6 +436,23 @@ intrinsic StrongAdd(A::List : K:=false) -> FldElt
   return sum;
 end intrinsic;
 
+intrinsic StrongEquality(x::Any, y::Any : K:=false) -> BoolElt
+  {
+    Given elements x and y of possibly different fields,
+    return true if and only if they are equal after
+    strong embedding into their compositum.
+  }
+  if x cmpeq y then
+    return true;
+  end if;
+
+  if K cmpeq false then
+    K := Compositum(NumberField(Parent(x)), NumberField(Parent(y)));
+  end if;
+
+  return StrongCoerce(K, x) eq StrongCoerce(K, y);
+end intrinsic;
+
 intrinsic MinDistBtwnRoots(K::FldAlg) -> FldReElt
   {
     Returns the minimum absolute value distance between 
