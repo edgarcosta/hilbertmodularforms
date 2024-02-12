@@ -757,3 +757,25 @@ intrinsic MinkowskiConstant(F::FldAlg) -> FldReElt
   n := Degree(F);
   return Sqrt(Abs(D)) * (4 / pi)^s * n^n / Factorial(n);
 end intrinsic;
+
+intrinsic LargestRootOfUnity(K::FldAlg) -> RngIntElt
+  {
+    Given a number field K, returns the largest d such that 
+    zeta_d lies in K.
+  }
+  n := Degree(K);
+
+  R<x> := PolynomialRing(K);
+  p_pows := [];
+  for p in PrimesUpTo(n+1) do
+    k := Floor(Log(p, n+1));
+    root_ct := #Roots(x^(p^k)-1);
+    e := Integers()!Log(p, root_ct);
+    Append(~p_pows, <p, e>);
+  end for;
+
+  m := &*[tup[1]^tup[2] : tup in p_pows];
+  require IsSubfield(CyclotomicField(m), K) : "Something's wrong, the field\
+      Q(zeta_m) isn't a subfield of K";
+  return m;
+end intrinsic;
