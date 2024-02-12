@@ -47,7 +47,7 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::SeqEnum[RngInt
   // extend multiplicatively
   for n in ideals do
     if not IsDefined(coeffs, n) then
-      coeffs[n] := &*[coeffs[pair[1]^pair[2]] : pair in factorization(n)];
+      coeffs[n] := StrongMultiply([* coeffs[pair[1]^pair[2]] : pair in factorization(n) *]);
     end if;
   end for;
 end intrinsic;
