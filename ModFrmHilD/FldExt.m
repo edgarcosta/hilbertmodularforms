@@ -4,6 +4,7 @@ declare attributes FldAlg:
   TotallyPositiveUnitsMap,
   TotallyPositiveUnitsGenerators,
   TotallyPositiveUnitsGeneratorsOrients,
+  UnitsGenerators,
   ClassGroupReps,
   MarkedEmbedding,
   Extensions,
@@ -156,7 +157,7 @@ intrinsic TotallyPositiveUnitsGeneratorsOrients(F::FldNum) -> SeqEnum
   return F`TotallyPositiveUnitsGeneratorsOrients;
 end intrinsic;
 
-intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
+intrinsic UnitsGenerators(F::FldNum : exclude_torsion:=true) -> SeqEnum[RngOrdElt]
   {
     parameters:
       F: a number field
@@ -164,10 +165,16 @@ intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
       A sequence of elements of the ring of integers
       which generate the group of units.
   }
-
-  U, mU := UnitGroup(F);
-  ugs_unorient := [mU(gen) : gen in Exclude(Generators(U), U.1)];
-  return [orient(F, eps) : eps in ugs_unorient];
+  if not assigned F`UnitsGenerators then
+    U, mU := UnitGroup(F);
+    require Order(U.1) gt 0 : "The first generator of the units group seems to no longer\
+      be the generator of torsion, so you should update the code to find the generator\
+      of torsion.";
+    gens := (exclude_torsion) select Exclude(Generators(U), U.1) else Generators(U);
+    ugs_unorient := [mU(gen) : gen in gens];
+    F`UnitsGenerators := [orient(F, eps) : eps in ugs_unorient];
+  end if;
+  return F`UnitsGenerators;
 end intrinsic;
 
 /////////////////////// MarkedEmbedding and strong coercion ///////////////////////////
