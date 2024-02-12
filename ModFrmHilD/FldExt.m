@@ -4,6 +4,7 @@ declare attributes FldAlg:
   TotallyPositiveUnitsMap,
   TotallyPositiveUnitsGenerators,
   TotallyPositiveUnitsGeneratorsOrients,
+  UnitsGenerators,
   ClassGroupReps,
   MarkedEmbedding,
   Extensions,
@@ -156,7 +157,7 @@ intrinsic TotallyPositiveUnitsGeneratorsOrients(F::FldNum) -> SeqEnum
   return F`TotallyPositiveUnitsGeneratorsOrients;
 end intrinsic;
 
-intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
+intrinsic UnitsGenerators(F::FldNum : exclude_torsion:=true) -> SeqEnum[RngOrdElt]
   {
     parameters:
       F: a number field
@@ -164,10 +165,16 @@ intrinsic UnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
       A sequence of elements of the ring of integers
       which generate the group of units.
   }
-
-  U, mU := UnitGroup(F);
-  ugs_unorient := [mU(gen) : gen in Exclude(Generators(U), U.1)];
-  return [orient(F, eps) : eps in ugs_unorient];
+  if not assigned F`UnitsGenerators then
+    U, mU := UnitGroup(F);
+    require Order(U.1) gt 0 : "The first generator of the units group seems to no longer\
+      be the generator of torsion, so you should update the code to find the generator\
+      of torsion.";
+    gens := (exclude_torsion) select Exclude(Generators(U), U.1) else Generators(U);
+    ugs_unorient := [mU(gen) : gen in gens];
+    F`UnitsGenerators := [orient(F, eps) : eps in ugs_unorient];
+  end if;
+  return F`UnitsGenerators;
 end intrinsic;
 
 /////////////////////// MarkedEmbedding and strong coercion ///////////////////////////
@@ -394,6 +401,56 @@ intrinsic StrongMultiply(A::List : K:=false) -> FldElt
     prod *:= y;
   end for;
   return prod;
+end intrinsic;
+
+intrinsic StrongAdd(A::List : K:=false) -> FldElt
+  {
+    input:
+      A - A list of elements (strong) coercible into K, not necessarily
+        from the same parent field.
+      K - A field of type FldRat, FldCyc, FldNum, or FldQuad
+    returns:
+      The sum of the elements in A, as an element of K.
+  }
+
+  // perform normal addition if all the objects 
+  // are of the same type
+  if &and[Parent(x) cmpeq Parent(A[1]) : x in A] then
+    return &+[x : x in A];
+  end if;
+
+  // If K is not assigned, it should be the compositum
+  // of all the elements
+  if K cmpeq false then
+    K := RationalsAsNumberField();
+    for x in A do
+      K := Compositum(K, NumberField(Parent(x)));
+    end for;
+  end if;
+
+  sum := K!0;
+  for x in A do
+    y := (Type(x) in [FldRatElt, RngIntElt]) select x else StrongCoerce(K, x);
+    sum +:= y;
+  end for;
+  return sum;
+end intrinsic;
+
+intrinsic StrongEquality(x::Any, y::Any : K:=false) -> BoolElt
+  {
+    Given elements x and y of possibly different fields,
+    return true if and only if they are equal after
+    strong embedding into their compositum.
+  }
+  if x cmpeq y then
+    return true;
+  end if;
+
+  if K cmpeq false then
+    K := Compositum(NumberField(Parent(x)), NumberField(Parent(y)));
+  end if;
+
+  return StrongCoerce(K, x) eq StrongCoerce(K, y);
 end intrinsic;
 
 intrinsic MinDistBtwnRoots(K::FldAlg) -> FldReElt
@@ -716,4 +773,26 @@ intrinsic MinkowskiConstant(F::FldAlg) -> FldReElt
   D := Discriminant(Integers(F));
   n := Degree(F);
   return Sqrt(Abs(D)) * (4 / pi)^s * n^n / Factorial(n);
+end intrinsic;
+
+intrinsic LargestRootOfUnity(K::FldAlg) -> RngIntElt
+  {
+    Given a number field K, returns the largest d such that 
+    zeta_d lies in K.
+  }
+  n := Degree(K);
+
+  R<x> := PolynomialRing(K);
+  p_pows := [];
+  for p in PrimesUpTo(n+1) do
+    k := Floor(Log(p, n+1));
+    root_ct := #Roots(x^(p^k)-1);
+    e := Integers()!Log(p, root_ct);
+    Append(~p_pows, <p, e>);
+  end for;
+
+  m := &*[tup[1]^tup[2] : tup in p_pows];
+  require IsSubfield(CyclotomicField(m), K) : "Something's wrong, the field\
+      Q(zeta_m) isn't a subfield of K";
+  return m;
 end intrinsic;
