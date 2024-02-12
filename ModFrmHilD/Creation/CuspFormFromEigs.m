@@ -93,7 +93,7 @@ intrinsic CuspFormFromEigenvalues(
     a_nn := coeffs_by_nn[nn];
     bb := IdealToNarrowClassRep(M, nn);
     nu := IdealToRep(M)[bb][nn];
-    coeffs_by_nu[bb][nu] := IdlCoeffToEltCoeff(coeff_ring!a_nn, nu, Weight(Mk), coeff_ring);
+    coeffs_by_nu[bb][nu] := IdlCoeffToEltCoeff(a_nn, nu, Weight(Mk), coeff_ring);
   end for;
 
   return HMF(Mk, coeffs_by_nu : coeff_ring := coeff_ring);
