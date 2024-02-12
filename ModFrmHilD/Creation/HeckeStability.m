@@ -22,7 +22,7 @@ intrinsic HeckeStableSubspace(
     for _ in [1 .. #V] do
         vprintf HilbertModularForms:  "Current dim = %o\n", dimprev;
         TpVprev := [HeckeOperator(g, pp) : g in Vprev];
-        Vnew := Intersection(Vprev, TpVprev);
+        Vnew := Intersection(Vprev, Basis(TpVprev));
         dimnew := #Vnew;
 
         vprintf HilbertModularForms: "New dim = %o\n", dimnew;
