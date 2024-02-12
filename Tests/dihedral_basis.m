@@ -1,3 +1,10 @@
+/***************************************************
+ * There is exactly one [1,1] dihedral form of level N.
+ * We check that it's in the cusp space (computed via
+ * Hecke stability). We then check that the forms
+ * are included into the dihedral space of level 2*N.
+***************************************************/
+
 F := QuadraticField(5);
 ZF := Integers(F);
 N := ideal<ZF | 241, 2*ZF.2 + 137>;
@@ -27,3 +34,20 @@ assert #LinearDependence(Dk2_old) eq 0;
 assert #LinearDependence(Sk2 cat Dk2_old) eq #Dk2_old;
 // the size of Dk1 should be the twice that of Dk2_old
 assert #Dk2_old eq 2 * #Dk1;
+
+/***************************************************
+ * We verify that the Moy-Specter form is not dihedral
+***************************************************/
+
+F := QuadraticField(5);
+ZF := Integers(F);
+prec := 550;
+M := GradedRingOfHMFs(F, prec);
+N := 14*ZF;
+H := HeckeCharacterGroup(N, [1,2]);
+H_prim := HeckeCharacterGroup(7*ZF, [1,2]);
+chi_prim := (H_prim).1;
+chi := H.1;
+M15chi := HMFSpace(M, N, [1,5], chi);
+D15chi := DihedralBasis(M15chi);
+assert #D15chi eq 0;
