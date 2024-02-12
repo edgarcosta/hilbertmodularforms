@@ -609,15 +609,15 @@ intrinsic Normalize(f::ModFrmHilDElt) -> ModFrmHilDElt
   return f * K!d;
 end intrinsic;
 
-intrinsic ScaleBySmallestNonzeroEig(f::ModFrmHilDElt) -> ModFrmHilDElt
+intrinsic DivideByFirstNonzeroIdlCoeff(f::ModFrmHilDElt) -> ModFrmHilDElt
   {}
   if IsZero(f) then
     return f;
   end if;
 
-  for pp in PrimesUpTo(Precision(f), BaseField(Parent(f))) do
-    if not IsZero(Coefficient(f, pp)) then
-      return f / Coefficient(f, pp);
+  for nn in IdealsUpTo(Precision(f), BaseField(Parent(f))) do
+    if not IsZero(Coefficient(f, nn)) then
+      return f / Coefficient(f, nn);
     end if;
   end for;
   require 0 eq 1 : "Something has gone wrong!";
