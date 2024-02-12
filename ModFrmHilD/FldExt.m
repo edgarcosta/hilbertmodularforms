@@ -403,6 +403,39 @@ intrinsic StrongMultiply(A::List : K:=false) -> FldElt
   return prod;
 end intrinsic;
 
+intrinsic StrongAdd(A::List : K:=false) -> FldElt
+  {
+    input:
+      A - A list of elements (strong) coercible into K, not necessarily
+        from the same parent field.
+      K - A field of type FldRat, FldCyc, FldNum, or FldQuad
+    returns:
+      The sum of the elements in A, as an element of K.
+  }
+
+  // perform normal addition if all the objects 
+  // are of the same type
+  if &and[Parent(x) cmpeq Parent(A[1]) : x in A] then
+    return &+[x : x in A];
+  end if;
+
+  // If K is not assigned, it should be the compositum
+  // of all the elements
+  if K cmpeq false then
+    K := RationalsAsNumberField();
+    for x in A do
+      K := Compositum(K, NumberField(Parent(x)));
+    end for;
+  end if;
+
+  sum := K!0;
+  for x in A do
+    y := (Type(x) in [FldRatElt, RngIntElt]) select x else StrongCoerce(K, x);
+    sum +:= y;
+  end for;
+  return sum;
+end intrinsic;
+
 intrinsic MinDistBtwnRoots(K::FldAlg) -> FldReElt
   {
     Returns the minimum absolute value distance between 
