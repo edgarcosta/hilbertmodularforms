@@ -476,3 +476,39 @@ intrinsic IsFiniteOrder(chi::HMFGrossenchar) -> RngOrdIdl
   {}
   return IsFiniteOrder(Parent(chi));
 end intrinsic;
+
+intrinsic IsPrimitive(chi::HMFGrossenchar) -> BoolElt
+  {}
+  N_f, N_oo := Conductor(chi);
+  M_f, M_oo := Modulus(chi);
+  return N_f eq M_f and N_oo eq M_oo;
+end intrinsic;
+
+intrinsic AssociatedPrimitiveCharacter(chi::HMFGrossenchar) -> HMFGrossenchar
+  {}
+  if IsPrimitive(chi) then
+    return chi;
+  end if;
+
+  M_f, M_oo := Modulus(chi);
+  N_f, N_oo := Conductor(chi);
+  X := Parent(chi);
+  Y := cHMFGrossencharsTorsor(X`BaseField, X`Weight, N_f : N_oo:=N_oo);
+  S := HMFGrossencharsTorsorSet(Y);
+  reps := RayClassGroupReps(X);
+  chi_on_reps := [* chi(rep) : rep in reps *];
+  for psi in S do
+    flag := true;
+    for i in [1 .. #reps] do
+      rep := reps[i];
+      if not StrongEquality(psi(rep), chi_on_reps[i]) then 
+        flag := false;
+        break;
+      end if;
+    end for;
+    if flag then
+      return psi;
+    end if;
+  end for;
+  require false : "Something is wrong!";
+end intrinsic;

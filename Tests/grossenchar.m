@@ -83,3 +83,35 @@ K := NumberField(x^3 - 2);
 ZK := Integers(K);
 k := [<0,0>, <0,0>, <0,0>];
 N := Factorization(5*ZK)[1][1];
+
+/**************************************************
+* Test computation of associated primitive character
+**************************************************/
+
+F := QuadraticField(5);
+M := 108*Integers(F);
+H := HeckeCharacterGroup(M, [1,2]);
+psi := H.1;
+assert not IsPrimitive(psi);
+psi_prim := AssociatedPrimitiveCharacter(psi);
+N_psi_f, N_psi_oo := Conductor(psi);
+
+X := cHMFGrossencharsTorsor(F, [<0,0>, <0,0>], M : N_oo:=[1,2]);
+reps := RayClassGroupReps(X);
+S := HMFGrossencharsTorsorSet(X);
+for eta in S do
+  if eta`RayClassChar eq psi then
+    chi := eta;
+    break;
+  end if;
+end for;
+
+assert [* chi(rep) : rep in reps *] cmpeq [* psi(rep) : rep in reps *];
+chi_prim := AssociatedPrimitiveCharacter(chi);
+N_chi_f, N_chi_oo := Conductor(chi);
+assert N_chi_f eq N_psi_f;
+assert N_chi_oo eq N_psi_oo;
+
+G, mp := RayClassGroup(N_psi_f, N_psi_oo);
+new_reps := [mp(gen) : gen in Generators(G)];
+assert [chi_prim(rep) : rep in new_reps] cmpeq [psi(rep) : rep in new_reps];
