@@ -218,6 +218,7 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
       X`IsNonempty := true;
       X`MarkedDrchChar := Dv.0;
     else
+      K := X`BaseField;
       D, D_map := RayResidueRing(mod_fin, mod_inf);
       D_gens := SetToSequence(Generators(D));
       // largest possible order of an element in D
@@ -229,12 +230,17 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
       // Because m can be quite large, we avoid constructing Q(zeta_m). 
       // Instead, we perform the computation to find psi over the complex
       // numbers. 
-      d := LargestRootOfUnity(SplittingField(X`BaseField));
+      d := LargestRootOfUnity(SplittingField(K));
       m := LCM(max_D_order, d);
-      L := CyclotomicField(d);
+      R<x> := PolynomialRing(X`BaseField);
+
+      // a dth root of unity in K
+      a := Roots(R!CyclotomicPolynomial(d))[1][1];
+      // the copy of Q(zeta_d) inside of v 
+      L := sub<K | a>;
       rou_dict := AssociativeArray();
       for j in [0 .. d - 1] do
-        rou_dict[L.1^j] := j;
+        rou_dict[a^j] := j;
       end for;
       units_gens := UnitsGenerators(X`BaseField : exclude_torsion:=false);
       unit_preimg_seqs := [Eltseq(eps @@ D_map) : eps in units_gens];
@@ -243,9 +249,11 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
       M cat:= [char_vector(j, #units_gens, m) : j in [1 .. #units_gens]];
       M := Matrix(M);
       v := [ExactQuotient(m, d) * rou_dict[StrongCoerce(L, EvaluateNoncompactInfinityType(X, eps))] : eps in units_gens];
+      print v;
       v := Vector(v);
       X`IsNonempty, u := IsConsistent(M, v);
       if X`IsNonempty then
+        print "hoi";
         if #D eq 1 then
           X`MarkedDrchChar := AssociatedPrimitiveCharacter(Dv.0);
         else

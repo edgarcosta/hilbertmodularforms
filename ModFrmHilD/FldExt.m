@@ -573,6 +573,7 @@ intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) ->
       not unique, but our algorithm is deterministic.
   }
   require IsSubfield(SplittingField(F), K) : "K must contain the Galois closure of F";
+  require IsNormal(K) : "K needs to be a Galois field";
   n := Degree(F);
   places := InfinitePlaces(F);
 
@@ -580,12 +581,12 @@ intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) ->
   a_embed_dict := AssociativeArray();
   r, s := Signature(F);
   for i in [1 .. r] do
-    z_i := ComplexField(Precision)!Evaluate(a, places[i]);
+    z_i := Round(10^Precision*Evaluate(a, places[i]));
     a_embed_dict[z_i] := i;
   end for;
 
   for i in [r+1 .. r+s] do
-    z_i := ComplexField(Precision)!Evaluate(a, places[i]);
+    z_i := Round(10^Precision*Evaluate(a, places[i]));
     a_embed_dict[z_i] := i;
     a_embed_dict[Conjugate(z_i)] := i + s;
   end for;
@@ -597,7 +598,7 @@ intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) ->
   
   aut_dict := AssociativeArray();
   for aut in Automorphisms(K) do
-    aut_a_est := ComplexField(Precision)!Evaluate(aut(a), v_0);
+    aut_a_est := Round(10^Precision*Evaluate(aut(a), v_0));
     b, x := IsDefined(a_embed_dict, aut_a_est);
     if b then
       aut_dict[x] := aut;
@@ -608,6 +609,8 @@ intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) ->
     end if;
   end for;
 
+  require #Keys(aut_dict) eq n : "Something's wrong, there should\
+    be at one stored automorphism for each embedding of F";
   return [aut_dict[i] : i in [1 .. n]];
 end intrinsic;
 

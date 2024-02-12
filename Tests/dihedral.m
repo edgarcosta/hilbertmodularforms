@@ -8,7 +8,7 @@
 for d in [5, 13] do
   F := QuadraticField(d);  
   if NarrowClassNumber(F) eq 1 then
-    for P in PrimesUpTo(500, F) do
+    for P in PrimesUpTo(150, F) do
       for K in QuadraticExtensionsWithConductor(P, [1,2]) do
         k := [1,1];
         HF := HeckeCharacterGroup(P, [1,2]);
