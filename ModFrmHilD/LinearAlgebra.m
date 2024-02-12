@@ -125,11 +125,12 @@ end intrinsic;
 
 intrinsic Intersection(V::SeqEnum[ModFrmHilDElt], W::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   {}
+  // assumes that V and W are actually bases, but doesn't check this 
+  // to avoid a slowdown. TODO abhijitm can probably handle better
   if #V eq 0 or #W eq 0 then
     return [];
   end if;
-  V := Basis(V);
-  W := Basis(W);
+
   lindep := LinearDependence(V cat W);
   intersection := [];
   for v in lindep do
