@@ -51,8 +51,9 @@ end intrinsic;
 intrinsic HeckeStabilityCuspBasis(
     Mk::ModFrmHilD
     :
-    prove := true,
-    stable_only:=false
+    prove:=true,
+    stable_only:=false,
+    smallest_prime:=true
     ) -> SeqEnum[ModFrmHilDElt]
     {
       Compute the space Mk using the Hecke stability method.
@@ -109,6 +110,7 @@ intrinsic HeckeStabilityCuspBasis(
     vprintf HilbertModularForms: "Computing basis of cusp forms of weight %o, level %o\n", [k[i] + eis_k : i in [1 .. n]], N;
     Mkl := HMFSpace(M, N, [k[i] + eis_k : i in [1 .. n]]);
     Bkl := CuspFormBasis(Mkl);
+    
     vprintf HilbertModularForms: "Size of basis is %o.\n", #Bkl;
 
     require #Bkl eq CuspDimension(Mkl) : "Need to increase precision to compute this space";
@@ -122,14 +124,18 @@ intrinsic HeckeStabilityCuspBasis(
     //Our initial candidate for our desired space.
     V := [f/Eis : f in Bkl];
 
-    // We want to choose the prime pp of smallest norm among
-    // the primes not dividing N
-    bound := 20;
-    primes := PrimesUpTo(bound, F:coprime_to := N);
-    // if N divides every prime of norm up to 20, which seems
-    // unlikely, but just in case
-    if #primes eq 0 then
-        primes := PrimesUpTo(Norm(N), F:coprime_to := N)[1];
+    if not smallest_prime then
+      // We want to choose the prime pp of smallest norm among
+      // the primes not dividing N
+      bound := 20;
+      primes := PrimesUpTo(bound, F:coprime_to := N);
+      // if N divides every prime of norm up to 20, which seems
+      // unlikely, but just in case
+      if #primes eq 0 then
+          primes := PrimesUpTo(Norm(N), F:coprime_to := N)[1];
+      end if;
+    else
+      primes := PrimesUpTo(2^Degree(F), F);
     end if;
     pp := primes[1];
 
