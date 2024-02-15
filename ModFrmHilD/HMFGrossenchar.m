@@ -219,7 +219,6 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
       X`MarkedDrchChar := Dv.0;
     else
       K := X`BaseField;
-      E := (IsNormal(K)) select K else SplittingField(K);
       D, D_map := RayResidueRing(mod_fin, mod_inf);
       D_gens := SetToSequence(Generators(D));
       // largest possible order of an element in D
@@ -231,28 +230,30 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
       // Because m can be quite large, we avoid constructing Q(zeta_m). 
       // Instead, we perform the computation to find psi over the complex
       // numbers. 
-      d := LargestRootOfUnity(E);
+      d := LargestRootOfUnity(SplittingField(K));
       m := LCM(max_D_order, d);
-      R<x> := PolynomialRing(E);
+      R<x> := PolynomialRing(X`BaseField);
 
       // a dth root of unity in K
       a := Roots(R!CyclotomicPolynomial(d))[1][1];
       // the copy of Q(zeta_d) inside of v 
-      L := sub<E | a>;
+      L := sub<K | a>;
       rou_dict := AssociativeArray();
       for j in [0 .. d - 1] do
         rou_dict[a^j] := j;
       end for;
       units_gens := UnitsGenerators(X`BaseField : exclude_torsion:=false);
       unit_preimg_seqs := [Eltseq(eps @@ D_map) : eps in units_gens];
-      M := [[unit_preimg_seqs[j][i] * ExactQuotient(m, Order(D.i)) : j in [1 .. #units_gens]] : i in [1 .. #D_gens]];
+      M := [[unit_preimg_seqs[j][i] * ExactQuotient(m, Order(D_gens[i])) : j in [1 .. #units_gens]] : i in [1 .. #D_gens]];
       char_vector := func<i, n, x | [(j eq i) select x else 0 : j in [1 .. n]]>;
       M cat:= [char_vector(j, #units_gens, m) : j in [1 .. #units_gens]];
       M := Matrix(M);
       v := [ExactQuotient(m, d) * rou_dict[StrongCoerce(L, EvaluateNoncompactInfinityType(X, eps))] : eps in units_gens];
+      print v;
       v := Vector(v);
       X`IsNonempty, u := IsConsistent(M, v);
       if X`IsNonempty then
+        print "hoi";
         if #D eq 1 then
           X`MarkedDrchChar := AssociatedPrimitiveCharacter(Dv.0);
         else
