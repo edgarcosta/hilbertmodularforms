@@ -143,7 +143,7 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt) ->
     return Rationals()!1;
   end if;
 
-  K_gal := (IsNormal(K)) select K else SplittingField(K);
+  K_gal := (IsGalois(K)) select K else SplittingField(K);
   auts := AutsOfKReppingEmbeddingsOfF(K, K_gal);
   gal_conjs_of_x := [aut(x) : aut in auts];
   
@@ -219,7 +219,7 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
       X`MarkedDrchChar := Dv.0;
     else
       K := X`BaseField;
-      E := (IsNormal(K)) select K else SplittingField(K);
+      E := (IsGalois(K)) select K else SplittingField(K);
       D, D_map := RayResidueRing(mod_fin, mod_inf);
       D_gens := SetToSequence(Generators(D));
       // largest possible order of an element in D
@@ -348,7 +348,7 @@ end intrinsic;
 //////////////////////////////// HMFGrossencharsTorsor evaluation
 
 function MaxPowerDividingD(x, d)
-  // returns the largest divisor of d such that x is a dth root
+  // returns the largest divisor of d such that x is a dth power 
   divisors := Divisors(d);
   for t in Reverse(divisors) do
     if IsPower(x, t) then
@@ -379,14 +379,15 @@ intrinsic SetMarkedCharClassRepEvals(X::HMFGrossencharsTorsor)
       require b : "Something has gone wrong, rep^d should be a principal ideal";
 
       a := EvaluateNoncompactInfinityType(X, x) * X`MarkedDrchChar(x);
-
-      t := MaxPowerDividingD(L!a, d);
-      L := RadicalExtension(L, Integers()!(d/t), L!a);
-      X`MarkedCharClassRepEvals[rep] := Root(L!a, d)^-1;
+      L := Compositum(L, Parent(a));
+      a := StrongCoerce(L, a);
+      t := MaxPowerDividingD(a, d);
+      L := RadicalExtension(L, Integers()!(d/t), a);
+      X`MarkedCharClassRepEvals[rep] := Root(a, d)^-1;
       Append(~reps, rep);
     end for;
     for rep in reps do
-      X`MarkedCharClassRepEvals[rep] := L!X`MarkedCharClassRepEvals[rep];
+      X`MarkedCharClassRepEvals[rep] := StrongCoerce(L, X`MarkedCharClassRepEvals[rep]);
     end for;
   end if;
 end intrinsic;

@@ -292,7 +292,7 @@ intrinsic StrongCoerce(L::Fld, x::FldElt) -> FldElt
     K`Restrictions := AssociativeArray();
   end if;
 
-  require IsNormal(K) : "Strong coercion is not yet implemented\
+  require IsGalois(K) : "Strong coercion is not yet implemented\
       for non-Galois initial fields";
 
   // if K = QQ then all embeddings are the same
@@ -573,7 +573,7 @@ intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) ->
       not unique, but our algorithm is deterministic.
   }
   require IsSubfield(SplittingField(F), K) : "K must contain the Galois closure of F";
-  require IsNormal(K) : "K needs to be a Galois field";
+  require IsGalois(K) : "K needs to be a Galois field";
   n := Degree(F);
   places := InfinitePlaces(F);
 
@@ -637,7 +637,7 @@ intrinsic ComplexConjugateOfPlace(w::PlcNumElt) -> FldElt
       complex conjugate of v_0(x).
   }
   K := NumberField(w);
-  require IsNormal(K) : "K is not Galois";
+  require IsGalois(K) : "K is not Galois";
   require IsComplex(w) : "w is not a complex place";
 
   auts := AutsOfKReppingEmbeddingsOfF(K, K);
@@ -798,4 +798,15 @@ intrinsic LargestRootOfUnity(K::FldAlg) -> RngIntElt
   require IsSubfield(CyclotomicField(m), K) : "Something's wrong, the field\
       Q(zeta_m) isn't a subfield of K";
   return m;
+end intrinsic;
+
+intrinsic IsGalois(F::FldAlg) -> BoolElt
+  {
+    IsNormal fails if the defining polynomial of F has non-integral coefficients.
+  }
+  if &and[IsIntegral(a) : a in DefiningPolyCoeffs(F)] then
+    return IsNormal(F);
+  else
+    return #Automorphisms(F) eq Degree(F);
+  end if;
 end intrinsic;
