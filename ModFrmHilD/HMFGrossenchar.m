@@ -34,12 +34,28 @@ declare attributes HMFGrossencharsTorsor:
   MarkedDrchChar, // GrpDrchNFElt - A character psi of the ray residue ring of modulus Modulus(X)
                    // such that psi * chi_inf (the infinity-type associated to the given weight)
                    // is trivial on units (i.e. is a character on principal ideals). 
-  MarkedCharClassRepEvals, // Assoc: 
+  MarkedCharClassRepEvals, // Assoc: I -> chi_0(I), where I is one of the ideals appearing in
+                           //   X`RayClassGroupReps and where chi_0 is the marked Grossencharacter
+                           //   of the torsor.
   IsNonempty; // bool: true if there are Grossencharacters of this weight and level
 
 declare attributes HMFGrossenchar:
   Parent, // HMFGrossencharsTorsor
-  RayClassChar; // GrpHeckeElt 
+  RayClassChar, // GrpHeckeElt 
+  ClassRepEvals, // Assoc - I -> chi(I), where I is one of the ideals appearing in
+                       //   X`RayClassGroupReps and where chi_0 is the marked Grossencharacter
+                       //   of the torsor.
+  DrchChar, // GrpDrchNFElt - The primitive character associated to the product of 
+            //  the marked Dirichlet character of the torsor and
+            //  the Dirichlet restriction of the ray class character 
+            //  attached to this Grossencharacter. The conductor of this
+            //  character is the conductor of the Grossencharacter.
+  IsPrimitivized; // BoolElt - true if the character has been primitivized, i.e.
+                  // if the conductor of chi`DrchChar is equal to the conductor
+                  // of chi. If true, chi can be evaluated at any ideal
+                  // coprime to its conductor, but if false it is only 
+                  // guaranteed to be evaluable at ideals coprime to the
+                  // modulus.
 
 //////////////////////////////// HMFGrossencharsTorsor ////////////////////////////////
 
@@ -396,12 +412,17 @@ end intrinsic;
 
 intrinsic cHMFGrossenchar(X::HMFGrossencharsTorsor, psi::GrpHeckeElt) -> HMFGrossenchar
   {}
-  // check that psi is the right whatnots
   chi := New(HMFGrossenchar);
   chi`Parent := X;
   require Modulus(psi) eq Modulus(X) : "The given ray class character does not have\
       the same modulus as the given parent object";
   chi`RayClassChar := psi;
+  chi`ClassRepEvals := AssociativeArray();
+  for tup in X`ClassGroupReps do
+    rep := tup[2];
+    chi`ClassRepEvals[rep] := StrongMultiply([* X`MarkedCharClassRepEvals[rep], psi(rep) *]);
+  end for;
+  chi`DrchChar := X`MarkedDrchChar * DirichletRestriction(psi)^-1;
   return chi;
 end intrinsic;
 
@@ -437,8 +458,9 @@ intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
   {}
   X := Parent(chi);
   b, x := IsPrincipal(I);
+
   if b then
-    marked_char_on_J := Rationals()!1;
+    chi_at_J := Rationals()!1;
   else
     I_CG := I @@ X`ClassMap; 
     J := X`ClassMap(I_CG);
@@ -451,14 +473,13 @@ intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
     g_factzn_exps := Eltseq(g);
     require &+[g_factzn_exps[i] * vals[i][1] : i in [1 .. #vals]] eq g : "Something has gone wrong,\ 
       Eltseq(g) should give a factorization of g in terms of the generators of the class group."; 
-    marked_char_on_J := &*[X`MarkedCharClassRepEvals[vals[i][2]]^(g_factzn_exps[i]) : i in [1 .. #vals]];
+    chi_at_J := &*[chi`ClassRepEvals[vals[i][2]]^(g_factzn_exps[i]) : i in [1 .. #vals]];
   end if;
 
   return StrongMultiply([*
-      chi`RayClassChar(I),
-      marked_char_on_J,
+      chi_at_J,
       EvaluateNoncompactInfinityType(X, x)^-1,
-      X`MarkedDrchChar(X`BaseField!x)^-1 
+      chi`DrchChar(X`BaseField!x)^-1 
       *]);
 end intrinsic;
 
@@ -466,8 +487,7 @@ end intrinsic;
 
 intrinsic Conductor(chi::HMFGrossenchar) -> RngOrdIdl
   {}
-  X := Parent(chi);
-  return Conductor(X`MarkedDrchChar * DirichletRestriction(chi`RayClassChar)^-1);
+  return Conductor(chi`DrchChar);
 end intrinsic;
 
 intrinsic Modulus(chi::HMFGrossenchar) -> RngOrdIdl
@@ -485,6 +505,14 @@ intrinsic IsFiniteOrder(chi::HMFGrossenchar) -> RngOrdIdl
   return IsFiniteOrder(Parent(chi));
 end intrinsic;
 
+intrinsic IsPrimitivized(chi::HMFGrossenchar) -> BoolElt
+  {}
+  if not assigned chi`IsPrimitivized then
+    chi`IsPrimitivized := IsPrimitive(chi`DrchChar);
+  end if;
+  return chi`IsPrimitivized;
+end intrinsic;
+
 intrinsic IsPrimitive(chi::HMFGrossenchar) -> BoolElt
   {}
   N_f, N_oo := Conductor(chi);
@@ -492,31 +520,24 @@ intrinsic IsPrimitive(chi::HMFGrossenchar) -> BoolElt
   return N_f eq M_f and N_oo eq M_oo;
 end intrinsic;
 
-intrinsic AssociatedPrimitiveCharacter(chi::HMFGrossenchar) -> HMFGrossenchar
-  {}
-  if IsPrimitive(chi) then
-    return chi;
-  end if;
+intrinsic Primitivize(chi::HMFGrossenchar)
+  {
+    Given a HMFGrossenchar chi, replaces its Dirichlet character psi
+    with the primitive Dirichlet character associated to psi. 
 
-  M_f, M_oo := Modulus(chi);
-  N_f, N_oo := Conductor(chi);
-  X := Parent(chi);
-  Y := cHMFGrossencharsTorsor(X`BaseField, X`Weight, N_f : N_oo:=N_oo);
-  S := HMFGrossencharsTorsorSet(Y);
-  reps := RayClassGroupReps(X);
-  chi_on_reps := [* chi(rep) : rep in reps *];
-  for psi in S do
-    flag := true;
-    for i in [1 .. #reps] do
-      rep := reps[i];
-      if not StrongEquality(psi(rep), chi_on_reps[i]) then 
-        flag := false;
-        break;
-      end if;
-    end for;
-    if flag then
-      return psi;
-    end if;
-  end for;
-  require false : "Something is wrong!";
+    This is not the same behavior as AssociatedPrimitiveCharacter 
+    because this modifies the existing character rather than returning
+    a new one in the lower modulus. The point is that if we want to 
+    evaluate a ray class character at primes coprime to its conductor
+    but not to its modulus, it is better to call this function and then
+    perform evaluations rather than to build a whole new character, since
+    primitivization does not change anything about the character other
+    than "unextending by zero". 
+  }
+  if not IsPrimitivized(chi) then
+    chi`DrchChar := AssociatedPrimitiveCharacter(chi`DrchChar);
+    chi`IsPrimitivized := true;
+  end if;
 end intrinsic;
+
+
