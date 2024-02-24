@@ -28,9 +28,6 @@ declare attributes HMFGrossencharsTorsor:
                      // generators for the class group and corresponding ideal 
                      // representatives. We do this because the algorithm for computing
                      // generators is nondeterministic.
-  RayClassGroupReps, // SeqEnum[Tup[GpAbElt, RngOrdIdl]] - The above, but for the 
-                     // ray class group of modulus that of X. We can test on these ideals
-                     // to distinguish different elements of X.
   MarkedDrchChar, // GrpDrchNFElt - A character psi of the ray residue ring of modulus Modulus(X)
                    // such that psi * chi_inf (the infinity-type associated to the given weight)
                    // is trivial on units (i.e. is a character on principal ideals). 
@@ -350,15 +347,6 @@ intrinsic IsAlgebraic(X::HMFGrossencharsTorsor) -> BoolElt
     end if;
   end for;
   return true;
-end intrinsic;
-
-intrinsic RayClassGroupReps(X::HMFGrossencharsTorsor) -> SeqEnum[RngOrdIdl]
-  {}
-  if not assigned X`RayClassGroupReps then
-    G, mp:= RayClassGroup(X`FiniteModulus, X`InfiniteModulus); 
-    X`RayClassGroupReps := [mp(gen) : gen in Generators(G)];
-  end if;
-  return X`RayClassGroupReps;
 end intrinsic;
 
 //////////////////////////////// HMFGrossencharsTorsor evaluation
