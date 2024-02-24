@@ -804,9 +804,10 @@ intrinsic IsGalois(F::FldAlg) -> BoolElt
   {
     IsNormal fails if the defining polynomial of F has non-integral coefficients.
   }
-  if &and[IsIntegral(a) : a in DefiningPolyCoeffs(F)] then
+  coeffs := DefiningPolyCoeffs(F);
+  if &and[IsIntegral(a) : a in coeffs] and coeffs[#coeffs] eq 1 then
     return IsNormal(F);
   else
-    return #Automorphisms(F) eq Degree(F);
+    return #GaloisGroup(F) eq Degree(F);
   end if;
 end intrinsic;

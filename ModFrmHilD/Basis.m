@@ -318,7 +318,8 @@ intrinsic NewDihedralBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   
   ans := [];
   for psi in PossibleGrossenchars(Mk) do
-    Append(~ans, ThetaSeries(Mk, AssociatedPrimitiveCharacter(psi)));
+    Primitivize(psi);
+    Append(~ans, ThetaSeries(Mk, psi));
   end for;
   
   return (#ans eq 0) select ans else Basis(ans);

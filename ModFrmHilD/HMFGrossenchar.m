@@ -27,19 +27,33 @@ declare attributes HMFGrossencharsTorsor:
   ClassGroupReps, // SeqEnum[Tup[GpAbElt, RngOrdIdl]] - A sequence consisting of 
                      // generators for the class group and corresponding ideal 
                      // representatives. We do this because the algorithm for computing
-                     // generators is nondeterministic.
-  RayClassGroupReps, // SeqEnum[Tup[GpAbElt, RngOrdIdl]] - The above, but for the 
-                     // ray class group of modulus that of X. We can test on these ideals
-                     // to distinguish different elements of X.
+                     // generators is nondeterministic, and because we want to use
+                     // generators which are coprime to the modulus of the character.
   MarkedDrchChar, // GrpDrchNFElt - A character psi of the ray residue ring of modulus Modulus(X)
                    // such that psi * chi_inf (the infinity-type associated to the given weight)
                    // is trivial on units (i.e. is a character on principal ideals). 
-  MarkedCharClassRepEvals, // Assoc: 
+  MarkedCharClassRepEvals, // Assoc: I -> chi_0(I), where I is one of the ideals appearing in
+                           //   X`ClassGroupReps and where chi_0 is the marked Grossencharacter
+                           //   of the torsor.
   IsNonempty; // bool: true if there are Grossencharacters of this weight and level
 
 declare attributes HMFGrossenchar:
   Parent, // HMFGrossencharsTorsor
-  RayClassChar; // GrpHeckeElt 
+  RayClassChar, // GrpHeckeElt 
+  ClassRepEvals, // Assoc - I -> chi(I), where I is one of the ideals appearing in
+                       //   X`ClassGroupReps and where chi_0 is the marked Grossencharacter
+                       //   of the torsor.
+  DrchChar, // GrpDrchNFElt - The primitive character associated to the product of 
+            //  the marked Dirichlet character of the torsor and
+            //  the Dirichlet restriction of the ray class character 
+            //  attached to this Grossencharacter. The conductor of this
+            //  character is the conductor of the Grossencharacter.
+  IsPrimitivized; // BoolElt - true if the character has been primitivized, i.e.
+                  // if the conductor of chi`DrchChar is equal to the conductor
+                  // of chi. If true, chi can be evaluated at any ideal
+                  // coprime to its conductor, but if false it is only 
+                  // guaranteed to be evaluable at ideals coprime to the
+                  // modulus.
 
 //////////////////////////////// HMFGrossencharsTorsor ////////////////////////////////
 
@@ -68,16 +82,13 @@ intrinsic cHMFGrossencharsTorsor(
   X`Weight := k;
   X`FiniteModulus := N_f;
   X`InfiniteModulus := N_oo;
-  G, X`ClassMap := ClassGroup(X`BaseField);
-  require IsDiagonal(RelationMatrix(G)) : "There should be no cross-relations\
-      between the generators of the ray class group";
+  X`ClassGroup, X`ClassMap := ClassGroup(X`BaseField);
+  require IsDiagonal(RelationMatrix(X`ClassGroup)) : "There should be no cross-relations\
+      between the generators of the class group";
 
-  X`ClassGroupReps := [<G.i, X`ClassMap(G.i)> : i in [1 .. #Generators(G)]];
-  X`ClassGroup := G;
-
-  if IsNonempty(X) then
-    SetMarkedCharClassRepEvals(X);
-  end if;
+  // This is a very important function, which checks if there is a Dirichlet character
+  // which cancels out the infinity part. 
+  _ := IsNonempty(X);
   return X;
 end intrinsic;
 
@@ -283,6 +294,45 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
   end if;
 end intrinsic;
 
+intrinsic ClassGroupReps(X::HMFGrossencharsTorsor) -> SeqEnum[Tup]
+  {
+    Let K = X`BaseField. This function returns a sequence consisting of tuples 
+    of <g, I>, where g is a group element of the class group and I is an ideal 
+    of O_K in the class g that is coprime to the finite modulus of X. 
+  }
+  if not assigned X`ClassGroupReps then
+    if #X`ClassGroup eq 1 then
+      return [];
+    end if;
+    rcg, rc_map:= RayClassGroup(X`FiniteModulus, X`InfiniteModulus);
+    cg_gens := Generators(X`ClassGroup);
+    cg_gens_og := cg_gens;
+    cg_reps_dict := AssociativeArray();
+
+    // find a subset of ideal generators of the ray class group 
+    // which generate the class group. The point is to find
+    // generators which are coprime to the finite modulus so that
+    // we don't encounter trouble when evaluating things.
+    for rc_gen in Generators(rcg) do
+      I := rc_map(rc_gen);
+      cg_img_of_gen := I @@ X`ClassMap;
+      if not IsDefined(cg_reps_dict, cg_img_of_gen) then
+        cg_reps_dict[cg_img_of_gen] := I;
+      else
+        if Norm(I) lt Norm(cg_reps_dict[cg_img_of_gen]) then
+          cg_reps_dict[cg_img_of_gen] := I;
+        end if;
+      end if;
+    end for;
+    X`ClassGroupReps := [<gen, cg_reps_dict[gen]> : gen in cg_gens_og];
+    for tup in X`ClassGroupReps do
+      assert tup[2] @@ X`ClassMap eq tup[1];
+      assert IsCoprime(tup[2], X`FiniteModulus);
+    end for;
+  end if;
+  return X`ClassGroupReps;
+end intrinsic;
+
 //////////////////////////////// HMFGrossencharsTorsor fundamental intrinsics
 
 intrinsic Print(X::HMFGrossencharsTorsor, level::MonStgElt)
@@ -336,15 +386,6 @@ intrinsic IsAlgebraic(X::HMFGrossencharsTorsor) -> BoolElt
   return true;
 end intrinsic;
 
-intrinsic RayClassGroupReps(X::HMFGrossencharsTorsor) -> SeqEnum[RngOrdIdl]
-  {}
-  if not assigned X`RayClassGroupReps then
-    G, mp:= RayClassGroup(X`FiniteModulus, X`InfiniteModulus); 
-    X`RayClassGroupReps := [mp(gen) : gen in Generators(G)];
-  end if;
-  return X`RayClassGroupReps;
-end intrinsic;
-
 //////////////////////////////// HMFGrossencharsTorsor evaluation
 
 function MaxPowerDividingD(x, d)
@@ -358,50 +399,52 @@ function MaxPowerDividingD(x, d)
   assert 0 eq 1; // Something has gone wrong, any element should be a first root
 end function;
 
-intrinsic SetMarkedCharClassRepEvals(X::HMFGrossencharsTorsor)
+intrinsic MarkedCharClassRepEvals(X::HMFGrossencharsTorsor) -> Assoc
   {
-    Define the evaluation of a marked element of the set of
-    Grossencharacters of this weight on representatives of generators
-    of the ray class group.
+    Returns an associative array taking an ideal generator I of the class group
+    to the evaluation of the marked character of X on I. The Is are drawn from
+    ClassGroupReps(X).
   }
   if not assigned X`MarkedCharClassRepEvals then
     X`MarkedCharClassRepEvals := AssociativeArray();
 
     polys := [];
     inf_evals := [];
-    L := RationalsAsNumberField();
     reps := [];
-    for tup in X`ClassGroupReps do
+    for tup in ClassGroupReps(X) do
       gen, rep := Explode(tup);
       d := Order(gen);
 
       b, x := IsPrincipal(rep^d);
       require b : "Something has gone wrong, rep^d should be a principal ideal";
 
-      a := EvaluateNoncompactInfinityType(X, x) * X`MarkedDrchChar(x);
-      L := Compositum(L, Parent(a));
-      a := StrongCoerce(L, a);
+      a := StrongMultiply([* EvaluateNoncompactInfinityType(X, x), X`MarkedDrchChar(x) *]);
+      L := Parent(a);
       t := MaxPowerDividingD(a, d);
       L := RadicalExtension(L, Integers()!(d/t), a);
       X`MarkedCharClassRepEvals[rep] := Root(a, d)^-1;
       Append(~reps, rep);
     end for;
-    for rep in reps do
-      X`MarkedCharClassRepEvals[rep] := StrongCoerce(L, X`MarkedCharClassRepEvals[rep]);
-    end for;
   end if;
+  return X`MarkedCharClassRepEvals;
 end intrinsic;
 
 //////////////////////////////// HMFGrossenchar constructors
 
 intrinsic cHMFGrossenchar(X::HMFGrossencharsTorsor, psi::GrpHeckeElt) -> HMFGrossenchar
   {}
-  // check that psi is the right whatnots
   chi := New(HMFGrossenchar);
   chi`Parent := X;
+  require IsNonempty(X) : "This HMFGrossencharsTorsor is empty!";
   require Modulus(psi) eq Modulus(X) : "The given ray class character does not have\
       the same modulus as the given parent object";
   chi`RayClassChar := psi;
+  chi`ClassRepEvals := AssociativeArray();
+  for tup in ClassGroupReps(X) do
+    rep := tup[2];
+    chi`ClassRepEvals[rep] := StrongMultiply([* MarkedCharClassRepEvals(X)[rep], psi(rep) *]);
+  end for;
+  chi`DrchChar := X`MarkedDrchChar * DirichletRestriction(psi)^-1;
   return chi;
 end intrinsic;
 
@@ -437,28 +480,27 @@ intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
   {}
   X := Parent(chi);
   b, x := IsPrincipal(I);
+
   if b then
-    marked_char_on_J := Rationals()!1;
+    chi_at_J := Rationals()!1;
   else
-    I_CG := I @@ X`ClassMap; 
-    J := X`ClassMap(I_CG);
+    g := I @@ X`ClassMap; 
+    g_factzn_exps := Eltseq(g);
+    cg_reps := ClassGroupReps(X);
+    require &+[g_factzn_exps[i] * cg_reps[i][1] : i in [1 .. #cg_reps]] eq g : "Something has gone wrong,\
+      Eltseq(g) should give a factorization of g in terms of the generators of the class group."; 
+    J := &*[cg_reps[i][2]^(g_factzn_exps[i]) : i in [1 .. #cg_reps]];
 
     // We choose a generator for IJ^-1. 
     c, x := IsPrincipal(I * J^-1);
     require c : "Something has gone wrong, I * J^-1 should be principal";
-    vals := X`ClassGroupReps;
-    g := I @@ X`ClassMap;
-    g_factzn_exps := Eltseq(g);
-    require &+[g_factzn_exps[i] * vals[i][1] : i in [1 .. #vals]] eq g : "Something has gone wrong,\ 
-      Eltseq(g) should give a factorization of g in terms of the generators of the class group."; 
-    marked_char_on_J := &*[X`MarkedCharClassRepEvals[vals[i][2]]^(g_factzn_exps[i]) : i in [1 .. #vals]];
+    chi_at_J := &*[chi`ClassRepEvals[cg_reps[i][2]]^(g_factzn_exps[i]) : i in [1 .. #cg_reps]];
   end if;
 
   return StrongMultiply([*
-      chi`RayClassChar(I),
-      marked_char_on_J,
+      chi_at_J,
       EvaluateNoncompactInfinityType(X, x)^-1,
-      X`MarkedDrchChar(X`BaseField!x)^-1 
+      chi`DrchChar(X`BaseField!x)^-1 
       *]);
 end intrinsic;
 
@@ -466,8 +508,7 @@ end intrinsic;
 
 intrinsic Conductor(chi::HMFGrossenchar) -> RngOrdIdl
   {}
-  X := Parent(chi);
-  return Conductor(X`MarkedDrchChar * DirichletRestriction(chi`RayClassChar)^-1);
+  return Conductor(chi`DrchChar);
 end intrinsic;
 
 intrinsic Modulus(chi::HMFGrossenchar) -> RngOrdIdl
@@ -485,6 +526,14 @@ intrinsic IsFiniteOrder(chi::HMFGrossenchar) -> RngOrdIdl
   return IsFiniteOrder(Parent(chi));
 end intrinsic;
 
+intrinsic IsPrimitivized(chi::HMFGrossenchar) -> BoolElt
+  {}
+  if not assigned chi`IsPrimitivized then
+    chi`IsPrimitivized := IsPrimitive(chi`DrchChar);
+  end if;
+  return chi`IsPrimitivized;
+end intrinsic;
+
 intrinsic IsPrimitive(chi::HMFGrossenchar) -> BoolElt
   {}
   N_f, N_oo := Conductor(chi);
@@ -492,31 +541,24 @@ intrinsic IsPrimitive(chi::HMFGrossenchar) -> BoolElt
   return N_f eq M_f and N_oo eq M_oo;
 end intrinsic;
 
-intrinsic AssociatedPrimitiveCharacter(chi::HMFGrossenchar) -> HMFGrossenchar
-  {}
-  if IsPrimitive(chi) then
-    return chi;
-  end if;
+intrinsic Primitivize(chi::HMFGrossenchar)
+  {
+    Given a HMFGrossenchar chi, replaces its Dirichlet character psi
+    with the primitive Dirichlet character associated to psi. 
 
-  M_f, M_oo := Modulus(chi);
-  N_f, N_oo := Conductor(chi);
-  X := Parent(chi);
-  Y := cHMFGrossencharsTorsor(X`BaseField, X`Weight, N_f : N_oo:=N_oo);
-  S := HMFGrossencharsTorsorSet(Y);
-  reps := RayClassGroupReps(X);
-  chi_on_reps := [* chi(rep) : rep in reps *];
-  for psi in S do
-    flag := true;
-    for i in [1 .. #reps] do
-      rep := reps[i];
-      if not StrongEquality(psi(rep), chi_on_reps[i]) then 
-        flag := false;
-        break;
-      end if;
-    end for;
-    if flag then
-      return psi;
-    end if;
-  end for;
-  require false : "Something is wrong!";
+    This is not the same behavior as AssociatedPrimitiveCharacter 
+    because this modifies the existing character rather than returning
+    a new one in the lower modulus. The point is that if we want to 
+    evaluate a ray class character at primes coprime to its conductor
+    but not to its modulus, it is better to call this function and then
+    perform evaluations rather than to build a whole new character, since
+    primitivization does not change anything about the character other
+    than "unextending by zero". 
+  }
+  if not IsPrimitivized(chi) then
+    chi`DrchChar := AssociatedPrimitiveCharacter(chi`DrchChar);
+    chi`IsPrimitivized := true;
+  end if;
 end intrinsic;
+
+
