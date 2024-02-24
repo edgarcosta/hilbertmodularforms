@@ -27,12 +27,13 @@ declare attributes HMFGrossencharsTorsor:
   ClassGroupReps, // SeqEnum[Tup[GpAbElt, RngOrdIdl]] - A sequence consisting of 
                      // generators for the class group and corresponding ideal 
                      // representatives. We do this because the algorithm for computing
-                     // generators is nondeterministic.
+                     // generators is nondeterministic, and because we want to use
+                     // generators which are coprime to the modulus of the character.
   MarkedDrchChar, // GrpDrchNFElt - A character psi of the ray residue ring of modulus Modulus(X)
                    // such that psi * chi_inf (the infinity-type associated to the given weight)
                    // is trivial on units (i.e. is a character on principal ideals). 
   MarkedCharClassRepEvals, // Assoc: I -> chi_0(I), where I is one of the ideals appearing in
-                           //   X`RayClassGroupReps and where chi_0 is the marked Grossencharacter
+                           //   X`ClassGroupReps and where chi_0 is the marked Grossencharacter
                            //   of the torsor.
   IsNonempty; // bool: true if there are Grossencharacters of this weight and level
 
@@ -40,7 +41,7 @@ declare attributes HMFGrossenchar:
   Parent, // HMFGrossencharsTorsor
   RayClassChar, // GrpHeckeElt 
   ClassRepEvals, // Assoc - I -> chi(I), where I is one of the ideals appearing in
-                       //   X`RayClassGroupReps and where chi_0 is the marked Grossencharacter
+                       //   X`ClassGroupReps and where chi_0 is the marked Grossencharacter
                        //   of the torsor.
   DrchChar, // GrpDrchNFElt - The primitive character associated to the product of 
             //  the marked Dirichlet character of the torsor and
@@ -81,12 +82,9 @@ intrinsic cHMFGrossencharsTorsor(
   X`Weight := k;
   X`FiniteModulus := N_f;
   X`InfiniteModulus := N_oo;
-  G, X`ClassMap := ClassGroup(X`BaseField);
-  require IsDiagonal(RelationMatrix(G)) : "There should be no cross-relations\
-      between the generators of the ray class group";
-
-  X`ClassGroupReps := [<G.i, X`ClassMap(G.i)> : i in [1 .. #Generators(G)]];
-  X`ClassGroup := G;
+  X`ClassGroup, X`ClassMap := ClassGroup(X`BaseField);
+  require IsDiagonal(RelationMatrix(X`ClassGroup)) : "There should be no cross-relations\
+      between the generators of the class group";
 
   if IsNonempty(X) then
     SetMarkedCharClassRepEvals(X);
@@ -296,6 +294,45 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
   end if;
 end intrinsic;
 
+intrinsic ClassGroupReps(X::HMFGrossencharsTorsor) -> SeqEnum[Tup]
+  {
+    Let K = X`BaseField. This function returns a sequence consisting of tuples 
+    of <g, I>, where g is a group element of the class group and I is an ideal 
+    of O_K in the class g that is coprime to the finite modulus of X. 
+  }
+  if not assigned X`ClassGroupReps then
+    if #X`ClassGroup eq 1 then
+      return [];
+    end if;
+    rcg, rc_map:= RayClassGroup(X`FiniteModulus, X`InfiniteModulus);
+    cg_gens := Generators(X`ClassGroup);
+    cg_gens_og := cg_gens;
+    cg_reps_dict := AssociativeArray();
+
+    // find a subset of ideal generators of the ray class group 
+    // which generate the class group. The point is to find
+    // generators which are coprime to the finite modulus so that
+    // we don't encounter trouble when evaluating things.
+    for rc_gen in Generators(rcg) do
+      I := rc_map(rc_gen);
+      cg_img_of_gen := I @@ X`ClassMap;
+      if not IsDefined(cg_reps_dict, cg_img_of_gen) then
+        cg_reps_dict[cg_img_of_gen] := I;
+      else
+        if Norm(I) lt Norm(cg_reps_dict[cg_img_of_gen]) then
+          cg_reps_dict[cg_img_of_gen] := I;
+        end if;
+      end if;
+    end for;
+    X`ClassGroupReps := [<gen, cg_reps_dict[gen]> : gen in cg_gens_og];
+    for tup in X`ClassGroupReps do
+      assert tup[2] @@ X`ClassMap eq tup[1];
+      assert IsCoprime(tup[2], X`FiniteModulus);
+    end for;
+  end if;
+  return X`ClassGroupReps;
+end intrinsic;
+
 //////////////////////////////// HMFGrossencharsTorsor fundamental intrinsics
 
 intrinsic Print(X::HMFGrossencharsTorsor, level::MonStgElt)
@@ -375,7 +412,7 @@ intrinsic SetMarkedCharClassRepEvals(X::HMFGrossencharsTorsor)
     inf_evals := [];
     L := RationalsAsNumberField();
     reps := [];
-    for tup in X`ClassGroupReps do
+    for tup in ClassGroupReps(X) do
       gen, rep := Explode(tup);
       d := Order(gen);
 
@@ -406,7 +443,7 @@ intrinsic cHMFGrossenchar(X::HMFGrossencharsTorsor, psi::GrpHeckeElt) -> HMFGros
       the same modulus as the given parent object";
   chi`RayClassChar := psi;
   chi`ClassRepEvals := AssociativeArray();
-  for tup in X`ClassGroupReps do
+  for tup in ClassGroupReps(X) do
     rep := tup[2];
     chi`ClassRepEvals[rep] := StrongMultiply([* X`MarkedCharClassRepEvals[rep], psi(rep) *]);
   end for;
@@ -450,18 +487,17 @@ intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
   if b then
     chi_at_J := Rationals()!1;
   else
-    I_CG := I @@ X`ClassMap; 
-    J := X`ClassMap(I_CG);
+    g := I @@ X`ClassMap; 
+    g_factzn_exps := Eltseq(g);
+    cg_reps := ClassGroupReps(X);
+    require &+[g_factzn_exps[i] * cg_reps[i][1] : i in [1 .. #cg_reps]] eq g : "Something has gone wrong,\
+      Eltseq(g) should give a factorization of g in terms of the generators of the class group."; 
+    J := &*[cg_reps[i][2]^(g_factzn_exps[i]) : i in [1 .. #cg_reps]];
 
     // We choose a generator for IJ^-1. 
     c, x := IsPrincipal(I * J^-1);
     require c : "Something has gone wrong, I * J^-1 should be principal";
-    vals := X`ClassGroupReps;
-    g := I @@ X`ClassMap;
-    g_factzn_exps := Eltseq(g);
-    require &+[g_factzn_exps[i] * vals[i][1] : i in [1 .. #vals]] eq g : "Something has gone wrong,\ 
-      Eltseq(g) should give a factorization of g in terms of the generators of the class group."; 
-    chi_at_J := &*[chi`ClassRepEvals[vals[i][2]]^(g_factzn_exps[i]) : i in [1 .. #vals]];
+    chi_at_J := &*[chi`ClassRepEvals[cg_reps[i][2]]^(g_factzn_exps[i]) : i in [1 .. #cg_reps]];
   end if;
 
   return StrongMultiply([*

@@ -97,7 +97,8 @@ psi_prim := AssociatedPrimitiveCharacter(psi);
 N_psi_f, N_psi_oo := Conductor(psi);
 
 X := cHMFGrossencharsTorsor(F, [<0,0>, <0,0>], M : N_oo:=[1,2]);
-reps := RayClassGroupReps(X);
+rcg, rcg_mp := RayClassGroup(X`FiniteModulus, X`InfiniteModulus);
+reps := [rcg_mp(gen) : gen in Generators(rcg)];
 S := HMFGrossencharsTorsorSet(X);
 for eta in S do
   if eta`RayClassChar eq psi then
