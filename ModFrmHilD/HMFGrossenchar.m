@@ -86,9 +86,9 @@ intrinsic cHMFGrossencharsTorsor(
   require IsDiagonal(RelationMatrix(X`ClassGroup)) : "There should be no cross-relations\
       between the generators of the class group";
 
-  if IsNonempty(X) then
-    SetMarkedCharClassRepEvals(X);
-  end if;
+  // This is a very important function, which checks if there is a Dirichlet character
+  // which cancels out the infinity part. 
+  _ := IsNonempty(X);
   return X;
 end intrinsic;
 
@@ -399,18 +399,17 @@ function MaxPowerDividingD(x, d)
   assert 0 eq 1; // Something has gone wrong, any element should be a first root
 end function;
 
-intrinsic SetMarkedCharClassRepEvals(X::HMFGrossencharsTorsor)
+intrinsic MarkedCharClassRepEvals(X::HMFGrossencharsTorsor) -> Assoc
   {
-    Define the evaluation of a marked element of the set of
-    Grossencharacters of this weight on representatives of generators
-    of the ray class group.
+    Returns an associative array taking an ideal generator I of the class group
+    to the evaluation of the marked character of X on I. The Is are drawn from
+    ClassGroupReps(X).
   }
   if not assigned X`MarkedCharClassRepEvals then
     X`MarkedCharClassRepEvals := AssociativeArray();
 
     polys := [];
     inf_evals := [];
-    L := RationalsAsNumberField();
     reps := [];
     for tup in ClassGroupReps(X) do
       gen, rep := Explode(tup);
@@ -419,18 +418,15 @@ intrinsic SetMarkedCharClassRepEvals(X::HMFGrossencharsTorsor)
       b, x := IsPrincipal(rep^d);
       require b : "Something has gone wrong, rep^d should be a principal ideal";
 
-      a := EvaluateNoncompactInfinityType(X, x) * X`MarkedDrchChar(x);
-      L := Compositum(L, Parent(a));
-      a := StrongCoerce(L, a);
+      a := StrongMultiply([* EvaluateNoncompactInfinityType(X, x), X`MarkedDrchChar(x) *]);
+      L := Parent(a);
       t := MaxPowerDividingD(a, d);
       L := RadicalExtension(L, Integers()!(d/t), a);
       X`MarkedCharClassRepEvals[rep] := Root(a, d)^-1;
       Append(~reps, rep);
     end for;
-    for rep in reps do
-      X`MarkedCharClassRepEvals[rep] := StrongCoerce(L, X`MarkedCharClassRepEvals[rep]);
-    end for;
   end if;
+  return X`MarkedCharClassRepEvals;
 end intrinsic;
 
 //////////////////////////////// HMFGrossenchar constructors
@@ -439,13 +435,14 @@ intrinsic cHMFGrossenchar(X::HMFGrossencharsTorsor, psi::GrpHeckeElt) -> HMFGros
   {}
   chi := New(HMFGrossenchar);
   chi`Parent := X;
+  require IsNonempty(X) : "This HMFGrossencharsTorsor is empty!";
   require Modulus(psi) eq Modulus(X) : "The given ray class character does not have\
       the same modulus as the given parent object";
   chi`RayClassChar := psi;
   chi`ClassRepEvals := AssociativeArray();
   for tup in ClassGroupReps(X) do
     rep := tup[2];
-    chi`ClassRepEvals[rep] := StrongMultiply([* X`MarkedCharClassRepEvals[rep], psi(rep) *]);
+    chi`ClassRepEvals[rep] := StrongMultiply([* MarkedCharClassRepEvals(X)[rep], psi(rep) *]);
   end for;
   chi`DrchChar := X`MarkedDrchChar * DirichletRestriction(psi)^-1;
   return chi;
