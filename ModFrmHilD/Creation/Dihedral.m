@@ -289,9 +289,9 @@ intrinsic ThetaSeries(Mk::ModFrmHilD, psi::HMFGrossenchar) -> ModFrmHilDElt
     g := #fact;
     d := InertiaDegree(pp);
     if g eq 2 then
-      a_pps[pp] := StrongAdd([* psi(fact[1][1])^-1, psi(fact[2][1])^-1 *]);
+      a_pps[pp] := StrongAdd([* psi(fact[1][1]), psi(fact[2][1]) *]);
     elif fact[1][2] ne 1 then
-      a_pps[pp] := psi(fact[1][1])^-1;
+      a_pps[pp] := psi(fact[1][1]);
     else
       a_pps[pp] := 0;
     end if;
