@@ -19,6 +19,8 @@ Mk1 := HMFSpace(M, N, [1,1], chi);
 Sk1 := HeckeStabilityCuspBasis(Mk1 : prove:=false);
 Dk1 := DihedralBasis(Mk1);
 
+// there should be one dihedral form of this level
+assert #Dk1 eq 1;
 // Dk1 should be linearly independent
 assert #LinearDependence(Dk1) eq 0;
 // Dk1 should be contained in Sk1
