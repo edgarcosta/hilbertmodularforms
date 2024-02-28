@@ -233,7 +233,7 @@ intrinsic PossibleGrossencharsOfRelQuadExt(K, N, k_hmf, chi) -> List
       flag := true;
       for g in Generators(GF) do
         I := mF(g);
-        flag and:= StrongEquality(chi(I) * Norm(I)^(Max(k_hmf) - 1), psi(Integers(K_abs)!!(I))^-1 * QuadraticCharacter(I^-1, K));
+        flag and:= StrongEquality(chi(I) * Norm(I)^(Max(k_hmf) - 1), psi(Integers(K_abs)!!(I)) * QuadraticCharacter(I, K));
       end for;
       if flag then
         Append(~ans, psi);
@@ -289,9 +289,9 @@ intrinsic ThetaSeries(Mk::ModFrmHilD, psi::HMFGrossenchar) -> ModFrmHilDElt
     g := #fact;
     d := InertiaDegree(pp);
     if g eq 2 then
-      a_pps[pp] := StrongAdd([* psi(fact[1][1])^-1, psi(fact[2][1])^-1 *]);
+      a_pps[pp] := StrongAdd([* psi(fact[1][1]), psi(fact[2][1]) *]);
     elif fact[1][2] ne 1 then
-      a_pps[pp] := psi(fact[1][1])^-1;
+      a_pps[pp] := psi(fact[1][1]);
     else
       a_pps[pp] := 0;
     end if;

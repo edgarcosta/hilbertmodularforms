@@ -498,9 +498,9 @@ intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
   end if;
 
   return StrongMultiply([*
-      chi_at_J,
-      EvaluateNoncompactInfinityType(X, x)^-1,
-      chi`DrchChar(X`BaseField!x)^-1 
+      chi_at_J^-1,
+      EvaluateNoncompactInfinityType(X, x),
+      chi`DrchChar(X`BaseField!x)
       *]);
 end intrinsic;
 

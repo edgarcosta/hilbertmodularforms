@@ -126,6 +126,18 @@ intrinsic Coefficient(f :: ModFrmHilDEltComp, nu :: FldNumElt
     return a;
 end intrinsic;
 
+intrinsic Coefficient(f::ModFrmHilDEltComp, nn::RngOrdIdl) -> FldElt
+  {}
+  if IsZero(nn) then
+    return Coefficient(f, BaseField(f)!0);
+  end if;
+  require IdealToNarrowClassRep(GradedRing(f), nn) eq ComponentIdeal(f) : "nn needs\
+    to be associated to this component";
+  nu := IdealToRep(GradedRing(f))[ComponentIdeal(f)][nn];
+  a_nu := Coefficient(f, nu);
+  return EltCoeffToIdlCoeff(a_nu, nu, Weight(Space(f)));
+end intrinsic;
+
 // specify two functions of HMFExpansionCoefficient for multivariate and univariate.
 // if we choose only one of these implementations, can remove duplicate
 intrinsic HMFExpansionCoefficient(f :: RngUPolElt, exp :: SeqEnum[RngIntElt]) -> RngElt
@@ -774,8 +786,9 @@ ideal class [mm*bb].}
     mf, pf := Modulus(chif);
     ZF := Integers(M);
     coeff_ring := CoefficientRing(f);
+    k := Weight(Mk);
 
-    require Weight(Mk_f) eq Weight(Mk): "Weight(f) is not equal to Weight(Mk)";
+    require Weight(Mk_f) eq k: "Weight(f) is not equal to Weight(Mk)";
     require chif eq Restrict(chi, mf, pf): "Character(f) is not equal to Character(Mk)";
     require UnitCharacters(Mk_f) eq UnitCharacters(Mk): "UnitCharacters(f) is not equal to UnitCharacters(Mk)";
     require N2 subset N1: "Level of f does not divide level of Mk";
@@ -790,8 +803,12 @@ ideal class [mm*bb].}
     mmbbpinv := (M`NarrowClassGroupRepsToIdealDual[mmbb])^(-1);
     for nn -> nu in IdealToRep(M)[mmbb] do
         if Norm(nu) * Norm(mmbbpinv) le prec and IsIntegral(nn * mminv) then
-            coeffs[nu] := Coefficient(f, IdealToRep(M)[bb][ZF!!(nn*mminv)]
-                                     : InFunDomain := true);
+            a_nn := Coefficient(f, ZF!!(nn*mminv));
+            if IsParallel(k) then
+              coeffs[nu] := a_nn;
+            else
+              coeffs[nu] := IdlCoeffToEltCoeff(a_nn, nu, k, coeff_ring);
+            end if;
         else
             coeffs[nu] := coeff_ring ! 0;
         end if;

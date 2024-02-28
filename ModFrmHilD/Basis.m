@@ -69,7 +69,7 @@ intrinsic CuspFormBasis(
     if ViaTraceForm then
       Mk`CuspFormBasis := CuspFormBasisViaTrace(Mk : IdealClassesSupport:=IdealClassesSupport);
     else
-      Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad) cat OldCuspFormBasis(Mk : GaloisDescent := GaloisDescent);
+      Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad) cat OldCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad);
     end if;
     // The contents of Mk`CuspFormBasis should be a basis for the space of cuspforms
     require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
@@ -99,7 +99,7 @@ intrinsic NewCuspFormBasis(
       Mk`NewCuspFormBasis := NewCuspForms(Mk : GaloisDescent := GaloisDescent);
     end if;
   end if;
-
+  
   return SubBasis(Mk`NewCuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
 
@@ -201,7 +201,9 @@ intrinsic OldCuspFormBasis(
   :
   IdealClassesSupport := false,
   Symmetric := false,
-  GaloisDescent := true) -> SeqEnum[ModFrmHilDElt]
+  GaloisDescent := true,
+  SaveAndLoad := false
+  ) -> SeqEnum[ModFrmHilDElt]
   {
     input:
       Mk: A space of HMFs
@@ -221,7 +223,7 @@ intrinsic OldCuspFormBasis(
     divisors := Exclude(Divisors(N), N);
     for D in divisors do
       Mk_D := HMFSpace(M, D, k);
-      Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : IdealClassesSupport := IdealClassesSupport, Symmetric := Symmetric, GaloisDescent := GaloisDescent)];
+      Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric, GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
     end for;
   end if;
   return SubBasis(Mk`OldCuspFormBasis, IdealClassesSupport, Symmetric);

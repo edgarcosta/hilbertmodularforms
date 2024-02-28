@@ -20,7 +20,7 @@ procedure test(F, N, k, true_old_dim)
   assert #LinearDependence(new_basis cat old_basis) eq 0;
 
   // Check that the claimed old basis vectors
-  // are Hecke operators for a prime not dividing
+  // are Hecke eigenforms for a prime not dividing
   // the level.
 
   pp := PrimesUpTo(bound, F:coprime_to := N)[1];

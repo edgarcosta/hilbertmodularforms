@@ -19,6 +19,8 @@ Mk1 := HMFSpace(M, N, [1,1], chi);
 Sk1 := HeckeStabilityCuspBasis(Mk1 : prove:=false);
 Dk1 := DihedralBasis(Mk1);
 
+// there should be one dihedral form of this level
+assert #Dk1 eq 1;
 // Dk1 should be linearly independent
 assert #LinearDependence(Dk1) eq 0;
 // Dk1 should be contained in Sk1
@@ -51,3 +53,27 @@ chi := H.1;
 M15chi := HMFSpace(M, N, [1,5], chi);
 D15chi := DihedralBasis(M15chi);
 assert #D15chi eq 0;
+
+/***************************************************
+ * We verify that there is a dihedral form of weight [1,3] 
+ * and level a prime above 41, and that it agrees with
+ * the form produced via Hecke stability.
+***************************************************/
+
+F := QuadraticField(5);
+ZF := Integers(F);
+N := Factorization(41*ZF)[1][1];
+M := GradedRingOfHMFs(F, 150);
+H := HeckeCharacterGroup(N, [1,2]);
+chi := H.1; 
+
+Mk := HMFSpace(M, N, [1,3], chi);
+Sk := HeckeStabilityCuspBasis(Mk : prove:=false);
+Dk := DihedralBasis(Mk);
+
+// there should be one dihedral form of this level
+assert #Dk eq 1;
+// Dk should be linearly independent
+assert #LinearDependence(Dk) eq 0;
+// Dk should be contained in Sk1
+assert #LinearDependence(Sk cat Dk) eq #Dk;
