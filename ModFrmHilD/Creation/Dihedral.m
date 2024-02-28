@@ -233,7 +233,7 @@ intrinsic PossibleGrossencharsOfRelQuadExt(K, N, k_hmf, chi) -> List
       flag := true;
       for g in Generators(GF) do
         I := mF(g);
-        flag and:= StrongEquality(chi(I) * Norm(I)^(Max(k_hmf) - 1), psi(Integers(K_abs)!!(I))^-1 * QuadraticCharacter(I^-1, K));
+        flag and:= StrongEquality(chi(I) * Norm(I)^(Max(k_hmf) - 1), psi(Integers(K_abs)!!(I)) * QuadraticCharacter(I, K));
       end for;
       if flag then
         Append(~ans, psi);
