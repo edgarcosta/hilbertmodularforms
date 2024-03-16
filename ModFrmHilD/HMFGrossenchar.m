@@ -421,8 +421,8 @@ intrinsic MarkedCharClassRepEvals(X::HMFGrossencharsTorsor) -> Assoc
       a := StrongMultiply([* EvaluateNoncompactInfinityType(X, x), X`MarkedDrchChar(x) *]);
       L := Parent(a);
       t := MaxPowerDividingD(a, d);
-      L := RadicalExtension(L, Integers()!(d/t), a);
-      X`MarkedCharClassRepEvals[rep] := Root(a, d)^-1;
+      L := AbsoluteField(RadicalExtension(L, Integers()!(d/t), Root(a,t)));
+      X`MarkedCharClassRepEvals[rep] := Root(L!a, d)^-1;
       Append(~reps, rep);
     end for;
   end if;
