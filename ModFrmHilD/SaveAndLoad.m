@@ -202,8 +202,8 @@ intrinsic LoadOrBuildAndSave(
     inputs:
       Mk - space of HMFs
       builder - intrinsic which is used to build
-        the basis if it is not saved
-      suffix - string suffix where this basis should
+        the basis if it is not saved.
+        suffix - string suffix where this basis should
         be saved/loaded from
       save_dir - directory where precomputed results
         are saved
@@ -227,7 +227,11 @@ intrinsic LoadOrBuildAndSave(
   // loaded is false if the file was not saved or if
   // the precision of the stored basis wasn't high enough
   if not loaded then
-    basis := builder(Mk);
+    if builder eq HeckeStabilityCuspBasis then
+      basis := HeckeStabilityCuspBasis(Mk : SaveAndLoad:=true);
+    else
+      basis := builder(Mk);
+    end if;
     SaveBasis(loadfile_name, basis);
   end if;
   return basis;
