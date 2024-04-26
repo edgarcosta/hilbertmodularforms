@@ -88,7 +88,7 @@ end intrinsic;
 //
 // For most applications, the ModFrmHil/ or Trace.m code should be used. 
 
-intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> SeqEnum[ModFrmHilDElt]
+intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60, coprime_only:=true) -> SeqEnum[ModFrmHilDElt]
   {
     inputs:
       M: A space of forms on which the Hecke algebra acts by
@@ -106,7 +106,8 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60) -> 
   ZF := Integers(F);
   hecke_matrices := [];
 
-  for pp in PrimesUpTo(P, F : coprime_to:=N) do
+  primes := (coprime_only) select PrimesUpTo(P, F : coprime_to:=N) else PrimesUpTo(P, F);
+  for pp in primes do
     Append(~hecke_matrices, HeckeMatrix(basis, pp));
   end for;
 
