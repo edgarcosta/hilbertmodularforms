@@ -53,7 +53,8 @@ intrinsic HeckeStabilityCuspBasis(
     :
     prove:=true,
     stable_only:=false,
-    smallest_prime:=true
+    smallest_prime:=true,
+    SaveAndLoad:=false
     ) -> SeqEnum[ModFrmHilDElt]
     {
       Compute the space Mk using the Hecke stability method.
@@ -64,6 +65,13 @@ intrinsic HeckeStabilityCuspBasis(
           If true, we return the Hecke stable subspace we find without 
           raising it to a dth power to ensure that the forms we found 
           are genuinely holomorphic.
+        - The optional parameter smallest_prime is true or false.
+          If true, we use the Hecke operator associated to the prime of smallest
+          norm in this field. If false, we use the prime of smallest norm which is
+          coprime to the level. The former is only guaranteed to find newforms.
+        - The optional parameter SaveandLoad is true or false.
+          If true, we attempt to SaveAndLoad any cusp form bases we need during the 
+          computation.
     }
 
     M := Parent(Mk);
@@ -109,7 +117,7 @@ intrinsic HeckeStabilityCuspBasis(
     //Load space of Cusp forms of weight [k1 + eis_k, ..., kn + eis_k], level N, and trivial character
     vprintf HilbertModularForms: "Computing basis of cusp forms of weight %o, level %o\n", [k[i] + eis_k : i in [1 .. n]], N;
     Mkl := HMFSpace(M, N, [k[i] + eis_k : i in [1 .. n]]);
-    Bkl := CuspFormBasis(Mkl);
+    Bkl := CuspFormBasis(Mkl : SaveAndLoad:=SaveAndLoad);
     
     vprintf HilbertModularForms: "Size of basis is %o.\n", #Bkl;
 
@@ -153,7 +161,7 @@ intrinsic HeckeStabilityCuspBasis(
     d := Order(chi);
     Mk_dth_power := HMFSpace(M, N, [d*k[i] : i in [1 .. n]]);
     Bmod := Basis(Mk_dth_power);
-    Bcusp := CuspFormBasis(Mk_dth_power);
+    Bcusp := CuspFormBasis(Mk_dth_power : SaveAndLoad:=SaveAndLoad);
 
     require #Bcusp eq CuspDimension(Mk_dth_power): "Need to increase precision to compute this space";
 

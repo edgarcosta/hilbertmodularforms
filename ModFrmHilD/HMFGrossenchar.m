@@ -228,6 +228,9 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
     if IsFiniteOrder(X) then
       X`IsNonempty := true;
       X`MarkedDrchChar := Dv.0;
+    elif &and[IsOne(EvaluateNoncompactInfinityType(X, eps)) : eps in UnitsGenerators(X`BaseField : exclude_torsion:=false)] then
+      X`IsNonempty := true;
+      X`MarkedDrchChar := Dv.0;
     else
       K := X`BaseField;
       E := (IsGalois(K)) select K else SplittingField(K);
