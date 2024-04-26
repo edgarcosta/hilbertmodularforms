@@ -234,6 +234,15 @@ intrinsic ChangeCoefficientRing(f::ModFrmHilDElt, R::Rng) -> ModFrmHilDElt
   return HMFSumComponents(Parent(f), components);
 end intrinsic;
 
+intrinsic CanChangeRing(f::ModFrmHilDElt, R::Rng) -> BoolElt, ModFrmHilDElt
+  {}
+  try
+    return true, ChangeCoefficientRing(f, R);
+  catch e
+    return false, _;
+  end try;
+end intrinsic;
+
 intrinsic IsCoercible(Mk::ModFrmHilD, f::.) -> BoolElt, .
 {}
     if Type(f) eq RngIntElt then
