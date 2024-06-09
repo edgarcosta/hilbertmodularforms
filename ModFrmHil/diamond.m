@@ -30,7 +30,7 @@ forward DiamondOperatorDefiniteBig;
 
 // from hecke.m
 
-function operator(M, p, op : hack := true)
+function operator(M, p, op : hack:=true)
   if hack then
       assert op in {"Hecke", "AL", "DegDown1", "DegDownp", "Diamond"};
   else
@@ -39,15 +39,15 @@ function operator(M, p, op : hack := true)
 
   // Check if cached on M
   cached, Tp := IsDefined(eval "M`"*op, p);
-  if cached then 
+  if cached then
     return Tp;
   end if;
 
   if Dimension(M : UseFormula:=false) eq 0 then // gets cached dimension or computes the space
 
-    Tp := ZeroMatrix(Integers(), 0, 0); 
+    Tp := ZeroMatrix(Integers(), 0, 0);
 
-  elif assigned M`basis_matrix_wrt_ambient then 
+  elif assigned M`basis_matrix_wrt_ambient then
 
     // (TO DO: is this always better than getting it directly from the big operator?)
     bm := M`basis_matrix_wrt_ambient;
@@ -56,9 +56,9 @@ function operator(M, p, op : hack := true)
     Tp_amb := ChangeRing(Tp_amb, BaseRing(bm));
     Tp := bm * Tp_amb * bmi;
 
-    if debug and basis_is_honest(M) and Norm(p + Level(M)) eq 1 then 
+    if debug and basis_is_honest(M) and Norm(p + Level(M)) eq 1 then
       // check Tp really preserves M as a subspace of M`Ambient
-      assert Rowspace(bm * Tp_amb) subset Rowspace(bm); 
+      assert Rowspace(bm * Tp_amb) subset Rowspace(bm);
     end if;
 
   elif IsBianchi(M) then
@@ -79,7 +79,7 @@ function operator(M, p, op : hack := true)
     bmi := M`basis_matrix_wrt_ambient_inv;
     return bm * Tp * bmi;
 
-  elif IsDefinite(M) then 
+  elif IsDefinite(M) then
 
     MA := TopAmbient(M);
     if hack then
@@ -119,7 +119,7 @@ function operator(M, p, op : hack := true)
 
   if assigned M`hecke_matrix_field then
     bool, Tp := CanChangeRing(Tp, M`hecke_matrix_field);
-    error if not bool, 
+    error if not bool,
          "The hecke_matrix_field seems to be wrong!\n" * please_report;
   end if;
 
@@ -127,12 +127,12 @@ function operator(M, p, op : hack := true)
     // check commutativity
     bad := Level(M) / NewLevel(M);
     new := Minimum(bad) eq 1;
-    for l in Keys(M`Hecke) do 
+    for l in Keys(M`Hecke) do
       if new or Minimum(l + bad) eq 1 then
         Tl := M`Hecke[l];
-        assert Tl*Tp eq Tp*Tl; 
+        assert Tl*Tp eq Tp*Tl;
       end if;
-    end for; 
+    end for;
   end if;
 
   // Cache
@@ -146,14 +146,14 @@ function operator(M, p, op : hack := true)
       when "DegDown1" : M`DegDown1[p] := Tp;
       when "DegDownp" : M`DegDownp[p] := Tp;
       when "Diamond"  : M`Diamond[p]  := Tp;
-    end case; 
+    end case;
   else
     case op:
       when "Hecke"    : M`Hecke[p]    := Tp;
       when "AL"       : M`AL[p]       := Tp;
       when "DegDown1" : M`DegDown1[p] := Tp;
       when "DegDownp" : M`DegDownp[p] := Tp;
-    end case; 
+    end case;
   end if;
 //end if;
 
@@ -195,17 +195,17 @@ end function;
 
 function DiamondOperatorDefiniteBig(M, J)
     vprintf HilbertModularForms, 1 :
-	"Computing diamond operator for ideal J = %o\n", J; 
+	"Computing diamond operator for ideal J = %o\n", J;
     assert IsDefinite(M);
-    
+
     // Form here on we assume this is an ambient space
     assert (not assigned M`Ambient);
-    
+
     N := Level(M);
     weight2 := Seqset(Weight(M)) eq {2};
     easy := weight2 and N eq Discriminant(QuaternionOrder(M));
     // easy = basis of big space is given by the rids
-    
+
     if (not assigned M`rids) then
 	vprintf HilbertModularForms, 1 :
 	    "Right ideal classes were not computed, forcing them to be computed.\n";
@@ -219,7 +219,7 @@ function DiamondOperatorDefiniteBig(M, J)
     h := #ideal_classes;
     vprintf HilbertModularForms, 1 :
 	"There are %o O(1)-right ideal classes.\n", h;
-    
+
     // J acts by left multiplication on the classes of right ideals.
     // This creates a permutation of the ideal classes, which we now construct
 
@@ -246,13 +246,13 @@ function DiamondOperatorDefiniteBig(M, J)
 	    end if;
 	end for;
     end for;
-    
+
     if easy then
 	perm := [Index(perm_inv, i) : i in [1..#perm_inv]];
 	d_J := PermutationMatrix(F_weight,perm);
 	return d_J;
     end if;
-    
+
     sm := M`splitting_map;
     HMDF := M`ModFrmHilDirFacts;
     nCFD := [#hmdf`CFD : hmdf in HMDF];
@@ -287,7 +287,7 @@ function DiamondOperatorDefiniteBig(M, J)
 	    target_idx := &+nCFD[1..I_dest_idx-1];
 	    target_idx +:= tgt_idx;
 	    u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
-	   
+
 	    if weight2 then
 		alpha_rep := IdentityMatrix(F_weight, 1);
 	    else
@@ -339,13 +339,13 @@ intrinsic DiamondOperator(M::ModFrmHil, J::RngOrdIdl) -> AlgMatElt
     J := CoprimeRepresentative(J, Level(M))*J;
 /*
     F_weight := getWeightBaseField(M);
-    
+
     if Dimension(M) eq 0 then
 	return MatrixAlgebra(F_weight, 0)!1;
     end if;
 
     // we compute it on the ambient space
-    if assigned M`basis_matrix_wrt_ambient then 
+    if assigned M`basis_matrix_wrt_ambient then
 
 	// (TO DO: is this always better than getting it directly from the big operator?)
 	bm := M`basis_matrix_wrt_ambient;
@@ -369,7 +369,7 @@ end intrinsic;
 // Here M is a ModFrmHil (HibertCuspForms(M))
 // Currently just works for trivial weight.
 function HeckeCharacterSubspace(M, chi)
-    
+
     K := BaseRing(M);
     Z_K := Integers(K);
     // cl_K, cl_map := RayClassGroup(Level(M), [1..Degree(K)]);
@@ -390,26 +390,26 @@ function HeckeCharacterSubspace(M, chi)
     hecke := [HeckeOperator(M, PrimeIdealsOverPrime(K,p)[1])
 	      : p in PrimesUpTo(check_bound)];
     assert &and[dJ[2]*T eq T*dJ[2] : T in hecke, dJ in dJs];
-   */    
+   */
 
     F_weight := getWeightBaseField(M);
     Id_M := IdentityMatrix(F_weight, Dimension(M));
-    
+
     subsp := &meet [Kernel(dJ[2] - chi(dJ[1])*Id_M) : dJ in dJs];
 
     dim := Dimension(subsp);
-   
+
     M_sub := HMF0(BaseField(M), Level(M), 1*Integers(K), chi, Weight(M), CentralCharacter(M));
     M_sub`basis_matrix_wrt_ambient := BasisMatrix(subsp);
-    
+
     L := BaseRing(M_sub`basis_matrix_wrt_ambient);
     Id_Msub := ChangeRing(IdentityMatrix(F_weight, dim),L);
-    
-    M_sub`basis_matrix_wrt_ambient_inv := 
-        Transpose(Solution( Transpose(M_sub`basis_matrix_wrt_ambient), 
+
+    M_sub`basis_matrix_wrt_ambient_inv :=
+        Transpose(Solution( Transpose(M_sub`basis_matrix_wrt_ambient),
 			    Id_Msub));
     if assigned M`basis_matrix then
-       M_sub`basis_matrix := M_sub`basis_matrix_wrt_ambient * 
+       M_sub`basis_matrix := M_sub`basis_matrix_wrt_ambient *
 			     ChangeRing(M`basis_matrix,L);
        M_sub`basis_matrix_inv := Transpose(Solution( Transpose(M_sub`basis_matrix), Id_Msub));
     end if;
@@ -419,7 +419,7 @@ function HeckeCharacterSubspace(M, chi)
     if assigned M`is_new then
       M_sub`is_new := M`is_new;
     end if;
-    
+
     return M_sub;
 end function;
 
