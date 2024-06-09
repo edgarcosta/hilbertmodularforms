@@ -1,5 +1,5 @@
 import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
-import "../../ModFrmHil/copypaste/hecke.m" : hecke_algebra;
+import !"Geometry/ModFrmHil/hecke.m" : hecke_algebra;
 
 // Caching magma computations
 intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List

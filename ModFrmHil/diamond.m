@@ -1,21 +1,24 @@
-import "copypaste/definite.m" : HeckeOperatorDefiniteBig,
-                                AtkinLehnerDefiniteBig,
-				DegeneracyDown1DefiniteBig,
-				DegeneracyDownpDefiniteBig;
-
-import "copypaste/hackobj.m" : IsBianchi, TopAmbient;
-
-import "copypaste/hecke.m" : basis_is_honest,
-                             basis_matrix,
-			     debug,
-			     HilbertModularSpaceDirectFactors,
-			     make_ideal,
-			     please_report,
-			     restriction;
+import !"Geometry/ModFrmHil/definite.m":
+  AtkinLehnerDefiniteBig,
+  DegeneracyDown1DefiniteBig,
+  DegeneracyDownpDefiniteBig,
+  HeckeOperatorDefiniteBig;
+import !"Geometry/ModFrmHil/hackobj.m" :
+  IsBianchi,
+  TopAmbient;
+import !"Geometry/ModFrmHil/hecke.m" :
+  HilbertModularSpaceDirectFactors,
+  basis_is_honest,
+  basis_matrix,
+  debug,
+  make_ideal,
+  please_report,
+  restriction;
 
 import "hackobj.m" : HMF0;
-import "hecke_field.m" : hecke_matrix_field,
-                         WeightRepresentation;
+import "hecke_field.m" :
+  hecke_matrix_field,
+  WeightRepresentation;
 
 /**************** New intrinsics **********************/
 

@@ -14,15 +14,22 @@ freeze;
 *                                                                     *
 ***********************************************************************/
 
-import "hecke.m"              : basis_matrix, 
-                                basis_is_honest, 
-                                hecke_matrix_field; 
+// hack begins
+// We replace HMF0 with out own
+import "../hackobj.m" : HMF0;
 
-import "definite.m"           : BasisMatrixDefinite,
-                                InnerProductMatrixBig;
+import "hecke.m" :
+  basis_matrix,
+  basis_is_honest,
+  hecke_matrix_field;
 
-import "../hackobj.m"         : HMF0;
-import "../BianchiNew/hackobj.m" : DimensionBianchi;
+import "definite.m":
+  BasisMatrixDefinite,
+  InnerProductMatrixBig;
+
+// Converted to following imports to absolute imports
+import !"Geometry/BianchiNew/hackobj.m" : DimensionBianchi;
+// hack ends
 
 QuaternionOrderIntrinsic := QuaternionOrder; 
 
@@ -460,7 +467,7 @@ function is_cached_hmf(QO, F, N, k)
   end if;
   return false, _;
 end function;
-/*
+/* hack: replaced via import
 function HMF0(F, N, Nnew, Chi, k, C)
   M := New(ModFrmHil);
   M`Field := F;

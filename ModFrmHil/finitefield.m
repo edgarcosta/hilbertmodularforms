@@ -1,25 +1,24 @@
+import !"Geometry/ModFrmHil/hecke.m" :
+  BMF_with_ambient,
+  CharacteristicPolynomialViaCRT,
+  NewformsOfDegree1Implemented,
+  basis_is_honest,
+  get_red_vector,
+  hecke_algebra,
+  pseudo_inverse,
+  random_large_split_prime,
+  reduction;
 
+import !"Geometry/ModFrmHil/hackobj.m" :
+  Ambient,
+  HMF0,
+  IsBianchi;
+import !"Geometry/ModFrmHil/definite.m" :
+  weight_map_arch;
 
-import "copypastefunctions.m" : random_large_split_prime_using_max_order,
-                                random_large_split_prime,
-                                reduction,
-                                dimension_lower_bound,
-                                hecke_algebra_dimension,
-                                hecke_algebra,
-                                CharacteristicPolynomialViaCRT,
-                                NewformsOfDegree1Implemented,
-                                basis_is_honest,
-                                pseudo_inverse,
-                                red_eigenvector,
-                                get_red_vector,
-                                IsBianchi,
-                                Ambient,
-                                BMF_with_ambient,
-                                HMF0,
-                                weight_map_arch;
-
-import "hecke_field.m" : hecke_matrix_field,
-                         minimal_hecke_matrix_field;
+import "hecke_field.m" :
+  hecke_matrix_field,
+  minimal_hecke_matrix_field;
 
 
 forward WeightRepresentationFiniteField;

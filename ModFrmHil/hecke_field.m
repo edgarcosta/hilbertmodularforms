@@ -1,27 +1,28 @@
-import "copypaste/definite.m" : _ResidueMatrixRing,
-			        HMSDF,
-                                weight_map_arch;
-			   
-import "copypaste/hackobj.m" : Ambient,
-                               BMF_with_ambient,
-			       IsBianchi, 
-			       TopAmbient;
+import !"Geometry/ModFrmHil/definite.m":
+  _ResidueMatrixRing,
+  HMSDF,
+  weight_map_arch;
+import !"Geometry/ModFrmHil/hackobj.m" :
+  Ambient,
+  BMF_with_ambient,
+  IsBianchi,
+  TopAmbient;
 
-import "copypaste/hecke.m" : random_large_split_prime_using_max_order,
-                             random_large_split_prime,
-			     reduction,
-			     dimension_lower_bound,
-			     hecke_algebra_dimension,
-			     hecke_algebra,
-			     CharacteristicPolynomialViaCRT,
-			     NewformsOfDegree1Implemented,
-			     basis_is_honest,
-			     pseudo_inverse,
-			     rational_basis,
-			     red_eigenvector,
-			     get_red_vector;
+import !"Geometry/ModFrmHil/hecke.m" :
+  CharacteristicPolynomialViaCRT,
+  NewformsOfDegree1Implemented,
+  basis_is_honest,
+  dimension_lower_bound,
+  get_red_vector,
+  hecke_algebra,
+  hecke_algebra_dimension,
+  pseudo_inverse,
+  rational_basis,
+  red_eigenvector,
+  reduction;
 
-import "copypaste/precompute.m" : get_rids;
+import !"Geometry/ModFrmHil/precompute.m" :
+  get_rids;
 
 import "hackobj.m" : HMF0;
 
