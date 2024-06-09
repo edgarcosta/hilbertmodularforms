@@ -17,8 +17,6 @@ import !"Geometry/ModFrmHil/hecke.m" :
   hecke_algebra,
   hecke_algebra_dimension,
   pseudo_inverse,
-  random_large_split_prime,
-  random_large_split_prime_using_max_order,
   rational_basis,
   red_eigenvector,
   reduction;

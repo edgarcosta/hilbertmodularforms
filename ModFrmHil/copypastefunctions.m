@@ -5,51 +5,6 @@ import "finitefield.m" : reduction_mod_random_large_split_prime;
 
 debug := false;
 
-function random_large_split_prime_using_max_order(K)
-  OK := Integers(K);
-  while true do
-    p := PreviousPrime(Random(B,2*B) : Proof:=false) where B is Round(2^22.5);
-    if OK cmpeq Integers() then
-      return p;
-    elif AbsoluteDiscriminant(OK) mod p eq 0 then
-      continue;
-    elif exists(P){tup[1] : tup in Factorization(p*OK) | AbsoluteNorm(tup[1]) eq p} then
-      assert IsPrime(P);
-      return P;
-    end if;
-  end while;
-end function;
-
-function random_large_split_prime(K)
-  if Type(K) eq FldRat then
-    p := PreviousPrime(Random(B,2*B) : Proof:=false) where B is Round(2^22.5);
-    return p;
-  end if;
-  F := BaseField(K);
-  OF := Integers(F);
-
-  assert Ngens(K) eq 1;
-  f := DefiningPolynomial(K);
-  integral, f := CanChangeRing(f, OF);
-  assert integral;
-  assert IsMonic(f);
-  O := Order(ChangeUniverse(Basis(OF), K) cat [K.1]);
-
-  while true do
-    p := random_large_split_prime_using_max_order(F);
-    k, res := ResidueClassField(p);
-    fp := Polynomial([k| c@res : c in Coefficients(f)]);
-    bool, rt := HasRoot(fp);
-    if bool and Evaluate(Derivative(fp),rt) ne 0 then
-      pbasis := Type(p) eq RngIntElt select [O|p]
-                                      else ChangeUniverse(Basis(p),O);
-      P := ideal< O | pbasis cat [O| K.1 - (rt@@res)] >;
-      assert IsPrime(P);
-      return P;
-    end if;
-  end while;
-end function;
-
 // Reduction mod P of a matrix algebra T
 
 function reduction(T, P : res:=0)

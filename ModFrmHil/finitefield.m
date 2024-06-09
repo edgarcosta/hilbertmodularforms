@@ -1,4 +1,5 @@
-
+import !"Geometry/ModFrmHil/hecke.m" :
+  random_large_split_prime;
 
 import "copypastefunctions.m" :
   Ambient,
@@ -13,8 +14,6 @@ import "copypastefunctions.m" :
   hecke_algebra,
   hecke_algebra_dimension,
   pseudo_inverse,
-  random_large_split_prime,
-  random_large_split_prime_using_max_order,
   red_eigenvector,
   reduction,
   weight_map_arch;
