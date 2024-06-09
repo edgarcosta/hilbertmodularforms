@@ -3,7 +3,7 @@ freeze;
 
 forward HMF0;
 
-import "copypaste/hackobj.m" : HMF;
+import !"Geometry/ModFrmHil/hackobj.m" : HMF;
 
 /**************** New Attributes **********************/
 
