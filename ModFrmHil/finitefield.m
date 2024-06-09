@@ -1,21 +1,19 @@
 import !"Geometry/ModFrmHil/hecke.m" :
-  random_large_split_prime;
-
-import "copypastefunctions.m" :
-  Ambient,
   BMF_with_ambient,
   CharacteristicPolynomialViaCRT,
-  HMF0,
-  IsBianchi,
   NewformsOfDegree1Implemented,
   basis_is_honest,
-  dimension_lower_bound,
   get_red_vector,
   hecke_algebra,
-  hecke_algebra_dimension,
   pseudo_inverse,
-  red_eigenvector,
-  reduction,
+  random_large_split_prime,
+  reduction;
+
+import !"Geometry/ModFrmHil/hackobj.m" :
+  Ambient,
+  HMF0,
+  IsBianchi;
+import !"Geometry/ModFrmHil/definite.m" :
   weight_map_arch;
 
 import "hecke_field.m" :
