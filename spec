@@ -11,6 +11,6 @@
 
   Verification
   {
-    +spec	
+    +spec
   }
 }
