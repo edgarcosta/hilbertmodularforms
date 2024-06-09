@@ -13,17 +13,19 @@ freeze;
 //////////////////////////////////////////////////////////////////////////////
 
 // hack begins
-// We replace the import by our own function
+// We replace DegeneracyMapDomain and WeightRepresentation by our own function
 import "../hecke_field.m" : DegeneracyMapDomain, WeightRepresentation;
 // HMF0 no longer needed
 //import "hackobj.m" : HMF0;
-// hack ends
+
 
 import "hecke.m" : please_report, pseudo_inverse, basis_is_honest;
 
 import "precompute.m" : get_rids, get_tps;
 
-import "proj1.m" : residue_class_reps;
+// Converted to following imports to absolute imports
+import !"Geometry/ModFrmHil/proj1.m" : residue_class_reps;
+// hack ends
 
 debug := false;
 
