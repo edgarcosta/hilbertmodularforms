@@ -1,6 +1,8 @@
 forward IsBianchi;
 forward Ambient;
 import "finitefield.m" : reduction_mod_random_large_split_prime;
+import !"Geometry/ModFrmHil/hecke.m" :
+  random_large_split_prime;
 /********************   from hecke.m    *********************/
 
 debug := false;
