@@ -21,9 +21,9 @@ import "../hecke_field.m" : DegeneracyMapDomain, WeightRepresentation;
 
 import "hecke.m" : please_report, pseudo_inverse, basis_is_honest;
 
-import "precompute.m" : get_rids, get_tps;
-
 // Converted to following imports to absolute imports
+import !"Geometry/ModFrmHil/precompute.m" : get_rids, get_tps;
+
 import !"Geometry/ModFrmHil/proj1.m" : residue_class_reps;
 // hack ends
 

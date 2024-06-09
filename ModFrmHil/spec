@@ -11,7 +11,4 @@
   copypaste/hackobj.m
   # we replace: operator, HMF0, hecke_matrix_field, minimal_hecke_matrix_field
   copypaste/hecke.m
-
-  # ????
-  precompute.m
 }
