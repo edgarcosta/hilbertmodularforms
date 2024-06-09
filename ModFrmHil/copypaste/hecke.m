@@ -10,10 +10,10 @@ freeze;
 
 *****************************************************************************/
 
-import "hackobj.m" : Ambient, 
+import "hackobj.m" : Ambient,
                      TopAmbient,
-                     // HMF0, 
-                     IsBianchi, 
+                     HMF0,
+                     IsBianchi,
                      BMF_with_ambient,
                      set_quaternion_order;
 
@@ -25,11 +25,10 @@ import "definite.m" : BasisMatrixDefinite,
                       DegeneracyDownpDefiniteBig;
 // hack begins
 import "../diamond.m" : operator;
-import "../hackobj.m" : HMF0; 
+import "../hackobj.m" : HMF0;
 import "../hecke_field.m" : hecke_matrix_field,
                             minimal_hecke_matrix_field;
 // hack ends
-  
 
 debug := false;
 
