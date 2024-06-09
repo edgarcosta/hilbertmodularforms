@@ -3,4 +3,7 @@
   finitefield.m
   hackobj.m
   hecke_field.m
+
+  # we need to overwrite DegeneracyMapDomain and WeightRepresentation
+  copypaste/definite.m
 }

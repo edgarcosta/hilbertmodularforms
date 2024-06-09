@@ -14,9 +14,9 @@ freeze;
 
 // hack begins
 // We replace the import by our own function
-// import "hackobj.m" : HMF0;
-import "../hackobj.m" : HMF0;
 import "../hecke_field.m" : DegeneracyMapDomain, WeightRepresentation;
+// HMF0 no longer needed
+//import "hackobj.m" : HMF0;
 // hack ends
 
 import "hecke.m" : please_report, pseudo_inverse, basis_is_honest;
@@ -418,7 +418,7 @@ function weight_map_arch(q, splittings, K, m, n)
 end function;
 
 
-/*
+/* hack: replaced via the import "../hecke_field.m" : ...
 function WeightRepresentation(M) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the 
 //  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
@@ -1966,7 +1966,7 @@ function DegeneracyMap(M1, M2, p : Big:=false)
 
 end function;
 
-/*
+/* hack: replaced via the import "../hecke_field.m" : ...
 function DegeneracyMapDomain(M, d)
    // Given an ambient space M and an integral ideal d such that NewLevel(M) | d | Level(M), 
    // returns a space of level d and same weight as M, defined using internals that are
