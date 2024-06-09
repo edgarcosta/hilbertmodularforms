@@ -2,81 +2,11 @@ forward IsBianchi;
 forward Ambient;
 import "finitefield.m" : reduction_mod_random_large_split_prime;
 import !"Geometry/ModFrmHil/hecke.m" :
-  random_large_split_prime;
+  random_large_split_prime,
+  reduction;
 /********************   from hecke.m    *********************/
 
 debug := false;
-
-// Reduction mod P of a matrix algebra T
-
-function reduction(T, P : res:=0)
-  K := BaseRing(T);
-  if res cmpne 0 then
-    k := Codomain(res);
-  elif Type(K) eq FldRat then
-    k := GF(P);
-    res := map<Rationals() -> k | x :-> k!x>;
-  else
-    k, res := ResidueClassField(P);
-  end if;
-
-/* TO DO: implement CanChangeRing(Mrtx[FldRat], FldFin)
-  if Type(K) eq FldRat then
-    if ISA(Type(T), Mtrx) then
-      return CanChangeRing(T, k);
-    else
-      U := [];
-      for t in GeneratorsSequence(T) do
-        bool, u := CanChangeUniverse(t, k);
-        if bool then
-          Append(~U, u);
-        else
-          return false, _;
-        end if;
-        return true, MatrixAlgebra< k, Degree(T) | U >;
-      end for;
-    end if;
-  end if;
-*/
-
-  // General case
-  // TO DO: implement CanChangeRing(Mtrx, Map)
-
-  function red(t)
-    u := MatrixAlgebra(k, Nrows(t)) ! 0;
-    flag := true;
-    for e in Support(t) do
-      i, j := Explode(e);
-      try
-        u[i,j] := t[i,j] @ res;
-      catch E;
-        flag := false;
-      end try;
-    end for;
-    if flag then
-      return true, u;
-    else
-      return false, _;
-    end if;
-  end function;
-
-  if ISA(Type(T), Mtrx) then
-    return red(T);
-  else
-    U := [];
-    for t in GeneratorsSequence(T) do
-      bool, u := red(t);
-      if bool then
-        Append(~U, u);
-      else
-        return false, _;
-      end if;
-    end for;
-    return true, MatrixAlgebra< k, Degree(T) | U >;
-  end if;
-end function;
-
-
 
 
 // For a matrix algebra U, returns the dimension of the module U*v
