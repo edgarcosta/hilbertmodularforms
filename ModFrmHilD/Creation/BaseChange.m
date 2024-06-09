@@ -22,11 +22,11 @@ intrinsic BaseChange(M::ModFrmHilDGRng, f::ModFrmElt : psi := false) -> ModFrmHi
   else
     psi := DirichletCharacter(f);
   end if;
-  
+
   a_pps := AssociativeArray();
   for pp in PrimeIdeals(M) do
     d := InertiaDegree(pp);
-    p := Integers()!Root(Norm(pp), d); 
+    p := Integers()!Root(Norm(pp), d);
     a_p := Coefficient(f, p);
     a_pps[pp] := (d eq 1) select a_p else a_p^d - d * a_p^(d-2) * psi(p) * p^(k-1);
   end for;
@@ -35,7 +35,6 @@ intrinsic BaseChange(M::ModFrmHilDGRng, f::ModFrmElt : psi := false) -> ModFrmHi
 
   H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
   chi := Extend(NormInduction(F, psi), H);
-  Parent(chi);
   k_par := [k : _ in [1 .. Degree(F)]];
   Mk := HMFSpace(M, N, k_par, chi);
 

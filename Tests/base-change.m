@@ -25,7 +25,7 @@ procedure test(F, N, k : psi := false)
 
   S_Q := Basis(CuspidalSubspace(M_Q));
   f := S_Q[1];
-  g := BaseChange(M, f : psi := psi);
+  g := BaseChange(M, f : psi:=psi);
 
   Sk := CuspFormBasis(Mk);
   assert #LinearDependence(Append(Sk, g)) eq 1;
@@ -36,7 +36,7 @@ F := QuadraticField(5);
 N := 23;
 k := 1;
 psi := DirichletGroup(N).1;
-test(F, N, k : psi := psi);
+test(F, N, k : psi:=psi);
 
 N := 11;
 k := 2;
