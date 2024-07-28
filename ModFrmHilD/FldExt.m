@@ -1,6 +1,6 @@
 // save fundamental unit
 declare attributes FldAlg:
-  TotallyPositiveUnits,
+  TotallyPositiveUnitsGroup,
   TotallyPositiveUnitsMap,
   TotallyPositiveUnitsGenerators,
   TotallyPositiveUnitsGeneratorsOrients,
@@ -63,10 +63,10 @@ intrinsic Signature(a::RngOrdElt) -> SeqEnum
   return Signature(FieldOfFractions(R)!a);
 end intrinsic;
 
-intrinsic TotallyPositiveUnits(F::FldAlg) -> GrpAb, Map
+intrinsic TotallyPositiveUnitsGroup(F::FldAlg) -> GrpAb, Map
   {return the group of totally positive units of the base as an abstract group and the map from abstract totally positive unit group into F^\times_>0}
 
-  if not assigned F`TotallyPositiveUnits or not assigned F`TotallyPositiveUnitsMap then
+  if not assigned F`TotallyPositiveUnitsGroup or not assigned F`TotallyPositiveUnitsMap then
     U, mp := UnitGroup(F);
     // Stupid function, the isomorphism mu_2 -> ZZ/2*ZZ
     hiota := function(u);
@@ -81,11 +81,11 @@ intrinsic TotallyPositiveUnits(F::FldAlg) -> GrpAb, Map
     UZd := AbelianGroup([2 : i in [1..Degree(F)]]);
     phi := hom<U -> UZd | [[hiota(Sign(Evaluate(mp(U.i), v))) : v in RealPlaces(F)] : i in [1..#Generators(U)]]>;
     K := Kernel(phi);
-    F`TotallyPositiveUnits := K;
+    F`TotallyPositiveUnitsGroup := K;
     F`TotallyPositiveUnitsMap := mp;
   end if;
 
-  return F`TotallyPositiveUnits, F`TotallyPositiveUnitsMap;
+  return F`TotallyPositiveUnitsGroup, F`TotallyPositiveUnitsMap;
 end intrinsic;
 
 intrinsic FundamentalUnit(F::FldNum) -> FldElt
@@ -117,7 +117,7 @@ intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
   end if;
 
   if not assigned F`TotallyPositiveUnitsGenerators then
-    PU, mPU := TotallyPositiveUnits(F);
+    PU, mPU := TotallyPositiveUnitsGroup(F);
     tpugs_unorient := [Integers(F)!mPU(gen) : gen in Generators(PU)];
 
     v := InfinitePlaces(F)[1];
@@ -129,9 +129,9 @@ intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
     // consistent with the existing behavior of FundamentalUnitTotPos
     //
     // We keep track of which generators are inverted with respect to the 
-    // Generators(F`TotallyPositiveUnits) because we need to solve the word
+    // Generators(F`TotallyPositiveUnitsGroup) because we need to solve the word
     // problem in the unit generators code and it solves it there with respect
-    // to Generators(F`TotallyPositiveUnits).
+    // to Generators(F`TotallyPositiveUnitsGroup).
     for eps in tpugs_unorient do
       if Evaluate(eps, v) lt 1 then
         Append(~F`TotallyPositiveUnitsGenerators, eps);
@@ -148,7 +148,7 @@ end intrinsic;
 intrinsic TotallyPositiveUnitsGeneratorsOrients(F::FldNum) -> SeqEnum
   {
     Returns a sequence whose ith entry e is such that the 
-    ith element of SetToSequence(Generators(TotallyPositiveUnits)) is the
+    ith element of SetToSequence(Generators(TotallyPositiveUnitsGroup)) is the
     ith element of F`TotallyPositiveUnitsGenerators raised to the eth power.
 
     Here, e will either be 1 or -1. 
