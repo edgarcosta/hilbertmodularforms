@@ -20,7 +20,7 @@ intrinsic Evaluate(omega::GrpCharUnitTotElt, x::RngElt) -> RngElt
   else
     b, c := IsDefined(omega`cachedvalues, F!x);
     if not b then
-      U, mU := TotallyPositiveUnits(F);
+      U, mU := TotallyPositiveUnitsGroup(F);
       orients := TotallyPositiveUnitsGeneratorsOrients(F);
       vals := omega`vals;
       c := &*[vals[i]^(a[i]*orients[i]) : i in [1..#vals]] where a := Eltseq(U!(x@@mU));
@@ -86,7 +86,7 @@ intrinsic TrivialUnitCharacter(F::FldAlg) -> GrpCharUnitTotElt
   {Create the trivial unit character on the totally positive unit group
    of the ring of integers of F.}
 
- return UnitCharacter(F, [1: i in [1..#Generators(TotallyPositiveUnits(F))]]);
+ return UnitCharacter(F, [1: i in [1..#Generators(TotallyPositiveUnitsGroup(F))]]);
 end intrinsic;
 
 intrinsic WeightUnitCharacter(F::FldAlg, k::SeqEnum[RngIntElt]) -> GrpCharUnitTotElt

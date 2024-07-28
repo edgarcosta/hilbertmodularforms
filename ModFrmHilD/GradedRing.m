@@ -194,9 +194,9 @@ intrinsic UnitGroupMap(M::ModFrmHilDGRng) -> Any
   return M`UnitGroupMap;
 end intrinsic;
 
-intrinsic TotallyPositiveUnits(M::ModFrmHilDGRng) -> GrpAb, Map
+intrinsic TotallyPositiveUnitsGroup(M::ModFrmHilDGRng) -> GrpAb, Map
   {return the group of totally positive units of the base as an abstract group and the map from abstract totally positive unit group into F^\times_>0}
-  return TotallyPositiveUnits(BaseField(M));
+  return TotallyPositiveUnitsGroup(BaseField(M));
 end intrinsic;
 
 intrinsic Places(M::ModFrmHilDGRng) -> Any
@@ -326,7 +326,7 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
 
   M`UnitGroup := U;
   M`UnitGroupMap := mU;
-  _, _ := TotallyPositiveUnits(F); // it caches it
+  _, _ := TotallyPositiveUnitsGroup(F); // it caches it
   // maybe we should make good choices for narrow class group reps
   // i.e. generators of small trace?
   // TODO: see above 2 lines

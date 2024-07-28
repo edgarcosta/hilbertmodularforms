@@ -97,7 +97,7 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> 
   if not IsTotallyPositive(factors) then //just in case factors is negative
     factors:=-factors;
   end if;
-  G, unitmp := TotallyPositiveUnits(M);
+  G, unitmp := TotallyPositiveUnitsGroup(M);
 
   Mkplus := HMFSpace(M, k);
   // Dealing with unit characters
