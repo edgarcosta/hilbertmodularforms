@@ -1,4 +1,4 @@
-intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngQuadIdl) -> ModFrmElt
+intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngOrdIdl) -> ModFrmElt
   {Given an HMF f of parallel weight k, returns the classical modular curve of weight nk and level obtained from restricting
   the component bb of the HMF to the diagonal.}
   require #SequenceToSet(Weight(f)) eq 1: "Only defined for parallel weight.";
@@ -36,41 +36,29 @@ intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngQuadId
   return modForms!(denom*(restriction +O(q^(prec))));
 end intrinsic;
 
-/*
-// Totally Positive Elements in an Ideal
-   From a basis {a,b} for the ideal bb where
-     Tr(a) = n and Tr(b) = 0.
-   Elements in ideal will look like xa + yb where x,y in ZZ
-   and have embedding xa_1 + yb_1 and xa_2 + yb_2.
-   All totally positive elements of given trace t will satisfy
-   1)    t = Tr(xa+yb)    <=>   t = xn
-   2)    xa+yb totally positive       <=>   y > -x*a_1/b_1   and  y > -x*a_2/b_2
-   Eq 1) determines the value for x,
-     and Eq 2) allows us to loop over values of y
-*/
 intrinsic PositiveElementsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
-  {Given aa a fractional ideal and t a nonnegative integer,
-   returns the totally positive elements of aa with trace t.}
+  {
+    Given aa a fractional ideal and t a nonnegative integer,
+    returns the totally positive elements of aa with trace t.
+  }
   basis := TraceBasis(aa);
-  places := InfinitePlaces(NumberField(Parent(basis[1])));
-  smallestTrace := Integers()!Trace(basis[1]);
-  T := [];
-  if t mod smallestTrace eq 0 then
-    x := t div smallestTrace;
-    a_1 := Evaluate(basis[1],places[1]);
-    a_2 := Evaluate(basis[1],places[2]);
-    b_1 := Evaluate(basis[2],places[1]);
-    b_2 := Evaluate(basis[2],places[2]);
-    assert b_1 lt 0 and b_2 gt 0; // if this assumption changes, the inequalities get swapped
-    // at place 2, x*a2 + y*b2 >= 0 => y >= -x*a2/b2
-    lower_bnd := Ceiling(-x*a_2/b_2);
-    // at place 1, x*a1 + y*b1 >= 0 => y <= -x*a1/b1
-    upper_bnd := Floor(-x*a_1/b_1);
-    for y in [lower_bnd .. upper_bnd] do
-      Append(~T, x*basis[1]+y*basis[2]);
-    end for;
+  smallest_trace := Integers()!Trace(basis[1]);
+  if (t mod smallest_trace) eq 0 then
+    F := NumberField(Parent(basis[1]));
+    n := Degree(F);
+
+    B := Matrix([[Evaluate(b, v) : v in InfinitePlaces(F)] : b in basis]);
+    B := t * B^-1;
+
+    // drop the first coordinate, it'll always be t / smallest_trace
+    vertices := [Rationalize(Vector([v[i] : i in [2 .. n]])) : v in Rows(B)];
+    assert #vertices[1] eq n-1 and #vertices eq n;
+    P := Polytope(vertices);
+    pts := InteriorPoints(P);
+    // put t / smallest_trace back in each vector
+    x := t div smallest_trace;
+    return [x * basis[1] + &+[Eltseq(pt)[i] * basis[i+1] : i in [1 .. n-1]] : pt in pts];
+  else
+    return [];
   end if;
-  return T;
 end intrinsic;
-
-
