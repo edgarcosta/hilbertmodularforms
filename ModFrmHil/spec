@@ -6,4 +6,5 @@
   hecke.m
   hecke_field.m
   level.m
+  weight_rep.m
 }

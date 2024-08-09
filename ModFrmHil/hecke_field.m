@@ -150,52 +150,12 @@ function WeightRepresentation(M) // ModFrmHil -> Map
          QQ := Rationals();
          M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
       else
-         // define weight_base_field = extension K/F containing Galois closure of F and 
-         // containing a root of every conjugate of the minimal polynomial of H.1
-         if assigned F`SplittingField then
-           K,rts:=Explode(F`SplittingField);
-         else
-           K,rts:=SplittingField(F : Abs:=true, Opt:=false);
-           F`SplittingField:=<K, rts>;
-         end if;
-         embeddings_F_to_K:=[hom<F->K | r> : r in rts];
-         H1coeffs:=Coefficients(MinimalPolynomial(H.1));
-         alphas:=[K| ];
-         for FtoK in embeddings_F_to_K do
-             hh:=PolynomialRing(K)! [c@FtoK : c in H1coeffs];
-             if IsIrreducible(hh) then
-                K:=ext<K|hh>;
-                alphas:=ChangeUniverse(alphas,K) cat [K.1];
-            else
-                Append(~alphas, Roots(hh)[1][1]);
-            end if;
-         end for;
-         // make weight_base_field an (optimized) absolute field, for efficiency in later calculations 
-         weight_field := K; // names appears in verbose output
-         K := AbsoluteField(K);
-         K := OptimizedRepresentation(K);
-         embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
+         splitting_seq, K, weight_field := Splittings(H);
          Fspl := F`SplittingField[1];
          M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
          M`weight_base_field:=K;
          vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
          vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
-
-         assert H.1*H.2 eq H.3; // this is assumed in the defn of the splitting homomorphism below
-         splitting_seq:=[];
-         for i:=1 to Degree(F) do
-            h:=embeddings_F_to_K[i];
-            // need a splitting homomorphism (H tensor K) -> Mat_2(K) whose restriction to K is h 
-            alpha:=alphas[i];
-            b:= K! h(F!(H.2^2));
-            iK:=Matrix(K, 2, [alpha, 0, 0, -alpha]); 
-            jK:=Matrix(K, 2, [0, 1, b, 0]); 
-            kK:=iK*jK;
-            assert K! h(H.3^2) eq (kK^2)[1,1]; 
-            Append(~splitting_seq, 
-                   map< H -> MatrixRing(K,2)|
-                        q:-> h(s[1])+h(s[2])*iK+h(s[3])*jK+h(s[4])*kK where s:=Eltseq(q) >);
-         end for;
          M`weight_dimension := &* [x+1 : x in n];
          M2K:=MatrixRing(K, M`weight_dimension);
          M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
