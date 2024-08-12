@@ -125,21 +125,28 @@ end function;
 //
 //-------------
 
+// Gamma`LevelRPAs_new stores a dictionary keyed by level N.
+// Gamma`LevelRPAs_new[N] contains a dictionary keyed by 
+// the integers [-#gens ..., -1, 1, ..., #gens], where gens is
+// Generators(Group(Gamma)).
+//
+// At a positive integer i, the dictionary stores the permutation matrix 
+// induced by right action of the ith generator on coset representatives
+// (which should be something like Gamma(N) \ Gamma). 
 function RightPermutationActions(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep)
   if not assigned Gamma`LevelRPAs_new then
     Gamma`LevelRPAs_new := AssociativeArray();
   end if;
 
   if IsDefined(Gamma`LevelRPAs_new, N) then
-    return Explode(Gamma`LevelRPAs_new[N]);
+    return Gamma`LevelRPAs_new[N];
   end if;
 
   vprintf ModFrmHil: "Computing right permutation actions .................. ";
   time0 := Cputime();
 
   U, m := Group(Gamma);
-  RPAs := [];
-  RPAsinv := [];
+  RPAs := AssociativeArray();
   P1N, P1Nrep := GetOrMakeP1(Gamma, N);
   for i := 1 to #Generators(U) do
     delta := Quaternion(m(U.i));
@@ -148,16 +155,14 @@ function RightPermutationActions(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep)
       _, v := P1Nrep(iota(alphai*delta)[2], false, false);
       Append(~perm, Index(P1N, v));
     end for;
-    rpa  := PermutationSparseMatrix(Integers(),  SymmetricGroup(#P1N)!perm    );
-    rpai := PermutationSparseMatrix(Integers(), (SymmetricGroup(#P1N)!perm)^-1 );
-    Append(~RPAs, rpa);
-    Append(~RPAsinv, rpai);
+    RPAs[i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#P1N)!perm);
+    RPAs[-i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#P1N)!perm^-1);
   end for;
 
   vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
 
-  Gamma`LevelRPAs_new[N] := <RPAs, RPAsinv>;
-  return RPAs, RPAsinv;
+  Gamma`LevelRPAs_new[N] := RPAs;
+  return RPAs;
 end function;
 
 intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
