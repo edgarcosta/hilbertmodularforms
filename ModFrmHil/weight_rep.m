@@ -1,3 +1,5 @@
+declare attributes AlgQuat : Splittings;
+
 intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
   {
     input: 
@@ -10,6 +12,10 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
       We also return the field K as well as (TODO abhijitm no clue why but 
       I didn't want to change it) an unoptimized version of K. 
   }
+  if assigned B`Splittings then
+    return Explode(B`Splittings);
+  end if;
+
   F := BaseField(B);
   // define weight_base_field = extension K/F containing Galois closure of F and 
   // containing a root of every conjugate of the minimal polynomial of B.1
@@ -56,5 +62,6 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
         map< B -> MatrixRing(K,2)|
           q:-> h(s[1])+h(s[2])*iK+h(s[3])*jK+h(s[4])*kK where s := Eltseq(q) >);
   end for;
+  B`Splittings := <splitting_seq, K, weight_field>;
   return splitting_seq, K, weight_field;
 end intrinsic;
