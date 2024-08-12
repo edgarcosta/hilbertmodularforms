@@ -102,46 +102,13 @@ end function;
 //
 //-------------
 
-InducedRelation := function(rel, RPAs, RPAsinv);
-  rel := Eltseq(LHS(rel));
-
+InducedRelation := function(rel, RPAs, RPAsinv : IsTrivialCoefficientModule:=false);
   rpa1 := RPAs[1];
   R    := BaseRing(rpa1);
   nr   := Nrows(rpa1);
   mats := [SparseMatrix(R, nr, nr) : i in [1..#RPAs]];
-  g    := IdentitySparseMatrix(R, nr);
 
-  for i := #rel to 1 by -1 do
-    absi := Abs(rel[i]);
-    if rel[i] lt 0 then
-      mats[absi] -:= RPAsinv[absi]*g;
-    else
-      mats[absi] +:= g;
-    end if;
-    if Sign(rel[i]) eq 1 then
-      g := RPAs[absi]*g;
-    else
-      g := RPAsinv[absi]*g;
-    end if;
-  end for;
-
-  return VerticalJoin(mats);
-end function;
-
-CompleteRelationFromUnit := function(Gamma, alpha, RPAs, RPAsinv : IsTrivialCoefficientModule := false);
-  Uside := Gamma`ShimGroupSidepairs;
-  mside := Gamma`ShimGroupSidepairsMap;
-
-  reldata := ShimuraReduceUnit(Gamma!alpha);
-  assert IsScalar(Quaternion(reldata[1]));
-  rel := reldata[3];
-
-  rpa1 := RPAs[1];
-  R    := BaseRing(rpa1);
-  nr   := Nrows(rpa1);
-  mats := [SparseMatrix(R, nr, nr) : i in [1..#RPAs]];
   I    := IdentitySparseMatrix(R, nr);
-
   if IsTrivialCoefficientModule then
     for i := 1 to #rel do
       absi := Abs(rel[i]);
@@ -167,8 +134,16 @@ CompleteRelationFromUnit := function(Gamma, alpha, RPAs, RPAsinv : IsTrivialCoef
       end if;
     end for;
   end if;
-
   return VerticalJoin(mats), rel;
+end function;
+
+CompleteRelationFromUnit := function(Gamma, alpha, RPAs, RPAsinv : IsTrivialCoefficientModule:=false);
+  reldata := ShimuraReduceUnit(Gamma!alpha);
+  assert IsScalar(Quaternion(reldata[1]));
+  rel := reldata[3];
+
+  mat, rel := InducedRelation(rel, RPAs, RPAsinv : IsTrivialCoefficientModule:=IsTrivialCoefficientModule);
+  return mat, rel;
 end function;
 
 //-------------
@@ -190,7 +165,8 @@ function InducedH1Internal(Gamma, N, cosets, RPAs, RPAsinv);
   d := #Generators(U);
   gammagens := [Quaternion(m(U.i)) : i in [1..d]];
 
-  R := HorizontalJoin([InducedRelation(rel, RPAs, RPAsinv) : rel in Relations(U)]);
+  R := HorizontalJoin(
+    [InducedRelation(Eltseq(LHS(rel)), RPAs, RPAsinv) : rel in Relations(U)]);
   Z := Kernel(R);
 
   I := IdentitySparseMatrix(BaseRing(RPAs[1]), Nrows(RPAs[1]));
