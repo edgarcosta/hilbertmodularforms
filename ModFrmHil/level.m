@@ -108,7 +108,15 @@ InducedRelation := function(rel, RPAs, RPAsinv : IsTrivialCoefficientModule:=fal
   nr   := Nrows(rpa1);
   mats := [SparseMatrix(R, nr, nr) : i in [1..#RPAs]];
 
-  I    := IdentitySparseMatrix(R, nr);
+  I := IdentitySparseMatrix(R, nr);
+
+  // if the coefficient module is trivial then
+  // we can avoid some of the computation.
+  //
+  // TODO - abhijitm we probably also shouldn't be calling
+  // InducedRelation in the first place if the coefficient module 
+  // is trivial... but this function is going to disappear soon
+  // anyways so I think it's not worth optimizing. 
   if IsTrivialCoefficientModule then
     for i := 1 to #rel do
       absi := Abs(rel[i]);
@@ -124,13 +132,10 @@ InducedRelation := function(rel, RPAs, RPAsinv : IsTrivialCoefficientModule:=fal
       absi := Abs(rel[i]);
       if rel[i] lt 0 then
         mats[absi] -:= RPAsinv[absi]*g;
+        g := RPAsinv[absi]*g;
       else
         mats[absi] +:= g;
-      end if;
-      if Sign(rel[i]) eq 1 then
         g := RPAs[absi]*g;
-      else
-        g := RPAsinv[absi]*g;
       end if;
     end for;
   end if;
@@ -138,6 +143,10 @@ InducedRelation := function(rel, RPAs, RPAsinv : IsTrivialCoefficientModule:=fal
 end function;
 
 CompleteRelationFromUnit := function(Gamma, alpha, RPAs, RPAsinv : IsTrivialCoefficientModule:=false);
+  // this expresses alpha in terms of the generators of Gamma
+  // TODO abhijitm - this may not be a problem, but I don't think these generators
+  // need to agree with the generators produced by Generators(Group(Gamma)).
+  // I think these come from the side pairing.
   reldata := ShimuraReduceUnit(Gamma!alpha);
   assert IsScalar(Quaternion(reldata[1]));
   rel := reldata[3];
