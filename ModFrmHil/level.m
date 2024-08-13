@@ -277,7 +277,11 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
   B := Algebra(O);
   F := BaseRing(B);
   Z_F := MaximalOrder(F);
+  Z_FN := quo<Z_F | N>;
+  P1N, P1Nrep := GetOrMakeP1_new(Gamma, N);
+
   FeqQQ := F cmpeq Rationals();
+  elleqoo := ell cmpeq "Infinity";
 
   if not assigned Gamma`HeckeMatrixoo_new then
     Gamma`HeckeMatrixoo_new := AssociativeArray();
@@ -286,7 +290,6 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
     Gamma`HardHeckeMatrices_new := AssociativeArray();
   end if;
 
-  elleqoo := ell cmpeq "Infinity";
   if elleqoo and IsDefined(Gamma`HeckeMatrixoo_new, N) then
     vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
     return Gamma`HeckeMatrixoo_new[N];
@@ -302,8 +305,6 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
     require UseAtkinLehner : 
       "Hecke operator not defined when ell divides D; use Atkin-Lehner operator instead";
   end if;
-
-  P1N, P1Nrep := GetOrMakeP1(Gamma, N);
 
   if not assigned B`NarrowClassGroup then
     vprintf ModFrmHil: "Computing narrow class group of F .................... ";
@@ -322,10 +323,6 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
     vtime ModFrmHil:
     _ := Group(Gamma);
   end if;
-
-  Z_FN := quo<Z_F | N>;
-  _, iota := ResidueMatrixRing(O, N);
-  cosets := Gamma0Cosets(Gamma, N, Z_FN, iota, P1N, P1Nrep);
 
   if not assigned O`RightIdealClasses or &or[not assigned Ol`FuchsianGroup : Ol in O`RightIdealClasses[1][3]] then
     vprintf ModFrmHil: "Computing ideal classes, orders, and groups .......... \n";
@@ -362,8 +359,6 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
       _ := Group(Gammal);
 
       vprintf ModFrmHil: "Time: %o \n", Cputime(time1);
-
-      alpha := ElementOfNormMinusOne(Ol);
     end for;
 
     IndentPop();
@@ -395,9 +390,9 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
 
   if ridsbasis ne 0 then
     vprintf ModFrmHil, 3: "Using ridsbasis %o...\n", ridsbasis;
-  end if;
-
-  if ridsbasis eq 0 then 
+  else
+    // none of the existing ridsbases are coprime to the level,
+    // so we need to compute a new one
     function newIdealClassRep(J, Gamma);
       Jinv := LeftInverse(J);
       ZBJ := ZBasis(Jinv);
@@ -422,12 +417,9 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
       end while;
     end function;
 
-    ridsoldnum := 1;
+    vprintf ModFrmHil: "Ideal class representative not coprime to ell, recomputing using 1... \n";
 
-    ridsold := O`RightIdealClasses[ridsoldnum];
-    ridsnew := ridsold;
-
-    vprintf ModFrmHil: "Ideal class representative not coprime to ell, recomputing using %o... \n", ridsoldnum;
+    ridsold := O`RightIdealClasses[1];
     for i := 1 to #ClFelts do
       Jold := ridsold[2][i];
       Oold := ridsold[3][i];
@@ -488,6 +480,7 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
       _ := FundamentalDomain(Gammanew, Dnew : StartDomain := domainnew, AssertDomain := true);
       _ := Group(Gammanew);
 
+      ridsnew := ridsold;
       ridsnew[1][i] := Norm(Jnew);
       ridsnew[2][i] := Jnew;
       ridsnew[3][i] := Onew;
@@ -573,12 +566,6 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
     end for;
   end for;
 
-  for i := 1 to #leftOrders do
-    Ol := leftOrders[i];
-    _, iota := ResidueMatrixRing(Ol, N);
-    cosets := Gamma0Cosets(Ol`FuchsianGroup, N, Z_FN, iota, P1N, P1Nrep);
-  end for;
-
   for i := 1 to #ClFelts do
     indp := Index(ClFelts, ClFelts[i]);
     ind := Index(ClFelts, ClFelts[i]+t);
@@ -600,7 +587,6 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
       M := VerticalJoin(M, Z);
     end if;
   end for;
-
 
   if elleqoo then
     Gamma`HeckeMatrixoo_new[N] := M;
