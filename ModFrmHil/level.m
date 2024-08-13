@@ -15,7 +15,7 @@ import !"Geometry/GrpPSL2/GrpPSL2Shim/domain.m" : Vertices;
 import "weight_rep.m" : GetOrMakeP1, Gamma0Cosets, RightPermutationActions;
 import "hecke.m" : pseudo_inverse;
 
-declare attributes GrpPSL2 : LevelCosets_new, LevelRPAs_new, LevelCPAs_new, LevelH1s, ShimGroupSidepairsQuats, HeckeMatrixoo, HardHeckeMatrices, P1s_dict;
+declare attributes GrpPSL2 : LevelCosets_new, LevelRPAs_new, LevelCPAs_new, LevelH1s, ShimGroupSidepairsQuats, HeckeMatrixoo_new, HardHeckeMatrices_new, P1s_dict;
 declare attributes AlgQuat : NarrowClassGroup, NarrowClassGroupMap;
 
 forward HeckeMatrix1;
@@ -279,26 +279,23 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
   Z_F := MaximalOrder(F);
   FeqQQ := F cmpeq Rationals();
 
+  if not assigned Gamma`HeckeMatrixoo_new then
+    Gamma`HeckeMatrixoo_new := AssociativeArray();
+  end if;
+  if not assigned Gamma`HardHeckeMatrices_new then
+    Gamma`HardHeckeMatrices_new := AssociativeArray();
+  end if;
+
   elleqoo := ell cmpeq "Infinity";
-
-  if elleqoo and assigned Gamma`HeckeMatrixoo then 
-    for t in Gamma`HeckeMatrixoo do
-      if t[1] eq N then
-        vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
-        return t[2];
-      end if;
-    end for;
+  if elleqoo and IsDefined(Gamma`HeckeMatrixoo_new, N) then
+    vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
+    return Gamma`HeckeMatrixoo_new[N];
+  elif (not elleqoo) and IsDefined(
+      Gamma`HardHeckeMatrices_new, <N, ell, UseAtkinLehner>) then
+    vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
+    return Gamma`HardHeckeMatrices_new[<N, ell, UseAtkinLehner>];
   end if;
-
-  if not elleqoo and assigned Gamma`HardHeckeMatrices then
-    for t in Gamma`HardHeckeMatrices do
-      if t[1] eq N and t[2] eq ell and t[3] eq UseAtkinLehner then
-        vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
-        return t[4];
-      end if;
-    end for;
-  end if;
-
+    
   require not UseAtkinLehner or Valuation(Discriminant(O)*N, ell) gt 0 :
     "Atkin-Lehner involution only applies when ell divides D*N";
   if not elleqoo and Valuation(Discriminant(B),ell) gt 0 then
@@ -604,16 +601,11 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
     end if;
   end for;
 
+
   if elleqoo then
-    if not assigned Gamma`HeckeMatrixoo then
-      Gamma`HeckeMatrixoo := [* *];
-    end if;
-    Append(~Gamma`HeckeMatrixoo, <N, M>);
+    Gamma`HeckeMatrixoo_new[N] := M;
   elif UseAtkinLehner or (ell + Discriminant(O)/Discriminant(B)*N eq ell) then
-    if not assigned Gamma`HardHeckeMatrices then
-      Gamma`HardHeckeMatrices := [* *];
-    end if;
-    Append(~Gamma`HardHeckeMatrices, <N, ell, UseAtkinLehner, M>);
+    Gamma`HardHeckeMatrices_new[<N, ell, UseAtkinLehner>] := M;
   end if;
 
   return M, CharacteristicPolynomial(M);
