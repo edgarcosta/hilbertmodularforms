@@ -225,7 +225,7 @@ intrinsic PossibleGrossencharsOfRelQuadExt(K, N, k_hmf, chi) -> List
     S := HMFGrossencharsTorsorSet(X);
   end if;
 
-  GF, mF := RayClassGroup(N, [1,2]);
+  GF, mF := RayClassGroup(N, [1 .. Degree(F)]);
   ans := [* *];
   for psi in S do
     N_psi := ZK!!(Conductor(psi));

@@ -337,7 +337,7 @@ intrinsic OldDihedralBasis(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilDElt]
   old_dihedrals := [];
   divisors := [D : D in Divisors(N) | (D ne N) and (D subset Conductor(chi))];
   for D in divisors do
-    chi_D := Restrict(chi, D, [1,2]);
+    chi_D := Restrict(chi, D, [1 .. Degree(BaseField(Mk))]);
     Mk_D := HMFSpace(M, D, k, chi_D);
     old_dihedrals cat:= &cat[Inclusion(f, Mk) : f in NewDihedralBasis(Mk_D)];
   end for;
