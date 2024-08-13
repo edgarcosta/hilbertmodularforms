@@ -31,6 +31,10 @@ intrinsic BaseChange(M::ModFrmHilDGRng, f::ModFrmElt : psi := false) -> ModFrmHi
     a_pps[pp] := (d eq 1) select a_p else a_p^d - d * a_p^(d-2) * psi(p) * p^(k-1);
   end for;
 
+  // TODO abhijitm - this is actually not optimal. It is possible for the ramification
+  // in the modular form to disappear in the base change if it factors through a finite
+  // quotient. The base change form does occur in the level (N) but it won't generally
+  // be new at this level. I will fix it someday. 
   N := Level(f) * Integers(F);
 
   H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
