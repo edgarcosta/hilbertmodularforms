@@ -603,7 +603,6 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
   assert O_mother`RightIdealClasses[ridsbasis][4];
   rids := O_mother`RightIdealClasses[ridsbasis];
 
-// GetMemoryUsage(); MemProfile();
 
   P1N, P1Nrep := GetOrMakeP1(Gamma_mother, N);
 
@@ -756,8 +755,6 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
 
     Y_U := [];
 
-// GetMemoryUsage(); MemProfile();
-
     vprintf ModFrmHil: "Computing operator the hard way ...................... ";
     vtime ModFrmHil:
 
@@ -810,8 +807,6 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       error "No column submatrix worked!?  This is a serious error; please report.";
     end if;
   end if;
-
-// GetMemoryUsage(); MemProfile();
 
   // We've ruled out some "work hard" cases; we'll try to use as much optimization as possible.
   // We still have to do some extra computing if ell is in the support of the ideal classes.
@@ -868,7 +863,6 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
     levelmults := [Op!1];
   end if;
 
-// GetMemoryUsage(); MemProfile();
 
   vprintf ModFrmHil: "Computing conjugation actions ........................ ";
   vtime ModFrmHil:
@@ -889,7 +883,6 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
     end for;
   end if;
 
-// GetMemoryUsage(); MemProfile();
 
   Y_Op := [];
   X := [];
@@ -928,7 +921,6 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
     Append(~Y_Op, Y_Opi);
   end for;
 
-// GetMemoryUsage(); MemProfile();
 
   Y_U := [];
   vprintf ModFrmHil: "Reducing %4o units of Gamma ......................... ", n*numP1;
@@ -946,7 +938,6 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
     Append(~Y_U, G);
   end for;
 
-// GetMemoryUsage(); MemProfile();
 
   vprintf ModFrmHil: "Computing H1 (coinduced) ............................. ";
   vtime ModFrmHil:
