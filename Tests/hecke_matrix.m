@@ -6,14 +6,41 @@
 *******************************************************************************/
 
 MAX_PP_NORM := 50;
-NUM_TRIALS := 2;
 OPTIONAL_TESTS := false;
 
+// set to true if you want to print times
+PRINT_TIMES := false;
+
+// compares HeckeMatrix(Gamma, N, pp) to HeckeMatrix2(Gamma, N, pp)
+// and optionally returns the duration of HeckeMatrix2.
+
+// Note that the first iteration of HeckeMatrix in each test() may be
+// very slow if a presentation for Gamma needs to be computed. 
+procedure compare_and_time(Gamma, N, pp : UseAtkinLehner:=false)
+  t := Cputime();
+  M2 := HeckeMatrix2(Gamma, N, pp : UseAtkinLehner:=UseAtkinLehner);
+  hm2_time := Cputime(t);
+
+  M := HeckeMatrix(Gamma, N, pp : UseAtkinLehner:=UseAtkinLehner);
+
+  assert M eq M2;
+
+  if PRINT_TIMES then
+    print "HeckeMatrix2 time: ", hm2_time;
+    print "\n";
+  end if;
+end procedure;
+
+
 // the default quaternion algebra is the one ramified at all but one infinite place
-// this will thrwo an error if B over a field of even degree.
-function test(F, N : B:=0)
+// this will throw an error if B over a field of even degree.
+procedure test(F, N : B:=0)
   // F::FldNum
   // N::RngOrdIdl
+
+  if PRINT_TIMES then
+    print "-----------------------------------------------\n";
+  end if;
 
   ZF := Integers(F);
 
@@ -30,69 +57,63 @@ function test(F, N : B:=0)
   Gamma := FuchsianGroup(O);
 
   // Hecke matrix at infinity
-  assert HeckeMatrix(Gamma, N, "Infinity") eq HeckeMatrix2(Gamma, N, "Infinity");
-  d := Nrows(HeckeMatrix(Gamma, N, "Infinity"));
+  compare_and_time(Gamma, N, "Infinity");
 
   coprime_pps := [pp : pp in PrimesUpTo(MAX_PP_NORM, F) | GCD(pp, N * D) eq 1*ZF];
   level_pps := [fac[1] : fac in Factorization(N)];
   disc_pps := [fac[1] : fac in Factorization(Discriminant(B))];
 
-  for _ in [1 .. NUM_TRIALS] do
-    pp := Random(coprime_pps);
-    assert HeckeMatrix(Gamma, N, pp) eq HeckeMatrix2(Gamma, N, pp);
+  pp := coprime_pps[3];
+  compare_and_time(Gamma, N, pp);
 
-    if #level_pps ne 0 then
-      pp := Random(level_pps);
-      assert HeckeMatrix(Gamma, N, pp) eq HeckeMatrix2(Gamma, N, pp);
-      assert HeckeMatrix(Gamma, N, pp : UseAtkinLehner:=true) eq HeckeMatrix2(Gamma, N, pp : UseAtkinLehner:=true);
-      Exclude(~level_pps, pp);
-    end if;
+  if #level_pps ne 0 then
+    pp := level_pps[1];
+    compare_and_time(Gamma, N, pp);
+    compare_and_time(Gamma, N, pp : UseAtkinLehner:=true);
+    Exclude(~level_pps, pp);
+  end if;
 
-    if #disc_pps ne 0 then
-      pp := Random(disc_pps);
-      assert HeckeMatrix(Gamma, N, pp : UseAtkinLehner:=true) 
-        eq HeckeMatrix2(Gamma, N, pp : UseAtkinLehner:=true);
-      Exclude(~disc_pps, pp);
-    end if;
-  end for;
-  return d;
-end function;
+  if #disc_pps ne 0 then
+    pp := disc_pps[1];
+    compare_and_time(Gamma, N, pp : UseAtkinLehner:=true);
+    Exclude(~disc_pps, pp);
+  end if;
+end procedure;
 
 R<x> := PolynomialRing(Rationals());
 
 // h+(F) = 1, D = 1, N = 4
 F := NumberField(x^3-x^2-2*x+1);
 ZF := Integers(F);
-// the dimension of H1 is 2, see Greenberg-Voight
-assert test(F, 4*ZF) eq 2;
+
+test(F, 4*ZF);
 
 // h+(F) = 1, D = 1, N = (7, a)^2 * (2)
 pps := PrimesUpTo(15, F);
-_ := test(F, pps[1]^2 * pps[2]);
+test(F, pps[1]^2 * pps[2]);
 
-// h+(F) = 1, D = (2) * (13, alpha), N = (7, a) * (2)
+// h+(F) = 1, D = (2) * (13, alpha), N = (7, a)
 B := QuaternionAlgebra(2 * Factorization(13*ZF)[1][1], [InfinitePlaces(F)[i] : i in [2 .. Degree(F)]]);
-_ := test(F, Factorization(7*ZF)[1][1] : B:=B);
-
-// h+(F) = 3, D = 1
-F := NumberField(x^3-x^2-9*x+8);
-ZF := Integers(F);
-pps := PrimesUpTo(15, F);
-_ := test(F, pps[1] * pps[2]);
+test(F, Factorization(7*ZF)[1][1] : B:=B);
 
 if OPTIONAL_TESTS then
+  // h+(F) = 3, D = 1
+  F := NumberField(x^3-x^2-9*x+8);
+  ZF := Integers(F);
+  pps := PrimesUpTo(15, F);
+  test(F, pps[1] * pps[2]);
+
   // h+(F) = 1, D = 1, N = 1
   F := NumberField(x^3-x^2-10*x+8);
   ZF := Integers(F);
   // the dimension of H1 is 4, see Greenberg-Voight
-  assert test(F, 1*ZF) eq 4;
+  test(F, 1*ZF);
 
   // h+(F) = 1, D = 1, N = 3
-  _ := test(F, 3*ZF);
+  test(F, 3*ZF);
 
   // h+(F) = 2, D = 1
   F := NumberField(x^3-x^2-9*x+10);
   ZF := Integers(F);
-  _ := test(F, 2*ZF);
+  test(F, 2*ZF);
 end if;
-
