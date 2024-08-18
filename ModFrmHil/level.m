@@ -219,6 +219,37 @@ end function;
 
 //-------------
 //
+// Utility
+//
+//-------------
+
+function eichlerize(alpha, iota, P1N, P1Nrep, N_cosets)
+  // inputs:
+  //   alpha::AlgAssVOrdElt - An element of a maximal order O of a quaternion algebra
+  //     B/F whose discriminant D does not divide some level N
+  //   iota::Map - A map produced by ResidueMatrixRing, taking O to M_2(ZF/N)
+  //   P1Nrep::UserProgram- A function returned by ProjectiveLine(ZF/N) which can
+  //     take a SeqEnum of elements of ZF (which are interpreted as elements of ZF/N)
+  //     and return the corresponding representative of P1N (e.g. one of [0, i] or [1, 0])
+  //   N_cosets::SeqEnum[AlgAssVOrdElt] - Coset representatives of Gamma(N)\Gamma(1),
+  //     where Gamma(1) and Gamma(N) are Fuchsian groups associated to O and an Eichler
+  //     order O_0(N) respectively. 
+  //
+  // returns: 
+  //   an element beta in O_0(N) such that there is a c in N_cosets for which
+  //   beta = c * alpha. 
+  //
+  // TODO abhijitm explain why it's useful, maybe copy from the comments you wrote later
+  iota_alpha := iota(alpha);
+  v := [iota_alpha[2,1], -iota_alpha[1,1]];
+  _, v := P1Nrep(v, false, false);
+  c := N_cosets[Index(P1N, v)];
+  // replace alpha with c * alpha which now lives in O_o(N)
+  return c * alpha;
+end function;
+
+//-------------
+//
 // Main loop.
 //
 //-------------
@@ -440,11 +471,9 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
           P1Nprime, P1Nprimerep := GetOrMakeP1(Gamma, Nprime);
           Z_FNprime := quo<Z_F | Nprime>;
           cosetsold := Gamma0Cosets(Oold`FuchsianGroup, Nprime, Z_FNprime, iotaold, P1Nprime, P1Nprimerep);
-          iotadelta := iotaold(delta^(-1));
-          v := [iotadelta[2,1], -iotadelta[1,1]];
-          _, v := P1Nprimerep(v, false, false);
-          c := cosetsold[Index(P1Nprime, v)];
-          delta := delta*c^(-1);
+
+          // TODO abhijitm - no clue why we do two inverses, but this is how it was 
+          delta := eichlerize(delta^(-1), iotaold, P1Nprime, P1Nprimerep, cosetsold)^(-1);
         end if;
       end if;
 
@@ -679,17 +708,10 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
              -1 in RealSigns(Norm(alphap));
     end if;
 
-    // Ensure alpha is trivial at N.
-    iotaalphap := iotap(alphap);
-    v := [iotaalphap[2,1], -iotaalphap[1,1]];
-    if not IsLevelOne then
-      _, v := P1Nrep(v, false, false);
-      c := cosetsp[Index(P1N, v)];
-      alphap := c*alphap;
-    end if;
+    alphap := eichlerize(alphap, iotap, P1N, P1Nrep, cosetsp);
 
     lambda := alphap;
-    lambdas := [lambda];
+    alphas := [lambda];
     NNlambda := Norm(Norm(lambda));
     NNlambda := Numerator(NNlambda)*Denominator(NNlambda);
 
@@ -717,16 +739,16 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       ee := Valuation(Discriminant(O)*N, ell);
       lambda := LeftIdealGens(Gamma, ell, JJp, 1, O, Op, iotaell : Slow := true, ALval := ee)[1];
 
-      lambdas := [];
+      alphas := [];
       _, iotapNell := ResidueMatrixRing(O, N/ell^ee);
       for c := 1 to #cosetsp do
         if Valuation(iotap(cosetsp[c]*lambda)[2,1],ell) ge ee and
            Valuation(iotap(cosetsp[c]*lambda)[2,2],ell) ge ee and
            iotapNell(cosetsp[c]*lambda)[2,1] in N/ell^ee then
-          Append(~lambdas, cosetsp[c]*lambda);
+          Append(~alphas, cosetsp[c]*lambda);
         end if;
       end for;
-      assert #lambdas eq 1;
+      assert #alphas eq 1;
     elif ellU then
       Z_Fell := quo<Z_F | ell>;
       P1ellfull, P1ellfullrep := GetOrMakeP1(Gamma_mother, ell);
@@ -741,16 +763,18 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       ellcosets := [ellcosetsfull[c] : c in [1..#P1ellfull] | c ne ooind];
 
       lambda := LeftIdealGens(Gamma, ell, JJp, 1, O, Op, iotaell);
-      lambdas := [lambda*ellcosets[c] : c in [1..numP1]];
-
-      for i := 1 to #lambdas do
-        lambdap := lambdas[i];
-        iotalambdap := iotap(lambdap);
-        v := [iotalambdap[2,1], -iotalambdap[1,1]];
-        _, v := P1Nrep(v, false, false);
-        c := cosetsp[Index(P1N, v)];
-        lambdas[i] := c*lambdas[i];
-      end for;
+      
+      // alphas will ultimately store the elements alpha_j such that
+      // Gamma lambda Gamma = \sqcup Gamma alpha_j.
+      //
+      // alphas_og is the initial assignment, computed as 
+      // alpha_j = lambda * gamma_j where gamma_j are the cosets 
+      // of Gamma(l) \ Gamma(1). However, these alpha_j need not
+      // be in O_o(N), and this is something we want. Thus, we multiply
+      // on the left by appropriate coset representatives of Gamma(N) \ Gamma(1)
+      // in order to obtain our final alphas.
+      alphas := [lambda*ellcosets[c] : c in [1..numP1]];
+      alphas := [eichlerize(alpha, iotap, P1N, P1Nrep, cosetsp) : alpha in alphas];
     end if;
 
     Y_U := [];
@@ -762,23 +786,20 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       G := [];
       for k in [1..#cosets] do
         Gk := [];
-        iotalik := iota(lifts[i]*cosets[k]^(-1));
-        v := [iotalik[2,1], -iotalik[1,1]];
-        _, v := P1Nrep(v, false, false);
-        ci := Index(P1N, v);
-        liftsik := O!(cosets[ci]*lifts[i]*cosets[k]^(-1));
+        alpha := lifts[i] * cosets[k]^(-1);
+        liftsik := O!eichlerize(alpha, iota, P1N, P1Nrep, cosets);
         Y_Opi := [];
 
         for j in [1..numP1] do
           if elleqoo or ellAL then
             c := 1;
           else
-            iotadelta := iotaell(lambdas[j]*liftsik);
+            iotadelta := iotaell(alphas[j]*liftsik);
             bl, v := P1ellfullrep(iotadelta[1], false, false);
             c := Index(P1ell, v);
           end if;
-          y := Op!(lambdas[j]*liftsik*lambdas[c]^(-1));
-          y,rel := CompleteRelationFromUnit(Gammap, y, RPAsp : IsTrivialCoefficientModule := false);
+          y := Op!(alphas[j]*liftsik*alphas[c]^(-1));
+          y, _ := CompleteRelationFromUnit(Gammap, y, RPAsp : IsTrivialCoefficientModule := false);
           Append(~Gk, y);
         end for;
 
@@ -822,21 +843,20 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       if ellAL then
         // We've covered the case when ell divides N, so this is only the case ell divides D;
         // hence ell exactly divides D.
+
+        // lambdas has length 1
         lambdas := LeftIdealGens(Gamma, ell, JJp, 1, O, Op, iotaell : Slow := true, ALval := 1);
       elif inNormSupport then
+        // lambdas has length numP1
         lambdas := LeftIdealGens(Gamma, ell, JJp, 1, O, Op, iotaell : Slow := true);
       end if;
 
       // Ensure lambda is trivial at N.
       if not IsLevelOne then
-        for i := 1 to #lambdas do
-          lambdap := lambdas[i];
-          iotalambdap := iotap(lambdap);
-          v := [iotalambdap[2,1], -iotalambdap[1,1]];
-          _, v := P1Nrep(v, false, false);
-          c := cosetsp[Index(P1N, v)];
-          lambdas[i] := c*lambdas[i];
-        end for;
+        alphas := [eichlerize(lambda, iotap, P1N, P1Nrep, cosetsp) 
+                : lambda in lambdas];
+      else
+        alphas := lambdas;
       end if;
     else // Go for the fast code.
       lambda := LeftIdealGens(Gamma, ell, JJp, 1, O, Op, iotaell);
@@ -846,21 +866,12 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
 
       // Ensure lambda is trivial at N.
       if not IsLevelOne then
-        levelmults := [];
-        for i := 1 to #ellcosets do
-          lambdap := lambda*ellcosets[i];
-          iotalambdap := iotap(lambdap);
-          v := [iotalambdap[2,1], -iotalambdap[1,1]];
-          _, v := P1Nrep(v, false, false);
-          c := cosetsp[Index(P1N, v)];
-          Append(~levelmults, c);
-        end for;
+        alphas := [eichlerize(lambda * ellcoset, iotap, P1N, P1Nrep, cosetsp) 
+               : ellcoset in ellcosets];
       else
-        levelmults := [Op!1 : i in [1..#ellcosets]];
+        alphas := [lambda * ellcoset : ellcoset in ellcosets];
       end if;
     end if;
-  else
-    levelmults := [Op!1];
   end if;
 
 
@@ -871,11 +882,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
 
     Zp := [];
     for j in [1..numP1] do
-      if inNormSupport then 
-        iotaj := iotap(lambdas[j]);
-      else
-        iotaj := iotap(levelmults[j]*lambda*ellcosets[j]);
-      end if;
+      iotaj := iotap(alphas[j]);
       xinv := (Z_FN!iotaj[1,1])^(-1);
       perm1 := CPAs1[Index(Q1, Z_FN!iotaj[1,2]*xinv)];
       perm2 := CPAs2[Index(Q2, Z_FN!iotaj[2,2]*xinv)];
@@ -897,11 +904,11 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
     else
       if inNormSupport then
         // Work hard
-        for j in [1..#lambdas] do
-          for c in [1..#lambdas] do
-            if lambdas[j]*lifts[i]*(lambdas[c])^(-1) in Op then
+        for j in [1..#alphas] do
+          for c in [1..#alphas] do
+            if alphas[j]*lifts[i]*(alphas[c])^(-1) in Op then
               Append(~Xi, c);
-              Append(~Y_Opi, Op!(lambdas[j]*lifts[i]*lambdas[c]^(-1)));
+              Append(~Y_Opi, Op!(alphas[j]*lifts[i]*alphas[c]^(-1)));
               break c;
             end if;
           end for;
@@ -912,8 +919,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
           _, v := P1ellrep(iotadelta[2], false, false);
           c := Index(P1ell, v);
           Append(~Xi, c);
-          Append(~Y_Opi, Op!(levelmults[j]*lambda*ellcosets[j]*lifts[i]*
-                             (levelmults[c]*lambda*ellcosets[c])^(-1)));
+          Append(~Y_Opi, Op!(alphas[j] * lifts[i] * alphas[c]^(-1)));
         end for;
       end if;
     end if;
