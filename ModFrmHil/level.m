@@ -36,9 +36,15 @@ ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1N
   end if;
 
   Z_F := BaseRing(BaseRing(Gamma));
+  // bas is a list of elements of Z_F giving a 
+  // basis for Z_F/N. 
+  // n_seq is a list of the elements of Z_F/N, given as coefficients
+  // of the basis vectors in bas.
   bas, n_seq := residue_class_reps(N);
+  // a list of elements of Z_F representing the elements of Z_F/N
   Rset:=[[s[m]: m in [1..#s]]: s in Set(CartesianProduct(<[0..n_seq[l]-1]: l in [1..#n_seq]>))];
 
+  // iotaalphavs[i] stores the element of P1N corresponding to cosets[i]
   iotaalphavs := [];
   for alphai in cosets do
     _, v := P1Nrep(iota(alphai)[2], false, false);
@@ -47,6 +53,9 @@ ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1N
 
   qcnt := 0;
   CPAs1bas := [];
+  // we iterate through the row vectors w * (1 q \\ 0 1)
+  // as q ranges over a basis for Z/NZ, and see what the resulting 
+  // permutation of P1N representatives is
   for q in bas do
     qcnt +:= 1;
     perm := [];
@@ -58,6 +67,9 @@ ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1N
     Append(~CPAs1bas, perm);
   end for;
 
+  // we iterate through the row vectors w * (1 0 \\ 0 q)
+  // as q ranges over a basis for (Z/NZ)*, and see what the resulting permutation
+  // of representatives of P1N is
   Z_FNstar, mZ_FNstar := UnitGroup(Z_FN);
   basmult := [Z_F!mZ_FNstar(Z_FNstar.i) : i in [1..#Generators(Z_FNstar)]];
   qcnt := 0;
@@ -133,6 +145,10 @@ InducedRelation := function(rel, RPAs : IsTrivialCoefficientModule:=false);
     for i := #rel to 1 by -1 do
       absi := Abs(rel[i]);
       if rel[i] lt 0 then
+        // this is because if f is a cocycle,
+        // f(x^-1) = -f(x)x^-1, 
+        // so the tail we multiply by has one less element than it would 
+        // in the other case.
         mats[absi] -:= RPAs[rel[i]]*g;
         g := RPAs[rel[i]]*g;
       else
