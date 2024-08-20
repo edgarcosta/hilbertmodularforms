@@ -103,29 +103,91 @@ function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
 
   if X cmpne 0 then
     // if X is given then X`Character should be defined
-    assert Type(X) eq IdealDatum and assigned X`Character;
+    assert Type(X) eq IdealDatum;
 
+    // if chi is trivial then we don't need to do anything
     chi := X`Character;
-    b_mod_N := X`ResidueMap(b);
-    // TODO abhijitm this should maybe be removed for performance
-    // The character only really makes sense (it's only really a character) if
-    // b is in O_0(N) \cap B^*. 
-    assert b_mod_N[2][1] in Modulus(chi);
+    if Order(chi) gt 1 then
+      b_mod_N := X`ResidueMap(b);
+      // TODO abhijitm this should maybe be removed for performance
+      // The character only really makes sense (it's only really a character) if
+      // b is in O_0(N) \cap B^*. 
+      assert b_mod_N[2][1] in Modulus(chi);
 
-    // if the order of chi is bigger than 2 then we need to work in a
-    // bigger field extension, and strong coerce to make sure that things get
-    // embedded properly. If the order of chi is 2 then we just multiply
-    // by the value.
-    if Order(chi) gt 2 then
-      K := Compositum(K, CyclotomicField(Order(chi)));
-      // the character should be evaluated on the bottom right entry
-      M := chi(b_mod_N[2][2]) * StrongCoerceMatrix(K, M);
-    else
-      M := chi(b_mod_N[2][2]) * M;
+      // if the order of chi is bigger than 2 then we need to work in a
+      // bigger field extension, and strong coerce to make sure that things get
+      // embedded properly. If the order of chi is 2 then we just multiply
+      // by the value.
+      if Order(chi) gt 2 then
+        K := Compositum(K, CyclotomicField(Order(chi)));
+        // the character should be evaluated on the bottom right entry
+        M := chi(b_mod_N[2][2]) * StrongCoerceMatrix(K, M);
+      else
+        M := chi(b_mod_N[2][2]) * M;
+      end if;
     end if;
   end if;
 
   return M;
+end function;
+
+function matrix_of_induced_action(b, k, X)
+  /*********************************************************************
+   * b::AlgAssVOrdElt - An element of a quaternion order O / F. 
+   * k::SeqEnum[RngIntElt] - Weight of the space of modular forms being computed
+   * X::LevelDatum - A struct encoding (among other things) the level N, 
+   *   nebentypus chi, a map iota_mod_N from O to M2(Z_F), where Z_F is the ring
+   *   of integers of F, and coset representatives N_cosets of Gamma(N)\Gamma(1),
+   *   where Gamma(1) and Gamma(N) are Fuchsian groups associated to O and an Eichler
+   *   order O_0(N) respectively. 
+   
+   * returns->Mtrx - The matrix of the action of b on 
+   *   V := Ind_(Gamma(N))^(Gamma(1)) Wk, 
+   *   where Wk is defined in weight_map_arch.
+   
+   * Write {gamma_j} for the set N_cosets. Assuming b is in O, for each j there
+   * exists a jb (right action) such that 
+   * gamma_j * b = b' * gamma_(bj),
+   * where b' is in O_0(N). 
+   *
+   * Write r for the number of cosets (this will be the order of the projective
+   * line P1(ZF/N)). The matrix we produce is a r x r block matrix where each block
+   * is square of dimension 
+   * dim Wk = prod_i (k_i - 1).
+   * In total dim V = r * prod_i (k_i - 1). 
+   *
+   * The nonzero blocks are block coordinates (j, bj), and in this block we have
+   * the action of b' on Wk, where
+   * b' := gamma_j * b * gamma_(bj)^-1. 
+   * Note that this is in O_0(N), so there is a well defined action on Wk. 
+   * To compute each block, we call weight_map_arch on b'. 
+   ***********************************************************************/
+
+  dim_W := &*[k_i - 1 : k_i in k];
+  n := [k_i - 2 : k_i in k];
+  m := [-n_i div 2 : n_i in n];
+
+  _, K, _ := Splittings(Parent(b));
+  K := Compositum(K, CyclotomicField(Order(X`Character)));
+
+  r := #X`P1Elements;
+  blocks := [ZeroMatrix(K, dim_W) : _ in [1 .. r^2]];
+  for u in X`P1Elements do
+    x := (X`CosetRepsByP1[u][2]) * b;
+    _, v := X`P1Rep(X`ResidueMap(x)[2], false, false);
+
+    // this should now be in O_0(N) so we can apply weight_map_arch to it
+    bp := x * (X`CosetRepsByP1[v][2])^(-1);
+    
+    // The matrix for bp should live in the block whose row corresponds to
+    // u and whose column corresponds to v.
+
+    // X`CosetRepIdx[w] gives the index of the coset corresponding to the 
+    // element w of P1(ZF/N). 
+    row_major_idx := r * (X`CosetRepsByP1[u][1] - 1) + X`CosetRepsByP1[v][1];
+    blocks[row_major_idx] := weight_map_arch(bp, n : m:=m, X:=X);
+  end for;
+  return BlockMatrix(r, r, blocks);
 end function;
 
 //-------------
