@@ -1,5 +1,9 @@
 CC_THRESHOLD := 10^-10;
 
+DIM := 4;
+NUM_TRIALS := 2;
+MAX_COEFF := 7;
+
 procedure test(a, K1, K2)
   // a::FldElt - Element of K1
   // K1::Fld  
@@ -13,14 +17,24 @@ procedure test(a, K1, K2)
 
   c := StrongCoerce(K1, b);
   assert c eq a;
-end procedure;
 
+  // test matrix coercion 
+  // create {NUM_TRIALS} random matrices over K1 of dimension DIM,
+  // coerce them to and from K2, and check that the results agree
+  R := MatrixRing(K1, DIM);
+  S := MatrixRing(K2, DIM);
+
+  Ms := [R![Random(K1, MAX_COEFF): _ in [1 .. DIM^2]] : _ in [1 .. NUM_TRIALS]];
+  coerced_Ms := [StrongCoerceMatrix(K2, M) : M in Ms];
+  uncoerced_Ms := [StrongCoerceMatrix(K1, M) : M in coerced_Ms];
+  assert Ms eq uncoerced_Ms;
+end procedure;
 
 Q := RationalField();
 F := QuadraticField(5);
 R<x> := PolynomialRing(Rationals());
 K := NumberField(x^3 - x^2 - 2*x + 1);
-L := CyclotomicField(5);
+L := CyclotomicField(3);
 H := Compositum(F, L);
 M := Compositum(K, L);
 
@@ -60,3 +74,5 @@ assert Abs(Evaluate(c, w) - Evaluate(a, v_K) * Evaluate(b, v_L)) lt CC_THRESHOLD
 
 B := ListToStrongCoercedSeq([* 1, 2/3, K.1, L.1 *]);
 assert IsIsomorphic(Parent(B[1]), Compositum(K, L));
+
+
