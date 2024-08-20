@@ -32,9 +32,10 @@ end function;
 //-------------
 
 function FastSymmetricPower(mat, n)
+  K := BaseRing(mat);
   case n:
     when 0:
-      return MatrixRing(BaseRing(mat), 1)!1;
+      return MatrixRing(K, 1)!1;
     when 1:
       return mat;
     else
@@ -42,25 +43,35 @@ function FastSymmetricPower(mat, n)
   end case;
 end function;
 
-function weight_map_arch(b, m, n : K:=0, splittings:=0)
-  // b - AlgQuatElt or AlgAssVOrdElt
-  // m - SeqEnum[FldRatElt] or SeqEnum[RngIntElt]
-  // n - SeqEnum[RngIntElt]
+function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
+  // b::AlgQuatElt or AlgAssVOrdElt
+  // n::SeqEnum[RngIntElt]
+  //
+  // m::SeqEnum[FldRatElt] or SeqEnum[RngIntElt]
+  // X::IdealDatum - A struct encoding a character chi of 
+  //   modulus N and the mod N map from O to M2(ZF/N) produced by 
+  //   ResidueMatrixRing.
+  // K - FldNum
+  // splittings - SeqEnum[AlgMatElt]
   //
   // returns a matrix corresponding to the action of b on
-  // Wk = ⊗_i (Sym^(n_i) ⊗ det^(m_i)),
+  // Wk = ⊗_i (Sym^(n_i) ⊗ det^(m_i)) ⊗ chi,
   // where b acts on the ith component via its image under
   // the ith embedding B -> M_2(K) coming from Splittings(B).
   //
+  // Note that chi only makes sense when b lies in O_0(N) \cap B^*,
+  // where O_0(N) is the Eichler order in a chosen maximal order 
+  // consisting of elements whose bottom left entry (this makes sense
+  // as long as N is coprime to the discriminant of B) is congruent to 0 mod N.
+  //
+  // If m is not assigned, we ignore the determinant factors above.
+  // This comes up when Wk is being used as the coefficient module
+  // for group cohomology of an arithmetic Fuchsian group.
+  // In this setting, the reduced norm is always 1 so we can ignore the determinant terms. 
+
   // In practice, n = k - 2 and m depends on the choice of central character.
   // m will usually be integral but in the non-paritious case it is not possible
-  // for it to be integral (but even then it will be at worst half-integral).
-  //
-  // Some of the calls to this function are for use as the coefficient module
-  // for group cohomology of an arithmetic Fuchsian group.
-  // In this setting, the reduced norm is always 1 so we can ignore the determinant terms.
-  //
-  // TODO abhijitm - the nebentypus will also get added here.
+  // for it to be integral (but even then it will be at worst half-integral). 
   d := #m;
   
   if K cmpeq 0 and splittings cmpeq 0 then
@@ -75,10 +86,10 @@ function weight_map_arch(b, m, n : K:=0, splittings:=0)
       continue;
     else
       mat := splittings[l](b);
-      if n[l] eq 0 then
-        Ml := MatrixRing(K, 1)!(Determinant(mat)^m[l]);
-      elif m[l] eq 0 then
+      if m[l] eq 0 then
         Ml := FastSymmetricPower(mat, n[l]);
+      elif n[l] eq 0 then
+        Ml := MatrixRing(K, 1)!(Determinant(mat)^m[l]);
       else
         // TODO abhijitm m[l] is a fraction then this probably needs to be in a
         // bigger number field, but I'm going to ignore this issue for now.
@@ -89,6 +100,31 @@ function weight_map_arch(b, m, n : K:=0, splittings:=0)
       M := TensorProduct(Ml, M);
     end if;
   end for;
+
+  if X cmpne 0 then
+    // if X is given then X`Character should be defined
+    assert Type(X) eq IdealDatum and assigned X`Character;
+
+    chi := X`Character;
+    b_mod_N := X`ResidueMap(b);
+    // TODO abhijitm this should maybe be removed for performance
+    // The character only really makes sense (it's only really a character) if
+    // b is in O_0(N) \cap B^*. 
+    assert b_mod_N[2][1] in Modulus(chi);
+
+    // if the order of chi is bigger than 2 then we need to work in a
+    // bigger field extension, and strong coerce to make sure that things get
+    // embedded properly. If the order of chi is 2 then we just multiply
+    // by the value.
+    if Order(chi) gt 2 then
+      K := Compositum(K, CyclotomicField(Order(chi)));
+      // the character should be evaluated on the bottom right entry
+      M := chi(b_mod_N[2][2]) * StrongCoerceMatrix(K, M);
+    else
+      M := chi(b_mod_N[2][2]) * M;
+    end if;
+  end if;
+
   return M;
 end function;
 

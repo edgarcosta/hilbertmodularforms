@@ -209,6 +209,7 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
         assert bool;
         pp := ideal<Integers(K) | [iso(K!g) : g in Generators(p)]>;
       end if;
+
       FF, OKtoFF := ResidueClassField(pp);
       KtoFF := map<K->FF | x :-> OKtoFF(x*d)/FF!d where d:= Denominator(x)>;
       splitting_seq_FF := [];
@@ -216,7 +217,7 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
       splitting_seq_FF := [s*M2KtoFF : s in splitting_seq];
       M2FF:=MatrixRing(FF, M`weight_dimension);
       M`weight_rep:=map<H -> M2FF|q :-> 
-        weight_map_arch(q, m, n : K:=FF, splittings:=splitting_seq_FF)>;
+        weight_map_arch(q, n : m:=m, K:=FF, splittings:=splitting_seq_FF)>;
       M`weight_base_field := FF;
     end if;
     return M`weight_rep, M`weight_dimension, M`weight_base_field;

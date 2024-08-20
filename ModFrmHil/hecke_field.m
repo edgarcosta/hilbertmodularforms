@@ -158,7 +158,7 @@ function WeightRepresentation(M) // ModFrmHil -> Map
          vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
          M`weight_dimension := &* [x+1 : x in n];
          M2K:=MatrixRing(K, M`weight_dimension);
-         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, m, n)>;
+         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, n : m:=m)>;
       end if;
       return M`weight_rep, M`weight_dimension, M`weight_base_field;
    end if;
