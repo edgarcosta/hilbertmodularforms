@@ -5,6 +5,7 @@
   hackobj.m
   hecke.m
   hecke_field.m
+  ideal_datum.m
   level.m
   weight_rep.m
 }

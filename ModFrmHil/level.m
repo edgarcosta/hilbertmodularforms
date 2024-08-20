@@ -12,7 +12,7 @@ import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne, LeftIdealGens
 import !"Algebra/AlgQuat/enumerate.m" :
              EnumerativeSearchInternal, ReducedBasisInternal;
 import !"Geometry/GrpPSL2/GrpPSL2Shim/domain.m" : Vertices;
-import "weight_rep.m" : GetOrMakeP1, Gamma0Cosets, RightPermutationActions;
+import "weight_rep.m" : GetOrMakeP1, RightPermutationActions;
 import "hecke.m" : pseudo_inverse;
 
 declare attributes GrpPSL2 : LevelCosets_new, LevelRPAs_new, LevelCPAs_new, LevelH1s, ShimGroupSidepairsQuats, HeckeMatrixoo_new, HardHeckeMatrices_new, P1s_dict;
@@ -26,7 +26,10 @@ forward HeckeMatrix1;
 //
 //-------------
 
-ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep);
+ConjugationPermutationActions := function(X);
+  // X::IdealDatum
+  Gamma := X`FuchsianGroup;
+  N := X`Ideal;
   if not assigned Gamma`LevelCPAs_new then
     Gamma`LevelCPAs_new := AssociativeArray();
   end if;
@@ -35,7 +38,9 @@ ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1N
     return Explode(Gamma`LevelCPAs_new[N]);
   end if;
 
-  Z_F := BaseRing(BaseRing(Gamma));
+  Z_F := IntegerRing(X);
+  assert Z_F eq BaseRing(BaseRing(Gamma));
+  Z_FN := X`ResidueRing;
   // bas is a list of elements of Z_F giving a 
   // basis for Z_F/N. 
   // n_seq is a list of the elements of Z_F/N, given as coefficients
@@ -46,8 +51,8 @@ ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1N
 
   // iotaalphavs[i] stores the element of P1N corresponding to cosets[i]
   iotaalphavs := [];
-  for alphai in cosets do
-    _, v := P1Nrep(iota(alphai)[2], false, false);
+  for alphai in X`CosetReps do
+    _, v := X`P1Rep(X`ResidueMap(alphai)[2], false, false);
     Append(~iotaalphavs, [Z_F!t : t in Eltseq(v)]);
   end for;
 
@@ -60,10 +65,10 @@ ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1N
     qcnt +:= 1;
     perm := [];
     for w in iotaalphavs do
-      _, v := P1Nrep([w[1], w[1]*q + w[2]], false, false);
-      Append(~perm, Index(P1N, v));
+      _, v := X`P1Rep([w[1], w[1]*q + w[2]], false, false);
+      Append(~perm, Index(X`P1Elements, v));
     end for;
-    perm := SymmetricGroup(#cosets)!perm;
+    perm := SymmetricGroup(#X`CosetReps)!perm;
     Append(~CPAs1bas, perm);
   end for;
 
@@ -78,10 +83,10 @@ ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1N
     qcnt +:= 1;
     perm := [];
     for w in iotaalphavs do
-      _, v := P1Nrep([w[1], q*w[2]], false, false);
-      Append(~perm, Index(P1N, v));
+      _, v := X`P1Rep([w[1], q*w[2]], false, false);
+      Append(~perm, Index(X`P1Elements, v));
     end for;
-    perm := SymmetricGroup(#cosets)!perm;
+    perm := SymmetricGroup(#X`CosetReps)!perm;
     Append(~CPAs2bas, perm);
   end for;
   
@@ -239,27 +244,21 @@ end function;
 //
 //-------------
 
-function eichlerize(alpha, iota, P1N, P1Nrep, N_cosets)
+function eichlerize(alpha, X)
   // inputs:
   //   alpha::AlgAssVOrdElt - An element of a maximal order O of a quaternion algebra
   //     B/F whose discriminant D does not divide some level N
-  //   iota::Map - A map produced by ResidueMatrixRing, taking O to M_2(ZF/N)
-  //   P1Nrep::UserProgram- A function returned by ProjectiveLine(ZF/N) which can
-  //     take a SeqEnum of elements of ZF (which are interpreted as elements of ZF/N)
-  //     and return the corresponding representative of P1N (e.g. one of [0, i] or [1, 0])
-  //   N_cosets::SeqEnum[AlgAssVOrdElt] - Coset representatives of Gamma(N)\Gamma(1),
-  //     where Gamma(1) and Gamma(N) are Fuchsian groups associated to O and an Eichler
-  //     order O_0(N) respectively. 
+  //   X::IdealDatum
   //
   // returns: 
-  //   an element beta in O_0(N) such that there is a c in N_cosets for which
+  //   an element beta in O_0(N) such that there is a c in X`CosetReps for which
   //   beta = c * alpha. 
   //
   // TODO abhijitm explain why it's useful, maybe copy from the comments you wrote later
-  iota_alpha := iota(alpha);
+  iota_alpha := X`ResidueMap(alpha);
   v := [iota_alpha[2,1], -iota_alpha[1,1]];
-  _, v := P1Nrep(v, false, false);
-  c := N_cosets[Index(P1N, v)];
+  _, v := X`P1Rep(v, false, false);
+  c := X`CosetReps[Index(X`P1Elements, v)];
   // replace alpha with c * alpha which now lives in O_o(N)
   return c * alpha;
 end function;
@@ -323,9 +322,8 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
   O := Gamma`BaseRing;
   B := Algebra(O);
   F := BaseRing(B);
+
   Z_F := MaximalOrder(F);
-  Z_FN := quo<Z_F | N>;
-  P1N, P1Nrep := GetOrMakeP1_new(Gamma, N);
 
   FeqQQ := F cmpeq Rationals();
   elleqoo := ell cmpeq "Infinity";
@@ -483,13 +481,10 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
         Nprimefacts := [ Nfact[1]^Nfact[2] : Nfact in Factorization(N) | Valuation(Norm(Jold),Nfact[1]) eq 0];
         if #Nprimefacts ne 0 then
           Nprime := &*Nprimefacts;
-          _, iotaold := ResidueMatrixRing(Oold, Nprime);
-          P1Nprime, P1Nprimerep := GetOrMakeP1(Gamma, Nprime);
-          Z_FNprime := quo<Z_F | Nprime>;
-          cosetsold := Gamma0Cosets(Oold`FuchsianGroup, Nprime, Z_FNprime, iotaold, P1Nprime, P1Nprimerep);
-
+          X_old := cIdealDatum(Oold`FuchsianGroup, Nprime);
+          cosetsold := X_old`CosetReps;
           // TODO abhijitm - no clue why we do two inverses, but this is how it was 
-          delta := eichlerize(delta^(-1), iotaold, P1Nprime, P1Nprimerep, cosetsold)^(-1);
+          delta := eichlerize(delta^(-1), X_old)^(-1);
         end if;
       end if;
 
@@ -567,7 +562,6 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
                                       i in [2..#O`RightIdealClasses[ridsbasis][3]]] + fakell eq 1*Z_F;
   if not elleqoo and Valuation(Discriminant(B),ell) eq 0 then
     P1ell, P1ellrep := GetOrMakeP1(Gamma, ell);
-    Z_Fell := quo<Z_F | ell>;
 
     if not inNormSupport then
       leftOrders := O`RightIdealClasses[ridsbasis][3];
@@ -585,7 +579,8 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
         if forall{ pmat : pmat in leftOrders[i]`pMatrixRings | pmat[1] ne _ell } then
           Append(~leftOrders[i]`pMatrixRings, <_ell, M2ell, phiell, mFell>);
         end if;
-        ellcosets := Gamma0Cosets(leftOrders[i]`FuchsianGroup, ell, Z_Fell, iotaell, P1ell, P1ellrep);
+        X_ell := cIdealDatum(leftOrders[i]`FuchsianGroup, ell);
+        ellcosets := X_ell`CosetReps;
       end for;
     else
       iotaell := [];
@@ -598,7 +593,6 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
   leftOrders := O`RightIdealClasses[ridsbasis][3];
   assert N + &*O`RightIdealClasses[ridsbasis][1] eq 1*Z_F;
   for ellq in [pp[1] : pp in Factorization(N)] do
-    P1ellq, P1ellqrep := GetOrMakeP1(Gamma, ellq);
     M2ellq, phiellq, mFellq := pMatrixRing(leftOrders[1], ellq);
     for i := 1 to #leftOrders do
       if not assigned leftOrders[i]`pMatrixRings then
@@ -648,13 +642,8 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
   assert O_mother`RightIdealClasses[ridsbasis][4];
   rids := O_mother`RightIdealClasses[ridsbasis];
 
-
-  P1N, P1Nrep := GetOrMakeP1(Gamma_mother, N);
-
   B := Algebra(O_mother);
   F := BaseRing(B);
-  Z_F := MaximalOrder(F);
-  Z_FN := quo<Z_F | N>;
 
   O := rids[3][ind];
   Op := rids[3][indp];
@@ -687,15 +676,13 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
   IsLevelOne := Norm(N) eq 1;
 
   // Check or precompute level structure.
-  _, iota := ResidueMatrixRing(O, N);
-  _, iotap := ResidueMatrixRing(Op, N);
-  Z_FN := quo<Z_F | N>;
+  X := cIdealDatum(Gamma, N);
+  Xp := cIdealDatum(Gammap, N);
+  cosets := X`CosetReps;
+  cosetsp := Xp`CosetReps;
 
-  cosets := Gamma0Cosets(Gamma, N, Z_FN, iota, P1N, P1Nrep);
-  cosetsp := Gamma0Cosets(Gammap, N, Z_FN, iotap, P1N, P1Nrep);
-
-  RPAs := RightPermutationActions(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep);
-  RPAsp := RightPermutationActions(Gammap, N, Z_FN, iotap, P1N, cosetsp, P1Nrep);
+  RPAs := RightPermutationActions(X);
+  RPAsp := RightPermutationActions(Xp);
 
   D := Parent(Gamma`ShimFDDisc[1]); 
 
@@ -715,16 +702,15 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       alphap := ElementOfNormMinusOne(O);
     else
       _, alphap := IsPrincipal(JJp, Gammap : Strict := false);
+      if not (-1 in RealSigns(Norm(alphap))) then
+        assert ind eq indp;
+        alphap := ElementOfNormMinusOne(O);
+        assert alphap in O and IsUnit(IntegerRing(Xp)!Norm(alphap)) and
+               -1 in RealSigns(Norm(alphap));
+      end if;
     end if;
 
-    if not FeqQQ and not -1 in RealSigns(Norm(alphap)) then
-      assert ind eq indp;
-      alphap := ElementOfNormMinusOne(O);
-      assert alphap in O and IsUnit(Z_F!Norm(alphap)) and
-             -1 in RealSigns(Norm(alphap));
-    end if;
-
-    alphap := eichlerize(alphap, iotap, P1N, P1Nrep, cosetsp);
+    alphap := eichlerize(alphap, Xp);
 
     lambda := alphap;
     alphas := [lambda];
@@ -757,6 +743,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
 
       alphas := [];
       _, iotapNell := ResidueMatrixRing(O, N/ell^ee);
+      iotap := Xp`ResidueMap;
       for c := 1 to #cosetsp do
         if Valuation(iotap(cosetsp[c]*lambda)[2,1],ell) ge ee and
            Valuation(iotap(cosetsp[c]*lambda)[2,2],ell) ge ee and
@@ -766,10 +753,10 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       end for;
       assert #alphas eq 1;
     elif ellU then
-      Z_Fell := quo<Z_F | ell>;
-      P1ellfull, P1ellfullrep := GetOrMakeP1(Gamma_mother, ell);
-      ellcosetsfull := Gamma0Cosets(Gamma, ell, Z_Fell, iotaell, P1ellfull, P1ellfullrep);
+      X_ell_full := cIdealDatum(Gamma, ell);
+      ellcosetsfull := X_ell_full`CosetReps;
       ooind := 1;
+      P1ellfull := X_ell_full`P1Elements;
       while ooind le #P1ellfull do
         if Valuation(P1ellfull[ooind][1],ell) gt 0 then // Should be infinity, in fact!
           break;
@@ -790,7 +777,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       // on the left by appropriate coset representatives of Gamma(N) \ Gamma(1)
       // in order to obtain our final alphas.
       alphas := [lambda*ellcosets[c] : c in [1..numP1]];
-      alphas := [eichlerize(alpha, iotap, P1N, P1Nrep, cosetsp) : alpha in alphas];
+      alphas := [eichlerize(alpha, Xp) : alpha in alphas];
     end if;
 
     Y_U := [];
@@ -803,7 +790,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
       for k in [1..#cosets] do
         Gk := [];
         alpha := lifts[i] * cosets[k]^(-1);
-        liftsik := O!eichlerize(alpha, iota, P1N, P1Nrep, cosets);
+        liftsik := O!eichlerize(alpha, X);
         Y_Opi := [];
 
         for j in [1..numP1] do
@@ -811,7 +798,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
             c := 1;
           else
             iotadelta := iotaell(alphas[j]*liftsik);
-            bl, v := P1ellfullrep(iotadelta[1], false, false);
+            bl, v := X_ell_full`P1Rep(iotadelta[1], false, false);
             c := Index(P1ell, v);
           end if;
           y := Op!(alphas[j]*liftsik*alphas[c]^(-1));
@@ -869,20 +856,21 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
 
       // Ensure lambda is trivial at N.
       if not IsLevelOne then
-        alphas := [eichlerize(lambda, iotap, P1N, P1Nrep, cosetsp) 
+        alphas := [eichlerize(lambda, Xp) 
                 : lambda in lambdas];
       else
         alphas := lambdas;
       end if;
     else // Go for the fast code.
       lambda := LeftIdealGens(Gamma, ell, JJp, 1, O, Op, iotaell);
-      P1ell, P1ellrep := GetOrMakeP1(Gamma_mother, ell);
-      Z_Fell := quo<Z_F | ell>;
-      ellcosets := Gamma0Cosets(Gamma, ell, Z_Fell, iotaell, P1ell, P1ellrep);
+      X_ell := cIdealDatum(Gamma, ell);
+      P1ell := X_ell`P1Elements;
+      P1ellrep := X_ell`P1Rep;
+      ellcosets := X_ell`CosetReps;
 
       // Ensure lambda is trivial at N.
       if not IsLevelOne then
-        alphas := [eichlerize(lambda * ellcoset, iotap, P1N, P1Nrep, cosetsp) 
+        alphas := [eichlerize(lambda * ellcoset, Xp) 
                : ellcoset in ellcosets];
       else
         alphas := [lambda * ellcoset : ellcoset in ellcosets];
@@ -894,14 +882,17 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
   vprintf ModFrmHil: "Computing conjugation actions ........................ ";
   vtime ModFrmHil:
   if not IsLevelOne then
-    Q1, CPAs1, Q2, CPAs2 := ConjugationPermutationActions(Gammap, N, Z_FN, iotap, P1N, cosetsp, P1Nrep);
+    Q1, CPAs1, Q2, CPAs2 := ConjugationPermutationActions(Xp);
 
     Zp := [];
     for j in [1..numP1] do
-      iotaj := iotap(alphas[j]);
+      iotaj := Xp`ResidueMap(alphas[j]);
+      Z_FN := Xp`ResidueRing;
+      // print "iotaj[1,1]", iotaj;
       xinv := (Z_FN!iotaj[1,1])^(-1);
-      perm1 := CPAs1[Index(Q1, Z_FN!iotaj[1,2]*xinv)];
-      perm2 := CPAs2[Index(Q2, Z_FN!iotaj[2,2]*xinv)];
+      // print "iotaj[2,2]*xinv", (Z_FN!iotaj[2,2])*xinv;
+      perm1 := CPAs1[Index(Q1, (Z_FN!iotaj[1,2])*xinv)];
+      perm2 := CPAs2[Index(Q2, (Z_FN!iotaj[2,2])*xinv)];
       Append(~Zp, PermutationSparseMatrix(Integers(), perm2 * perm1));
     end for;
   end if;

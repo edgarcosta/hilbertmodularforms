@@ -2,6 +2,31 @@ declare attributes AlgQuat : Splittings;
 
 //-------------
 //
+// Compute a projective line
+//
+//-------------
+
+function GetOrMakeP1(Gamma, N)
+  // Gamma - GrpPSL2
+  // N - RngOrdIdl
+  //
+  // Returns the cached output of ProjectiveLine(Gamma, N)
+  Z_F := Order(N);
+  Z_FN := quo<Z_F | N>;
+  if not assigned Gamma`P1s_dict then
+    Gamma`P1s_dict := AssociativeArray();
+  end if;
+  if IsDefined(Gamma`P1s_dict, N) then
+    return Explode(Gamma`P1s_dict[N]);
+  else
+    P1N, P1Nrep := ProjectiveLine(Z_FN);
+    Gamma`P1s_dict[N] := <P1N, P1Nrep>;
+    return P1N, P1Nrep;
+  end if;
+end function;
+
+//-------------
+//
 // Computing the weight representation
 //
 //-------------
@@ -69,125 +94,6 @@ end function;
 
 //-------------
 //
-// Compute the set of cosets.
-//
-//-------------
-
-function GetOrMakeP1(Gamma, N)
-  // Gamma - GrpPSL2
-  // N - RngOrdIdl
-  //
-  // Returns the cached output of ProjectiveLine(Gamma, N)
-  Z_F := Order(N);
-  Z_FN := quo<Z_F | N>;
-  if not assigned Gamma`P1s_dict then
-    Gamma`P1s_dict := AssociativeArray();
-  end if;
-  if IsDefined(Gamma`P1s_dict, N) then
-    return Explode(Gamma`P1s_dict[N]);
-  else
-    P1N, P1Nrep := ProjectiveLine(Z_FN);
-    Gamma`P1s_dict[N] := <P1N, P1Nrep>;
-    return P1N, P1Nrep;
-  end if;
-end function;
-
-function LeftToRightCosets(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep)
-  // Given a sequence of coset representatives for
-  // Gamma(1) / Gamma(N), return a sequence of representatives
-  // for Gamma(N) \ Gamma(1).
-  rcosets := cosets;
-  cosetsinv := [c^(-1) : c in cosets];
-  for c in cosetsinv do
-    v := iota(c)[2];
-    // Gamma`P1Ns[N] is a tuple, the second entry
-    // is a map taking v to its standard representative
-    // in P1N.
-    _, v := GetOrMakeP1(Gamma, N)[2](v, false, false);
-    rcosets[Index(Gamma`P1N, v)] := c;
-  end for;
-  return rcosets;
-end function;
-
-function Gamma0Cosets(Gamma, N, Z_FN, iota, P1, P1rep : LeftCosets:=true)
-  if not assigned Gamma`LevelCosets_new then
-    Gamma`LevelCosets_new := AssociativeArray();
-  end if;
-
-  if IsDefined(Gamma`LevelCosets_new, N) then
-    if LeftCosets then
-      return Gamma`LevelCosets_new[N];
-    else
-      return LeftToRightCosets(Gamma, N, Z_FN, iota, P1, Gamma`LevelCosets_new[N], P1rep);
-    end if;
-  end if;
-
-  if Norm(N) eq 1 then
-    return [BaseRing(Gamma)!1];
-  end if;
-
-  vprintf ModFrmHil: "Computing cosets ..................................... ";
-  time0 := Cputime();
-
-  O := BaseRing(Gamma);
-  B := Algebra(O);
-
-  D := Parent(Gamma`ShimFDDisc[1]);
-  mU := Gamma`ShimFDSidepairsDomain;
-  i := 1;
-  while i lt #mU do
-    if mU[i] eq mU[i+1] then
-      Remove(~mU,i);
-    end if;
-    i +:= 1;
-  end while;
-  mU := [<mU[i], i> : i in [1..#mU]];
-
-  frontier := [<O!1,[]>];
-  cosets := [<O!1,[Integers()|]> : i in [1..#P1]];
-  cosetcnt := 1;
-
-  _, v := P1rep(iota(O!1)[2], false, false);
-  ind1 := Index(P1, v);
-
-  while frontier ne [] do
-    newfrontier := [];
-    for delta in frontier do
-      for g in mU do
-        gamma := delta[1]*g[1];
-
-        v := iota(gamma)[2];
-        _, v := P1rep(v, false, false);
-        ind := Index(P1, v);
-        if ind ne ind1 and cosets[ind][1] eq 1 then
-          // Optionally, we could keep (and return) the elements in Gamma0N that
-          // we find, but as it stands now, this wastes precious time as we
-          // work with the induced module, anyway.
-          cosets[ind] := <gamma, delta[2] cat [g[2]]>;
-          Append(~newfrontier, <gamma, [g[2]] cat delta[2]>);
-          cosetcnt +:= 1;
-        end if;
-      end for;
-    end for;
-    frontier := newfrontier;
-  end while;
-
-  if #Factorization(N) gt 0 then
-    assert cosetcnt eq Norm(N)*&*[1+1/Norm(pp[1]) : pp in Factorization(N)];
-  end if;
-  for i := 1 to #P1 do
-    v := iota(cosets[i][1])[2];
-    _, v := P1rep(v, false, false);
-    assert v eq P1[i];
-  end for;
-
-  Gamma`LevelCosets_new[N] := [c[1] : c in cosets];
-  vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
-  return Gamma0Cosets(Gamma, N, Z_FN, iota, P1, P1rep : LeftCosets:=LeftCosets);
-end function;
-
-//-------------
-//
 // Right action functions.
 //
 //-------------
@@ -200,7 +106,10 @@ end function;
 // At a positive integer i, the dictionary stores the permutation matrix 
 // induced by right action of the ith generator on coset representatives
 // (which should be something like Gamma(N) \ Gamma). 
-function RightPermutationActions(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep)
+function RightPermutationActions(X)
+  // X::IdealDatum
+  Gamma := X`FuchsianGroup;
+  N := X`Ideal;
   if not assigned Gamma`LevelRPAs_new then
     Gamma`LevelRPAs_new := AssociativeArray();
   end if;
@@ -214,16 +123,15 @@ function RightPermutationActions(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep)
 
   U, m := Group(Gamma);
   RPAs := AssociativeArray();
-  P1N, P1Nrep := GetOrMakeP1(Gamma, N);
   for i := 1 to #Generators(U) do
     delta := Quaternion(m(U.i));
     perm := [];
-    for alphai in cosets do
-      _, v := P1Nrep(iota(alphai*delta)[2], false, false);
-      Append(~perm, Index(P1N, v));
+    for alphai in X`CosetReps do
+      _, v := X`P1Rep(X`ResidueMap(alphai*delta)[2], false, false);
+      Append(~perm, Index(X`P1Elements, v));
     end for;
-    RPAs[i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#P1N)!perm);
-    RPAs[-i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#P1N)!perm^-1);
+    RPAs[i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#X`P1Elements)!perm);
+    RPAs[-i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#X`P1Elements)!perm^-1);
   end for;
 
   vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
