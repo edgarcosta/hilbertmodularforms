@@ -78,6 +78,12 @@ function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
     splittings, K, _ := Splittings(Parent(b));
   end if;
 
+  // parallel weight 2 case
+  // TODO abhijitm should account for m
+  if n eq [0 : _ in [1 .. #n]] and Order(X`Character) eq 1 then
+    return MatrixRing(Integers(), 1)!1;
+  end if;
+
   M := MatrixRing(K, 1)!1;
   for l := d to 1 by -1 do
     // this casework looks gross because this function needs to be performant.
@@ -141,7 +147,7 @@ function matrix_of_induced_action(b, k, X)
    *   where Gamma(1) and Gamma(N) are Fuchsian groups associated to O and an Eichler
    *   order O_0(N) respectively. 
    
-   * returns->Mtrx - The matrix of the action of b on 
+   * returns->SparseMtrx - The matrix of the action of b on 
    *   V := Ind_(Gamma(N))^(Gamma(1)) Wk, 
    *   where Wk is defined in weight_map_arch.
    
@@ -167,11 +173,18 @@ function matrix_of_induced_action(b, k, X)
   n := [k_i - 2 : k_i in k];
   m := [-n_i div 2 : n_i in n];
 
-  _, K, _ := Splittings(Parent(b));
-  K := Compositum(K, CyclotomicField(Order(X`Character)));
+  par_wt_2 := (n eq [0 : _ in k]);
+  // R will be the ring over which our matrices are defined
+  if par_wt_2 then
+    R := Integers();
+  else
+    _, K, _ := Splittings(Parent(b));
+    R := Compositum(K, CyclotomicField(Order(X`Character)));
+  end if;
 
   r := #X`P1Elements;
-  blocks := [ZeroMatrix(K, dim_W) : _ in [1 .. r^2]];
+
+  blocks := [ZeroMatrix(R, dim_W) : _ in [1 .. r^2]];
   for u in X`P1Elements do
     x := (X`CosetRepsByP1[u][2]) * b;
     _, v := X`P1Rep(X`ResidueMap(x)[2], false, false);
@@ -185,57 +198,15 @@ function matrix_of_induced_action(b, k, X)
     // X`CosetRepIdx[w] gives the index of the coset corresponding to the 
     // element w of P1(ZF/N). 
     row_major_idx := r * (X`CosetRepsByP1[u][1] - 1) + X`CosetRepsByP1[v][1];
-    blocks[row_major_idx] := weight_map_arch(bp, n : m:=m, X:=X);
+
+    if par_wt_2 then
+      blocks[row_major_idx] := MatrixRing(R, 1)!1;
+    else
+      blocks[row_major_idx] := weight_map_arch(bp, n : m:=m, X:=X);
+    end if;
+
   end for;
-  return BlockMatrix(r, r, blocks);
-end function;
-
-//-------------
-//
-// Right action functions.
-//
-//-------------
-
-// Gamma`LevelRPAs_new stores a dictionary keyed by level N.
-// Gamma`LevelRPAs_new[N] contains a dictionary keyed by 
-// the integers [-#gens ..., -1, 1, ..., #gens], where gens is
-// Generators(Group(Gamma)).
-//
-// At a positive integer i, the dictionary stores the permutation matrix 
-// induced by right action of the ith generator on coset representatives
-// (which should be something like Gamma(N) \ Gamma). 
-function RightPermutationActions(X)
-  // X::IdealDatum
-  Gamma := X`FuchsianGroup;
-  N := X`Ideal;
-  if not assigned Gamma`LevelRPAs_new then
-    Gamma`LevelRPAs_new := AssociativeArray();
-  end if;
-
-  if IsDefined(Gamma`LevelRPAs_new, N) then
-    return Gamma`LevelRPAs_new[N];
-  end if;
-
-  vprintf ModFrmHil: "Computing right permutation actions .................. ";
-  time0 := Cputime();
-
-  U, m := Group(Gamma);
-  RPAs := AssociativeArray();
-  for i := 1 to #Generators(U) do
-    delta := Quaternion(m(U.i));
-    perm := [];
-    for alphai in X`CosetReps do
-      _, v := X`P1Rep(X`ResidueMap(alphai*delta)[2], false, false);
-      Append(~perm, Index(X`P1Elements, v));
-    end for;
-    RPAs[i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#X`P1Elements)!perm);
-    RPAs[-i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#X`P1Elements)!perm^-1);
-  end for;
-
-  vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
-
-  Gamma`LevelRPAs_new[N] := RPAs;
-  return RPAs;
+  return SparseMatrix(BlockMatrix(r, r, blocks));
 end function;
 
 //-------------

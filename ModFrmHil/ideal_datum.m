@@ -5,7 +5,7 @@
  * This serves to reduce repetition and simplify function signatures.
  **************************************************************************/
 
-import "weight_rep.m" : GetOrMakeP1, RightPermutationActions;
+import "weight_rep.m" : GetOrMakeP1, matrix_of_induced_action;
 
 declare type IdealDatum;
 declare attributes IdealDatum:
@@ -19,7 +19,8 @@ declare attributes IdealDatum:
   P1Rep,
   ResidueMap,
   CosetReps,
-  CosetRepsByP1;
+  CosetRepsByP1,
+  InducedModuleMtrxs;
 
 declare attributes GrpPSL2 : ideal_data;
 
@@ -68,9 +69,22 @@ intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=1) -> IdealDatum
   end if;
 
   X`CosetRepsByP1 := AssociativeArray();
-  // Gamma0Cosets also assigns X`CosetRepsByP1
   X`CosetReps := Gamma0Cosets(X);
 
+  for i := 1 to #X`P1Elements do
+    // TODO abhijitm these next three lines should be removed before committing,
+    // they're just checks
+    v := X`ResidueMap(X`CosetReps[i])[2];
+    _, v := X`P1Rep(v, false, false);
+    assert v eq X`P1Elements[i];
+
+    // cache coset reps and their index in Gamma0Cosets
+    // by their P1 representatives
+    X`CosetRepsByP1[v] := <i, X`CosetReps[i]>;
+  end for;
+  assert #X`CosetRepsByP1 eq #X`P1Elements;
+
+  X`InducedModuleMtrxs := AssociativeArray();
 
   Gamma`ideal_data[<I, chi>] := X;
   return X;
@@ -180,18 +194,29 @@ function Gamma0Cosets(X : LeftCosets:=true)
 
   if #Factorization(N) gt 0 then
     assert cosetcnt eq Norm(N)*&*[1+1/Norm(pp[1]) : pp in Factorization(N)];
-  end if;
-  for i := 1 to #X`P1Elements do
-    v := X`ResidueMap(cosets[i][1])[2];
-    _, v := X`P1Rep(v, false, false);
-    assert v eq X`P1Elements[i];
-
-    // cache coset reps and their index in Gamma0Cosets
-    // by their P1 representatives
-    X`CosetRepsByP1[v] := <i, cosets[i][1]>;
-  end for;
+  end if; 
 
   Gamma`LevelCosets_new[N] := [c[1] : c in cosets];
   vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
   return Gamma0Cosets(X : LeftCosets:=LeftCosets);
+end function;
+
+function induced_module_mtrxs_of_gens(X, k)
+  // X::IdealDatum
+  // k::SeqEnum[RngIntElt]
+  if IsDefined(X`InducedModuleMtrxs, k) then
+    return X`InducedModuleMtrxs[k];
+  end if;
+
+  G, _, m := Group(X`FuchsianGroup);
+  gens := [m(G.i) : i in [1 .. #Generators(G)]];
+
+  Ms := AssociativeArray();
+  for i in [1 .. #gens] do
+    Ms[i] := matrix_of_induced_action(gens[i], k, X);
+    Ms[-i] := matrix_of_induced_action(gens[i]^(-1), k, X);
+  end for;
+
+  X`InducedModuleMtrxs[k] := Ms;
+  return Ms;
 end function;
