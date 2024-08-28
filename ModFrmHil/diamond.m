@@ -16,9 +16,7 @@ import !"Geometry/ModFrmHil/hecke.m" :
   restriction;
 
 import "hackobj.m" : HMF0;
-import "hecke_field.m" :
-  hecke_matrix_field,
-  WeightRepresentation;
+import "hecke_field.m" : hecke_matrix_field, WeightRepresentation;
 
 /**************** New intrinsics **********************/
 
@@ -96,6 +94,12 @@ function operator(M, p, op)
     MA := TopAmbient(M);
     assert disc eq make_ideal(NewLevel(MA));
     N := Level(M)/disc;
+
+    // TODO abhijitm this is to assign variables like M`weight_base_field
+    // which might get used later.
+    if not assigned M`weight_rep then
+      _ := WeightRepresentation(M);
+    end if;
 
     Gamma := FuchsianGroup(QuaternionOrder(M));
     case op:
