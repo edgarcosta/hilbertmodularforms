@@ -141,6 +141,36 @@ function weight_rep_dim(k)
   return &*[k_i - 1 : k_i in k];
 end function;
 
+// computes m (an input to weight_map_arch) from k
+// TODO abhijitm eventually this should be a parameter
+// that the user can set on instantiation of ModFrmHil
+function m_from_k(k)
+  k_0 := Max(k);
+  return [(k_0 - k_i) div 2 : k_i in k];
+end function;
+
+function n_from_k(k)
+  return [k_i - 2 : k_i in k];
+end function;
+
+function is_par_wt_2(k)
+  return &and[k_i eq 2 : k_i in k];
+end function;
+
+// Computes the weight_rep_dim x weight_rep_dim matrix
+// of the action of b (which is assumed to be in O_0(N) for
+// N the ideal of X) on the weight representation. 
+function matrix_of_action(b, k, X)
+  n := n_from_k(k);
+  m := m_from_k(k);
+
+  if is_par_wt_2(k) then
+    return IdentitySparseMatrix(Integers(), weight_rep_dim(k));
+  else
+    return weight_map_arch(b, n : m:=m, X:=X);
+  end if;
+end function;
+
 function matrix_of_induced_action(b, k, X)
   /*********************************************************************
    * b::AlgAssVOrdElt - An element of a quaternion order O / F. 
@@ -174,12 +204,11 @@ function matrix_of_induced_action(b, k, X)
    ***********************************************************************/
 
   dim_W := weight_rep_dim(k);
-  n := [k_i - 2 : k_i in k];
-  m := [-n_i div 2 : n_i in n];
+  n := n_from_k(k);
+  m := m_from_k(k);
 
-  par_wt_2 := (n eq [0 : _ in k]);
   // R will be the ring over which our matrices are defined
-  if par_wt_2 then
+  if is_par_wt_2(k) then
     R := Integers();
   else
     _, K, _ := Splittings(Parent(b));
@@ -203,7 +232,7 @@ function matrix_of_induced_action(b, k, X)
     // element w of P1(ZF/N). 
     row_major_idx := r * (X`CosetRepsByP1[u][1] - 1) + X`CosetRepsByP1[v][1];
 
-    if par_wt_2 then
+    if is_par_wt_2(k) then
       blocks[row_major_idx] := MatrixRing(R, 1)!1;
     else
       blocks[row_major_idx] := weight_map_arch(bp, n : m:=m, X:=X);
