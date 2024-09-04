@@ -12,7 +12,7 @@ import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne, LeftIdealGens
 import !"Algebra/AlgQuat/enumerate.m" :
              EnumerativeSearchInternal, ReducedBasisInternal;
 import !"Geometry/GrpPSL2/GrpPSL2Shim/domain.m" : Vertices;
-import "weight_rep.m" : GetOrMakeP1, matrix_of_action, matrix_of_induced_action, weight_rep_dim;
+import "weight_rep.m" : GetOrMakeP1, is_par_wt_2, matrix_of_action, matrix_of_induced_action, weight_rep_dim;
 import "ideal_datum.m" : induced_module_mtrxs_of_gens;
 
 declare attributes GrpPSL2 : LevelCosets_new, H1s, ShimGroupSidepairsQuats, HeckeMatrixoo_new, HardHeckeMatrices_new, P1s_dict;
@@ -583,6 +583,8 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
   lifts := [m(U.i) : i in [1..n]];
 
   IsLevelOne := Norm(N) eq 1;
+  IsParallelWeightTwo := is_par_wt_2(weight);
+  IsTrivialCoefficientModule := IsLevelOne and IsParallelWeightTwo;
 
   // Check or precompute level structure.
   Gamma_datum := cIdealDatum(Gamma, N : chi:=chi);
@@ -709,7 +711,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
             c := Index(P1ell, v);
           end if;
           y := Op!(alphas[j]*liftsik*alphas[c]^(-1));
-          y, _ := CompleteRelationFromUnit(Gammap_datum, y, weight : IsTrivialCoefficientModule := false);
+          y, _ := CompleteRelationFromUnit(Gammap_datum, y, weight : IsTrivialCoefficientModule:=false);
           y := ColumnSubmatrix(y, 1, W_dim);
           y := y * matrix_of_action(alphas[c], weight, Gammap_datum);
           Append(~Gk, y);
@@ -785,10 +787,17 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
 
   vprintf ModFrmHil: "Computing conjugation actions ........................ ";
   vtime ModFrmHil:
-  if not IsLevelOne then
+
+  // if level 1 and parallel weight 2, the coefficient module is trivial
+  // and there's no Zp action
+  if IsLevelOne then
+    // equivalently, if not IsTrivialCoefficientModule
+    if not IsParallelWeightTwo then
+      Zp := [matrix_of_action(alpha, weight, Gamma_datum) : alpha in alphas];
+    end if;
+  else
     Zp := [matrix_of_induced_action(alpha, weight, Gamma_datum) : alpha in alphas];
   end if;
-
 
   Y_Op := [];
   X := [];
@@ -834,8 +843,8 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
     G := [];
 
     for j in [1..numP1] do
-      y := CompleteRelationFromUnit(Gammap_datum, Y_Op[i][j], weight : IsTrivialCoefficientModule := IsLevelOne);
-      if not IsLevelOne then
+      y := CompleteRelationFromUnit(Gammap_datum, Y_Op[i][j], weight : IsTrivialCoefficientModule:=IsTrivialCoefficientModule);
+      if not IsTrivialCoefficientModule then
         y := y*Zp[X[i][j]];
       end if;
       Append(~G, y);
