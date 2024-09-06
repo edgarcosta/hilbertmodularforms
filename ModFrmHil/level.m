@@ -93,15 +93,11 @@ end function;
 //-------------
 
 function InducedH1Internal(X, k);
+  if IsDefined(X`H1s, k) then
+    return Explode(X`H1s[k]);
+  end if;
+
   Gamma := X`FuchsianGroup;
-  if not assigned Gamma`LevelH1s then
-    Gamma`H1s := AssociativeArray();
-  end if;
-
-  if IsDefined(Gamma`H1s, <X`Ideal, k, X`Character>) then
-    return Explode(Gamma`H1s[<X`Ideal, k, X`Character>]);
-  end if;
-
   U, _, m := Group(Gamma);
   d := #Generators(U);
   gammagens := [m(U.i) : i in [1..d]];
@@ -135,7 +131,7 @@ function InducedH1Internal(X, k);
     Htilde := [Htilde[i] : i in [1..Nrows(Htilde)]];
   end if;
 
-  Gamma`H1s[<X`Ideal, k, X`Character>] := <Htilde, mH>;
+  X`H1s[k] := <Htilde, mH>;
   return Htilde, mH;
 end function;
 
@@ -586,9 +582,13 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
   IsParallelWeightTwo := is_par_wt_2(weight);
   IsTrivialCoefficientModule := IsLevelOne and IsParallelWeightTwo;
 
-  // Check or precompute level structure.
   Gamma_datum := cIdealDatum(Gamma, N : chi:=chi);
-  Gammap_datum := cIdealDatum(Gammap, N : chi:=chi);
+  if O eq Op then
+    // this happens if the narrow class number is 1
+    Gammap_datum := Gamma_datum;
+  else
+    Gammap_datum := cIdealDatum(Gammap, N : chi:=chi);
+  end if;
   cosets := Gamma_datum`CosetReps;
   cosetsp := Gammap_datum`CosetReps;
 
