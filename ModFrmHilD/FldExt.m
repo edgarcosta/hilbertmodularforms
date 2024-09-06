@@ -630,30 +630,22 @@ intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) ->
   require IsSubfield(SplittingField(F), K) : "K must contain the Galois closure of F";
   require IsGalois(K) : "K needs to be a Galois field";
   n := Degree(F);
-  places := InfinitePlaces(F);
-
   a := PrimitiveElement(F);
-  a_embed_dict := AssociativeArray();
-  r, s := Signature(F);
-  for i in [1 .. r] do
-    z_i := Round(10^Precision*Evaluate(a, places[i]));
-    a_embed_dict[z_i] := i;
-  end for;
 
-  for i in [r+1 .. r+s] do
-    z_i := Round(10^Precision*Evaluate(a, places[i]));
-    a_embed_dict[z_i] := i;
-    a_embed_dict[Conjugate(z_i)] := i + s;
-  end for;
-
+  // a dictionary whose keys are embeddings of the primitive element of F
+  // (or precisely, the first 10^Precision digits of its image under each
+  // embedding). The value associated to the image under the ith embedding
+  // is the integer i.
+  a_embed_dict, f := PrimitiveEltEmbedDict(F : Precision:=Precision);
+  
   // a distinguished place of K 
   // if we want to view our HMFs as having coefficients over C,
   // we should apply v_0 to all the coefficients
   v_0 := MarkedEmbedding(K);
-  
+
   aut_dict := AssociativeArray();
   for aut in Automorphisms(K) do
-    aut_a_est := Round(10^Precision*Evaluate(aut(a), v_0));
+    aut_a_est := f(Evaluate(aut(a), v_0));
     b, x := IsDefined(a_embed_dict, aut_a_est);
     if b then
       aut_dict[x] := aut;
@@ -667,6 +659,46 @@ intrinsic AutsOfKReppingEmbeddingsOfF(F::FldNum, K::FldNum : Precision := 25) ->
   require #Keys(aut_dict) eq n : "Something's wrong, there should\
     be at one stored automorphism for each embedding of F";
   return [aut_dict[i] : i in [1 .. n]];
+end intrinsic;
+
+intrinsic PrimitiveEltEmbedDict(
+    F::Fld :
+    Precision:=100,
+    f:=func<x|Round(10^Precision*x)>
+    ) -> UserProgram, Assoc
+  {
+    input:
+      F: A field with r real places and s complex places
+    returns:
+      - An associative array defining a map from images of the primitive element
+      under archimedean embeddings of F to an index specifying the embedding. 
+      - A function mapping a real number to the format of the keys
+      of this associative array.
+      
+      
+      First, list the r + 2s embeddings (not just the places) of F by writing
+      down the r + s outputs of InfinitePlaces(F) and letting the last s be the conjugates
+      in order of the s complex embeddings we already have. Then, the associative array
+      takes the image of the primitive element of F under the jth embedding of the list
+      to the integer j.
+  }
+  n := Degree(F);
+  places := InfinitePlaces(F);
+  a := PrimitiveElement(F);
+  a_embed_dict := AssociativeArray();
+  r, s := Signature(F);
+  for i in [1 .. r] do
+    z_i := f(Evaluate(a, places[i]));
+    a_embed_dict[z_i] := i;
+  end for;
+
+  for i in [r+1 .. r+s] do
+    z_i := f(Evaluate(a, places[i]));
+    a_embed_dict[z_i] := i;
+    a_embed_dict[Conjugate(z_i)] := i + s;
+  end for;
+
+  return a_embed_dict, f;
 end intrinsic;
 
 intrinsic AutsOfUCFReppingEmbeddingsOfF(F::FldNum, k::SeqEnum[RngIntElt] : Precision := 50) -> SeqEnum[Map]

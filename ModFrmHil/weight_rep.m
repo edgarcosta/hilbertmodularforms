@@ -265,6 +265,7 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
   end if;
 
   F := BaseField(B);
+  vs := InfinitePlaces(F);
   // define weight_base_field = extension K/F containing Galois closure of F and 
   // containing a root of every conjugate of the minimal polynomial of B.1
   if assigned F`SplittingField then
@@ -273,6 +274,7 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
     K,rts := SplittingField(F : Abs := true, Opt := false);
     F`SplittingField := <K, rts>;
   end if;
+
   embeddings_F_to_K := [hom<F->K | r> : r in rts];
   B1coeffs := Coefficients(MinimalPolynomial(B.1));
   alphas := [K| ];
@@ -292,7 +294,26 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
                      // it was so we return this separately. 
   K := AbsoluteField(K);
   K := OptimizedRepresentation(K);
+
+  // sort the embeddings so that they are consistent with the order of the embeddings
+  // coming from InfinitePlaces(F)
+  prim_elt_emb_dict, f := PrimitiveEltEmbedDict(F);
   embeddings_F_to_K  :=  [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
+  sorted_embs := embeddings_F_to_K;
+  sorted_alphas := alphas;
+  a := PrimitiveElement(F);
+  for j in [1 .. #embeddings_F_to_K] do
+    emb := embeddings_F_to_K[j];
+    alpha := alphas[j];
+    b, i := IsDefined(prim_elt_emb_dict, f(Evaluate(emb(a), MarkedEmbedding(K))));
+    require b : "Something's gone wrong with finding embeddings of F into K";
+    sorted_embs[i] := emb;
+    sorted_alphas[i] := alpha;
+  end for;
+
+  embeddings_F_to_K := sorted_embs;
+  alphas := sorted_alphas;
+
 
   require B.1*B.2 eq B.3 : "We assume B.1 * B.2 == B.3 when defining\
     the splitting homomorphisms.";
