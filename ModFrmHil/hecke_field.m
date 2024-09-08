@@ -26,6 +26,9 @@ import !"Geometry/ModFrmHil/precompute.m" :
 import "hackobj.m" : HMF0;
 
 import "weight_rep.m" : weight_map_arch;
+
+forward WeightRepresentation;
+
 /**************** New Attributes **********************/
 
 declare attributes ModFrmHil : minimal_hecke_field_emb,
@@ -38,9 +41,12 @@ declare attributes ModFrmHil : minimal_hecke_field_emb,
 function hecke_matrix_field(M)
   if assigned M`hecke_matrix_field then
     return M`hecke_matrix_field;
-  elif IsBianchi(M) or not IsDefinite(M) then
+  elif IsBianchi(M) then
     return Rationals();
   else
+    if not assigned TopAmbient(M)`weight_base_field then
+      _ := WeightRepresentation(TopAmbient(M));
+    end if;
 	  return TopAmbient(M)`weight_base_field;
   end if;
 end function;
