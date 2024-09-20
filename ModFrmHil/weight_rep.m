@@ -43,6 +43,34 @@ function FastSymmetricPower(mat, n)
   end case;
 end function;
 
+function FiniteModulusCharFromHeckeChar(chi)
+  // input:
+  //   chi::GrpHeckeElt - A Hecke character over a field F
+  //     of modulus N
+  // returns:
+  //   UserProgram - A function from FldNumElt to C* obtained as the restriction 
+  //   of the Hecke character chi to the nonarchimedean primes dividing N.
+  //   This is *not* the same as the Dirichlet restriction, which is the
+  //   character on principal ideals induced by chi viewed as a ray class character.
+  //   In particular, the Dirichlet restriction is trivial on units, whereas
+  //   psi can be nontrivial on units (in practice we expect psi(e) = sign(e)^k)
+  //   when k has odd components.
+  comps := Components(chi);
+  level, places := Modulus(chi);
+
+  F := NumberField(Order(level));
+  ZF := Integers(F);
+  // require places eq [1..Degree(F)] : "Chi is not a narrow class group character.";
+  // require (Degree(F) eq #InfinitePlaces(F)) : "The field is not totally real.";
+
+  // implementing the character psi which is described above
+  // as the product of the components of chi on the finite places
+  psi := function(x); // x is a FldNumElt
+    return (level eq 1*ZF) select 1 else &*[comps[v[1]](x) : v in Factorization(level)];
+  end function;
+  return psi;
+end function;
+
 function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
   // b::AlgQuatElt or AlgAssVOrdElt
   // n::SeqEnum[RngIntElt]
@@ -113,12 +141,14 @@ function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
 
     // if chi is trivial then we don't need to do anything
     chi := X`Character;
-    if Order(chi) gt 1 then
+    if not IsTrivial(chi) then
       b_mod_N := X`ResidueMap(b);
       // TODO abhijitm this should maybe be removed for performance
       // The character only really makes sense (it's only really a character) if
       // b is in O_0(N) \cap B^*. 
       assert b_mod_N[2][1] in Modulus(chi);
+
+      psi := FiniteModulusCharFromHeckeChar(chi);
 
       // if the order of chi is bigger than 2 then we need to work in a
       // bigger field extension, and strong coerce to make sure that things get
@@ -127,9 +157,9 @@ function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
       if Order(chi) gt 2 then
         K := Compositum(K, CyclotomicField(Order(chi)));
         // the character should be evaluated on the bottom right entry
-        M := chi(b_mod_N[2][2]) * StrongCoerceMatrix(K, M);
+        M := psi(b_mod_N[2][2]) * StrongCoerceMatrix(K, M);
       else
-        M := chi(b_mod_N[2][2]) * M;
+        M := psi(b_mod_N[2][2]) * M;
       end if;
     end if;
   end if;
@@ -164,7 +194,7 @@ function matrix_of_action(b, k, X)
   n := n_from_k(k);
   m := m_from_k(k);
 
-  if is_par_wt_2(k) then
+  if is_par_wt_2(k) and IsTrivial(X`Character) then
     return IdentitySparseMatrix(Integers(), weight_rep_dim(k));
   else
     return weight_map_arch(b, n : m:=m, X:=X);
@@ -208,7 +238,7 @@ function matrix_of_induced_action(b, k, X)
   m := m_from_k(k);
 
   // R will be the ring over which our matrices are defined
-  if is_par_wt_2(k) then
+  if is_par_wt_2(k) and IsTrivial(X`Character) then
     R := Integers();
   else
     _, K, _ := Splittings(Parent(b));
@@ -224,6 +254,7 @@ function matrix_of_induced_action(b, k, X)
 
     // this should now be in O_0(N) so we can apply weight_map_arch to it
     bp := x * (X`CosetRepsByP1[v][2])^(-1);
+    // print bp;
     
     // The matrix for bp should live in the block whose row corresponds to
     // u and whose column corresponds to v.
@@ -231,8 +262,9 @@ function matrix_of_induced_action(b, k, X)
     // X`CosetRepIdx[w] gives the index of the coset corresponding to the 
     // element w of P1(ZF/N). 
     row_major_idx := r * (X`CosetRepsByP1[u][1] - 1) + X`CosetRepsByP1[v][1];
+    // print row_major_idx;
 
-    if is_par_wt_2(k) then
+    if is_par_wt_2(k) and IsTrivial(X`Character) then
       blocks[row_major_idx] := MatrixRing(R, 1)!1;
     else
       blocks[row_major_idx] := weight_map_arch(bp, n : m:=m, X:=X);

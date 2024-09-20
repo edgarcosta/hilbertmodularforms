@@ -176,9 +176,12 @@ function basis_matrix(M)
             V := Kernel(Transpose(BasisMatrix(C)*IP));
         else
             for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
-                new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
-                V meet:= new;
-                C +:= old;
+                // An oldspace from pp only makes sense if the nebentypus is also "old" at pp
+                if IsOne(GCD(pp[1], Conductor(DirichletCharacter(M)))) then
+                    new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
+                  V meet:= new;
+                  C +:= old;
+                end if;
             end for;
         end if;
         R := BaseRing(MA`basis_matrix);
@@ -2205,19 +2208,32 @@ function space_with_level(M, N, Nnew)
   if ISA(Type(M), ModFrmHil) then 
     F := BaseField(M);
     k := Weight(M);
+    chi := DirichletCharacter(M);
+    _, m_inf := Modulus(chi);
+    c_f := Conductor(chi);
+    // If the conductor of chi doesn't divide N then this space cannot be constructed
+    assert N subset c_f;
 
-      M1 := HilbertCuspForms(F, N, k);
-      if not assigned M1`QuaternionOrder and assigned M`QuaternionOrder 
-         and IsSuitableQuaternionOrder(M`QuaternionOrder, M1) 
-      then
-        set_quaternion_order(M1, M`QuaternionOrder);
-      end if;
-      MN := NewSubspace(M1, Nnew);
-      if assigned M`QuaternionOrder and not assigned MN`QuaternionOrder 
-         and IsSuitableQuaternionOrder(M`QuaternionOrder, MN) 
-      then
-        set_quaternion_order(MN, M`QuaternionOrder);
-      end if;
+    // The character of the level N space should have finite modulus N.
+    // I think the infinite modulus shouldn't change
+    if Type(chi) eq GrpHeckeElt then
+      chi_res := Restrict(chi, N, m_inf);
+    else
+      chi_res := 1;
+    end if;
+
+    M1 := HilbertCuspForms(F, N, chi_res, k);
+    if not assigned M1`QuaternionOrder and assigned M`QuaternionOrder
+       and IsSuitableQuaternionOrder(M`QuaternionOrder, M1)
+    then
+      set_quaternion_order(M1, M`QuaternionOrder);
+    end if;
+    MN := NewSubspace(M1, Nnew);
+    if assigned M`QuaternionOrder and not assigned MN`QuaternionOrder
+       and IsSuitableQuaternionOrder(M`QuaternionOrder, MN)
+    then
+      set_quaternion_order(MN, M`QuaternionOrder);
+    end if;
 
     return MN;
   end if;

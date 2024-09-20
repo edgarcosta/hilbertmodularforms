@@ -1457,7 +1457,7 @@ function DegeneracyDown1DefiniteBig(M, p)
 
    weight2 := Seqset(Weight(M)) eq {2};
 assert weight2;
-assert M`DirichletCharacter cmpeq 1;
+assert (M`DirichletCharacter cmpeq 1) or IsTrivial(M`DirichletCharacter);
 
    // TO DO: easy case where N/p = 1, get the matrix just using stab_orders
 

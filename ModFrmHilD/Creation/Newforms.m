@@ -4,7 +4,9 @@ import !"Geometry/ModFrmHil/hecke.m" : hecke_algebra;
 // Caching magma computations
 intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
   {return the NewformDecomposition in magma type}
- require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
+  if IsEven(Degree(BaseField(Mk))) then 
+    require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
+  end if;
   if not assigned Mk`MagmaNewformDecomposition then
     N := Level(Mk);
     k := Weight(Mk);
