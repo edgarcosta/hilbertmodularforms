@@ -78,7 +78,7 @@ intrinsic HackyFieldLabel(F::FldNum) -> MonStgElt
     identically, hence this approach. Once FldNumCC or something like it
     is natively implemented, we may be able to do better.
   }
-  return Join([IntegerToString(a) : a in DefiningPolyCoeffs(F)], ".");
+  return Join([IntegerToString(Integers()!(a)) : a in DefiningPolyCoeffs(F)], ".");
 end intrinsic;
 
 intrinsic FieldFromHackyLabel(F_label::MonStgElt) -> Fld
