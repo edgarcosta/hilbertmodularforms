@@ -171,7 +171,8 @@ end function;
 
 intrinsic HeckeCharWeightFromWeight(K::Fld, F::Fld, k::SeqEnum[RngIntElt]) -> SeqEnum[Tup] 
   {}
-  if IsParallel(k) then
+  // in parallel weight 1, the infinity type is trivial
+  if IsParallel(k) and (k[1] eq 1) then
     r, s := Signature(K);
     return [<0, 0> : _ in [1 .. r+s]];
   else
