@@ -1,4 +1,4 @@
-intrinsic BaseChange(M::ModFrmHilDGRng, f::ModFrmElt : psi := false) -> ModFrmHilDElt
+intrinsic BaseChange(M::ModFrmHilDGRng, f::ModFrmElt : psi:=false, N_force:=false) -> ModFrmHilDElt
   {
     inputs:
       M: Graded ring of HMFs into which to create the base change
@@ -35,7 +35,11 @@ intrinsic BaseChange(M::ModFrmHilDGRng, f::ModFrmElt : psi := false) -> ModFrmHi
   // in the modular form to disappear in the base change if it factors through a finite
   // quotient. The base change form does occur in the level (N) but it won't generally
   // be new at this level. I will fix it someday. 
-  N := Level(f) * Integers(F);
+  if N_force cmpeq false then
+    N := Level(f) * Integers(F);
+  else
+    N := N_force;
+  end if;
 
   H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
   chi := Extend(NormInduction(F, psi), H);
