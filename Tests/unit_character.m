@@ -15,7 +15,7 @@ procedure test(M, k, correct : level := 1, chi := 1)
 
   F := BaseField(M);
   N := (level cmpeq 1) select 1*Integers(F) else level;
-  H := HeckeCharacterGroup(N, [1,2]);
+  H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
   chi := H!chi;
 
   Mk := HMFSpace(M, N, k, chi);
@@ -119,28 +119,43 @@ test(M, k, correct);
 
 ////********************** Galois cubic with discriminant 49 **********************////
 
-// weight [2,2,2] over the non-Galois cubic field 
-// with defining polynomial x^3 - x^2 + 1 
+// weight [2,2,2] over a Galois cubic field 
 
-/* TODO (abhijitm) uncomment this once ee2be7d and
- * its parents land (new multiplication code)
-  
 R<x> := PolynomialRing(Rationals());
 F<a> := NumberField(x^3 - x^2 - 2*x + 1);
 ZF := Integers(F);
 prec:=20;
-M:=GradedRingOfHMFs(F, prec);
-N := 1*ZF;
-M_222 := HMFSpace(M, N, [2,2,2]);
-unitchars := M_222`UnitCharacters;
+M := GradedRingOfHMFs(F, prec);
 // there should be one unit character for each component
-assert #unitchars eq 1;
 
-eps := TotallyPositiveUnitsGenerators(F)[1];
-// the unit character(s) in parallel weight should be trivial
-assert Evaluate(unitchars[1], eps) eq [1];
+correct := AssociativeArray();
+for bb in M`NarrowClassGroupReps do
+  correct[bb] := AssociativeArray();
+end for;
 
-*/
+U, m := UnitGroup(F);
+eps_1 := m(U.1);
+eps_2 := m(U.2);
+bb := 1*ZF;
+
+k := [2,2,2];
+K := UnitCharField(F, k);
+for eps in TotallyPositiveUnitsGenerators(F) do
+  correct[bb][eps] := K!1;
+end for;
+
+test(M, k, correct);
+
+k := [2,2,4];
+K := UnitCharField(F, k);
+auts := AutsOfUCFReppingEmbeddingsOfF(F, k);
+for eps in TotallyPositiveUnitsGenerators(F) do
+  // this is the same as auts[1](eps) * auts[2](eps) * auts[3](eps)^2
+  // because Norm(eps) = 1.
+  correct[bb][eps] := auts[3](eps);
+end for;
+
+test(M, k, correct);
 
 /********************** non-Galois cubic with discriminant -23 **********************////
 
