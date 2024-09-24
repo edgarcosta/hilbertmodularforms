@@ -157,9 +157,9 @@ function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
       if Order(chi) gt 2 then
         K := Compositum(K, CyclotomicField(Order(chi)));
         // the character should be evaluated on the bottom right entry
-        M := psi(b_mod_N[2][2]) * StrongCoerceMatrix(K, M);
+        M := psi(b_mod_N[1][1]) * StrongCoerceMatrix(K, M);
       else
-        M := psi(b_mod_N[2][2]) * M;
+        M := psi(b_mod_N[1][1]) * M;
       end if;
     end if;
   end if;
