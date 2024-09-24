@@ -56,9 +56,13 @@ intrinsic CuspFormBasis(
   k := Weight(Mk);
 
   // Weight 1 forms cannot be computed using Jacquet-Langlands transfer
-  // The Magma functionality doesn't currently support nebentypus characters with nontrivial
-  // Dirichlet restrictions, so that is also handled here.
-  if not &and[x ge 2 : x in k] or not IsTrivial(DirichletRestriction(Character(Mk))) then
+  // The Magma functionality for definite quaternion algebras doesn't currently support 
+  // nebentypus characters with nontrivial Dirichlet restrictions, so that is also
+  // computed using Hecke stability
+  if not &and[x ge 2 : x in k] or 
+    ((Degree(BaseField(Mk)) eq 2) and 
+      (not IsTrivial(DirichletRestriction(Character(Mk))))
+    ) then
     if SaveAndLoad then
       Mk`CuspFormBasis := LoadOrBuildAndSave(Mk, HeckeStabilityCuspBasis, "_cusp_space");
     else
@@ -221,12 +225,20 @@ intrinsic OldCuspFormBasis(
     M := Parent(Mk);
     N := Level(Mk);
     k := Weight(Mk);
+    chi := Character(Mk);
+    _, m_inf := Modulus(chi);
+    c_f := Conductor(chi);
 
     Mk`OldCuspFormBasis := [];
     divisors := Exclude(Divisors(N), N);
     for D in divisors do
-      Mk_D := HMFSpace(M, D, k);
-      Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric, GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
+      // oldforms cannot occur unless the nebentypus
+      // makes sense in the lower level
+      if D subset Conductor(chi) then
+        chi_res := Restrict(chi, D, m_inf);
+        Mk_D := HMFSpace(M, D, k, chi_res);
+        Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric, GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
+      end if;
     end for;
   end if;
   return SubBasis(Mk`OldCuspFormBasis, IdealClassesSupport, Symmetric);
