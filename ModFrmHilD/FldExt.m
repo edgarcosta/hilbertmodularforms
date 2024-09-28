@@ -119,7 +119,7 @@ intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
 
   if not assigned F`TotallyPositiveUnitsGenerators then
     PU, mPU := TotallyPositiveUnitsGroup(F);
-    tpugs_unorient := [Integers(F)!mPU(gen) : gen in Generators(PU)];
+    tpugs_unorient := [Integers(F)!mPU(PU.i) : i in [1 .. #Generators(PU)]];
 
     v := InfinitePlaces(F)[1];
     F`TotallyPositiveUnitsGenerators := [];
