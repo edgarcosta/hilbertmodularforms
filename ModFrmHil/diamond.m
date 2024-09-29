@@ -37,7 +37,12 @@ function operator(M, p, op)
   // Check if cached on M
   cached, Tp := IsDefined(eval "M`"*op, p);
   if cached then
-    return Tp;
+    if op eq "Hecke" then
+      Tp, p_reps := Explode(Tp);
+      return Tp, p_reps;
+    else
+      return Tp, _;
+    end if;
   end if;
 
   if Dimension(M : UseFormula:=false) eq 0 then // gets cached dimension or computes the space
@@ -49,7 +54,7 @@ function operator(M, p, op)
     // (TO DO: is this always better than getting it directly from the big operator?)
     bm := M`basis_matrix_wrt_ambient;
     bmi := M`basis_matrix_wrt_ambient_inv;
-    Tp_amb := operator(M`Ambient, p, op);
+    Tp_amb, p_reps := operator(M`Ambient, p, op);
     Tp_amb := ChangeRing(Tp_amb, BaseRing(bm));
     Tp := bm * Tp_amb * bmi;
 
@@ -87,6 +92,8 @@ function operator(M, p, op)
       when "Diamond" : Tp_big := DiamondOperatorDefiniteBig(MA, p);
     end case;
     Tp := restriction(M, Tp_big);
+    // TODO abhijitm, this never gets used, it's just to assign something
+    p_reps := [1];
 
   else // indefinite quat order
 
@@ -103,7 +110,7 @@ function operator(M, p, op)
 
     Gamma := FuchsianGroup(QuaternionOrder(M));
     case op:
-      when "Hecke" : Tp_big := HeckeMatrix2(Gamma, N, p, Weight(M), DirichletCharacter(M));
+      when "Hecke" : Tp_big, p_reps := HeckeMatrix2(Gamma, N, p, Weight(M), DirichletCharacter(M));
       when "AL"    : Tp_big := HeckeMatrix2(
                                   Gamma,
                                   N,
@@ -140,7 +147,7 @@ function operator(M, p, op)
   // TO DO: hecke_algebra etc checks cache directly
   //if not (IsDefinite(M) and not assigned M`Ambient) then
   case op:
-    when "Hecke"    : M`Hecke[p]    := Tp;
+    when "Hecke"    : M`Hecke[p]    := <Tp, p_reps>;
     when "AL"       : M`AL[p]       := Tp;
     when "DegDown1" : M`DegDown1[p] := Tp;
     when "DegDownp" : M`DegDownp[p] := Tp;
@@ -148,7 +155,11 @@ function operator(M, p, op)
   end case;
   //end if;
 
-  return Tp;
+  if op eq "Hecke" then
+    return Tp, p_reps;
+  else
+    return Tp, _;
+  end if;
 end function;
 
 // we compute a Hecke operator to force magma to compute the space

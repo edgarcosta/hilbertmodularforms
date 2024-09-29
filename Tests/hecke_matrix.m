@@ -184,7 +184,9 @@ chi := HeckeCharacterGroup(N, [1,2,3]).1;
 k := [3,3,3];
 pp := 2*ZF;
 
-T2chi := HeckeMatrix2(Gamma, N, pp, k, chi);
+T2chi, lambdas_2 := HeckeMatrix2(Gamma, N, pp, k, chi);
+assert #lambdas_2 eq 1;
+assert Norm(lambdas_2[1]) eq 8;
 assert R!CharacteristicPolynomial(T2chi) eq (x^6 + 490*x^4 + 60025*x^2);
 
 // test for nonparallel weight
@@ -192,7 +194,9 @@ assert R!CharacteristicPolynomial(T2chi) eq (x^6 + 490*x^4 + 60025*x^2);
 N := 2*ZF;
 k := [4,4,4];
 pp := Factorization(7*ZF)[1][1];
-T7 := HeckeMatrix2(Gamma, N, pp, k, 1);
+T7, lambdas_7 := HeckeMatrix2(Gamma, N, pp, k, 1);
+assert #lambdas_7 eq 1;
+assert Norm(lambdas_7[1]) eq 7;
 assert R!CharacteristicPolynomial(T7) eq (x^8 - 16*x^7 - 2624*x^6 + 34048*x^5 + 2584064*x^4 - 23883776*x^3 - 1140801536*x^2 + 5507317760*x + 192756121600);
 
 // TODO abhijitm add examples for nontrivial class number,

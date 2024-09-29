@@ -327,7 +327,8 @@ intrinsic HeckeOperator(M::ModFrmHil, p::Any) -> Mtrx
   bool, err, p := checks(M, p, "Hecke");
   require bool : err;
  
-  return operator(M, p, "Hecke");
+  matrix, reps := operator(M, p, "Hecke");
+  return matrix, reps;
 end intrinsic;
 
 intrinsic AtkinLehnerOperator(M::ModFrmHil, q::Any) -> Mtrx
@@ -955,9 +956,9 @@ intrinsic SetRationalBasis(M::ModFrmHil)
     // coerce cached Hecke if necessary
     H := M`hecke_matrix_field;
     for P in Keys(M`Hecke) do 
-      TP := M`Hecke[P];
+      TP, p_reps := Explode(M`Hecke[P]);
       if BaseRing(TP) cmpne H then
-        M`Hecke[P] := ChangeRing(TP, H);
+        M`Hecke[P] := <ChangeRing(TP, H), p_reps>;
       end if;
     end for;
     for P in Keys(M`HeckeCharPoly) do 
@@ -992,8 +993,8 @@ intrinsic SetRationalBasis(M::ModFrmHil)
 
   // Conjugate stored Hecke operators into the new basis
   for P in Keys(M`Hecke) do
-    TP := M`Hecke[P];
-    M`Hecke[P] := cob * TP * cob_inv;
+    TP, p_reps := Explode(M`Hecke[P]);
+    M`Hecke[P] := <cob * TP * cob_inv, p_reps>;
   end for;
 
   if not M`hecke_matrix_field_is_minimal then
@@ -1002,8 +1003,8 @@ intrinsic SetRationalBasis(M::ModFrmHil)
     M`hecke_matrix_field_is_minimal := true;
     // Coerce stored Hecke matrices to the smaller field
     for P in Keys(M`Hecke) do
-      TP := M`Hecke[P];
-      M`Hecke[P] := ChangeRing(TP, H);
+      TP, p_reps := Explode(M`Hecke[P]);
+      M`Hecke[P] := <ChangeRing(TP, H), p_reps>;
     end for;
     for P in Keys(M`HeckeCharPoly) do
       fP := M`HeckeCharPoly[P];
