@@ -229,6 +229,17 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := f
 
   Z_F := MaximalOrder(F);
 
+  require Order(N) eq Z_F : "The level N is not from the ring of integers of the base\
+    field of the Fuchsian group Gamma";
+
+  // if chi is not given we set it to be the trivial character
+  H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
+  if chi cmpeq 1 then
+    chi := H.0;
+  else
+    assert Parent(chi) eq H;
+  end if;
+
   FeqQQ := F cmpeq Rationals();
   elleqoo := ell cmpeq "Infinity";
 

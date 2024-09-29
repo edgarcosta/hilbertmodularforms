@@ -27,7 +27,10 @@ declare attributes GrpPSL2 : ideal_data;
 
 forward Gamma0Cosets;
 
-intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=1) -> IdealDatum
+intrinsic cIdealDatum(
+              Gamma::GrpPSL2, I::RngOrdIdl : 
+              chi:=HeckeCharacterGroup(I, [1 .. Degree(NumberField(Order(I)))]).0
+              ) -> IdealDatum
   {
     inputs:
       O - An order of a quaternion algebra B/F
@@ -36,7 +39,6 @@ intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=1) -> IdealDatum
 
     Constructor.
   }
-  
   if not assigned Gamma`ideal_data then
     Gamma`ideal_data := AssociativeArray();
     Gamma`ideal_data[I] := AssociativeArray();
@@ -48,23 +50,18 @@ intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=1) -> IdealDatum
 
   X := New(IdealDatum);
   X`FuchsianGroup := Gamma;
-  O := QuaternionOrder(Gamma);
   X`Ideal := I;
 
-  // if chi is not given we set it to be the trivial character
+  O := QuaternionOrder(Gamma);
   F := BaseField(Algebra(O));
+
   H := HeckeCharacterGroup(I, [1 .. Degree(F)]);
-  if chi cmpne 1 then
-    assert Parent(chi) eq H;
-    X`Character := chi;
-  else
-    X`Character := H.0;
-  end if;
+  assert Parent(chi) eq H;
+  X`Character := chi;
 
   X`ResidueRing := quo<IntegerRing(X) | I>; 
   X`P1Elements, X`P1Rep := GetOrMakeP1(Gamma, I);
   _, X`ResidueMap := ResidueMatrixRing(O, I);
-
 
   if not (assigned Gamma`ShimFDSidepairsDomain and assigned Gamma`ShimFDDisc) then
     // assigns attributes of Gamma which are needed in Gamma0Cosets
