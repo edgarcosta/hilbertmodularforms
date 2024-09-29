@@ -39,8 +39,11 @@ intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=1) -> IdealDatum
   
   if not assigned Gamma`ideal_data then
     Gamma`ideal_data := AssociativeArray();
-  elif IsDefined(Gamma`ideal_data, <I, chi>) then
-    return Gamma`ideal_data[<I, chi>];
+    Gamma`ideal_data[I] := AssociativeArray();
+  elif not IsDefined(Gamma`ideal_data, I) then
+    Gamma`ideal_data[I] := AssociativeArray();
+  elif IsDefined(Gamma`ideal_data[I], chi) then
+    return Gamma`ideal_data[I][chi];
   end if;
 
   X := New(IdealDatum);
@@ -88,7 +91,7 @@ intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=1) -> IdealDatum
   X`InducedModuleMtrxs := AssociativeArray();
   X`H1s := AssociativeArray();
 
-  Gamma`ideal_data[<I, chi>] := X;
+  Gamma`ideal_data[I][chi] := X;
   return X;
 end intrinsic;
 
