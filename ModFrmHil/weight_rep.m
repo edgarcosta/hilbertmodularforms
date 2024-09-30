@@ -171,12 +171,24 @@ function weight_rep_dim(k)
   return &*[k_i - 1 : k_i in k];
 end function;
 
+function is_paritious(k)
+  return &and[((k_i - k[1]) mod 2 eq 0) : k_i in k];
+end function;
+
 // computes m (an input to weight_map_arch) from k
 // TODO abhijitm eventually this should be a parameter
 // that the user can set on instantiation of ModFrmHil
 function m_from_k(k)
-  k_0 := Max(k);
-  return [(k_0 - k_i) div 2 : k_i in k];
+  if is_paritious(k) then
+    k_0 := Max(k);
+    return [(k_0 - k_i) div 2 : k_i in k];
+  else
+    // If the weight is nonparitious, we don't handle the
+    // determinant twists in the weight representation, instead
+    // handling it downstream so as to avoid dealing with
+    // square roots.
+    return [0 : k_i in k];
+  end if;
 end function;
 
 function n_from_k(k)
