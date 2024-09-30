@@ -9,6 +9,7 @@ declare attributes FldAlg:
   MarkedEmbedding,
   Extensions,
   Restrictions,
+  MatrixRingHoms,
   UnitCharFieldsByWeight,
   MinDistBtwnRoots
   ;
@@ -118,7 +119,7 @@ intrinsic TotallyPositiveUnitsGenerators(F::FldNum) -> SeqEnum[RngOrdElt]
 
   if not assigned F`TotallyPositiveUnitsGenerators then
     PU, mPU := TotallyPositiveUnitsGroup(F);
-    tpugs_unorient := [Integers(F)!mPU(gen) : gen in Generators(PU)];
+    tpugs_unorient := [Integers(F)!mPU(PU.i) : i in [1 .. #Generators(PU)]];
 
     v := InfinitePlaces(F)[1];
     F`TotallyPositiveUnitsGenerators := [];
@@ -451,6 +452,60 @@ intrinsic StrongEquality(x::Any, y::Any : K:=false) -> BoolElt
   end if;
 
   return StrongCoerce(K, x) eq StrongCoerce(K, y);
+end intrinsic;
+
+intrinsic StrongCoerceMatrix(L::Fld, M::AlgMatElt) -> Mtrx
+  {
+    Strong coerces the matrix M, defined over a base field K,
+    into the field L. 
+  }
+  R := Parent(M);
+  K := BaseRing(R);
+  require Type(K) in [FldRat, FldQuad, FldCyc, FldNum] : "M must be defined\
+    over a field of type FldRat, FldQuad, FldCyc, or FldNum.";
+
+  n := Nrows(M);
+  // if either K or L is FldRat then automatic coercion should work.
+  if K cmpeq Rationals() then
+    return MatrixRing(L, n)!M;
+  elif L cmpeq Rationals() then
+    return MatrixRing(L, n)!M;
+  end if;
+
+  if DefiningPolyCoeffs(K) cmpeq DefiningPolyCoeffs(L) then
+    return MatrixRing(L, n)!M;
+  end if;
+
+  if not assigned K`MatrixRingHoms then
+    // M`MatrixRingHoms maps <L, n>, for L a number field
+    // and n a positive integer, to a homomorphism from 
+    // the ring of nxn matrices over K to the same over L.
+    K`MatrixRingHoms := AssociativeArray();
+  end if;
+
+
+  S := MatrixRing(L, n);
+  L_poly := DefiningPolyCoeffs(L);
+  if IsSubfield(K, L) then
+    if not IsDefined(K`MatrixRingHoms, <L_poly, n>) then
+      // this is just to do the usual checks and assign the map
+      // K`Extensions[L_poly]
+      _ := StrongCoerce(L, K.1);
+      b, aut := IsDefined(K`Extensions, L_poly);
+      require b : "Something's gone wrong, this should be defined.";
+      phi := hom<K -> L | L!(K.1)>;
+      psi := aut * phi;
+      K`MatrixRingHoms[<L_poly, n>] := hom<R -> S | psi>;
+    end if;
+    return K`MatrixRingHoms[<L_poly, n>](M);
+  elif IsSubfield(L, K) then
+    // The MatrixRingHoms logic only goes one way, so we strong coerce
+    // the entries of the matrix individually if we are trying to 
+    // coerce into a smaller subfield.
+    
+    // this will throw an error if the elements of M are not all coercible into L.
+    return S![StrongCoerce(L, x) : x in Eltseq(M)];
+  end if;
 end intrinsic;
 
 intrinsic MinDistBtwnRoots(K::FldAlg) -> FldReElt

@@ -372,7 +372,7 @@ end intrinsic;
 intrinsic IsFiniteOrder(X::HMFGrossencharsTorsor) -> BoolElt
   {}
   for tup in X`Weight do
-    if not IsZero(tup[1]) then
+    if not (IsZero(tup[1]) and IsZero(tup[2])) then
       return false;
     end if;
   end for;
