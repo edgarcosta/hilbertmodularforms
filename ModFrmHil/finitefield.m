@@ -14,7 +14,8 @@ import !"Geometry/ModFrmHil/hackobj.m" :
   HMF0,
   IsBianchi;
 import "weight_rep.m" :
-  weight_map_arch;
+  weight_map_arch,
+  is_paritious;
 
 import "hecke_field.m" :
   hecke_matrix_field,
@@ -282,7 +283,13 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
     K := hecke_matrix_field(M); // Hecke matrices should be over this, currently
 
     T, primes, v, _, P, t, comb := Explode(hecke_algebra(M : generator));
-    assert BaseRing(t) eq K;
+    if is_paritious(Weight(M)) then
+      assert BaseRing(t) eq K;
+    else
+      assert IsSubfield(BaseRing(t), K);
+      t := ChangeRing(t, K);
+      v := ChangeRing(v, K);
+    end if;
 
     vprintf ModFrmHil: "Characteristic polynomial of Hecke algebra generator: ";
     vtime ModFrmHil:

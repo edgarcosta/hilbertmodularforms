@@ -23,9 +23,12 @@ import !"Geometry/ModFrmHil/hecke.m" :
 import !"Geometry/ModFrmHil/precompute.m" :
   get_rids;
 
+import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne;
+
 import "hackobj.m" : HMF0;
 
 import "weight_rep.m" : weight_map_arch, is_paritious;
+import "hecke.m" : get_image_of_eps_nonparit;
 
 forward WeightRepresentation;
 
@@ -47,7 +50,36 @@ function hecke_matrix_field(M)
     if not assigned TopAmbient(M)`weight_base_field then
       _ := WeightRepresentation(TopAmbient(M));
     end if;
-	  return TopAmbient(M)`weight_base_field;
+    if is_paritious(Weight(M)) then
+	    return TopAmbient(M)`weight_base_field;
+    else
+      // if the weight is nonparitious, the Hecke matrices on the entire
+      // H1 will be over the weight base field but the + and - subspaces
+      // will be defined over a quadratic extension
+      O := QuaternionOrder(M);
+      F := BaseField(M);
+      mu := ElementOfNormMinusOne(O);
+      eps := Norm(mu);
+      auts := AutsOfKReppingEmbeddingsOfF(F, F);
+      k := Weight(M);
+      k0 := Max(Weight(M));
+      z := get_image_of_eps_nonparit(M);
+
+      // There are several assumptions being made here
+      // - the quaternion algebra is split at exactly one infinite prime
+      // - at this prime, the weight is k0
+      // We check for these assumptions when constructing the space,
+      // but it's worth keeping in mind nonetheless.
+      K := TopAmbient(M)`weight_base_field;
+      R<x> := PolynomialRing(F);
+      poly := x^2 - z;
+      if IsIrreducible(poly) then
+        // TODO abhijitm I'm a little bit worried about returning a 
+        // relative extension here instead of an absolute one...
+        K := ext<K | x^2 - z>;
+      end if;
+      return K;
+    end if;
   end if;
 end function;
 
