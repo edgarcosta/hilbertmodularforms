@@ -52,6 +52,121 @@ intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::SeqEnum[RngInt
   end for;
 end intrinsic;
 
+// TODO abhijitm remove code reuse by combining this and the above? 
+// Also, the output of this function is strange because it's keyed by ideal
+// but stores Fourier coefficients. It makes sense in context of the current
+// Creation/Newforms.m code but it seems like there should be a cleaner way.
+intrinsic ExtendMultiplicativelyFourier(
+    ~coeffs::Assoc,
+    ~mfh_reps::Assoc,
+    Mk::ModFrmHilD,
+    prime_ideals::SeqEnum,
+    ideals::SeqEnum[RngOrdIdl]
+    )
+  {}
+  F := BaseField(Mk);
+  ZF := Integers(F);
+  N := Level(Mk);
+  k := Weight(Mk);
+  chi := Character(Mk);
+
+  coeffs[0*ZF] := 0;
+  coeffs[1*ZF] := 1;
+  mfh_reps[0*ZF] := 0;
+  mfh_reps[1*ZF] := 1;
+
+  // set recursion
+  // ideals must be sorted by Norm
+  max_norm := Norm(ideals[#ideals]);
+  prec := Floor(Log(2, max_norm)) + 1;
+  Q := Rationals();
+  // Power series ring for recursion
+  QX<X, Y> := PolynomialRing(Q, 2);
+  R<T> := PowerSeriesRing(QX : Precision := prec);
+  recursion := Coefficients(1/(1 - X*T + Y*T^2));
+  // If good, then 1/(1 - a_p T + Chi(p)*Norm(p)^{k0-1} T^2) = 1 + a_p T + a_{p^2} T^2 + ...
+  // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
+  for pp in prime_ideals do
+    // a totally positive element of F generating the ideal pp
+    pi := mfh_reps[pp];
+    if N subset pp then
+      z := 0;
+    else
+      auts := AutsOfKReppingEmbeddingsOfF(F, F);
+      z := &*[auts[i](pi)^(k[i] - 1) : i in [1 .. #k]];
+    end if;
+
+    assert IsTotallyPositive(pi);
+    ppe := pp; // will store p^e in the eth iteration
+    for e in [2..Floor(Log(Norm(pp), max_norm))] do
+      ppe *:= pp;
+      coeffs[ppe] := Evaluate(recursion[e+1], [coeffs[pp], chi(pp) * z]);  
+      mfh_reps[ppe] := pi^e;
+    end for;
+  end for;
+
+  for nn in ideals do
+    if IsZero(nn) or IsOne(nn) then
+      continue;
+    end if;
+    
+    // list of things to be multiplied
+    mult_list := [* *];
+    // The product of mfh_reps corresponding to the factorization of N.
+    // This will differ from nu (the rep associated to the ideal nn by
+    // IdealToRep(M, nn)) by a totally positive unit
+    // 
+    // We start with a generator of the (co)different because nu = dd^-1 * nn
+    mfh_nn := F!1;
+    for pair in Factorization(nn) do
+      Append(~mult_list, coeffs[pair[1]^pair[2]]);
+      mfh_nn *:= mfh_reps[pair[1]]^pair[2];
+    end for;
+    coeffs[nn] := StrongMultiply(mult_list);
+    mfh_reps[nn] := mfh_nn;
+  end for;
+end intrinsic;
+ 
+function dinv(M)
+  // input
+  //   M::GradedRingOfHMFs - A graded ring of HMFs over a field F with h+(F) = 1
+  // returns
+  //   A canonical totally positive generator for the codifferent.
+  F := BaseField(M);
+  ZF := Integers(F);
+  assert NarrowClassNumber(F) eq 1;
+  _, d_inv := IsNarrowlyPrincipal(Different(ZF)^-1);
+  d_inv, _ := FunDomainRep(M, d_inv);
+  return d_inv;
+end function;
+
+// TODO abhijitm this should disappear once the Newforms logic is rewritten
+function coeff_from_ext_mult_fourier(Mk, coeff_nn, mfh_nn, nn : bb:=1*Integers(BaseField(Mk)))
+  /******************
+   *  inputs:
+   *    Mk::ModFrmHilD
+   *    coeff_nn::FldNumElt - The coefficient stored in coeffs[nn] in the Newforms code. It is 
+   *      the eigenvalue of some Hecke operator T_n for n a totally positive generator of nn
+   *      (this will be the same as the usual T_nn up to a constant).
+   *    mfh_nn::FldNumElt - The value n above
+   *    nn::RngOrdIdl - The ideal 
+   *    bb::RngOrdIdl - A narrow class group rep. This is nonfunctional for now as we currently 
+   *      require that the narrow class number be 1 anyways.
+   *  returns:
+   *    The coefficient a_nu where nu is the fundamental domain rep corresponding to the ideal
+   *    nn. It is equal to coeff_nn up to some unit character.
+   **********************/
+  if IsZero(mfh_nn) then
+    return coeff_nn * 0;
+  else
+    nup := dinv(Parent(Mk)) * mfh_nn;
+    nu := IdealToRep(Parent(Mk), nn);
+    eps := nu / nup;
+    uc := Mk`UnitCharacters[bb];
+    return coeff_nn * Evaluate(uc, eps);
+  end if;
+end function;
+
 intrinsic CuspFormFromEigenvalues(
     Mk::ModFrmHilD,
     coeffs_by_nn::Assoc :

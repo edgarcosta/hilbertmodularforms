@@ -503,13 +503,14 @@ precision instead.}
     // Gather exponents and coefficients
     precs := [p: p in M`PrecisionsByComponent[bb] | p le prec];
     exps := [];
-    coeffs := [];
+    coeffs := [CoefficientRing | ];
     for p in precs do
         for nu->exp in M`FunDomainRepsOfPrec[bb][p] do
             b, coeff := IsDefined(coeff_array, nu);
             require b: "Coefficient not found for index: ", nu;
             Append(~exps, exp);
-            Append(~coeffs, coeff);
+            print coeff, Parent(coeff), CoefficientRing;
+            Append(~coeffs, StrongCoerce(CoefficientRing, coeff));
         end for;
     end for;
 
