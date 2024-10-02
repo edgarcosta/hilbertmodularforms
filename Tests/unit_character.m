@@ -157,6 +157,22 @@ end for;
 
 test(M, k, correct);
 
+k := [2,2,3];
+K := UnitCharField(F, k);
+// because h+(F) = 1, every totally positive unit is a square,
+// so the image of the unit character actually lies in F
+assert IsIsomorphic(K, F); 
+auts := AutsOfUCFReppingEmbeddingsOfF(F, k);
+for eps in TotallyPositiveUnitsGenerators(F) do
+  // this is the same as auts[3](eps)^(1/2), and it should be 
+  // the positive square root
+  x := Sqrt(auts[3](eps));
+  // we want the square root to be a "positive real number", and since we can archimedean-ize everything
+  // by embedding using the marked embedding, this means that we want 
+  x *:= Sign(Evaluate(StrongCoerce(F, x), MarkedEmbedding(F)));
+  correct[bb][eps] := x;
+end for;
+
 /********************** non-Galois cubic with discriminant -23 **********************////
 
 // weight [2,3,4] over the non-Galois cubic field 

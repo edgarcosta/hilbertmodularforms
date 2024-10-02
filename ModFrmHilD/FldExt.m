@@ -601,12 +601,16 @@ intrinsic UnitCharFieldsByWeight(F::FldNum, k::SeqEnum[RngIntElt]) -> FldNum
   elif IsParitious(k) then
     L := SplittingField(F);
   else
-    polys := [];
-    for eps in NonSquareTotPosUnitsGens(F) do
-      Append(~polys, x^2-eps);
-    end for;
-    K := (#polys eq 0) select F else AbsoluteField(ext<F | polys>);
-    L := SplittingField(K);
+    if NarrowClassNumber(F) eq 1 then
+      L := SplittingField(F);
+    else
+      polys := [];
+      for eps in NonSquareTotPosUnitsGens(F) do
+        Append(~polys, x^2-eps);
+      end for;
+      K := (#polys eq 0) select F else AbsoluteField(ext<F | polys>);
+      L := SplittingField(K);
+    end if;
   end if;
   F`UnitCharFieldsByWeight[k] := L;
   return L;
