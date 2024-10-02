@@ -32,7 +32,7 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : B:=false) -> ModFrmHil
     coeffs[bb] := AssociativeArray();
 
     for nu in FunDomainRepsUpToPrec(M, bb, prec) do
-      nn := nu*bbpinv;  // already call nn the ideal for the Hecke operator
+      nn := nu*bbpinv;
       c := 0;
 
       // loop over divisors
@@ -153,6 +153,77 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60, cop
     Append(~eigs, eig / first_nonzero_a_nn);
   end for;
   return eigs;
+end intrinsic;
+
+// TODO abhijitm combine to reduce code reuse
+intrinsic HeckeOperatorFourier(f::ModFrmHilDElt, pi::FldNumElt : B:=false) -> ModFrmHilDElt
+  {}
+  Mk := Parent(f);
+  M := Parent(Mk);
+  F := BaseField(M);
+  ZF := Integers(F);
+  // nonparitious code is only implemented for fields of
+  // narrow class number 1
+  assert NarrowClassNumber(F) eq 1;
+  bb := 1*ZF;
+  k := Weight(f);
+  chi := Character(Mk);
+  K := CoefficientRing(f);
+
+  // for now we assume this f is a cusp form
+  assert IsZero(Coefficient(f, bb, F!0));
+  // for now this operator is only defined for pi a totally positive generator of 
+  // a prime ideal
+  assert Parent(pi) eq F;
+  assert IsIntegral(pi);
+  pp := ideal<ZF | ZF!pi>;
+  assert IsPrime(pp);
+  assert IsTotallyPositive(pi);
+
+  prec := Precision(f) div Norm(pp);
+  coeffs := AssociativeArray();
+  coeffs[bb] := AssociativeArray();
+
+  for nu in FunDomainRepsUpToPrec(M, bb, prec) do
+    nn := M`RepToIdeal[bb][nu];
+    if IsZero(nn) then
+      coeffs[bb][nu] := K!0;
+    else
+      auts := AutsOfKReppingEmbeddingsOfF(F, F);
+      pi_to_k := &*[auts[i](pi)^(k[i] - 1) : i in [1 .. #k]];
+      a_nu := Coefficient(f, bb, pi * nu);
+      if nn subset pp then
+        a_nu +:= StrongMultiply([* chi(pp), pi_to_k, Coefficient(f, bb, nu / pi) *] : K:=K);
+      end if;
+      assert a_nu in K;
+      coeffs[bb][nu] := a_nu;
+    end if;
+  end for;
+
+  g := HMF(Mk, coeffs : prec:=prec, coeff_ring := K);
+
+  // Attempting to increase precision using a basis
+  // TODO abhijitm should probably improve this code
+  basis := false;
+  if B cmpne false then
+    // if a basis is given, we assume that it's
+    // Hecke stable
+    basis := B;
+  elif assigned Mk`CuspFormBasis then
+    // if f is a cusp form
+    if #LinearDependence(Append(Mk`CuspFormBasis, f)) eq 1 then
+      basis := Mk`CuspFormBasis;
+    end if;
+  elif assigned Mk`Basis then
+    basis := Mk`Basis;
+  end if;
+
+  // if there's a basis to increase precision with
+  if basis cmpne false then
+    g := IncreasePrecisionWithBasis(g, basis);
+  end if;
+  
+  return g;
 end intrinsic;
 
 intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
