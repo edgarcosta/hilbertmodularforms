@@ -66,9 +66,9 @@ intrinsic Components(f::ModFrmHilDElt) -> Assoc
   return f`Components;
 end intrinsic;
 
-intrinsic Coefficient(f::ModFrmHilDElt, bb::RngOrdIdl, nu::RngElt) -> Any
+intrinsic Coefficient(f::ModFrmHilDElt, bb::RngOrdIdl, nu::RngElt : InFunDomain:=false) -> Any
   {}
-  return Coefficient(Components(f)[bb], nu);
+  return Coefficient(Components(f)[bb], nu : InFunDomain:=InFunDomain);
 end intrinsic;
 
 intrinsic Coefficient(f::ModFrmHilDElt, nn::RngOrdIdl) -> RngElt
