@@ -254,13 +254,13 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := f
     Gamma`HardHeckeMatrices_new := AssociativeArray();
   end if;
 
-  if elleqoo and IsDefined(Gamma`HeckeMatrixoo_new, <N, weight, chi>) then
+  if elleqoo and IsDefined(Gamma`HeckeMatrixoo_new, <N, weight, HeckeCharLabel(chi)>) then
     vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
-    return Gamma`HeckeMatrixoo_new[<N, weight, chi>];
+    return Gamma`HeckeMatrixoo_new[<N, weight, HeckeCharLabel(chi)>];
   elif (not elleqoo) and IsDefined(
-      Gamma`HardHeckeMatrices_new, <N, weight, chi, ell, UseAtkinLehner>) then
+      Gamma`HardHeckeMatrices_new, <N, weight, HeckeCharLabel(chi), ell, UseAtkinLehner>) then
     vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
-    return Gamma`HardHeckeMatrices_new[<N, weight, chi, ell, UseAtkinLehner>];
+    return Gamma`HardHeckeMatrices_new[<N, weight, HeckeCharLabel(chi), ell, UseAtkinLehner>];
   end if;
     
   require not UseAtkinLehner or Valuation(Discriminant(O)*N, ell) gt 0 :
@@ -552,9 +552,9 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := f
   end for;
 
   if elleqoo then
-    Gamma`HeckeMatrixoo_new[<N, weight, chi>] := M;
+    Gamma`HeckeMatrixoo_new[<N, weight, HeckeCharLabel(chi)>] := M;
   elif UseAtkinLehner or (ell + Discriminant(O)/Discriminant(B)*N eq ell) then
-    Gamma`HardHeckeMatrices_new[<N, weight, chi, ell, UseAtkinLehner>] := M;
+    Gamma`HardHeckeMatrices_new[<N, weight, HeckeCharLabel(chi), ell, UseAtkinLehner>] := M;
   end if;
 
   if #lambda_nms gt 0 then
