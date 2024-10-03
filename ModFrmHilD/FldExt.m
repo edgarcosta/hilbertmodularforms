@@ -171,11 +171,17 @@ intrinsic UnitsGenerators(F::FldNum : exclude_torsion:=true) -> SeqEnum[RngOrdEl
     require Order(U.1) gt 0 : "The first generator of the units group seems to no longer\
       be the generator of torsion, so you should update the code to find the generator\
       of torsion.";
-    gens := (exclude_torsion) select Exclude(Generators(U), U.1) else Generators(U);
-    ugs_unorient := [mU(gen) : gen in gens];
+    ugs_unorient := [mU(U.i) : i in [1 .. #Generators(U)]];
     F`UnitsGenerators := [orient(F, eps) : eps in ugs_unorient];
   end if;
-  return F`UnitsGenerators;
+  // this makes sense since we check earlier that U.1 is a generator for the torsion
+  n := #F`UnitsGenerators;
+  idxs := (exclude_torsion) select [2 .. n] else [1 .. n];
+  if exclude_torsion then
+    return F`UnitsGenerators[2 .. n];
+  else
+    return F`UnitsGenerators;
+  end if;
 end intrinsic;
 
 /////////////////////// MarkedEmbedding and strong coercion ///////////////////////////
