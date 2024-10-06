@@ -808,12 +808,19 @@ ideal class [mm*bb].}
     mminv := mm^-1;
     mmbbpinv := (M`NarrowClassGroupRepsToIdealDual[mmbb])^(-1);
     for nn -> nu in IdealToRep(M)[mmbb] do
-        if Norm(nu) * Norm(mmbbpinv) le prec and IsIntegral(nn * mminv) then
-            a_nn := Coefficient(f, ZF!!(nn*mminv));
-            if IsParallel(k) then
-              coeffs[nu] := a_nn;
+        if Norm(nu) * Norm(mmbbpinv) le prec and IsIntegral(nn * mminv) then 
+            if IsParitious(k) then
+              a_nn := Coefficient(f, ZF!!(nn*mminv));
+              if IsParallel(k) then
+                coeffs[nu] := a_nn;
+              else
+                coeffs[nu] := IdlCoeffToEltCoeff(a_nn, nu, k, coeff_ring);
+              end if;
             else
-              coeffs[nu] := IdlCoeffToEltCoeff(a_nn, nu, k, coeff_ring);
+              // We avoid using ideal coefficients for nonparitious forms
+              // so this fetches the appropriate Fourier coefficient instead
+              a_nu := Coefficient(f, IdealToRep(M, ZF!!(nn*mminv)));
+              coeffs[nu] := a_nu;
             end if;
         else
             coeffs[nu] := coeff_ring ! 0;
