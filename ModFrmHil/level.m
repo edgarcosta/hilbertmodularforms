@@ -260,7 +260,7 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := f
   elif (not elleqoo) and IsDefined(
       Gamma`HardHeckeMatrices_new, <N, weight, HeckeCharLabel(chi), ell, UseAtkinLehner>) then
     vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
-    return Gamma`HardHeckeMatrices_new[<N, weight, HeckeCharLabel(chi), ell, UseAtkinLehner>];
+    return Explode(Gamma`HardHeckeMatrices_new[<N, weight, HeckeCharLabel(chi), ell, UseAtkinLehner>]);
   end if;
     
   require not UseAtkinLehner or Valuation(Discriminant(O)*N, ell) gt 0 :
@@ -554,7 +554,7 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := f
   if elleqoo then
     Gamma`HeckeMatrixoo_new[<N, weight, HeckeCharLabel(chi)>] := M;
   elif UseAtkinLehner or (ell + Discriminant(O)/Discriminant(B)*N eq ell) then
-    Gamma`HardHeckeMatrices_new[<N, weight, HeckeCharLabel(chi), ell, UseAtkinLehner>] := M;
+    Gamma`HardHeckeMatrices_new[<N, weight, HeckeCharLabel(chi), ell, UseAtkinLehner>] := <M, lambda_nms>;
   end if;
 
   if #lambda_nms gt 0 then
