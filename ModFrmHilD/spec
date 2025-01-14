@@ -29,7 +29,6 @@
   Utils.m
   VDGTable.m
   Verbose.m
-  Workspace.m
 }
 
 Creation
