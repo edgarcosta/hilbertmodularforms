@@ -261,11 +261,11 @@ function matrix_of_induced_action(b, k, X)
 
   blocks := [ZeroMatrix(R, dim_W) : _ in [1 .. r^2]];
   for u in X`P1Elements do
-    x := (X`CosetRepsByP1[u][2]) * b;
+    x := (CosetRepsByP1(X)[u][2]) * b;
     _, v := X`P1Rep(X`ResidueMap(x)[2], false, false);
 
     // this should now be in O_0(N) so we can apply weight_map_arch to it
-    bp := x * (X`CosetRepsByP1[v][2])^(-1);
+    bp := x * (CosetRepsByP1(X)[v][2])^(-1);
     // print bp;
     
     // The matrix for bp should live in the block whose row corresponds to
@@ -273,7 +273,7 @@ function matrix_of_induced_action(b, k, X)
 
     // X`CosetRepIdx[w] gives the index of the coset corresponding to the 
     // element w of P1(ZF/N). 
-    row_major_idx := r * (X`CosetRepsByP1[u][1] - 1) + X`CosetRepsByP1[v][1];
+    row_major_idx := r * (CosetRepsByP1(X)[u][1] - 1) + CosetRepsByP1(X)[v][1];
     // print row_major_idx;
 
     if is_par_wt_2(k) and IsTrivial(X`Character) then
