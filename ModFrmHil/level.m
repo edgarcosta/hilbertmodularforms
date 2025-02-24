@@ -118,17 +118,25 @@ function InducedH1Internal(X, k);
   H, mH := quo<Z | ZcoB>;
 
   ZB := Basis(Z);
+  // put the matrix coB - whose rows are coboundary elements in Z -
+  // into row echelon form
   S := EchelonForm(Matrix(coB));
+  // remove zero rows, so only rows containing pivot columns are left
   RemoveZeroRows(~S);
+  // the set of pivot columns
   piv := [Min(Support(S[i])): i in [1..Nrows(S)]];
+  // pivot columns should be distinct
   assert #SequenceToSet(piv) eq #piv;
+  // basis vectors of Z whose smallest nonzero entry isn't a 
+  // pivot columnn. Apparently these form a basis for Z/B
   Htilde := [ZB[i] : i in [1..#ZB] | 
                         Min(Support(ZB[i])) notin piv];
   if #Htilde gt 0 then
+    // matrix on Z/B whose rows are the images of the cocycles in Htildee
     mHtilde := Matrix([mH(h) : h in Htilde]);
     assert Abs(Norm(Determinant(mHtilde))) eq 1;
+    // I think Htilde takes a basis vector of Z/B to its lift
     Htilde := mHtilde^(-1)*Matrix(Htilde);
-    Htilde := [Htilde[i] : i in [1..Nrows(Htilde)]];
   end if;
 
   X`H1s[k] := <Htilde, mH>;
@@ -748,13 +756,13 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
 
     Htilde, mH := InducedH1(Gamma_datum, Gammap_datum, weight);
 
-    if #Htilde eq 0 then
-      return [], _;
+    if Htilde cmpeq [] then
+      return [], lambda;
     else
       M := HorizontalJoin([ HorizontalJoin([ &+[ Y_U[i][k][j] : j in [1..numP1]] : k in [1..#cosets]]) : i in [1..n] ]);
-      MH := Matrix(Htilde)*M;
-      if &and[MH[i] in Domain(mH) : i in [1..#Htilde]] then
-        MM := Matrix([mH(MH[i]) : i in [1..#Htilde]]);
+      MH := Htilde*M;
+      if &and[MH[i] in Domain(mH) : i in [1..Nrows(Htilde)]] then
+        MM := Matrix([mH(MH[i]) : i in [1..Nrows(Htilde)]]);
         if ellU then
           return MM, lambda;
         else
@@ -884,13 +892,12 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
   vprintf ModFrmHil: "Computing H1 (coinduced) ............................. ";
   vtime ModFrmHil:
   Htilde, mH := InducedH1(Gamma_datum, Gammap_datum, weight);
-  
-  if #Htilde eq 0 then
-    return [], _;
+  if Htilde cmpeq [] then
+    return [], lambda;
   else
     M := HorizontalJoin([ &+[ Y_U[i][j] : j in [1..numP1]] : i in [1..n] ]);
-    MH := Matrix(Htilde)*M;
-    MM := Matrix([mH(MH[i]) : i in [1..#Htilde]]);
+    MH := Htilde*M;
+    MM := Matrix([mH(MH[i]) : i in [1..Nrows(Htilde)]]);
     if not (ellAL or inNormSupport) then
       return MM, lambda;
     else
