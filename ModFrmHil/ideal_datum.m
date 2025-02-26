@@ -29,7 +29,8 @@ forward Gamma0Cosets;
 
 intrinsic cIdealDatum(
               Gamma::GrpPSL2, I::RngOrdIdl : 
-              chi:=HeckeCharacterGroup(I, [1 .. Degree(NumberField(Order(I)))]).0
+              chi:=HeckeCharacterGroup(I, [1 .. Degree(NumberField(Order(I)))]).0,
+              residue_map:=0
               ) -> IdealDatum
   {
     inputs:
@@ -62,7 +63,11 @@ intrinsic cIdealDatum(
 
   X`ResidueRing := quo<IntegerRing(X) | I>; 
   X`P1Elements, X`P1Rep := GetOrMakeP1(Gamma, I);
-  _, X`ResidueMap := ResidueMatrixRing(O, I);
+  if residue_map cmpeq 0 then
+    _, X`ResidueMap := ResidueMatrixRing(O, I);
+  else
+    X`ResidueMap := residue_map;
+  end if;
 
   if not (assigned Gamma`ShimFDSidepairsDomain and assigned Gamma`ShimFDDisc) then
     // assigns attributes of Gamma which are needed in Gamma0Cosets
