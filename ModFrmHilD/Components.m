@@ -267,7 +267,7 @@ intrinsic HMFPruneExpansion(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
 {Internal function: returns a pruned version of the series f}
 
     exps := [];
-    precs := [p: p in M`PrecisionsByComponent[bb] | p le prec];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
     for p in precs do
         for nu->e in M`FunDomainRepsOfPrec[bb][p] do
             Append(~exps, e);
@@ -282,7 +282,7 @@ intrinsic HMFPruneExpansion(f :: ModFrmHilDEltComp : Precision := Precision(f))
 {Internal function: replace f`Expansion by pruned version}
 
     f`Expansion := HMFPruneExpansion(GradedRing(f), ComponentIdeal(f), Expansion(f) :
-                                     Precision := prec);
+                                     Precision := Precision);
 end intrinsic;
 
 intrinsic HMFPruneLowerSetExpansion(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
@@ -292,7 +292,7 @@ intrinsic HMFPruneLowerSetExpansion(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: R
 {Internal function: returns a pruned version of the lowerset series f}
 
     exps := [];
-    precs := [p: p in M`PrecisionsByComponent[bb] | p le prec];
+    precs := [p: p in M`PrecisionsByComponent[bb] | p le Precision];
     for p in precs do
         for nu->exp_nu in M`FunDomainRepsOfPrec[bb][p] do
             for eps->e in M`LowerSet[bb][nu] do
