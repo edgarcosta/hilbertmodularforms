@@ -261,7 +261,7 @@ intrinsic HMFExpansionSubset(f :: RngUPolElt, exps :: SeqEnum) -> RngUPolElt
 end intrinsic;
 
 intrinsic HMFPruneExpansion(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
-                         prec := Precision(M)
+                         Precision := Precision(M)
     ) -> RngElt
 
 {Internal function: returns a pruned version of the series f}
@@ -277,16 +277,16 @@ intrinsic HMFPruneExpansion(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
 
 end intrinsic;
 
-intrinsic HMFPruneExpansion(f :: ModFrmHilDEltComp : prec := Precision(f))
+intrinsic HMFPruneExpansion(f :: ModFrmHilDEltComp : Precision := Precision(f))
 
 {Internal function: replace f`Expansion by pruned version}
 
     f`Expansion := HMFPruneExpansion(GradedRing(f), ComponentIdeal(f), Expansion(f) :
-                                     prec := prec);
+                                     Precision := prec);
 end intrinsic;
 
 intrinsic HMFPruneLowerSetExpansion(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: RngElt :
-                                    prec := Precision(M)
+                                    Precision := Precision(M)
     ) -> RngElt
 
 {Internal function: returns a pruned version of the lowerset series f}
@@ -304,12 +304,12 @@ intrinsic HMFPruneLowerSetExpansion(M :: ModFrmHilDGRng, bb :: RngOrdIdl, f :: R
 
 end intrinsic;
 
-intrinsic HMFPruneLowerSetExpansion(f :: ModFrmHilDEltComp : prec := Precision(f))
+intrinsic HMFPruneLowerSetExpansion(f :: ModFrmHilDEltComp : Precision := Precision(f))
 
 {Internal function: replace f`LowerSetExpansion by pruned version}
 
     f`LowerSetExpansion := HMFPruneLowerSetExpansion(GradedRing(f), ComponentIdeal(f),
-                                                     LowerSetExpansion(f) : prec := prec);
+                                                     LowerSetExpansion(f) : Precision := Precision);
 end intrinsic;
 
 ///////////////////////////////////////////////////
@@ -323,7 +323,7 @@ intrinsic HMFGetExpansionFromLowerSet(f :: ModFrmHilDEltComp)
 {Internal function: compute f`Expansion from f`LowerSetExpansion}
 
     f`Expansion := HMFPruneExpansion(GradedRing(f), ComponentIdeal(f), f`LowerSetExpansion :
-                                     prec := Precision(f));
+                                     Precision := Precision(f));
 end intrinsic;
 
 intrinsic HMFGetLowerSetFromExpansion(f :: ModFrmHilDEltComp)
@@ -474,9 +474,9 @@ be a multivariate polynomial ring or a tower of univariate polynomial rings.}
 
     if Prune then
         if LowerSet then
-            HMFPruneLowerSetExpansion(g : prec := prec);
+            HMFPruneLowerSetExpansion(g : Precision := prec);
         else
-            HMFPruneExpansion(g : prec := prec);
+            HMFPruneExpansion(g : Precision := prec);
         end if;
     end if;
     return g;
@@ -660,10 +660,10 @@ intrinsic '^'(f :: ModFrmHilDEltComp, n :: RngIntElt) -> ModFrmHilDEltComp
     bits := Reverse(bits[1..(#bits - 1)]);
     for i in bits do
         g := g^2;
-        g := HMFPruneLowerSetExpansion(M, bb, g : prec := prec);
+        g := HMFPruneLowerSetExpansion(M, bb, g : Precision := prec);
         if i eq 1 then
             g := g * serf;
-            g := HMFPruneLowerSetExpansion(M, bb, g : prec := prec);
+            g := HMFPruneLowerSetExpansion(M, bb, g : Precision := prec);
         end if;
     end for;
 
@@ -687,9 +687,9 @@ intrinsic InverseExpansion(f :: ModFrmHilDEltComp) -> RngElt
         inv := S ! 1;
         while u ne 0 do
             inv := (1 + u) * inv;
-            inv := HMFPruneLowerSetExpansion(M, bb, inv : prec := Precision(f));
+            inv := HMFPruneLowerSetExpansion(M, bb, inv : Precision := Precision(f));
             u := u * u;
-            u := HMFPruneLowerSetExpansion(M, bb, u : prec := Precision(f));
+            u := HMFPruneLowerSetExpansion(M, bb, u : Precision := Precision(f));
         end while;
         f`InverseExpansion := a0inv * inv;
     end if;
@@ -716,13 +716,13 @@ intrinsic '/'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltCo
     serg := InverseExpansion(g);
     prec := Min(Precision(f), Precision(g));
     if prec lt Precision(f) then
-        serf := HMFPruneLowerSetExpansion(M, bb, serf : prec := prec);
+        serf := HMFPruneLowerSetExpansion(M, bb, serf : Precision := prec);
     elif prec lt Precision(g) then
-        serg := HMFPruneLowerSetExpansion(M, bb, serg : prec := prec);
+        serg := HMFPruneLowerSetExpansion(M, bb, serg : Precision := prec);
     end if;
 
     res := serf * serg;
-    res := HMFPruneLowerSetExpansion(M, bb, res : prec := prec);
+    res := HMFPruneLowerSetExpansion(M, bb, res : Precision := prec);
 
     return HMFComponent(Space(f) / Space(g), bb, res, prec :
                         LowerSet := true, Prune := false);
