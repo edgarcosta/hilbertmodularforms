@@ -736,7 +736,7 @@ end intrinsic;
 
 intrinsic Derivative(f::ModFrmHilDEltComp, i::RngIntElt) -> ModFrmHilDEltComp
 {Returns the derivative with the respect to the ith coordinate}
-    return HMFComponent(Space(f), ComponentIdeal(f), Derivative(f`Expansion, j), Precision(f) -1);
+    return HMFComponent(Space(f), ComponentIdeal(f), Derivative(f`Expansion, i), Precision(f) -1);
 end intrinsic;
 
 intrinsic Trace(f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
