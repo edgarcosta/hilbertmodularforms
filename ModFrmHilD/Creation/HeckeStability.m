@@ -63,7 +63,8 @@ intrinsic HeckeStabilityCuspBasis(
     prove:=true,
     stable_only:=false,
     smallest_prime:=true,
-    SaveAndLoad:=false
+    SaveAndLoad:=false,
+    chi_eis:=0
     ) -> SeqEnum[ModFrmHilDElt]
     {
       Compute the space Mk using the Hecke stability method.
@@ -115,17 +116,21 @@ intrinsic HeckeStabilityCuspBasis(
       // In this case, the upstairs space will also have nontrivial
       // nebentypus, so we search for a nebentypus which works 
       H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
-      flag := false;
-      for psi in Elements(H) do
-        // TODO abhijitm I'm confused about IsGamma1EisensteinWeight, is it doing
-        // anything that IsCompatibleWeight isn't?
-        if IsCompatibleWeight(psi, eis_wt) and IsGamma1EisensteinWeight(psi, 1) then
-          chi_eis := psi;
-          flag := true;
-          break;
-        end if;
-      end for;
-      require flag : "No Eisenstein series seems to work?";
+      if chi_eis cmpne 0 then
+        assert IsCompatibleWeight(chi_eis, eis_wt) and IsGamma1EisensteinWeight(chi_eis, 1);
+      else
+        flag := false;
+        for psi in Elements(H) do
+          // TODO abhijitm I'm confused about IsGamma1EisensteinWeight, is it doing
+          // anything that IsCompatibleWeight isn't?
+          if IsCompatibleWeight(psi, eis_wt) and IsGamma1EisensteinWeight(psi, 1) then
+            chi_eis := psi;
+            flag := true;
+            break;
+          end if;
+        end for;
+        require flag : "No Eisenstein series seems to work?";
+      end if;
       // TODO abhijitm this might be problematic, I'm a bit confused about the
       // primitivization step still
       chi_eis_prim := AssociatedPrimitiveCharacter(chi_eis^-1);
