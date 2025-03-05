@@ -413,7 +413,7 @@ intrinsic HMFExpansionRing(M::ModFrmHilDGRng, K::Rng :
     b, R := IsDefined(M`RngMPol, t);
     if not b then
       if unique then
-        R := PolynomialRing(K, n);
+        R<[q]> := PolynomialRing(K, n);
         M`RngMPol[t] := R;
       else
         M`RngMPol[t] := AssociativeArray();
@@ -422,7 +422,7 @@ intrinsic HMFExpansionRing(M::ModFrmHilDGRng, K::Rng :
     if not unique then // otherwise we already have R
       b, R := IsDefined(M`RngMPol[t], DefiningPolynomial(K));
       if not b then
-        R := PolynomialRing(K, n);
+        R<[q]> := PolynomialRing(K, n);
         M`RngMPol[t][DefiningPolynomial(K)] := R;
       end if;
     end if;
@@ -733,6 +733,11 @@ end intrinsic;
 //         Advanced operations                   //
 //                                               //
 ///////////////////////////////////////////////////
+
+intrinsic Derivative(f::ModFrmHilDEltComp, i::RngIntElt) -> ModFrmHilDEltComp
+{Returns the derivative with the respect to the ith coordinate}
+    return HMFComponent(Space(f), ComponentIdeal(f), Derivative(f`Expansion, i), Precision(f) -1);
+end intrinsic;
 
 intrinsic Trace(f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
 
