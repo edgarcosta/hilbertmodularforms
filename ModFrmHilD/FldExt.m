@@ -797,16 +797,18 @@ intrinsic DefiningPolyCoeffs(K::Fld) -> SeqEnum
 end intrinsic;
 
 intrinsic TraceBasis(aa::RngOrdFracIdl) -> SeqEnum
-  {Given a fractional ideal aa, returns a basis (a,b) in Smith normal form
-   where Trace(a) = n > 0 and Trace(b) = 0}
+  {Given a fractional ideal aa, returns a basis (a_1, ..., a_n) in Smith normal form
+   where Trace(a_1) > 0 and Trace(a_i) = 0 for i > 1. 
+   Further, Trace(a_j*ZF.j) > 0 and Trace(a_i*ZF.j) = 0 for all i > j.}
 
   // Preliminaries
   B := Basis(aa);
   ZF := Parent(B[2]);
+  // This also should be generalized appropriately when n > 2
   v := InfinitePlaces(NumberField(ZF))[2];
 
   // Change of basis
-  traces := Matrix([[Integers()!Trace(B[i])] : i in [1..#B]]);
+  traces := Matrix([[Integers()!Trace(B[i]*ZF.j) : j in [1..Degree(ZF)]] : i in [1..#B]]);
   _, Q := HermiteForm(traces);
 
   TB := Eltseq(Vector(B)*Transpose(ChangeRing(Q,ZF)));
