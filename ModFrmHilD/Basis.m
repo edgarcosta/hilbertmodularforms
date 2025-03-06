@@ -65,7 +65,7 @@ intrinsic CuspFormBasis(
       Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk : prove := false);
     end if;
   else
-    ViaTraceForm and:= IsParallel(Weight(Mk)) and GaloisDescent and (k mod 2) eq 0;
+    ViaTraceForm and:= IsParallel(k) and GaloisDescent and (k[1] mod 2) eq 0;
     if ViaTraceForm then
       Mk`CuspFormBasis := CuspFormBasisViaTrace(Mk : IdealClassesSupport:=IdealClassesSupport);
     else
@@ -116,7 +116,7 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
   F := BaseField(Mk);
   ZF := Integers(F);
   C := NarrowClassGroupReps(M);
-  dim := CuspDimension(Mk); // Change this to : version := "trace" later
+  dim := CuspDimension(Mk : version := "trace"); // Change this to : version := "trace" later
   m,p := Conductor(chi);
   _, ii := Modulus(chi); // Modulus
 
@@ -127,6 +127,7 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
   require (k[1] mod 2) eq 0: "Not implemented for odd weights";
 
   // Ideal bound 
+  // Eran: Why is this a fixed bound??
   bound := 500;
   Ideals := IdealsUpTo(bound, F); // Ideals for traceforms
 
@@ -173,9 +174,11 @@ intrinsic CuspFormBasisViaTrace(Mk::ModFrmHilD : IdealClassesSupport:=false, fai
     // Compute new ideal
     aa := Ideals[t];
     vprintf HilbertModularForms: "Computing %o new traceforms.\n Fail counter: %o\n Ideals: %o\n", d, fails, [ IdealOneLine(aa) : aa in aas];
+    /*
     vprintf HilbertModularForms: "PrecomputeTraceForms(M, aas)...";
     vtime HilbertModularForms:
     PrecomputeTraceForms(M, aas);
+    */
 
     // Check for linear dependence
     B cat:= [TraceForm(Mk,aa) : aa in aas];

@@ -489,6 +489,7 @@ end function;
 function ClassNumberOverUnitIndex(M,K)
   // K CM quadratic extension of F
   // M ModFrmHilDGRng
+  vprintf HMFTrace, 3 : "K = %o\n", K;
   UF := UnitGroup(M);
   mUF := UnitGroupMap(M);
   Kabs := AbsoluteField(K);
@@ -948,6 +949,7 @@ intrinsic TraceRecurse(Mk::ModFrmHilD, mm::RngOrdIdl, nn::RngOrdIdl) -> Any
     a,b,c := Explode(t);
     // Compute trace of T(b) * D(c) on Mk
     x := (1/#C) * &+[ chi( H[aa] ) * TraceProduct(Mk, b, Classrep(c * aa) : precomp := true) : aa in C ];
+    // x := (1/#C) * &+[ chi( H[aa] ) * TraceProduct(Mk, b, Classrep(c * aa)) : aa in C ];
     // Eisenstein correction factor
     x +:= CorrectionFactor(Mk, b) * chi( c );
     // Scale by a and add to sum
