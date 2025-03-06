@@ -125,6 +125,8 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
     Sumterm +:= wk * emb;
   end for;
 
+  Sumterm := (-1)^Degree(ZF)*Sumterm;
+
   // Trace is Constant term + Sum term
   tr := (#BPrimes ne 0) select Sumterm else ConstantTerm(Mk,mmaa) + Sumterm;
 
@@ -190,7 +192,7 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
     C := EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa);
     vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", u, t, EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa);
     vprintf HMFTrace : "WeightFactor: <%o, %o> %o\n", u, t, WeightFactor(u, t, prec);
-    res +:= mult * C * WeightFactor(u, t, prec);
+    res +:= (-1)^n * mult * C * WeightFactor(u, t, prec);
   end for;
   if reconstruct then
     R<X> := PolynomialRing(Rationals());
@@ -209,7 +211,7 @@ intrinsic HilbertSeries(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> RngSe
   ans := HilbertSeriesCusp(M, NN : prec:=false);
   R<X> := Parent(ans);
   // Compute the dimension of the Eisenstein Series
-  Mk := HMFSpace(M,NN,[2,2]);
+  Mk := HMFSpace(M,NN,[2 : i in [1..Degree(Order(NN))]]);
   n := NumberOfCusps(Mk);
   ans +:= n/(1-X^2);
   ans -:= (n-1);
@@ -439,13 +441,20 @@ intrinsic IdealCMExtensions(M::ModFrmHilDGRng, a::RngElt, aa::RngOrdIdl) -> SeqE
   F := BaseField(M);
   ZF := Integers(M);
   places := Places(M);
-  // half of square with sides 2sqrt(a).
+  // half of hypercube with sides 2sqrt(a).
+  LBs := [-2*Sqrt(Evaluate(a,place)) : place in places];
+  UBs := [2*Sqrt(Evaluate(a,place)) : place in places];
+  LBs[#LBs] := 0;
+  /*
   XLB := -2*Sqrt(Evaluate(a,places[1]));
   YLB := 0;
   XUB := 2*Sqrt(Evaluate(a,places[1]));
   YUB := 2*Sqrt(Evaluate(a,places[2]));
-  vprintf HMFTrace, 3: "computing ElementsInABox(M, aa, %o, %o, %o, %o)...", XLB, YLB, XUB, YUB;
-  vtime HMFTrace, 3: T := ElementsInABox(M, aa, XLB, YLB, XUB, YUB);
+  */
+  // vprintf HMFTrace, 3: "computing ElementsInABox(M, aa, %o, %o, %o, %o)...", XLB, YLB, XUB, YUB;
+  vprintf HMFTrace, 3: "computing ElementsInAHyperCube(M, aa, %o, %o)...", LBs, UBs;
+  // vtime HMFTrace, 3: T := ElementsInABox(M, aa, XLB, YLB, XUB, YUB);
+  vtime HMFTrace, 3: T := ElementsInAHyperCube(M, aa, LBs, UBs);
   T := [ i : i in T | i^2-4*a ne 0]; // Zero is "technically" not totally positive for this computation
   vprintf HMFTrace, 2: "Done with IdealCMExtensions(M, %o, %o)\n", a, aa;
   return T;
