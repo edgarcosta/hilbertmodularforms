@@ -307,7 +307,7 @@ intrinsic IsThetaEqual(Gamma::GrpHilbert, theta1::Assoc, theta2::Assoc) -> BoolE
   for p in Keys(theta1) do
       frakp := PrimeIdealsOverPrime(F,p)[1];
       v := Valuation(D,p);
-      if (theta1[p] - theta2[p]) notin frakp^v then
+      if Valuation(theta1[p] - theta2[p],frakp) lt v then
 	  return false;
       end if;
   end for;

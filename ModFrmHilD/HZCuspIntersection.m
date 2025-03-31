@@ -358,12 +358,15 @@ intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) ->
 	   end if;
        end for;
        QFs := [* QuadraticForm(Ds[i]*Qs[i]/2) : i in [1..#Qs] *];
-       A := [1/ws[1]];
+       A := [1/ws[2]];
        for i in [1..#s-1] do
 	   A[i+1] := A[i] / ws[i+1];
        end for;
        assert &and[A[i] + A[i+2] eq s[i+1] * A[i+1] : i in [1..#s-2]];
        A := [1] cat A;
+       // check
+       M := CuspResolutionMV(b,N,F!cusp[2][1],F!cusp[2][2]);
+       assert &and[a in M : a in A];
        all_pqs := [];
        all_comps := [];
        for k->QF in QFs do
@@ -378,6 +381,11 @@ intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) ->
 	       p_plus_q +:= 1;
 	   end while;
 	   lambdas := [pq[1]*A[k] + pq[2]*A[k+1] : pq in pqs];
+	   good_idxs := [i : i in [1..#lambdas] |
+			 Norm(lambdas[i]) eq t*Norm(M)];
+	   lambdas := [lambdas[i] : i in good_idxs];
+	   pqs := [pqs[i] : i in good_idxs];
+	   assert &and[Norm(lambda) eq t*Norm(M) : lambda in lambdas];
 	   Append(~all_comps, [GetHZComponent(Gamma, lambda, comps) : lambda in lambdas]);
 	   pqs_prim := [];
 	   for pq in pqs do
@@ -388,11 +396,12 @@ intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) ->
        end for;
        cusp_mults := [[0 : QF in QFs] : c in comps];
        for cyc_idx in [1..#QFs] do
-	   cyc_idx_next := cyc_idx mod #QFs + 1;
+	   // cyc_idx_next := cyc_idx mod #QFs + 1;
+	   cyc_idx_prev := (cyc_idx + #QFs - 2) mod #QFs + 1;
 	   for j in [1..#all_pqs[cyc_idx]] do
-	       cusp_mults[cyc_idx][all_comps[cyc_idx][j]] +:= all_pqs[cyc_idx][j][1];
-	       if (all_pqs[cyc_idx_next][j][1] ne 0) then
-		   cusp_mults[cyc_idx][all_comps[cyc_idx][j]] +:= all_pqs[cyc_idx_next][j][2];
+	       cusp_mults[all_comps[cyc_idx][j]][cyc_idx] +:= all_pqs[cyc_idx][j][1];
+	       if (all_pqs[cyc_idx][j][1] ne 0) then
+		   cusp_mults[all_comps[cyc_idx][j]][cyc_idx_prev] +:= all_pqs[cyc_idx][j][2];
 	       end if;
 	   end for;
        end for;

@@ -18,6 +18,24 @@ procedure testHZ(D, bs, mults)
     end for;
 end procedure;
 
+procedure testHZComponents(D, bs, mults)
+    F := QuadraticField(D);
+    ZF<z> := Integers(F);
+    N := 1*ZF;
+    for b in bs do
+	Gamma := CongruenceSubgroup("SL", "Gamma0", F, N, b);
+        for t in Keys(mults[b]) do
+            results := HZCuspIntersection(Gamma, t);
+	    results_by_comp := HZCuspIntersectionComponents(Gamma, t);
+
+	    ncusps := #results[1];
+	    sum_res_by_comp := [ [&+[comp[i] : comp in res]
+				  : i in [1..ncusps]] : res in results_by_comp];
+	    assert sum_res_by_comp eq results;
+        end for;
+    end for;
+end procedure;
+
 Ds := [13, 60];
 bs := AssociativeArray(Ds);
 for d in Ds do
@@ -80,4 +98,6 @@ testHZ(60, bs[60], mults[60]);
 print "Success!";
 
 
+testHZComponents(13, bs[13], mults[13]);
 
+testHZComponents(60, bs[60], mults[60]);
