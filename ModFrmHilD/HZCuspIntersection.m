@@ -326,7 +326,7 @@ intrinsic HZCuspIntersection(Gamma::GrpHilbert, lambda::FldQuadElt) ->
 end intrinsic;
 
 intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) -> 
-	  SeqEnum[SeqEnum[RngIntElt]]
+	  SeqEnum[SeqEnum[SeqEnum[RngIntElt]]]
 {computes the intersection numbers of the Hirzebruch-Zagier divisor F_t with the cusp resolutions}
    cusps := CuspsWithResolution(Gamma);
    cusps_mults := [];
@@ -348,25 +348,18 @@ intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) ->
        end if;
        ws := [HJReconstructPeriodic(F,[s[(i+j-2) mod #s + 1] : j in [1..#s]]) 
 	      : i in [1..#s]];
-       Qs := [Matrix([[Norm(x+y)-Norm(x)-Norm(y) : y in [1,w]] : x in [1,w]]) 
-	      : w in ws];
-       Ds := [Denominator(Q) : Q in Qs];
-       for i in [1..#Qs] do
-	   if IsOdd(Integers()!(Ds[i]*Qs[i][1,1])) or 
-	      IsOdd(Integers()!(Ds[i]*Qs[i][2,2])) then
-	       Ds[i] *:= 2;
-	   end if;
-       end for;
-       QFs := [* QuadraticForm(Ds[i]*Qs[i]/2) : i in [1..#Qs] *];
-       A := [1/ws[2]];
-       for i in [1..#s-1] do
-	   A[i+1] := A[i] / ws[i+1];
+       A := [F!1];
+       for i in [1..#s] do
+	   A[i+1] := A[i] / ws[(i mod #s) + 1];
        end for;
        assert &and[A[i] + A[i+2] eq s[i+1] * A[i+1] : i in [1..#s-2]];
-       A := [1] cat A;
        // check
        M := CuspResolutionMV(b,N,F!cusp[2][1],F!cusp[2][2]);
        assert &and[a in M : a in A];
+       
+       Qs := [Matrix([[Norm(x+y)-Norm(x)-Norm(y) : y in basis] : x in basis]) 
+	      where basis := [A[k],A[k+1]]: k in [1..#ws]];
+       QFs := [* QuadraticForm(Qs[i]/(2*Norm(M))) : i in [1..#Qs] *];
        all_pqs := [];
        all_comps := [];
        for k->QF in QFs do
@@ -396,12 +389,13 @@ intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) ->
        end for;
        cusp_mults := [[0 : QF in QFs] : c in comps];
        for cyc_idx in [1..#QFs] do
-	   // cyc_idx_next := cyc_idx mod #QFs + 1;
-	   cyc_idx_prev := (cyc_idx + #QFs - 2) mod #QFs + 1;
+	   cyc_idx_next := cyc_idx mod #QFs + 1;
+	   // cyc_idx_prev := (cyc_idx + #QFs - 2) mod #QFs + 1;
 	   for j in [1..#all_pqs[cyc_idx]] do
-	       cusp_mults[all_comps[cyc_idx][j]][cyc_idx] +:= all_pqs[cyc_idx][j][1];
+	       comp_idx := all_comps[cyc_idx][j];
+	       cusp_mults[comp_idx][cyc_idx] +:= all_pqs[cyc_idx][j][1];
 	       if (all_pqs[cyc_idx][j][1] ne 0) then
-		   cusp_mults[all_comps[cyc_idx][j]][cyc_idx_prev] +:= all_pqs[cyc_idx][j][2];
+		   cusp_mults[comp_idx][cyc_idx_next] +:= all_pqs[cyc_idx][j][2];
 	       end if;
 	   end for;
        end for;
