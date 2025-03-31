@@ -95,7 +95,7 @@ intrinsic GetPossibleThetas(Gamma::GrpHilbert, N::RngIntElt) -> SeqEnum[Assoc]
 	ZFmodpv, red := quo<ZF | frakp^Valuation(D,p)>;
 	if (p eq 2) and (v eq 2) then
 	    d := SquareFree(D);
-	    thetas := [1@@red, Sqrt(ZFmodpv!d)@@red];
+	    thetas := [1, Sqrt(ZF!d)];
 	else
 	    x := Sqrt(ZFmodpv!Norm(b)*N)@@red;
 	    thetas := [x, -x];
@@ -275,7 +275,11 @@ intrinsic GetAllHZComponents(Gamma::GrpHilbert, N::RngIntElt) -> SeqEnum[AlgMatE
 	    etas := [eta : eta in etas | eta[p] eq eta_p[1]];
 	end if;
     end if;
-    return [GetHZComponent(Gamma, theta, eta,  N) : theta in thetas, eta in etas];
+    comps := [GetHZComponent(Gamma, theta, eta,  N) : theta in thetas,
+						      eta in etas];
+    assert &and[not IsSameComponent(Gamma, comps[i], comps[j])
+		: i,j in [1..#comps] | i ne j];
+    return comps;
 end intrinsic;
 
 intrinsic Theta(Gamma::GrpHilbert, B::AlgMatElt[FldNum]) -> SeqEnum[Assoc]
