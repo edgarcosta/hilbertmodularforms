@@ -410,7 +410,7 @@ intrinsic GetHZComponent(Gamma::GrpHilbert, lambda::FldNumElt, comps::SeqEnum[Al
       end if;
   end for;
   // This should not happen. If we're here something is wrong!!!
-  return 0;
+  require false : "Something is wrong, could not determine component!\n";
 end intrinsic;	  
 
 intrinsic Genera(R::RngOrd) -> Assoc
