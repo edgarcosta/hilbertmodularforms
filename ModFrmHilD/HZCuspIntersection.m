@@ -356,9 +356,9 @@ intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) ->
        // check
        M := CuspResolutionMV(b,N,F!cusp[2][1],F!cusp[2][2]);
        I := ideal<ZF | A[1], A[2]>;
-       is_equiv, lambda := IsNarrowlyPrincipal(I*M^(-1));
+       is_equiv, scale := IsNarrowlyPrincipal(I*M^(-1));
        assert is_equiv;
-       // A := [lambda^(-1)*a : a in A];
+       // A := [scale^(-1)*a : a in A];
        assert &and[a in I : a in A];
        assert &and[ideal<ZF | A[k], A[k+1]> eq I : k in [1..#A-1]];
        
@@ -386,6 +386,9 @@ intrinsic HZCuspIntersectionComponents(Gamma::GrpHilbert, t::RngIntElt) ->
 	   pqs := [pqs[i] : i in good_idxs];
 	   */
 	   assert &and[Norm(lambda) eq t*Norm(I) : lambda in lambdas];
+	   is_equiv, scale := IsNarrowlyPrincipal(I*b);
+	   lambdas := [scale^(-1)*lambda : lambda in lambdas];
+	   assert &and[Norm(lambda)*Norm(b) eq t : lambda in lambdas];
 	   Append(~all_comps, [GetHZComponent(Gamma, lambda, comps) : lambda in lambdas]);
 	   pqs_prim := [];
 	   for pq in pqs do

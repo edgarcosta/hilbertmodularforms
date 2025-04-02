@@ -42,6 +42,10 @@ for d in Ds do
     ZF<z> := Integers(QuadraticField(d));
     cl_plus_F, cl_plus_map := NarrowClassGroup(ZF);
     bs[d] := [cl_plus_map(x) : x in cl_plus_F];
+    for j->bb in bs[d] do
+	alpha := CoprimeNarrowRepresentative(bb, d*ZF);
+	bs[d][j] := alpha*bb;
+    end for;
 end for;
 
 
