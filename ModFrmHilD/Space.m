@@ -423,16 +423,6 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
     version := "builtin";
   end if;
 
-  // TODO abhijitm remove once trace formula officially
-  // supports higher degree fields
-  if Degree(BaseField(Mk)) gt 2 then
-    version := "builtin";
-  end if;
-  /*
-  if NarrowClassNumber(Parent(Mk)) ne 1 and not IsTrivial(Character(Mk)) then
-    version := "builtin";
-  end if;
-  */
   if not assigned Mk`CuspDimension then
     k := Weight(Mk);
     if version eq "builtin" then

@@ -15,7 +15,7 @@ import "../SaveAndLoad.m": default_dir;
 
 function TriplesFilename(ZF)
   F := NumberField(ZF);
-  F_label := Join([IntegerToString(a) : a in DefiningPolyCoeffs(F)], ".");
+  F_label := Join([IntegerToString(Integers()!a) : a in DefiningPolyCoeffs(F)], ".");
   return default_dir() cat F_label cat "_triples";
 end function;
 

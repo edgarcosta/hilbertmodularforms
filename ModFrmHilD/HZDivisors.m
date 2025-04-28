@@ -95,7 +95,7 @@ intrinsic GetPossibleThetas(Gamma::GrpHilbert, N::RngIntElt) -> SeqEnum[Assoc]
 	ZFmodpv, red := quo<ZF | frakp^Valuation(D,p)>;
 	if (p eq 2) and (v eq 2) then
 	    d := SquareFree(D);
-	    thetas := [1@@red, Sqrt(ZFmodpv!d)@@red];
+	    thetas := [1, Sqrt(ZF!d)];
 	else
 	    x := Sqrt(ZFmodpv!Norm(b)*N)@@red;
 	    thetas := [x, -x];
@@ -157,9 +157,11 @@ end function;
 function find_mu(theta, eta, a, D, bb, N)
     ZF := Order(bb);
     F := NumberField(ZF);
+    assert IsCoprime(bb, D*ZF);
     R1_primes := R1(D,N);
     R2_primes := R2(D,N);
-    other_primes := [p : p in PrimeDivisors(D) | p notin R1_primes cat R2_primes];
+    other_primes := [p : p in PrimeDivisors(D) |
+		     p notin R1_primes cat R2_primes];
     a_primes := [p : p in PrimeDivisors(a)];
     values := [ZF | 0];
     ideals := [Conjugate(bb)];
@@ -170,9 +172,19 @@ function find_mu(theta, eta, a, D, bb, N)
     // TODO: Figure out what happens for p = 2 in other_primes !!
     for p in other_primes do
 	frakp := PrimeIdealsOverPrime(F,p)[1];
-	ZFmodpv, red := quo<ZF | frakp^Valuation(D,p)>;
-	Append(~values, Sqrt(red(N*Norm(bb))));
-	Append(~ideals, frakp^Valuation(D,p));
+	vD := Valuation(D,p);
+	vN, N0 := Valuation(N,p);
+	v := vD - vN;
+	pi := UniformizingElement(frakp);
+	if v eq 0 then
+	    elt := 0;
+	else
+	    ZFmodpv, red := quo<ZF | frakp^v>;
+	    elt := Sqrt(red(N0*Norm(bb)))@@red;
+	end if;
+	ZFmodpvD, redvD := quo<ZF | frakp^vD>;
+	Append(~values, redvD(pi^vN*elt));
+	Append(~ideals, frakp^vD);
     end for;
     for p in a_primes do
 	frakps := PrimeIdealsOverPrime(F,p);
@@ -208,7 +220,7 @@ function find_mu(theta, eta, a, D, bb, N)
 	end if;	
     end for;
     mu := CRT(values, ideals);
-    assert ((Norm(mu) - N*Norm(bb)) mod a*D*Norm(bb)) eq 0;
+    assert ((Norm(mu) - N*Norm(bb)) mod (a*D*Norm(bb))) eq 0;
     return mu;
 end function;
 
@@ -218,10 +230,13 @@ intrinsic GetHZComponent(Gamma::GrpHilbert, theta::Assoc, eta::Assoc, N::RngIntE
     ZF := Order(bb);
     F := NumberField(ZF);
     D := Discriminant(ZF);
+    require IsCoprime(bb, D*ZF) :
+		     "Component ideal must be coprime to the discriminant!\n";
     sigma := Automorphisms(F)[2];
     sqrtD := Sqrt(F!D);
     a := find_a(eta, D, bb, N);
     mu := find_mu(theta, eta, a, D, bb, N);
+    assert (N*Norm(bb) - Norm(mu)) mod (a*Norm(bb)*D) eq 0;
     b := (N*Norm(bb) - Norm(mu)) div (a*Norm(bb)*D);
     lambda := Norm(bb)^(-1) * mu;
     // Verifying we have an admissible matrix B
@@ -235,6 +250,7 @@ intrinsic GetHZComponent(Gamma::GrpHilbert, theta::Assoc, eta::Assoc, N::RngIntE
 	assert g^(-1)*lambda notin bb^(-1);
     end if;
     B := Matrix([[a*sqrtD, lambda], [-sigma(lambda), Norm(bb)^(-1)*b*sqrtD]]);
+    assert Determinant(B)*Norm(bb) eq N;
     return B;
 end intrinsic;
 
@@ -275,7 +291,11 @@ intrinsic GetAllHZComponents(Gamma::GrpHilbert, N::RngIntElt) -> SeqEnum[AlgMatE
 	    etas := [eta : eta in etas | eta[p] eq eta_p[1]];
 	end if;
     end if;
-    return [GetHZComponent(Gamma, theta, eta,  N) : theta in thetas, eta in etas];
+    comps := [GetHZComponent(Gamma, theta, eta,  N) : theta in thetas,
+						      eta in etas];
+    assert &and[not IsSameComponent(Gamma, comps[i], comps[j])
+		: i,j in [1..#comps] | i ne j];
+    return comps;
 end intrinsic;
 
 intrinsic Theta(Gamma::GrpHilbert, B::AlgMatElt[FldNum]) -> SeqEnum[Assoc]
@@ -307,7 +327,7 @@ intrinsic IsThetaEqual(Gamma::GrpHilbert, theta1::Assoc, theta2::Assoc) -> BoolE
   for p in Keys(theta1) do
       frakp := PrimeIdealsOverPrime(F,p)[1];
       v := Valuation(D,p);
-      if (theta1[p] - theta2[p]) notin frakp^v then
+      if Valuation(theta1[p] - theta2[p],frakp) lt v then
 	  return false;
       end if;
   end for;
@@ -406,7 +426,7 @@ intrinsic GetHZComponent(Gamma::GrpHilbert, lambda::FldNumElt, comps::SeqEnum[Al
       end if;
   end for;
   // This should not happen. If we're here something is wrong!!!
-  return 0;
+  require false : "Something is wrong, could not determine component!\n";
 end intrinsic;	  
 
 intrinsic Genera(R::RngOrd) -> Assoc
