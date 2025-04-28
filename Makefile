@@ -2,7 +2,7 @@ TEST_FILES := $(wildcard Tests/*.m)
 CHECK_FILES := $(patsubst Tests/%, check/%, $(TEST_FILES))
 
 
-MAKEFLAGS += -j$(shell nproc || printf 1)
+MAKEFLAGS += -j$(shell nproc 2> /dev/null || printf 1)
 
 all: check
 
