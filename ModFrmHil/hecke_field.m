@@ -35,19 +35,13 @@ declare attributes ModFrmHil : minimal_hecke_field_emb,
 
 // originally from hecke.m
 
-function hecke_matrix_field(M : hack := true)
+function hecke_matrix_field(M)
   if assigned M`hecke_matrix_field then
     return M`hecke_matrix_field;
   elif IsBianchi(M) or not IsDefinite(M) then
     return Rationals();
   else
-      if hack then
-	  // hack begins
 	  return TopAmbient(M)`weight_base_field;
-	  // hack ends
-      else
-	  return Ambient(M)`weight_base_field;
-      end if;
   end if;
 end function;
 
@@ -55,24 +49,18 @@ end function;
 // M`hecke_matrix_field is not always assigned; when it is not,
 // HeckeOperator returns matrices over the weight_base_field.
 
-function minimal_hecke_matrix_field(M : hack := true)
+function minimal_hecke_matrix_field(M)
   bool, minimal := HasAttribute(M, "hecke_matrix_field_is_minimal");
   if bool and minimal then
     H := M`hecke_matrix_field;
-    if hack then
-	M`minimal_hecke_field_emb := IdentityHomomorphism(H);
-    end if;
+	  M`minimal_hecke_field_emb := IdentityHomomorphism(H);
   elif assigned M`Ambient then
     H := minimal_hecke_matrix_field(M`Ambient);
-    if hack then
-	M`minimal_hecke_field_emb := M`Ambient`minimal_hecke_field_emb;
-    end if;
+	  M`minimal_hecke_field_emb := M`Ambient`minimal_hecke_field_emb;
   elif IsParallelWeight(M) then
      H := Rationals();
-     if hack then
-	 K := hecke_matrix_field(M);
-	 M`minimal_hecke_field_emb := hom<H->K|>;
-     end if;
+	   K := hecke_matrix_field(M);
+	   M`minimal_hecke_field_emb := hom<H->K|>;
   else
     vprintf ModFrmHil: "Figuring out the \'Hecke matrix field\' ... "; 
     time0 := Cputime();
@@ -138,7 +126,7 @@ function DegeneracyMapDomain(M, d)
    return DM;
 end function;
 
-function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
+function WeightRepresentation(M) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the 
 //  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
 //  map H^* -> GL(2, K)^g -> GL(V_k) is contructed, where g is the degree of F and V_k the weight space.
@@ -159,10 +147,8 @@ function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
          M`weight_rep := map< H -> Mat1 | q :-> I >;
          M`weight_base_field := Rationals();
          M`weight_dimension := 1; 
-	 if hack then
-	     QQ := Rationals();
-	     M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
-	 end if;
+         QQ := Rationals();
+         M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
       else
          // define weight_base_field = extension K/F containing Galois closure of F and 
          // containing a root of every conjugate of the minimal polynomial of H.1
@@ -189,10 +175,8 @@ function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
          K := AbsoluteField(K);
          K := OptimizedRepresentation(K);
          embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
-	 if hack then
-	     Fspl := F`SplittingField[1];
-	     M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
-	 end if;
+         Fspl := F`SplittingField[1];
+         M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
          M`weight_base_field:=K;
          vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
          vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);

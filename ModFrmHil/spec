@@ -1,14 +1,8 @@
 {
+  definite.m
   diamond.m
   finitefield.m
   hackobj.m
+  hecke.m
   hecke_field.m
-
-  # we replace: DegeneracyMapDomain and WeightRepresentation
-  copypaste/definite.m
-  # we replace: HMF0
-  # and fix import for DimensionBianchi
-  copypaste/hackobj.m
-  # we replace: operator, HMF0, hecke_matrix_field, minimal_hecke_matrix_field
-  copypaste/hecke.m
 }

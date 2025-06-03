@@ -12,20 +12,10 @@ freeze;
 //
 //////////////////////////////////////////////////////////////////////////////
 
-// hack begins
-// We replace DegeneracyMapDomain and WeightRepresentation by our own function
-import "../hecke_field.m" : DegeneracyMapDomain, WeightRepresentation;
-// HMF0 no longer needed
-//import "hackobj.m" : HMF0;
-
-
+import "hecke_field.m" : DegeneracyMapDomain, WeightRepresentation;
 import "hecke.m" : please_report, pseudo_inverse, basis_is_honest;
-
-// Converted to following imports to absolute imports
 import !"Geometry/ModFrmHil/precompute.m" : get_rids, get_tps;
-
 import !"Geometry/ModFrmHil/proj1.m" : residue_class_reps;
-// hack ends
 
 debug := false;
 
@@ -418,84 +408,6 @@ function weight_map_arch(q, splittings, K, m, n)
    end for;
    return M;
 end function;
-
-
-/* hack: replaced via the import "../hecke_field.m" : ...
-function WeightRepresentation(M) // ModFrmHil -> Map
-//  Given a space of Hilbert modular forms over a totally real number field F. This determines if the 
-//  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
-//  map H^* -> GL(2, K)^g -> GL(V_k) is contructed, where g is the degree of F and V_k the weight space.
-
-   if assigned M`weight_rep then
-      return M`weight_rep, M`weight_dimension, M`weight_base_field;
-   else
-      H:=Algebra(QuaternionOrder(M)); 
-      F:=BaseField(H); 
-      k:=M`Weight;
-      bool, m, n, C := IsArithmeticWeight(F,k);  
-      assert bool;
-      assert C eq M`CentralCharacter;
-
-      if Seqset(k) eq {2} then // parallel weight 2
-         I := IdentityMatrix(Rationals(), 1);
-         Mat1 := Parent(I);
-         M`weight_rep := map< H -> Mat1 | q :-> I >;
-         M`weight_base_field := Rationals();
-         M`weight_dimension := 1; 
-      else
-         // define weight_base_field = extension K/F containing Galois closure of F and 
-         // containing a root of every conjugate of the minimal polynomial of H.1
-         if assigned F`SplittingField then
-           K,rts:=Explode(F`SplittingField);
-         else
-           K,rts:=SplittingField(F : Abs:=true, Opt:=false);
-           F`SplittingField:=<K, rts>;
-         end if;
-         embeddings_F_to_K:=[hom<F->K | r> : r in rts];
-         H1coeffs:=Coefficients(MinimalPolynomial(H.1));
-         alphas:=[K| ];
-         for FtoK in embeddings_F_to_K do
-             hh:=PolynomialRing(K)! [c@FtoK : c in H1coeffs];
-             if IsIrreducible(hh) then
-                K:=ext<K|hh>;
-                alphas:=ChangeUniverse(alphas,K) cat [K.1];
-            else
-                Append(~alphas, Roots(hh)[1][1]);
-            end if;
-         end for;
-         // make weight_base_field an (optimized) absolute field, for efficiency in later calculations 
-         weight_field := K; // names appears in verbose output
-         K := AbsoluteField(K);
-         K := OptimizedRepresentation(K);
-         embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
-         M`weight_base_field:=K;
-         vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
-         vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
-
-         assert H.1*H.2 eq H.3; // this is assumed in the defn of the splitting homomorphism below
-         splitting_seq:=[];
-         for i:=1 to Degree(F) do
-            h:=embeddings_F_to_K[i];
-            // need a splitting homomorphism (H tensor K) -> Mat_2(K) whose restriction to K is h 
-            alpha:=alphas[i];
-            b:= K! h(F!(H.2^2));
-            iK:=Matrix(K, 2, [alpha, 0, 0, -alpha]); 
-            jK:=Matrix(K, 2, [0, 1, b, 0]); 
-            kK:=iK*jK;
-            assert K! h(H.3^2) eq (kK^2)[1,1]; 
-            Append(~splitting_seq, 
-                   map< H -> MatrixRing(K,2)|
-                        q:-> h(s[1])+h(s[2])*iK+h(s[3])*jK+h(s[4])*kK where s:=Eltseq(q) >);
-         end for;
-         M`weight_dimension := &* [x+1 : x in n];
-         M2K:=MatrixRing(K, M`weight_dimension);
-         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
-      end if;
-      return M`weight_rep, M`weight_dimension, M`weight_base_field;
-   end if;
-end function;
-*/
-
 
 // Canonical representatives of elements of the projective line $P^1(OK/level)$ 
 
@@ -1967,33 +1879,6 @@ function DegeneracyMap(M1, M2, p : Big:=false)
    end if;
 
 end function;
-
-/* hack: replaced via the import "../hecke_field.m" : ...
-function DegeneracyMapDomain(M, d)
-   // Given an ambient space M and an integral ideal d such that NewLevel(M) | d | Level(M), 
-   // returns a space of level d and same weight as M, defined using internals that are
-   // compatible with M (same quaternion algebra, same splitting map and weight representation)
-
-   QO:=M`QuaternionOrder;
-   assert NewLevel(M) eq Discriminant(QO);
-   assert IsIntegral(d/NewLevel(M));
-   assert IsIntegral(Level(M)/d); 
-
-   // MUST use identical internal data: in particular, rids and weight_rep.
-   // Call low-level constructor to avoid complications with caching, and don't cache DM
-   // TO DO: use cached spaces, to avoid recomputing ModFrmHilDirFacts (that's the only advantage)
-   DM:=HMF0(BaseField(M), d, NewLevel(M), DirichletCharacter(M), Weight(M), CentralCharacter(M));
-   DM`QuaternionOrder:=QO;
-   DM`rids:=get_rids(M);
-   DM`splitting_map:=M`splitting_map; // can use same splitting_map even though its level is larger than needed
-   DM`weight_base_field:=M`weight_base_field;
-   DM`weight_dimension:=M`weight_dimension;
-   if Seqset(Weight(M)) ne {2} then // nontrivial weight
-      DM`weight_rep:=M`weight_rep;
-   end if;
-   return DM;
-end function;
-*/
 
 // Basis of a newspace (called only by BasisMatrixDefinite)
 
