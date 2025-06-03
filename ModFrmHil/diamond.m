@@ -19,6 +19,7 @@ import "hackobj.m" : HMF0;
 import "hecke_field.m" :
   hecke_matrix_field,
   WeightRepresentation;
+import "level.m" : HeckeMatrix;
 
 /**************** New intrinsics **********************/
 
