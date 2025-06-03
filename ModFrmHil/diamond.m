@@ -19,7 +19,6 @@ import "hackobj.m" : HMF0;
 import "hecke_field.m" :
   hecke_matrix_field,
   WeightRepresentation;
-import "level.m" : HeckeMatrix;
 
 /**************** New intrinsics **********************/
 
@@ -100,8 +99,8 @@ function operator(M, p, op)
 
     Gamma := FuchsianGroup(QuaternionOrder(M));
     case op:
-      when "Hecke" : Tp_big := HeckeMatrix(Gamma, N, p);
-      when "AL"    : Tp_big := HeckeMatrix(Gamma, N, p : UseAtkinLehner);
+      when "Hecke" : Tp_big := HeckeMatrix2(Gamma, N, p);
+      when "AL"    : Tp_big := HeckeMatrix2(Gamma, N, p : UseAtkinLehner);
     end case;
     bm, bmi := basis_matrix(M);
     Tp := restriction(M, Tp_big);

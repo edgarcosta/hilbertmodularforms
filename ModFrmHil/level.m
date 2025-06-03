@@ -453,7 +453,7 @@ GetOrMakeP1 := function(Gamma, N);
   return P1N, P1Nrep;
 end function;
 
-intrinsic HeckeMatrix(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgMatElt
+intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgMatElt
   {Computes the matrix of the Hecke operator T_ell acting on H^1 of the 
    induced module from level N.}
 
