@@ -12,117 +12,13 @@ import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne, LeftIdealGens
 import !"Algebra/AlgQuat/enumerate.m" :
              EnumerativeSearchInternal, ReducedBasisInternal;
 import !"Geometry/GrpPSL2/GrpPSL2Shim/domain.m" : Vertices;
+import "weight_rep.m" : GetOrMakeP1, Gamma0Cosets, RightPermutationActions;
 import "hecke.m" : pseudo_inverse;
 
-declare attributes GrpPSL2 : LevelCosets, LevelRPAs, LevelCPAs, LevelH1s, ShimGroupSidepairsQuats, HeckeMatrixoo, HardHeckeMatrices, P1s;
+declare attributes GrpPSL2 : LevelCosets_new, LevelRPAs_new, LevelCPAs_new, LevelH1s, ShimGroupSidepairsQuats, HeckeMatrixoo, HardHeckeMatrices, P1s_dict;
 declare attributes AlgQuat : NarrowClassGroup, NarrowClassGroupMap;
 
 forward HeckeMatrix1;
-
-//-------------
-//
-// Compute the set of cosets.
-//
-//-------------
-
-LeftToRightCosets := function(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep);
-  rcosets := cosets;
-  cosetsinv := [c^(-1) : c in cosets];
-  for c in cosetsinv do
-    v := iota(c)[2];
-    _, v := P1Nrep(v, false, false);
-    rcosets[Index(P1N, v)] := c;
-  end for;
-  return rcosets;
-end function;
-
-Gamma0Cosets := function(Gamma, N, Z_FN, iota, P1, P1rep : LeftCosets := true);
-  if assigned Gamma`LevelCosets then
-    for c in Gamma`LevelCosets do
-      if c[1] eq N then
-        if LeftCosets then
-          return c[4];
-        else
-          return LeftToRightCosets(Gamma, N, Z_FN, iota, c[6], c[4], c[7]);
-        end if;
-      end if;
-    end for;
-  end if;
-
-  if Norm(N) eq 1 then
-    return [BaseRing(Gamma)!1];
-  end if;
-
-  vprintf ModFrmHil: "Computing cosets ..................................... ";
-  time0 := Cputime();
-  
-  O := BaseRing(Gamma);
-  B := Algebra(O);
-
-  D := Parent(Gamma`ShimFDDisc[1]);
-  mU := Gamma`ShimFDSidepairsDomain;
-  i := 1;
-  while i lt #mU do
-    if mU[i] eq mU[i+1] then
-      Remove(~mU,i);
-    end if;
-    i +:= 1;
-  end while;
-  mU := [<mU[i], i> : i in [1..#mU]];
-
-  frontier := [<O!1,[]>];
-  cosets := [<O!1,[Integers()|]> : i in [1..#P1]];
-  cosetcnt := 1;
-
-  _, v := P1rep(iota(O!1)[2], false, false);
-  ind1 := Index(P1, v);
-
-  while frontier ne [] do
-    newfrontier := [];
-    for delta in frontier do
-      for g in mU do
-        gamma := delta[1]*g[1];
-
-        v := iota(gamma)[2];
-        _, v := P1rep(v, false, false);
-        ind := Index(P1, v);
-        if ind ne ind1 and cosets[ind][1] eq 1 then
-          // Optionally, we could keep (and return) the elements in Gamma0N that
-          // we find, but as it stands now, this wastes precious time as we
-          // work with the induced module, anyway.
-          cosets[ind] := <gamma, delta[2] cat [g[2]]>;
-          Append(~newfrontier, <gamma, [g[2]] cat delta[2]>);
-          cosetcnt +:= 1;
-        end if;
-      end for;
-    end for;
-    frontier := newfrontier;
-  end while;
-
-  if #Factorization(N) gt 0 then
-    assert cosetcnt eq Norm(N)*&*[1+1/Norm(pp[1]) : pp in Factorization(N)];
-  end if;
-  for i := 1 to #P1 do
-    v := iota(cosets[i][1])[2];
-    _, v := P1rep(v, false, false);
-    assert v eq P1[i];
-  end for;
-
-  dat := <N, iota, P1, [c[1] : c in cosets], [c[2] : c in cosets]>;
-  if assigned Gamma`LevelCosets then
-    Append(~Gamma`LevelCosets, dat);
-  else
-    Gamma`LevelCosets := <dat>;
-  end if;
-
-  vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
-
-  if not LeftCosets then
-    return LeftToRightCosets(Gamma, N, Z_FN, iota, P1, dat[4], P1rep);
-  else
-    return dat[4];
-  end if;
-end function;
 
 //-------------
 //
@@ -130,52 +26,13 @@ end function;
 //
 //-------------
 
-RightPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep);
-  if assigned Gamma`LevelRPAs then
-    for c in Gamma`LevelRPAs do
-      if c[1] eq N then
-        return c[2], c[3];
-      end if;
-    end for;
-  end if;
-
-  vprintf ModFrmHil: "Computing right permutation actions .................. ";
-  time0 := Cputime();
-
-  U, m := Group(Gamma);
-  RPAs := [];
-  RPAsinv := [];
-  for i := 1 to #Generators(U) do
-    delta := Quaternion(m(U.i));
-    perm := [];
-    for alphai in cosets do
-      _, v := P1Nrep(iota(alphai*delta)[2], false, false);
-      Append(~perm, Index(P1N, v));
-    end for;
-    rpa  := PermutationSparseMatrix(Integers(),  SymmetricGroup(#cosets)!perm    );
-    rpai := PermutationSparseMatrix(Integers(), (SymmetricGroup(#cosets)!perm)^-1 );
-    Append(~RPAs, rpa);
-    Append(~RPAsinv, rpai);
-  end for;
-
-  vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
-
-  if assigned Gamma`LevelRPAs then
-    Append(~Gamma`LevelRPAs, <N, RPAs, RPAsinv>);
-  else
-    Gamma`LevelRPAs := <<N, RPAs, RPAsinv>>;
-  end if;
-
-  return RPAs, RPAsinv;
-end function;
-
 ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep);
-  if assigned Gamma`LevelCPAs then
-    for c in Gamma`LevelCPAs do
-      if c[1] eq N then
-        return c[2], c[3], c[4], c[5];
-      end if;
-    end for;
+  if not assigned Gamma`LevelCPAs_new then
+    Gamma`LevelCPAs_new := AssociativeArray();
+  end if;
+
+  if IsDefined(Gamma`LevelCPAs_new, N) then
+    return Explode(Gamma`LevelCPAs_new[N]);
   end if;
 
   Z_F := BaseRing(BaseRing(Gamma));
@@ -235,12 +92,8 @@ ConjugationPermutationActions := function(Gamma, N, Z_FN, iota, P1N, cosets, P1N
     end if;
   end for;
 
-  if assigned Gamma`LevelCPAs then
-    Append(~Gamma`LevelCPAs, <N, Q1, CPAs1, Q2, CPAs2>);
-  else
-    Gamma`LevelCPAs := <<N, Q1, CPAs1, Q2, CPAs2>>;
-  end if;
-  return Q1, CPAs1, Q2, CPAs2;  
+  Gamma`LevelCPAs_new[N] := <Q1, CPAs1, Q2, CPAs2>;
+  return Q1, CPAs1, Q2, CPAs2;
 end function;
 
 //-------------
@@ -427,30 +280,6 @@ FindGammas := function(Ol, Gamma : Bound := 100);
   end while;
 
   return foundgammas, cosets;
-end function;
-
-GetOrMakeP1 := function(Gamma, N);
-  Z_F := Order(N);
-  Z_FN := quo<Z_F | N>;
-  found := false;
-  if assigned Gamma`P1s then
-    for t in Gamma`P1s do
-      if t[1] eq N then
-        P1N := t[2];
-        P1Nrep := t[3];
-        break t;
-      end if;
-    end for;
-  end if;
-  if not found then
-    P1N, P1Nrep := ProjectiveLine(Z_FN);
-    if assigned Gamma`P1s then
-      Append(~Gamma`P1s, <N, P1N, P1Nrep>);
-    else
-      Gamma`P1s := [* <N, P1N, P1Nrep> *];
-    end if;
-  end if;
-  return P1N, P1Nrep;
 end function;
 
 intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgMatElt
