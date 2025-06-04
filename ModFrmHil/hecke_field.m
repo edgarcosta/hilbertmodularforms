@@ -1,7 +1,6 @@
 import !"Geometry/ModFrmHil/definite.m":
   _ResidueMatrixRing,
-  HMSDF,
-  weight_map_arch;
+  HMSDF;
 import !"Geometry/ModFrmHil/hackobj.m" :
   Ambient,
   BMF_with_ambient,
@@ -26,6 +25,7 @@ import !"Geometry/ModFrmHil/precompute.m" :
 
 import "hackobj.m" : HMF0;
 
+import "weight_rep.m" : weight_map_arch;
 /**************** New Attributes **********************/
 
 declare attributes ModFrmHil : minimal_hecke_field_emb,
@@ -158,7 +158,7 @@ function WeightRepresentation(M) // ModFrmHil -> Map
          vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
          M`weight_dimension := &* [x+1 : x in n];
          M2K:=MatrixRing(K, M`weight_dimension);
-         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
+         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, m, n)>;
       end if;
       return M`weight_rep, M`weight_dimension, M`weight_base_field;
    end if;

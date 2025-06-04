@@ -13,7 +13,7 @@ import !"Geometry/ModFrmHil/hackobj.m" :
   Ambient,
   HMF0,
   IsBianchi;
-import !"Geometry/ModFrmHil/definite.m" :
+import "weight_rep.m" :
   weight_map_arch;
 
 import "hecke_field.m" :
@@ -215,7 +215,8 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
       M2KtoFF := hom<MatrixRing(K, 2) -> MatrixRing(FF, 2) | KtoFF>;
       splitting_seq_FF := [s*M2KtoFF : s in splitting_seq];
       M2FF:=MatrixRing(FF, M`weight_dimension);
-      M`weight_rep:=map<H -> M2FF|q :-> weight_map_arch(q, splitting_seq_FF, FF, m, n)>;
+      M`weight_rep:=map<H -> M2FF|q :-> 
+        weight_map_arch(q, m, n : K:=FF, splittings:=splitting_seq_FF)>;
       M`weight_base_field := FF;
     end if;
     return M`weight_rep, M`weight_dimension, M`weight_base_field;

@@ -373,42 +373,6 @@ intrinsic IsArithmeticWeight(F::Fld, k::SeqEnum[RngIntElt] : CentralCharacter:="
    return true, m, n, C;
 end intrinsic;
 
-
-
-// Tensor product is associative; for efficiency always do
-// TensorProduct(small_mat, large_mat)
-
-function weight_map_arch(q, splittings, K, m, n)
-   d := #m;
-   M := MatrixRing(K,1)!1;
-   for l := d to 1 by -1 do 
-      if m[l] eq 0 and n[l] eq 0 then
-         // don't need to modify M
-         continue;
-      else
-         matq := splittings[l](q);
-         if n[l] eq 0 then
-            M *:= Determinant(matq)^m[l];
-         else
-            if n[l] eq 1 then
-               Ml := matq;
-            else  
-               Ml := SymmetricPower2(matq, n[l]);
-            end if;
-            if m[l] ne 0 then
-               Ml *:= Determinant(matq)^m[l];
-            end if;
-            if l eq d then
-               M := Ml;
-            else
-               M := TensorProduct(Ml, M);
-            end if;
-         end if;
-      end if;
-   end for;
-   return M;
-end function;
-
 // Canonical representatives of elements of the projective line $P^1(OK/level)$ 
 
 // For a vector v = (a,b) in OK^2, this determines whether v defines an element in P^1(OK/d). 

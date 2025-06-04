@@ -1,5 +1,78 @@
 declare attributes AlgQuat : Splittings;
 
+//-------------
+//
+// Computing the weight representation
+//
+//-------------
+
+function FastSymmetricPower(mat, n)
+  case n:
+    when 0:
+      return MatrixRing(BaseRing(mat), 1)!1;
+    when 1:
+      return mat;
+    else
+      return SymmetricPower2(mat, n);
+  end case;
+end function;
+
+function weight_map_arch(b, m, n : K:=0, splittings:=0)
+  // b - AlgQuatElt or AlgAssVOrdElt
+  // m - SeqEnum[FldRatElt] or SeqEnum[RngIntElt]
+  // n - SeqEnum[RngIntElt]
+  //
+  // returns a matrix corresponding to the action of b on
+  // Wk = ⊗_i (Sym^(n_i) ⊗ det^(m_i)),
+  // where b acts on the ith component via its image under
+  // the ith embedding B -> M_2(K) coming from Splittings(B).
+  //
+  // In practice, n = k - 2 and m depends on the choice of central character.
+  // m will usually be integral but in the non-paritious case it is not possible
+  // for it to be integral (but even then it will be at worst half-integral).
+  //
+  // Some of the calls to this function are for use as the coefficient module
+  // for group cohomology of an arithmetic Fuchsian group.
+  // In this setting, the reduced norm is always 1 so we can ignore the determinant terms.
+  //
+  // TODO abhijitm - the nebentypus will also get added here.
+  d := #m;
+  
+  if K cmpeq 0 and splittings cmpeq 0 then
+    splittings, K, _ := Splittings(Parent(b));
+  end if;
+
+  M := MatrixRing(K, 1)!1;
+  for l := d to 1 by -1 do
+    // this casework looks gross because this function needs to be performant.
+    if m[l] eq 0 and n[l] eq 0 then
+      // don't need to modify M
+      continue;
+    else
+      mat := splittings[l](b);
+      if n[l] eq 0 then
+        Ml := MatrixRing(K, 1)!(Determinant(mat)^m[l]);
+      elif m[l] eq 0 then
+        Ml := FastSymmetricPower(mat, n[l]);
+      else
+        // TODO abhijitm m[l] is a fraction then this probably needs to be in a
+        // bigger number field, but I'm going to ignore this issue for now.
+        Ml := Determinant(mat)^m[l] * FastSymmetricPower(mat, n[l]);
+      end if;
+      // Tensor product is associative; for efficiency always do
+      // TensorProduct(small_mat, large_mat)
+      M := TensorProduct(Ml, M);
+    end if;
+  end for;
+  return M;
+end function;
+
+//-------------
+//
+// Compute the set of cosets.
+//
+//-------------
+
 function GetOrMakeP1(Gamma, N)
   // Gamma - GrpPSL2
   // N - RngOrdIdl
@@ -18,12 +91,6 @@ function GetOrMakeP1(Gamma, N)
     return P1N, P1Nrep;
   end if;
 end function;
-
-//-------------
-//
-// Compute the set of cosets.
-//
-//-------------
 
 function LeftToRightCosets(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep)
   // Given a sequence of coset representatives for
@@ -165,6 +232,12 @@ function RightPermutationActions(Gamma, N, Z_FN, iota, P1N, cosets, P1Nrep)
   return RPAs;
 end function;
 
+//-------------
+//
+// Computing splittings of quaternion algebras
+//
+//-------------
+
 intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
   {
     input:
@@ -230,3 +303,9 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
   B`Splittings := <splitting_seq, K, weight_field>;
   return splitting_seq, K, weight_field;
 end intrinsic;
+
+intrinsic Splittings(O::AlgAssVOrd) -> SeqEnum[Map], FldNum, FldNum
+  {}
+  return Splittings(Algebra(O));
+end intrinsic;
+
