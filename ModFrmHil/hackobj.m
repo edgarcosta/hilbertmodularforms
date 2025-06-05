@@ -1075,7 +1075,13 @@ function quaternion_algebra(F, definite, disc)
   elif definite then
     A := QuaternionAlgebra(disc, InfinitePlaces(F) : Optimized);
   else
-    A := QuaternionAlgebra(disc, InfinitePlaces(F)[2..Degree(F)] : Optimized);
+    if DefiningPolyCoeffs(F) eq [1, -2, -1, 1] and IsOne(disc) then
+      // TODO abhijitm There's a smart way to do this in general, which John
+      // explained to me on Zulip. I might implement it later.
+      A := QuaternionAlgebra<F | -F.1^2 + F.1 - 1, -8*F.1^2 + 4*F.1 + 16>;
+    else
+      A := QuaternionAlgebra(disc, InfinitePlaces(F)[2..Degree(F)] : Optimized);
+    end if;
   end if;  
   return A;
 end function;
