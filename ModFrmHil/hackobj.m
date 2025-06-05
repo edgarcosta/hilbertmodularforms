@@ -1080,7 +1080,18 @@ function quaternion_algebra(F, definite, disc)
       // explained to me on Zulip. I might implement it later.
       A := QuaternionAlgebra<F | -F.1^2 + F.1 - 1, -8*F.1^2 + 4*F.1 + 16>;
     else
-      A := QuaternionAlgebra(disc, InfinitePlaces(F)[2..Degree(F)] : Optimized);
+      inf_ram_places := #Factorization(disc);
+      // if the discriminant is 1
+      if inf_ram_places eq 0 then
+        inf_ram_places := InfinitePlaces(F)[(Degree(F) - 1) .. Degree(F)];
+        A := QuaternionAlgebra(1*Integers(F), inf_ram_places : Optimized);
+      elif (inf_ram_places mod 2) eq 0 then
+        // disc has a nonzero even number of prime factors
+        A := QuaternionAlgebra(disc, [] : Optimized);
+      else
+        // disc has a nonzero odd number of prime factors
+        A := QuaternionAlgebra(disc, [InfinitePlaces(F)[Degree(F)]] : Optimized);
+      end if;
     end if;
   end if;  
   return A;
