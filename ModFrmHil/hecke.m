@@ -267,8 +267,10 @@ function checks(M, _p, op)
       if not Level(M) subset p then
         return false, "The second argument must divide the level of the space", p;
       end if;
-      return false, "Operator not implemented in this case (ideal is not coprime to the"
-                   *" discriminant of the quaternion order used to compute this space)", p;
+      if op ne "AL" then
+        return false, "Operator not implemented in this case (ideal is not coprime to the"
+                    *" discriminant of the quaternion order used to compute this space)", p;
+      end if;
     end if;
     if op ne "AL" and Seqset(Weight(M)) ne {2} then
       return false, "Operator is currently implemented only for parallel weight 2", p;
