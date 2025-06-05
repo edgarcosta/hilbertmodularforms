@@ -11,19 +11,61 @@ OPTIONAL_TESTS := false;
 // set to true if you want to print times
 PRINT_TIMES := true;
 
+import "./ModFrmHil/ideal_datum.m" : induced_module_mtrxs_of_gens;
+
+forward RightPermutationActions;
+
+
+// Gamma`LevelRPAs_new stores a dictionary keyed by level N.
+// Gamma`LevelRPAs_new[N] contains a dictionary keyed by 
+// the integers [-#gens ..., -1, 1, ..., #gens], where gens is
+// Generators(Group(Gamma)).
+//
+// At a positive integer i, the dictionary stores the permutation matrix 
+// induced by right action of the ith generator on coset representatives
+// (which should be something like Gamma(N) \ Gamma). 
+function RightPermutationActions(X)
+  // X::IdealDatum
+  Gamma := X`FuchsianGroup;
+  N := X`Ideal;
+  time0 := Cputime();
+
+  U, m := Group(Gamma);
+  RPAs := AssociativeArray();
+  for i := 1 to #Generators(U) do
+    delta := Quaternion(m(U.i));
+    perm := [];
+    for alphai in X`CosetReps do
+      _, v := X`P1Rep(X`ResidueMap(alphai*delta)[2], false, false);
+      Append(~perm, Index(X`P1Elements, v));
+    end for;
+    RPAs[i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#X`P1Elements)!perm);
+    RPAs[-i] := PermutationSparseMatrix(Integers(), SymmetricGroup(#X`P1Elements)!perm^-1);
+  end for;
+
+  vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
+  return RPAs;
+end function;
+
 // compares HeckeMatrix(Gamma, N, pp) to HeckeMatrix2(Gamma, N, pp)
 // and optionally returns the duration of HeckeMatrix2.
 
 // Note that the first iteration of HeckeMatrix in each test() may be
-// very slow if a presentation for Gamma needs to be computed. 
-procedure compare_and_time(Gamma, N, pp : UseAtkinLehner:=false)
+// very slow if a presentation for Gamma needs to be computed. Once this
+// is computed it is cached and subsequent runs can be meaningfully
+// compared.
+procedure compare_and_time(Gamma, N, pp, k : UseAtkinLehner:=false)
+  F := BaseField(QuaternionAlgebra(Gamma));
+
   t := Cputime();
-  M2 := HeckeMatrix2(Gamma, N, pp : UseAtkinLehner:=UseAtkinLehner);
+  M2 := HeckeMatrix2(Gamma, N, pp, k, 1 : UseAtkinLehner:=UseAtkinLehner);
   hm2_time := Cputime(t);
 
   M := HeckeMatrix(Gamma, N, pp : UseAtkinLehner:=UseAtkinLehner);
 
-  assert M eq M2;
+  if #SequenceToSet(k) eq 1 and k[1] eq 2 then
+    assert M eq M2;
+  end if;
 
   if PRINT_TIMES then
     print "HeckeMatrix2 time: ", hm2_time;
@@ -53,29 +95,36 @@ procedure test(F, N : B:=0)
   D := Discriminant(B);
   // the level and discriminant are assumed to be coprime
   assert IsCoprime(N, D);
-
   Gamma := FuchsianGroup(O);
 
+  X := cIdealDatum(Gamma, N);
+  // because HeckeMatrix only works in parallel weight, this is the setting
+  // in which we test
+  k := [2 : _ in [1 .. Degree(F)]];
+
+  assert [<a, b> : a->b in induced_module_mtrxs_of_gens(X, k)] eq 
+              [<a, b> : a->b in RightPermutationActions(X)];
+
   // Hecke matrix at infinity
-  compare_and_time(Gamma, N, "Infinity");
+  compare_and_time(Gamma, N, "Infinity", k);
 
   coprime_pps := [pp : pp in PrimesUpTo(MAX_PP_NORM, F) | GCD(pp, N * D) eq 1*ZF];
   level_pps := [fac[1] : fac in Factorization(N)];
   disc_pps := [fac[1] : fac in Factorization(Discriminant(B))];
 
   pp := coprime_pps[3];
-  compare_and_time(Gamma, N, pp);
+  compare_and_time(Gamma, N, pp, k);
 
   if #level_pps ne 0 then
     pp := level_pps[1];
-    compare_and_time(Gamma, N, pp);
-    compare_and_time(Gamma, N, pp : UseAtkinLehner:=true);
+    compare_and_time(Gamma, N, pp, k);
+    compare_and_time(Gamma, N, pp, k : UseAtkinLehner:=true);
     Exclude(~level_pps, pp);
   end if;
 
   if #disc_pps ne 0 then
     pp := disc_pps[1];
-    compare_and_time(Gamma, N, pp : UseAtkinLehner:=true);
+    compare_and_time(Gamma, N, pp, k : UseAtkinLehner:=true);
     Exclude(~disc_pps, pp);
   end if;
 end procedure;
@@ -117,3 +166,4 @@ if OPTIONAL_TESTS then
   ZF := Integers(F);
   test(F, 2*ZF);
 end if;
+
