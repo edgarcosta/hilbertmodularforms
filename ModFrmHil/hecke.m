@@ -2073,7 +2073,7 @@ end intrinsic;
 // Routines for arbitrary Hecke modules: splitting off 'oldspaces'
 //////////////////////////////////////////////////////////////////////////
 
-import "../ModFrm/operators.m" : field_of_fractions;
+import !"Geometry/ModFrm/operators.m" : field_of_fractions;
 
 // Given a subspace V of the underlying vector space of M, 
 // returns matrix for restriction of HeckeOperator(M, P) to V 
