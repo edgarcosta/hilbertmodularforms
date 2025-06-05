@@ -25,7 +25,7 @@ declare attributes GrpPSL2 : ideal_data;
 
 forward Gamma0Cosets;
 
-intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=0) -> IdealDatum
+intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=1) -> IdealDatum
   {
     inputs:
       O - An order of a quaternion algebra B/F
@@ -49,7 +49,7 @@ intrinsic cIdealDatum(Gamma::GrpPSL2, I::RngOrdIdl : chi:=0) -> IdealDatum
   // if chi is not given we set it to be the trivial character
   F := BaseField(Algebra(O));
   H := HeckeCharacterGroup(I, [1 .. Degree(F)]);
-  if chi cmpne 0 then
+  if chi cmpne 1 then
     assert Parent(chi) eq H;
     X`Character := chi;
   else

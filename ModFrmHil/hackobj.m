@@ -1021,7 +1021,7 @@ intrinsic Dimension(M::ModFrmHil : UseFormula:=true) -> RngIntElt
       else
         // Inclusion-exclusion (see comment in definite case)
         dim := 0;
-        use_genus := NarrowClassNumber(BaseField(M)) eq 1;
+        use_genus := (NarrowClassNumber(BaseField(M)) eq 1) and (SequenceToSet(Weight(M)) eq {2});
         if use_genus then
           vprintf ModFrmHil: "Computing dimension via genus formula ... \n";
         else
@@ -1034,14 +1034,15 @@ intrinsic Dimension(M::ModFrmHil : UseFormula:=true) -> RngIntElt
             cJ := (-2) ^ #{tup : tup in Jfact | tup[2] eq 1};
             NdivJ := Parent(J)! (eichler_level/J);
             if use_genus then
+              // TODO abhijitm I'm a bit confused since use_genus is only true when
+              // the narrow class number is 1
               dimJ := Genus(FuchsianGroup(BaseField(M), discA, NdivJ : ComputeAlgebra:=false))
                         * NarrowClassNumber(BaseField(M));
             else
               // Just compute the space--otherwise, we waste time computing the structure of the
               // intermediate groups; Shapiro's lemma is superior.
               Gamma := FuchsianGroup(OA);
-              dimJ := Nrows(HeckeMatrix(Gamma, NdivJ, "Infinity"))/2;
-              dimJ := Integers()!dimJ;
+              dimJ := Nrows(HeckeMatrix2(Gamma, NdivJ, "Infinity", Weight(M), Character(M))) div 2;
             end if;
             dim +:= cJ * dimJ;
           end if;

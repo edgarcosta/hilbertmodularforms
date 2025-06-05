@@ -119,6 +119,11 @@ end function;
 //
 //-------------
 
+// Given a word rel as a product of powers of generators and inverse generators,
+// InducedRelations produces a (#Generators(Gamma) x dim W_k) by dim W_k matrix
+// that when multiplied by the (#Generators(Gamma) x dim W_k) length row vector
+// representing a cocycle (or candidate cocycle) f, returns the dim W_k length
+// row vector representing f(rel).
 InducedRelation := function(rel, RPAs : IsTrivialCoefficientModule:=false);
   // set parameters based on an arbitrary element 
   rpa1 := RPAs[Rep(Keys(RPAs))];
@@ -315,7 +320,7 @@ FindGammas := function(Ol, Gamma : Bound := 100);
   return foundgammas, cosets;
 end function;
 
-intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgMatElt
+intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := false) -> AlgMatElt
   {Computes the matrix of the Hecke operator T_ell acting on H^1 of the 
    induced module from level N.}
 
@@ -613,7 +618,7 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
       M2ell, phiell, mFell := pMatrixRing(leftOrder, ell);
       _, iotaell := ResidueMatrixRing(leftOrder, ell);
     end if;
-    Mblock := HeckeMatrix1(O, N, ell, ind, indp, ridsbasis, iotaell : ellAL := UseAtkinLehner);
+    Mblock := HeckeMatrix1(O, N, ell, ind, indp, ridsbasis, iotaell, weight, chi : ellAL := UseAtkinLehner);
     if Mblock cmpeq [] then
       // Zero-dimensional space!
       return Matrix(Rationals(), 0, 0, []), PolynomialRing(Rationals())!0;
@@ -636,7 +641,7 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell : UseAtkinLehner := false) -> AlgM
   return M, CharacteristicPolynomial(M);
 end intrinsic;
 
-HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL := false);
+HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight, chi : ellAL := false);
   // Initialization.
   Gamma_mother := O_mother`FuchsianGroup;
   assert O_mother`RightIdealClasses[ridsbasis][4];
@@ -676,8 +681,8 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell : ellAL
   IsLevelOne := Norm(N) eq 1;
 
   // Check or precompute level structure.
-  X := cIdealDatum(Gamma, N);
-  Xp := cIdealDatum(Gammap, N);
+  X := cIdealDatum(Gamma, N : chi:=chi);
+  Xp := cIdealDatum(Gammap, N : chi:=chi);
   cosets := X`CosetReps;
   cosetsp := Xp`CosetReps;
 

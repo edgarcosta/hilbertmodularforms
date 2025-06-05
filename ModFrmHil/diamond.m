@@ -99,8 +99,14 @@ function operator(M, p, op)
 
     Gamma := FuchsianGroup(QuaternionOrder(M));
     case op:
-      when "Hecke" : Tp_big := HeckeMatrix2(Gamma, N, p);
-      when "AL"    : Tp_big := HeckeMatrix2(Gamma, N, p : UseAtkinLehner);
+      when "Hecke" : Tp_big := HeckeMatrix2(Gamma, N, p, Weight(M), DirichletCharacter(M));
+      when "AL"    : Tp_big := HeckeMatrix2(
+                                  Gamma,
+                                  N,
+                                  p,
+                                  Weight(M),
+                                  DirichletCharacter(M) : 
+                                  UseAtkinLehner);
     end case;
     bm, bmi := basis_matrix(M);
     Tp := restriction(M, Tp_big);
