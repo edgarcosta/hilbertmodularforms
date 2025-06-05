@@ -12,106 +12,13 @@ import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne, LeftIdealGens
 import !"Algebra/AlgQuat/enumerate.m" :
              EnumerativeSearchInternal, ReducedBasisInternal;
 import !"Geometry/GrpPSL2/GrpPSL2Shim/domain.m" : Vertices;
-import "weight_rep.m" : GetOrMakeP1, RightPermutationActions;
-import "hecke.m" : pseudo_inverse;
+import "weight_rep.m" : GetOrMakeP1, matrix_of_induced_action;
+import "ideal_datum.m" : induced_module_mtrxs_of_gens;
 
-declare attributes GrpPSL2 : LevelCosets_new, LevelRPAs_new, LevelCPAs_new, LevelH1s, ShimGroupSidepairsQuats, HeckeMatrixoo_new, HardHeckeMatrices_new, P1s_dict;
+declare attributes GrpPSL2 : LevelCosets_new, H1s, ShimGroupSidepairsQuats, HeckeMatrixoo_new, HardHeckeMatrices_new, P1s_dict;
 declare attributes AlgQuat : NarrowClassGroup, NarrowClassGroupMap;
 
 forward HeckeMatrix1;
-
-//-------------
-//
-// Right action functions.
-//
-//-------------
-
-ConjugationPermutationActions := function(X);
-  // X::IdealDatum
-  Gamma := X`FuchsianGroup;
-  N := X`Ideal;
-  if not assigned Gamma`LevelCPAs_new then
-    Gamma`LevelCPAs_new := AssociativeArray();
-  end if;
-
-  if IsDefined(Gamma`LevelCPAs_new, N) then
-    return Explode(Gamma`LevelCPAs_new[N]);
-  end if;
-
-  Z_F := IntegerRing(X);
-  assert Z_F eq BaseRing(BaseRing(Gamma));
-  Z_FN := X`ResidueRing;
-  // bas is a list of elements of Z_F giving a 
-  // basis for Z_F/N. 
-  // n_seq is a list of the elements of Z_F/N, given as coefficients
-  // of the basis vectors in bas.
-  bas, n_seq := residue_class_reps(N);
-  // a list of elements of Z_F representing the elements of Z_F/N
-  Rset:=[[s[m]: m in [1..#s]]: s in Set(CartesianProduct(<[0..n_seq[l]-1]: l in [1..#n_seq]>))];
-
-  // iotaalphavs[i] stores the element of P1N corresponding to cosets[i]
-  iotaalphavs := [];
-  for alphai in X`CosetReps do
-    _, v := X`P1Rep(X`ResidueMap(alphai)[2], false, false);
-    Append(~iotaalphavs, [Z_F!t : t in Eltseq(v)]);
-  end for;
-
-  qcnt := 0;
-  CPAs1bas := [];
-  // we iterate through the row vectors w * (1 q \\ 0 1)
-  // as q ranges over a basis for Z/NZ, and see what the resulting 
-  // permutation of P1N representatives is
-  for q in bas do
-    qcnt +:= 1;
-    perm := [];
-    for w in iotaalphavs do
-      _, v := X`P1Rep([w[1], w[1]*q + w[2]], false, false);
-      Append(~perm, Index(X`P1Elements, v));
-    end for;
-    perm := SymmetricGroup(#X`CosetReps)!perm;
-    Append(~CPAs1bas, perm);
-  end for;
-
-  // we iterate through the row vectors w * (1 0 \\ 0 q)
-  // as q ranges over a basis for (Z/NZ)*, and see what the resulting permutation
-  // of representatives of P1N is
-  Z_FNstar, mZ_FNstar := UnitGroup(Z_FN);
-  basmult := [Z_F!mZ_FNstar(Z_FNstar.i) : i in [1..#Generators(Z_FNstar)]];
-  qcnt := 0;
-  CPAs2bas := [];
-  for q in basmult do
-    qcnt +:= 1;
-    perm := [];
-    for w in iotaalphavs do
-      _, v := X`P1Rep([w[1], q*w[2]], false, false);
-      Append(~perm, Index(X`P1Elements, v));
-    end for;
-    perm := SymmetricGroup(#X`CosetReps)!perm;
-    Append(~CPAs2bas, perm);
-  end for;
-  
-  Q1 := [Z_FN!x : x in Rset];
-  CPAs1 := [];
-  for i := 1 to #Rset do
-    perm := &*[CPAs1bas[j]^Rset[i][j] : j in [1..#CPAs1bas]];
-    Append(~CPAs1, perm);
-  end for;
-  ChangeUniverse(~Q1, Z_FN);
-
-  Q2 := [];
-  CPAs2 := [];
-  for i := 1 to #Rset do
-    z := Z_FN!Rset[i];
-    if IsUnit(z) then
-      perm := &*[CPAs2bas[j]^zseq[j] : j in [1..#CPAs2bas]] where zseq is Eltseq(z@@mZ_FNstar);
-      Append(~CPAs2, perm);
-      Append(~Q2, z);
-    end if;
-  end for;
-
-  Gamma`LevelCPAs_new[N] := <Q1, CPAs1, Q2, CPAs2>;
-  return Q1, CPAs1, Q2, CPAs2;
-end function;
 
 //-------------
 //
@@ -124,23 +31,18 @@ end function;
 // that when multiplied by the (#Generators(Gamma) x dim W_k) length row vector
 // representing a cocycle (or candidate cocycle) f, returns the dim W_k length
 // row vector representing f(rel).
-InducedRelation := function(rel, RPAs : IsTrivialCoefficientModule:=false);
+InducedRelation := function(rel, mtrxs_of_gens : IsTrivialCoefficientModule:=false);
   // set parameters based on an arbitrary element 
-  rpa1 := RPAs[Rep(Keys(RPAs))];
+  rpa1 := mtrxs_of_gens[Rep(Keys(mtrxs_of_gens))];
   R    := BaseRing(rpa1);
   nr   := Nrows(rpa1);
 
-  // the number of keys of RPAs is equal to twice the number of generators
-  mats := [SparseMatrix(R, nr, nr) : i in [1..(#Keys(RPAs) div 2)]];
+  // the number of keys of mtrxs_of_gens is equal to twice the number of generators
+  mats := [SparseMatrix(R, nr, nr) : i in [1..(#Keys(mtrxs_of_gens) div 2)]];
   I := IdentitySparseMatrix(R, nr);
 
   // if the coefficient module is trivial then
   // we can avoid some of the computation.
-  //
-  // TODO - abhijitm we probably also shouldn't be calling
-  // InducedRelation in the first place if the coefficient module 
-  // is trivial... but this function is going to disappear soon
-  // anyways so I think it's not worth optimizing. 
   if IsTrivialCoefficientModule then
     for i := 1 to #rel do
       absi := Abs(rel[i]);
@@ -159,27 +61,28 @@ InducedRelation := function(rel, RPAs : IsTrivialCoefficientModule:=false);
         // f(x^-1) = -f(x)x^-1, 
         // so the tail we multiply by has one less element than it would 
         // in the other case.
-        mats[absi] -:= RPAs[rel[i]]*g;
-        g := RPAs[rel[i]]*g;
+        mats[absi] -:= mtrxs_of_gens[rel[i]]*g;
+        g := mtrxs_of_gens[rel[i]]*g;
       else
         mats[absi] +:= g;
-        g := RPAs[absi]*g;
+        g := mtrxs_of_gens[absi]*g;
       end if;
     end for;
   end if;
   return VerticalJoin(mats), rel;
 end function;
 
-CompleteRelationFromUnit := function(Gamma, alpha, RPAs : IsTrivialCoefficientModule:=false);
+CompleteRelationFromUnit := function(X, alpha, k : IsTrivialCoefficientModule:=false);
   // this expresses alpha in terms of the generators of Gamma
   // TODO abhijitm - this may not be a problem, but I don't think these generators
   // need to agree with the generators produced by Generators(Group(Gamma)).
   // I think these come from the side pairing.
-  reldata := ShimuraReduceUnit(Gamma!alpha);
+  reldata := ShimuraReduceUnit(X`FuchsianGroup!alpha);
   assert IsScalar(Quaternion(reldata[1]));
   rel := reldata[3];
 
-  mat, rel := InducedRelation(rel, RPAs : IsTrivialCoefficientModule:=IsTrivialCoefficientModule);
+  mat, rel := InducedRelation(rel, induced_module_mtrxs_of_gens(X, k)
+           : IsTrivialCoefficientModule:=IsTrivialCoefficientModule);
   return mat, rel;
 end function;
 
@@ -189,25 +92,30 @@ end function;
 //
 //-------------
 
-function InducedH1Internal(Gamma, N, cosets, RPAs);
-  if assigned Gamma`LevelH1s then
-    for H1 in Gamma`LevelH1s do
-      if H1[1] eq N then
-        return H1[2], H1[3];
-      end if;
-    end for;
+function InducedH1Internal(X, k);
+  Gamma := X`FuchsianGroup;
+  if not assigned Gamma`LevelH1s then
+    Gamma`H1s := AssociativeArray();
   end if;
 
-  U, m := Group(Gamma);
-  d := #Generators(U);
-  gammagens := [Quaternion(m(U.i)) : i in [1..d]];
+  if IsDefined(Gamma`H1s, <X`Ideal, k, X`Character>) then
+    return Explode(Gamma`H1s[<X`Ideal, k, X`Character>]);
+  end if;
 
+  U, _, m := Group(Gamma);
+  d := #Generators(U);
+  gammagens := [m(U.i) : i in [1..d]];
+
+  mtrxs_of_gens := induced_module_mtrxs_of_gens(X, k);
   R := HorizontalJoin(
-    [InducedRelation(Eltseq(LHS(rel)), RPAs) : rel in Relations(U)]);
+    [InducedRelation(Eltseq(LHS(rel)), mtrxs_of_gens) : rel in Relations(U)]);
   Z := Kernel(R);
 
-  I := IdentitySparseMatrix(BaseRing(RPAs[1]), Nrows(RPAs[1]));
-  coB := HorizontalJoin([RPAs[i] - I : i in [1 .. (#RPAs div 2)]]);
+  I := IdentitySparseMatrix(BaseRing(mtrxs_of_gens[1]), Nrows(mtrxs_of_gens[1]));
+  // the keys of mtrxs_of_gens are [-t, -(t-1), .., -1, 1, ..., t],
+  // and the negative keys store inverses of generators. We only want the
+  // generators themselves here.
+  coB := HorizontalJoin([mtrxs_of_gens[i] - I : i in [1 .. (#mtrxs_of_gens div 2)]]);
   coB := [Z!coB[i] : i in [1..Nrows(coB)]];
   ZcoB := sub<Z | coB>;
 
@@ -222,23 +130,18 @@ function InducedH1Internal(Gamma, N, cosets, RPAs);
                         Min(Support(ZB[i])) notin piv];
   if #Htilde gt 0 then
     mHtilde := Matrix([mH(h) : h in Htilde]);
-    assert Abs(Determinant(mHtilde)) eq 1;
+    assert Abs(Norm(Determinant(mHtilde))) eq 1;
     Htilde := mHtilde^(-1)*Matrix(Htilde);
     Htilde := [Htilde[i] : i in [1..Nrows(Htilde)]];
   end if;
 
-  if assigned Gamma`LevelH1s then
-    Append(~Gamma`LevelH1s, <N, Htilde, mH>);
-  else
-    Gamma`LevelH1s := <<N, Htilde, mH>>;
-  end if;
-
+  Gamma`H1s[<X`Ideal, k, X`Character>] := <Htilde, mH>;
   return Htilde, mH;
 end function;
 
-function InducedH1(Gamma, Gammap, N, cosets, cosetsp, RPAs, RPAsp);
-  Htilde, mH := InducedH1Internal(Gamma, N, cosets, RPAs);
-  Htildep, mHp := InducedH1Internal(Gammap, N, cosetsp, RPAsp);
+function InducedH1(X, Xp, k);
+  Htilde, mH := InducedH1Internal(X, k);
+  Htildep, mHp := InducedH1Internal(Xp, k);
 
   return Htildep, mH;
 end function;
@@ -336,17 +239,18 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := f
   if not assigned Gamma`HeckeMatrixoo_new then
     Gamma`HeckeMatrixoo_new := AssociativeArray();
   end if;
+
   if not assigned Gamma`HardHeckeMatrices_new then
     Gamma`HardHeckeMatrices_new := AssociativeArray();
   end if;
 
-  if elleqoo and IsDefined(Gamma`HeckeMatrixoo_new, N) then
+  if elleqoo and IsDefined(Gamma`HeckeMatrixoo_new, <N, weight, chi>) then
     vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
-    return Gamma`HeckeMatrixoo_new[N];
+    return Gamma`HeckeMatrixoo_new[<N, weight, chi>];
   elif (not elleqoo) and IsDefined(
-      Gamma`HardHeckeMatrices_new, <N, ell, UseAtkinLehner>) then
+      Gamma`HardHeckeMatrices_new, <N, weight, chi, ell, UseAtkinLehner>) then
     vprint ModFrmHil, 2: "Recalling saved matrix! ...... ";
-    return Gamma`HardHeckeMatrices_new[<N, ell, UseAtkinLehner>];
+    return Gamma`HardHeckeMatrices_new[<N, weight, chi, ell, UseAtkinLehner>];
   end if;
     
   require not UseAtkinLehner or Valuation(Discriminant(O)*N, ell) gt 0 :
@@ -633,9 +537,9 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := f
   end for;
 
   if elleqoo then
-    Gamma`HeckeMatrixoo_new[N] := M;
+    Gamma`HeckeMatrixoo_new[<N, weight, chi>] := M;
   elif UseAtkinLehner or (ell + Discriminant(O)/Discriminant(B)*N eq ell) then
-    Gamma`HardHeckeMatrices_new[<N, ell, UseAtkinLehner>] := M;
+    Gamma`HardHeckeMatrices_new[<N, weight, chi, ell, UseAtkinLehner>] := M;
   end if;
 
   return M, CharacteristicPolynomial(M);
@@ -681,13 +585,10 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
   IsLevelOne := Norm(N) eq 1;
 
   // Check or precompute level structure.
-  X := cIdealDatum(Gamma, N : chi:=chi);
-  Xp := cIdealDatum(Gammap, N : chi:=chi);
-  cosets := X`CosetReps;
-  cosetsp := Xp`CosetReps;
-
-  RPAs := RightPermutationActions(X);
-  RPAsp := RightPermutationActions(Xp);
+  Gamma_datum := cIdealDatum(Gamma, N : chi:=chi);
+  Gammap_datum := cIdealDatum(Gammap, N : chi:=chi);
+  cosets := Gamma_datum`CosetReps;
+  cosetsp := Gammap_datum`CosetReps;
 
   D := Parent(Gamma`ShimFDDisc[1]); 
 
@@ -710,12 +611,12 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
       if not (-1 in RealSigns(Norm(alphap))) then
         assert ind eq indp;
         alphap := ElementOfNormMinusOne(O);
-        assert alphap in O and IsUnit(IntegerRing(Xp)!Norm(alphap)) and
+        assert alphap in O and IsUnit(IntegerRing(Gammap_datum)!Norm(alphap)) and
                -1 in RealSigns(Norm(alphap));
       end if;
     end if;
 
-    alphap := eichlerize(alphap, Xp);
+    alphap := eichlerize(alphap, Gammap_datum);
 
     lambda := alphap;
     alphas := [lambda];
@@ -748,7 +649,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
 
       alphas := [];
       _, iotapNell := ResidueMatrixRing(O, N/ell^ee);
-      iotap := Xp`ResidueMap;
+      iotap := Gammap_datum`ResidueMap;
       for c := 1 to #cosetsp do
         if Valuation(iotap(cosetsp[c]*lambda)[2,1],ell) ge ee and
            Valuation(iotap(cosetsp[c]*lambda)[2,2],ell) ge ee and
@@ -782,7 +683,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
       // on the left by appropriate coset representatives of Gamma(N) \ Gamma(1)
       // in order to obtain our final alphas.
       alphas := [lambda*ellcosets[c] : c in [1..numP1]];
-      alphas := [eichlerize(alpha, Xp) : alpha in alphas];
+      alphas := [eichlerize(alpha, Gammap_datum) : alpha in alphas];
     end if;
 
     Y_U := [];
@@ -795,7 +696,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
       for k in [1..#cosets] do
         Gk := [];
         alpha := lifts[i] * cosets[k]^(-1);
-        liftsik := O!eichlerize(alpha, X);
+        liftsik := O!eichlerize(alpha, Gamma_datum);
         Y_Opi := [];
 
         for j in [1..numP1] do
@@ -807,7 +708,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
             c := Index(P1ell, v);
           end if;
           y := Op!(alphas[j]*liftsik*alphas[c]^(-1));
-          y, _ := CompleteRelationFromUnit(Gammap, y, RPAsp : IsTrivialCoefficientModule := false);
+          y, _ := CompleteRelationFromUnit(Gammap_datum, y, weight : IsTrivialCoefficientModule := false);
           Append(~Gk, y);
         end for;
 
@@ -816,7 +717,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
       Append(~Y_U, G);
     end for;
 
-    Htilde, mH := InducedH1(Gamma, Gammap, N, cosets, cosetsp, RPAs, RPAsp);
+    Htilde, mH := InducedH1(Gamma_datum, Gammap_datum, weight);
 
     if #Htilde eq 0 then
       return [];
@@ -861,7 +762,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
 
       // Ensure lambda is trivial at N.
       if not IsLevelOne then
-        alphas := [eichlerize(lambda, Xp) 
+        alphas := [eichlerize(lambda, Gammap_datum)
                 : lambda in lambdas];
       else
         alphas := lambdas;
@@ -875,7 +776,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
 
       // Ensure lambda is trivial at N.
       if not IsLevelOne then
-        alphas := [eichlerize(lambda * ellcoset, Xp) 
+        alphas := [eichlerize(lambda * ellcoset, Gammap_datum)
                : ellcoset in ellcosets];
       else
         alphas := [lambda * ellcoset : ellcoset in ellcosets];
@@ -887,19 +788,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
   vprintf ModFrmHil: "Computing conjugation actions ........................ ";
   vtime ModFrmHil:
   if not IsLevelOne then
-    Q1, CPAs1, Q2, CPAs2 := ConjugationPermutationActions(Xp);
-
-    Zp := [];
-    for j in [1..numP1] do
-      iotaj := Xp`ResidueMap(alphas[j]);
-      Z_FN := Xp`ResidueRing;
-      // print "iotaj[1,1]", iotaj;
-      xinv := (Z_FN!iotaj[1,1])^(-1);
-      // print "iotaj[2,2]*xinv", (Z_FN!iotaj[2,2])*xinv;
-      perm1 := CPAs1[Index(Q1, (Z_FN!iotaj[1,2])*xinv)];
-      perm2 := CPAs2[Index(Q2, (Z_FN!iotaj[2,2])*xinv)];
-      Append(~Zp, PermutationSparseMatrix(Integers(), perm2 * perm1));
-    end for;
+    Zp := [matrix_of_induced_action(alpha, weight, Gamma_datum) : alpha in alphas];
   end if;
 
 
@@ -947,7 +836,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
     G := [];
 
     for j in [1..numP1] do
-      y := CompleteRelationFromUnit(Gammap, Y_Op[i][j], RPAsp : IsTrivialCoefficientModule := IsLevelOne);
+      y := CompleteRelationFromUnit(Gammap_datum, Y_Op[i][j], weight : IsTrivialCoefficientModule := IsLevelOne);
       if not IsLevelOne then
         y := y*Zp[X[i][j]];
       end if;
@@ -959,7 +848,7 @@ HeckeMatrix1 := function(O_mother, N, ell, ind, indp, ridsbasis, iotaell, weight
 
   vprintf ModFrmHil: "Computing H1 (coinduced) ............................. ";
   vtime ModFrmHil:
-  Htilde, mH := InducedH1(Gamma, Gammap, N, cosets, cosetsp, RPAs, RPAsp);
+  Htilde, mH := InducedH1(Gamma_datum, Gammap_datum, weight);
   
   if #Htilde eq 0 then
     return [];

@@ -352,8 +352,6 @@ If false, also returns a string explaining why}
   else // INDEFINITE
     if #inf_ram ne Degree(F) - 1 then
       return false, "\nInvalid QuaternionOrder given (it is unramifed at more than one infinite place)";
-    elif Weight(M) ne [2 : i in [1..Degree(F)]] then
-      return false, "\nInvalid QuaternionOrder given (indefinite orders can only be used for spaces of weight 2)";
     elif Norm(_Discriminant(A) + Level(M)/_Discriminant(A)) ne 1 then
       return false, "\nInvalid QuaternionOrder given (when the order is indefinite, "*
                     "the discriminant of the quaternion algebra must exactly divide the level)";
@@ -1088,7 +1086,7 @@ end function;
 // or 
 //   false, message
 
-function qa_discriminant(F, N, Nnew, k)
+function qa_discriminant(F, N, Nnew, k, chi)
   n := Degree(F);
   if IsEven(n) then  
     return true, true, 1*Integers(F);
@@ -1097,9 +1095,9 @@ function qa_discriminant(F, N, Nnew, k)
     // check facts are sorted
     norms := [Norm(t[1]) : t in facts]; 
     assert norms eq Sort(norms);
-    if exists(P){t[1] : t in facts | t[2] eq 1} then
+    if exists(P){t[1] : t in facts | t[2] eq 1} and (chi cmpeq 1 or IsTrivial(chi)) then
       return true, true, P;
-    elif n gt 1 and Seqset(k) eq {2} then
+    elif n gt 1 then
       return true, false, 1*Integers(F);
     end if;
   end if;
@@ -1133,7 +1131,7 @@ intrinsic QuaternionOrder(M::ModFrmHil) -> AlgAssVOrd
   Nnew := NewLevel(M);
   assert IsIntegral(N/Nnew) and Norm(Nnew + N/Nnew) eq 1;
 
-  bool, definite, disc := qa_discriminant(F, N, Nnew, Weight(M));
+  bool, definite, disc := qa_discriminant(F, N, Nnew, Weight(M), DirichletCharacter(M));
   if not bool then
     require false : definite; // 'definite' is an error message
   end if;

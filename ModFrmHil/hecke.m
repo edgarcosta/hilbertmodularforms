@@ -81,13 +81,13 @@ function basis_of_plus_subspace(M)
   if T cmpeq [] then 
     T := Matrix(Integers(), 0, 0, []); 
   end if;
-  T := ChangeRing(T, Integers());
   plus_basis := KernelMatrix(T-1);
-  plus_basis := ChangeRing(plus_basis, Rationals()); 
   minus_basis := KernelMatrix(T+1);
-  minus_basis := ChangeRing(minus_basis, Rationals()); 
   assert Nrows(plus_basis) + Nrows(minus_basis) eq Nrows(T);
 
+  plus_basis := ChangeRing(plus_basis, FieldOfFractions(BaseRing(plus_basis)));
+  minus_basis := ChangeRing(minus_basis, FieldOfFractions(BaseRing(minus_basis)));
+  
   return plus_basis, minus_basis;
 end function;
 
