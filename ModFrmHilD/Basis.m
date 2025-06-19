@@ -76,7 +76,11 @@ intrinsic CuspFormBasis(
       Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad) cat OldCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad);
     end if;
     // The contents of Mk`CuspFormBasis should be a basis for the space of cuspforms
-    require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
+    // There's no independent way of checking the dimension when we use the indefinite method,
+    // so in that case we shouldn't bother checking the dimension.
+    if IsDefinite(HilbertCuspForms(Mk)) then
+      require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
+    end if;
   end if;
   return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
 end intrinsic;
