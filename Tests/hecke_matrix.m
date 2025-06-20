@@ -145,6 +145,7 @@ test(F, pps[1]^2 * pps[2]);
 B := QuaternionAlgebra(2 * Factorization(13*ZF)[1][1], [InfinitePlaces(F)[i] : i in [2 .. Degree(F)]]);
 test(F, Factorization(7*ZF)[1][1] : B:=B);
 
+
 if OPTIONAL_TESTS then
   // h+(F) = 3, D = 1
   F := NumberField(x^3-x^2-9*x+8);
@@ -167,3 +168,32 @@ if OPTIONAL_TESTS then
   test(F, 2*ZF);
 end if;
 
+// tests for new functionality
+
+F := NumberField(x^3-x^2-2*x+1);
+ZF := Integers(F);
+B := QuaternionAlgebra<F | -F.1^2 + F.1 - 1, -8*F.1^2 + 4*F.1 + 16>;
+O := MaximalOrder(B);
+D := Discriminant(B);
+Gamma := FuchsianGroup(O);
+
+// test for nontrivial nebentypus 
+
+N := 3*ZF;
+chi := HeckeCharacterGroup(N, [1,2,3]).1;
+k := [3,3,3];
+pp := 2*ZF;
+
+T2chi := HeckeMatrix2(Gamma, N, pp, k, chi);
+assert R!CharacteristicPolynomial(T2chi) eq (x^6 + 490*x^4 + 60025*x^2);
+
+// test for nonparallel weight
+
+N := 2*ZF;
+k := [4,4,4];
+pp := Factorization(7*ZF)[1][1];
+T7 := HeckeMatrix2(Gamma, N, pp, k, 1);
+assert R!CharacteristicPolynomial(T7) eq (x^8 - 16*x^7 - 2624*x^6 + 34048*x^5 + 2584064*x^4 - 23883776*x^3 - 1140801536*x^2 + 5507317760*x + 192756121600);
+
+// TODO abhijitm add examples for nontrivial class number,
+// nonparitious weight, and more!
