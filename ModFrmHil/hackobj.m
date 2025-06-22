@@ -1078,7 +1078,13 @@ function quaternion_algebra(F, definite, disc)
     if DefiningPolyCoeffs(F) eq [1, -2, -1, 1] and IsOne(disc) then
       // TODO abhijitm There's a smart way to do this in general, which John
       // explained to me on Zulip. I might implement it later.
-      A := QuaternionAlgebra<F | -F.1^2 + F.1 - 1, -8*F.1^2 + 4*F.1 + 16>;
+      //
+      // TODO abhijitm this is actively dangerous now that I've started adding
+      // nonparitious logic, because it's important there that the ramified places
+      // be the ones where we take square roots (since things are forced to be positive
+      // there). As such, this hardcoding *only works* if k0 (or something congruent to k0)
+      // is at the last place.
+      A := QuaternionAlgebra<F | -3, -12*F.1>;
     else
       inf_ram_places := #Factorization(disc);
       // if the discriminant is 1
