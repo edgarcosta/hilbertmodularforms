@@ -501,7 +501,7 @@ if Chi cmpeq 1 then
   end if;
 end if;
 
-  bool, _, _, C := IsArithmeticWeight(F, k); assert bool; // already checked
+  _, _, _, C := IsArithmeticWeight(F, k);
 
   M := HMF0(F, N, 1*Integers(F), Chi, k, C);
 
@@ -638,9 +638,12 @@ intrinsic HilbertCuspForms(F::FldNum, N::RngOrdIdl, chi::GrpHeckeElt,
          "The base field F must be totally real";
   require #k eq Degree(F) :
          "The weight k should be a sequence of d integers, where d is the degree of the field";
-  // TODO : Do we still want to leave this?
-  require IsArithmeticWeight(F, k) :
-         "The weight should be a sequence of integers that are all at least 2, and all of the same parity";
+  // TODO abhijitm this condition can be removed with a little bit of work
+  if not IsArithmeticWeight(F, k) then
+    require Max(k) eq k[#k] : "We may remove this restriction later,\
+      but for now we expect the largest element of k to appear in\
+      the last entry.";
+  end if;
   require IsCompatibleWeight(chi, k) :
          "The weight should be compatible with the character.";
 

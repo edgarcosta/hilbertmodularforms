@@ -25,7 +25,7 @@ import !"Geometry/ModFrmHil/precompute.m" :
 
 import "hackobj.m" : HMF0;
 
-import "weight_rep.m" : weight_map_arch;
+import "weight_rep.m" : weight_map_arch, is_paritious;
 
 forward WeightRepresentation;
 
@@ -143,8 +143,7 @@ function WeightRepresentation(M) // ModFrmHil -> Map
       H:=Algebra(QuaternionOrder(M)); 
       F:=BaseField(H); 
       k:=M`Weight;
-      bool, m, n, C := IsArithmeticWeight(F,k);  
-      assert bool;
+      _, m, n, C := IsArithmeticWeight(F,k);  
       assert C eq M`CentralCharacter;
 
       if Seqset(k) eq {2} then // parallel weight 2
@@ -164,7 +163,11 @@ function WeightRepresentation(M) // ModFrmHil -> Map
          vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
          M`weight_dimension := &* [x+1 : x in n];
          M2K:=MatrixRing(K, M`weight_dimension);
-         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, n : m:=m)>;
+         if is_paritious(Weight(M)) then
+            M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, n : m:=m)>;
+         else
+            M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, n : m:=[0 : _ in [1 .. #Weight(M)]])>;
+         end if;
       end if;
       return M`weight_rep, M`weight_dimension, M`weight_base_field;
    end if;

@@ -351,13 +351,7 @@ intrinsic IsArithmeticWeight(F::Fld, k::SeqEnum[RngIntElt] : CentralCharacter:="
           "The first argument should be Q or an absolute extension of Q";
    require Degree(F) eq #k: 
           "The number of components of k must equal the degree of the base field";
-   if not forall{m: m in k| IsEven(m) and (m ge 2)} and
-      not forall{m: m in k| IsOdd(m) and (m ge 2)} 
-   then
-     return false, _, _; 
-   end if;
-
-   if Type(CentralCharacter) eq RngIntElt then
+  if Type(CentralCharacter) eq RngIntElt then
      C := CentralCharacter;
      kmax := Max(k);
      require C ge kmax - 2 and IsEven(C - kmax) : 
@@ -367,6 +361,13 @@ intrinsic IsArithmeticWeight(F::Fld, k::SeqEnum[RngIntElt] : CentralCharacter:="
    end if;
 
    n := [k[i] - 2 : i in [1..#k]];
+
+   if not forall{m: m in k| IsEven(m) and (m ge 2)} and
+      not forall{m: m in k| IsOdd(m) and (m ge 2)}
+   then
+     // TODO abhijitm this is terrible practice
+     return false, _, n, C;
+   end if;
    m := [Integers()| (C - n[i])/2 : i in [1..#k]];
 
 //printf "Arithmetic weight: m = %o, n = %o, C = %o\n", m, n, C;
