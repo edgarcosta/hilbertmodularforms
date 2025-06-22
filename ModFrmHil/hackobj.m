@@ -653,34 +653,16 @@ end intrinsic;
 intrinsic HilbertCuspForms(F::FldNum, N::RngOrdIdl, chi::GrpHeckeElt,
 			   k::RngIntElt : QuaternionOrder:=0) -> ModFrmHil
 {"} // "
-  require NumberField(Order(N)) eq F :
-         "The level N must be an ideal in the base field";
-  require IsAbsoluteField(F) :
-         "The base field F must be an absolute extension of Q";
-  require IsTotallyReal(F) :
-         "The base field F must be totally real";
-  require IsCompatibleWeight(chi, k) :
-         "The weight should be compatible with the character.";
-
   k := [k : i in [1..Degree(F)]];
-  return HMF(F, N, k : Chi := chi, QuaternionOrder:=QuaternionOrder);
+  return HilbertCuspForms(F, N, chi, k : QuaternionOrder:=QuaternionOrder);
 end intrinsic;
 
 intrinsic HilbertCuspForms(F::FldNum, N::RngOrdIdl, chi::GrpHeckeElt
 			   : QuaternionOrder:=0)
        -> ModFrmHil
 {"} // "
-  require NumberField(Order(N)) eq F :
-         "The level N must be an ideal in the base field";
-  require IsAbsoluteField(F) :
-         "The base field F must be an absolute extension of Q";
-  require IsTotallyReal(F) :
-         "The base field F must be totally real";
-  require IsCompatibleWeight(chi, 2) :
-         "The weight should be compatible with the character.";
-
   k := [2 : i in [1..Degree(F)]];
-  return HMF(F, N, k : Chi := chi, QuaternionOrder:=QuaternionOrder );
+  return HilbertCuspForms(F, N, chi, k : QuaternionOrder:=QuaternionOrder);
 end intrinsic;
 
 intrinsic HilbertCuspForms(F::FldRat, N::RngInt, chi::GrpHeckeElt,
