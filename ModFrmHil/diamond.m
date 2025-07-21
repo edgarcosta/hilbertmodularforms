@@ -18,15 +18,6 @@ import !"Geometry/ModFrmHil/hecke.m" :
 import "hackobj.m" : HMF0;
 import "hecke_field.m" : hecke_matrix_field, WeightRepresentation;
 
-/**************** New intrinsics **********************/
-
-intrinsic '*'(a::RngOrdIdl, I::AlgAssVOrdIdl) -> AlgAssVOrdIdl
-{Given an ideal a of R, and an ideal I of O, an order over R, Returns the ideal a*I.}
-  return &+[g * I : g in Generators(a)];
-end intrinsic;
-
-/********************************************************/
-
 forward DiamondOperatorDefiniteBig;
 
 // from hecke.m
@@ -234,7 +225,12 @@ function DiamondOperatorDefiniteBig(M, J)
 	    "Working on O(1)-right ideal class representative no. %o.\n", rid_idx;
 	t0 := Cputime();
 	for j in [1..h] do
-	    is_isom, alpha := IsIsomorphic(I, J*ideal_classes[j]);
+	    // Magma 2.28-26 there is a bug in IsIsomorphic, and
+	    // this does not work.
+	    // We thus replace J*I by the following.
+	    // is_isom, alpha := IsIsomorphic(I, J*ideal_classes[j]);
+	    JIj := &+[g*ideal_classes[j] : g in Generators(J)];
+	    is_isom, alpha := IsIsomorphic(I, JIj);
 	    if is_isom then
 		Append(~perm_inv, j);
 		Append(~alphas, alpha);
