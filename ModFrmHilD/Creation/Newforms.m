@@ -1,10 +1,13 @@
 import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
 import !"Geometry/ModFrmHil/hecke.m" : hecke_algebra;
+import "CuspFormFromEigs.m" : coeff_from_ext_mult_fourier;
 
 // Caching magma computations
 intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
   {return the NewformDecomposition in magma type}
- require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
+  if IsEven(Degree(BaseField(Mk))) then 
+    require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
+  end if;
   if not assigned Mk`MagmaNewformDecomposition then
     N := Level(Mk);
     k := Weight(Mk);
@@ -81,6 +84,11 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   k := Weight(S);
 
   divisors := Divisors(N/NS);
+  if not IsParitious(k) then
+    // the nonparitious code currently only works for N = NS
+    assert #divisors eq 1;
+  end if;
+
   if N eq NS then
     primes := PrimeIdeals(M);
     ideals := Ideals(M);
@@ -95,7 +103,13 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   end if;
 
   if GaloisDescent then
-    fn := func<pp|Matrix(HeckeOperator(S, pp))>;
+    fn := function(pp)
+      M, pis := HeckeOperator(S, pp);
+      // TODO abhijitm this is where we assume
+      // that the narrow class number of F is 1
+      return Matrix(M), pis[1];
+    end function;
+
     // Tzeta is the matrix of a generator for the Hecke algebra
     // (it has a generator because the Hecke algebra is isomorphic
     // to a number field). 
@@ -120,13 +134,23 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
 
   vprintf HilbertModularForms: "Computing eigenvalues for %o...\n", S;
   coeffs := AssociativeArray();
+  // stores a pi for each pp
+  mfh_reps := AssociativeArray();
   vtime HilbertModularForms:
   for pp in primes do
-    coeffs[pp] :=  fn(pp);
+    if IsParitious(Weight(Mk)) then
+      coeffs[pp] :=  fn(pp);
+    else
+      coeffs[pp], mfh_reps[pp] := fn(pp);
+    end if;
   end for;
   ZF := Integers(Mk);
 
-  ExtendMultiplicatively(~coeffs, N, k, chiH, primes, ideals : factorization:=func<n|Factorization(M, n)>);
+  if IsParitious(Weight(Mk)) then
+    ExtendMultiplicatively(~coeffs, N, k, chiH, primes, ideals : factorization:=func<n|Factorization(M, n)>);
+  else 
+    ExtendMultiplicativelyFourier(~coeffs, ~mfh_reps, Mk, primes, ideals);
+  end if;
 
   Tzeta_powers := [Tzeta^i : i in [0..Nrows(Tzeta) - 1]];
 
@@ -171,13 +195,24 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
           // whose entries are the nnth Fourier coefficient of f_1, ..., f_n. 
           // By linearity, the trace of this product is the nnth Fourier coefficient
           // of T^i(f_1 + ... + f_n) as desired. 
-          a_nn := Trace(Tzeta_powers[i]*v);
+          //
+          // The exact same logic applies in the non-paritious case, except here the traces of the 
+          // matrices are the a_nu and not the a_nn.
           if nn eq 0*ZF then
             // apparently the norm of the zero ideal is not defined
             // so we treat this case separately
             CoeffsArray[i][bb][nu] := R!0;
-          else
+          end if;
+
+          if IsParitious(Weight(Mk)) then
+            a_nn := Trace(Tzeta_powers[i]*v);
             CoeffsArray[i][bb][nu] := R!(bool select IdlCoeffToEltCoeff(a_nn, nu, k, R) else 0);
+          else
+            // TODO abhijitm this is only tested in the case of N = NS, dd = ddinv = 1,
+            // so I think in this setting bool is always true
+            a_nup := Trace(Tzeta_powers[i]*v);
+            a_nu := coeff_from_ext_mult_fourier(Mk, a_nup, mfh_reps[nn], nn);
+            CoeffsArray[i][bb][nu] := R!(bool select a_nu else 0);
           end if;
         end for;
       end for;

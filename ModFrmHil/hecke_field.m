@@ -1,7 +1,6 @@
 import !"Geometry/ModFrmHil/definite.m":
   _ResidueMatrixRing,
-  HMSDF,
-  weight_map_arch;
+  HMSDF;
 import !"Geometry/ModFrmHil/hackobj.m" :
   Ambient,
   BMF_with_ambient,
@@ -24,7 +23,14 @@ import !"Geometry/ModFrmHil/hecke.m" :
 import !"Geometry/ModFrmHil/precompute.m" :
   get_rids;
 
+import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne;
+
 import "hackobj.m" : HMF0;
+
+import "weight_rep.m" : weight_map_arch, is_paritious;
+import "hecke.m" : get_image_of_eps_nonparit;
+
+forward WeightRepresentation;
 
 /**************** New Attributes **********************/
 
@@ -35,19 +41,45 @@ declare attributes ModFrmHil : minimal_hecke_field_emb,
 
 // originally from hecke.m
 
-function hecke_matrix_field(M : hack := true)
+function hecke_matrix_field(M)
   if assigned M`hecke_matrix_field then
     return M`hecke_matrix_field;
-  elif IsBianchi(M) or not IsDefinite(M) then
+  elif IsBianchi(M) then
     return Rationals();
   else
-      if hack then
-	  // hack begins
-	  return TopAmbient(M)`weight_base_field;
-	  // hack ends
-      else
-	  return Ambient(M)`weight_base_field;
+    if not assigned TopAmbient(M)`weight_base_field then
+      _ := WeightRepresentation(TopAmbient(M));
+    end if;
+    if is_paritious(Weight(M)) then
+	    return TopAmbient(M)`weight_base_field;
+    else
+      // if the weight is nonparitious, the Hecke matrices on the entire
+      // H1 will be over the weight base field but the + and - subspaces
+      // will be defined over a quadratic extension
+      O := QuaternionOrder(M);
+      F := BaseField(M);
+      mu := ElementOfNormMinusOne(O);
+      eps := Norm(mu);
+      auts := AutsOfKReppingEmbeddingsOfF(F, F);
+      k := Weight(M);
+      k0 := Max(Weight(M));
+      z := get_image_of_eps_nonparit(M);
+
+      // There are several assumptions being made here
+      // - the quaternion algebra is split at exactly one infinite prime
+      // - at this prime, the weight is k0
+      // We check for these assumptions when constructing the space,
+      // but it's worth keeping in mind nonetheless.
+      K := TopAmbient(M)`weight_base_field;
+      R<x> := PolynomialRing(F);
+      poly := x^2 - z;
+      if IsIrreducible(poly) then
+        // TODO abhijitm I'm a little bit worried about returning a 
+        // relative extension here instead of an absolute one...
+        K := ext<K | x^2 - z>;
       end if;
+      return K;
+    end if;
   end if;
 end function;
 
@@ -55,24 +87,18 @@ end function;
 // M`hecke_matrix_field is not always assigned; when it is not,
 // HeckeOperator returns matrices over the weight_base_field.
 
-function minimal_hecke_matrix_field(M : hack := true)
+function minimal_hecke_matrix_field(M)
   bool, minimal := HasAttribute(M, "hecke_matrix_field_is_minimal");
   if bool and minimal then
     H := M`hecke_matrix_field;
-    if hack then
-	M`minimal_hecke_field_emb := IdentityHomomorphism(H);
-    end if;
+	  M`minimal_hecke_field_emb := IdentityHomomorphism(H);
   elif assigned M`Ambient then
     H := minimal_hecke_matrix_field(M`Ambient);
-    if hack then
-	M`minimal_hecke_field_emb := M`Ambient`minimal_hecke_field_emb;
-    end if;
+	  M`minimal_hecke_field_emb := M`Ambient`minimal_hecke_field_emb;
   elif IsParallelWeight(M) then
      H := Rationals();
-     if hack then
-	 K := hecke_matrix_field(M);
-	 M`minimal_hecke_field_emb := hom<H->K|>;
-     end if;
+	   K := hecke_matrix_field(M);
+	   M`minimal_hecke_field_emb := hom<H->K|>;
   else
     vprintf ModFrmHil: "Figuring out the \'Hecke matrix field\' ... "; 
     time0 := Cputime();
@@ -138,7 +164,7 @@ function DegeneracyMapDomain(M, d)
    return DM;
 end function;
 
-function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
+function WeightRepresentation(M) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the 
 //  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
 //  map H^* -> GL(2, K)^g -> GL(V_k) is contructed, where g is the degree of F and V_k the weight space.
@@ -149,8 +175,7 @@ function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
       H:=Algebra(QuaternionOrder(M)); 
       F:=BaseField(H); 
       k:=M`Weight;
-      bool, m, n, C := IsArithmeticWeight(F,k);  
-      assert bool;
+      _, m, n, C := IsArithmeticWeight(F,k);  
       assert C eq M`CentralCharacter;
 
       if Seqset(k) eq {2} then // parallel weight 2
@@ -159,62 +184,22 @@ function WeightRepresentation(M : hack := true) // ModFrmHil -> Map
          M`weight_rep := map< H -> Mat1 | q :-> I >;
          M`weight_base_field := Rationals();
          M`weight_dimension := 1; 
-	 if hack then
-	     QQ := Rationals();
-	     M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
-	 end if;
+         QQ := Rationals();
+         M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
       else
-         // define weight_base_field = extension K/F containing Galois closure of F and 
-         // containing a root of every conjugate of the minimal polynomial of H.1
-         if assigned F`SplittingField then
-           K,rts:=Explode(F`SplittingField);
-         else
-           K,rts:=SplittingField(F : Abs:=true, Opt:=false);
-           F`SplittingField:=<K, rts>;
-         end if;
-         embeddings_F_to_K:=[hom<F->K | r> : r in rts];
-         H1coeffs:=Coefficients(MinimalPolynomial(H.1));
-         alphas:=[K| ];
-         for FtoK in embeddings_F_to_K do
-             hh:=PolynomialRing(K)! [c@FtoK : c in H1coeffs];
-             if IsIrreducible(hh) then
-                K:=ext<K|hh>;
-                alphas:=ChangeUniverse(alphas,K) cat [K.1];
-            else
-                Append(~alphas, Roots(hh)[1][1]);
-            end if;
-         end for;
-         // make weight_base_field an (optimized) absolute field, for efficiency in later calculations 
-         weight_field := K; // names appears in verbose output
-         K := AbsoluteField(K);
-         K := OptimizedRepresentation(K);
-         embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
-	 if hack then
-	     Fspl := F`SplittingField[1];
-	     M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
-	 end if;
+         splitting_seq, K, weight_field := Splittings(H);
+         Fspl := F`SplittingField[1];
+         M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
          M`weight_base_field:=K;
          vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
          vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
-
-         assert H.1*H.2 eq H.3; // this is assumed in the defn of the splitting homomorphism below
-         splitting_seq:=[];
-         for i:=1 to Degree(F) do
-            h:=embeddings_F_to_K[i];
-            // need a splitting homomorphism (H tensor K) -> Mat_2(K) whose restriction to K is h 
-            alpha:=alphas[i];
-            b:= K! h(F!(H.2^2));
-            iK:=Matrix(K, 2, [alpha, 0, 0, -alpha]); 
-            jK:=Matrix(K, 2, [0, 1, b, 0]); 
-            kK:=iK*jK;
-            assert K! h(H.3^2) eq (kK^2)[1,1]; 
-            Append(~splitting_seq, 
-                   map< H -> MatrixRing(K,2)|
-                        q:-> h(s[1])+h(s[2])*iK+h(s[3])*jK+h(s[4])*kK where s:=Eltseq(q) >);
-         end for;
          M`weight_dimension := &* [x+1 : x in n];
          M2K:=MatrixRing(K, M`weight_dimension);
-         M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
+         if is_paritious(Weight(M)) then
+            M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, n : m:=m)>;
+         else
+            M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, n : m:=[0 : _ in [1 .. #Weight(M)]])>;
+         end if;
       end if;
       return M`weight_rep, M`weight_dimension, M`weight_base_field;
    end if;

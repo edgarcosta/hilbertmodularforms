@@ -1,15 +1,24 @@
 intrinsic HeckeStableSubspace(
     V::SeqEnum,
-    pp::RngOrdIdl
+    pp::RngOrdIdl :
+    use_fourier:=false
     ) -> SeqEnum
     {
     Given a sequence of forms V and an ideal pp, compute a basis of the subspace of span(V) that is stable under the Hecke operator T_pp.
     }
+    if not use_fourier then
+      hecke_operator := func<f | HeckeOperator(f, pp)>;
+    else
+      b, pi := IsNarrowlyPrincipal(pp);
+      F := NumberField(Order(pp));
+      assert b; // the nonparitious code assumes that h+(F) = 1
+      hecke_operator := func<f | HeckeOperatorFourier(f, F!pi)>;
+    end if;
 
     // compute the kernel of Tp
     // we include the kernel in our final output
     // because it is also Hecke stable
-    TpV := [HeckeOperator(f, pp) : f in V];
+    TpV := [hecke_operator(f) : f in V];
     lindep := LinearDependence(TpV);
     Tp_kernel := [Normalize(&+[vec[i]*V[i] : i in [1 .. #V]]) : vec in lindep];
 
@@ -21,7 +30,7 @@ intrinsic HeckeStableSubspace(
 
     for _ in [1 .. #V] do
         vprintf HilbertModularForms:  "Current dim = %o\n", dimprev;
-        TpVprev := [HeckeOperator(g, pp) : g in Vprev];
+        TpVprev := [hecke_operator(g) : g in Vprev];
         Vnew := Intersection(Vprev, Basis(TpVprev));
         dimnew := #Vnew;
 
@@ -78,14 +87,8 @@ intrinsic HeckeStabilityCuspBasis(
     k := Weight(Mk);
     N := Level(Mk);
     chi := Character(Mk);
-    chi_prim := AssociatedPrimitiveCharacter(chi);
 
-    // This comes from the fact that we don't currently support
-    // computation of cusp spaces with nebentypus of nontrivial
-    // Dirichlet restriction. If and when this changes,
-    // this line should be removed and the code modified.
-    require IsGamma1EisensteinWeight(chi, 1) : "Hecke stability does not work for characters which are not totally odd";
-
+   
     F := BaseField(M);
     ZF := Integers(M);
     n := Degree(F);
@@ -93,7 +96,43 @@ intrinsic HeckeStabilityCuspBasis(
     par_wt_k := func<k | [k : _ in [1 .. n]]>;
     eis_k := (Conductor(chi) ne 1*ZF) select 1 else 3;
     eis_wt := par_wt_k(eis_k);
-    MEis := HMFSpace(M, N, eis_wt, chi^-1);
+
+    H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
+    if IsParitious(k) then
+      // This comes from the fact that we don't currently support
+      // computation of cusp spaces with nebentypus of nontrivial
+      // Dirichlet restriction. If and when this changes,
+      // this line should be removed and the code modified.
+      //
+      // TODO abhijitm
+      require IsGamma1EisensteinWeight(chi, 1) : "Hecke stability does not work for characters which are not totally odd";
+
+      chi_eis := chi^-1;
+      chi_eis_prim := AssociatedPrimitiveCharacter(chi)^-1;
+      // Mkl is the upstairs space
+      chi_Mkl := H.0;
+    else
+      // In this case, the upstairs space will also have nontrivial
+      // nebentypus, so we search for a nebentypus which works 
+      H := HeckeCharacterGroup(N, [1 .. Degree(F)]);
+      flag := false;
+      for psi in Elements(H) do
+        // TODO abhijitm I'm confused about IsGamma1EisensteinWeight, is it doing
+        // anything that IsCompatibleWeight isn't?
+        if IsCompatibleWeight(psi, eis_wt) and IsGamma1EisensteinWeight(psi, 1) then
+          chi_eis := psi;
+          flag := true;
+          break;
+        end if;
+      end for;
+      require flag : "No Eisenstein series seems to work?";
+      // TODO abhijitm this might be problematic, I'm a bit confused about the
+      // primitivization step still
+      chi_eis_prim := AssociatedPrimitiveCharacter(chi_eis^-1);
+      chi_Mkl := chi * chi_eis;
+    end if;
+
+    MEis := HMFSpace(M, N, eis_wt, chi_eis);
 
     triv_char := HeckeCharacterGroup(1*ZF, [1 .. n]).0;
 
@@ -101,7 +140,7 @@ intrinsic HeckeStabilityCuspBasis(
     // this Eisenstein series should be nonzero at the cusp at infinity in
     // every component. Thus, we should be able to divide by it
     // and obtain something with nebentypus character chi.
-    myarray, _ := EisensteinConstantCoefficient(M, eis_wt, chi_prim^-1, triv_char);
+    myarray, _ := EisensteinConstantCoefficient(M, eis_wt, chi_eis_prim, triv_char);
     require &*[myarray[key] : key in Keys(myarray)] ne 0 : "The Eisenstein series you've chosen is 0 at some cusps at infinity";
 
     // TODO abhijitm there's something annoying going on here
@@ -112,11 +151,11 @@ intrinsic HeckeStabilityCuspBasis(
     // functional for now.
     //
     // We take the primitive character
-    Eis := EisensteinSeries(MEis, chi_prim^-1, triv_char);
+    Eis := EisensteinSeries(MEis, chi_eis_prim, triv_char);
 
     //Load space of Cusp forms of weight [k1 + eis_k, ..., kn + eis_k], level N, and trivial character
     vprintf HilbertModularForms: "Computing basis of cusp forms of weight %o, level %o\n", [k[i] + eis_k : i in [1 .. n]], N;
-    Mkl := HMFSpace(M, N, [k[i] + eis_k : i in [1 .. n]]);
+    Mkl := HMFSpace(M, N, [k[i] + eis_k : i in [1 .. n]], chi_Mkl);
     Bkl := CuspFormBasis(Mkl : SaveAndLoad:=SaveAndLoad);
     
     vprintf HilbertModularForms: "Size of basis is %o.\n", #Bkl;
@@ -149,7 +188,11 @@ intrinsic HeckeStabilityCuspBasis(
 
     vprintf HilbertModularForms: "Computing Hecke stable subspace for prime %o\n of norm %o.\n", pp, Norm(pp);
 
-    V := HeckeStableSubspace(V, ZF!!pp);
+    if IsParitious(k) then
+      V := HeckeStableSubspace(V, ZF!!pp);
+    else
+      V := HeckeStableSubspace(V, ZF!!pp : use_fourier:=true);
+    end if;
 
     if #V eq 0 or stable_only then
         return V;

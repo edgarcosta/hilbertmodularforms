@@ -10,9 +10,11 @@ freeze;
 
 *****************************************************************************/
 
+import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne;
+
 import "hackobj.m" : Ambient,
                      TopAmbient,
-                     // HMF0, // removed for the hack
+                     HMF0,
                      IsBianchi,
                      BMF_with_ambient,
                      set_quaternion_order;
@@ -23,12 +25,10 @@ import "definite.m" : BasisMatrixDefinite,
                       AtkinLehnerDefiniteBig,
                       DegeneracyDown1DefiniteBig,
                       DegeneracyDownpDefiniteBig;
-// hack begins
-import "../diamond.m" : operator;
-import "../hackobj.m" : HMF0;
-import "../hecke_field.m" : hecke_matrix_field,
-                            minimal_hecke_matrix_field;
-// hack ends
+import "diamond.m" : operator;
+import "hecke_field.m" : hecke_matrix_field,
+                         minimal_hecke_matrix_field;
+import "weight_rep.m" : is_paritious;
 
 debug := false;
 
@@ -68,65 +68,29 @@ function make_ideal(x)
   end case;
 end function;
 
-// Returns the field currently used as the BaseRing of each HeckeOperator.
-// M`hecke_matrix_field is not always assigned; when it is not,
-// HeckeOperator returns matrices over the weight_base_field.
-
-/* hack: replaced via import
-function hecke_matrix_field(M)
-  if assigned M`hecke_matrix_field then
-    return M`hecke_matrix_field;
-  elif IsBianchi(M) or not IsDefinite(M) then
-    return Rationals();
-  else
-    return Ambient(M)`weight_base_field;
-  end if;
-end function;
-*/
-
-// The natural field over which Hecke operators can be expressed.
-/* hack: replaced via import
-function minimal_hecke_matrix_field(M)
-  bool, minimal := HasAttribute(M, "hecke_matrix_field_is_minimal");
-  if bool and minimal then
-    H := M`hecke_matrix_field;
-  elif assigned M`Ambient then
-    H := minimal_hecke_matrix_field(M`Ambient);
-  elif IsParallelWeight(M) then
-    H := Rationals();
-  else
-    vprintf ModFrmHil: "Figuring out the \'Hecke matrix field\' ... "; 
-    time0 := Cputime();
-
-    // The field where they currently live was created as an ext of Kgal.
-    // The hecke_matrix_field is the subfield of Kgal corresponding to
-    // the subgroup of the Galois group that fixes Weight(M).
-    K := BaseField(M);
-    assert assigned K`SplittingField; // WeightRepresentation should set it 
-    Kgal, rts := Explode(K`SplittingField);
-    assert IsAbsoluteField(Kgal);
-    Aut, _, Autmap := AutomorphismGroup(Kgal);
-    // figure out the Galois group as a permutation group acting on rts
-    Sym := SymmetricGroup(AbsoluteDegree(K));
-    gens := [Aut.i@Autmap : i in [1..Ngens(Aut)]];
-    images := [Sym| [Index(rts, r@a) : r in rts] : a in gens];
-    G := sub< Sym | images >;
-    Aut_to_G := hom< Aut -> G | images >;
-    act := func< w,g | [w[i] : i in Eltseq(g^-1)] >;
-    Gw := sub< G | [g : g in G | act(w,g) eq w] > where w is Weight(M);
-    Gw_in_Aut := sub< Aut | [h@@Aut_to_G : h in Generators(Gw)] >;
-    H := FixedField(Kgal, Gw_in_Aut);  
-
-    vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
-  end if;
-  return H;
-end function;
-*/
-
 function basis_is_honest(M)
   return assigned M`basis_is_honest and M`basis_is_honest
          or assigned M`basis_matrix and not assigned M`Ambient;
          // (an ambient is automatically honest)
+end function;
+
+// Returns the value of a determinant twist on the chosen 
+// "ElementOfNormMinusOne" (which represents complex conjugation).
+// This is used only when computing nonparitious spaces.
+// In these case we don't include the determinant twist in the 
+// weight representation itself, and this function lets us compute
+// its value.
+
+// TODO abhijitm not a great function name
+function get_image_of_eps_nonparit(M)
+  O := QuaternionOrder(M);
+  F := BaseField(M);
+
+  eps := Norm(ElementOfNormMinusOne(O));
+  auts := AutsOfKReppingEmbeddingsOfF(F, F);
+  k := Weight(M);
+  k0 := Max(Weight(M));
+  return &*[auts[i](eps)^(k0 - k[i]) : i in [1 .. #auts]];
 end function;
 
 // For Fuchsian group Gamma, return a basis matrix for the plus subspace 
@@ -135,17 +99,32 @@ end function;
 function basis_of_plus_subspace(M) 
   Gamma := FuchsianGroup(QuaternionOrder(M));
   N := Level(M) / make_ideal(Discriminant(QuaternionOrder(M)));
-  T := HeckeMatrix(Gamma, N, "Infinity");
+  T := HeckeMatrix2(Gamma, N, "Infinity", Weight(M), DirichletCharacter(M));
   if T cmpeq [] then 
     T := Matrix(Integers(), 0, 0, []); 
   end if;
-  T := ChangeRing(T, Integers());
-  plus_basis := KernelMatrix(T-1);
-  plus_basis := ChangeRing(plus_basis, Rationals()); 
-  minus_basis := KernelMatrix(T+1);
-  minus_basis := ChangeRing(minus_basis, Rationals()); 
-  assert Nrows(plus_basis) + Nrows(minus_basis) eq Nrows(T);
+  if is_paritious(Weight(M)) then
+    plus_basis := KernelMatrix(T-1);
+    minus_basis := KernelMatrix(T+1);
+  else
+    // TODO abhijitm I don't think it matters which one is + and which is -,
+    // since the other Hecke operators should act the same on both?
+    T := ChangeRing(T, hecke_matrix_field(M));
+    assert #Eigenvalues(T) eq 2;
+    eig := Rep(Eigenvalues(T))[1];
+    F := BaseField(M);
 
+    z := get_image_of_eps_nonparit(M);
+    assert F!(eig^2) eq z^-1;
+    plus_basis := KernelMatrix(T - eig);
+    minus_basis := KernelMatrix(T + eig);
+  end if;
+  assert Nrows(plus_basis) + Nrows(minus_basis) eq Nrows(T);
+  assert Nrows(plus_basis) eq Nrows(minus_basis);
+
+  plus_basis := ChangeRing(plus_basis, FieldOfFractions(BaseRing(plus_basis)));
+  minus_basis := ChangeRing(minus_basis, FieldOfFractions(BaseRing(minus_basis)));
+  
   return plus_basis, minus_basis;
 end function;
 
@@ -234,9 +213,12 @@ function basis_matrix(M)
             V := Kernel(Transpose(BasisMatrix(C)*IP));
         else
             for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
-                new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
-                V meet:= new;
-                C +:= old;
+                // An oldspace from pp only makes sense if the nebentypus is also "old" at pp
+                if IsOne(GCD(pp[1], Conductor(DirichletCharacter(M)))) then
+                    new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
+                  V meet:= new;
+                  C +:= old;
+                end if;
             end for;
         end if;
         R := BaseRing(MA`basis_matrix);
@@ -325,8 +307,10 @@ function checks(M, _p, op)
       if not Level(M) subset p then
         return false, "The second argument must divide the level of the space", p;
       end if;
-      return false, "Operator not implemented in this case (ideal is not coprime to the"
-                   *" discriminant of the quaternion order used to compute this space)", p;
+      if op ne "AL" then
+        return false, "Operator not implemented in this case (ideal is not coprime to the"
+                    *" discriminant of the quaternion order used to compute this space)", p;
+      end if;
     end if;
     if op ne "AL" and Seqset(Weight(M)) ne {2} then
       return false, "Operator is currently implemented only for parallel weight 2", p;
@@ -336,114 +320,6 @@ function checks(M, _p, op)
   return true, _, p;
 end function;
 
-/*  hack: replaced via import
-function operator(M, p, op)
-  assert op in {"Hecke", "AL", "DegDown1", "DegDownp"};
-
-  // Check if cached on M
-  cached, Tp := IsDefined(eval "M`"*op, p);
-  if cached then 
-    return Tp;
-  end if;
-
-  if Dimension(M : UseFormula:=false) eq 0 then // gets cached dimension or computes the space
-
-    Tp := ZeroMatrix(Integers(), 0, 0); 
-
-  elif assigned M`basis_matrix_wrt_ambient then 
-
-    // (TO DO: is this always better than getting it directly from the big operator?)
-    bm := M`basis_matrix_wrt_ambient;
-    bmi := M`basis_matrix_wrt_ambient_inv;
-    Tp_amb := operator(M`Ambient, p, op);
-    Tp_amb := ChangeRing(Tp_amb, BaseRing(bm));
-    Tp := bm * Tp_amb * bmi;
-
-    if debug and basis_is_honest(M) and Norm(p + Level(M)) eq 1 then 
-      // check Tp really preserves M as a subspace of M`Ambient
-      assert Rowspace(bm * Tp_amb) subset Rowspace(bm); 
-    end if;
-
-  elif IsBianchi(M) then
-
-    // Always compute and store operator on ambient
-
-    bool, MA := HasAttribute(M, "Ambient");
-
-    if not bool then
-      return HeckeMatrixBianchi(M, p);
-    end if;
-
-    assert not assigned MA`Ambient;
-
-    Tp := HeckeMatrixBianchi(MA, p);
-
-    bm := M`basis_matrix_wrt_ambient;
-    bmi := M`basis_matrix_wrt_ambient_inv;
-    return bm * Tp * bmi;
-
-  elif IsDefinite(M) then 
-
-    MA := TopAmbient(M);
-    case op:
-      when "Hecke"   : Tp_big := HeckeOperatorDefiniteBig(MA, p);
-      when "AL"      : Tp_big := AtkinLehnerDefiniteBig(MA, p);
-      when "DegDown1": Tp_big := DegeneracyDown1DefiniteBig(MA, p);
-      when "DegDownp": Tp_big := DegeneracyDownpDefiniteBig(MA, p);
-    end case;
-    Tp := restriction(M, Tp_big);
-
-  else // indefinite quat order
-
-    disc := make_ideal(Discriminant(QuaternionOrder(M)));
-    MA := TopAmbient(M);
-    assert disc eq make_ideal(NewLevel(MA));
-    N := Level(M)/disc;
-
-    Gamma := FuchsianGroup(QuaternionOrder(M));
-    case op:
-      when "Hecke" : Tp_big := HeckeMatrix(Gamma, N, p);
-      when "AL"    : Tp_big := HeckeMatrix(Gamma, N, p : UseAtkinLehner);
-    end case;
-    bm, bmi := basis_matrix(M);
-    Tp := restriction(M, Tp_big);
-
-  end if;
-
-  if assigned M`hecke_matrix_field then
-    bool, Tp := CanChangeRing(Tp, M`hecke_matrix_field);
-    error if not bool, 
-         "The hecke_matrix_field seems to be wrong!\n" * please_report;
-  end if;
-
-  if debug then
-    // check commutativity
-    bad := Level(M) / NewLevel(M);
-    new := Minimum(bad) eq 1;
-    for l in Keys(M`Hecke) do 
-      if new or Minimum(l + bad) eq 1 then
-        Tl := M`Hecke[l];
-        assert Tl*Tp eq Tp*Tl; 
-      end if;
-    end for; 
-  end if;
-
-  // Cache
-  // (for definite ambient, big matrix is cached instead)
-// TO DO: hecke_algebra etc checks cache directly
-//if not (IsDefinite(M) and not assigned M`Ambient) then
-    case op:
-      when "Hecke"    : M`Hecke[p]    := Tp;
-      when "AL"       : M`AL[p]       := Tp;
-      when "DegDown1" : M`DegDown1[p] := Tp;
-      when "DegDownp" : M`DegDownp[p] := Tp;
-    end case; 
-//end if;
-
-  return Tp;
-end function;
-*/
-
 intrinsic HeckeOperator(M::ModFrmHil, p::Any) -> Mtrx
 {The Hecke operator T_p on the space M of Hilbert modular forms 
  (where p is a prime ideal of the base field of M)}
@@ -451,7 +327,8 @@ intrinsic HeckeOperator(M::ModFrmHil, p::Any) -> Mtrx
   bool, err, p := checks(M, p, "Hecke");
   require bool : err;
  
-  return operator(M, p, "Hecke");
+  matrix, reps := operator(M, p, "Hecke");
+  return matrix, reps;
 end intrinsic;
 
 intrinsic AtkinLehnerOperator(M::ModFrmHil, q::Any) -> Mtrx
@@ -1079,9 +956,9 @@ intrinsic SetRationalBasis(M::ModFrmHil)
     // coerce cached Hecke if necessary
     H := M`hecke_matrix_field;
     for P in Keys(M`Hecke) do 
-      TP := M`Hecke[P];
+      TP, p_reps := Explode(M`Hecke[P]);
       if BaseRing(TP) cmpne H then
-        M`Hecke[P] := ChangeRing(TP, H);
+        M`Hecke[P] := <ChangeRing(TP, H), p_reps>;
       end if;
     end for;
     for P in Keys(M`HeckeCharPoly) do 
@@ -1116,8 +993,8 @@ intrinsic SetRationalBasis(M::ModFrmHil)
 
   // Conjugate stored Hecke operators into the new basis
   for P in Keys(M`Hecke) do
-    TP := M`Hecke[P];
-    M`Hecke[P] := cob * TP * cob_inv;
+    TP, p_reps := Explode(M`Hecke[P]);
+    M`Hecke[P] := <cob * TP * cob_inv, p_reps>;
   end for;
 
   if not M`hecke_matrix_field_is_minimal then
@@ -1126,8 +1003,8 @@ intrinsic SetRationalBasis(M::ModFrmHil)
     M`hecke_matrix_field_is_minimal := true;
     // Coerce stored Hecke matrices to the smaller field
     for P in Keys(M`Hecke) do
-      TP := M`Hecke[P];
-      M`Hecke[P] := ChangeRing(TP, H);
+      TP, p_reps := Explode(M`Hecke[P]);
+      M`Hecke[P] := <ChangeRing(TP, H), p_reps>;
     end for;
     for P in Keys(M`HeckeCharPoly) do
       fP := M`HeckeCharPoly[P];
@@ -2237,7 +2114,7 @@ end intrinsic;
 // Routines for arbitrary Hecke modules: splitting off 'oldspaces'
 //////////////////////////////////////////////////////////////////////////
 
-import "../ModFrm/operators.m" : field_of_fractions;
+import !"Geometry/ModFrm/operators.m" : field_of_fractions;
 
 // Given a subspace V of the underlying vector space of M, 
 // returns matrix for restriction of HeckeOperator(M, P) to V 
@@ -2369,19 +2246,32 @@ function space_with_level(M, N, Nnew)
   if ISA(Type(M), ModFrmHil) then 
     F := BaseField(M);
     k := Weight(M);
+    chi := DirichletCharacter(M);
+    _, m_inf := Modulus(chi);
+    c_f := Conductor(chi);
+    // If the conductor of chi doesn't divide N then this space cannot be constructed
+    assert N subset c_f;
 
-      M1 := HilbertCuspForms(F, N, k);
-      if not assigned M1`QuaternionOrder and assigned M`QuaternionOrder 
-         and IsSuitableQuaternionOrder(M`QuaternionOrder, M1) 
-      then
-        set_quaternion_order(M1, M`QuaternionOrder);
-      end if;
-      MN := NewSubspace(M1, Nnew);
-      if assigned M`QuaternionOrder and not assigned MN`QuaternionOrder 
-         and IsSuitableQuaternionOrder(M`QuaternionOrder, MN) 
-      then
-        set_quaternion_order(MN, M`QuaternionOrder);
-      end if;
+    // The character of the level N space should have finite modulus N.
+    // I think the infinite modulus shouldn't change
+    if Type(chi) eq GrpHeckeElt then
+      chi_res := Restrict(chi, N, m_inf);
+    else
+      chi_res := 1;
+    end if;
+
+    M1 := HilbertCuspForms(F, N, chi_res, k);
+    if not assigned M1`QuaternionOrder and assigned M`QuaternionOrder
+       and IsSuitableQuaternionOrder(M`QuaternionOrder, M1)
+    then
+      set_quaternion_order(M1, M`QuaternionOrder);
+    end if;
+    MN := NewSubspace(M1, Nnew);
+    if assigned M`QuaternionOrder and not assigned MN`QuaternionOrder
+       and IsSuitableQuaternionOrder(M`QuaternionOrder, MN)
+    then
+      set_quaternion_order(MN, M`QuaternionOrder);
+    end if;
 
     return MN;
   end if;

@@ -13,8 +13,9 @@ import !"Geometry/ModFrmHil/hackobj.m" :
   Ambient,
   HMF0,
   IsBianchi;
-import !"Geometry/ModFrmHil/definite.m" :
-  weight_map_arch;
+import "weight_rep.m" :
+  weight_map_arch,
+  is_paritious;
 
 import "hecke_field.m" :
   hecke_matrix_field,
@@ -117,13 +118,9 @@ end intrinsic;
 /************** end of new intrinsic ****************/
 
 // originally from hecke.m
-function reduction_mod_random_large_split_prime(T, F : hack:=true)
-  if hack then
-    // hack begins
-    if IsFinite(F) then
-        return T, Characteristic(F);
-    end if;
-  // hack ends
+function reduction_mod_random_large_split_prime(T, F)
+  if IsFinite(F) then
+      return T, Characteristic(F);
   end if;
   repeat
     P := random_large_split_prime(F);
@@ -133,7 +130,7 @@ function reduction_mod_random_large_split_prime(T, F : hack:=true)
 end function;
 
 // originally from definite.m
-function WeightRepresentationFiniteField(M, p : hack:=true) // ModFrmHil -> Map
+function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
 //  Given a space of Hilbert modular forms over a totally real number field F. This determines if the
 //  weight k is an arithmetic. If so, an extension of F which is Galois over Q and splits H is found. Then,
 //  map H^* -> GL(2, K)^g -> GL(V_k) is contructed, where g is the degree of F and V_k the weight space.
@@ -154,10 +151,8 @@ function WeightRepresentationFiniteField(M, p : hack:=true) // ModFrmHil -> Map
       M`weight_rep := map< H -> Mat1 | q :-> I >;
       M`weight_base_field := Rationals();
       M`weight_dimension := 1;
-      if hack then
-        QQ := Rationals();
-        M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
-      end if;
+      QQ := Rationals();
+      M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
     else
       // define weight_base_field = extension K/F containing Galois closure of F and
       // containing a root of every conjugate of the minimal polynomial of H.1
@@ -184,10 +179,8 @@ function WeightRepresentationFiniteField(M, p : hack:=true) // ModFrmHil -> Map
       K := AbsoluteField(K);
       K := OptimizedRepresentation(K);
       embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
-      if hack then
-        Fspl := F`SplittingField[1];
-        M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
-      end if;
+      Fspl := F`SplittingField[1];
+      M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
       M`weight_base_field:=K;
       vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
       vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
@@ -210,27 +203,23 @@ function WeightRepresentationFiniteField(M, p : hack:=true) // ModFrmHil -> Map
       M`weight_dimension := &* [x+1 : x in n];
       M2K:=MatrixRing(K, M`weight_dimension);
 
-      if hack then
-        // hack begins
-        if Type(p) eq RngIntElt then
-          pp := PrimeIdealsOverPrime(K, p)[1];
-        else
-          bool, iso := IsIsomorphic(NumberField(Order(p)), K);
-          assert bool;
-          pp := ideal<Integers(K) | [iso(K!g) : g in Generators(p)]>;
-        end if;
-        FF, OKtoFF := ResidueClassField(pp);
-        KtoFF := map<K->FF | x :-> OKtoFF(x*d)/FF!d where d:= Denominator(x)>;
-        splitting_seq_FF := [];
-        M2KtoFF := hom<MatrixRing(K, 2) -> MatrixRing(FF, 2) | KtoFF>;
-        splitting_seq_FF := [s*M2KtoFF : s in splitting_seq];
-        M2FF:=MatrixRing(FF, M`weight_dimension);
-        M`weight_rep:=map<H -> M2FF|q :-> weight_map_arch(q, splitting_seq_FF, FF, m, n)>;
-        M`weight_base_field := FF;
-        // hack ends
+      if Type(p) eq RngIntElt then
+        pp := PrimeIdealsOverPrime(K, p)[1];
       else
-        M`weight_rep:=map<H -> M2K|q :-> weight_map_arch(q, splitting_seq, K, m, n)>;
+        bool, iso := IsIsomorphic(NumberField(Order(p)), K);
+        assert bool;
+        pp := ideal<Integers(K) | [iso(K!g) : g in Generators(p)]>;
       end if;
+
+      FF, OKtoFF := ResidueClassField(pp);
+      KtoFF := map<K->FF | x :-> OKtoFF(x*d)/FF!d where d:= Denominator(x)>;
+      splitting_seq_FF := [];
+      M2KtoFF := hom<MatrixRing(K, 2) -> MatrixRing(FF, 2) | KtoFF>;
+      splitting_seq_FF := [s*M2KtoFF : s in splitting_seq];
+      M2FF:=MatrixRing(FF, M`weight_dimension);
+      M`weight_rep:=map<H -> M2FF|q :-> 
+        weight_map_arch(q, n : m:=m, K:=FF, splittings:=splitting_seq_FF)>;
+      M`weight_base_field := FF;
     end if;
     return M`weight_rep, M`weight_dimension, M`weight_base_field;
   end if;
@@ -239,7 +228,7 @@ end function;
 
 
 
-intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0, hack:=true) -> List
+intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0) -> List
 { Given a new space M of Hilbert modular forms, this decomposes M into subspaces
 that are irreducible as Hecke modules, and returns this list of new spaces }
 
@@ -294,34 +283,26 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
     K := hecke_matrix_field(M); // Hecke matrices should be over this, currently
 
     T, primes, v, _, P, t, comb := Explode(hecke_algebra(M : generator));
-    assert BaseRing(t) eq K;
+    if is_paritious(Weight(M)) then
+      assert BaseRing(t) eq K;
+    else
+      assert IsSubfield(BaseRing(t), K);
+      t := ChangeRing(t, K);
+      v := ChangeRing(v, K);
+    end if;
 
     vprintf ModFrmHil: "Characteristic polynomial of Hecke algebra generator: ";
     vtime ModFrmHil:
-    if hack then
-      // hack starts, by adding "or IsFinite(K)"
-      if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K) then
-        // hack ends
-        chi := CharacteristicPolynomial(t);
-      else
-        // parallel weight ==> poly is over Z
-        apbound := &+ [Abs(comb[i])*HeckeEigenvalueBound(M,primes[i]) : i in [1..#primes] | comb[i] ne 0];
-        bound := dim*apbound^dim;
-        chi := CharacteristicPolynomialViaCRT(t, bound);
-      end if;
+    if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K) then
+      chi := CharacteristicPolynomial(t);
     else
-      if K cmpeq Rationals() or not IsParallelWeight(M) then
-        chi := CharacteristicPolynomial(t);
-      else
-        // parallel weight ==> poly is over Z
-        apbound := &+ [Abs(comb[i])*HeckeEigenvalueBound(M,primes[i])
-           : i in [1..#primes] | comb[i] ne 0];
-        bound := dim*apbound^dim;
-        chi := CharacteristicPolynomialViaCRT(t, bound);
-      end if;
+      // parallel weight ==> poly is over Z
+      apbound := &+ [Abs(comb[i])*HeckeEigenvalueBound(M,primes[i]) : i in [1..#primes] | comb[i] ne 0];
+      bound := dim*apbound^dim;
+      chi := CharacteristicPolynomialViaCRT(t, bound);
     end if;
-
-    if (not hack) or not IsFinite(K) then
+    
+    if not IsFinite(K) then
       // decomposition should be over the true hecke field (= Q for parallel weight)
       chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
     end if;
@@ -547,7 +528,7 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
   return ND;
 end intrinsic;
 
-intrinsic Eigenform(M::ModFrmHil : hack:=true) -> ModFrmHilElt
+intrinsic Eigenform(M::ModFrmHil) -> ModFrmHilElt
 {An eigenform in the space M of Hilbert modular forms
  (which must be an irreducible module under the Hecke action)}
 
@@ -571,17 +552,14 @@ if METHOD lt 3 then
 
     // Old way: determine the Hecke algebra of this newform space
 
-    if hack then
-      SetRationalBasis(M);
-    end if;
+    SetRationalBasis(M);
     T, _, _, _, _, t := Explode(hecke_algebra(M : generator));
 
     vprintf ModFrmHil: "CharacteristicPolynomial: ";
     vtime ModFrmHil:
     chi := CharacteristicPolynomial(t);
     K := BaseRing(t);
-    hack and:= IsFinite(K); // the goal of the hack is to enable computations over finite fields
-    if (not hack) then
+    if (not IsFinite(K)) then
       Kmin := minimal_hecke_matrix_field(M);
       t_K := t;
       t := ChangeRing(t_K, Kmin);
@@ -598,10 +576,8 @@ if METHOD lt 3 then
       E := BaseRing(chi);
       e := t[1][1];
     else
-      if hack then
-        // begin hack
+      if IsFinite(K) then
         E := ext<BaseRing(chi)|chi>; e:=E.1;
-        // end hack
       else
         E := NumberField(chi); e:=E.1;
       end if;
@@ -609,14 +585,12 @@ if METHOD lt 3 then
     nf`BaseField := E;
 
     K := BaseRing(t);
-    if hack then
-      //begin hack
+    if IsFinite(K) then
       if K eq E then
         EK := K;
       else
         EK := ext<E| DefiningPolynomial(K)>;
       end if;
-      // end hack
     else
        EK := CompositeFields(K, E)[1];
      end if;
