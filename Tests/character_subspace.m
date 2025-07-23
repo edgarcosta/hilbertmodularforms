@@ -821,6 +821,9 @@ Append(~ks, [[4,4]]); // forcing non-trivial weight
 Append(~ds, 321); // Q(sqrt321) is the a field with class group which is of order 3. This is important to distinguish between an action and its inverse.
 Append(~ns, [1]);
 Append(~ks, [[4,4]]);
+Append(~ds, 273); // bug in J*I in Magma
+Append(~ns, [1]);
+Append(~ks, [[2,2]]);
 
 printf "Checking dimensions at ";
 for i->d in ds do
