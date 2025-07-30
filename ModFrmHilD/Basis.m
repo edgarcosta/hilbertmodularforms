@@ -326,7 +326,7 @@ intrinsic OldEisensteinBasis(
     // D = N because we want oldforms.
     divisors := [D : D in Divisors(N) | (D ne N) and (D subset Conductor(chi))];
     for D in divisors do
-      chi_D := Restrict(chi, D, [1,2]);
+      chi_D := Restrict(chi, D, [1..Degree(BaseField(Mk))]);
       Mk_D := HMFSpace(M, D, k, chi_D);
       Mk`OldEisensteinBasis cat:= &cat[Inclusion(f, Mk) : f in NewEisensteinBasis(Mk_D : IdealClassesSupport := IdealClassesSupport, Symmetric := Symmetric)];
     end for;
