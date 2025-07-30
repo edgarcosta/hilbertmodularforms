@@ -509,7 +509,6 @@ precision instead.}
             b, coeff := IsDefined(coeff_array, nu);
             require b: "Coefficient not found for index: ", nu;
             Append(~exps, exp);
-            print coeff, Parent(coeff), CoefficientRing;
             Append(~coeffs, StrongCoerce(CoefficientRing, coeff));
         end for;
     end for;
