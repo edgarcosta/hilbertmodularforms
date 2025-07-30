@@ -1039,7 +1039,6 @@ intrinsic HeckeTraceForm(Mk::ModFrmHilD) -> ModFrmHilDElt
     coeffs[bb] := AssociativeArray();
     for nu->nn in ShintaniRepsIdeal(M)[bb] do
       if not IsZero(nn) then
-        print Norm(nn), Trace( HeckeOp(Mk,nn) );
         coeffs[bb][nu] := Q ! Trace( HeckeOp(Mk,nn) );
       else
         coeffs[bb][nu] := 0;
