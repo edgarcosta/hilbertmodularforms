@@ -450,7 +450,7 @@ intrinsic EisensteinDimension(Mk::ModFrmHilD) -> RngIntElt
     old_eisenstein_dim := 0;
     divisors := [D : D in Divisors(N) | (D ne N) and (D subset Conductor(chi))];
     for D in divisors do
-      chi_D := Restrict(chi, D, [1,2]);
+      chi_D := Restrict(chi, D, [1..Degree(BaseField(Mk))]);
       Mk_D := HMFSpace(M, D, k, chi_D);
       old_eisenstein_dim +:= #Divisors(N/D) * NewEisensteinDimension(Mk_D);
     end for;
