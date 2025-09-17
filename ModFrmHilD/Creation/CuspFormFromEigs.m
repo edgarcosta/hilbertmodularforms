@@ -59,9 +59,7 @@ end intrinsic;
 intrinsic ExtendMultiplicativelyFourier(
     ~coeffs::Assoc,
     ~mfh_reps::Assoc,
-    Mk::ModFrmHilD,
-    prime_ideals::SeqEnum,
-    ideals::SeqEnum[RngOrdIdl]
+    Mk::ModFrmHilD
     )
   {}
   F := BaseField(Mk);
@@ -69,6 +67,8 @@ intrinsic ExtendMultiplicativelyFourier(
   N := Level(Mk);
   k := Weight(Mk);
   chi := Character(Mk);
+  prime_ideals := PrimeIdeals(Parent(Mk));
+  ideals := Ideals(Parent(Mk));
 
   coeffs[0*ZF] := 0;
   coeffs[1*ZF] := 1;

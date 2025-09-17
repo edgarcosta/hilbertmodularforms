@@ -37,7 +37,7 @@ procedure test(Mk, bb)
     mfh_reps[pp] := pi_new;
   end for;
 
-  ExtendMultiplicativelyFourier(~coeffs, ~mfh_reps, Mk, primes, M`Ideals);
+  ExtendMultiplicativelyFourier(~coeffs, ~mfh_reps, Mk);
 
   coeffs_by_nu := AssociativeArray();
   coeffs_by_nu[bb] := AssociativeArray();
