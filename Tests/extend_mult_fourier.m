@@ -37,6 +37,7 @@ procedure test(Mk, bb)
     mfh_reps[pp] := pi_new;
   end for;
 
+
   ExtendMultiplicativelyFourier(~coeffs, ~mfh_reps, Mk);
 
   coeffs_by_nu := AssociativeArray();
@@ -52,9 +53,12 @@ procedure test(Mk, bb)
   end for;
 
   g := HMF(Mk, coeffs_by_nu);
+  h := CuspEigenformFromCoeffsAtPrimes(Mk, coeffs : from_a_pp:=false, mfh_reps:=mfh_reps);
+
   // they will not necessarily be the same because of the aforementioned normalization
   // choice resulting from our choice of d. 
   assert #LinearDependence([f, g]) eq 1;
+  assert #LinearDependence([f, h]) eq 1;
 end procedure;
 
 /******  F = Q(sqrt(5)) ******/

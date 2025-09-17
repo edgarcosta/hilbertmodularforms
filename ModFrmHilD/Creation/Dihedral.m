@@ -297,7 +297,7 @@ intrinsic ThetaSeries(Mk::ModFrmHilD, psi::HMFGrossenchar) -> ModFrmHilDElt
       a_pps[pp] := 0;
     end if;
   end for;
-  return CuspFormFromEigenvalues(Mk, a_pps);
+  return CuspEigenformFromCoeffsAtPrimes(Mk, a_pps);
 end intrinsic;
 
 intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
