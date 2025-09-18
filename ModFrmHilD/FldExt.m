@@ -11,7 +11,9 @@ declare attributes FldAlg:
   Restrictions,
   MatrixRingHoms,
   UnitCharFieldsByWeight,
-  MinDistBtwnRoots
+  MinDistBtwnRoots,
+  CMAutomorphism,
+  TotallyRealSubfield
   ;
 
 
@@ -909,4 +911,42 @@ intrinsic IsGalois(F::FldAlg) -> BoolElt
   else
     return #GaloisGroup(F) eq Degree(F);
   end if;
+end intrinsic;
+
+intrinsic IsCM(K::FldAlg) -> BoolElt, Map, FldAlg
+  {
+    If K is CM, returns true, tau, where tau is complex conjugation in K
+    Otherwise, returns false
+  }
+  if assigned K`CMAutomorphism then
+    return true, K`CMAutomorphism, K`TotallyRealSubfield;
+  end if;
+  if not IsTotallyComplex(K) then
+    return false, _, _;
+  end if;
+
+  auts := Automorphisms(K);
+  if Degree(K) eq 2 then
+    // we already checked that it's totally complex
+    K`CMAutomorphism := auts[2];
+    K`TotallyRealSubfield := Rationals();
+    return true, K`CMAutomorphism, K`TotallyRealSubfield;
+  end if;
+
+  nontriv_auts := auts[2 .. #auts];
+  for tup in Subfields(K, Integers()!(Degree(K) / 2)) do
+    F := tup[1];
+    if IsTotallyReal(F) then
+      for aut in nontriv_auts do
+        if aut(K!F.1) eq K!F.1 then
+          K`CMAutomorphism := aut;
+          K`TotallyRealSubfield := F;
+          return true, aut, F;
+        end if;
+      end for;
+      require 0 eq 1 : "Couldn't find an automorphism fixing an index 2
+        totally real subfield of K, so something's gone wrong!";
+    end if;
+  end for;
+  return false, _, _;
 end intrinsic;
