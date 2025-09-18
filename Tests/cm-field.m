@@ -4,10 +4,22 @@ procedure test(K, b_actual)
     assert 0 eq 1; 
   end if;
 
-  if b and (not IsIsomorphic(FixedField(K, [tau]), F)) then
-    // something's wrong with the automorphism or 
-    // the totally real subfield
-    assert 0 eq 1;
+  if b then
+    if (not IsIsomorphic(FixedField(K, [tau]), F)) then
+      // something's wrong with the automorphism or 
+      // the totally real subfield
+      assert 0 eq 1;
+    else
+      // for a CM field we return units as the root of unity followed
+      // by generators for the positive 
+      U, mU := UnitGroup(K);
+      units_K := UnitsGenerators(K : exclude_torsion:=false);
+      assert IsRootOfUnity(units_K[1]);
+      if #units_K gt 1 then
+        assert &and[u in F : u in units_K[2 .. #units_K]];
+      end if;
+      assert U eq sub<U | [u @@ mU : u in units_K]>;
+    end if;
   end if;
 end procedure;
 

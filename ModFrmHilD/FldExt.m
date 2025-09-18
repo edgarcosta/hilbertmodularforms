@@ -167,14 +167,28 @@ intrinsic UnitsGenerators(F::FldNum : exclude_torsion:=true) -> SeqEnum[RngOrdEl
     returns:
       A sequence of elements of the ring of integers
       which generate the group of units.
+
+      If the field is CM, we return a root of unity followed by
+      generators for the units in the totally real subfield.
   }
   if not assigned F`UnitsGenerators then
     U, mU := UnitGroup(F);
     require Order(U.1) gt 0 : "The first generator of the units group seems to no longer\
       be the generator of torsion, so you should update the code to find the generator\
       of torsion.";
-    ugs_unorient := [mU(U.i) : i in [1 .. #Generators(U)]];
-    F`UnitsGenerators := [orient(F, eps) : eps in ugs_unorient];
+    if not IsCM(F) then 
+      ugs_unorient := [mU(U.i) : i in [1 .. #Generators(U)]];
+      F`UnitsGenerators := [orient(F, eps) : eps in ugs_unorient];
+    else
+      _, _, Fplus := IsCM(F);
+      if Fplus eq Rationals() then
+        F`UnitsGenerators := [mU(U.1)];
+      else
+        F`UnitsGenerators := [mU(U.1)] cat [F!u : u in UnitsGenerators(Fplus)];
+      end if;
+      // orientation doesn't make sense as we are in a totally complex field anyways
+    end if;
+
   end if;
   // this makes sense since we check earlier that U.1 is a generator for the torsion
   n := #F`UnitsGenerators;
