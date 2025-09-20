@@ -79,6 +79,9 @@ CompleteRelationFromUnit := function(X, alpha, k : IsTrivialCoefficientModule:=f
   // I think these come from the side pairing.
   reldata := ShimuraReduceUnit(X`FuchsianGroup!alpha);
   assert IsScalar(Quaternion(reldata[1]));
+  // This is a sequence of numbers in {-#gens, .., -1, 1, .., #gens},
+  // representing a sequence of generators or their inverses.
+  // For example, g_1g_2g_1^-1 would be [1, 2, -1].
   rel := reldata[3];
 
   mat, rel := InducedRelation(rel, induced_module_mtrxs_of_gens(X, k)
