@@ -127,17 +127,19 @@ intrinsic ExtendMultiplicativelyFourier(
   end for;
 end intrinsic;
  
-function dinv(M)
+function codifferent_generator(M)
   // input
   //   M::GradedRingOfHMFs - A graded ring of HMFs over a field F with h+(F) = 1
   // returns
   //   A canonical totally positive generator for the codifferent.
-  F := BaseField(M);
-  ZF := Integers(F);
-  assert NarrowClassNumber(F) eq 1;
-  _, d_inv := IsNarrowlyPrincipal(Different(ZF)^-1);
-  d_inv, _ := FunDomainRep(M, d_inv);
-  return d_inv;
+  if not assigned M`CodifferentGenerator then
+    F := BaseField(M);
+    ZF := Integers(F);
+    assert NarrowClassNumber(F) eq 1;
+    _, d_inv := IsNarrowlyPrincipal(Different(ZF)^-1);
+    M`CodifferentGenerator, _ := FunDomainRep(M, d_inv);
+  end if;
+  return M`CodifferentGenerator;
 end function;
 
 // TODO abhijitm this should disappear once the Newforms logic is rewritten
@@ -159,7 +161,7 @@ function coeff_from_ext_mult_fourier(Mk, coeff_nn, mfh_nn, nn : bb:=1*Integers(B
   if IsZero(mfh_nn) then
     return coeff_nn * 0;
   else
-    nup := dinv(Parent(Mk)) * mfh_nn;
+    nup := codifferent_generator(Parent(Mk)) * mfh_nn;
     nu := IdealToRep(Parent(Mk), nn);
     eps := nu / nup;
     uc := Mk`UnitCharacters[bb];
