@@ -55,6 +55,7 @@ declare attributes HMFGrossenchar:
                   // guaranteed to be evaluable at ideals coprime to the
                   // modulus.
 
+forward is_integral;
 //////////////////////////////// HMFGrossencharsTorsor ////////////////////////////////
 
 //////////////////////////////// HMFGrossencharsTorsor constructors
@@ -171,7 +172,7 @@ function eval_inf_type_at_rou_or_tot_real(X, x)
     return &*[non_conj_auts[i](K_gal!x)^(n_is[i]) : i in [1 .. Kplus_deg]];
   end if;
 
-  b, x_Kplus := IsStrongCoercible(Kplus, x);
+  b, x_Kplus := IsCoercible(Kplus, x);
   // This function should only be called when x is either
   // a root of unity or an element of the totally real subfield of K
   assert b;
@@ -181,13 +182,16 @@ function eval_inf_type_at_rou_or_tot_real(X, x)
   return Norm(x_Kplus)^s * &*[Sign(Real(Evaluate(x, vs[i])))^(n_is[i] + s)  : i in [1 .. Kplus_deg]];
 end function;
 
-intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt : nonpar_hack:=false) -> FldElt, FldElt
+intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt : nonpar_hack:=false, custom_weight:=0) -> FldElt, FldElt
   {
     inputs:
-      X - a torsor of HMFs of a given field K, level N, weight k
+      X - a torsor of grossencharacters of a given field K, level N, weight k
       x - An element of the field K
+      nonpar_hack - If this is given, use a separate logic stream which only works
+        when K is CM and x is either a unit of K or an element of K+
+      custom_weight - A weight to use in lieu of X`weight.
     returns:
-      If the weight k is
+      If the weight (either X`Weight, or a custom_weight if one is provided) is
       [<a_1, b_1>, ..., <a_r, b_r>, <u_(r+1), v_(r+1)>, ..., <u_s, v_s>],
       evaluates the "non-sign" part of the infinity-type on x,
       i.e. the map x -> \prod |x_i|^a_i * \prod z_j^u_j zbar_j^v_j,
@@ -197,9 +201,13 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt : n
       This is the evaluation of the infinity-type with the \prod sgn(x_i)^b_i 
       (over the embeddings under real places) omitted. We deal with the 
       sign part elsewhere.
+
+      The custom_weight argument is used by some logic with nonalgebraic Hecke characters
+      to avoid dealing with messy square roots and field extensions
   }
 
   if nonpar_hack then
+    assert custom_weight eq 0;
     return eval_inf_type_at_rou_or_tot_real(X, x);
   end if;
     
@@ -219,20 +227,23 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt : n
   auts := AutsOfKReppingEmbeddingsOfF(K, K_gal);
   gal_conjs_of_x := [aut(x) : aut in auts];
   
-  // If the character is algebraic, then the infinity type looks like
+  weight := (custom_weight cmpeq 0) select X`Weight else custom_weight;
+
+  // If the weight is integral (which in particular happens when the
+  // character is algebraic or when a custom weight is chosen appropriately)
+  // then the infinity type looks like
   // a product of integral powers. Otherwise, our output will live in 
-  // a field extension with some square roots, unless x happens to be
-  // a square anyways.
-  if IsAlgebraic(X) or IsSquare(x) then
+  // a field extension with some square roots.
+  if is_integral(weight) then
     L := K_gal;
   else
     R<z> := PolynomialRing(K);
     polys := [];
     for i->y in gal_conjs_of_x do
       append_sqrt := false;
-      if (i le r + s) and not IsIntegral(X`Weight[i][1]) then
+      if (i le r + s) and not IsIntegral(weight[i][1]) then
         append_sqrt := true;
-      elif (i gt r + s) and not IsIntegral(X`Weight[i - s][2]) then
+      elif (i gt r + s) and not IsIntegral(weight[i - s][2]) then
         append_sqrt := true;
       end if;
 
@@ -249,13 +260,13 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt : n
   out := L!1;
   for i->y in gal_conjs_of_x do
     if i le r then
-      u_i := X`Weight[i][1];
+      u_i := weight[i][1];
       out *:= (L!y)^(u_i);
     elif i le (r + s) then
-      u_i := X`Weight[i][1];
+      u_i := weight[i][1];
       out *:= (L!y)^(u_i);
     else
-      v_i := X`Weight[i - s][2];
+      v_i := weight[i - s][2];
       out *:= (L!y)^(v_i);
     end if;
   end for;
@@ -263,10 +274,15 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt : n
   return out;
 end intrinsic;
 
-intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::RngElt : nonpar_hack:=false) -> FldElt
+intrinsic EvaluateNoncompactInfinityType(
+    X::HMFGrossencharsTorsor,
+    x::RngElt : 
+    nonpar_hack:=false,
+    custom_weight:=0
+    ) -> FldElt
   {}
   K := NumberField(Parent(x));
-  return  EvaluateNoncompactInfinityType(X, K!x : nonpar_hack:=nonpar_hack);
+  return  EvaluateNoncompactInfinityType(X, K!x : nonpar_hack:=nonpar_hack, custom_weight:=custom_weight);
 end intrinsic;
 
 intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
@@ -462,14 +478,21 @@ intrinsic IsFiniteOrder(X::HMFGrossencharsTorsor) -> BoolElt
   return true;
 end intrinsic;
 
-intrinsic IsAlgebraic(X::HMFGrossencharsTorsor) -> BoolElt
-  {}
-  for tup in X`Weight do
+function is_integral(weight)
+  // weight - SeqEnum[Tup], expected to be in the format of X`Weight
+  //
+  // returns true if all entries of all tuples are integers
+  for tup in weight do
     if not (IsIntegral(tup[1]) and IsIntegral(tup[2])) then
       return false;
     end if;
   end for;
   return true;
+end function;
+
+intrinsic IsAlgebraic(X::HMFGrossencharsTorsor) -> BoolElt
+  {}
+  return is_integral(X`Weight);
 end intrinsic;
 
 //////////////////////////////// HMFGrossencharsTorsor evaluation
@@ -562,10 +585,15 @@ intrinsic Print(chi::HMFGrossenchar, level::MonStgElt)
   end if;
 end intrinsic;
 
-intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
+intrinsic Evaluate(chi::HMFGrossenchar, I::RngOrdIdl : custom_weight:=0, gen:=0, nonpar_hack:=false) -> FldElt
   {}
   X := Parent(chi);
-  b, x := IsPrincipal(I);
+  if gen cmpeq 0 then
+    b, x := IsPrincipal(I);
+  else
+    b := true;
+    x := gen;
+  end if;
 
   if b then
     chi_at_J := Rationals()!1;
@@ -585,10 +613,16 @@ intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
 
   return StrongMultiply([*
       chi_at_J^-1,
-      EvaluateNoncompactInfinityType(X, x),
+      EvaluateNoncompactInfinityType(X, x : nonpar_hack:=nonpar_hack, custom_weight:=custom_weight),
       chi`DrchChar(X`BaseField!x)
       *]);
 end intrinsic;
+
+intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
+  {}
+  return Evaluate(chi, I);
+end intrinsic;
+
 
 //////////////////////////////// HMFGrossenchar attribute access
 
