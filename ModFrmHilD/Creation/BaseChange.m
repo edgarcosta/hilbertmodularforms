@@ -46,5 +46,5 @@ intrinsic BaseChange(M::ModFrmHilDGRng, f::ModFrmElt : psi:=false, N_force:=fals
   k_par := [k : _ in [1 .. Degree(F)]];
   Mk := HMFSpace(M, N, k_par, chi);
 
-  return CuspFormFromEigenvalues(Mk, a_pps);
+  return CuspEigenformFromCoeffsAtPrimes(Mk, a_pps);
 end intrinsic;

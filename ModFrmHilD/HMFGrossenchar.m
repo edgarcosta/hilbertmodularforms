@@ -55,6 +55,7 @@ declare attributes HMFGrossenchar:
                   // guaranteed to be evaluable at ideals coprime to the
                   // modulus.
 
+forward is_integral;
 //////////////////////////////// HMFGrossencharsTorsor ////////////////////////////////
 
 //////////////////////////////// HMFGrossencharsTorsor constructors
@@ -85,6 +86,12 @@ intrinsic cHMFGrossencharsTorsor(
   X`ClassGroup, X`ClassMap := ClassGroup(X`BaseField);
   require IsDiagonal(RelationMatrix(X`ClassGroup)) : "There should be no cross-relations\
       between the generators of the class group";
+
+  // TODO abhijitm - it'd be nice to someday remove this requirement
+  // but I don't have any plans to.
+  if not IsAlgebraic(X) then
+    require IsCM(K) : "Nonalgebraic characters are currently only supported over CM base fields";
+  end if;
 
   // This is a very important function, which checks if there is a Dirichlet character
   // which cancels out the infinity part. 
@@ -125,13 +132,66 @@ end intrinsic;
 
 //////////////////////////////// HMFGrossencharsTorsor helpers
 
-intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt) -> FldElt, FldElt
+// TODO abhijitm this function name is unfortunate as it works
+// on either a unit of K or an element of K+
+function eval_inf_type_at_rou_or_tot_real(X, x)
+  /*
+   * inputs
+   *   X - HMFGrossencharsTorsor, with X`BaseField expected to be a CM field
+   *   x - FldElt, with x either a root of unity or an element in K^+
+   *   cmplx_conj
+   * returns
+   *   FldElt, The evaluation of the non-compact infinity type of X at x
+   *
+   * This function exists to do some hacks in the non-algebraic case which allow
+   * us to compute spaces of non-algebraic grossencharacters over a CM field K.
+   * The idea is that the units of K are roots of unity in K along with the units
+   * of F, and the infinity type can be evaluated on these relatively easily.
+   */
+  K := X`BaseField;
+  b, _, Kplus := IsCM(K);
+
+  // we require that K is CM 
+  assert b;
+
+  K_gal := (IsGalois(K)) select K else SplittingField(K);
+  // auts is a length 2n list where the last n are complex conjugates
+  // of the first n. 
+  auts := AutsOfKReppingEmbeddingsOfF(K, K_gal);
+
+  Kplus_deg := ExactQuotient(Degree(K), 2);
+  non_conj_auts := auts[1 .. Kplus_deg];
+
+  n_is := [Integers()!(X`Weight[i][1] - X`Weight[i][2]) : i in [1 .. Kplus_deg]];
+  s := Integers()!(X`Weight[1][1] + X`Weight[1][2]);
+  // In both of the cases below, the character is
+  // the character is
+  // \prod_i (x_i/|x_i|)^(a_i - b_i) |x_i|^(a_i + b_i)
+  if IsRootOfUnity(K_gal!x) then
+    // in this case |x_i| = 1 so we just get \prod_i x_i^(a_i-b_i)
+    return &*[non_conj_auts[i](K_gal!x)^(n_is[i]) : i in [1 .. Kplus_deg]];
+  end if;
+
+  b, x_Kplus := IsCoercible(Kplus, x);
+  // This function should only be called when x is either
+  // a root of unity or an element of the totally real subfield of K
+  assert b;
+  vs := InfinitePlaces(K);
+  // In this case |Norm(x)| =  and x_i / |x_i| = sign(x_i)
+  // so we get \prod_i sign(x_i)^(a_i - b_i)
+  return Norm(x_Kplus)^s * &*[Sign(Real(Evaluate(x, vs[i])))^(n_is[i] + s)  : i in [1 .. Kplus_deg]];
+end function;
+
+intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt : nonpar_hack:=false, custom_weight:=0) -> FldElt, FldElt
   {
     inputs:
-      X - a torsor of HMFs of a given field K, level N, weight k
+      X - a torsor of grossencharacters of a given field K, level N, weight k
       x - An element of the field K
+      nonpar_hack - If this is given, use a separate logic stream which only works
+        when K is CM and x is either a unit of K or an element of K+
+      custom_weight - A weight to use in lieu of X`weight.
     returns:
-      If the weight k is
+      If the weight (either X`Weight, or a custom_weight if one is provided) is
       [<a_1, b_1>, ..., <a_r, b_r>, <u_(r+1), v_(r+1)>, ..., <u_s, v_s>],
       evaluates the "non-sign" part of the infinity-type on x,
       i.e. the map x -> \prod |x_i|^a_i * \prod z_j^u_j zbar_j^v_j,
@@ -141,7 +201,16 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt) ->
       This is the evaluation of the infinity-type with the \prod sgn(x_i)^b_i 
       (over the embeddings under real places) omitted. We deal with the 
       sign part elsewhere.
+
+      The custom_weight argument is used by some logic with nonalgebraic Hecke characters
+      to avoid dealing with messy square roots and field extensions
   }
+
+  if nonpar_hack then
+    assert custom_weight eq 0;
+    return eval_inf_type_at_rou_or_tot_real(X, x);
+  end if;
+    
   K := X`BaseField;
   require Parent(x) eq K : "x must be an element of the base field of X";
 
@@ -158,19 +227,23 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt) ->
   auts := AutsOfKReppingEmbeddingsOfF(K, K_gal);
   gal_conjs_of_x := [aut(x) : aut in auts];
   
-  // If the character is algebraic, then the infinity type looks like
+  weight := (custom_weight cmpeq 0) select X`Weight else custom_weight;
+
+  // If the weight is integral (which in particular happens when the
+  // character is algebraic or when a custom weight is chosen appropriately)
+  // then the infinity type looks like
   // a product of integral powers. Otherwise, our output will live in 
-  // a field extension with some square roots. 
-  if IsAlgebraic(X) then
+  // a field extension with some square roots.
+  if is_integral(weight) then
     L := K_gal;
   else
     R<z> := PolynomialRing(K);
     polys := [];
     for i->y in gal_conjs_of_x do
       append_sqrt := false;
-      if (i le r + s) and not IsIntegral(X`Weight[i][1]) then
+      if (i le r + s) and not IsIntegral(weight[i][1]) then
         append_sqrt := true;
-      elif (i gt r + s) and not IsIntegral(X`Weight[i - s][2]) then
+      elif (i gt r + s) and not IsIntegral(weight[i - s][2]) then
         append_sqrt := true;
       end if;
 
@@ -187,13 +260,13 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt) ->
   out := L!1;
   for i->y in gal_conjs_of_x do
     if i le r then
-      u_i := X`Weight[i][1];
+      u_i := weight[i][1];
       out *:= (L!y)^(u_i);
     elif i le (r + s) then
-      u_i := X`Weight[i][1];
+      u_i := weight[i][1];
       out *:= (L!y)^(u_i);
     else
-      v_i := X`Weight[i - s][2];
+      v_i := weight[i - s][2];
       out *:= (L!y)^(v_i);
     end if;
   end for;
@@ -201,10 +274,15 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt) ->
   return out;
 end intrinsic;
 
-intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::RngElt) -> FldElt
+intrinsic EvaluateNoncompactInfinityType(
+    X::HMFGrossencharsTorsor,
+    x::RngElt : 
+    nonpar_hack:=false,
+    custom_weight:=0
+    ) -> FldElt
   {}
   K := NumberField(Parent(x));
-  return  EvaluateNoncompactInfinityType(X, K!x);
+  return  EvaluateNoncompactInfinityType(X, K!x : nonpar_hack:=nonpar_hack, custom_weight:=custom_weight);
 end intrinsic;
 
 intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
@@ -225,10 +303,12 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
   if not assigned X`IsNonempty then
     mod_fin, mod_inf := Modulus(X);
     Dv := DirichletGroup(mod_fin, mod_inf);
+    
+    nonpar_hack := not IsAlgebraic(X);
     if IsFiniteOrder(X) then
       X`IsNonempty := true;
       X`MarkedDrchChar := Dv.0;
-    elif &and[IsOne(EvaluateNoncompactInfinityType(X, eps)) : eps in UnitsGenerators(X`BaseField : exclude_torsion:=false)] then
+      elif &and[IsOne(EvaluateNoncompactInfinityType(X, eps : nonpar_hack:=nonpar_hack)) : eps in UnitsGenerators(X`BaseField : exclude_torsion:=false)] then
       X`IsNonempty := true;
       X`MarkedDrchChar := Dv.0;
     else
@@ -243,46 +323,65 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
       // Dirichlet characters psi all lie in Q(zeta_m). 
       //
       // Because m can be quite large, we avoid constructing Q(zeta_m). 
-      // Instead, we perform the computation to find psi over the complex
-      // numbers. 
-      d := LargestRootOfUnity(E);
+      d, zeta_d := LargestRootOfUnity(E);
       m := LCM(max_D_order, d);
-      R<x> := PolynomialRing(E);
-
       // a dth root of unity in K
-      a := Roots(R!CyclotomicPolynomial(d))[1][1];
       // the copy of Q(zeta_d) inside of v 
-      L := sub<E | a>;
       rou_dict := AssociativeArray();
       for j in [0 .. d - 1] do
-        rou_dict[a^j] := j;
+        rou_dict[zeta_d^j] := j;
       end for;
       units_gens := UnitsGenerators(X`BaseField : exclude_torsion:=false);
       unit_preimg_seqs := [Eltseq(eps @@ D_map) : eps in units_gens];
       M := [[unit_preimg_seqs[j][i] * ExactQuotient(m, Order(D.i)) : j in [1 .. #units_gens]] : i in [1 .. #D_gens]];
+      // returns a length n seqenum which is 0s except at the ith position, where it's n
       char_vector := func<i, n, x | [(j eq i) select x else 0 : j in [1 .. n]]>;
       M cat:= [char_vector(j, #units_gens, m) : j in [1 .. #units_gens]];
       M := Matrix(M);
-      v := [ExactQuotient(m, d) * rou_dict[StrongCoerce(L, EvaluateNoncompactInfinityType(X, eps))] : eps in units_gens];
+      v := [ExactQuotient(m, d) * rou_dict[EvaluateNoncompactInfinityType(X, eps : nonpar_hack:=nonpar_hack)] : eps in units_gens];
       v := Vector(v);
+      
       X`IsNonempty, u := IsConsistent(M, v);
       if X`IsNonempty then
         if #D eq 1 then
           X`MarkedDrchChar := AssociatedPrimitiveCharacter(Dv.0);
         else
           Dv_gens := Generators(Dv);
-          // we invert because we want the product of the Dirichlet character
-          // and the infinity type to be 1.
           D_gens := [gen : gen in D_gens | Order(gen) ne 1];
           Dv_gens := [gen : gen in SetToSequence(Dv_gens) | Order(gen) ne 1];
           assert #Dv_gens eq #D_gens;
-          psi := (&*[Dv.j^(u[j]) : j in [1 .. #D_gens]])^-1;
-          X`MarkedDrchChar := AssociatedPrimitiveCharacter(psi);
-          for eps in units_gens do
-            require IsOne(StrongMultiply(
-                  [* EvaluateNoncompactInfinityType(X, eps), X`MarkedDrchChar(eps) *]
-                  )) : "The marked character isn't the inverse of the infinity type";
-          end for;
+          // we invert because we want the product of the Dirichlet character
+          // and the infinity type to be 1.
+          psi_cand := (&*[Dv.j^(u[j]) : j in [1 .. #D_gens]])^-1;
+
+          // function to check if psi is the inverse of the noncompact infinity type 
+          // on all units of K
+          psi_works := func<psi | &and[IsOne(StrongMultiply(
+                    [* EvaluateNoncompactInfinityType(X, eps : nonpar_hack:=nonpar_hack), psi(eps) *]
+                  )) : eps in units_gens]>;
+          if d eq 2 then
+            require psi_works(psi_cand) : "psi isn't the inverse of the infinity type,
+                       something's wrong!";
+            psi_true := psi_cand;
+          else
+            // In this case, we have to deal with some stupidity involving embeddings 
+            // of the root of unity. TODO abhijitm I couldn't figure out how to do this 
+            // cleanly, so I decided to just loop through odd powers until one of the psi
+            // worked (this is fine at least for totally real and CM base fields 
+            // because it'll already be correct on the totally real units since those evaluations
+            // are +/- 1 and what's left is checking on the root of unity
+            flag := false;
+            for i in [2*j - 1 : j in [1 .. d]] do
+              psi := psi_cand^i;
+              if psi_works(psi) then
+                flag := true;
+                psi_true := psi;
+                break i;
+              end if;
+            end for;
+            require flag : "Something is wrong, some power of psi_cand should've worked";
+          end if;
+          X`MarkedDrchChar := AssociatedPrimitiveCharacter(psi_true);
         end if;
       end if;
     end if;
@@ -379,14 +478,21 @@ intrinsic IsFiniteOrder(X::HMFGrossencharsTorsor) -> BoolElt
   return true;
 end intrinsic;
 
-intrinsic IsAlgebraic(X::HMFGrossencharsTorsor) -> BoolElt
-  {}
-  for tup in X`Weight do
+function is_integral(weight)
+  // weight - SeqEnum[Tup], expected to be in the format of X`Weight
+  //
+  // returns true if all entries of all tuples are integers
+  for tup in weight do
     if not (IsIntegral(tup[1]) and IsIntegral(tup[2])) then
       return false;
     end if;
   end for;
   return true;
+end function;
+
+intrinsic IsAlgebraic(X::HMFGrossencharsTorsor) -> BoolElt
+  {}
+  return is_integral(X`Weight);
 end intrinsic;
 
 //////////////////////////////// HMFGrossencharsTorsor evaluation
@@ -479,10 +585,15 @@ intrinsic Print(chi::HMFGrossenchar, level::MonStgElt)
   end if;
 end intrinsic;
 
-intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
+intrinsic Evaluate(chi::HMFGrossenchar, I::RngOrdIdl : custom_weight:=0, gen:=0, nonpar_hack:=false) -> FldElt
   {}
   X := Parent(chi);
-  b, x := IsPrincipal(I);
+  if gen cmpeq 0 then
+    b, x := IsPrincipal(I);
+  else
+    b := true;
+    x := gen;
+  end if;
 
   if b then
     chi_at_J := Rationals()!1;
@@ -502,10 +613,16 @@ intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
 
   return StrongMultiply([*
       chi_at_J^-1,
-      EvaluateNoncompactInfinityType(X, x),
+      EvaluateNoncompactInfinityType(X, x : nonpar_hack:=nonpar_hack, custom_weight:=custom_weight),
       chi`DrchChar(X`BaseField!x)
       *]);
 end intrinsic;
+
+intrinsic '@'(I::RngOrdIdl, chi::HMFGrossenchar) -> FldElt
+  {}
+  return Evaluate(chi, I);
+end intrinsic;
+
 
 //////////////////////////////// HMFGrossenchar attribute access
 

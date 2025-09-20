@@ -11,7 +11,9 @@ declare attributes FldAlg:
   Restrictions,
   MatrixRingHoms,
   UnitCharFieldsByWeight,
-  MinDistBtwnRoots
+  MinDistBtwnRoots,
+  CMAutomorphism,
+  TotallyRealSubfield
   ;
 
 
@@ -165,14 +167,28 @@ intrinsic UnitsGenerators(F::FldNum : exclude_torsion:=true) -> SeqEnum[RngOrdEl
     returns:
       A sequence of elements of the ring of integers
       which generate the group of units.
+
+      If the field is CM, we return a root of unity followed by
+      generators for the units in the totally real subfield.
   }
   if not assigned F`UnitsGenerators then
     U, mU := UnitGroup(F);
     require Order(U.1) gt 0 : "The first generator of the units group seems to no longer\
       be the generator of torsion, so you should update the code to find the generator\
       of torsion.";
-    ugs_unorient := [mU(U.i) : i in [1 .. #Generators(U)]];
-    F`UnitsGenerators := [orient(F, eps) : eps in ugs_unorient];
+    if not IsCM(F) then 
+      ugs_unorient := [mU(U.i) : i in [1 .. #Generators(U)]];
+      F`UnitsGenerators := [orient(F, eps) : eps in ugs_unorient];
+    else
+      _, _, Fplus := IsCM(F);
+      if Fplus eq Rationals() then
+        F`UnitsGenerators := [mU(U.1)];
+      else
+        F`UnitsGenerators := [mU(U.1)] cat [F!u : u in UnitsGenerators(Fplus)];
+      end if;
+      // orientation doesn't make sense as we are in a totally complex field anyways
+    end if;
+
   end if;
   // this makes sense since we check earlier that U.1 is a generator for the torsion
   n := #F`UnitsGenerators;
@@ -877,26 +893,16 @@ intrinsic MinkowskiConstant(F::FldAlg) -> FldReElt
   return Sqrt(Abs(D)) * (4 / pi)^s * n^n / Factorial(n);
 end intrinsic;
 
-intrinsic LargestRootOfUnity(K::FldAlg) -> RngIntElt
+intrinsic LargestRootOfUnity(K::FldAlg) -> RngIntElt, FldElt
   {
     Given a number field K, returns the largest d such that 
     zeta_d lies in K.
   }
-  n := Degree(K);
-
-  R<x> := PolynomialRing(K);
-  p_pows := [];
-  for p in PrimesUpTo(n+1) do
-    k := Floor(Log(p, n+1));
-    root_ct := #Roots(x^(p^k)-1);
-    e := Integers()!Log(p, root_ct);
-    Append(~p_pows, <p, e>);
-  end for;
-
-  m := &*[tup[1]^tup[2] : tup in p_pows];
-  require IsSubfield(CyclotomicField(m), K) : "Something's wrong, the field\
-      Q(zeta_m) isn't a subfield of K";
-  return m;
+  zeta_d := UnitsGenerators(K : exclude_torsion:=false)[1];
+  b, d := IsRootOfUnity(zeta_d);
+  // the first generator should always be torsion
+  assert b;
+  return d, zeta_d;
 end intrinsic;
 
 intrinsic IsGalois(F::FldAlg) -> BoolElt
@@ -909,4 +915,42 @@ intrinsic IsGalois(F::FldAlg) -> BoolElt
   else
     return #GaloisGroup(F) eq Degree(F);
   end if;
+end intrinsic;
+
+intrinsic IsCM(K::FldAlg) -> BoolElt, Map, FldAlg
+  {
+    If K is CM, returns true, tau, where tau is complex conjugation in K
+    Otherwise, returns false
+  }
+  if assigned K`CMAutomorphism then
+    return true, K`CMAutomorphism, K`TotallyRealSubfield;
+  end if;
+  if not IsTotallyComplex(K) then
+    return false, _, _;
+  end if;
+
+  auts := Automorphisms(K);
+  if Degree(K) eq 2 then
+    // we already checked that it's totally complex
+    K`CMAutomorphism := auts[2];
+    K`TotallyRealSubfield := Rationals();
+    return true, K`CMAutomorphism, K`TotallyRealSubfield;
+  end if;
+
+  nontriv_auts := auts[2 .. #auts];
+  for tup in Subfields(K, Integers()!(Degree(K) / 2)) do
+    F := tup[1];
+    if IsTotallyReal(F) then
+      for aut in nontriv_auts do
+        if aut(K!F.1) eq K!F.1 then
+          K`CMAutomorphism := aut;
+          K`TotallyRealSubfield := F;
+          return true, aut, F;
+        end if;
+      end for;
+      require 0 eq 1 : "Couldn't find an automorphism fixing an index 2
+        totally real subfield of K, so something's gone wrong!";
+    end if;
+  end for;
+  return false, _, _;
 end intrinsic;

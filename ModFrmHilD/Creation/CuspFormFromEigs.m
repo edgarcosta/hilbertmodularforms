@@ -59,9 +59,7 @@ end intrinsic;
 intrinsic ExtendMultiplicativelyFourier(
     ~coeffs::Assoc,
     ~mfh_reps::Assoc,
-    Mk::ModFrmHilD,
-    prime_ideals::SeqEnum,
-    ideals::SeqEnum[RngOrdIdl]
+    Mk::ModFrmHilD
     )
   {}
   F := BaseField(Mk);
@@ -69,6 +67,8 @@ intrinsic ExtendMultiplicativelyFourier(
   N := Level(Mk);
   k := Weight(Mk);
   chi := Character(Mk);
+  prime_ideals := PrimeIdeals(Parent(Mk));
+  ideals := Ideals(Parent(Mk));
 
   coeffs[0*ZF] := 0;
   coeffs[1*ZF] := 1;
@@ -127,17 +127,19 @@ intrinsic ExtendMultiplicativelyFourier(
   end for;
 end intrinsic;
  
-function dinv(M)
+function codifferent_generator(M)
   // input
   //   M::GradedRingOfHMFs - A graded ring of HMFs over a field F with h+(F) = 1
   // returns
   //   A canonical totally positive generator for the codifferent.
-  F := BaseField(M);
-  ZF := Integers(F);
-  assert NarrowClassNumber(F) eq 1;
-  _, d_inv := IsNarrowlyPrincipal(Different(ZF)^-1);
-  d_inv, _ := FunDomainRep(M, d_inv);
-  return d_inv;
+  if not assigned M`CodifferentGenerator then
+    F := BaseField(M);
+    ZF := Integers(F);
+    assert NarrowClassNumber(F) eq 1;
+    _, d_inv := IsNarrowlyPrincipal(Different(ZF)^-1);
+    M`CodifferentGenerator, _ := FunDomainRep(M, d_inv);
+  end if;
+  return M`CodifferentGenerator;
 end function;
 
 // TODO abhijitm this should disappear once the Newforms logic is rewritten
@@ -159,7 +161,7 @@ function coeff_from_ext_mult_fourier(Mk, coeff_nn, mfh_nn, nn : bb:=1*Integers(B
   if IsZero(mfh_nn) then
     return coeff_nn * 0;
   else
-    nup := dinv(Parent(Mk)) * mfh_nn;
+    nup := codifferent_generator(Parent(Mk)) * mfh_nn;
     nu := IdealToRep(Parent(Mk), nn);
     eps := nu / nup;
     uc := Mk`UnitCharacters[bb];
@@ -167,31 +169,45 @@ function coeff_from_ext_mult_fourier(Mk, coeff_nn, mfh_nn, nn : bb:=1*Integers(B
   end if;
 end function;
 
-intrinsic CuspFormFromEigenvalues(
+intrinsic CuspEigenformFromCoeffsAtPrimes(
     Mk::ModFrmHilD,
     coeffs_by_nn::Assoc :
-    coeff_ring := DefaultCoefficientRing(Mk)
+    coeff_ring:=DefaultCoefficientRing(Mk),
+    from_a_pp:=true,
+    mfh_reps:=0
     ) -> ModFrmHilDElt
   {
     inputs:
       Mk - Space of HMFs
       coeffs_by_nn - Poorly named, but this is an associative array
-        indexed by prime ideals pp up to Precision(Parent(Mk))
-      coeff_ring - coefficient ring of these cusp forms
+        indexed by prime ideals pp up to Precision(Parent(Mk)). 
+        If from_a_pp is true then coeffs_by_nn[pp] stores the coefficient a_pp.
+        If from_a_pp is false then coeffs_by_nn[pp] stores the tuple <pi, a_pi>,
+        where pi is a totally positive generator of pp (we assume that the narrow
+        class number of the field is 1) and a_pi is the Fourier coefficient at pi
+      coeff_ring - Coefficient ring of these cusp forms. This is the field of
+        a_pp when from_a_pp is true and the field of the a_pi when from_a_pp is false.
     returns:
       The cusp form with these Hecke eigenvalues
   }
   M := Parent(Mk);
   F := BaseField(Mk);
-  ExtendMultiplicatively(
-    ~coeffs_by_nn,
-    Level(Mk),
-    Weight(Mk),
-    Character(Mk),
-    PrimeIdeals(M),
-    Ideals(M) :
-    factorization:=func<n|Factorization(M, n)>
-    );
+
+  // get coefficients at every nn, not just the prime ideals
+  if from_a_pp then
+    ExtendMultiplicatively(
+      ~coeffs_by_nn,
+      Level(Mk),
+      Weight(Mk),
+      Character(Mk),
+      PrimeIdeals(M),
+      Ideals(M) :
+      factorization:=func<n|Factorization(M, n)>
+      );
+  else
+    assert mfh_reps cmpne 0;
+    ExtendMultiplicativelyFourier(~coeffs_by_nn, ~mfh_reps, Mk);
+  end if;
 
   // TODO abhijitm once Jean's improvements are in, this construction
   // should be rewritten
@@ -205,11 +221,21 @@ intrinsic CuspFormFromEigenvalues(
   ideals := Exclude(Ideals(M), ideal<Integers(F) | 0>);
 
   for nn in ideals do
-    a_nn := coeffs_by_nn[nn];
     bb := IdealToNarrowClassRep(M, nn);
     nu := IdealToRep(M)[bb][nn];
-    coeffs_by_nu[bb][nu] := IdlCoeffToEltCoeff(a_nn, nu, Weight(Mk), coeff_ring);
+    if from_a_pp then
+      a_nn := coeffs_by_nn[nn];
+      coeffs_by_nu[bb][nu] := IdlCoeffToEltCoeff(a_nn, nu, Weight(Mk), coeff_ring);
+    else
+      // nup is a totally positive generator of nn, but won't typically be the 
+      // fundamental representative nu corresponding to nn
+      a_nup := coeffs_by_nn[nn];
+      nup := mfh_reps[nn];
+      // recover a_nu from a_nup and store it in coeffs_by_nu[bb][nu]
+      coeffs_by_nu[bb][nu] := coeff_from_ext_mult_fourier(Mk, a_nup, nup, nn);
+    end if;
   end for;
 
   return HMF(Mk, coeffs_by_nu : coeff_ring := coeff_ring);
 end intrinsic;
+

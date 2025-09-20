@@ -53,7 +53,8 @@ declare attributes ModFrmHilDGRng:
   // used by HMFSeriesRing, as we always want to use the same RngMPol
   RngMPol,
   Automorphisms, // Automorphism group of F
-  LocalSquares; // Local squares stored for trace
+  LocalSquares, // Local squares stored for trace
+  CodifferentGenerator; // Totally positive generator of the codifferent
 
 
  intrinsic IdealRepsMapDeterministic(F::FldNum, mp::Map) -> Assoc

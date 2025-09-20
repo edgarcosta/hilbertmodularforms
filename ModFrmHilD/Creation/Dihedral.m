@@ -1,3 +1,5 @@
+import "CuspFormFromEigs.m" : codifferent_generator;
+
 /////////////////////////////// Compute quadratic extensions with conductor
 
 intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEnum[RngIntElt] : Dividing := true)
@@ -226,15 +228,30 @@ intrinsic PossibleGrossencharsOfRelQuadExt(K, N, k_hmf, chi) -> List
     S := HMFGrossencharsTorsorSet(X);
   end if;
 
-  GK, mK := RayClassGroup(N, [1 .. Degree(BaseField(K))]);
+  GF, mF := RayClassGroup(N, [1 .. Degree(BaseField(K))]);
   ans := [* *];
   for psi in S do
     N_psi := ZK!!(Conductor(psi));
     if Norm(N_psi) * rel_disc eq N then
       flag := true;
-      for g in Generators(GK) do
-        I := mK(g);
-        flag and:= StrongEquality(chi(I) * Norm(I)^(Max(k_hmf) - 1), psi(Integers(K_abs)!!(I)) * QuadraticCharacter(I, K));
+      for g in Generators(GF) do
+        I := mF(g);
+        if IsAlgebraic(X) then
+          nonpar_hack := false;
+          // the default value of gen
+          gen := 0;
+        else
+          nonpar_hack := true;
+          // in the nonparitious case, we want to feed Evaluate
+          // a generator of I which lies in F
+          b, x := IsPrincipal(I);
+          assert b;
+          gen:=x;
+        end if;
+        flag and:= StrongEquality(
+            chi(I) * Norm(I)^(Max(k_hmf) - 1),
+            Evaluate(psi, Integers(K_abs)!!(I) : gen:=gen, nonpar_hack:=nonpar_hack) * QuadraticCharacter(I, K)
+            );
       end for;
       if flag then
         Append(~ans, psi);
@@ -278,26 +295,88 @@ intrinsic ThetaSeries(Mk::ModFrmHilD, psi::HMFGrossenchar) -> ModFrmHilDElt
   }
   M := Parent(Mk);
   F := BaseField(M);
+ 
   ZF := Integers(F);
   prec := Precision(M);
   K := NumberField(Order(Modulus(psi))); 
-  
+
+  // TODO abhijitm this is known (9/20/25) to fail in a lot of nonparitious
+  // cases due to field coercion issues. I'm hoping that the pending migration
+  // to FldNumEmb will resolve them, but until then use with caution.
+  //
+  // You might be able to get away with calling #PossibleGrossenchars, which should
+  // work more often, and using it as an upper bound for the dimension of CM forms.
+  paritious_weight := IsParitious(Weight(Mk));
+  if not paritious_weight then
+    X := Parent(psi);
+    require NarrowClassNumber(F) eq 1 : "Nonparitious forms are only implemented for
+      fields with narrow class number one";
+    assert IsSubfield(F, K);
+    K_rel := RelativeField(F, K);
+    // K/F is CM and tau is the nontrivial automorphism
+    assert Degree(K_rel) eq 2;
+    tau := Automorphisms(K_rel)[2];
+    k := Weight(Mk);
+    k0 := Max(k);
+    lies_over := OrderedPlacesOfCMField(K, F);
+    shifted_half_weight := [(k0 - k[lies_over[i]]) / 2 : i in [1..#k]];
+    custom_weight := [
+      <Integers()!(X`Weight[i][1] - shifted_half_weight[i]),
+      Integers()!(X`Weight[i][2] - shifted_half_weight[i])> :
+      i in [1 .. Degree(F)]];
+    // TODO abhijitm somehow some errors don't occur when this
+    // is X`BaseField instead of the splitting field.
+    L := SplittingField(X`BaseField);
+  end if;
+
   // We create an associative array indexed by prime ideals pp up to 
   // Precision(Parent(Mk)) and populate them with traces associated to psi.
-  a_pps := AssociativeArray();
+  coeffs_by_pp := AssociativeArray();
+  pis_by_pp := AssociativeArray();
   for pp in PrimeIdeals(M) do
     fact := Factorization(Integers(K) !! pp);
     g := #fact;
     d := InertiaDegree(pp);
-    if g eq 2 then
-      a_pps[pp] := StrongAdd([* psi(fact[1][1]), psi(fact[2][1]) *]);
-    elif fact[1][2] ne 1 then
-      a_pps[pp] := psi(fact[1][1]);
+    if paritious_weight then
+      if g eq 2 then
+        coeffs_by_pp[pp] := StrongAdd([* psi(fact[1][1]), psi(fact[2][1]) *]);
+      elif fact[1][2] ne 1 then
+        coeffs_by_pp[pp] := psi(fact[1][1]);
+      else
+        coeffs_by_pp[pp] := 0;
+      end if;
     else
-      a_pps[pp] := 0;
+      if g eq 2 then
+        _, lambda_1 := IsNarrowlyPrincipal(fact[1][1]);
+        lambdas := [lambda_1, tau(lambda_1)];
+        pi := F!(&*lambdas);
+        assert Norm(pi) eq Norm(pp);
+        psi_evals := [* Evaluate(psi, fact[i][1] : custom_weight:=custom_weight, gen:=lambdas[i])
+                  : i in [1..2] *];
+        coeffs_by_pp[pp] := L!StrongAdd(psi_evals);
+      elif fact[1][2] ne 1 then
+        _, lambda := IsNarrowlyPrincipal(fact[1][1]);
+        lambdas := [lambda, tau(lambda)];
+        pi := F!(&*lambdas);
+        assert Norm(pi) eq Norm(pp);
+        coeffs_by_pp[pp] := L!Evaluate(psi, fact[1][1] : custom_weight:=custom_weight, gen:=lambda);
+      else
+        coeffs_by_pp[pp] := L!0;
+        pi := codifferent_generator(Parent(Mk))^-1 * IdealToRep(M, pp);
+      end if;
+      pis_by_pp[pp] := pi;
     end if;
   end for;
-  return CuspFormFromEigenvalues(Mk, a_pps);
+
+  if paritious_weight then
+    return CuspEigenformFromCoeffsAtPrimes(Mk, coeffs_by_pp);
+  else
+    return CuspEigenformFromCoeffsAtPrimes(Mk, coeffs_by_pp : 
+                                                    from_a_pp:=false,
+                                                    mfh_reps:=pis_by_pp,
+                                                    coeff_ring:=L
+                                                  );
+  end if;
 end intrinsic;
 
 intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
