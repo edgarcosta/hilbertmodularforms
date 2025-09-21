@@ -29,7 +29,8 @@ forward Gamma0Cosets;
 
 intrinsic cIdealDatum(
               Gamma::GrpPSL2, I::RngOrdIdl : 
-              chi:=HeckeCharacterGroup(I, [1 .. Degree(NumberField(Order(I)))]).0
+              chi:=HeckeCharacterGroup(I, [1 .. Degree(NumberField(Order(I)))]).0,
+              residue_map:=0
               ) -> IdealDatum
   {
     inputs:
@@ -53,6 +54,7 @@ intrinsic cIdealDatum(
   X`Ideal := I;
 
   O := QuaternionOrder(Gamma);
+  X`QuaternionOrder := O;
   F := BaseField(Algebra(O));
 
   H := HeckeCharacterGroup(I, [1 .. Degree(F)]);
@@ -61,7 +63,11 @@ intrinsic cIdealDatum(
 
   X`ResidueRing := quo<IntegerRing(X) | I>; 
   X`P1Elements, X`P1Rep := GetOrMakeP1(Gamma, I);
-  _, X`ResidueMap := ResidueMatrixRing(O, I);
+  if residue_map cmpeq 0 then
+    _, X`ResidueMap := ResidueMatrixRing(O, I);
+  else
+    X`ResidueMap := residue_map;
+  end if;
 
   if not (assigned Gamma`ShimFDSidepairsDomain and assigned Gamma`ShimFDDisc) then
     // assigns attributes of Gamma which are needed in Gamma0Cosets
@@ -69,21 +75,7 @@ intrinsic cIdealDatum(
     _ := Group(Gamma);
   end if;
 
-  X`CosetRepsByP1 := AssociativeArray();
   X`CosetReps := Gamma0Cosets(X);
-
-  for i := 1 to #X`P1Elements do
-    // TODO abhijitm these next three lines should be removed before committing,
-    // they're just checks
-    v := X`ResidueMap(X`CosetReps[i])[2];
-    _, v := X`P1Rep(v, false, false);
-    assert v eq X`P1Elements[i];
-
-    // cache coset reps and their index in Gamma0Cosets
-    // by their P1 representatives
-    X`CosetRepsByP1[v] := <i, X`CosetReps[i]>;
-  end for;
-  assert #X`CosetRepsByP1 eq #X`P1Elements;
 
   X`InducedModuleMtrxs := AssociativeArray();
   X`H1s := AssociativeArray();
@@ -99,6 +91,35 @@ end intrinsic;
 intrinsic IntegerRing(X::IdealDatum) -> Rng
   {}
   return Order(X`Ideal);
+end intrinsic;
+
+intrinsic CosetRepsByP1(X::IdealDatum) -> AssociativeArray
+  {
+    Returns an array mapping P1 representatives in X`P1Elements to
+    coset representatives in X`CosetReps. 
+
+    This only makes sense to do when the quaternion order defining 
+    Gamma is an Eichler order whose discriminant is coprime
+    to the ideal N.
+  }
+  if assigned X`CosetRepsByP1 then
+    return X`CosetRepsByP1;
+  end if;
+  X`CosetRepsByP1 := AssociativeArray();
+
+  for i := 1 to #X`P1Elements do
+    // TODO abhijitm these next three lines should be removed before committing,
+    // they're just checks
+    v := X`ResidueMap(X`CosetReps[i])[2];
+    _, v := X`P1Rep(v, false, false);
+    assert v eq X`P1Elements[i];
+
+    // cache coset reps and their index in Gamma0Cosets
+    // by their P1 representatives
+    X`CosetRepsByP1[v] := <i, X`CosetReps[i]>;
+  end for;
+  assert #X`CosetRepsByP1 eq #X`P1Elements;
+  return X`CosetRepsByP1;
 end intrinsic;
 
 /**************************************
