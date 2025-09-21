@@ -382,10 +382,12 @@ end intrinsic;
 intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
   {returns true if this form could be dihedral, false if it cannot be}
   Mk := Parent(f);
+  M := Parent(Mk);
   F := BaseField(Mk);
   N := Level(Mk);
   k := Weight(Mk);
   BOUND := 100;
+  is_paritious := IsParitious(k);
 
   Ks := QuadraticExtensionsWithConductor(N, [1 .. Degree(F)]);
   for K in Ks do
@@ -396,9 +398,21 @@ intrinsic ProbabilisticDihedralTest(f::ModFrmHilDElt) -> BoolElt
     inert_primes := [pp : pp in PrimesUpTo(BOUND, F : coprime_to:=Discriminant(ZK))\
                       | #Factorization(ZK!!pp) eq 1];
     for pp in inert_primes do
-      if not IsZero(Coefficient(f, pp)) then
-        possibly_dihedral := false;
-        break;
+      if is_paritious then
+        // For paritious forms, use the existing approach
+        if not IsZero(Coefficient(f, pp)) then
+          possibly_dihedral := false;
+          break;
+        end if;
+      else
+        // For nonparitious forms, check if a_nu = 0 where nu is the EltCoeff 
+        // corresponding to the ideal pp
+        nu := IdealToRep(M, pp);
+        bb := IdealToNarrowClassRep(M, pp);
+        if not IsZero(Coefficient(f, bb, nu)) then
+          possibly_dihedral := false;
+          break;
+        end if;
       end if;
     end for;
     if possibly_dihedral then
