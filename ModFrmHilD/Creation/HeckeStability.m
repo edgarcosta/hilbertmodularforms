@@ -12,7 +12,7 @@ intrinsic HeckeStableSubspace(
       b, pi := IsNarrowlyPrincipal(pp);
       F := NumberField(Order(pp));
       assert b; // the nonparitious code assumes that h+(F) = 1
-      hecke_operator := func<f | HeckeOperatorFourier(f, F!pi)>;
+      hecke_operator := func<f | HeckeOperatorCoeff(f, F!pi)>;
     end if;
 
     // compute the kernel of Tp

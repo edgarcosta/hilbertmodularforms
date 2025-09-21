@@ -4,10 +4,16 @@
 //                                               //
 ///////////////////////////////////////////////////
 
+forward GetBasisForPrecisionIncrease;
+forward ApplyBasisPrecisionIncrease;
+
 ///////////// ModFrmHilDElt: Hecke Operators ////////////////
-intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : B:=false) -> ModFrmHilDElt
+intrinsic HeckeOperatorIdeal(f::ModFrmHilDElt, mm::RngOrdIdl : B:=false) -> ModFrmHilDElt
   {
     Returns T(mm)(f) for the character chi modulo the level of f.
+    This function is designed for paritious forms and uses ideal coefficients.
+    For nonparitious forms, use HeckeOperatorCoeff or HeckeOperator instead.
+    
     The optional parameter B is a basis which can be used to increase
     precision. If B is not provided, we attempt to use a basis of the
     parent space if it's been computed.  
@@ -55,26 +61,9 @@ intrinsic HeckeOperator(f::ModFrmHilDElt, mm::RngOrdIdl : B:=false) -> ModFrmHil
 
   g := HMF(Mk, coeffs : prec:=prec, coeff_ring := K);
 
-  // Attempting to increase precision using a basis
-  // TODO abhijitm should probably improve this code
-  basis := false;
-  if B cmpne false then
-    // if a basis is given, we assume that it's
-    // Hecke stable
-    basis := B;
-  elif assigned Mk`CuspFormBasis then
-    // if f is a cusp form
-    if #LinearDependence(Append(Mk`CuspFormBasis, f)) eq 1 then
-      basis := Mk`CuspFormBasis;
-    end if;
-  elif assigned Mk`Basis then
-    basis := Mk`Basis;
-  end if;
-
-  // if there's a basis to increase precision with
-  if basis cmpne false then
-    g := IncreasePrecisionWithBasis(g, basis);
-  end if;
+  // Apply basis precision increase if available
+  basis := GetBasisForPrecisionIncrease(Mk, f, B);
+  g := ApplyBasisPrecisionIncrease(g, basis);
   
   return g;
 end intrinsic;
@@ -155,9 +144,39 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 60, cop
   return eigs;
 end intrinsic;
 
-// TODO abhijitm combine to reduce code reuse
-intrinsic HeckeOperatorFourier(f::ModFrmHilDElt, pi::FldNumElt : B:=false) -> ModFrmHilDElt
-  {}
+// Helper function to handle common basis logic for precision increase
+function GetBasisForPrecisionIncrease(Mk, f, B)
+  basis := false;
+  if B cmpne false then
+    // if a basis is given, we assume that it's
+    // Hecke stable
+    basis := B;
+  elif assigned Mk`CuspFormBasis then
+    // if f is a cusp form
+    if #LinearDependence(Append(Mk`CuspFormBasis, f)) eq 1 then
+      basis := Mk`CuspFormBasis;
+    end if;
+  elif assigned Mk`Basis then
+    basis := Mk`Basis;
+  end if;
+  return basis;
+end function;
+
+// Helper function to apply basis precision increase if available
+function ApplyBasisPrecisionIncrease(g, basis)
+  if basis cmpne false then
+    g := IncreasePrecisionWithBasis(g, basis);
+  end if;
+  return g;
+end function;
+
+intrinsic HeckeOperatorCoeff(f::ModFrmHilDElt, pi : B:=false) -> ModFrmHilDElt
+  {
+    Hecke operator for nonparitious forms using coefficient access.
+    This is specialized for fields with narrow class number 1.
+  }
+
+  require Type(pi) in [FldOrdElt, FldNumElt, RngOrdElt, RngQuadElt, FldElt, FldQuadElt] : "pi must be a RngOrdElt, FldOrdElt or FldNumElt, not", Type(pi);
   Mk := Parent(f);
   M := Parent(Mk);
   F := BaseField(M);
@@ -174,7 +193,7 @@ intrinsic HeckeOperatorFourier(f::ModFrmHilDElt, pi::FldNumElt : B:=false) -> Mo
   assert IsZero(Coefficient(f, bb, F!0));
   // for now this operator is only defined for pi a totally positive generator of 
   // a prime ideal
-  assert Parent(pi) eq F;
+  assert FieldOfFractions(Parent(pi)) eq F;
   assert IsIntegral(pi);
   pp := ideal<ZF | ZF!pi>;
   assert IsPrime(pp);
@@ -202,28 +221,43 @@ intrinsic HeckeOperatorFourier(f::ModFrmHilDElt, pi::FldNumElt : B:=false) -> Mo
 
   g := HMF(Mk, coeffs : prec:=prec, coeff_ring := K);
 
-  // Attempting to increase precision using a basis
-  // TODO abhijitm should probably improve this code
-  basis := false;
-  if B cmpne false then
-    // if a basis is given, we assume that it's
-    // Hecke stable
-    basis := B;
-  elif assigned Mk`CuspFormBasis then
-    // if f is a cusp form
-    if #LinearDependence(Append(Mk`CuspFormBasis, f)) eq 1 then
-      basis := Mk`CuspFormBasis;
-    end if;
-  elif assigned Mk`Basis then
-    basis := Mk`Basis;
-  end if;
-
-  // if there's a basis to increase precision with
-  if basis cmpne false then
-    g := IncreasePrecisionWithBasis(g, basis);
-  end if;
+  // Apply basis precision increase if available
+  basis := GetBasisForPrecisionIncrease(Mk, f, B);
+  g := ApplyBasisPrecisionIncrease(g, basis);
   
   return g;
+end intrinsic;
+
+// Hecke operator that automatically chooses between paritious and nonparitious methods
+intrinsic HeckeOperator(f::ModFrmHilDElt, nn::RngOrdIdl : B:=false) -> ModFrmHilDElt, .
+  {
+    Hecke operator that automatically handles both paritious and nonparitious forms.
+    For paritious forms, uses the standard ideal-based method and returns only the transformed form.
+    For nonparitious forms, requires nn to be a prime ideal, uses Fourier coefficient method,
+    and returns both the transformed form and the totally positive generator pi.
+  }
+  Mk := Parent(f);
+  k := Weight(Mk);
+  
+  if IsParitious(k) then
+    return HeckeOperatorIdeal(f, nn : B:=B), _;
+  else
+    // For nonparitious forms, we need nn to be a prime ideal
+    // and we extract a totally positive generator
+    require IsPrime(nn) : "For nonparitious forms, nn must be a prime ideal";
+    F := BaseField(Parent(Mk));
+    ZF := Integers(F);
+    
+    // Get a totally positive generator of the prime ideal
+    // This assumes narrow class number 1
+    require NarrowClassNumber(F) eq 1 : "Nonparitious forms only supported for narrow class number 1";
+    
+    b, pi := IsNarrowlyPrincipal(nn);
+    require b : "Prime ideal should be narrowly principal when narrow class number is 1";
+    require IsTotallyPositive(pi) : "Generator must be totally positive";
+    
+    return HeckeOperatorCoeff(f, pi : B:=B), pi;
+  end if;
 end intrinsic;
 
 intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
@@ -241,7 +275,7 @@ intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl) -> Mtrx
   rows := [];
 
   for f in basis do
-    g := HeckeOperator(f, nn);
+    g, _ := HeckeOperator(f, nn);
     lindep := LinearDependence(basis cat [g]);
     require #lindep eq 1 : "Try increasing precision, #lindep was", #lindep;
     lindep := lindep[1];
