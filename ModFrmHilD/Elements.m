@@ -640,3 +640,23 @@ intrinsic DivideByFirstNonzeroIdlCoeff(f::ModFrmHilDElt) -> ModFrmHilDElt
   end for;
   require 0 eq 1 : "Something has gone wrong!";
 end intrinsic;
+
+intrinsic DivideByFirstNonzeroEltCoeff(f::ModFrmHilDElt) -> ModFrmHilDElt
+  {}
+  if IsZero(f) then
+    return f;
+  end if;
+
+  M := Parent(Parent(f));
+  ZF := Integers(BaseField(M));
+  // we assume narrow class number 1, this is easily improved though
+  assert #Components(f) eq 1;
+
+  bb := 1*ZF;
+  for nu in Keys(M`FunDomainReps[bb]) do
+    if not IsZero(Coefficient(f, bb, nu)) then
+      return f / Coefficient(f, bb, nu);
+    end if;
+  end for;
+  require 0 eq 1 : "Something has gone wrong!";
+end intrinsic;
