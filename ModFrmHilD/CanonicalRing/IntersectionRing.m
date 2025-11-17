@@ -94,8 +94,7 @@ end intrinsic;
 /////////////////////////////////////////////////////
 
 declare type ChowRngHMS[ChowRngHMSElt];
-declare attributes ChowRngHMS[ChowRngHMSElt] : CongruenceSubgroup, ResolutionCycles,
-        MultiplicationTable, GradedComponents, Generators, GeneratorInfo;
+declare attributes ChowRngHMS : CongruenceSubgroup, ResolutionCycles, MultiplicationTable, GradedComponents, Generators, GeneratorInfo;
 declare attributes ChowRngHMSElt : Parent, GradedComponents;
 
 // The Chow ring of a Hilbert Modular surface:
