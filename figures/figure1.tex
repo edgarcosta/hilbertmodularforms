@@ -13,8 +13,14 @@
 \draw node (B) at (\yA, \xA) {};
 \draw node[right] at (B) {$\quad \left(\sqrt{B/v_1(\eps)},\sqrt{Bv_1(\eps)}\right)$};
 %Fill
-\fill [blue!10] (0,0) -- (A.center) -- (\xA, 0);
-\fill [blue!10] (0,0) -- (B.center) -- (0, \xA);
+\def\xC{{8.2361}}
+\def\yC{{3.1459}}
+\def\xD{{3.1459}}
+\def\yD{{8.2361}}
+\fill [pink!10] (0,0) -- (A.center) -- (\xA, 0);
+\fill [pink!10] (0,0) -- (B.center) -- (0, \xA);
+\fill [blue!10] (0,0) -- (\xC, \yC) -- (\xC, 0);
+\fill [blue!10] (0,0) -- (\xD, \yD) -- (0, \yD);
 \fill [green!10] (0,0) -- (B.center)
 plot [domain=\yA:\xA] (\x,36/\x)
 -- (A.center) -- (0,0);
