@@ -39,6 +39,20 @@ function figure1(frakb, B : scale := 0.9, max_grid := 12.0,
   eps := F!TotallyPositiveUnitsGenerators(F)[1];
   v_eps := Sort(RealEmbeddings(eps));
   cone_coords := [Sqrt(B*v) : v in v_eps];
+  // This was originally from (-2,-1.1) to (10.1, 9.9)
+  // - allowing more from left to right than bottom up  !?
+  min_lat := min_grid + margin;
+  max_lat := max_grid - margin;
+  M := GradedRingOfHMFs(F,1);
+  lat_pts := ElementsInABox(M, frakb_prime, min_lat, min_lat, max_lat, max_lat);
+  real_embs := [RealEmbeddings(pt) : pt in lat_pts];
+  cone_lat_pts := [pt : pt in real_embs | pt[1]*pt[2] lt B and pt[1] gt 0 and cone_coords[1]*pt[2] le cone_coords[2]*pt[1] 
+                                          and cone_coords[2]*pt[2] ge cone_coords[1]*pt[1]];
+  top_lat_pt := cone_lat_pts[i] where _, i := Max([emb[2] : emb in cone_lat_pts]);
+  right_lat_pt := cone_lat_pts[i] where _, i := Max([emb[1] : emb in cone_lat_pts]);
+  top_shadow_pt := [cone_coords[1]/cone_coords[2]*top_lat_pt[2], top_lat_pt[2]];
+  right_shadow_pt := [right_lat_pt[1], cone_coords[1]/cone_coords[2]*right_lat_pt[1]];
+  assert top_lat_pt eq Reverse(right_lat_pt);
   Append(~output_lines, Sprintf("\\def\\xA{%.4o}",cone_coords[2]));
   Append(~output_lines, Sprintf("\\def\\yA{%.4o}",cone_coords[1]));
   // Here A and B are the right and left endpoints of the cone, respectively.
@@ -47,8 +61,14 @@ function figure1(frakb, B : scale := 0.9, max_grid := 12.0,
   Append(~output_lines, "\\draw node (B) at (\\yA, \\xA) {};");
   Append(~output_lines, "\\draw node[right] at (B) {$\\quad \\left(\\sqrt{B/v_1(\\eps)},\\sqrt{Bv_1(\\eps)}\\right)$};");
   Append(~output_lines, "%Fill");
-  Append(~output_lines, "\\fill [blue!10] (0,0) -- (A.center) -- (\\xA, 0);");
-  Append(~output_lines, "\\fill [blue!10] (0,0) -- (B.center) -- (0, \\xA);");
+  Append(~output_lines, Sprintf("\\def\\xC{{%.4o}}", right_shadow_pt[1]));
+  Append(~output_lines, Sprintf("\\def\\yC{{%.4o}}", right_shadow_pt[2]));
+  Append(~output_lines, Sprintf("\\def\\xD{{%.4o}}", top_shadow_pt[1]));
+  Append(~output_lines, Sprintf("\\def\\yD{{%.4o}}", top_shadow_pt[2]));
+  Append(~output_lines, "\\fill [pink!10] (0,0) -- (A.center) -- (\\xA, 0);");
+  Append(~output_lines, "\\fill [pink!10] (0,0) -- (B.center) -- (0, \\xA);");
+  Append(~output_lines, "\\fill [blue!10] (0,0) -- (\\xC, \\yC) -- (\\xC, 0);");
+  Append(~output_lines, "\\fill [blue!10] (0,0) -- (\\xD, \\yD) -- (0, \\yD);");
   Append(~output_lines, "\\fill [green!10] (0,0) -- (B.center)");
   Append(~output_lines, Sprintf("plot [domain=\\yA:\\xA] (\\x,%.4o/\\x)", B));
   Append(~output_lines, "-- (A.center) -- (0,0);");
@@ -68,21 +88,14 @@ function figure1(frakb, B : scale := 0.9, max_grid := 12.0,
   Append(~output_lines, "\\draw [dashed] (A.center) -- (\\xA, 0);");
   Append(~output_lines, "\\draw [dashed] (B.center) -- (0, \\xA);");
   Append(~output_lines, "%Lattice points");
-  // This was originally from (-2,-1.1) to (10.1, 9.9)
-  // - allowing more from left to right than bottom up  !?
-  min_lat := min_grid + margin;
-  max_lat := max_grid - margin;
   Append(~output_lines, Sprintf("{\\clip (%.4o,%.4o) rectangle (%.4o,%.4o);",
 				min_lat, min_lat, max_lat, max_lat));
-  M := GradedRingOfHMFs(F,1);
-  lat_pts := ElementsInABox(M, frakb_prime, min_lat, min_lat, max_lat, max_lat);
-  for pt in lat_pts do
-    real_pt := RealEmbeddings(pt);
-    Append(~output_lines, Sprintf("\\def\\xx{{%.4o}}", real_pt[1]));
-    Append(~output_lines, Sprintf("\\def\\yy{{%.4o}}", real_pt[2]));
+  for emb in real_embs do
+    Append(~output_lines, Sprintf("\\def\\xx{{%.4o}}", emb[1]));
+    Append(~output_lines, Sprintf("\\def\\yy{{%.4o}}", emb[2]));
     Append(~output_lines, Sprintf("\\draw[fill] ({\\xx},{\\yy}) circle (%.4o);",
 				  radius));
-  end for;
+  end for;  
   Append(~output_lines, "}");
   Append(~output_lines, "%Draw three \"shadows\"");
   norms := {Norm(l) : l in lat_pts | Norm(l) le B};
