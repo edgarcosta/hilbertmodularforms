@@ -387,7 +387,8 @@ intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
 	 //    require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
-    Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Character(Mk), Weight(Mk));
+    // Call without character first to avoid type issues, then apply character subspace
+    Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Weight(Mk));
     Mk`MagmaSpace := HeckeCharacterSubspace(Mk`MagmaSpace, Character(Mk));
   end if;
   return Mk`MagmaSpace;
