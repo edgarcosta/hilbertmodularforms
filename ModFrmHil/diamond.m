@@ -3,10 +3,10 @@ import "definite.m":
   DegeneracyDown1DefiniteBig,
   DegeneracyDownpDefiniteBig,
   HeckeOperatorDefiniteBig;
-import !"Geometry/ModFrmHil/hackobj.m" :
+import "hackobj.m" :
   IsBianchi,
   TopAmbient;
-import !"Geometry/ModFrmHil/hecke.m" :
+import "hecke.m" :
   HilbertModularSpaceDirectFactors,
   basis_is_honest,
   basis_matrix,

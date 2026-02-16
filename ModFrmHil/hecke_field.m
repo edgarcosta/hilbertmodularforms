@@ -1,13 +1,13 @@
 import "definite.m":
   _ResidueMatrixRing,
   HMSDF;
-import !"Geometry/ModFrmHil/hackobj.m" :
+import "hackobj.m" :
   Ambient,
   BMF_with_ambient,
   IsBianchi,
   TopAmbient;
 
-import !"Geometry/ModFrmHil/hecke.m" :
+import "hecke.m" :
   CharacteristicPolynomialViaCRT,
   NewformsOfDegree1Implemented,
   basis_is_honest,

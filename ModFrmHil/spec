@@ -7,5 +7,6 @@
   hecke_field.m
   ideal_datum.m
   level.m
+  precompute.m
   weight_rep.m
 }

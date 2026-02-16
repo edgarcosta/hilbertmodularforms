@@ -1,4 +1,4 @@
-import !"Geometry/ModFrmHil/hecke.m" :
+import "hecke.m" :
   BMF_with_ambient,
   CharacteristicPolynomialViaCRT,
   NewformsOfDegree1Implemented,
@@ -9,7 +9,7 @@ import !"Geometry/ModFrmHil/hecke.m" :
   random_large_split_prime,
   reduction;
 
-import !"Geometry/ModFrmHil/hackobj.m" :
+import "hackobj.m" :
   Ambient,
   HMF0,
   IsBianchi;
