@@ -1,7 +1,7 @@
 // HilbertModularVariety end-to-end test: Q(sqrt(2)), level 1
 // Known: generators in weights [2,4,6,14], 1 relation in weight 28
 // Expected: 1 component (h+ = 1), certified, dimension 2
-// Resources: >10 min CPU, ~2 GB RAM (estimated)
+// Resources: ~16 min CPU, ~791 MB RAM
 printf "HilbertModularVariety on Q(sqrt(2)), level 1...";
 t0 := Cputime(); walltime := Time();
 F := QuadraticField(2);

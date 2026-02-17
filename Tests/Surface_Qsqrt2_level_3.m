@@ -1,7 +1,7 @@
 // HilbertModularVariety end-to-end test: Q(sqrt(2)), level 3*ZF
 // 3 is inert in Q(sqrt(2)), so 3*ZF is a prime ideal of norm 9
 // Expected: 1 component, certified, dimension 2
-// Resources: >10 min CPU (estimated)
+// Resources: ~15 min CPU, ~1231 MB RAM
 printf "HilbertModularVariety on Q(sqrt(2)), level 3*ZF...";
 t0 := Cputime(); walltime := Time();
 F := QuadraticField(2);

@@ -2,7 +2,7 @@
 // pp is the unique prime above 5, with pp^2 = 5*ZF
 // Known: generators in weights [2,2,6,10,10], relations in weights [12,20]
 // Expected: 1 component, certified, dimension 2
-// Resources: >10 min CPU (estimated)
+// Resources: ~9 min CPU, ~499 MB RAM
 printf "HilbertModularVariety on Q(sqrt(5)), level pp (norm 5)...";
 t0 := Cputime(); walltime := Time();
 F := QuadraticField(5);
