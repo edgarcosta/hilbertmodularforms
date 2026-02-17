@@ -599,6 +599,17 @@ intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
   return H;
 end intrinsic;
 
+intrinsic HilbertSeriesOfPresentation(Gens::Assoc, Relations::Assoc) -> FldFunRatUElt
+  {Return the Hilbert series of the presentation Q[Gens]/Relations as a rational function.}
+  R := ConstructWeightedPolynomialRing(Gens);
+  PolynomialList := [];
+  for i in Keys(Relations) do
+    PolynomialList cat:= RelationstoPolynomials(R, Relations[i], i);
+  end for;
+  I := ideal<R | PolynomialList>;
+  return HilbertSeries(I);
+end intrinsic;
+
 intrinsic CanonicalBasis(Gens::Assoc, Relations::Assoc, f::ModFrmHilDElt) -> Any
 {return a basis for the space of modular forms in weight n, in terms of
         monomials of the "canonical" generators}
@@ -762,6 +773,255 @@ end intrinsic;
 
 /////////////////////////////////////////////////////
 //
+//    Algebraic independence and HilbertModularVariety algorithm
+//
+/////////////////////////////////////////////////////
+
+intrinsic AlgebraicallyIndependent(forms::SeqEnum[ModFrmHilDElt]
+    : IdealClassesSupport := false) -> BoolElt
+{Check if the given forms are algebraically independent using the Jacobian criterion.
+The forms should all have the same parallel weight, and there should be n+1 of them where
+n = [F:Q]. Returns true if algebraic independence is certified on at least one component.}
+
+  n := Degree(BaseField(GradedRing(forms[1])));
+  require #forms eq n + 1 : "Expected n+1 forms where n = degree of the base field";
+
+  M := GradedRing(forms[1]);
+  if IdealClassesSupport cmpeq false then
+    IdealClassesSupport := NarrowClassGroupReps(M);
+  end if;
+
+  for bb in IdealClassesSupport do
+    // Find a pivot form with nonzero constant term on this component
+    pivot := 0;
+    for i in [1..#forms] do
+      f_bb := Components(forms[i])[bb];
+      exp := Expansion(f_bb);
+      R_exp := Parent(exp);
+      ct := MonomialCoefficient(exp, R_exp!1);
+      if ct ne 0 then
+        pivot := i;
+        break;
+      end if;
+    end for;
+
+    if pivot eq 0 then
+      vprintf HilbertModularForms : "AlgebraicallyIndependent: no pivot with nonzero constant term on component %o\n", bb;
+      continue;
+    end if;
+
+    // Compute ratios g_i = f_i / f_pivot for i != pivot
+    f0_bb := Components(forms[pivot])[bb];
+    ratios := [];
+    for i in [1..#forms] do
+      if i ne pivot then
+        fi_bb := Components(forms[i])[bb];
+        gi_bb := fi_bb / f0_bb;
+        Append(~ratios, Expansion(gi_bb));
+      end if;
+    end for;
+
+    // Build n x n Jacobian matrix of partial derivatives
+    J := Matrix(n, n, [Derivative(ratios[i], j) : i in [1..n], j in [1..n]]);
+
+    if Determinant(J) ne 0 then
+      vprintf HilbertModularForms : "AlgebraicallyIndependent: certified on component %o\n", bb;
+      return true;
+    end if;
+  end for;
+
+  return false;
+end intrinsic;
+
+
+intrinsic CandidateAlgIndependentElements(
+    Gens::Assoc, Relations::Assoc, m::RngIntElt
+    : IdealClassesSupport := false) -> SeqEnum[ModFrmHilDElt], BoolElt
+{Search through degrees in the quotient ring defined by Gens and Relations to find m
+linearly independent forms of the same degree as candidates for algebraic independence.
+Returns the candidates and whether enough were found.}
+
+  R := ConstructWeightedPolynomialRing(Gens);
+  I := ConstructIdeal(R, Relations);
+
+  gen_weights := Sort(SetToSequence(Keys(Gens)));
+  max_degree := Maximum(gen_weights) * m;
+
+  for d := Minimum(gen_weights) to max_degree by 2 do
+    kbase := MonomialGenerators(R, I, d);
+    if #kbase lt m then
+      continue;
+    end if;
+
+    // Evaluate monomials to get actual forms
+    forms := EvaluateMonomials(Gens, kbase);
+
+    // Find m linearly independent forms
+    mat := CoefficientsMatrix(forms : IdealClasses := IdealClassesSupport);
+    pivots := PivotRows(mat);
+
+    if #pivots ge m then
+      return [forms[pivots[i]] : i in [1..m]], true;
+    end if;
+  end for;
+
+  return [], false;
+end intrinsic;
+
+
+intrinsic ApproximateGradedRing(M::ModFrmHilDGRng, N::RngOrdIdl, B::RngIntElt
+    : IdealClassesSupport := false, Alg := "Standard",
+      NumberOfTraceForms := 0,
+      Symmetric := false,
+      PrecomputedGens := AssociativeArray()) -> Tup
+{Compute generators and relations for the graded ring of Hilbert modular forms
+of level N. Generators are searched up to weight B, and relations up to weight 2*B
+(since relations can have degree up to the sum of any two generator weights).}
+  return ConstructGeneratorsAndRelations(M, N, B, 2*B
+      : IdealClassesSupport := IdealClassesSupport,
+        Alg := Alg,
+        NumberOfTraceForms := NumberOfTraceForms,
+        Symmetric := Symmetric,
+        PrecomputedGens := PrecomputedGens);
+end intrinsic;
+
+
+intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl
+    : MaxB := 100, Alg := "Standard",
+      NumberOfTraceForms := 0,
+      Symmetric := false,
+      PrecomputedGens := AssociativeArray(),
+      IdealClassesSupport := false) -> Assoc, SeqEnum, BoolElt
+{Compute the graded ring of Hilbert modular forms of level N over F using Algorithm 1
+from the paper. The algorithm iterates over increasing weight bounds B:
+
+Phase 1: Find B_0 where the sum of per-component Hilbert series (from the computed
+presentation) matches the trace formula Hilbert series.
+
+Phase 2: Certify the presentation by finding n+1 algebraically independent elements
+(where n = [F:Q]) on each component via a Jacobian determinant check.
+
+Returns:
+  comp_data - an associative array mapping component ideal bb to <Gens, Relations, Monomials>,
+  schemes   - a sequence of schemes (one per component),
+  certified - whether the algebraic independence check passed.}
+
+  n := Degree(F);
+  ZF := Integers(F);
+
+  M_temp := GradedRingOfHMFs(F, 1);
+  if IdealClassesSupport cmpeq false then
+    comps := NarrowClassGroupReps(M_temp);
+  else
+    comps := IdealClassesSupport;
+  end if;
+
+  // PHASE 1: Find B_0 where Hilbert series matches
+  B_0 := 0;
+  comp_data := AssociativeArray();
+
+  for B := 2 to MaxB by 2 do
+    vprintf HilbertModularForms : "HilbertModularVariety Phase 1: B = %o\n", B;
+
+    prec := ComputePrecisionFromHilbertSeries(N, 2*B);
+    M := GradedRingOfHMFs(F, prec);
+
+    // Compute per-component approximate graded rings
+    for bb in comps do
+      dict := ApproximateGradedRing(M, N, B
+          : IdealClassesSupport := [bb], Alg := Alg,
+            NumberOfTraceForms := NumberOfTraceForms,
+            Symmetric := Symmetric,
+            PrecomputedGens := PrecomputedGens);
+      comp_data[bb] := dict;
+    end for;
+
+    // Build ideals from per-component data
+    Is := [];
+    for bb in comps do
+      Gens_bb := comp_data[bb][1];
+      Rels_bb := comp_data[bb][2];
+      R_bb := ConstructWeightedPolynomialRing(Gens_bb);
+      I_bb := ConstructIdeal(R_bb, Rels_bb);
+      Append(~Is, I_bb);
+    end for;
+
+    // Check if the combined Hilbert series matches the trace formula
+    sane, H_trace, H_test := HilbertSeriesSanityCheck(M, N, Is);
+
+    if sane then
+      B_0 := B;
+      vprintf HilbertModularForms : "HilbertModularVariety Phase 1 complete: B_0 = %o\n", B_0;
+      break;
+    else
+      vprintf HilbertModularForms : "HilbertModularVariety Phase 1: HS mismatch at B = %o\n", B;
+      vprintf HilbertModularForms : "  trace formula: %o\n", H_trace;
+      vprintf HilbertModularForms : "  computed:      %o\n", H_test;
+    end if;
+  end for;
+
+  require B_0 ne 0 : Sprintf("HilbertModularVariety: failed to find matching Hilbert series up to MaxB = %o", MaxB);
+
+  // Build schemes from the final data
+  schemes := [];
+  for bb in comps do
+    S := MakeScheme(comp_data[bb][1], comp_data[bb][2]);
+    Append(~schemes, S);
+  end for;
+
+  // PHASE 2: Certify via algebraic independence (Jacobian check)
+  for B := B_0 to MaxB by 2 do
+    vprintf HilbertModularForms : "HilbertModularVariety Phase 2: B = %o\n", B;
+
+    if B gt B_0 then
+      // Recompute with higher weight bound for more relations
+      prec := ComputePrecisionFromHilbertSeries(N, 2*B);
+      M := GradedRingOfHMFs(F, prec);
+      for bb in comps do
+        dict := ApproximateGradedRing(M, N, B
+            : IdealClassesSupport := [bb], Alg := Alg,
+              NumberOfTraceForms := NumberOfTraceForms,
+              Symmetric := Symmetric,
+              PrecomputedGens := PrecomputedGens);
+        comp_data[bb] := dict;
+      end for;
+      schemes := [];
+      for bb in comps do
+        S := MakeScheme(comp_data[bb][1], comp_data[bb][2]);
+        Append(~schemes, S);
+      end for;
+    end if;
+
+    all_certified := true;
+    for bb in comps do
+      candidates, found := CandidateAlgIndependentElements(
+          comp_data[bb][1], comp_data[bb][2], n + 1
+          : IdealClassesSupport := [bb]);
+      if not found then
+        vprintf HilbertModularForms : "HilbertModularVariety Phase 2: not enough candidates on component %o\n", bb;
+        all_certified := false;
+        break;
+      end if;
+      if not AlgebraicallyIndependent(candidates : IdealClassesSupport := [bb]) then
+        vprintf HilbertModularForms : "HilbertModularVariety Phase 2: Jacobian check failed on component %o\n", bb;
+        all_certified := false;
+        break;
+      end if;
+    end for;
+
+    if all_certified then
+      vprintf HilbertModularForms : "HilbertModularVariety Phase 2 complete: certified at B = %o\n", B;
+      return comp_data, schemes, true;
+    end if;
+  end for;
+
+  vprintf HilbertModularForms : "HilbertModularVariety: could not certify algebraic independence up to MaxB = %o\n", MaxB;
+  return comp_data, schemes, false;
+end intrinsic;
+
+
+/////////////////////////////////////////////////////
+//
 //    Generator bound.
 //
 /////////////////////////////////////////////////////
@@ -776,16 +1036,11 @@ intrinsic GeneratorWeightBound(F::FldNum, N::RngOrdIdl) -> RngIntElt
     return GeneratorWeightBound(CongruenceSubgroup(F, N));
 end intrinsic;
 
-intrinsic GeneratorWeightBound(G::GrpHilbert) -> RngIntElt
-{Determine a bound for the maximum weight of a generator in the graded ring of modular forms.}
-    error "Not Implemented.";
-    return -9999;
-end intrinsic;
-
-
-// TODO: Eventually, this will be converted into the correct function.
-intrinsic GeneratorWeightBound(G::GrpHilbert : experiment:=false) -> Any
-{Experiment with the Neves style argument.}
+intrinsic GeneratorWeightBound(G::GrpHilbert : Experiment:=false) -> Any
+{Determine a bound for the maximum weight of a generator in the graded ring of modular forms,
+using a Neves-style argument based on the log-canonical sheaf.
+When Experiment is true, returns intermediate data (g, hilb, hilbI, Q, poly) for debugging.
+Returns -1 if the bound cannot be computed for this field.}
 
     // The algorithm to compute a degree bound on the generator can be found in the Overleaf
     // document associated to the paper. It proceeds along the following steps.
@@ -836,11 +1091,13 @@ intrinsic GeneratorWeightBound(G::GrpHilbert : experiment:=false) -> Any
     // 6. The degree of this polynomial reveals the path to victory.
     poly := hilb - hilbI - Q;
 
-    if experiment then
+    if Experiment then
 	return g, hilb, hilbI, Q, poly;
     end if;
 
-    assert Denominator(poly) eq 1;
+    if Denominator(poly) ne 1 then
+      return -1;
+    end if;
 
     // The only generators not accounted for in the restriction come from below the weight
     // of the section.
