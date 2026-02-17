@@ -107,7 +107,7 @@ intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filenam
   if filename eq "" then
     filename := Sprintf("Verification/CanonicalRingEquations/%o.m", ConvertLabel(label));
   end if;
-  Write(filename, s);
+  Write(filename, s : Overwrite := true);
   return Sprintf("Canonical ring equations written to %o", filename);
 end intrinsic;
 

@@ -1,7 +1,7 @@
 // HilbertModularVariety end-to-end test: Q(sqrt(5)), level 2*ZF
 // 2 is inert in Q(sqrt(5)), so 2*ZF is a prime ideal of norm 4
 // Expected: 1 component, certified, dimension 2
-// Resources: >10 min CPU (estimated)
+// Resources: ~33 min CPU, ~1135 MB RAM
 printf "HilbertModularVariety on Q(sqrt(5)), level 2*ZF...";
 t0 := Cputime(); walltime := Time();
 F := QuadraticField(5);
