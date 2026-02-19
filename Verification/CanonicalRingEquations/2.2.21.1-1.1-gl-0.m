@@ -1,3 +1,6 @@
+// STALE: generated with old 4-arg HilbertModularVariety; Hilbert series sanity check fails.
+// Cannot regenerate: narrow class number 2 hits upstream Magma bug (precompute.m:1064).
+//
 // level has label 1.1
 // Computed with precision = 180
 // generator degree bound = 10
