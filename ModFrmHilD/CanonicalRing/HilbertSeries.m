@@ -139,6 +139,63 @@ intrinsic testHilbertSeriesVasquez() -> BoolElt
 end intrinsic;
 
 
+intrinsic HilbertSeriesVdG(Gamma::GrpHilbert) -> FldFunRatUElt
+{Closed-form Hilbert series for a single component of a Hilbert modular surface,
+using Proposition VIII.1.1 of van der Geer, Hilbert Modular Surfaces.
+Requires level 1 and Gamma0 type.  The variable t corresponds to even weight,
+so the coefficient of t^m is the dimension of weight-2m forms.}
+
+    F := BaseField(Gamma);
+    ZF := Integers(F);
+    D := Discriminant(ZF);
+
+    require Degree(F) eq 2 : "Only implemented for real quadratic fields";
+    require Norm(Level(Gamma)) eq 1 : "Only implemented for level 1";
+    require GammaType(Gamma) eq "Gamma0" : "Only implemented for Gamma0";
+
+    R<t> := FunctionField(Rationals());
+
+    // D = 5 is a special case: order-5 elliptic points break the
+    // period-3 structure assumed by the generic formula.
+    if D eq 5 then
+        return (1 + t^10) * (1-t)^(-1) * (1-t^3)^(-1) * (1-t^5)^(-1);
+    end if;
+
+    // Per-component invariants
+    chi := ArithmeticGenus(Gamma);
+    h := NumberOfCusps(Gamma);
+    vol := VolumeOfFundamentalDomain(Gamma);
+
+    // tau_ot = (1/3)*a_3^+ for the component, extracted from the
+    // weight-4 cusp form dimension via [vdG IV.4]
+    // Coerce to rationals since DimensionOfCuspForms may live in a cyclotomic field.
+    tau_ot := Rationals() ! (2*vol + chi - DimensionOfCuspForms(Gamma, 4));
+
+    b0 := 1;
+    b1 := Rationals() ! (chi + h - 3);
+    b2 := Rationals() ! (2*vol - chi - tau_ot - h + 3);
+    b3 := Rationals() ! (2*vol + 2*tau_ot - 2);
+
+    B := b0 + b1*t + b2*t^2 + b3*t^3 + b2*t^4 + b1*t^5 + b0*t^6;
+    return B * (1-t)^(-2) * (1-t^3)^(-1);
+
+end intrinsic;
+
+intrinsic HilbertSeriesVdG(F::FldNum) -> SeqEnum[FldFunRatUElt]
+{Closed-form Hilbert series for each component of the Hilbert modular surface
+over the real quadratic field F at level 1, using Proposition VIII.1.1 of
+van der Geer, Hilbert Modular Surfaces.  Returns a sequence indexed by
+narrow class group representatives.}
+
+    require Degree(F) eq 2 : "Only implemented for real quadratic fields";
+    ZF := Integers(F);
+    NCl, mp := NarrowClassGroup(F);
+    return [HilbertSeriesVdG(CongruenceSubgroup("GL+", "Gamma0", F, 1*ZF, mp(el)))
+            : el in NCl];
+
+end intrinsic;
+
+
 intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> FldFunRatUElt
 {Returns the dimension of the space of Hilbert Modular Forms of weight `k` and level `(1)`.}
     return HilbertSeriesVasquez(BaseField(M));
