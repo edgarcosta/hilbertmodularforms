@@ -1454,24 +1454,60 @@ if METHOD lt 3 then
 
      vprintf ModFrmHil: "CharacteristicPolynomial: ";
      vtime ModFrmHil:
-     chi := CharacteristicPolynomial(t);  
-     chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
-     require IsIrreducible(chi) : 
+     chi := CharacteristicPolynomial(t);
+     F := minimal_hecke_matrix_field(M);
+     Fx := PolynomialRing(F);
+     K := BaseRing(t);
+     is_sub, emb_F_K := IsSubfield(F,K);
+     assert is_sub;
+     // We need to control the embedding
+     chi := Fx![c@@emb_F_K : c in Coefficients(chi)];
+     require IsIrreducible(chi) :
             "The space M is not an irreducible module under the Hecke action";
 
-     if Degree(chi) eq 1 then 
+     if Degree(chi) eq 1 then
        E := BaseRing(chi);
        e := t[1][1];
      else
        E := NumberField(chi); e:=E.1;
      end if;
-     nf`BaseField := E;                  
+     nf`BaseField := E;
 
-     K := BaseRing(t);
      EK := CompositeFields(K, E)[1];
+     // We map out the possible embeddings
+     // as we need the following field diagram to commute
+     //      EK
+     //    /     \
+     //  E        K
+     //    \     /
+     //       F
+     //
+     if Degree(K) eq 1 then
+	 embs_K_EK := [hom<K->EK | >];
+     else
+	 rootsK := Roots(DefiningPolynomial(K), EK);
+	 embs_K_EK := [hom<K->EK | r[1]> : r in rootsK];
+     end if;
+     if Degree(E) eq 1 then
+	 embs_E_EK := [hom<E->EK | >];
+     else
+	 rootsE := Roots(DefiningPolynomial(E), EK);
+	 embs_E_EK := [hom<E->EK | r[1]> : r in rootsE];
+     end if;
+     emb_E_EK := embs_E_EK[1];
+     assert exists(emb_K_EK){sig : sig in embs_K_EK |
+			     emb_E_EK(F.1) eq sig(emb_F_K(F.1))};
 
-     tEK := ChangeRing(t, EK);
-     eEK := EK!e;
+     tEK := ChangeRing(t, EK, emb_K_EK);
+     // We choose the embedding for e according to its parent
+     if Parent(e) eq E then
+	 eEK := emb_E_EK(e);
+     elif Parent(e) eq K then
+	 eEK := emb_K_EK(e);
+     else
+	 require false:
+                 "Something went wrong in composite embeddings.";
+     end if;
 
      nf`BaseField := E;
      nf`EK := EK;
