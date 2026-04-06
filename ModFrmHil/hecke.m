@@ -1513,6 +1513,7 @@ if METHOD lt 3 then
      nf`EK := EK;
      nf`tEK := tEK;
      nf`eEK := eEK;
+     nf`emb_K_EK := emb_K_EK;
 
      vprintf ModFrmHil: "Eigenspace: ";
      vtime ModFrmHil:
@@ -1767,7 +1768,7 @@ intrinsic HeckeEigenvalue(f::ModFrmHilElt, P::Any) -> RngElt
     TP := HeckeOperatorDefiniteBig(TopAmbient(M), P : Columns:=[i]);
     assert Ncols(TP) eq n;
     TPi := ExtractBlock(TP, 1, i, n, 1);
-    vTPi := v * ChangeRing(TPi, BaseRing(v));
+    vTPi := v * ChangeRing(TPi, f`emb_K_EK);
     e := vTPi[1]/v[i];
 
   elif assigned f`coords_wrt_parent then
@@ -1775,18 +1776,18 @@ intrinsic HeckeEigenvalue(f::ModFrmHilElt, P::Any) -> RngElt
     // TO DO: correct coercions for all cases
     v := f`coords_wrt_parent;
     TP := HeckeOperator(M, P);
-    vTP := v * ChangeRing(TP, BaseRing(v));
+    vTP := v * ChangeRing(TP, f`emb_K_EK);
     assert exists(i){i : i in [1..Ncols(v)] | v[i] ne 0};
     e := vTP[i]/v[i];
-    error if vTP ne e*v, 
+    error if vTP ne e*v,
          "Form does not seem to be an eigenform!" * please_report;
 
   elif assigned f`coords_wrt_ambient then
-    
+
     // TO DO: correct coercions for all cases
     v := f`coords_wrt_ambient;
     TP := HeckeOperator(M`Ambient, P);
-    vTP := v * ChangeRing(TP, BaseRing(v));
+    vTP := v * ChangeRing(TP, f`emb_K_EK);
     assert exists(i){i : i in [1..Ncols(v)] | v[i] ne 0};
     e := vTP[i]/v[i];
     error if vTP ne e*v, 
