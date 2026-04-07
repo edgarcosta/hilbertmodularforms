@@ -1378,7 +1378,7 @@ declare attributes ModFrmHilElt :
 
   best_column,                  // [temp?] used in HeckeEigenvalue
 
-  EK, tEK, eEK;                 // [temp?] used in Eigenform (METHOD 3 and 4)
+  EK, tEK, eEK, emb_K_EK;                 // [temp?] used in Eigenform (METHOD 3 and 4)
 
 /****************   Hacking for ModFrmHilElt   *****************/
 
