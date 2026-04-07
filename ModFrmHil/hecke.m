@@ -1443,7 +1443,11 @@ METHOD := M`HeckeMethod;
      vprintf ModFrmHil, 2: " (using METHOD %o)", METHOD;
      vprintf ModFrmHil: "\n"; 
 
-     nf := New(ModFrmHilElt);
+     if IsBianchi(M) then
+        nf := New(ModFrmBianchiElt);
+     else
+        nf := New(ModFrmHilElt);
+     end if;
      nf`Parent := M;
 
 if METHOD lt 3 then
