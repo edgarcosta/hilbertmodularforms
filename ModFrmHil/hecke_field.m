@@ -153,7 +153,7 @@ function DegeneracyMapDomain(M, d)
    // TO DO: use cached spaces, to avoid recomputing ModFrmHilDirFacts (that's the only advantage)
    DM:=HMF0(BaseField(M), d, NewLevel(M), DirichletCharacter(M), Weight(M), CentralCharacter(M));
    DM`QuaternionOrder:=QO;
-   DM`rids:=get_rids(M);
+   DM`rids, DM`support:=get_rids(M);
    DM`splitting_map:=M`splitting_map; // can use same splitting_map even though its level is larger than needed
    DM`weight_base_field:=M`weight_base_field;
    DM`weight_dimension:=M`weight_dimension;
