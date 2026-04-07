@@ -870,7 +870,8 @@ ii := Min([i : i in [1..#ords] | #ords_short_vals[i] gt 0 ] cat [1]);
       ridls_colonZBs := OH`RightIdealClasses[record_idx]`rids_colonZBs;
       ridls_colons := OH`RightIdealClasses[record_idx]`rids_colons;
 
-      for j := 1 to h do 
+      mod_units := [false : j in [1..h]];
+      for j := 1 to h do
         if j notin rows then
           Append(~ts_raw, [[] : i in [1..h]]);
           continue;
@@ -949,14 +950,14 @@ ii := Min([i : i in [1..#ords] | #ords_short_vals[i] gt 0 ] cat [1]);
           end for;
         end if;
         
-        mod_units := &and can_find_nbrs and (not debug); // in debug we would want to compare results
+        mod_units[j] := &and can_find_nbrs and (not debug); // in debug we would want to compare results
         for i in inds do
           g := ridls_colon_norms_gens[j][i] * gP;
           for u in pos_units_mod_norms[i] do
             if not can_find_nbrs[i] then
               bool, elts := has_element_of_norm(ridls_colonZBs[<j,i>], u*g : all);
             else
-              elts := ElementsOfNorm(ridls_colons[<j,i>], u*g : ModUnits := mod_units);
+              elts := ElementsOfNorm(ridls_colons[<j,i>], u*g : ModUnits := mod_units[j]);
               bool := not IsEmpty(elts);
               if debug then
                 bool_old, elts_old := has_element_of_norm(ridls_colonZBs[<j,i>], u*g : all);
@@ -988,77 +989,77 @@ ii := Min([i : i in [1..#ords] | #ords_short_vals[i] gt 0 ] cat [1]);
         return {-s lt s select -s else s : s in S};
       end function;
       
-      if not mod_units then
-        inds := [(j in rows) select inds_for_j(j) else [] : j in [1..h]];
-        allinds := Seqset(&cat inds);
-        noums := AssociativeArray(allinds);
-        for i in allinds do 
-          noumsi := ridls[i]`LeftOrder`norm_one_units_mod_scalars;
-          assert Universe(noumsi) eq H;
-          Exclude(~noumsi, H!1);
-          Exclude(~noumsi, H!-1);
-          noums[i] := noumsi;
-        end for;
+      not_mod_unit_rows := [j : j in rows | not mod_units[j]];
+      mod_unit_rows := [j : j in rows | mod_units[j]];
+      inds := [(j in not_mod_unit_rows) select inds_for_j(j) else [] : j in [1..h]];
+      allinds := Seqset(&cat inds);
+      noums := AssociativeArray(allinds);
+      for i in allinds do
+        noumsi := ridls[i]`LeftOrder`norm_one_units_mod_scalars;
+        assert Universe(noumsi) eq H;
+        Exclude(~noumsi, H!1);
+        Exclude(~noumsi, H!-1);
+        noums[i] := noumsi;
+      end for;
 
-        vprintf ModFrmHil, 2: "Choosing representatives modulo left multiplication by units: ";
-        vtime ModFrmHil, 2:
+      vprintf ModFrmHil, 2: "Choosing representatives modulo left multiplication by units: ";
+      vtime ModFrmHil, 2:
 
-        for j in rows do
-          for i in inds[j] do 
-            ts := [H| ];
-            for ie := 1 to #ts_raw[j][i] do 
-              elts := ts_raw[j][i][ie]; 
-              us := noums[i];
-              // Discard repeats modulo left mult by the norm-one-units us;
-              // here elts contains full orbits mod +-1,
-              // and us are the units mod +-1
-              length := 1+#us;
-              if length eq 1 then
-                ts cat:= elts;
-              elif #elts eq length then
-                Append(~ts, elts[1]);
-              else
-                elts := normalize(elts);
-                while true do
-                  // assert #elts ge length;
-                  // assert #elts mod length eq 0;
-                  e1 := Rep(elts);
-                  Append(~ts, e1);
-                  if #elts eq length then
-                    // the current elts form precisely one orbit
-                    break;
-                  else
-                    Exclude(~elts, e1);
-                    orbit := normalize({H| u*e1 : u in us});
-                    // assert orbit subset elts;
-                    elts diff:= orbit;
-                  end if;
-                end while;
-              end if;
-            end for; // ie
-
-
-            if debug and small_prime then // this checks the two methods against eachother
-              bool, tpsji := IsDefined(tps, <j,i>); assert bool;
-              assert #ts eq #tpsji;
-              for t in ts do 
-              assert #[tt : tt in tpsji | tt/t in  LeftOrder(ridls[i])] eq 1; 
-              end for;
-              for t in tpsji do 
-                assert #[tt : tt in ts | tt/t in  LeftOrder(ridls[i])] eq 1; 
-              end for;
+      for j in not_mod_unit_rows do
+        for i in inds[j] do
+          ts := [H| ];
+          for ie := 1 to #ts_raw[j][i] do
+            elts := ts_raw[j][i][ie];
+            us := noums[i];
+            // Discard repeats modulo left mult by the norm-one-units us;
+            // here elts contains full orbits mod +-1,
+            // and us are the units mod +-1
+            length := 1+#us;
+            if length eq 1 then
+              ts cat:= elts;
+            elif #elts eq length then
+              Append(~ts, elts[1]);
+            else
+              elts := normalize(elts);
+              while true do
+                // assert #elts ge length;
+                // assert #elts mod length eq 0;
+                e1 := Rep(elts);
+                Append(~ts, e1);
+                if #elts eq length then
+                  // the current elts form precisely one orbit
+                  break;
+                else
+                  Exclude(~elts, e1);
+                  orbit := normalize({H| u*e1 : u in us});
+                  // assert orbit subset elts;
+                  elts diff:= orbit;
+                end if;
+              end while;
             end if;
+          end for; // ie
 
-            tps[<j,i>] := ts;
-          end for; // i
-        end for; // j
-      else
-        for j in [1..h] do
-          for i in [1..h] do
-            tps[<j,i>] := &cat[ts : ts in ts_raw[j][i]];
-          end for;
+
+          if debug and small_prime then // this checks the two methods against eachother
+            bool, tpsji := IsDefined(tps, <j,i>); assert bool;
+            assert #ts eq #tpsji;
+            for t in ts do
+            assert #[tt : tt in tpsji | tt/t in  LeftOrder(ridls[i])] eq 1;
+            end for;
+            for t in tpsji do
+              assert #[tt : tt in ts | tt/t in  LeftOrder(ridls[i])] eq 1;
+            end for;
+          end if;
+
+          tps[<j,i>] := ts;
+        end for; // i
+      end for; // j
+
+      for j in mod_unit_rows do
+        for i in [1..h] do
+          tps[<j,i>] := &cat[ts : ts in ts_raw[j][i]];
         end for;
-      end if;
+      end for;
     end if; // small_prime
     IndentPop();
 
