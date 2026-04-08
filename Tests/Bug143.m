@@ -64,8 +64,4 @@ end procedure;
 //   debug/avx2     |  57.7 |  35.4 |  93.1 |  1.63
 //   debug/avx64    |  58.0 |  36.3 |  94.3 |  1.60
 //   debug/native   |  59.2 |  36.0 |  95.2 |  1.65
-if assigned verbose then
-    SetVerbose("ModFrmHil", eval verbose);
-end if;
 test_Bug_143(3);
-exit;

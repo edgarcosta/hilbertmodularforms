@@ -21,4 +21,4 @@ for i in [1..N] do
     test_Bug_58(1869775440, i);
 end for;
 
-exit;
+

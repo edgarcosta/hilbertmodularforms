@@ -14,4 +14,3 @@ procedure test_Bug_144()
 end procedure;
 
 test_Bug_144();
-exit;
