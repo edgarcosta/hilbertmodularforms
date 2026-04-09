@@ -39,6 +39,7 @@ function operator(M, p, op)
   if Dimension(M : UseFormula:=false) eq 0 then // gets cached dimension or computes the space
 
     Tp := ZeroMatrix(Integers(), 0, 0);
+    p_reps := [];
 
   elif assigned M`basis_matrix_wrt_ambient then
 

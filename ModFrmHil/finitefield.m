@@ -434,6 +434,7 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
           N`Ambient := MA;
         end if;
         // give N same ambient as M (TO DO: but reconsider when to make M wrt ambient, rather than wrt raw?)
+        N`NewSpace := M;
         N`is_new := true;
         N`HeckeIrreducible := true;
         if assigned M`hecke_matrix_field then
@@ -602,6 +603,13 @@ if METHOD lt 3 then
      nf`EK := EK;
      nf`tEK := tEK;
      nf`eEK := eEK;
+     if not IsFinite(K) then
+       if Degree(K) eq 1 then
+         nf`emb_K_EK := hom<K->EK | >;
+       else
+         nf`emb_K_EK := hom<K->EK | EK!K.1>;
+       end if;
+     end if;
 
      vprintf ModFrmHil: "Eigenspace: ";
      vtime ModFrmHil:
@@ -660,6 +668,11 @@ elif METHOD ge 3 then
      nf`EK := EK;
      nf`tEK := tEK;
      nf`eEK := eEK;
+     if Degree(K) eq 1 then
+       nf`emb_K_EK := hom<K->EK | >;
+     else
+       nf`emb_K_EK := hom<K->EK | EK!K.1>;
+     end if;
 
 end if;
 
