@@ -876,7 +876,7 @@ intrinsic ApproximateGradedRing(M::ModFrmHilDGRng, N::RngOrdIdl, B::RngIntElt
       PrecomputedGens := AssociativeArray()) -> Tup
 {Compute generators and relations for the graded ring of Hilbert modular forms
 of level N. Generators are searched up to weight B, and relations up to weight 2*B
-(since relations can have degree up to the sum of any two generator weights).}
+(heuristically, we hope that relations can have degree up to the sum of any two generator weights).}
   return ConstructGeneratorsAndRelations(M, N, B, 2*B
       : IdealClassesSupport := IdealClassesSupport,
         Alg := Alg,
