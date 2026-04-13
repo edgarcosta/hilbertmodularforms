@@ -17,6 +17,7 @@ freeze;
 import "hecke.m" :
   basis_matrix,
   basis_is_honest,
+  hecke_matrix_auto,
   hecke_matrix_field;
 
 import "definite.m":
@@ -1044,7 +1045,7 @@ intrinsic Dimension(M::ModFrmHil : UseFormula:=true) -> RngIntElt
               // Just compute the space--otherwise, we waste time computing the structure of the
               // intermediate groups; Shapiro's lemma is superior.
               Gamma := FuchsianGroup(OA);
-              dimJ := Nrows(HeckeMatrix2(Gamma, NdivJ, "Infinity", Weight(M), DirichletCharacter(M))) div 2;
+              dimJ := Nrows(hecke_matrix_auto(Gamma, NdivJ, "Infinity", Weight(M), DirichletCharacter(M))) div 2;
             end if;
             dim +:= cJ * dimJ;
           end if;
