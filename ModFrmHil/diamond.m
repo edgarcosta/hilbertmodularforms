@@ -11,6 +11,7 @@ import "hecke.m" :
   basis_is_honest,
   basis_matrix,
   debug,
+  hecke_matrix_auto,
   make_ideal,
   please_report,
   restriction;
@@ -102,15 +103,10 @@ function operator(M, p, op)
 
     Gamma := FuchsianGroup(QuaternionOrder(M));
     case op:
-      when "Hecke" : Tp_big, p_reps := HeckeMatrix2(Gamma, N, p, Weight(M), DirichletCharacter(M));
-      when "AL"    : Tp_big := HeckeMatrix2(
-                                  Gamma,
-                                  N,
-                                  p,
-                                  Weight(M),
-                                  DirichletCharacter(M) : 
-                                  UseAtkinLehner);
+      when "Hecke" : Tp_big := hecke_matrix_auto(Gamma, N, p, Weight(M), DirichletCharacter(M));
+      when "AL"    : Tp_big := hecke_matrix_auto(Gamma, N, p, Weight(M), DirichletCharacter(M) : UseAtkinLehner);
     end case;
+    p_reps := [];
     bm, bmi := basis_matrix(M);
     Tp := restriction(M, Tp_big);
 
