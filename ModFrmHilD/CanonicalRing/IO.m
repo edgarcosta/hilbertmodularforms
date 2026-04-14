@@ -57,29 +57,29 @@ intrinsic WriteCanonicalRingComputationToString(F::FldNum, NN::RngOrdIdl : Alg :
   tt0 := Cputime();
   s := Sprintf("// Computing for quadratic field %o\n", LMFDBLabel(F));
   s := Sprintf("// level has label %o\n", LMFDBLabel(NN));
-  prec, gen_bd, rel_bd := SetPrecisionAndBounds(NN);
-  s *:= Sprintf("// Computed with precision = %o\n", prec);
-  s *:= Sprintf("// generator degree bound = %o\n", gen_bd);
-  s *:= Sprintf("// relation degree bound = %o\n", rel_bd);
   s *:= Sprintf("// using %o algorithm\n", Alg);
+
+  comp_data, schemes, certified := HilbertModularVariety(F, NN : Alg := Alg);
+
   NCl, mp := NarrowClassGroup(F);
   mpdet := IdealRepsMapDeterministic(F, mp);
   comps := [mpdet[el] : el in NCl];
-  Ss := [];
-  // TODO: should loop over Galois orbits of components so that surface is both irreducible and defined over QQ
-  for bb in comps do
-    t0 := Cputime();
+  label := "";
+  for i in [1..#comps] do
+    bb := comps[i];
     s *:= Sprintf("// component with label %o\n", LMFDBLabel(bb));
     G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
-    //G := CongruenceSubgroup(AmbientType, GammaType, F, NN, bb);
-    S := HilbertModularVariety(F, NN, gen_bd, rel_bd : Precision := prec, IdealClassesSupport := [bb], Alg := Alg);
-    Append(~Ss, S);
-    s *:= WriteCanonicalSurfaceToString(LMFDBLabel(G), S);
-    t1 := Cputime();
-    s *:= Sprintf("// Computation took %o seconds\n", t1-t0);
+    label := LMFDBLabel(G);
+    s *:= WriteCanonicalSurfaceToString(label, schemes[i]);
   end for;
-  M := GradedRingOfHMFs(F,prec);
-  sane, H_trace, H_test := HilbertSeriesSanityCheck(M,NN,Ss);
+
+  if certified then
+    s *:= "// Certified: algebraic independence verified\n";
+  else
+    s *:= "// Warning: algebraic independence not certified\n";
+  end if;
+  M := GradedRingOfHMFs(F, 1);
+  sane, H_trace, H_test := HilbertSeriesSanityCheck(M, NN, schemes);
   if sane then
     s *:= "// Sanity check passed: Hilbert series agree!\n";
   else
@@ -87,7 +87,6 @@ intrinsic WriteCanonicalRingComputationToString(F::FldNum, NN::RngOrdIdl : Alg :
     s *:= Sprintf("// series from trace formula = %o\n", H_trace);
     s *:= Sprintf("// computed series = %o\n", H_test);
   end if;
-  label := LMFDBLabel(G);
   tt1 := Cputime();
   s *:= Sprintf("// Total computation for all components took %o seconds\n", tt1-tt0);
   return s, label;
@@ -108,7 +107,7 @@ intrinsic WriteCanonicalRingComputationToFile(F::FldNum, NN::RngOrdIdl : filenam
   if filename eq "" then
     filename := Sprintf("Verification/CanonicalRingEquations/%o.m", ConvertLabel(label));
   end if;
-  Write(filename, s);
+  Write(filename, s : Overwrite := true);
   return Sprintf("Canonical ring equations written to %o", filename);
 end intrinsic;
 
