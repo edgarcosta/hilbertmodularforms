@@ -1,6 +1,6 @@
 // usage: magma target:=SUBSTRING exitsignal:=BOOL run_tests.m
 if assigned filename then
-  if "Tests/" eq filename[1..6] then
+  if #filename ge 6 and "Tests/" eq filename[1..6] then
     filename := filename[7..#filename];
   end if;
   tests := [filename];
