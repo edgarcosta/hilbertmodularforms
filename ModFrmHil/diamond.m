@@ -11,7 +11,6 @@ import "hecke.m" :
   basis_is_honest,
   basis_matrix,
   debug,
-  hecke_matrix_auto,
   make_ideal,
   please_report,
   restriction;
@@ -102,11 +101,20 @@ function operator(M, p, op)
     end if;
 
     Gamma := FuchsianGroup(QuaternionOrder(M));
-    case op:
-      when "Hecke" : Tp_big := hecke_matrix_auto(Gamma, N, p, Weight(M), DirichletCharacter(M));
-      when "AL"    : Tp_big := hecke_matrix_auto(Gamma, N, p, Weight(M), DirichletCharacter(M) : UseAtkinLehner);
-    end case;
-    p_reps := [];
+    if Type(N) eq RngInt then
+      // Over Q, Level/disc can collapse to RngInt; use built-in HeckeMatrix
+      case op:
+        when "Hecke" : Tp_big := HeckeMatrix(Gamma, N, p);
+        when "AL"    : Tp_big := HeckeMatrix(Gamma, N, p : UseAtkinLehner);
+      end case;
+      p_reps := [];
+    else
+      case op:
+        when "Hecke" : Tp_big, p_reps := HeckeMatrix2(Gamma, N, p, Weight(M), DirichletCharacter(M));
+        when "AL"    : Tp_big := HeckeMatrix2(Gamma, N, p, Weight(M), DirichletCharacter(M) : UseAtkinLehner);
+                       p_reps := [];
+      end case;
+    end if;
     bm, bmi := basis_matrix(M);
     Tp := restriction(M, Tp_big);
 
