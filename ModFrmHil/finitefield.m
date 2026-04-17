@@ -208,7 +208,7 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
       else
         bool, iso := IsIsomorphic(NumberField(Order(p)), K);
         assert bool;
-        pp := ideal<Integers(K) | [iso(K!g) : g in Generators(p)]>;
+        pp := ideal<Integers(K) | [Integers(K)!iso(NumberField(Order(p))!g) : g in Generators(p)]>;
       end if;
 
       FF, OKtoFF := ResidueClassField(pp);
