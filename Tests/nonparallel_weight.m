@@ -1,3 +1,4 @@
+// test-time: ~36s
 function hecke_eigs(F, N, k, MD)
   /***
    * F::FldNum - Base field of HMFs

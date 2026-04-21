@@ -1,3 +1,4 @@
+// test-time: ~43s
 // HilbertModularVariety end-to-end test: Q(sqrt(13)), level 2*ZF
 // 2 is inert in Q(sqrt(13)), so 2*ZF is a prime ideal of norm 4
 // Expected: 1 component, certified, dimension 2

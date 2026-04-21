@@ -1,3 +1,4 @@
+// test-time: ~1m
 ///////////////////  Q(\sqrt{5}) /////////////////// 
 F:=QuadraticField(5);
 prec := 500;

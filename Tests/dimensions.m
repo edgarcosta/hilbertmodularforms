@@ -1,3 +1,4 @@
+// test-time: ~40s
 procedure testDimension(F,N,k)
     // Summing over all components to get the total
     cg, cg_map := NarrowClassGroup(F);

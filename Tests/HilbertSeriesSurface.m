@@ -1,3 +1,4 @@
+// test-time: ~35s
 
 // This test uses Prop. VIII.1.1 in vdG
 procedure test_level_1(D, bb)
