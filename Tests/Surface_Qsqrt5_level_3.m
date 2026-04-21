@@ -1,3 +1,4 @@
+// test-time: ~2m
 // HilbertModularVariety end-to-end test: Q(sqrt(5)), level 3*ZF
 // 3 is inert in Q(sqrt(5)), so 3*ZF is a prime ideal of norm 9
 // Known: generators in weights [2,2,4,6,8], relations in weights [8,16]

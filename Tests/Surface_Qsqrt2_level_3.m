@@ -1,3 +1,4 @@
+// test-time: ~11m
 // HilbertModularVariety end-to-end test: Q(sqrt(2)), level 3*ZF
 // 3 is inert in Q(sqrt(2)), so 3*ZF is a prime ideal of norm 9
 // Expected: 1 component, certified, dimension 2

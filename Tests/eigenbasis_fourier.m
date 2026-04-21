@@ -1,3 +1,4 @@
+// test-time: ~33s
 // Global verbose flag
 VERBOSE := false;
 

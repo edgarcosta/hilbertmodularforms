@@ -1,3 +1,4 @@
+// test-time: ~52s
 // Test whether the square of a [2,2,3] form is in the [4,4,6] space
 
 R<x> := PolynomialRing(Rationals());
