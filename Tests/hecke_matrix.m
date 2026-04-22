@@ -1,3 +1,4 @@
+// test-time: ~55s
 /******************************************************************************
 * This file has tests for ModFrmHil/level.m::HeckeMatrix2, a modification of 
 * !Geometry/ModFrmHil/level.m::HeckeMatrix.

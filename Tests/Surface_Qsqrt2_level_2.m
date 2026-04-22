@@ -1,3 +1,4 @@
+// test-time: ~2m
 // HilbertModularVariety end-to-end test: Q(sqrt(2)), level 2*ZF
 // 2*ZF = pp^2 where pp is the prime above 2
 // Known: generators in weights [2,2,2,8], 1 relation in weight 16

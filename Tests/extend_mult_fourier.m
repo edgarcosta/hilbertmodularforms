@@ -1,3 +1,4 @@
+// test-time: ~38s
 import "ModFrmHilD/Creation/CuspFormFromEigs.m" : coeff_from_ext_mult_fourier;
 
 procedure test(Mk, bb)

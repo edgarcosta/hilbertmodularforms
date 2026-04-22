@@ -243,7 +243,14 @@ intrinsic HeckeMatrix2(Gamma::GrpPSL2, N, ell, weight, chi : UseAtkinLehner := f
 
   Z_F := MaximalOrder(F);
 
-  require Order(N) eq Z_F : "The level N is not from the ring of integers of the base\
+  // When Level/disc are equal over a number field, Magma may return the ring
+  // (RngOrd) instead of the unit ideal. Coerce to a proper ideal.
+  if Type(N) eq RngOrd then
+    N := 1*Z_F;
+  end if;
+
+  require Type(N) ne RngInt and Order(N) eq Z_F :
+    "The level N is not from the ring of integers of the base\
     field of the Fuchsian group Gamma";
 
   // if chi is not given we set it to be the trivial character

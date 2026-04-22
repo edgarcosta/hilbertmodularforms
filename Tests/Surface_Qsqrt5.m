@@ -1,3 +1,4 @@
+// test-time: ~1h18m
 // HilbertModularVariety end-to-end test: Q(sqrt(5)), level 1
 // Known: generators in weights [2,6,10,20], 1 relation in weight 40
 // Expected: 1 component (h+ = 1), certified, dimension 2

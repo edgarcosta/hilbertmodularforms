@@ -1,3 +1,4 @@
+// test-time: ~1m
 R<x> := PolynomialRing(Rationals());
 F := NumberField(x^3-x^2-2*x+1);
 ZF := Integers(F);
