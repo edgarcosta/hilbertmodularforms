@@ -29,7 +29,7 @@ for D in [2..50] do
     PP<T> := PowerSeriesRing(Rationals(), 100);
 
     G := CongruenceSubgroup(K);
-    g, hilb, hilbI, Q, poly := GeneratorWeightBound(G : experiment:=true);
+    g, hilb, hilbI, Q, poly := GeneratorWeightBound(G : Experiment:=true);
 
     print "den: ", Denominator(poly);
     
