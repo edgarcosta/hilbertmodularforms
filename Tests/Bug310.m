@@ -1,23 +1,34 @@
-/********************************                                             
- * Tests Bug report 310                                                      
+/********************************
+ * Tests Bug report 310
+ *
+ * ElementsOfNorm had an assertion
+ *   assert {Norm(x) : x in elts} eq {n};
+ * that crashes when elts is empty. This test uses a definite
+ * quaternion algebra over Q(sqrt(2)) with disc = (3)*(5) (h=8)
+ * where some right ideal classes have no elements of norm 7,
+ * triggering the empty case through the Neighbors code path.
  ********************************/
 
 procedure test_Bug_310()
     QQ := Rationals();
     _<x> := PolynomialRing(QQ);
-    m4 := x^3 + x^2 - 4*x + 1;
-    F<c> := NumberField(m4);
-    O := Integers(F);   
-    I13 := Factorisation(13*O)[1, 1];
-    I2 := 2*O;
-    I3:=3*O;
-    N0:=I2*I3*I13;
-    D:=I2*I3*I13;
-    H := QuaternionAlgebra(D,InfinitePlaces(F));
+    F<a> := NumberField(x^2 - 2);
+    O := Integers(F);
+    I3 := Factorisation(3*O)[1,1];
+    I5 := Factorisation(5*O)[1,1];
+    D := I3*I5;
+    H := QuaternionAlgebra(D, InfinitePlaces(F));
     OH := MaximalOrder(H);
-    M := HilbertCuspForms(F,N0);
-    N := NewSubspace(M : QuaternionOrder := OH);
-    T7 := HeckeOperator(N,7*O);
+    rids := RightIdealClasses(OH);
+    assert #rids eq 8;
+    found_empty := false;
+    for I in rids do
+        elts := ElementsOfNorm(I, 7);
+        norms := {Norm(x) : x in elts};
+        assert IsEmpty(norms) or (norms eq {7});
+        if IsEmpty(norms) then found_empty := true; end if;
+    end for;
+    assert found_empty;
     return;
 end procedure;
 
