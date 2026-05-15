@@ -2,6 +2,10 @@
 // Multi-component: narrow class number h+ = 2
 // Expected: 2 components, certified, each dimension 2
 // Resources: >10 min CPU (estimated)
+// EXCLUDED FROM CI: precompute.m L1070 row-sum assertion fails for h+=2
+// fields. "assert &+[#tps[<j,i>]] eq num" -- Hecke-neighbour enumeration
+// in precompute_tps misses elements when the narrow class group is
+// non-trivial and prime P is in support of right-ideal classes.
 printf "HilbertModularVariety on Q(sqrt(33)), level 1 (h+=2)...";
 t0 := Cputime(); walltime := Time();
 F := QuadraticField(33);
