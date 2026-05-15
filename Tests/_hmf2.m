@@ -1,3 +1,11 @@
+// TODO: indefinite HeckeMatrix2 fails when h+ > 1 (here h+ = 2 for
+// F = Q[w]/(w^3-4w-1), LMFDB 3.3.229.1). Then HeckeMatrix1 is called
+// with ind != indp, so Gamma_datum != Gammap_datum, and InducedH1
+// builds the cocycle kernels from different coset reps and weight-rep
+// blocks over a field; Htildep * M is no longer in Domain(mH)
+// (level.m ~L774). Upstream keeps both kernels in a common Z-lattice
+// by using integer coset-permutation matrices in InducedH1 and
+// applying the weight twist separately via Zp in HeckeMatrix1.
 
 // Test Hecke and AtkinLehner, verifying definite vs indefinite,
 // over cubic field
