@@ -14,7 +14,8 @@
 // Output: R = Weighted polynomial ring
 intrinsic ConstructWeightedPolynomialRing(Gens::Assoc)-> RngMPol
   {Return a weighted polynomial ring with #Gens[k] generators of degree k, for k in the keys of Gens}
-  GenWeights := &cat[[w : j in [1..#g]] : w->g in Gens];
+  sordidKeys := Sort(Setseq(Keys(Gens)));
+  GenWeights := &cat[[w : j in [1..#Gens[w]]] : w in sordidKeys];
   R := PolynomialRing(Rationals(), GenWeights);
   return R;
 end intrinsic;
@@ -79,7 +80,8 @@ intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt]) -> S
   {For a given set of HMF this produces all multiples with weight k}
 
   // this uses the same order as ConstructWeightedPolynomialRing
-  GenList := Sum([* SequenceToList(g): w->g in Gens*] : empty := [* *]);
+  sordidKeys := Sort(Setseq(Keys(Gens)));
+  GenList := Sum([* SequenceToList(Gens[w]): w in sordidKeys*] : empty := [* *]);
   return EvaluateMonomials(GenList, MonomialGens);
 end intrinsic;
 
@@ -571,7 +573,15 @@ intrinsic MakeScheme(Gens::Assoc, Relations::Assoc)-> Any
   R := ConstructWeightedPolynomialRing(Gens);
   PolynomialList := [];
   for i in Keys(Relations) do
-    PolynomialList cat:= RelationstoPolynomials(R,Relations[i],i);
+    rels := RelationstoPolynomials(R,Relations[i],i);
+    // Adding verification that the relations are satisfied
+    // This is in order to verify we did not mess up the ordering.
+    for rel in rels do
+      coeffs, mons := CoefficientsAndMonomials(rel);
+      evaluated_mons := EvaluateMonomials(Gens, mons);
+      assert &+[coeffs[i]*evaluated_mons[i] : i in [1..#coeffs]] eq 0;
+    end for;
+    PolynomialList cat:= rels;
   end for;
 
   P := ProjectiveSpace(R);
