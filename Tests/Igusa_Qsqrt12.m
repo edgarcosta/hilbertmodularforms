@@ -49,7 +49,7 @@ function gens_and_rels(D, B, num_gens, num_rels)
   for j in [1..max_num] do
     for k in Keys(rels) do
       assert #rels[k] eq num_rels[k];
-      R[j][k] := relss[k][j];
+      R[j][k] := rels[k][j];
     end for;
   end for;
   return vars, R, M;
