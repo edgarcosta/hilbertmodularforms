@@ -1,67 +1,94 @@
 # hilbertmodularforms
 
-Implementation to compute graded rings of Hilbert modular forms in [Magma](http://magma.maths.usyd.edu.au/magma/).
+A [Magma](http://magma.maths.usyd.edu.au/magma/) package for computing with Hilbert modular forms over totally real number fields, and with Hilbert modular surfaces. It extends Magma's built-in `ModFrmHil` with q-expansion bases, surface invariants, Hirzebruch–Zagier divisors, and canonical rings.
 
-## Source code
+## Papers
 
-Explanations about the Magma source code in each directory.
+This package accompanies two papers:
 
-### ModFrmHil
+- *Computing with Fourier expansions of Hilbert modular forms* (in preparation).
+- *A database of basic numerical invariants of Hilbert modular surfaces*, LuCaNT proceedings; arXiv:[2301.10302](https://arxiv.org/abs/2301.10302).
 
-This project builds on the [current Hilbert modular form implementation](http://magma.maths.usyd.edu.au/magma/handbook/hilbert_modular_forms) in Magma.
-The source code in ModFrmHil connects this work to the current implementation.
+## Loading the package
 
-### ModFrmHilD
+Requires Magma. Attach the package via its top-level `spec` file:
 
-The `ModFrmHilD` class represents the additional functionality we are adding to `ModFrmHil`.
-The `D` in this name stands for _Dartmouth_ where this project originated.
+```magma
+AttachSpec("spec");
+```
 
-### HilbertSeries
-
-Source code to compute formulas for Hilbert series of Hilbert modular surfaces.
-
-### spec files
-
-Package specification files, or `spec` files, help organize imports in various places.
-Package specification documentation: [http://magma.maths.usyd.edu.au/magma/handbook/text/24#181](http://magma.maths.usyd.edu.au/magma/handbook/text/24#181).
+A convenience file `config.m` is also provided, which attaches the spec and sets a few sensible defaults (e.g. `SetClassGroupBounds("GRH")`).
 
 ## Tests
 
-Example computations that are run during CI via `run_tests.m`.
-These examples can also be executed individually using
+Tests live in `Tests/` and are run via the included `Makefile`:
 
-```{shell}
-magma Tests/filename.m
+```bash
+make check                  # run all tests in parallel (uses all CPU cores)
+make check/<testfile.m>     # run a single test
+make debug/<testfile.m>     # run a single test with debug-on-error
+make clean                  # clear cached precomputed data
 ```
 
-## Examples
+Each test file is a Magma script that uses `assert`. Individual tests can also be run directly:
 
-These files are similar to files in Tests, but not run during CI.
-
-## scripts
-
-Scripts should include calling information in a comment at the top of the file. For example, we can run `generate_hs.m` using the following command.
-
-```{shell}
-magma -b D:=13 ambient:=SL gamma:=Gamma0 scripts/generate_kposs.m
+```bash
+magma -b filename:=Tests/<testfile.m> exitsignal:='' run_tests.m
 ```
 
-These scripts are then used to generate data for [https://github.com/edgarcosta/hilbertmodularsurfacesdata](https://github.com/edgarcosta/hilbertmodularsurfacesdata) which ultimately ends up on [https://teal.lmfdb.xyz/HilbertModularSurface/Q/](https://teal.lmfdb.xyz/HilbertModularSurface/Q/). These can be run using the following command.
+## Source code
 
-```{shell}
-A=GL;G=Gamma0;t=kposs;name=${A}_${G}_lt3000_cut5000_${t}; time parallel --joblog data/joblog/${name}.txt --results data/results/${name} --eta -j 64 magma -b cut:=5000 D:={} ambient:=$A gamma:=$G scripts/generate_${t}.m ::: {1..3000} > data/${name}.txt
+Brief explanations of each top-level directory.
+
+### ModFrmHil
+
+Patches and extensions to Magma's built-in [Hilbert modular forms](http://magma.maths.usyd.edu.au/magma/handbook/hilbert_modular_forms) implementation (Hecke and diamond operators, the definite case, precomputation hooks).
+
+### ModFrmHilD
+
+The core of the package — the `D` stands for *Dartmouth*, where the project originated. The type hierarchy is
+
+```
+ModFrmHilDGRng  >  ModFrmHilD  >  ModFrmHilDElt  >  ModFrmHilDEltComp
 ```
 
-TODO: explain how to call `counts_and_timings.m`
+with subdirectories for form creation (`Creation/` — Eisenstein, theta, base change, dihedral, trace forms), canonical rings (`CanonicalRing/`), and trace formula data (`Trace/`).
 
-## Verification
+### HilbertSeries
 
-This is unfinished work to verify computed equations against equations in the literature.
+Formulas for Hilbert series of Hilbert modular surfaces.
 
-## WorkInProgress
+### Verification
 
-Examples that may or may not run successfully, but have code or comments that may be useful or informative.
-Once a file has been polished and appropriate for public consumption it can be moved to Examples or Tests.
+Code to verify computed equations against equations in the literature.
+
+### spec files
+
+Package specification files; see the Magma [handbook section on packages](http://magma.maths.usyd.edu.au/magma/handbook/text/24#181).
+
+## Examples and work in progress
+
+- `examples/` contains worked examples (e.g. `paper-examples.m`).
+- `WorkInProgress/` contains demonstrations and exploratory scripts that may or may not currently run end-to-end.
+
+## Scripts and data
+
+Scripts in `scripts/` generate data for [hilbertmodularsurfacesdata](https://github.com/edgarcosta/hilbertmodularsurfacesdata), which in turn feeds [https://alpha.lmfdb.xyz/HilbertModularSurface/Q/](https://alpha.lmfdb.xyz/HilbertModularSurface/Q/). Each script documents its calling convention at the top of the file. For example:
+
+```bash
+magma -b D:=13 ambient:=SL gamma:=Gamma0 scripts/generate_hs.m
+```
+
+For parallel runs across many discriminants we use GNU Parallel, e.g.:
+
+```bash
+A=GL; G=Gamma0; t=hs
+parallel -j 64 magma -b D:={} ambient:=$A gamma:=$G scripts/generate_${t}.m ::: {1..3000}
+```
+
+## License
+
+BSD 3-Clause. See [`LICENSE`](LICENSE).
 
 ## Authors
 
