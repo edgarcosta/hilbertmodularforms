@@ -68,6 +68,23 @@ function make_ideal(x)
   end case;
 end function;
 
+// Wrapper: call HeckeMatrix2 when character/weight data is available,
+// fall back to the built-in HeckeMatrix when Level/disc collapses to
+// RngInt (which happens over Q when the Eichler level is trivial).
+function hecke_matrix_auto(Gamma, N, ell, weight, chi : UseAtkinLehner := false)
+  if Type(N) eq RngInt then
+    if Type(ell) eq MonStgElt then
+      return HeckeMatrix(Gamma, N, ell);
+    elif UseAtkinLehner then
+      return HeckeMatrix(Gamma, N, ell : UseAtkinLehner);
+    else
+      return HeckeMatrix(Gamma, N, ell);
+    end if;
+  else
+    return HeckeMatrix2(Gamma, N, ell, weight, chi : UseAtkinLehner := UseAtkinLehner);
+  end if;
+end function;
+
 function basis_is_honest(M)
   return assigned M`basis_is_honest and M`basis_is_honest
          or assigned M`basis_matrix and not assigned M`Ambient;
@@ -99,7 +116,7 @@ end function;
 function basis_of_plus_subspace(M) 
   Gamma := FuchsianGroup(QuaternionOrder(M));
   N := Level(M) / make_ideal(Discriminant(QuaternionOrder(M)));
-  T := HeckeMatrix2(Gamma, N, "Infinity", Weight(M), DirichletCharacter(M));
+  T := hecke_matrix_auto(Gamma, N, "Infinity", Weight(M), DirichletCharacter(M));
   if T cmpeq [] then 
     T := Matrix(Integers(), 0, 0, []); 
   end if;
@@ -214,7 +231,7 @@ function basis_matrix(M)
         else
             for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
                 // An oldspace from pp only makes sense if the nebentypus is also "old" at pp
-                if IsOne(GCD(pp[1], Conductor(DirichletCharacter(M)))) then
+                if (DirichletCharacter(M) cmpeq 1) or IsOne(GCD(pp[1], Conductor(DirichletCharacter(M)))) then
                     new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
                   V meet:= new;
                   C +:= old;
@@ -1310,15 +1327,16 @@ end if;
           N`Ambient := MA;
         end if;
         // give N same ambient as M (TO DO: but reconsider when to make M wrt ambient, rather than wrt raw?)
+        N`NewSpace := M;
         N`is_new := true;
         N`HeckeIrreducible := true;
         if assigned M`hecke_matrix_field then
           N`hecke_matrix_field := M`hecke_matrix_field;
         end if;
         field := hecke_matrix_field(N`Ambient);
-        if #components eq 1 then 
+        if #components eq 1 then
           pseudo_inv := kmat ^ -1;
-        else 
+        else
           complement := VerticalJoin(<components[i] : i in [1..#components] | i ne k>);
           pseudo_inv := pseudo_inverse(kmat, complement);
         end if;
@@ -1576,6 +1594,11 @@ elif METHOD ge 3 then
      nf`EK := EK;
      nf`tEK := tEK;
      nf`eEK := eEK;
+     if Degree(K) eq 1 then
+       nf`emb_K_EK := hom<K->EK | >;
+     else
+       nf`emb_K_EK := hom<K->EK | EK!K.1>;
+     end if;
 
 end if;
 
@@ -2288,20 +2311,24 @@ function space_with_level(M, N, Nnew)
     F := BaseField(M);
     k := Weight(M);
     chi := DirichletCharacter(M);
-    _, m_inf := Modulus(chi);
-    c_f := Conductor(chi);
-    // If the conductor of chi doesn't divide N then this space cannot be constructed
-    assert N subset c_f;
-
-    // The character of the level N space should have finite modulus N.
-    // I think the infinite modulus shouldn't change
-    if Type(chi) eq GrpHeckeElt then
-      chi_res := Restrict(chi, N, m_inf);
-    else
+    if chi cmpeq 1 or Type(chi) ne GrpHeckeElt then
       chi_res := 1;
+    else
+      _, m_inf := Modulus(chi);
+      c_f := Conductor(chi);
+      // If the conductor of chi doesn't divide N then this space cannot be constructed
+      assert N subset c_f;
+
+      // The character of the level N space should have finite modulus N.
+      // I think the infinite modulus shouldn't change
+      chi_res := Restrict(chi, N, m_inf);
     end if;
 
-    M1 := HilbertCuspForms(F, N, chi_res, k);
+    if chi_res cmpeq 1 then
+      M1 := HilbertCuspForms(F, N, k);
+    else
+      M1 := HilbertCuspForms(F, N, chi_res, k);
+    end if;
     if not assigned M1`QuaternionOrder and assigned M`QuaternionOrder
        and IsSuitableQuaternionOrder(M`QuaternionOrder, M1)
     then

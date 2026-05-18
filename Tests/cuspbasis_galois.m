@@ -1,3 +1,4 @@
+// test-time: ~6m
 printf "Testing GaloisDescent argument...";
 F:=QuadraticField(10);
 prec:=1;

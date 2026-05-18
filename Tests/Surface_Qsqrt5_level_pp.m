@@ -1,3 +1,4 @@
+// test-time: ~3m
 // HilbertModularVariety end-to-end test: Q(sqrt(5)), level pp (norm 5)
 // pp is the unique prime above 5, with pp^2 = 5*ZF
 // Known: generators in weights [2,2,6,10,10], relations in weights [12,20]

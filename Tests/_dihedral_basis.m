@@ -1,3 +1,13 @@
+// TODO: re-enable once Magma-Maths/Magma#55 is fixed.
+// The Embed at package/RepThry/ModGrp/Reduce-NonCyclic.m:231 (intrinsic
+// Compositum(FldAlg, FldAlg), line 132) fails with
+//   "Runtime error in 'Embed': Invalid embedding"
+// once Compositum has been called with a (FldQuad, FldCyc) pair in
+// both argument orders. Reached via ModFrmHilD/Space.m:613
+// (DefaultCoefficientRing) when constructing a non-parallel-weight +
+// non-trivial-nebentypus HMFSpace.
+// Regression bracket: works on V2.28-25; crashes on V2.29-beta0
+// through V2.29-7.
 /***************************************************
  * There is exactly one [1,1] dihedral form of level N.
  * We check that it's in the cusp space (computed via
