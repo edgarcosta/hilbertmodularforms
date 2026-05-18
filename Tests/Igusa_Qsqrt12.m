@@ -41,10 +41,12 @@ function gens_and_rels(D, B, num_gens, num_rels)
   for j in [1..max_num] do
     for k in Keys(gens) do
       assert #gens[k] eq num_gens[k];
-      vars[j][k] := gens[k][j];
+      if IsDefined(gens[k], j) then
+        vars[j][k] := gens[k][j];
+      end if;
     end for;
   end for;
-  max_num := Maximum([n : n in num_rels]);
+  max_num := IsEmpty(Keys(num_rels)) select 0 else Maximum([n : n in num_rels]);
   R := [AssociativeArray() : i in [1..max_num]];
   for j in [1..max_num] do
     for k in Keys(rels) do
