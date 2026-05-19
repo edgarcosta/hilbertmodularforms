@@ -833,7 +833,7 @@ intrinsic PositiveSqrt(nu::FldNumElt, K::FldNum) -> FldNumElt
   return (Evaluate(mu, v_0) ge 0) select mu else -1*mu;
 end intrinsic;
 
-intrinsic NormToHalfWeight(I::RngFracIdl, k0::RngIntElt, K::FldNum) -> FldNumElt
+intrinsic NormToHalfWeight(I::RngOrdFracIdl, k0::RngIntElt, K::FldNum) -> FldNumElt
   {
     input:
       I: A fractional ideal
