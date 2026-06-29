@@ -87,3 +87,73 @@ intrinsic IsIsomorphic(S1::Sch, S2::Sch) -> BoolElt
   end if;
   return false;
 end intrinsic;
+
+intrinsic VerifyGradedIsomorphism(I::RngMPol, J::RngMPol,
+    PhiImages::SeqEnum, PsiImages::SeqEnum) -> BoolElt
+{ Deterministically certify that the graded-algebra map phi from Generic(I)/I to
+  Generic(J)/J, sending the i-th source variable to PhiImages[i], is an isomorphism
+  with inverse psi given by PsiImages. Returns true iff all of:
+  (1) phi(g) in J for every generator g of I;
+  (2) psi(h) in I for every generator h of J;
+  (3) psi(phi(x_i)) - x_i in I for every source variable x_i;
+  (4) phi(psi(y_j)) - y_j in J for every target variable y_j;
+  (5) phi and psi are weighted-homogeneous of the variable weights.
+  Checks (1),(2) make phi,psi descend to the quotients; (3),(4) make them mutual
+  inverses (containments alone do NOT prove an isomorphism); (5) makes the induced
+  map of weighted-projective schemes well defined. The Hilbert-series equality of I
+  and J is a separate sanity check, not performed here. No SolveZeroDimIdeal search
+  is used, so the verdict is stable across Magma versions. Requires I and J to be
+  homogeneous (graded) ideals (returns false otherwise) and Generic(I), Generic(J) to
+  share the same weight vector (the caller normalizes proportional weights to the
+  canonical ones; see spec Section 5.1). A variable whose image is the zero polynomial
+  is rejected by check (5). }
+  Rsrc := Generic(I);
+  Rtgt := Generic(J);
+  require #PhiImages eq Rank(Rsrc):
+    "PhiImages must have one entry per variable of Generic(I)";
+  require #PsiImages eq Rank(Rtgt):
+    "PsiImages must have one entry per variable of Generic(J)";
+
+  // A graded isomorphism of the quotients is only meaningful when I and J are homogeneous
+  // (graded) ideals. The five checks below would otherwise certify a non-graded quotient
+  // (e.g. I = <x + 1>). Reject non-homogeneous input up front.
+  if not IsHomogeneous(I) or not IsHomogeneous(J) then
+    return false;
+  end if;
+
+  phi := hom< Rsrc -> Rtgt | [Rtgt | f : f in PhiImages] >;
+  psi := hom< Rtgt -> Rsrc | [Rsrc | f : f in PsiImages] >;
+
+  // (5) grading: each variable image is homogeneous of the source/target variable weight
+  for i in [1..Rank(Rsrc)] do
+    im := Rtgt ! PhiImages[i];
+    if im eq 0 or not IsHomogeneous(im) or WeightedDegree(im) ne WeightedDegree(Rsrc.i) then
+      return false;
+    end if;
+  end for;
+  for j in [1..Rank(Rtgt)] do
+    im := Rsrc ! PsiImages[j];
+    if im eq 0 or not IsHomogeneous(im) or WeightedDegree(im) ne WeightedDegree(Rtgt.j) then
+      return false;
+    end if;
+  end for;
+
+  // (1) phi(I) subset J
+  for g in Generators(I) do
+    if not (phi(g) in J) then return false; end if;
+  end for;
+  // (2) psi(J) subset I
+  for h in Generators(J) do
+    if not (psi(h) in I) then return false; end if;
+  end for;
+  // (3) psi . phi = identity on Generic(I)/I
+  for i in [1..Rank(Rsrc)] do
+    if not (psi(phi(Rsrc.i)) - Rsrc.i in I) then return false; end if;
+  end for;
+  // (4) phi . psi = identity on Generic(J)/J
+  for j in [1..Rank(Rtgt)] do
+    if not (phi(psi(Rtgt.j)) - Rtgt.j in J) then return false; end if;
+  end for;
+
+  return true;
+end intrinsic;
