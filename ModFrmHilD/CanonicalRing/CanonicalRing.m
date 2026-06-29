@@ -904,6 +904,11 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl
     : MaxB := 100, Alg := "Standard",
       NumberOfTraceForms := 0,
       Symmetric := false,
+      GeneratorWeight := 0,
+      RelationWeight := 0,
+      LowestWeight := 2,
+      ComputeNewGenerators := true,
+      Precision := 100,
       PrecomputedGens := AssociativeArray(),
       IdealClassesSupport := false) -> Assoc, SeqEnum, BoolElt
 {Compute the graded ring of Hilbert modular forms of level N over F using Algorithm 1
@@ -914,6 +919,10 @@ presentation) matches the trace formula Hilbert series.
 
 Phase 2: Certify the presentation by finding n+1 algebraically independent elements
 (where n = [F:Q]) on each component via a Jacobian determinant check.
+
+If GeneratorWeight is set (nonzero), the algorithm skips the B-search and computes a
+presentation directly at the given GeneratorWeight/RelationWeight bounds per component,
+returning certified = false (no Jacobian certification is performed in this mode).
 
 Returns:
   comp_data - an associative array mapping component ideal bb to <Gens, Relations, Monomials>,
@@ -928,6 +937,26 @@ Returns:
     comps := NarrowClassGroupReps(M_temp);
   else
     comps := IdealClassesSupport;
+  end if;
+
+  // Explicit-bounds mode (formerly the 4-arg HilbertModularVariety overload):
+  // one direct computation per component at the given weights, no B-search and
+  // no certification. For narrow class number 1 this reproduces the old 4-arg result.
+  if GeneratorWeight gt 0 then
+    relW := (RelationWeight gt 0) select RelationWeight else 2*GeneratorWeight;
+    prec := Max(Precision, ComputePrecisionFromHilbertSeries(N, GeneratorWeight));
+    R := GradedRingOfHMFs(F, prec);
+    comp_data := AssociativeArray();
+    schemes := [];
+    for bb in comps do
+      dict := ConstructGeneratorsAndRelations(R, N, GeneratorWeight, relW
+          : LowestWeight := LowestWeight, Alg := Alg, IdealClassesSupport := [bb],
+            Symmetric := Symmetric, NumberOfTraceForms := NumberOfTraceForms,
+            ComputeNewGenerators := ComputeNewGenerators, PrecomputedGens := PrecomputedGens);
+      comp_data[bb] := dict;
+      Append(~schemes, MakeScheme(dict[1], dict[2]));
+    end for;
+    return comp_data, schemes, false;
   end if;
 
   // PHASE 1: Find B_0 where Hilbert series matches
