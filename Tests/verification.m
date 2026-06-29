@@ -62,7 +62,8 @@ procedure test_sqrt13_dynamic()
   F := LMFDBField("2.2.13.1");
   NN := LMFDBIdeal(F, "1.1");
   prec, gen_bd, rel_bd := SetPrecisionAndBounds(NN);
-  S := HilbertModularVariety(F, NN, gen_bd, rel_bd : Precision := prec, IdealClassesSupport := false, Alg := "Standard");
+  _, schemes_vdg, _ := HilbertModularVariety(F, NN : GeneratorWeight := gen_bd, RelationWeight := rel_bd, Precision := prec, IdealClassesSupport := false, Alg := "Standard");
+  S := schemes_vdg[1];
   // Compare with van der Geer-Zagier
   QQ := Rationals();
   P<X2,X4,X6,Y6,X8> := PolynomialRing(QQ,[2,4,6,6,8]);
