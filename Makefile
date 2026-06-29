@@ -1,5 +1,5 @@
-TEST_FILES := $(wildcard Tests/*.m)
-CHECK_FILES := $(patsubst Tests/%, check/%, $(TEST_FILES))
+CHECK_FILES := $(patsubst Tests/%,check/%,$(wildcard Tests/*.m)) \
+               $(patsubst examples/%,check/%,$(wildcard examples/*.m))
 
 
 MAKEFLAGS += -j$(shell nproc 2> /dev/null || printf 1)
@@ -11,8 +11,12 @@ clean:
 
 check/%.m: Tests/%.m
 	@magma -b filename:=$< exitsignal:='' run_tests.m
+check/%.m: examples/%.m
+	@magma -b filename:=$< exitsignal:='' run_tests.m
 
 debug/%.m: Tests/%.m
+	@magma -b filename:=$< debug:='' run_tests.m
+debug/%.m: examples/%.m
 	@magma -b filename:=$< debug:='' run_tests.m
 
 check: $(CHECK_FILES)
