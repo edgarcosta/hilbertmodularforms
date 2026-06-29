@@ -1,11 +1,9 @@
 // usage: magma target:=SUBSTRING exitsignal:=BOOL run_tests.m
+// filename and target are full relative paths, e.g. Tests/foo.m or examples/foo.m
 if assigned filename then
-  if #filename ge 6 and "Tests/" eq filename[1..6] then
-    filename := filename[7..#filename];
-  end if;
   tests := [filename];
 else
-  tests := Split(Pipe("ls Tests", ""), "\n");
+  tests := Split(Pipe("ls Tests/*.m examples/*.m 2>/dev/null", ""), "\n");
 end if;
 if assigned debug then
   SetDebugOnError(true);
@@ -29,7 +27,7 @@ counter := 0;
 for filename in tests do
   if target in filename then
     counter +:=1;
-    fullPath := "Tests/" cat filename;
+    fullPath := filename;
     timestamp := Time();
     if assigned debug then
       printf "%o: ", filename;
@@ -60,4 +58,3 @@ end if;
 if assigned exitsignal then
   exit #failed;
 end if;
-
