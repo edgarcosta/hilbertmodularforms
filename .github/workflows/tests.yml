@@ -193,4 +193,3 @@ jobs:
         shell: bash
         run: |
           ./magma/magma -b target:=${{matrix.target}} exitsignal:="" run_tests.m
-
