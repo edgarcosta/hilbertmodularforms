@@ -381,13 +381,21 @@ It is assumed that `forms` are linearly independent.}
 
         eisensteinbasis := EisensteinBasis(Mk : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric);
         traceforms := [ TraceForm(Mk,aa) : aa in TraceFormIdeals ];
-        moreforms := Basis(forms cat eisensteinbasis cat traceforms );
-        coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
+        try
+            moreforms_input := forms cat eisensteinbasis;
+            if #traceforms ne 0 then
+                moreforms_input cat:= traceforms;
+            end if;
+            moreforms := Basis(moreforms_input);
+            coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
 
-        // TODO: This double complement call can surely be optimized away.
-        if Rank(coeffs_matrix) eq KnownMkDimension then
-            return forms cat ComplementBasis(forms, Basis(moreforms) : Alg := Alg);
-        end if;
+            // TODO: This double complement call can surely be optimized away.
+            if Rank(coeffs_matrix) eq KnownMkDimension then
+                return forms cat ComplementBasis(forms, Basis(moreforms) : Alg := Alg);
+            end if;
+        catch e
+            vprint HilbertModularForms : "Eisenstein / Traceforms shortcut failed; opening full basis";
+        end try;
     end if;
 
     vprint HilbertModularForms : "Opening Basis! This may be slow";
