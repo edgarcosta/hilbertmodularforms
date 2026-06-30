@@ -26,10 +26,17 @@
   and for the normalized newform basis (a_{(1)} = 1) the two order-m conditions
   become rank computations on the Atkin-Lehner sign vector.
 
-  Result: P_1 = 1, P_2 = 2.  Since a K3 surface has P_m = 1 for all m, the
-  surface is NOT K3: kappa(X_0(p31)) in {1, 2} (properly elliptic or general
-  type), despite its K3 numerical signature (chi = 2, p_g = 1, q = 0,
-  K^2(Y) = 0, e = 24).
+  Result: P_1 = 1, P_2 = 2.  Combined with chi = 2 (p_g = 1, q = 0), this
+  determines the Kodaira dimension:
+    - kappa = -infty (rational/ruled) needs p_g = 0;            excluded.
+    - kappa = 0: with q = 0, p_g = 1 the minimal model is a K3, so P_m = 1
+      for all m, hence P_2 = 1;                                  excluded (P_2 = 2).
+    - kappa = 2 (general type): the minimal model has K^2_min >= 1, and
+      Riemann-Roch + Mumford vanishing give P_2 = chi + K^2_min = 2 + K^2_min
+      >= 3;                                                      excluded (P_2 = 2).
+  Hence kappa(X_0(p31)) = 1: the surface is PROPERLY ELLIPTIC -- it carries a
+  genuine elliptic fibration -- despite its K3 numerical signature
+  (chi = 2, p_g = 1, q = 0, K^2(Y) = 0, e = 24).
 */
 
 AttachSpec("spec");
@@ -111,6 +118,8 @@ printf "P_2 = %o\n", P2;
 
 assert P1 eq 1 and P2 eq 2;
 print "";
-print "CONCLUSION: P_1, P_2 = 1, 2.  P_2 > 1 ==> the surface is NOT K3;";
-print "kappa(X_0(p31)) in {1, 2} (properly elliptic or general type).";
+print "CONCLUSION: P_1, P_2 = 1, 2.";
+print "With chi = 2: P_2 = 1 would force K3 (kappa 0); general type forces";
+print "P_2 = chi + K^2_min >= 3. Both excluded, so kappa(X_0(p31)) = 1:";
+print "the surface is PROPERLY ELLIPTIC (despite its K3 numerical signature).";
 exit;
