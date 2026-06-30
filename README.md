@@ -68,7 +68,7 @@ Package specification files; see the Magma [handbook section on packages](http:/
 
 ## Examples and work in progress
 
-- `examples/` holds the paper's worked examples that run in CI (the X0(11) modular curve, Igusa invariants, numerical surface invariants), each a self-contained script; `examples/slow/` holds the heavy cases CI skips. The canonical-ring witness examples are listed as pending in `examples/README.md`.
+- `examples/` holds the paper's worked examples that run in CI (the X0(11) modular curve, Igusa invariants, the cyclic cubic threefold example, numerical surface invariants), each a self-contained script; `examples/slow/` holds the heavy cases CI skips. The canonical-ring witness examples are listed as pending in `examples/README.md`.
 - `WorkInProgress/` contains demonstrations and exploratory scripts that may or may not currently run end-to-end.
 
 ## Scripts and data

@@ -5,12 +5,13 @@ Self-contained scripts for the examples in the papers, run in CI exactly like
 a CI runner live in `examples/slow/` and are skipped by CI; run them manually with
 `magma -b filename:=examples/slow/<file>.m exitsignal:='' run_tests.m`.
 
-## q-expansions paper (hmf-qexpansions.tex)
+## Computing with Fourier expansions of Hilbert modular forms
 
 | Paper section | Example | File | Status |
 |---|---|---|---|
 | Modular curve X0(11) | X0(11) model is an elliptic curve of conductor 11 | `modular_curve_X0_11.m` | CI |
 | Igusa invariants | Igusa invariants for Q(sqrt 12) and Q(sqrt 21) | `igusa_invariants.m` | CI |
+| Hilbert modular threefolds | cyclic cubic field Q(zeta_7 + zeta_7^-1), with products and Hecke translates in weights 8 and 10 | `cyclic_cubic_threefold.m` | CI |
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch | `canonical_ring_Qsqrt2.m` | pending (plan 4b: witness map) |
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier | `canonical_ring_Qsqrt13.m` | pending (plan 4b: witness map) |
 | D=5 | Q(sqrt 5) canonical ring vs Hirzebruch/Gundlach | `canonical_ring_Qsqrt5.m` | pending (plan 4b: witness map) |
@@ -22,9 +23,9 @@ a CI runner live in `examples/slow/` and are skipped by CI; run them manually wi
 |---|---|---|
 | Examples 1-4: surface invariants by label | `numerical_surface_invariants.m` | CI |
 
-## Pointer snippets for hmf-qexpansions.tex (paste into the Overleaf source)
+## Paper Pointer Snippets
 
-Repath the existing Igusa comments (currently at lines 5429 and 5471):
+Repath the existing Igusa comments in the paper source:
 
     % For verification of the above formulas, see examples/igusa_invariants.m
     % Code that verifies the above is in examples/igusa_invariants.m
