@@ -131,7 +131,7 @@ jobs:
         id: magmacache
         env:
           # Increase this value to reset cache when MAGMA_URL changes
-          CACHE_NUMBER: 2.29-6
+          CACHE_NUMBER: 2.29-8
         with:
           path: |
             ./magma
