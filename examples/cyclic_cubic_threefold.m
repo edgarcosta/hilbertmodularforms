@@ -5,8 +5,8 @@
 // full weight 8 space and a 7-dimensional subspace in weight 10, where
 // Hecke operators at primes above 13 produce the missing directions.
 //
-// This example verifies the current q-expansion computation at finite
-// precision.  It does not yet certify the dimension formula for M_10.
+// This example verifies the relevant trace-formula dimensions and the
+// current q-expansion computation at finite precision.
 
 procedure test_cyclic_cubic_threefold_products_and_hecke()
   Q := Rationals();
@@ -23,6 +23,11 @@ procedure test_cyclic_cubic_threefold_products_and_hecke()
     E[k] := Ek[1];
   end for;
 
+  M8 := HMFSpace(M, [8, 8, 8]);
+  assert EisensteinDimension(M8) eq 1;
+  assert CuspDimension(M8) eq 4;
+  assert Dimension(M8) eq 5;
+
   products8 := [
     E[2]^4,
     E[2]^2 * E[4],
@@ -31,6 +36,12 @@ procedure test_cyclic_cubic_threefold_products_and_hecke()
     E[8]
   ];
   assert #LinearDependence(products8) eq 0;
+  assert #products8 eq Dimension(M8);
+
+  M10 := HMFSpace(M, [10, 10, 10]);
+  assert EisensteinDimension(M10) eq 1;
+  assert CuspDimension(M10) eq 8;
+  assert Dimension(M10) eq 9;
 
   products10 := [
     E[2]^5,
@@ -51,6 +62,7 @@ procedure test_cyclic_cubic_threefold_products_and_hecke()
 
   // Two primes above 13 give the two extra directions expected in M_10.
   assert #LinearDependence(products10 cat hecke_translates[1..2]) eq 0;
+  assert #products10 + 2 eq Dimension(M10);
   assert #LinearDependence(products10 cat hecke_translates) eq 1;
 end procedure;
 
