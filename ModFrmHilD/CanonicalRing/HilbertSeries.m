@@ -198,17 +198,24 @@ end intrinsic;
 
 intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> FldFunRatUElt
 {Returns the dimension of the space of Hilbert Modular Forms of weight `k` and level `(1)`.}
-    return HilbertSeriesVasquez(BaseField(M));
+    F := BaseField(M);
+    if Degree(F) eq 2 then
+        return HilbertSeriesVasquez(F);
+    end if;
+    return HilbertSeries(M, 1*Integers(F));
 end intrinsic;
 
 intrinsic HilbertSeries(F::FldNum, level::RngOrdIdl) -> FldFunRatUElt
 {Return the Hilbert series for the space of Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
-    if (NarrowClassNumber(F) eq 1) and (Norm(level) eq 1) then
+    if (Degree(F) eq 2) and (NarrowClassNumber(F) eq 1) and (Norm(level) eq 1) then
         return HilbertSeriesVasquez(F);
     end if;
     M := GradedRingOfHMFs(F, 1);
-    M2 := HMFSpace(M, level, [2,2]);
+    if Degree(F) ne 2 then
+        return HilbertSeries(M, level);
+    end if;
+    M2 := HMFSpace(M, level, [2 : i in [1..Degree(F)]]);
     HC := HilbertSeriesCusp(M, level);
     R<T> := Parent(HC);
     HE := EisensteinDimension(M2)*T^2/(1-T^2);

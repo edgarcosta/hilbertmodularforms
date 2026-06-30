@@ -14,7 +14,8 @@
 // Output: R = Weighted polynomial ring
 intrinsic ConstructWeightedPolynomialRing(Gens::Assoc)-> RngMPol
   {Return a weighted polynomial ring with #Gens[k] generators of degree k, for k in the keys of Gens}
-  GenWeights := &cat[[w : j in [1..#g]] : w->g in Gens];
+  gen_weights := Sort(Setseq(Keys(Gens)));
+  GenWeights := &cat[[w : j in [1..#Gens[w]]] : w in gen_weights];
   R := PolynomialRing(Rationals(), GenWeights);
   return R;
 end intrinsic;
@@ -79,7 +80,8 @@ intrinsic EvaluateMonomials(Gens::Assoc, MonomialGens::SeqEnum[RngMPolElt]) -> S
   {For a given set of HMF this produces all multiples with weight k}
 
   // this uses the same order as ConstructWeightedPolynomialRing
-  GenList := Sum([* SequenceToList(g): w->g in Gens*] : empty := [* *]);
+  gen_weights := Sort(Setseq(Keys(Gens)));
+  GenList := Sum([* SequenceToList(Gens[w]) : w in gen_weights *] : empty := [* *]);
   return EvaluateMonomials(GenList, MonomialGens);
 end intrinsic;
 
@@ -120,7 +122,7 @@ intrinsic Evaluate(F::RngMPolElt, v::List) -> ModFrmHilDElt
 {Given a multivariate polynomial `F` with `n` variables, and a list `v`, return
 `F(v[1], ..., v[n])`. No attempt is made to check whether this is well-defined.}
     coeffs, mons := CoefficientsAndMonomials(F);
-    eviled_mons := EvaluateMonomials([* F *], mons);
+    eviled_mons := EvaluateMonomials(v, mons);
     return &+[coeffs[i] * eviled_mons[i] : i in [1..#eviled_mons]];
 end intrinsic;
 
@@ -379,13 +381,21 @@ It is assumed that `forms` are linearly independent.}
 
         eisensteinbasis := EisensteinBasis(Mk : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric);
         traceforms := [ TraceForm(Mk,aa) : aa in TraceFormIdeals ];
-        moreforms := Basis(forms cat eisensteinbasis cat traceforms );
-        coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
+        try
+            moreforms_input := forms cat eisensteinbasis;
+            if #traceforms ne 0 then
+                moreforms_input cat:= traceforms;
+            end if;
+            moreforms := Basis(moreforms_input);
+            coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
 
-        // TODO: This double complement call can surely be optimized away.
-        if Rank(coeffs_matrix) eq KnownMkDimension then
-            return forms cat ComplementBasis(forms, Basis(moreforms) : Alg := Alg);
-        end if;
+            // TODO: This double complement call can surely be optimized away.
+            if Rank(coeffs_matrix) eq KnownMkDimension then
+                return forms cat ComplementBasis(forms, Basis(moreforms) : Alg := Alg);
+            end if;
+        catch e
+            vprint HilbertModularForms : "Eisenstein / Traceforms shortcut failed; opening full basis";
+        end try;
     end if;
 
     vprint HilbertModularForms : "Opening Basis! This may be slow";
