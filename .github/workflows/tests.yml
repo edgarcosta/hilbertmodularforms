@@ -6,6 +6,10 @@ on:
 
   pull_request_target:
 
+env:
+  # Increase this value to reset cache when MAGMA_URL changes.
+  MAGMA_CACHE_NUMBER: 2.29-8
+
 jobs:
 
   matrix:
@@ -81,14 +85,11 @@ jobs:
       - name: Cache magma
         uses: actions/cache@v3
         id: magmacache
-        env:
-          # Increase this value to reset cache when MAGMA_URL changes
-          CACHE_NUMBER: 2.29-8
         with:
           path: |
             ./magma
           key:
-            ${{ env.CACHE_NUMBER }}
+            ${{ env.MAGMA_CACHE_NUMBER }}
 
       - name: Install magma
         env:
@@ -102,6 +103,13 @@ jobs:
           done
           tar xf magma.tar.gz
           test -x ./magma/magma   # fail loudly so a bad download never poisons the cache
+
+      - name: Create dummy network device
+        shell: bash
+        run: |
+          sudo ip link add dumdum type dummy
+          sudo ifconfig dumdum hw ether `./magma/magma -d | grep "Valid MAC addresses" -A1 | tail -n1`
+          echo | ./magma/magma
 
   printjob:
     name: print event
@@ -159,14 +167,11 @@ jobs:
       - name: Cache magma
         uses: actions/cache@v3
         id: magmacache
-        env:
-          # Increase this value to reset cache when MAGMA_URL changes
-          CACHE_NUMBER: 2.29-8
         with:
           path: |
             ./magma
           key:
-            ${{ env.CACHE_NUMBER }}
+            ${{ env.MAGMA_CACHE_NUMBER }}
 
       - name: Install magma
         env:
@@ -188,4 +193,3 @@ jobs:
         shell: bash
         run: |
           ./magma/magma -b target:=${{matrix.target}} exitsignal:="" run_tests.m
-
