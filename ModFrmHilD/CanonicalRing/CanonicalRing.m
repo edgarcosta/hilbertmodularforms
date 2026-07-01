@@ -696,6 +696,14 @@ end function;
 intrinsic ComputePrecisionFromHilbertSeries(NN::RngOrdIdl, B::RngIntElt) -> RngIntElt
   {Compute the number of q-expansion coefficients needed from the coefficients of the Hilbert series}
   F := NumberField(Order(NN));
+  if Degree(F) ne 2 then
+    // The trace-formula Hilbert series is only validated for real quadratic
+    // fields and is non-integral for degree != 2. The weight-B coefficient is
+    // exactly dim M_B, so take it from the builtin dimension backend instead.
+    M := GradedRingOfHMFs(F, 1);
+    MB := HMFSpace(M, NN, [B : i in [1..Degree(F)]]);
+    return 10*Dimension(MB) + 10;
+  end if;
   H := HilbertSeries(F,NN);
   Pow<T> := PowerSeriesRing(Rationals(), B+1);
   return 10*Integers()!Coefficient(Pow!H, B) + 10;
