@@ -698,7 +698,18 @@ intrinsic ComputePrecisionFromHilbertSeries(NN::RngOrdIdl, B::RngIntElt) -> RngI
   F := NumberField(Order(NN));
   H := HilbertSeries(F,NN);
   Pow<T> := PowerSeriesRing(Rationals(), B+1);
-  return 10*Integers()!Coefficient(Pow!H, B) + 10;
+  c := Coefficient(Pow!H, B);
+  // The trace-formula Hilbert series is not fully implemented for cubic base
+  // fields at nontrivial level, where it can be non-integral; fall back to the
+  // built-in dimension of the weight-B space whenever the coefficient is not
+  // an integer.
+  if IsCoercible(Integers(), c) then
+    dimB := Integers()!c;
+  else
+    M := GradedRingOfHMFs(F, 1);
+    dimB := Dimension(HMFSpace(M, NN, [B : i in [1..Degree(F)]]));
+  end if;
+  return 10*dimB + 10;
 end intrinsic;
 
 intrinsic HilbertModularImage(forms::List, maxRelationDegree::RngIntElt) -> Sch

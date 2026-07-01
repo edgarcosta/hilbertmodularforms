@@ -431,7 +431,15 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
     else
       M := Parent(Mk);
       ZF := Integers(M);
-      Mk`CuspDimension := Integers()!Trace(Mk,1*ZF);
+      tr := Trace(Mk, 1*ZF);
+      // The trace formula is not fully implemented for cubic base fields at
+      // nontrivial level, where it can return a non-integral value; fall back
+      // to the built-in dimension whenever the trace is not an integer.
+      if IsCoercible(Integers(), tr) then
+        Mk`CuspDimension := Integers()!tr;
+      else
+        Mk`CuspDimension := Dimension(HilbertCuspForms(Mk));
+      end if;
     end if;
   end if;
   return Mk`CuspDimension;
