@@ -2,10 +2,14 @@
   Partial computation toward P_3 = dim H^0(Y, 3 K_Y) for the Hilbert modular
   surface X_0(p31) over Q(sqrt(5)) (p31 = prime above 31, norm 31).
 
+  RESOLVED: the full P_3 is now computed in plurigenera_P3_X0p31_Qsqrt5.m,
+  giving P_3 = 2 (multiple fibre of multiplicity 2). This script remains as a
+  lightweight record of the exact, validated cusp-infinity / Atkin-Lehner
+  pieces and the theoretical P_3 in {2,3} prediction.
+
   NOTE: the Kodaira dimension is already settled WITHOUT P_3 -- see
   plurigenera_X0p31_Qsqrt5.m: P_1, P_2 = 1, 2 with chi = 2 force kappa = 1
-  (properly elliptic). This script records the validated machinery toward the
-  *exact* P_3, which would only pin down the multiple-fibre multiplicity.
+  (properly elliptic). P_3 only pins down the multiple-fibre multiplicity.
 
   Theory: for a properly elliptic surface over P^1 with chi = 2 and a single
   multiple fibre of multiplicity m, P_n = 1 + floor(n(m-1)/m). P_2 = 2 forces
