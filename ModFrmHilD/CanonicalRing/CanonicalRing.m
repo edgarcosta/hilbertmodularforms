@@ -597,6 +597,23 @@ intrinsic MakeScheme(Gens::Assoc, Relations::Assoc)-> Any
   return S;
 end intrinsic;
 
+intrinsic VerifyRelationsVanishOnGenerators(Gens::Assoc, Relations::Assoc)
+  {Assert that every relation in Relations, interpreted as a polynomial in the weighted
+   ring built from Gens, vanishes identically when evaluated on the actual generator
+   q-expansions. This catches variable-ordering corruption that the Hilbert-series check
+   (which only sees the relation degrees) cannot detect: a scrambled relation of the same
+   degree passes the series check but fails to vanish on the forms.}
+
+  R := ConstructWeightedPolynomialRing(Gens);
+  // Generator forms in the SAME sorted-weight order used to build R.
+  gl := Sum([* SequenceToList(Gens[w]) : w in Sort(Setseq(Keys(Gens))) *] : empty := [* *]);
+  for i in Keys(Relations) do
+    for rel in RelationstoPolynomials(R, Relations[i], i) do
+      assert IsZero(Evaluate(rel, gl));
+    end for;
+  end for;
+end intrinsic;
+
 intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
   {Returns Hilbert series with precision n}
 
