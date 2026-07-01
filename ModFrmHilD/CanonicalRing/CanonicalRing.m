@@ -120,7 +120,7 @@ intrinsic Evaluate(F::RngMPolElt, v::List) -> ModFrmHilDElt
 {Given a multivariate polynomial `F` with `n` variables, and a list `v`, return
 `F(v[1], ..., v[n])`. No attempt is made to check whether this is well-defined.}
     coeffs, mons := CoefficientsAndMonomials(F);
-    eviled_mons := EvaluateMonomials([* F *], mons);
+    eviled_mons := EvaluateMonomials(v, mons);
     return &+[coeffs[i] * eviled_mons[i] : i in [1..#eviled_mons]];
 end intrinsic;
 
