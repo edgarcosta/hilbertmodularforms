@@ -157,3 +157,42 @@ intrinsic VerifyGradedIsomorphism(I::RngMPol, J::RngMPol,
 
   return true;
 end intrinsic;
+
+intrinsic GradedInverseImages(R::RngMPol, PhiImages::SeqEnum) -> SeqEnum
+{ Given a graded endomorphism phi of the weighted polynomial ring R with
+  phi(R.i) = PhiImages[i], return [psi(R.1), ..., psi(R.n)] for the inverse
+  endomorphism psi, solved weight by weight. This lets a stored witness map be
+  recorded once (as the forward images phi) and its inverse recovered for the
+  deterministic check in VerifyGradedIsomorphism. Requires phi to be linear-
+  invertible in each generator weight (the weight-w monomials must map to a basis);
+  raises a clear error naming the offending weight otherwise. }
+  require #PhiImages eq Rank(R): "PhiImages must have one entry per variable of R";
+  n := Rank(R);
+  Psi := [R | 0 : i in [1..n]];
+  for i in [1..n] do
+    w := WeightedDegree(R.i);
+    mons := MonomialsOfWeightedDegree(R, w);
+    rows := [[MonomialCoefficient(Evaluate(m, PhiImages), b) : b in mons] : m in mons];
+    M := Matrix(BaseRing(R), rows);
+    require IsInvertible(M): Sprintf("GradedInverseImages: phi is not invertible on the weight-%o graded piece; this intrinsic requires phi to be an ambient graded automorphism (the weight-w monomials must map to a basis)", w);
+    rhs := Vector(BaseRing(R), [ (mons[k] eq R.i) select 1 else 0 : k in [1..#mons] ]);
+    cc := Solution(M, rhs);
+    Psi[i] := &+[ cc[k]*mons[k] : k in [1..#mons] ];
+  end for;
+  return Psi;
+end intrinsic;
+
+intrinsic LoadStoredCanonicalRing(label::MonStgElt) -> RngMPol
+{ Load the stored canonical-ring ideal for the LMFDB variety <label>
+  (e.g. "2.2.13.1-1.1") from Verification/CanonicalRingEquations/<label>-gl-0.m,
+  as an ideal in the file's weighted polynomial ring. Single-component files only;
+  errors on multi-component (h+ = 2) files, which have one scheme per narrow-class
+  component and need a component-wise loader. }
+  filename := Sprintf("Verification/CanonicalRingEquations/%o-gl-0.m", label);
+  s := Read(filename);
+  ncomp := #[ m : m in Split(s, "\n") | Position(m, "component with label") gt 0 ];
+  require ncomp le 1:
+    Sprintf("%o has %o components; LoadStoredCanonicalRing handles single-component files only", filename, ncomp);
+  R, A, eqns, S := eval (s cat "\nreturn R, A, eqns, S;");
+  return ideal< R | eqns >;
+end intrinsic;
