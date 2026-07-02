@@ -423,6 +423,14 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
     version := "builtin";
   end if;
 
+  // The trace formula only supports characters whose finite conductor is trivial
+  // (characters of the narrow class group; see ModFrmHilD/Trace/Trace.m, which
+  // requires Conductor(chi) eq 1*ZF). Route a genuine finite-conductor nebentypus
+  // to the builtin backend.
+  if Conductor(Character(Mk)) ne 1*Integers(Parent(Mk)) then
+    version := "builtin";
+  end if;
+
   if not assigned Mk`CuspDimension then
     k := Weight(Mk);
     if version eq "builtin" then
