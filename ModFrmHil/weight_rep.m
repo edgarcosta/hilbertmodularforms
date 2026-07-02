@@ -1,4 +1,4 @@
-declare attributes AlgQuat : Splittings;
+declare attributes AlgQuat : Splittings, WeightBaseEmbeddings;
 
 //-------------
 //
@@ -358,7 +358,6 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
   embeddings_F_to_K := sorted_embs;
   alphas := sorted_alphas;
 
-
   require B.1*B.2 eq B.3 : "We assume B.1 * B.2 == B.3 when defining\
     the splitting homomorphisms.";
   splitting_seq := [];
@@ -376,11 +375,26 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
           q:-> h(s[1])+h(s[2])*iK+h(s[3])*jK+h(s[4])*kK where s := Eltseq(q) >);
   end for;
   B`Splittings := <splitting_seq, K, weight_field>;
+  B`WeightBaseEmbeddings := embeddings_F_to_K;
   return splitting_seq, K, weight_field;
 end intrinsic;
 
 intrinsic Splittings(O::AlgAssVOrd) -> SeqEnum[Map], FldNum, FldNum
   {}
   return Splittings(Algebra(O));
+end intrinsic;
+
+intrinsic WeightBaseEmbeddings(B::AlgQuat) -> SeqEnum[Map]
+  { The sorted embeddings F -> weight_base_field, indexed by the infinite places of
+    F = BaseField(B), as used to build the archimedean splittings of B. }
+  if not assigned B`WeightBaseEmbeddings then
+    _ := Splittings(B);
+  end if;
+  return B`WeightBaseEmbeddings;
+end intrinsic;
+
+intrinsic WeightBaseEmbeddings(O::AlgAssVOrd) -> SeqEnum[Map]
+  { " } // "
+  return WeightBaseEmbeddings(Algebra(O));
 end intrinsic;
 

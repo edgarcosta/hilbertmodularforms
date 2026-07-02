@@ -74,9 +74,14 @@ function hecke_matrix_field(M)
       R<x> := PolynomialRing(F);
       poly := x^2 - z;
       if IsIrreducible(poly) then
-        // TODO abhijitm I'm a little bit worried about returning a 
+        // TODO abhijitm I'm a little bit worried about returning a
         // relative extension here instead of an absolute one...
-        K := ext<K | x^2 - z>;
+        // We must adjoin Sqrt(z) coercing z into K via the SAME embedding F -> K that builds
+        // the archimedean splittings (the marked/first place), NOT Magma's natural coercion:
+        // the two agreed in Magma 2.29-6 but diverge in 2.29-8, which would put Sqrt(z) in the
+        // wrong square class and desynchronize the +/- split from the involution T.
+        embs := WeightBaseEmbeddings(O);
+        K := ext<K | PolynomialRing(K) ! [-embs[1](z), 0, 1]>;
       end if;
       return K;
     end if;
