@@ -35,6 +35,14 @@ assert HilbertSeriesSanityCheck(M5, NN5_5, [I]);
 printf "PASSED\n";
 
 
+// === Q(sqrt(5)), level 31.2 [disc=5, label 2.2.5.1-31.2] ===
+printf "Verifying Q(sqrt(5)) level 31.2...";
+I := eval (Read("Verification/CanonicalRingEquations/2.2.5.1-31.2-gl-0.m") cat "return Ideal(S);");
+NN5_31 := LMFDBIdeal(F5, "31.2");
+assert HilbertSeriesSanityCheck(M5, NN5_31, [I]);
+printf "PASSED\n";
+
+
 // === Q(sqrt(2)), level 1 [disc=8, label 2.2.8.1-1.1] ===
 printf "Verifying Q(sqrt(2)) level 1...";
 I := eval (Read("Verification/CanonicalRingEquations/2.2.8.1-1.1-gl-0.m") cat "return Ideal(S);");
