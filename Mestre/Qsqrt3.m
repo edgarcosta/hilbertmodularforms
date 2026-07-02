@@ -19,12 +19,12 @@ function IgusaClebschInvariants_Sqrt3()
     assert psi_4_minus * psi_6_minus eq -7560*X2^2*X6;
     assert psi_4_minus * chi_10_minus eq 15/2*X2*X6^2;
     assert  psi_4_minus * chi_12_minus eq -15/2*X2*X4^2*X6 + 5/2*X2^2*X6^2;
-    psi_4 := psi_4_plus + psi_4_minus;
-    psi_6 := psi_6_plus + psi_6_minus;
-    chi_10 := chi_10_plus + chi_10_minus;
-    chi_12 := chi_12_plus + chi_12_minus;
-    // Renaming the variables the same way in the function field
-    _<X2, X4, X6, Y4> := chi_12/chi_10; 
+    // Pass to the field of fractions so the Igusa-Clebsch ratios are defined
+    F := FieldOfFractions(MSL);
+    psi_4 := F!(psi_4_plus + psi_4_minus);
+    psi_6 := F!(psi_6_plus + psi_6_minus);
+    chi_10 := F!(chi_10_plus + chi_10_minus);
+    chi_12 := F!(chi_12_plus + chi_12_minus);
     // Igusa-Clebsch invariants
     I2 := -24*chi_12/chi_10;
     I4 := 4*psi_4;
@@ -91,51 +91,20 @@ function ConicLAndCubicM(ICInv)
     return [L,M];
 end function;
 
-procedure code_that_ran()
-    I2_chi10 := -24*chi_12;
-    I4_chi10_2 := 4*psi_4*chi_10^2;  
-    I6_chi10_3 := (-8/3*psi_6*chi_10-32*psi_4*chi_12)*chi_10^2;
-    I10_chi10_5 := -2^14*chi_10^6;  
-    A :=-AP/120 ;
-    B :=(BP+720*A^2)/6750 ;
-    C :=(CP-8640*A^3+108000*A*B)/202500 ;
-    D :=(DP+62208*A^5-972000*A^3*B-1620000*A^2*C
-        +3037500*A*B^2+6075000*B*C)/(-4556250) ;
-Type(A);
-Type(B);
-Type(C);
-A;
-B;
-C;
-D;
-U := A^6;
- K := Parent(A);
-A11 := 2*C+A*B/3 ;
-    A22 := D;
-    A33 := B*D/2+2*C*(B^2+A*C)/9 ;
-    A23 := B*(B^2+A*C)/3+C*(2*C+A*B/3)/3 ;
-    A31 := D;
-    A12 := 2*(B^2+A*C)/3 ;
-    A32 := A23;  A13 := A31;  A21 := A12;
-C11 := A11*U^2*DP^8;
-C22 := A22*DP^10;
-C33 := A33*U^8;
- C23 := A23*DP^5*U^4;
-C31 := A31*DP^4*U^5;
-C12 := A12*U*DP^9;
-C32 := C23;  C13 := C31;  C21 := C12;
- PP<Z1,Z2,Z3> := PolynomialRing(K,3);
-L := C11*Z1^2+C22*Z2^2+C33*Z3^2+2*C12*Z1*Z2+2*C13*Z1*Z3+2*C23*Z2*Z3;
-end procedure;
-
 // From the Cowan-Frengley-Kimball paper, this is the form Q3
 // with Gram Matrix T3
 function RMSimplifiedMestreConic(A,A1,B,B1,B2)
-        T11 := -225A1^3*B + 285*A*A1^2*B1 + 324*B1^3;
+        T11 := -225*A1^3*B + 285*A*A1^2*B1 + 324*B1^3;
         T12 := 20*A^2*A1^2 - 45*A1*B*B1 + 36*A*B1^2;
         T13 := 90*A*A1^2*B + 30*A^2*A1*B1 - 375*A1^3*B2 + 162*B*B1^2;
         T22 := -60*A*A1*B + 4*A^2*B1 + 125*A1^2*B2;
         T23 := 20*A^3*A1 - 135*A1*B^2 + 18*A*B*B1 + 450*A1*B1*B2;
         T33 := 180*A^2*A1*B - 525*A*A1^2*B2 + 81*B^2*B1;
-        
+        // Return the form Q3 as the ternary quadratic form with Gram matrix T3
+        // (same Gram-matrix convention as the conic L in ConicLAndCubicM).
+        K := Parent(T11);
+        PP<Z1,Z2,Z3> := PolynomialRing(K, 3);
+        Q3 := T11*Z1^2 + T22*Z2^2 + T33*Z3^2
+            + 2*T12*Z1*Z2 + 2*T13*Z1*Z3 + 2*T23*Z2*Z3;
+        return Q3;
 end function;

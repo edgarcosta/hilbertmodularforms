@@ -596,6 +596,11 @@ intrinsic 'eq'(f::ModFrmHilDEltComp, c::RngElt) -> BoolElt
   return Expansion(f) eq c;
 end intrinsic;
 
+intrinsic 'eq'(c::RngElt, f::ModFrmHilDEltComp) -> BoolElt
+  {compare f against a scalar c}
+  return f eq c;
+end intrinsic;
+
 intrinsic '+'(f :: ModFrmHilDEltComp, g :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
 {}
     require Space(f) eq Space(g) : "Cannot add HMF components from different spaces";
