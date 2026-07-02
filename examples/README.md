@@ -12,7 +12,7 @@ a CI runner live in `examples/slow/` and are skipped by CI; run them manually wi
 | Modular curve X0(11) | X0(11) model is an elliptic curve of conductor 11 | `modular_curve_X0_11.m` | CI |
 | Igusa invariants | Igusa invariants for Q(sqrt 12) and Q(sqrt 21) | `igusa_invariants.m` | CI |
 | Hilbert modular threefolds | cyclic cubic field Q(zeta_7 + zeta_7^-1), with trace-formula dimensions, products, Hecke translates in weights 8 and 10, and syzygy-algorithm equations for the threefold map | `cyclic_cubic_threefold.m` | CI |
-| Hilbert modular threefolds | D=49 level (2) weight 4 defect-to-q-expansion bridge (infinity-cusp half, 2 of 4 defect conditions; second cusp is follow-up) for the arXiv:2501.15719 positive Kodaira-dimension row | `d49_level2_defect_bridge.m` | CI |
+| Hilbert modular threefolds | D=49 level (2) weight 4 defect-to-q-expansion bridge, both cusps: full four-row vanishing matrix via the Fricke involution, rank 4, surviving dimension 2, witnessing the arXiv:2501.15719 positive Kodaira-dimension row | `d49_level2_defect_bridge.m` | CI |
 | D=5 | Q(sqrt 5) canonical ring vs Gundlach/Hirzebruch, deterministic witness map | `canonical_ring_Qsqrt5.m` | CI |
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch double cover (rational sign c^2 = -C), deterministic witness map | `canonical_ring_Qsqrt2.m` | CI |
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier, deterministic witness map | `canonical_ring_Qsqrt13.m` | CI |
