@@ -578,8 +578,12 @@ intrinsic MakeScheme(Gens::Assoc, Relations::Assoc)-> Any
     // This is in order to verify we did not mess up the ordering.
     for rel in rels do
       coeffs, mons := CoefficientsAndMonomials(rel);
-      evaluated_mons := EvaluateMonomials(Gens, mons);
-      assert &+[coeffs[i]*evaluated_mons[i] : i in [1..#coeffs]] eq 0;
+      // A zero relation polynomial gives empty coeffs/mons, for which &+[] is
+      // illegal; such a relation is trivially satisfied, so skip the check.
+      if #coeffs gt 0 then
+        evaluated_mons := EvaluateMonomials(Gens, mons);
+        assert &+[coeffs[i]*evaluated_mons[i] : i in [1..#coeffs]] eq 0;
+      end if;
     end for;
     PolynomialList cat:= rels;
   end for;
