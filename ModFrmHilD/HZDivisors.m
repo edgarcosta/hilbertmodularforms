@@ -169,21 +169,22 @@ function find_mu(theta, eta, a, D, bb, N)
     ideals cat:= [PrimeIdealsOverPrime(F,p)[1]^Valuation(D,p) : p in R1_primes];
     values cat:= [0 : p in R2_primes];
     ideals cat:= [p^Valuation(D,p)*ZF : p in R2_primes];
-    // TODO: Figure out what happens for p = 2 in other_primes !!
     for p in other_primes do
 	frakp := PrimeIdealsOverPrime(F,p)[1];
 	vD := Valuation(D,p);
-	vN, N0 := Valuation(N,p);
-	v := vD - vN;
-	pi := UniformizingElement(frakp);
-	if v eq 0 then
-	    elt := 0;
-	else
-	    ZFmodpv, red := quo<ZF | frakp^v>;
-	    elt := Sqrt(red(N0*Norm(bb)))@@red;
-	end if;
-	ZFmodpvD, redvD := quo<ZF | frakp^vD>;
-	Append(~values, redvD(pi^vN*elt));
+	ZFmodpvD := quo<ZF | frakp^vD>;
+	// The obvious closed form (pi^vN * sqrt(N0*Norm(bb)) mod frakp^(vD-vN))
+	// is unsound here: Norm(pi) is only p up to a unit that depends on the
+	// chosen uniformizer, so it drops a correction term. Since frakp is
+	// ramified, ZFmodpvD has only Norm(frakp)^vD = p^vD elements (p=2 is
+	// the only prime that reaches this branch with vD > vN, so this is at
+	// most 8 elements), so search it directly for a value with the right
+	// norm instead of re-deriving the closed form. Only the norm
+	// congruence matters: other_primes carry no theta/eta invariant, so
+	// any mu matching it here CRTs into a valid global mu.
+	found := exists(w){w : w in ZFmodpvD | (Norm(ZF!w) - N*Norm(bb)) mod p^vD eq 0};
+	assert found;
+	Append(~values, w);
 	Append(~ideals, frakp^vD);
     end for;
     for p in a_primes do

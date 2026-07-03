@@ -125,6 +125,18 @@ end for;
 // Print newline.
 print "";
 
+// Deterministic case with a component ideal bb of large norm, for a field
+// where 2 is ramified with valuation 3 in the discriminant (D = 88 = 8*11).
+// This exercises find_mu's CRT construction at a prime dividing D that
+// divides N to a positive valuation strictly less than its valuation in D
+// (2 || N=2 but 2^3 || D=88), which the random draws above only cover
+// probabilistically.
+F88 := QuadraticField(88);
+ZF88 := Integers(F88);
+bb88 := ideal<ZF88 | 176*ZF88.2 - 1>;
+assert Norm(bb88) eq 681471;
+testHZDivisors(CongruenceSubgroup("SL", "Gamma0", F88, 1*ZF88, bb88));
+
 
 /* long test
 
