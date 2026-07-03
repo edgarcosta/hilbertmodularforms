@@ -423,12 +423,11 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
     version := "builtin";
   end if;
 
-  // The trace formula (ModFrmHilD/Trace) is only validated for real quadratic
-  // fields. For degree != 2 its elliptic term can leave an uncancelled 1/(order)
-  // from higher-order elliptic points, returning non-integer "dimensions"
-  // (e.g. 36/7 for F = Q(zeta_7)^+ at level (2), weight 4). Use the builtin
-  // backend there until the general totally-real formula is implemented.
-  if Degree(BaseField(Mk)) ne 2 then
+  // The trace formula only supports characters whose finite conductor is trivial
+  // (characters of the narrow class group; see ModFrmHilD/Trace/Trace.m, which
+  // requires Conductor(chi) eq 1*ZF). Route a genuine finite-conductor nebentypus
+  // to the builtin backend.
+  if Conductor(Character(Mk)) ne 1*Integers(Parent(Mk)) then
     version := "builtin";
   end if;
 

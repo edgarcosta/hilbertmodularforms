@@ -196,13 +196,14 @@ narrow class group representatives.}
 end intrinsic;
 
 
-intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> FldFunRatUElt
-{Returns the dimension of the space of Hilbert Modular Forms of weight `k` and level `(1)`.}
+intrinsic HilbertSeries(M::ModFrmHilDGRng) -> FldFunRatUElt
+{Return the Hilbert series for Hilbert modular forms over the base field of M at level (1);
+an omitted level is taken to be the unit ideal.}
+    // Delegate so the closed-form (Vasquez) versus trace-formula routing is decided in one
+    // place: HilbertSeries(F, level) uses Vasquez only when NarrowClassNumber(F) eq 1, which
+    // HilbertSeriesVasquez itself requires.
     F := BaseField(M);
-    if Degree(F) eq 2 then
-        return HilbertSeriesVasquez(F);
-    end if;
-    return HilbertSeries(M, 1*Integers(F));
+    return HilbertSeries(F, 1*Integers(F));
 end intrinsic;
 
 intrinsic HilbertSeries(F::FldNum, level::RngOrdIdl) -> FldFunRatUElt

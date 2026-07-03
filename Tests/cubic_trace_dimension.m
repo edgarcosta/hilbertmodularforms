@@ -1,23 +1,22 @@
-// test-time: ~40s
+// test-time: ~15s
 //
-// Regression test: cubic trace-formula dimensions must be integers and agree
-// with the builtin backend.
+// Focused regression: the trace-formula dimension for a cubic field must be an integer and
+// agree with the builtin backend, computed through the trace path itself (not a fallback).
+// Broader multi-field / Hecke / residue-degree coverage lives in Tests/cubic_dimension_battery.m.
 //
-// The Eichler-Selberg trace formula in ModFrmHilD/Trace/Trace.m was only ever
-// validated for real quadratic fields (see Tests/dimensions.m, Tests/traces.m,
-// and pos_elts_of_trace.m which asserts Degree(F) eq 2). For the cyclic cubic
-// field F = Q(zeta_7)^+ (disc 49) it returns non-integer "dimensions": the CM
-// extension Q(zeta_7)/F contributes elliptic points of order 7 whose 1/7 weight
-// (via ClassNumberOverUnitIndex, from the 14th roots of unity) is not cancelled.
+// The Eichler-Selberg trace formula in ModFrmHilD/Trace/Trace.m was only ever validated for
+// real quadratic fields (see Tests/dimensions.m, Tests/traces.m, and pos_elts_of_trace.m
+// which asserts Degree(F) eq 2). Its nonprecomp local optimal-embedding count
+// (EmbeddingNumberOverUnitIndex) was wrong at even inert primes of odd residue degree: for
+// F = Q(zeta_7)^+ (disc 49) the prime 2 is inert with residue field F_8, and the old
+// root-counting OptimalEmbeddingNumber returned 0 instead of 1 + (K/pp) = 2. So
+// Trace(: precomp := false) gave the non-integer cusp "dimensions" 6/7 and 22/7 at weights
+// 2 and 4, and on that broken backend CuspDimension(: version := "trace") and
+// ComputePrecisionFromHilbertSeries threw. The builtin backend gives dim M_2 = 2, dim M_4 = 6.
 //
-// Concretely HilbertSeries(F, 2*ZF) has coefficients 20/7 at weight 2 and 36/7
-// at weight 4, so on the broken backend:
-//   * CuspDimension(: version := "trace") throws (Integers()!<rational>), and
-//   * ComputePrecisionFromHilbertSeries(2*ZF, k) throws for k in {2,4}.
-// The builtin backend gives the correct dim M_2 = 2 and dim M_4 = 6.
-//
-// The fix routes degree != 2 through the builtin dimension, so the trace path
-// no longer throws and agrees with builtin.
+// The fix rewires the nonprecomp path to the same Hijikata closed form (OptimalEmbeddings)
+// already used by the precomp path, so the trace path is integer-valued and agrees with
+// builtin for degree > 2.
 
 Qx<x> := PolynomialRing(Rationals());
 F := NumberField(x^3 - x^2 - 2*x + 1); // Q(zeta_7)^+, disc 49
@@ -42,8 +41,9 @@ expected_total[4] := 6;
 for k in [2, 4] do
     Mk := HMFSpace(R, NN, [k, k, k]);
 
-    // Default CuspDimension path uses version := "trace"; on the broken backend
-    // this throws for the cubic field. After the fix it must return the builtin value.
+    // Default CuspDimension path uses version := "trace"; on the broken backend this threw
+    // for the cubic field. After the fix the trace path itself is integer-valued and must
+    // match builtin.
     cusp_trace := CuspDimension(Mk : version := "trace");
     delete Mk`CuspDimension;
     cusp_builtin := CuspDimension(Mk : version := "builtin");
