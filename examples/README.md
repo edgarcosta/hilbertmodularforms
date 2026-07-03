@@ -11,7 +11,8 @@ a CI runner live in `examples/slow/` and are skipped by CI; run them manually wi
 |---|---|---|---|
 | Modular curve X0(11) | X0(11) model is an elliptic curve of conductor 11 | `modular_curve_X0_11.m` | CI |
 | Igusa invariants | Igusa invariants for Q(sqrt 12) and Q(sqrt 21) | `igusa_invariants.m` | CI |
-| Hilbert modular threefolds | cyclic cubic field Q(zeta_7 + zeta_7^-1), with trace-formula dimensions, products, Hecke translates in weights 8 and 10, and syzygy-algorithm equations for the threefold map | `cyclic_cubic_threefold.m` | CI |
+| Hilbert modular threefolds | cyclic cubic field Q(zeta_7 + zeta_7^-1): trace-formula dimensions (builtin-confirmed through weight 8), Eisenstein + split-prime trace-form model at full precision, exact dependence of the third trace form, sound Jacobian threefold certificate, and relation ideal certified zero through degree 16 (degree 26 in slow/); the formerly displayed degree-16 equations are refuted, with witness pinned in `Tests/cyclic_cubic_threefold_regression.m` | `cyclic_cubic_threefold.m` | CI |
+| Hilbert modular threefolds | cyclic cubic relation hunt at precisions 450 and 700: unconditional relation-freeness of the 7-generator model through degree 26, phantom-kernel table (spurious relations at the truncation frontier at every precision), free-count vs dimension table through degree 40 | `slow/cyclic_cubic_threefold_certify.m` | slow (CI-skipped) |
 | Hilbert modular threefolds | D=49 level (2) weight 4 defect-to-q-expansion bridge, both cusps: full four-row vanishing matrix via the Fricke involution, rank 4, surviving dimension 2, witnessing the arXiv:2501.15719 positive Kodaira-dimension row | `d49_level2_defect_bridge.m` | CI |
 | D=5 | Q(sqrt 5) canonical ring vs Gundlach/Hirzebruch, deterministic witness map | `canonical_ring_Qsqrt5.m` | CI |
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch double cover (rational sign c^2 = -C), deterministic witness map | `canonical_ring_Qsqrt2.m` | CI |
