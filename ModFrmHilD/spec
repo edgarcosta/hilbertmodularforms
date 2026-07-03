@@ -51,6 +51,7 @@ Creation
 CanonicalRing
 {
   CanonicalRing.m
+  ChangeOfPresentation.m
   HilbertSeries.m
   IntersectionRing.m
   IO.m
