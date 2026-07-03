@@ -24,7 +24,20 @@ intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
     S := HeckeCharacterSubspace(New, Character(Mk));
     vprintf HilbertModularForms: "decomposition...";
     vtime HilbertModularForms:
-    Mk`MagmaNewformDecomposition := [<elt, Character(Mk)> : elt in NewformDecomposition(S)];
+    if not IsParitious(k) and Dimension(S) gt 0 then
+      _, _, _, _, _, Tzeta, _ := Explode(hecke_algebra(S : generator:=true));
+      chi_t := CharacteristicPolynomial(Tzeta);
+      if Degree(chi_t) eq Dimension(S) and IsIrreducible(chi_t) then
+        // Preserve the elemental-Hecke basis when the whole character subspace
+        // is one irreducible newform orbit; NewformDecomposition would rebuild
+        // an equivalent basis using version-sensitive field coercions.
+        Mk`MagmaNewformDecomposition := [<S, Character(Mk)>];
+      else
+        Mk`MagmaNewformDecomposition := [<elt, Character(Mk)> : elt in NewformDecomposition(S)];
+      end if;
+    else
+      Mk`MagmaNewformDecomposition := [<elt, Character(Mk)> : elt in NewformDecomposition(S)];
+    end if;
     vprintf HilbertModularForms: "Done\n";
   end if;
   return Mk`MagmaNewformDecomposition;
@@ -37,7 +50,16 @@ intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
     k := Weight(Mk);
     vprintf HilbertModularForms: "Computing eigenforms for N=%o and weight=%o...", IdealOneLine(N), k;
     vtime HilbertModularForms:
-    Mk`MagmaNewCuspForms := [* <Eigenform(elt[1]), elt[2]> :  elt in MagmaNewformDecomposition(Mk) *];
+    eigenforms := [* *];
+    for elt in MagmaNewformDecomposition(Mk) do
+      S := elt[1];
+      if assigned S`HeckeIrreducible then
+        Append(~eigenforms, <Eigenform(S), elt[2]>);
+      else
+        Append(~eigenforms, <S, elt[2]>);
+      end if;
+    end for;
+    Mk`MagmaNewCuspForms := eigenforms;
   end if;
   return Mk`MagmaNewCuspForms;
 end intrinsic;

@@ -91,6 +91,48 @@ function basis_is_honest(M)
          // (an ambient is automatically honest)
 end function;
 
+function change_hecke_matrix_ring(M, T, H)
+  if BaseRing(T) cmpeq H then
+    return T;
+  end if;
+
+  if assigned M`minimal_hecke_field_emb then
+    emb := M`minimal_hecke_field_emb;
+    if Domain(emb) cmpeq H then
+      try
+        return Matrix(H, Nrows(T), Ncols(T), [x @@ emb : x in Eltseq(T)]);
+      catch e
+        preimage_failed := true;
+      end try;
+    end if;
+  end if;
+
+  bool, TH := CanChangeRing(T, H);
+  error if not bool,
+       "The hecke_matrix_field seems to be wrong!\n" * please_report;
+  return TH;
+end function;
+
+function change_hecke_polynomial_ring(M, f, H)
+  if BaseRing(f) cmpeq H then
+    return f;
+  end if;
+
+  if assigned M`minimal_hecke_field_emb then
+    emb := M`minimal_hecke_field_emb;
+    if Domain(emb) cmpeq H then
+      try
+        P := PolynomialRing(H);
+        return P![Coefficient(f, i) @@ emb : i in [0..Degree(f)]];
+      catch e
+        preimage_failed := true;
+      end try;
+    end if;
+  end if;
+
+  return ChangeRing(f, H);
+end function;
+
 // Returns the value of a determinant twist on the chosen 
 // "ElementOfNormMinusOne" (which represents complex conjugation).
 // This is used only when computing nonparitious spaces.
@@ -979,13 +1021,13 @@ intrinsic SetRationalBasis(M::ModFrmHil)
     for P in Keys(M`Hecke) do 
       TP, p_reps := Explode(M`Hecke[P]);
       if BaseRing(TP) cmpne H then
-        M`Hecke[P] := <ChangeRing(TP, H), p_reps>;
+        M`Hecke[P] := <change_hecke_matrix_ring(M, TP, H), p_reps>;
       end if;
     end for;
     for P in Keys(M`HeckeCharPoly) do 
       fP := M`HeckeCharPoly[P];
       if BaseRing(fP) cmpne H then
-        M`HeckeCharPoly[P] := ChangeRing(fP, H);
+        M`HeckeCharPoly[P] := change_hecke_polynomial_ring(M, fP, H);
       end if;
     end for;
     return;
@@ -1025,11 +1067,11 @@ intrinsic SetRationalBasis(M::ModFrmHil)
     // Coerce stored Hecke matrices to the smaller field
     for P in Keys(M`Hecke) do
       TP, p_reps := Explode(M`Hecke[P]);
-      M`Hecke[P] := <ChangeRing(TP, H), p_reps>;
+      M`Hecke[P] := <change_hecke_matrix_ring(M, TP, H), p_reps>;
     end for;
     for P in Keys(M`HeckeCharPoly) do
       fP := M`HeckeCharPoly[P];
-      M`HeckeCharPoly[P] := ChangeRing(fP, H);
+      M`HeckeCharPoly[P] := change_hecke_polynomial_ring(M, fP, H);
     end for;
   end if;
 

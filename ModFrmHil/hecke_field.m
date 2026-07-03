@@ -39,6 +39,22 @@ declare attributes ModFrmHil : minimal_hecke_field_emb,
 
 /********************************************************/
 
+function splitting_field_embedding_to_weight_field(F, K, target)
+  Fspl, rts := Explode(F`SplittingField);
+  if Degree(Fspl) eq 1 then
+    return hom<Fspl -> K | >;
+  end if;
+
+  for root in Roots(DefiningPolynomial(Fspl), K) do
+    emb := hom<Fspl -> K | root[1]>;
+    if emb(rts[1]) eq target then
+      return emb;
+    end if;
+  end for;
+
+  error "Could not match the splitting-field embedding to the weight field";
+end function;
+
 // originally from hecke.m
 
 function hecke_matrix_field(M)
@@ -194,7 +210,9 @@ function WeightRepresentation(M) // ModFrmHil -> Map
       else
          splitting_seq, K, weight_field := Splittings(H);
          Fspl := F`SplittingField[1];
-         M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
+         target := WeightBaseEmbeddings(H)[1](F.1);
+         M`splitting_field_emb_weight_base_field :=
+           splitting_field_embedding_to_weight_field(F, K, target);
          M`weight_base_field:=K;
          vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
          vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
