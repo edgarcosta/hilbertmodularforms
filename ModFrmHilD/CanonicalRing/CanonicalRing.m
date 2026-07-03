@@ -782,19 +782,33 @@ n = [F:Q]. Returns true if algebraic independence is certified on at least one c
 
     // Compute ratios g_i = f_i / f_pivot for i != pivot
     f0_bb := Components(forms[pivot])[bb];
-    ratios := [];
+    ratio_comps := [];
     for i in [1..#forms] do
       if i ne pivot then
         fi_bb := Components(forms[i])[bb];
         gi_bb := fi_bb / f0_bb;
-        Append(~ratios, Expansion(gi_bb));
+        require IsMultivariate(gi_bb) :
+          "The Jacobian certificate requires the multivariate expansion representation";
+        Append(~ratio_comps, gi_bb);
       end if;
     end for;
+    prec_bb := Min([Precision(g) : g in ratio_comps]);
+    ratios := [LowerSetExpansion(g) : g in ratio_comps];
 
     // Build n x n Jacobian matrix of partial derivatives
     J := Matrix(n, n, [Derivative(ratios[i], j) : i in [1..n], j in [1..n]]);
 
-    if Determinant(J) ne 0 then
+    // Raw polynomial products of truncated expansions are correct only on the
+    // downward closed lower set, and every term of det(J) carries one first
+    // derivative per column, i.e. a uniform exponent shift by (1,..,1) off the
+    // nu-lattice. Shift back with q_1*...*q_n (harmless for vanishing), then
+    // prune to the lower set at the common input precision: what survives are
+    // exactly the coefficients whose convolutions stay inside stored data.
+    R_exp := Parent(ratios[1]);
+    det := Determinant(J) * &*[R_exp.j : j in [1..n]];
+    det := HMFPruneLowerSetExpansion(M, bb, det : Precision := prec_bb);
+
+    if det ne 0 then
       vprintf HilbertModularForms : "AlgebraicallyIndependent: certified on component %o\n", bb;
       return true;
     end if;
