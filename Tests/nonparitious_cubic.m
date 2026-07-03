@@ -24,14 +24,4 @@ S446 := CuspFormBasis(M446);
 assert #LinearDependence(S446) eq 0;
 Sk_squared := [Sk[1]^2, Sk[1] * Sk[2], Sk[2]^2];
 assert #LinearDependence(Sk_squared) eq 0;
-// Under Magma >= 2.29-7, coupled kernel-side changes in quaternion-ideal
-// and arithmetic-Fuchsian-group data make the computed Sk fail this
-// cross-weight containment; see
-// https://github.com/edgarcosta/hilbertmodularforms/issues/515. Gate until fixed.
-va, vb, vc := GetVersion();
-skip_containment := va gt 2 or (va eq 2 and (vb gt 29 or (vb eq 29 and vc ge 7)));
-if not skip_containment then
-  assert #Intersection(Sk_squared, S446) eq #Sk_squared;
-else
-  printf "SKIPPED cross-weight containment check under Magma %o.%o-%o (issue #515)\n", va, vb, vc;
-end if;
+assert #Intersection(Sk_squared, S446) eq #Sk_squared;

@@ -10,6 +10,7 @@ import "hecke.m" :
   HilbertModularSpaceDirectFactors,
   basis_is_honest,
   basis_matrix,
+  change_hecke_matrix_ring,
   debug,
   make_ideal,
   please_report,
@@ -121,9 +122,7 @@ function operator(M, p, op)
   end if;
 
   if assigned M`hecke_matrix_field then
-    bool, Tp := CanChangeRing(Tp, M`hecke_matrix_field);
-    error if not bool,
-         "The hecke_matrix_field seems to be wrong!\n" * please_report;
+    Tp := change_hecke_matrix_ring(M, Tp, M`hecke_matrix_field);
   end if;
 
   if debug then

@@ -3,6 +3,8 @@ import "hecke.m" :
   CharacteristicPolynomialViaCRT,
   NewformsOfDegree1Implemented,
   basis_is_honest,
+  change_hecke_matrix_ring,
+  change_hecke_polynomial_ring,
   get_red_vector,
   hecke_algebra,
   pseudo_inverse,
@@ -304,7 +306,7 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
     
     if not IsFinite(K) then
       // decomposition should be over the true hecke field (= Q for parallel weight)
-      chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
+      chi := change_hecke_polynomial_ring(M, chi, minimal_hecke_matrix_field(M));
     end if;
 
     vprintf ModFrmHil: "Factoring the polynomial: ";
@@ -563,9 +565,7 @@ if METHOD lt 3 then
     if (not IsFinite(K)) then
       Kmin := minimal_hecke_matrix_field(M);
       t_K := t;
-      t := ChangeRing(t_K, Kmin);
-      // Verifying that the coercion is compatible
-      assert t_K eq ChangeRing(t, M`minimal_hecke_field_emb);
+      t := change_hecke_matrix_ring(M, t_K, Kmin);
       chi := CharacteristicPolynomial(t);
       // the descent below cant lead to wrong results
       // chi := ChangeRing(chi, minimal_hecke_matrix_field(M)); // decomposition over this field
