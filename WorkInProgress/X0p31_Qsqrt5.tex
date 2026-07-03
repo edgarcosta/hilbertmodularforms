@@ -364,37 +364,44 @@ Fix the base coordinate $t=\eta/\Om^2$, so that the fibre $Y_t$ is the preimage
 under the degree-$4$ map $Y\to\bP^2=\bP(M_2)$ of the conic $\{F_1-tF_2=0\}$
 (here $(2L)^2=4$, since $\dim M_k\sim\tfrac12k^2$ gives $L^2=1$). We compute the
 functional invariant $j\colon\bP^1\to\bP^1$, $t\mapsto j(Y_t)$, explicitly.
-Working over the reduction of the saved model at a prime $p$, adjoining the
-single equation $F_1-t_0F_2$ cuts $Y$ down to the (one-dimensional) fibre
-$Y_{t_0}$; eliminating the nine generators of weight $\ge6$ and then one of the
-two remaining weight-$2$ coordinates yields a plane model $G(x_2,x_4)=0$
-birational to $Y_{t_0}$ (one relation is linear in the eliminated coordinate, so
-the projection is birational), of geometric genus $1$. A point is found by
-factoring $G(x_2^0,\,\cdot\,)$, and $\mathrm{EllipticCurve}(\,\cdot\,,\mathrm{pt})$
-returns a Weierstrass model and hence $j(t_0)$.
+We compute $j(t)$ \emph{exactly over $\bQ$}. For a rational $t_0$, adjoining the
+single equation $F_1-t_0F_2$ to the ideal of the saved Baily--Borel model
+$X=\Proj R$ (its $13$ generators have weights $2^3,6^6,10^4$) cuts $X$ down to the
+one-dimensional fibre, which agrees with $Y_{t_0}$ away from the finitely many
+points over the singularities of $X$. In the chart $\Om=x_3=1$, eliminating nine
+of the ten generators of weight $\ge6$ (retaining the weight-$6$ coordinate
+$x_4$) leaves the fibre in the two weight-$2$ coordinates $x_1,x_2$ and $x_4$; the
+relation quadratic in $x_4$ exhibits $Y_{t_0}$ as a double cover $y^2=W(x_1,x_2)$
+of the conic $\{F_1-t_0F_2=0\}$. That conic has a rational point, so parametrising
+it over $\bQ$ turns the double cover into a hyperelliptic model $y^2=h(s)$ with
+$\deg h=4$, whose Jacobian is an elliptic curve with $j$-invariant $j(t_0)\in\bQ$
+--- obtained without exhibiting a rational point on $Y_{t_0}$.
 
-Sampling $j(t_0)$ and reconstructing by Cauchy (rational-function) interpolation
-gives $j(t)=N(t)/D(t)$ with $\deg N=\deg D=24$; fitting on $50$ nodes and
-verifying on the remaining and on further fresh nodes fixes the degree
-unambiguously (a fit on $48$ nodes produces a spurious degree-$(23,24)$ function
-that fails on held-out nodes). The poles of $j$ are the multiplicative fibres,
-of type $I_n$ with $n=\operatorname{ord}_t$ of the pole; $D$ factors with pole
-multiplicities $(6,4,4,2,1,1,1,1,1,1,1,1)$, giving the stated list. As
-$\sum e(F_v)=24=e(Y)$ is already exhausted by these fibres, no additive fibre
-can occur (each would contribute $e\ge2$, and an $I_n^{*}$ at a simple pole would
-contribute $e\ge7$). Consistently, $N$ vanishes to order $3$ at every zero of
-$j$ and $N-1728\,D$ to order $2$ at every point where $j=1728$ --- the
-ramification a genuine functional invariant must have --- and $t=0$ is not a
-pole ($j(0)$ finite), matching the smooth reduced fibre of the double fibre
-${}_2I_0$. The computation was carried out at $p=1009$ and independently at
-$p=2003$, yielding the same partition (the $I_4$ pair and the eight $I_1$'s
-being defined over quadratic, resp.\ quartic, residue extensions).
+Carrying this out at the $72$ integers $t_0=1,\dots,72$ (each fibre smooth) and
+solving the $49$ linear conditions determines the unique $N/D$ with $D$ monic and
+$\deg N=\deg D=24$. The exact identity $N(t_0)=j(t_0)\,D(t_0)$ then holds at all
+$72$ values; since $72>\deg N+\deg D+1$, two rational functions of these degrees
+agreeing at more than $49$ points coincide, so $N/D=j$ in $\bQ(t)$. This is
+unconditional: an exact identity over $\bQ$, with no height or reduction
+hypothesis. Factoring $D$ over $\bQ$ gives
+\[
+   D=\ell_6^{\,6}\cdot \ell_2^{\,2}\cdot q_4^{\,4}\cdot o_8,
+\]
+with $\ell_6,\ell_2$ linear, $q_4$ irreducible of degree $2$, and $o_8$
+irreducible of degree $8$. The pole orders $6,2,4,1$ are the $I_n$ indices, so the
+singular fibres are one $I_6$ and one $I_2$ (both rational), a conjugate pair of
+$I_4$ (over $\bQ[t]/q_4$), and a single Galois orbit of eight $I_1$ (over
+$\bQ[t]/o_8$). As $\sum e(F_v)=6+2+2\cdot4+8\cdot1=24=e(Y)$ is already exhausted,
+no additive fibre occurs (each would contribute $e\ge2$, and an $I_n^{*}$ at least
+$6$). Consistently, $N$ vanishes to order $3$ at every zero of $j$ and $N-1728\,D$
+to order $2$ wherever $j=1728$ --- the ramification a genuine functional invariant
+must have --- and $t=0$ is not a pole ($j(0)$ finite), matching the smooth reduced
+fibre of the double fibre ${}_2I_0$. The same partition arises by reduction modulo
+$p=1009$ and $p=2003$.
 \end{proof}
 
 \begin{remark}
-The reduction is at split primes of good reduction for the fibration; the pole
-multiplicities are the $I_n$ indices and are preserved. The Shioda--Tate
-relation is consistent: the reducible fibres contribute
+The Shioda--Tate relation is consistent: the reducible fibres contribute
 $\sum_v(m_v-1)=(6-1)+(4-1)+(4-1)+(2-1)=12$ to the Picard number of the Jacobian
 surface, well within $h^{1,1}=20$.
 \end{remark}
