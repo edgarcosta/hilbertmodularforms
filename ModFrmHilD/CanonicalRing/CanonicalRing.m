@@ -122,7 +122,7 @@ intrinsic Evaluate(F::RngMPolElt, v::List) -> ModFrmHilDElt
 {Given a multivariate polynomial `F` with `n` variables, and a list `v`, return
 `F(v[1], ..., v[n])`. No attempt is made to check whether this is well-defined.}
     coeffs, mons := CoefficientsAndMonomials(F);
-    eviled_mons := EvaluateMonomials([* F *], mons);
+    eviled_mons := EvaluateMonomials(v, mons);
     return &+[coeffs[i] * eviled_mons[i] : i in [1..#eviled_mons]];
 end intrinsic;
 
@@ -381,13 +381,21 @@ It is assumed that `forms` are linearly independent.}
 
         eisensteinbasis := EisensteinBasis(Mk : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric);
         traceforms := [ TraceForm(Mk,aa) : aa in TraceFormIdeals ];
-        moreforms := Basis(forms cat eisensteinbasis cat traceforms );
-        coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
+        try
+            moreforms_input := forms cat eisensteinbasis;
+            if #traceforms ne 0 then
+                moreforms_input cat:= traceforms;
+            end if;
+            moreforms := Basis(moreforms_input);
+            coeffs_matrix := CoefficientsMatrix(moreforms : IdealClasses:=IdealClassesSupport);
 
-        // TODO: This double complement call can surely be optimized away.
-        if Rank(coeffs_matrix) eq KnownMkDimension then
-            return forms cat ComplementBasis(forms, Basis(moreforms) : Alg := Alg);
-        end if;
+            // TODO: This double complement call can surely be optimized away.
+            if Rank(coeffs_matrix) eq KnownMkDimension then
+                return forms cat ComplementBasis(forms, Basis(moreforms) : Alg := Alg);
+            end if;
+        catch e
+            vprint HilbertModularForms : "Eisenstein / Traceforms shortcut failed; opening full basis";
+        end try;
     end if;
 
     vprint HilbertModularForms : "Opening Basis! This may be slow";
@@ -578,8 +586,12 @@ intrinsic MakeScheme(Gens::Assoc, Relations::Assoc)-> Any
     // This is in order to verify we did not mess up the ordering.
     for rel in rels do
       coeffs, mons := CoefficientsAndMonomials(rel);
-      evaluated_mons := EvaluateMonomials(Gens, mons);
-      assert &+[coeffs[i]*evaluated_mons[i] : i in [1..#coeffs]] eq 0;
+      // A zero relation polynomial gives empty coeffs/mons, for which &+[] is
+      // illegal; such a relation is trivially satisfied, so skip the check.
+      if #coeffs gt 0 then
+        evaluated_mons := EvaluateMonomials(Gens, mons);
+        assert &+[coeffs[i]*evaluated_mons[i] : i in [1..#coeffs]] eq 0;
+      end if;
     end for;
     PolynomialList cat:= rels;
   end for;
@@ -587,6 +599,23 @@ intrinsic MakeScheme(Gens::Assoc, Relations::Assoc)-> Any
   P := ProjectiveSpace(R);
   S := Scheme(P, PolynomialList);
   return S;
+end intrinsic;
+
+intrinsic VerifyRelationsVanishOnGenerators(Gens::Assoc, Relations::Assoc)
+  {Assert that every relation in Relations, interpreted as a polynomial in the weighted
+   ring built from Gens, vanishes identically when evaluated on the actual generator
+   q-expansions. This catches variable-ordering corruption that the Hilbert-series check
+   (which only sees the relation degrees) cannot detect: a scrambled relation of the same
+   degree passes the series check but fails to vanish on the forms.}
+
+  R := ConstructWeightedPolynomialRing(Gens);
+  // Generator forms in the SAME sorted-weight order used to build R.
+  gl := Sum([* SequenceToList(Gens[w]) : w in Sort(Setseq(Keys(Gens))) *] : empty := [* *]);
+  for i in Keys(Relations) do
+    for rel in RelationstoPolynomials(R, Relations[i], i) do
+      assert IsZero(Evaluate(rel, gl));
+    end for;
+  end for;
 end intrinsic;
 
 intrinsic MakeHilbertSeries(Gens::Assoc, Relations::Assoc, n::RngIntElt)-> Any
@@ -701,75 +730,6 @@ intrinsic ComputePrecisionFromHilbertSeries(NN::RngOrdIdl, B::RngIntElt) -> RngI
   return 10*Integers()!Coefficient(Pow!H, B) + 10;
 end intrinsic;
 
-intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
-				: Precision := 100,
-				  LowestWeight:=2,
-				  Alg:="Standard",
-				  IdealClassesSupport:=false,
-				  Symmetric:=false,
-				  ComputeNewGenerators:=true,
-				  PrecomputedGens:=AssociativeArray()) -> Srfc
-{ Compute a model for the (canonical ring of the) Hilbert modular surface over F of level N.
-  Generators will have parallel weight upto MaxWeightGens, and relations will have parallel upto MaxWeightRelations.
-  Return a three Associative arrays, indexed by weight, corresponding to generators, relations and the monomials.
-  Use the optional parameter 'LowestWeight' to specifiy the lowest weight for the generators.
-  The optional parameter 'Alg' is passed to ComplementBasis.
-  Use the optional parameter 'IdealClassesSupport' to restrict the support of the generators to a given set of components.
-  Use the optional parameter 'Symmetric' to restrict the generators to be invariant under the automorphisms of the base field F, i.e., invariant under the swap map.
-  Use the optional parameters 'PrecomputedGens' as an AssociativeArray to provide precomputed generators.
-  Use the optional parameters 'ComputeNewGenerators' to determine if new generators will be computed.}
-
-  // check that precision is high enough
-  require Precision ge ComputePrecisionFromHilbertSeries(N, MaxGeneratorWeight): "Precision is too low; not enough coefficients for linear algebra";
-
-  R := GradedRingOfHMFs(F, Precision);
-  dict := ConstructGeneratorsAndRelations(R, N, MaxGeneratorWeight, MaxRelationWeight:
-					  LowestWeight:=LowestWeight,
-					  Alg:=Alg,
-					  IdealClassesSupport:=IdealClassesSupport,
-					  Symmetric:=Symmetric,
-					  ComputeNewGenerators:=ComputeNewGenerators,
-					  PrecomputedGens:=PrecomputedGens);
-  Gens := dict[1];
-  Rels := dict[2];
-  Mons := dict[3];
-
-  S := MakeScheme(Gens, Rels);
-  P_wtd<[x]> := Ambient(S);
-  eqns_S := DefiningEquations(S);
-  return S;
-end intrinsic;
-
-intrinsic HilbertModularSurface(F::FldQuad, N::RngOrdIdl, MaxGeneratorWeight::RngIntElt, MaxRelationWeight::RngIntElt
-				: Precision := 100,
-				  LowestWeight:=2,
-				  Alg:="Standard",
-				  IdealClassesSupport:=false,
-				  Symmetric:=false,
-				  ComputeNewGenerators:=true,
-				  PrecomputedGens:=AssociativeArray()) -> Srfc
-{
-  Compute a model for the (canonical ring of the) Hilbert modular surface over F of level N.
-  Generators will have parallel weight upto MaxWeightGens, and relations will have parallel upto MaxWeightRelations.
-  Return a three Associative arrays, indexed by weight, corresponding to generators, relations and the monomials.
-  Use the optional parameter 'LowestWeight' to specifiy the lowest weight for the generators.
-  The optional parameter 'Alg' is passed to ComplementBasis.
-  Use the optional parameter 'IdealClassesSupport' to restrict the support of the generators to a given set of components.
-  Use the optional parameter 'Symmetric' to restrict the generators to be symmetric under the automorphisms of the base field F, i.e., invariant under the swap map.
-  Use the optional parameters 'PrecomputedGens' as an AssociativeArray to provide precomputed generators.
-  Use the optional parameters 'ComputeNewGenerators' to determine if new generators will be computed.}
-  return HilbertModularVariety(F, N, MaxGeneratorWeight, MaxRelationWeight
-			       : Precision:=Precision,
-				 LowestWeight:=LowestWeight,
-				 Alg:=Alg,
-				 IdealClassesSupport:=IdealClassesSupport,
-				 Symmetric:=Symmetric,
-				 ComputeNewGenerators:=ComputeNewGenerators,
-				 PrecomputedGens:=PrecomputedGens);
-
-    // return Surface(P, eqns_S);
-end intrinsic;
-
 intrinsic HilbertModularImage(forms::List, maxRelationDegree::RngIntElt) -> Sch
 {Given a list (of type List) of Hilbert modular forms, compute the Zariski closure of the image of the rational map
 defined by these forms into a weighted projective space (with weights the weight of the forms).
@@ -822,19 +782,33 @@ n = [F:Q]. Returns true if algebraic independence is certified on at least one c
 
     // Compute ratios g_i = f_i / f_pivot for i != pivot
     f0_bb := Components(forms[pivot])[bb];
-    ratios := [];
+    ratio_comps := [];
     for i in [1..#forms] do
       if i ne pivot then
         fi_bb := Components(forms[i])[bb];
         gi_bb := fi_bb / f0_bb;
-        Append(~ratios, Expansion(gi_bb));
+        require IsMultivariate(gi_bb) :
+          "The Jacobian certificate requires the multivariate expansion representation";
+        Append(~ratio_comps, gi_bb);
       end if;
     end for;
+    prec_bb := Min([Precision(g) : g in ratio_comps]);
+    ratios := [LowerSetExpansion(g) : g in ratio_comps];
 
     // Build n x n Jacobian matrix of partial derivatives
     J := Matrix(n, n, [Derivative(ratios[i], j) : i in [1..n], j in [1..n]]);
 
-    if Determinant(J) ne 0 then
+    // Raw polynomial products of truncated expansions are correct only on the
+    // downward closed lower set, and every term of det(J) carries one first
+    // derivative per column, i.e. a uniform exponent shift by (1,..,1) off the
+    // nu-lattice. Shift back with q_1*...*q_n (harmless for vanishing), then
+    // prune to the lower set at the common input precision: what survives are
+    // exactly the coefficients whose convolutions stay inside stored data.
+    R_exp := Parent(ratios[1]);
+    det := Determinant(J) * &*[R_exp.j : j in [1..n]];
+    det := HMFPruneLowerSetExpansion(M, bb, det : Precision := prec_bb);
+
+    if det ne 0 then
       vprintf HilbertModularForms : "AlgebraicallyIndependent: certified on component %o\n", bb;
       return true;
     end if;
@@ -900,6 +874,11 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl
     : MaxB := 100, Alg := "Standard",
       NumberOfTraceForms := 0,
       Symmetric := false,
+      GeneratorWeight := 0,
+      RelationWeight := 0,
+      LowestWeight := 2,
+      ComputeNewGenerators := true,
+      Precision := 100,
       PrecomputedGens := AssociativeArray(),
       IdealClassesSupport := false) -> Assoc, SeqEnum, BoolElt
 {Compute the graded ring of Hilbert modular forms of level N over F using Algorithm 1
@@ -910,6 +889,10 @@ presentation) matches the trace formula Hilbert series.
 
 Phase 2: Certify the presentation by finding n+1 algebraically independent elements
 (where n = [F:Q]) on each component via a Jacobian determinant check.
+
+If GeneratorWeight is set (nonzero), the algorithm skips the B-search and computes a
+presentation directly at the given GeneratorWeight/RelationWeight bounds per component,
+returning certified = false (no Jacobian certification is performed in this mode).
 
 Returns:
   comp_data - an associative array mapping component ideal bb to <Gens, Relations, Monomials>,
@@ -924,6 +907,26 @@ Returns:
     comps := NarrowClassGroupReps(M_temp);
   else
     comps := IdealClassesSupport;
+  end if;
+
+  // Explicit-bounds mode (formerly the 4-arg HilbertModularVariety overload):
+  // one direct computation per component at the given weights, no B-search and
+  // no certification. For narrow class number 1 this reproduces the old 4-arg result.
+  if GeneratorWeight gt 0 then
+    relW := (RelationWeight gt 0) select RelationWeight else 2*GeneratorWeight;
+    prec := Max(Precision, ComputePrecisionFromHilbertSeries(N, GeneratorWeight));
+    R := GradedRingOfHMFs(F, prec);
+    comp_data := AssociativeArray();
+    schemes := [];
+    for bb in comps do
+      dict := ConstructGeneratorsAndRelations(R, N, GeneratorWeight, relW
+          : LowestWeight := LowestWeight, Alg := Alg, IdealClassesSupport := [bb],
+            Symmetric := Symmetric, NumberOfTraceForms := NumberOfTraceForms,
+            ComputeNewGenerators := ComputeNewGenerators, PrecomputedGens := PrecomputedGens);
+      comp_data[bb] := dict;
+      Append(~schemes, MakeScheme(dict[1], dict[2]));
+    end for;
+    return comp_data, schemes, false;
   end if;
 
   // PHASE 1: Find B_0 where Hilbert series matches

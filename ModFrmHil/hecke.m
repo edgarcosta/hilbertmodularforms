@@ -129,10 +129,14 @@ function basis_of_plus_subspace(M)
     T := ChangeRing(T, hecke_matrix_field(M));
     assert #Eigenvalues(T) eq 2;
     eig := Rep(Eigenvalues(T))[1];
-    F := BaseField(M);
 
     z := get_image_of_eps_nonparit(M);
-    assert F!(eig^2) eq z^-1;
+    // Sanity check eig^2 = z^-1, compared via the marked embedding F -> K that builds
+    // hecke_matrix_field. The old check F!(eig^2) eq z^-1 relied on Magma's natural coercion
+    // K -> F, which is unreliable across versions (it disagrees with the splitting embedding
+    // in 2.29-8), so we compare inside K instead.
+    embs := WeightBaseEmbeddings(QuaternionOrder(M));
+    assert eig^2 eq BaseRing(T) ! embs[1](z^-1);
     plus_basis := KernelMatrix(T - eig);
     minus_basis := KernelMatrix(T + eig);
   end if;

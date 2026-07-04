@@ -245,10 +245,10 @@ Embedding Numbers over Unit Index
     - FastArtinSymbol                                  (Fast implementation of artin symbol)
     - ClassNumberOverUnitIndex                         (Computes the class number and a unit index)
 
-  * EmbeddingNumbersOverUnitIndex                      (Computes Embedding numbers for an order x^2 + bx + a over a unit index)
-    - OptimalEmbeddingNumbers                          (Computes optimal embedding number for an order x^2 + bx + a using a formula.)
-      * Subroutine: PolynomialforOrder                 (Computes a polynomial for the local max order of in the extension (ZK)_pp / ZF_pp above a prime pp with a conductor of bb)
-      * Subroutine: PolynomialMaximalOrder             (Computes a polynomial for the local max order of in the extension (ZK)_pp / ZF_pp above a prime pp)
+  * EmbeddingNumberOverUnitIndex                       (Computes Embedding numbers for an order x^2 + bx + a over a unit index)
+    - OptimalEmbeddings                                (Computes optimal embedding number for an order x^2 + bx + a using a formula.)
+      * Subroutine: OptimalEmbeddingsOdd
+      * Subroutine: OptimalEmbeddingsEven
 
 
   * PrecompEmbeddingNumbersOverUnitIndex               (Computes Embedding numbers for an order x^2 + bx + a over a unit index)
@@ -536,8 +536,9 @@ intrinsic EmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, FactNN:
       for pair in FactNN do
         pp, e := Explode(pair); // prime and exponent
         f := Valuation(bb,pp); // Conductor
-        tb, nb := PolynomialforOrder(t, n, ZF, pp, f); // Polynomial for order with conductor bb
-        term *:= OptimalEmbeddingNumber(tb, nb, pp, e);
+        g := Valuation(DD,pp); // Valuation of Discriminant
+        A := (g eq 0) select LocalSquare(M,D,pp) else 0; // Artin Symbol
+        term *:= OptimalEmbeddings(e, 2*f, g, A, pp);
       end for;
       conductorsum +:= term;
     end for;
@@ -600,107 +601,6 @@ intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, 
   embeds := hw * conductorsum;
 
   return embeds;
-end intrinsic;
-
-
-/////////////////////////////////// Embedding Numbers over Unit index  //////////////////////////////////////////////
-
-intrinsic OptimalEmbeddingNumber(n::RngOrdElt, m::RngOrdElt, pp::RngOrdIdl, e::RngIntElt) -> RngIntElt
-  {Returns the optimal embeddings of x^2+nx+m into an a local order of level pp^e}
-  // FIXME: Clean up code
-  // requirements
-  require IsPrime(pp): "Not prime";
-  // Preliminaries
-  ZF := Ring(Parent(pp));
-  D := n^2-4*m;
-  Q,mQ := quo< ZF | pp^e >;
-  Q1,mQ1 := quo< ZF | pp^(e+1) >;
-  // roots of x^2+nx+m mod pp^e
-  L := [ t@@mQ : t in Q | (t^2 + mQ(n)*t + mQ(m)) eq mQ(0) ];
-  // If d is a unit then LQ — else LQ + image of elements in LQ1 which restrict down.
-  if Valuation(D,pp) eq 0 then
-    return #L;
-  else
-    L1 := [ t@@mQ1 : t in Q1 | (t^2 + mQ1(n)*t + mQ1(m)) eq mQ1(0) ];
-    L1res := { mQ(i) : i in L1};
-    return #L + #L1res;
-  end if;
-end intrinsic;
-
-
-intrinsic PolynomialforOrder(t::RngOrdElt, n::RngOrdElt, ZF::RngOrd, pp::RngOrdIdl, f::RngIntElt) -> Any
-  { Create a global polynomial x^2 + tbx + ab with local conductor f over pp }
-  t0, n0 := PolynomialMaximalOrder(t, n, ZF, pp);
-  pi := UniformizingElement(pp);
-  t0 *:= pi^(f);
-  n0 *:= pi^(2 * f);
-  return t0, n0;
-end intrinsic;
-
-
-intrinsic PolynomialMaximalOrder(n::RngOrdElt, m::RngOrdElt, ZF::RngOrd, pp::RngOrdIdl) -> Any
-  {Given a order ZK = x^2 + nx + m over ZF, computes a polynomial x^2 + n0x + m0 for the maximal order in the completion ZK_pp over ZF_pp}
-  // Preliminaries
-  D := n^2 - 4 * m;
-  F := FieldOfFractions(ZF);
-  _<x> := PolynomialRing(ZF);
-  K := ext< F | x^2 - D >;
-  ZK := Integers(K);
-  qq := Factorization(pp * ( 1 * ZK ))[1][1]; // qq is the prime above pp
-  /* Check if Split
-    Yes: return x^2 - 1 if pp odd
-         return seperate algorithm if pp even
-    No -> Check if x^2 - D is ramified.
-      Yes: return unformizer. // Ramified
-      No: return generator for ZF / pi. // Inert */
-  if IsSplit(qq) then
-    // qq is even
-    if Norm(pp) mod 2 eq 0 then
-      // Case 1: Local algebra F_2 is split. Return x^2 - x - 4
-      if IsSplit(pp) then
-        n0 := ZF ! -1;
-        m0 := ZF ! -4;
-      // Case 2: Local algebra F_2 is inert. Return x^2 + x - 1
-      elif IsInert(pp) then
-        n0 := ZF ! 1;
-        m0 := ZF ! -1;
-      /* Case 3: Local algebra F_2 is ramified. Find an equivalent quadratic extension of Q2.
-      Construct biquadratic field and use minimal polynomial for ring of integers of the 3rd quadratic field. */
-      else
-        for d in { 1, 2, 5, 6, 10, 14 } do
-          L := ext< F | x^2 + d >;
-          ZL := Integers(L);
-          ppl := pp * ( 1 * ZL );
-          if #Factorization(ppl) eq 2 then
-            Q := QuadraticField( -Discriminant(F) * d );
-            poly := MinimalPolynomial(Integers(Q).2);
-            coef := Coefficients(poly);
-            n0 := ZF ! coef[2];
-            m0 := ZF ! coef[1];
-            break;
-          end if;
-        end for;
-      end if;
-    // qq is odd
-    else
-      n0 := ZF ! 0;
-      m0 := ZF ! -1;
-    end if;
-  elif IsRamified(qq) then
-    pi := UniformizingElement(qq);
-    minpoly := MinimalPolynomial(pi);
-    coef := Coefficients(minpoly);
-    n0 := coef[2];
-    m0 := coef[1];
-  else
-    Fq, mFq := ResidueClassField(qq);
-    G := Generator(Fq);
-    minpoly := MinimalPolynomial(G@@mFq);
-    coef := Coefficients(minpoly);
-    n0 := coef[2];
-    m0 := coef[1];
-  end if;
-  return n0,m0;
 end intrinsic;
 
 

@@ -61,6 +61,14 @@ intrinsic WriteCanonicalRingComputationToString(F::FldNum, NN::RngOrdIdl : Alg :
 
   comp_data, schemes, certified := HilbertModularVariety(F, NN : Alg := Alg);
 
+  // Stronger self-check than the Hilbert-series comparison below: assert that each stored
+  // relation actually vanishes on the generator q-expansions. The series check only sees
+  // relation degrees, so a variable-order-scrambled relation of the right degree slips past
+  // it; this evaluation catches that. comp_data holds the generator forms in scope here.
+  for bb in Keys(comp_data) do
+    VerifyRelationsVanishOnGenerators(comp_data[bb][1], comp_data[bb][2]);
+  end for;
+
   NCl, mp := NarrowClassGroup(F);
   mpdet := IdealRepsMapDeterministic(F, mp);
   comps := [mpdet[el] : el in NCl];

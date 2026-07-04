@@ -196,19 +196,27 @@ narrow class group representatives.}
 end intrinsic;
 
 
-intrinsic HilbertSeriesLevelOne(M::ModFrmHilDGRng) -> FldFunRatUElt
-{Returns the dimension of the space of Hilbert Modular Forms of weight `k` and level `(1)`.}
-    return HilbertSeriesVasquez(BaseField(M));
+intrinsic HilbertSeries(M::ModFrmHilDGRng) -> FldFunRatUElt
+{Return the Hilbert series for Hilbert modular forms over the base field of M at level (1);
+an omitted level is taken to be the unit ideal.}
+    // Delegate so the closed-form (Vasquez) versus trace-formula routing is decided in one
+    // place: HilbertSeries(F, level) uses Vasquez only when NarrowClassNumber(F) eq 1, which
+    // HilbertSeriesVasquez itself requires.
+    F := BaseField(M);
+    return HilbertSeries(F, 1*Integers(F));
 end intrinsic;
 
 intrinsic HilbertSeries(F::FldNum, level::RngOrdIdl) -> FldFunRatUElt
 {Return the Hilbert series for the space of Hilbert Modular Forms of weight `k` with respect to
 the congruence subgroup `G`.}
-    if (NarrowClassNumber(F) eq 1) and (Norm(level) eq 1) then
+    if (Degree(F) eq 2) and (NarrowClassNumber(F) eq 1) and (Norm(level) eq 1) then
         return HilbertSeriesVasquez(F);
     end if;
     M := GradedRingOfHMFs(F, 1);
-    M2 := HMFSpace(M, level, [2,2]);
+    if Degree(F) ne 2 then
+        return HilbertSeries(M, level);
+    end if;
+    M2 := HMFSpace(M, level, [2 : i in [1..Degree(F)]]);
     HC := HilbertSeriesCusp(M, level);
     R<T> := Parent(HC);
     HE := EisensteinDimension(M2)*T^2/(1-T^2);
