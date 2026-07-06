@@ -94,10 +94,12 @@ These are computed from the arithmetic of $\Gamma$ by the formulas of
 Hirzebruch and van der Geer \cite[Ch.~II--IV]{vdG}: $K_Y^2$ and $e(Y)$ are
 sums of a volume term $2\zeta_F(-1)\cdot[\SL_2(\cO_F):\Gamma]$ and local
 contributions from the two cusps (Hirzebruch--Jung cycles) and the eight
-elliptic points (of orders $2,3,5$). One finds
+elliptic points (four of order $3$ and four of order $5$; there are no
+order-$2$ points). One finds
 $K_Y^2=\tfrac{64}{15}-2-\tfrac{34}{15}=0$ and $e(Y)=24$, whence
 $\chi(\cO_Y)=\tfrac1{12}(K_Y^2+e)=2$. Irregularity of Hilbert modular
-surfaces vanishes, $q=0$, so $p_g=\chi-1=1$ and $h^{1,1}=e-2=20$.
+surfaces vanishes, $q=0$, so $p_g=\chi-1=1$ and
+$h^{1,1}=b_2-2p_g=(e-2)-2=20$.
 \end{proof}
 
 These are precisely the invariants of a K3 surface. The point of this note is
@@ -131,8 +133,9 @@ $1$ along $\Delta$ is exactly the cusp condition, giving $S_2$.
 Let $P\in Y$ lie over an elliptic point with local analytic type
 $\tfrac1n(1,q)$, $\gcd(q,n)=1$. For $m\le2$ the vanishing conditions imposed by
 the components of $\Delta_{\mathrm{ell}}$ over $P$ on $M_{2m}$ are vacuous. The
-elliptic types occurring on $Y$ are $\tfrac12(1,1)$, $\tfrac13(1,1)$,
-$\tfrac13(1,2)$, $\tfrac15(1,2)$, $\tfrac15(1,3)$.
+elliptic types occurring on $Y$ are $\tfrac13(1,1)$,
+$\tfrac13(1,2)$, $\tfrac15(1,2)$, $\tfrac15(1,3)$ (four points of order $3$
+and four of order $5$; there are no order-$2$ points).
 \end{lemma}
 
 \begin{proof}
@@ -149,7 +152,7 @@ $\langle u,v\rangle\ge m$ for every primitive ray $v$ of the resolution fan of
 the cone of $\tfrac1n(1,q)$. The rays of the original cone give
 $a+m\ge m$ and $b+m\ge m$, automatic. Thus the only conditions come from the
 \emph{exceptional} rays. A direct check of the finitely many exceptional rays
-for each type shows: for the rational double points $\tfrac12(1,1)=A_1$ and
+for each type shows: for the rational double point
 $\tfrac13(1,2)=A_2$ there are no conditions for any $m$; for $\tfrac13(1,1)$,
 $\tfrac15(1,2)$, $\tfrac15(1,3)$ the least invariant exponent $a+b$ satisfying
 \eqref{eq:inv} already meets the ray inequalities when $m\le2$, so no
@@ -164,8 +167,12 @@ cycles }C\}$.
 
 \subsection{The cusp order and the second cusp}
 
-Each cusp of $\Gamma$ resolves to a single rational curve with
-self-intersection $-3$ (Hirzebruch--Jung datum $[3]$ for $F=\bQ(\sqrt5)$).
+Each cusp of $\Gamma$ resolves, by the Hirzebruch--Jung algorithm with datum
+$[3]$ for $F=\bQ(\sqrt5)$, to a single rational curve. As the cycle has length
+one, its two ends are identified: on $Y$ the cusp curve is a \emph{nodal}
+rational curve of arithmetic genus $1$ and self-intersection $-1$ (the datum
+$[3]$ gives $-3$, corrected by $+2$ for the node) --- the value used in
+$K_Y^2=\tfrac{64}{15}-2-\tfrac{34}{15}=0$ above.
 For $f\in M_k$ with Fourier expansion $f=\sum_\nu a_\nu\,e(\mathrm{Tr}(\nu z))$
 at the cusp $\infty$, set
 \[
@@ -323,12 +330,64 @@ $K_Y\sim f^*\cO(K_{\bP^1}+L)+F_0\sim F_0$; thus $\{\Om=0\}=F_0\in|K_Y|$, and
 adjunction gives $2p_a(F_0)-2=K_Y\cdot(K_Y+K_Y)=2K_Y^2=0$, i.e.\ $p_a(F_0)=1$.
 \end{proof}
 
+The multiplicity of the multiple fibre also follows numerically from the
+plurigenera, via the following general fact.
+
+\begin{lemma}\label{lem:mult}
+Let $f\colon Y\to\bP^1$ be a relatively minimal elliptic surface with
+$\chi(\cO_Y)=2$ and exactly one multiple fibre $mF_0$, whose reduced fibre $F_0$
+is a smooth curve of genus $1$. Then
+\[
+  P_n=1+\Big\lfloor\tfrac{n(m-1)}{m}\Big\rfloor\qquad(n\ge0).
+\]
+\end{lemma}
+
+\begin{proof}
+By Kodaira's canonical bundle formula for a relatively minimal elliptic surface,
+\[
+  K_Y\sim f^*(K_{\bP^1}+L)+(m-1)F_0,
+\]
+where $L$ is a line bundle on $\bP^1$ with $\deg L=\chi(\cO_Y)=2$. Since
+$\deg(K_{\bP^1}+L)=-2+2=0$, the pullback term is trivial, so $K_Y\sim(m-1)F_0$
+and hence $nK_Y\sim n(m-1)F_0$ and $P_n=h^0\bigl(Y,n(m-1)F_0\bigr)$.
+
+Two properties of the multiple fibre are used. First, as a divisor $mF_0$ is a
+full fibre, so $mF_0\sim f^*\cO_{\bP^1}(1)$. Second --- this is the meaning of
+multiplicity $m$ for a smooth fibre --- the normal bundle $N:=\cO_{F_0}(F_0)$ has
+order exactly $m$ in $\operatorname{Pic}^0(F_0)$; as $F_0$ has genus $1$, the degree-$0$ bundle
+$N^{\otimes j}$ is nontrivial, hence sectionless, for $0<j<m$:
+\begin{equation}\label{eq:torsion}
+  h^0\bigl(F_0,N^{\otimes j}\bigr)=0,\qquad 0<j<m.
+\end{equation}
+
+Write $n(m-1)=qm+r$ with $0\le r<m$, so $q=\lfloor n(m-1)/m\rfloor$. By the first
+property $n(m-1)F_0\sim f^*\cO(q)+rF_0$. For $1\le k\le r$ the restriction
+sequence
+\[
+  0\to\cO_Y\bigl(f^*\cO(q)+(k{-}1)F_0\bigr)\to\cO_Y\bigl(f^*\cO(q)+kF_0\bigr)
+   \to\cO_{F_0}(kF_0)\to0
+\]
+has right-hand term $\cO_{F_0}(kF_0)=N^{\otimes k}$, because $f^*\cO(q)$ is
+trivial on the fibre $F_0$. By \eqref{eq:torsion} this is sectionless for
+$0<k\le r<m$, so the inclusions are isomorphisms on global sections and
+\[
+  h^0\bigl(f^*\cO(q)+rF_0\bigr)=h^0\bigl(f^*\cO(q)\bigr)
+   =h^0\bigl(\bP^1,\cO(q)\bigr)=q+1,
+\]
+the middle equality by the projection formula ($f_*\cO_Y=\cO_{\bP^1}$). Thus
+$P_n=q+1=1+\lfloor n(m-1)/m\rfloor$.
+\end{proof}
+
 \begin{remark}
-The multiplicity of the multiple fibre also follows numerically from
-$P_3=2$: for an elliptic surface over $\bP^1$ with $\chi=2$ and a single
-multiple fibre of multiplicity $m$, $P_n=1+\lfloor n(m-1)/m\rfloor$, and
-$P_3=2$ forces $m=2$. Proposition~\ref{prop:fibration} gives $m=2$
-independently and exactly.
+Geometrically, a pluricanonical form is a section vanishing along $n(m-1)F_0$;
+one gains a new section only on accumulating a \emph{whole} fibre's worth of
+vanishing ($m$ copies of $F_0$ contribute one $f^*\cO(1)$, i.e.\ $+1$ to $h^0$),
+while the leftover $r<m$ copies are blocked by the $m$-torsion normal bundle.
+In particular $P_3=1+\lfloor 3(m-1)/m\rfloor$ equals $2$ precisely when $m=2$
+(it is $3$ for $m=3$ and $\ge3$ for $m\ge4$), so the computed $P_3=2$ forces
+$m=2$; then Lemma~\ref{lem:mult} returns $P_n=1+\lfloor n/2\rfloor$, matching
+$P_1,P_2,P_3=1,2,2$. Proposition~\ref{prop:fibration} gives $m=2$ independently
+and exactly.
 \end{remark}
 
 \begin{theorem}
