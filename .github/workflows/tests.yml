@@ -129,6 +129,7 @@ jobs:
     name: Run tests
     needs: [has_access, matrix, prime-magma]
     if: needs.has_access.outputs.has_access == 'true'
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
