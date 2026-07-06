@@ -845,7 +845,12 @@ Returns the candidates and whether enough were found.}
     pivots := PivotRows(mat);
 
     if #pivots ge m then
-      return [forms[pivots[i]] : i in [1..m]], true;
+      for comb in Subsets(Set(pivots), m) do
+        candidate := [forms[i] : i in Sort(Setseq(comb))];
+        if AlgebraicallyIndependent(candidate : IdealClassesSupport := IdealClassesSupport) then
+          return candidate, true;
+        end if;
+      end for;
     end if;
   end for;
 
