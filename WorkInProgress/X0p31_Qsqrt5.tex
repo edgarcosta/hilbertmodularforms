@@ -1,0 +1,475 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\DeclareMathOperator{\ord}{ord}
+\DeclareMathOperator{\Proj}{Proj}
+\DeclareMathOperator{\Sym}{Sym}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\SL}{SL}
+\DeclareMathOperator{\GL}{GL}
+\DeclareMathOperator{\Div}{div}
+\newcommand{\bP}{\mathbb{P}}
+\newcommand{\bH}{\mathbb{H}}
+\newcommand{\bC}{\mathbb{C}}
+\newcommand{\bQ}{\mathbb{Q}}
+\newcommand{\bZ}{\mathbb{Z}}
+\newcommand{\cO}{\mathcal{O}}
+\newcommand{\fp}{\mathfrak{p}}
+\newcommand{\Om}{\Omega}
+\newcommand{\kY}{K_Y}
+
+\title{A Hilbert modular surface with the numerical invariants of a K3 that is
+  properly elliptic: \\ $X_0(\fp_{31})$ over $\bQ(\sqrt5)$}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let $F=\bQ(\sqrt5)$ and let $\fp$ be a prime of $F$ above $31$ (norm $31$).
+We study the Hilbert modular surface $X_0(\fp)$ and its minimal smooth model
+$Y$. We show that $Y$ has $\chi(\cO_Y)=2$, $p_g=1$, $q=0$, $K_Y^2=0$ and
+topological Euler number $e(Y)=24$ --- exactly the numerical invariants of a
+K3 surface --- yet $Y$ is \emph{properly elliptic} ($\kappa(Y)=1$). The proof
+is a direct computation of the plurigenus $P_2=\dim H^0(Y,2K_Y)=2$, which
+excludes both K3 ($P_2=1$) and general type ($P_2\ge 3$). We compute the
+plurigenera $P_n=1+\lfloor n/2\rfloor$, identify the canonical ring as the
+polynomial ring $\bC[\Om,\eta]$ (weights $1,2$), and exhibit the Iitaka
+fibration as the pencil of conics $|2K_Y|$ in $\bP(M_2)$. Its unique multiple
+fibre has multiplicity $2$ and is supported on the vanishing locus of the
+weight-$2$ cusp form, and its singular fibres are $I_6+2I_4+I_2+8I_1$.
+\end{abstract}
+
+\section{Setup and notation}
+
+Let $F=\bQ(\sqrt5)$, $\cO_F=\bZ[\varphi]$ with $\varphi=\tfrac{1+\sqrt5}2$, and
+let $\fp=\fp_{31}$ be a prime above $31$ (there are two, conjugate under
+$\mathrm{Gal}(F/\bQ)$; we fix the one with \textsc{lmfdb} label $31.2$). Let
+$\Gamma=\Gamma_0(\fp)\subset \GL_2^+(\cO_F)$ and let
+$X=X_0(\fp)=\overline{\bH^2/\Gamma}$ be the Baily--Borel compactification of the
+associated Hilbert modular surface. Let $\pi\colon Y\to X$ be the minimal
+resolution of singularities (resolving the two cusps and the elliptic
+quotient points); $Y$ is a smooth projective surface. Since $F$ has narrow
+class number one, $X$ is irreducible.
+
+Write $L$ for the Hodge (modular) line bundle on $Y$, so that
+$M_k:=H^0(Y,kL)$ is the space of Hilbert modular forms of parallel weight $k$
+for $\Gamma$, and $S_k\subset M_k$ the cusp forms. We freely use the standard
+structure theory of Hilbert modular surfaces \cite{vdG}. In particular, with
+$\Delta$ the reduced exceptional divisor of $\pi$ (a sum of cusp resolution
+cycles $\Delta_{\mathrm{cusp}}$ and elliptic resolution cycles
+$\Delta_{\mathrm{ell}}$),
+\begin{equation}\label{eq:canonical}
+  K_Y \;=\; 2L-\Delta .
+\end{equation}
+
+All modular-form computations below were carried out in \textsc{Magma} using
+the \texttt{hilbertmodularforms} package; scripts accompany this note. We
+indicate at each step whether a statement is proved or computed, and (for the
+one genuinely numerical input, $P_3$) the nature of the evidence.
+
+\section{Numerical invariants}
+
+\begin{proposition}\label{prop:invariants}
+The surface $Y$ has
+\[
+  \chi(\cO_Y)=2,\quad q=h^{1,0}=0,\quad p_g=h^{2,0}=1,\quad
+  K_Y^2=0,\quad e(Y)=24,
+\]
+with Hodge diamond $\;1;\,0\,0;\,1\,20\,1;\,0\,0;\,1$.
+\end{proposition}
+
+\begin{proof}
+These are computed from the arithmetic of $\Gamma$ by the formulas of
+Hirzebruch and van der Geer \cite[Ch.~II--IV]{vdG}: $K_Y^2$ and $e(Y)$ are
+sums of a volume term $2\zeta_F(-1)\cdot[\SL_2(\cO_F):\Gamma]$ and local
+contributions from the two cusps (Hirzebruch--Jung cycles) and the eight
+elliptic points (four of order $3$ and four of order $5$; there are no
+order-$2$ points). One finds
+$K_Y^2=\tfrac{64}{15}-2-\tfrac{34}{15}=0$ and $e(Y)=24$, whence
+$\chi(\cO_Y)=\tfrac1{12}(K_Y^2+e)=2$. Irregularity of Hilbert modular
+surfaces vanishes, $q=0$, so $p_g=\chi-1=1$ and
+$h^{1,1}=b_2-2p_g=(e-2)-2=20$.
+\end{proof}
+
+These are precisely the invariants of a K3 surface. The point of this note is
+that $Y$ is nevertheless not a K3.
+
+\section{Pluricanonical forms}
+
+The following translation is standard for Hilbert modular surfaces
+\cite[Ch.~VII]{vdG}.
+
+\begin{lemma}\label{lem:mcan}
+For $m\ge1$,
+\[
+  H^0(Y,mK_Y)\;\cong\;\bigl\{\,f\in M_{2m}\ :\ \ord_C(f)\ge m
+  \text{ for every prime component } C\subset\Delta\,\bigr\}.
+\]
+In particular $H^0(Y,K_Y)=S_2$, so $p_g=\dim S_2$.
+\end{lemma}
+
+\begin{proof}
+By \eqref{eq:canonical}, $mK_Y=2mL-m\Delta$, and $H^0(Y,2mL)=M_{2m}$. A
+section $f\in M_{2m}$ lies in $H^0(Y,mK_Y)=H^0(Y,2mL-m\Delta)$ iff
+$\Div(f)\ge m\Delta$, i.e.\ $\ord_C(f)\ge m$ for each component $C$ of
+$\Delta$. For $m=1$ the divisor $\Delta$ is reduced, and vanishing to order
+$1$ along $\Delta$ is exactly the cusp condition, giving $S_2$.
+\end{proof}
+
+\subsection{The elliptic conditions are vacuous for $m\le2$}
+
+\begin{lemma}\label{lem:toric}
+Let $P\in Y$ lie over an elliptic point with local analytic type
+$\tfrac1n(1,q)$, $\gcd(q,n)=1$. For $m\le2$ the vanishing conditions imposed by
+the components of $\Delta_{\mathrm{ell}}$ over $P$ on $M_{2m}$ are vacuous. The
+elliptic types occurring on $Y$ are $\tfrac13(1,1)$,
+$\tfrac13(1,2)$, $\tfrac15(1,2)$, $\tfrac15(1,3)$ (four points of order $3$
+and four of order $5$; there are no order-$2$ points).
+\end{lemma}
+
+\begin{proof}
+Work in local coordinates $(w_1,w_2)$ in which the stabiliser
+$\mu_n$ acts by $(w_1,w_2)\mapsto(\zeta w_1,\zeta^q w_2)$, $\zeta=e^{2\pi
+i/n}$. An $m$-canonical form is locally $h(w)\,(dw_1\wedge dw_2)^m$ with
+$h=\sum c_{ab}w_1^aw_2^b$; $\mu_n$-invariance forces $c_{ab}=0$ unless
+\begin{equation}\label{eq:inv}
+  a+qb+m(1+q)\equiv 0 \pmod n .
+\end{equation}
+Passing to the minimal (toric) resolution, $w_1^aw_2^b(dw)^m$ extends
+holomorphically iff the lattice point $u=(a+m,\,b+m)$ satisfies
+$\langle u,v\rangle\ge m$ for every primitive ray $v$ of the resolution fan of
+the cone of $\tfrac1n(1,q)$. The rays of the original cone give
+$a+m\ge m$ and $b+m\ge m$, automatic. Thus the only conditions come from the
+\emph{exceptional} rays. A direct check of the finitely many exceptional rays
+for each type shows: for the rational double point
+$\tfrac13(1,2)=A_2$ there are no conditions for any $m$; for $\tfrac13(1,1)$,
+$\tfrac15(1,2)$, $\tfrac15(1,3)$ the least invariant exponent $a+b$ satisfying
+\eqref{eq:inv} already meets the ray inequalities when $m\le2$, so no
+condition is imposed. (Conditions first appear at $m=3$.) The list of types is
+read off from the elliptic point data of $\Gamma$.
+\end{proof}
+
+\begin{corollary}\label{cor:P2cusp}
+$P_1=\dim S_2$ and $P_2=\dim\{f\in S_4:\ \ord_C(f)\ge2\text{ for both cusp
+cycles }C\}$.
+\end{corollary}
+
+\subsection{The cusp order and the second cusp}
+
+Each cusp of $\Gamma$ resolves, by the Hirzebruch--Jung algorithm with datum
+$[3]$ for $F=\bQ(\sqrt5)$, to a single rational curve. As the cycle has length
+one, its two ends are identified: on $Y$ the cusp curve is a \emph{nodal}
+rational curve of arithmetic genus $1$ and self-intersection $-1$ (the datum
+$[3]$ gives $-3$, corrected by $+2$ for the node) --- the value used in
+$K_Y^2=\tfrac{64}{15}-2-\tfrac{34}{15}=0$ above.
+For $f\in M_k$ with Fourier expansion $f=\sum_\nu a_\nu\,e(\mathrm{Tr}(\nu z))$
+at the cusp $\infty$, set
+\[
+  \ord_\infty(f)=\min_{\nu:\,a_\nu\ne0}\ \min_{k\in\bZ}\ \mathrm{Tr}(\nu\,\varepsilon^k A_0),
+\]
+where $A_0$ generates the cusp resolution ray and $\varepsilon$ is the
+fundamental totally positive unit. This functional is normalised by the
+identity $\ord_\infty(\Om^k)=k$ (verified computationally for $k=1,2,3$, where
+$\Om$ spans $S_2$).
+
+\begin{lemma}\label{lem:dinf}
+Among the Fourier coefficients of weight-$4$ cusp forms, exactly one index
+$\nu_{\min}$ (corresponding to the trivial ideal $(1)$) has
+$\ord_\infty=1$. Hence for $f\in S_4$,
+$\ord_\infty(f)\ge2\iff a_{\nu_{\min}}(f)=0$, and
+$\dim\{f\in S_4:\ord_\infty(f)\ge2\}=3$.
+\end{lemma}
+
+\begin{proof}[Computation]
+Direct: $\dim S_4=4$, and the coefficient functional $a_{\nu_{\min}}$ is
+nonzero on $S_4$, cutting it to dimension $3$.
+\end{proof}
+
+\begin{proposition}\label{prop:P2}
+$P_2=2$.
+\end{proposition}
+
+\begin{proof}
+By Corollary~\ref{cor:P2cusp}, $P_2=\dim\{f\in S_4:\ord_\infty(f)\ge2\text{ and
+}\ord_0(f)\ge2\}$. Since $\dim S_4\bigl(\SL_2(\cO_F)\bigr)=0$, the space $S_4$
+is entirely $\fp$-new, so the Fricke involution $w_\fp$ (which interchanges
+the two cusps $0,\infty$) acts on $S_4$, and
+$\ord_0(f)=\ord_\infty(w_\fp f)$. Let $\{f_1,\dots,f_4\}$ be the normalised
+newform eigenbasis, $w_\fp f_i=\varepsilon_i f_i$ with $\varepsilon_i\in\{\pm1\}$
+and $a_{\nu_{\min}}(f_i)=1$. Writing $f=\sum_i c_if_i$, Lemma~\ref{lem:dinf}
+gives
+\[
+  \ord_\infty(f)\ge2\iff \textstyle\sum_i c_i=0,\qquad
+  \ord_0(f)\ge2\iff \textstyle\sum_i \varepsilon_i c_i=0 .
+\]
+The Atkin--Lehner operator on $S_4(\Gamma)$ has eigenvalues
+$\{-31,+31,+31,+31\}$, i.e.\ $(\varepsilon_i)=(-1,+1,+1,+1)$ (computed).
+Therefore
+\[
+  P_2=4-\rank\begin{pmatrix}1&1&1&1\\ -1&1&1&1\end{pmatrix}=4-2=2 . \qedhere
+\]
+\end{proof}
+
+\section{The Kodaira dimension}
+
+\begin{lemma}\label{lem:gt}
+If $Y$ were of general type, then $P_2=\chi(\cO_Y)+K^2_{\min}\ge3$, where
+$K_{\min}$ is the canonical class of the minimal model.
+\end{lemma}
+
+\begin{proof}
+On the minimal model $X_{\min}$, Riemann--Roch gives
+$\chi(2K)=\chi(\cO)+\tfrac12(2K)(2K-K)=\chi(\cO)+K^2_{\min}$. For a minimal
+surface of general type $K_{\min}$ is nef and big, so $h^2(2K)=h^0(-K)=0$ and
+$h^1(2K)=0$ (Mumford vanishing), whence $P_2=\chi+K^2_{\min}$. As
+$K^2_{\min}\ge1$ and $\chi=2$, $P_2\ge3$. Note $P_2$ is a birational
+invariant, so this bound applies to $Y$.
+\end{proof}
+
+\begin{theorem}\label{thm:main}
+$\kappa(Y)=1$: the surface $Y$ is properly elliptic.
+\end{theorem}
+
+\begin{proof}
+By the Enriques--Kodaira classification we run through the possibilities using
+Proposition~\ref{prop:invariants} ($\chi=2$, $q=0$, $p_g=1$) and
+Proposition~\ref{prop:P2} ($P_2=2$).
+\begin{itemize}
+\item $\kappa=-\infty$: rational or ruled surfaces have $p_g=0$; but $p_g=1$.
+\item $\kappa=0$: with $q=0$ and $p_g=1$ the minimal model is a K3 surface
+  (Enriques surfaces have $p_g=0$; abelian and bielliptic surfaces have
+  $q>0$). A K3 has $K\equiv0$, hence $P_m=\dim H^0(\cO)=1$ for all $m$; in
+  particular $P_2=1\ne2$.
+\item $\kappa=2$: excluded by Lemma~\ref{lem:gt}, since $P_2=2<3$.
+\end{itemize}
+The only remaining value is $\kappa=1$.
+\end{proof}
+
+\begin{remark}
+The value $P_2=2$ is decisive precisely because it lies strictly between the
+K3 value $P_2=1$ and the general-type lower bound $P_2\ge3$; no coarser
+invariant distinguishes $Y$ from a K3.
+\end{remark}
+
+\section{Plurigenera, the canonical ring, and the elliptic fibration}
+
+\begin{proposition}\label{prop:P3}
+$P_3=2$, and hence $P_n=1+\lfloor n/2\rfloor$ for all $n\ge0$.
+\end{proposition}
+
+\begin{proof}[Computation]
+$P_3=\dim\{f\in S_6:\ \ord_C(f)\ge3\text{ (both cusps)},\ \text{elliptic
+conditions}\}$. The cusp conditions ($3$ at each cusp) are computed exactly:
+the second cusp is handled through the Fricke involution, obtained in closed
+form from $w_\fp=S\cdot\mathrm{diag}(\pi,1)$ with $S\in\SL_2(\cO_F)$ --- giving
+$W=-U_\fp/31^2$ on the new part and the explicit action
+$g_{\mathrm{incl}}\leftrightarrow g(\pi z)$ (scalar $N(\pi)^{3}=31^3$) on the
+$2$-dimensional old part; the new/old split is $\ker(T_2-a_2(g))$. As a check,
+$\Om^3$ satisfies all six cusp conditions exactly. The six cusp conditions cut
+$S_6$ ($\dim14$) to an exact $8$-dimensional space; the elliptic conditions of
+Lemma~\ref{lem:toric} (now nonvacuous: one value condition at each
+$\tfrac13(1,1)$ point and one first-derivative condition at each $\tfrac15$
+point), evaluated numerically at the elliptic CM points and restricted to this
+$8$-dimensional kernel, have rank $6$ (stable across working precision and
+tolerance). Hence $P_3=8-6=2$. The last step is numerical; it is corroborated
+by the exact cusp validation and by exact agreement with the value forced by
+Proposition~\ref{prop:fibration} below.
+\end{proof}
+
+\begin{corollary}\label{cor:canring}
+The canonical ring $R(K_Y)=\bigoplus_{m\ge0}H^0(Y,mK_Y)$ is the polynomial ring
+$\bC[\Om,\eta]$ with $\deg\Om=1$, $\deg\eta=2$, and $B:=\Proj R(K_Y)\cong\bP^1$.
+\end{corollary}
+
+\begin{proof}
+The Hilbert function $1,1,2,2,3,3,4,\dots$ of $\bC[\Om,\eta]$ equals the
+plurigenera $P_m=1+\lfloor m/2\rfloor$ (Proposition~\ref{prop:P3}). Since
+$\kappa(Y)=1$, $R(K_Y)$ has Krull dimension $2$; two homogeneous generators
+$\Om\in H^0(K)$, $\eta\in H^0(2K)$ of these degrees are then algebraically
+independent, so $R(K_Y)=\bC[\Om,\eta]$ and $\Proj=\bP(1,2)\cong\bP^1$.
+\end{proof}
+
+The Iitaka fibration $f\colon Y\to B=\bP^1$ (an elliptic fibration, as
+$\kappa=1$) is thus the bicanonical pencil $|2K_Y|=\langle\Om^2,\eta\rangle$,
+with base coordinate $t=\eta/\Om^2$.
+
+\begin{proposition}\label{prop:fibration}
+$M_4=\Sym^2 M_2$, so $|2K_Y|$ is a pencil of conics in $\bP(M_2)\cong\bP^2$.
+Its unique rank-$1$ (double-line) member is $\Om^2$; consequently the elliptic
+fibration has a unique multiple fibre, of multiplicity $2$, equal to
+$2\{\Om=0\}$, and the reduced fibre $\{\Om=0\}$ is a curve of arithmetic genus
+$1$.
+\end{proposition}
+
+\begin{proof}
+The graded ring of $Y$ is generated in weights $2,6,10$; in particular there
+are no weight-$4$ generators, and $\dim M_4=6=\dim\Sym^2 M_2$, so
+$M_4=\Sym^2M_2$: every weight-$4$ form is a quadric in a basis $y_1,y_2,y_3$
+of $M_2$. Choosing $y_1,y_2$ Eisenstein and $y_3=\Om$, one computes (exactly)
+$H^0(2K_Y)=\langle F_1,F_2\rangle$ with $F_i$ explicit quadrics, and
+$\Om^2=y_3^2\in\langle F_1,F_2\rangle$. The binary cubic
+$\det(sM_1+tM_2)$ (where $M_i$ is the symmetric matrix of $F_i$) factors as
+$\ell_1\cdot\ell_2^2$; the simple root $\ell_1$ gives a rank-$2$ conic (two
+lines) and the double root $\ell_2$ gives the rank-$1$ conic, which is exactly
+$\Om^2=y_3^2$. A perfect-square member of the pencil is a double line, so the
+corresponding fibre of $f$ is $2\{y_3=0\}=2\{\Om=0\}$, a multiple fibre of
+multiplicity $2$. By the canonical bundle formula for an elliptic surface over
+$\bP^1$ with $\chi=2$ and a single double fibre $F_0$,
+$K_Y\sim f^*\cO(K_{\bP^1}+L)+F_0\sim F_0$; thus $\{\Om=0\}=F_0\in|K_Y|$, and
+adjunction gives $2p_a(F_0)-2=K_Y\cdot(K_Y+K_Y)=2K_Y^2=0$, i.e.\ $p_a(F_0)=1$.
+\end{proof}
+
+The multiplicity of the multiple fibre also follows numerically from the
+plurigenera, via the following general fact.
+
+\begin{lemma}\label{lem:mult}
+Let $f\colon Y\to\bP^1$ be a relatively minimal elliptic surface with
+$\chi(\cO_Y)=2$ and exactly one multiple fibre $mF_0$, whose reduced fibre $F_0$
+is a smooth curve of genus $1$. Then
+\[
+  P_n=1+\Big\lfloor\tfrac{n(m-1)}{m}\Big\rfloor\qquad(n\ge0).
+\]
+\end{lemma}
+
+\begin{proof}
+By Kodaira's canonical bundle formula for a relatively minimal elliptic surface,
+\[
+  K_Y\sim f^*(K_{\bP^1}+L)+(m-1)F_0,
+\]
+where $L$ is a line bundle on $\bP^1$ with $\deg L=\chi(\cO_Y)=2$. Since
+$\deg(K_{\bP^1}+L)=-2+2=0$, the pullback term is trivial, so $K_Y\sim(m-1)F_0$
+and hence $nK_Y\sim n(m-1)F_0$ and $P_n=h^0\bigl(Y,n(m-1)F_0\bigr)$.
+
+Two properties of the multiple fibre are used. First, as a divisor $mF_0$ is a
+full fibre, so $mF_0\sim f^*\cO_{\bP^1}(1)$. Second --- this is the meaning of
+multiplicity $m$ for a smooth fibre --- the normal bundle $N:=\cO_{F_0}(F_0)$ has
+order exactly $m$ in $\operatorname{Pic}^0(F_0)$; as $F_0$ has genus $1$, the degree-$0$ bundle
+$N^{\otimes j}$ is nontrivial, hence sectionless, for $0<j<m$:
+\begin{equation}\label{eq:torsion}
+  h^0\bigl(F_0,N^{\otimes j}\bigr)=0,\qquad 0<j<m.
+\end{equation}
+
+Write $n(m-1)=qm+r$ with $0\le r<m$, so $q=\lfloor n(m-1)/m\rfloor$. By the first
+property $n(m-1)F_0\sim f^*\cO(q)+rF_0$. For $1\le k\le r$ the restriction
+sequence
+\[
+  0\to\cO_Y\bigl(f^*\cO(q)+(k{-}1)F_0\bigr)\to\cO_Y\bigl(f^*\cO(q)+kF_0\bigr)
+   \to\cO_{F_0}(kF_0)\to0
+\]
+has right-hand term $\cO_{F_0}(kF_0)=N^{\otimes k}$, because $f^*\cO(q)$ is
+trivial on the fibre $F_0$. By \eqref{eq:torsion} this is sectionless for
+$0<k\le r<m$, so the inclusions are isomorphisms on global sections and
+\[
+  h^0\bigl(f^*\cO(q)+rF_0\bigr)=h^0\bigl(f^*\cO(q)\bigr)
+   =h^0\bigl(\bP^1,\cO(q)\bigr)=q+1,
+\]
+the middle equality by the projection formula ($f_*\cO_Y=\cO_{\bP^1}$). Thus
+$P_n=q+1=1+\lfloor n(m-1)/m\rfloor$.
+\end{proof}
+
+\begin{remark}
+Geometrically, a pluricanonical form is a section vanishing along $n(m-1)F_0$;
+one gains a new section only on accumulating a \emph{whole} fibre's worth of
+vanishing ($m$ copies of $F_0$ contribute one $f^*\cO(1)$, i.e.\ $+1$ to $h^0$),
+while the leftover $r<m$ copies are blocked by the $m$-torsion normal bundle.
+In particular $P_3=1+\lfloor 3(m-1)/m\rfloor$ equals $2$ precisely when $m=2$
+(it is $3$ for $m=3$ and $\ge3$ for $m\ge4$), so the computed $P_3=2$ forces
+$m=2$; then Lemma~\ref{lem:mult} returns $P_n=1+\lfloor n/2\rfloor$, matching
+$P_1,P_2,P_3=1,2,2$. Proposition~\ref{prop:fibration} gives $m=2$ independently
+and exactly.
+\end{remark}
+
+\begin{theorem}
+The minimal smooth model $Y$ of $X_0(\fp_{31})$ over $\bQ(\sqrt5)$ is a
+properly elliptic surface with invariants
+$\chi=2,\ p_g=1,\ q=0,\ K_Y^2=0,\ e=24$ (those of a K3 surface) and
+plurigenera $P_n=1+\lfloor n/2\rfloor$. Its Iitaka fibration is an elliptic
+fibration $Y\to\bP^1$ with singular fibres $I_6+2I_4+I_2+8I_1$ and a single
+non-reduced fibre, the double fibre ${}_2I_0$ supported on the vanishing locus
+of the weight-$2$ cusp form.
+\end{theorem}
+
+\begin{proof}
+Combine Propositions~\ref{prop:invariants}, \ref{prop:P2}, \ref{prop:P3},
+Theorem~\ref{thm:main}, Corollary~\ref{cor:canring},
+Proposition~\ref{prop:fibration} and Proposition~\ref{prop:fibres}.
+\end{proof}
+
+\begin{proposition}\label{prop:fibres}
+The singular fibres of $f\colon Y\to\bP^1$ are
+\[
+   I_6 \;+\; 2\,I_4 \;+\; I_2 \;+\; 8\,I_1
+   \qquad(\text{twelve fibres}),
+\]
+together with the multiple fibre ${}_2I_0$ of Proposition~\ref{prop:fibration}
+at $t=0$. In particular
+$\sum_v e(F_v)=6+2\cdot4+2+8\cdot1=24=e(Y)$ and
+$\deg\Delta_{\mathrm{ell}}=24=12\chi$, and there are no additive fibres.
+\end{proposition}
+
+\begin{proof}
+Fix the base coordinate $t=\eta/\Om^2$, so that the fibre $Y_t$ is the preimage
+under the degree-$4$ map $Y\to\bP^2=\bP(M_2)$ of the conic $\{F_1-tF_2=0\}$
+(here $(2L)^2=4$, since $\dim M_k\sim\tfrac12k^2$ gives $L^2=1$). We compute the
+functional invariant $j\colon\bP^1\to\bP^1$, $t\mapsto j(Y_t)$, explicitly.
+We compute $j(t)$ \emph{exactly over $\bQ$}. For a rational $t_0$, adjoining the
+single equation $F_1-t_0F_2$ to the ideal of the saved Baily--Borel model
+$X=\Proj R$ (its $13$ generators have weights $2^3,6^6,10^4$) cuts $X$ down to the
+one-dimensional fibre, which agrees with $Y_{t_0}$ away from the finitely many
+points over the singularities of $X$. In the chart $\Om=x_3=1$, eliminating nine
+of the ten generators of weight $\ge6$ (retaining the weight-$6$ coordinate
+$x_4$) leaves the fibre in the two weight-$2$ coordinates $x_1,x_2$ and $x_4$; the
+relation quadratic in $x_4$ exhibits $Y_{t_0}$ as a double cover $y^2=W(x_1,x_2)$
+of the conic $\{F_1-t_0F_2=0\}$. That conic has a rational point, so parametrising
+it over $\bQ$ turns the double cover into a hyperelliptic model $y^2=h(s)$ with
+$\deg h=4$, whose Jacobian is an elliptic curve with $j$-invariant $j(t_0)\in\bQ$
+--- obtained without exhibiting a rational point on $Y_{t_0}$.
+
+Carrying this out at the $72$ integers $t_0=1,\dots,72$ (each fibre smooth) and
+solving the $49$ linear conditions determines the unique $N/D$ with $D$ monic and
+$\deg N=\deg D=24$. The exact identity $N(t_0)=j(t_0)\,D(t_0)$ then holds at all
+$72$ values; since $72>\deg N+\deg D+1$, two rational functions of these degrees
+agreeing at more than $49$ points coincide, so $N/D=j$ in $\bQ(t)$. This is
+unconditional: an exact identity over $\bQ$, with no height or reduction
+hypothesis. Factoring $D$ over $\bQ$ gives
+\[
+   D=\ell_6^{\,6}\cdot \ell_2^{\,2}\cdot q_4^{\,4}\cdot o_8,
+\]
+with $\ell_6,\ell_2$ linear, $q_4$ irreducible of degree $2$, and $o_8$
+irreducible of degree $8$. The pole orders $6,2,4,1$ are the $I_n$ indices, so the
+singular fibres are one $I_6$ and one $I_2$ (both rational), a conjugate pair of
+$I_4$ (over $\bQ[t]/q_4$), and a single Galois orbit of eight $I_1$ (over
+$\bQ[t]/o_8$). As $\sum e(F_v)=6+2+2\cdot4+8\cdot1=24=e(Y)$ is already exhausted,
+no additive fibre occurs (each would contribute $e\ge2$, and an $I_n^{*}$ at least
+$6$). Consistently, $N$ vanishes to order $3$ at every zero of $j$ and $N-1728\,D$
+to order $2$ wherever $j=1728$ --- the ramification a genuine functional invariant
+must have --- and $t=0$ is not a pole ($j(0)$ finite), matching the smooth reduced
+fibre of the double fibre ${}_2I_0$. The same partition arises by reduction modulo
+$p=1009$ and $p=2003$.
+\end{proof}
+
+\begin{remark}
+The Shioda--Tate relation is consistent: the reducible fibres contribute
+$\sum_v(m_v-1)=(6-1)+(4-1)+(4-1)+(2-1)=12$ to the Picard number of the Jacobian
+surface, well within $h^{1,1}=20$.
+\end{remark}
+
+\begin{thebibliography}{9}
+\bibitem{vdG} G. van der Geer, \emph{Hilbert Modular Surfaces},
+  Ergeb. Math. Grenzgeb. (3) \textbf{16}, Springer, 1988.
+\bibitem{BHPV} W. Barth, K. Hulek, C. Peters, A. Van de Ven,
+  \emph{Compact Complex Surfaces}, 2nd ed., Springer, 2004.
+\end{thebibliography}
+
+\end{document}

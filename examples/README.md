@@ -25,6 +25,17 @@ a CI runner live in `examples/slow/` and are skipped by CI; run them manually wi
 |---|---|---|
 | Examples 1-4: surface invariants by label | `numerical_surface_invariants.m` | CI |
 
+## X_0(p31) over Q(sqrt 5): a properly elliptic surface with K3 invariants
+
+The prime `p31` above 31 (norm 31, LMFDB `31.2`). The minimal smooth model `Y`
+has the numerical invariants of a K3 (`chi=2`, `p_g=1`, `q=0`, `K^2=0`, `e=24`)
+yet `kappa(Y)=1`. See the accompanying note `WorkInProgress/X0p31_Qsqrt5.tex`.
+
+| Result | File | Status |
+|---|---|---|
+| `P_1=1`, `P_2=2`, and the exact `m=2` (multiplicity) certificate --- `M_4 = Sym^2 M_2`, conic-pencil discriminant `l1*l2^2`, rank-1 member `Omega^2` --- hence `kappa=1` and `P_n = 1 + floor(n/2)` | `X0p31_plurigenera.m` | CI |
+| Singular-fibre configuration `I_6 + 2 I_4 + I_2 + 8 I_1 + _2I_0`, proved unconditionally over Q: exact `j(t0)` at 72 fibres, exact interpolation of `j(t)=N/D`, and factorization of `D` over Q (height-free, `~1h`) | `slow/X0p31_elliptic_fibres.m` | slow (CI-skipped) |
+
 ## Paper Pointer Snippets
 
 Repath the existing Igusa comments in the paper source:

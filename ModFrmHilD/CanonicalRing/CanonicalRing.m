@@ -795,18 +795,112 @@ n = [F:Q]. Returns true if algebraic independence is certified on at least one c
     prec_bb := Min([Precision(g) : g in ratio_comps]);
     ratios := [LowerSetExpansion(g) : g in ratio_comps];
 
-    // Build n x n Jacobian matrix of partial derivatives
-    J := Matrix(n, n, [Derivative(ratios[i], j) : i in [1..n], j in [1..n]]);
+    // Keep only the exactly-computed coefficients of det(J). Its coefficient at
+    // exponent e is a sum, over the columns j, of convolutions whose column-j
+    // factor is the ratio expansion differentiated in q_j; every summand reads a
+    // ratio coefficient at an input a + u_j with 0 <= a <= e. Such an input is
+    // known exactly unless it is "bad": totally positive (inside the cone, where
+    // the ratio may be nonzero) yet beyond the stored lower set. A bad input
+    // d forbids exactly the coefficients e >= d - u_j (for the column j it derives
+    // in). So det(J)'s coefficient at e is exact iff e dominates no threshold
+    // d - u_j; a surviving nonzero one certifies independence, while a provably
+    // dependent input (det(J) identically zero) has none and insufficient
+    // precision yields a conservative false.
+    stored := {};
+    for p in [q : q in M`PrecisionsByComponent[bb] | q le prec_bb] do
+      for nu -> _ in M`FunDomainRepsOfPrec[bb][p] do
+        for _ -> e in M`LowerSet[bb][nu] do
+          Include(~stored, e);
+        end for;
+      end for;
+    end for;
 
-    // Raw polynomial products of truncated expansions are correct only on the
-    // downward closed lower set, and every term of det(J) carries one first
-    // derivative per column, i.e. a uniform exponent shift by (1,..,1) off the
-    // nu-lattice. Shift back with q_1*...*q_n (harmless for vanishing), then
-    // prune to the lower set at the common input precision: what survives are
-    // exactly the coefficients whose convolutions stay inside stored data.
+    F_base := BaseField(M);
+    E2N := ExpToNuMatrices(M)[bb];
+    // Precompute the real embeddings of the exponent-to-nu map (F is totally real),
+    // so total positivity of nu(d) is a sign check on the vector d * EMBED, with an
+    // exact fallback for borderline entries.
+    RR := RealField(30);
+    EMBED := [[RR ! Real(c) : c in Conjugates(F_base ! Eltseq(E2N[k]))] : k in [1..n]];
+    tol := RR ! (10^-10);
+    is_totpos := function(dd)
+      borderline := false;
+      for l in [1..n] do
+        s := &+[dd[k] * EMBED[k][l] : k in [1..n]];
+        if s lt -tol then
+          return false;
+        elif s le tol then
+          borderline := true;
+        end if;
+      end for;
+      if borderline then
+        return IsTotallyPositive(F_base ! Eltseq(Vector(Rationals(), dd) * E2N));
+      end if;
+      return true;
+    end function;
+
     R_exp := Parent(ratios[1]);
-    det := Determinant(J) * &*[R_exp.j : j in [1..n]];
-    det := HMFPruneLowerSetExpansion(M, bb, det : Precision := prec_bb);
+    J := Matrix(n, n, [Derivative(ratios[i], j) : i in [1..n], j in [1..n]]);
+    detJ := Determinant(J);
+    det := R_exp ! 0;
+    detmons := Monomials(detJ);
+
+    if #detmons ne 0 then
+      // A bad input (totally positive, beyond the stored lower set) at exponent d
+      // forbids every determinant coefficient e >= d - u_j. Every input to an
+      // examined coefficient lies within the determinant's own bounding box (plus
+      // one derivative step), so enumerate the bad inputs there, collect the
+      // thresholds d - u_j and reduce them to their minimal points.
+      Bmax := [Max([Exponents(m)[k] : m in detmons]) + 1 : k in [1..n]];
+      thresh := {};
+      for d in CartesianProduct([{0..Bmax[k]} : k in [1..n]]) do
+        dd := [di : di in d];
+        if dd in stored then
+          continue;
+        end if;
+        if is_totpos(dd) then
+          for j in [1..n] do
+            if dd[j] ge 1 then
+              t := dd; t[j] -:= 1;
+              Include(~thresh, t);
+            end if;
+          end for;
+        end if;
+      end for;
+      thresh_sorted := Sort([t : t in thresh], func<a, b | (&+a) - (&+b)>);
+      thresh_min := [];
+      for t in thresh_sorted do
+        dominated := false;
+        for s in thresh_min do
+          ok := true;
+          for k in [1..n] do
+            if s[k] gt t[k] then ok := false; break; end if;
+          end for;
+          if ok then dominated := true; break; end if;
+        end for;
+        if not dominated then Append(~thresh_min, t); end if;
+      end for;
+
+      // det(J)'s coefficient at e is exact iff e dominates no threshold; a
+      // surviving nonzero one certifies independence, a provably dependent input
+      // (det(J) identically zero) leaves none, and insufficient precision yields a
+      // conservative false.
+      for mon in detmons do
+        e := Exponents(mon);
+        dominated := false;
+        for t in thresh_min do
+          ok := true;
+          for k in [1..n] do
+            if t[k] gt e[k] then ok := false; break; end if;
+          end for;
+          if ok then dominated := true; break; end if;
+        end for;
+        if not dominated then
+          det := MonomialCoefficient(detJ, mon) * mon;
+          break;
+        end if;
+      end for;
+    end if;
 
     if det ne 0 then
       vprintf HilbertModularForms : "AlgebraicallyIndependent: certified on component %o\n", bb;
@@ -855,6 +949,59 @@ Returns the candidates and whether enough were found.}
   end for;
 
   return [], false;
+end intrinsic;
+
+
+intrinsic CertifyAlgIndependent(Gens::Assoc, Relations::Assoc, m::RngIntElt
+    : IdealClassesSupport := false, MaxAttempts := 200) -> BoolElt
+{Certify that the graded ring defined by Gens and Relations contains m algebraically
+independent forms of equal weight (so the associated variety has dimension m-1), using
+the Jacobian criterion. Unlike CandidateAlgIndependentElements, which returns only the
+first equal-degree set, this tries successive candidate sets -- higher degrees, and
+different m-subsets of the linearly independent forms at each degree -- until one is
+certified. This avoids spurious failures at a fixed precision when the first candidate
+set happens to have a Jacobian that vanishes to high order; a non-degenerate set is
+certified from its low-order coefficients, which are already reliable. Returns whether a
+certificate was found; at most MaxAttempts Jacobian checks are performed.}
+
+  R := ConstructWeightedPolynomialRing(Gens);
+  I := ConstructIdeal(R, Relations);
+
+  gen_weights := Sort(SetToSequence(Keys(Gens)));
+  max_degree := Maximum(gen_weights) * m;
+
+  attempts := 0;
+  for d := Minimum(gen_weights) to max_degree by 2 do
+    kbase := MonomialGenerators(R, I, d);
+    if #kbase lt m then
+      continue;
+    end if;
+
+    forms := EvaluateMonomials(Gens, kbase);
+    mat := CoefficientsMatrix(forms : IdealClasses := IdealClassesSupport);
+    pivots := PivotRows(mat);
+    if #pivots lt m then
+      continue;
+    end if;
+
+    // Cap the pool so the subset enumeration stays small; the first linearly
+    // independent forms already give enough distinct candidate sets.
+    K := Min(#pivots, m + 8);
+    indep := [forms[pivots[i]] : i in [1..K]];
+    pool := {x : x in [1..K]};
+    for choice in Subsets(pool, m) do
+      cands := [indep[i] : i in Sort(SetToSequence(choice))];
+      if AlgebraicallyIndependent(cands : IdealClassesSupport := IdealClassesSupport) then
+        return true;
+      end if;
+      attempts +:= 1;
+      if attempts ge MaxAttempts then
+        return false;
+      end if;
+    end for;
+  end for;
+
+  return false;
 end intrinsic;
 
 
@@ -1012,16 +1159,9 @@ Returns:
 
     all_certified := true;
     for bb in comps do
-      candidates, found := CandidateAlgIndependentElements(
-          comp_data[bb][1], comp_data[bb][2], n + 1
-          : IdealClassesSupport := [bb]);
-      if not found then
-        vprintf HilbertModularForms : "HilbertModularVariety Phase 2: not enough candidates on component %o\n", bb;
-        all_certified := false;
-        break;
-      end if;
-      if not AlgebraicallyIndependent(candidates : IdealClassesSupport := [bb]) then
-        vprintf HilbertModularForms : "HilbertModularVariety Phase 2: Jacobian check failed on component %o\n", bb;
+      if not CertifyAlgIndependent(comp_data[bb][1], comp_data[bb][2], n + 1
+          : IdealClassesSupport := [bb]) then
+        vprintf HilbertModularForms : "HilbertModularVariety Phase 2: no certified candidate set on component %o\n", bb;
         all_certified := false;
         break;
       end if;
