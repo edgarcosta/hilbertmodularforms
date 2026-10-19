@@ -45,14 +45,10 @@ function splitting_field_embedding_to_weight_field(F, K, target)
     return hom<Fspl -> K | >;
   end if;
 
-  for root in Roots(DefiningPolynomial(Fspl), K) do
-    emb := hom<Fspl -> K | root[1]>;
-    if emb(rts[1]) eq target then
-      return emb;
-    end if;
-  end for;
-
-  error "Could not match the splitting-field embedding to the weight field";
+  // StrongCoerce pins the embedding to the right Galois conjugate.
+  emb := hom<Fspl -> K | StrongCoerce(K, Fspl.1)>;
+  assert emb(rts[1]) eq target;
+  return emb;
 end function;
 
 // originally from hecke.m

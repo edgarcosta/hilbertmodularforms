@@ -96,7 +96,15 @@ function change_hecke_matrix_ring(M, T, H)
     return T;
   end if;
 
-  if assigned M`minimal_hecke_field_emb then
+  // Paritious weights descend via StrongCoerce, which keeps multi-orbit Hecke
+  // operators commuting after the descent; nonparitious weights use the emb preimage.
+  if is_paritious(Weight(M)) then
+    try
+      return Matrix(H, Nrows(T), Ncols(T), [StrongCoerce(H, x) : x in Eltseq(T)]);
+    catch e
+      vprintf ModFrmHil: "StrongCoerce failed in change_hecke_matrix_ring; using CanChangeRing\n";
+    end try;
+  elif assigned M`minimal_hecke_field_emb then
     emb := M`minimal_hecke_field_emb;
     if Domain(emb) cmpeq H then
       try
@@ -118,7 +126,15 @@ function change_hecke_polynomial_ring(M, f, H)
     return f;
   end if;
 
-  if assigned M`minimal_hecke_field_emb then
+  // StrongCoerce for paritious weights, emb preimage for nonparitious (see above).
+  if is_paritious(Weight(M)) then
+    try
+      P := PolynomialRing(H);
+      return P![StrongCoerce(H, Coefficient(f, i)) : i in [0..Degree(f)]];
+    catch e
+      vprintf ModFrmHil: "StrongCoerce failed in change_hecke_polynomial_ring; using ChangeRing\n";
+    end try;
+  elif assigned M`minimal_hecke_field_emb then
     emb := M`minimal_hecke_field_emb;
     if Domain(emb) cmpeq H then
       try
