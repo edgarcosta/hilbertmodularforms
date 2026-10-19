@@ -30,6 +30,8 @@ declare attributes ModFrmHilD:
   IsCuspidal, // BoolElt
   IsNew, // BoolElt
   MagmaSpace, //ModFrmHil
+  Algorithm, // MonStgElt, "Definite" or "Indefinite" - forces the backend used for MagmaSpace
+  MagmaQuaternionOrder, // AlgAssVOrd - an explicit quaternion order used to compute MagmaSpace
   MagmaNewformDecomposition, // List
   MagmaNewCuspForms, // SeqEnum[ModFrmHilElt]
   CoprimeClassGroupRepresentatives, // Assoc
@@ -383,12 +385,36 @@ intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
   return hplus*h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
+intrinsic SetAlgorithm(Mk::ModFrmHilD, Al::MonStgElt)
+  {Force the backend ("Definite" or "Indefinite") used to compute the underlying
+   ModFrmHil space. Must be called before the space is computed. Overridden by
+   SetQuaternionOrder if both are set.}
+  require Al in {"Definite", "definite", "Indefinite", "indefinite"} :
+    "The second argument must be \"Definite\" or \"Indefinite\"";
+  require not assigned Mk`MagmaSpace : "The underlying space has already been computed";
+  Mk`Algorithm := Al;
+end intrinsic;
+
+intrinsic SetQuaternionOrder(Mk::ModFrmHilD, QO::AlgAssVOrd)
+  {Force a specific quaternion order to be used to compute the underlying
+   ModFrmHil space. Must be called before the space is computed. Takes precedence
+   over SetAlgorithm.}
+  require not assigned Mk`MagmaSpace : "The underlying space has already been computed";
+  Mk`MagmaQuaternionOrder := QO;
+end intrinsic;
+
 intrinsic HilbertCuspForms(Mk::ModFrmHilD) -> ModFrmHil
   {return the Magma's builtin object}
   if not assigned Mk`MagmaSpace then
 	 //    require IsTrivial(DirichletRestriction(Character(Mk))): "Magma's builtin tools only supports characters which restrict to trivial Dirichlet characters.";
-    Mk`MagmaSpace := HilbertCuspForms(BaseField(Mk), Level(Mk), Character(Mk), Weight(Mk));
-    Mk`MagmaSpace := HeckeCharacterSubspace(Mk`MagmaSpace, Character(Mk));
+    MF := HilbertCuspForms(BaseField(Mk), Level(Mk), Character(Mk), Weight(Mk));
+    // Optionally force the backend/quaternion order before anything is computed.
+    if assigned Mk`MagmaQuaternionOrder then
+      SetQuaternionOrder(MF, Mk`MagmaQuaternionOrder);
+    elif assigned Mk`Algorithm then
+      SetAlgorithm(MF, Mk`Algorithm);
+    end if;
+    Mk`MagmaSpace := HeckeCharacterSubspace(MF, Character(Mk));
   end if;
   return Mk`MagmaSpace;
 end intrinsic;

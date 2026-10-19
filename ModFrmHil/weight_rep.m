@@ -315,7 +315,8 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
   if assigned F`SplittingField then
     K,rts := Explode(F`SplittingField);
   else
-    K,rts := SplittingField(F : Abs := true, Opt := false);
+    // Opt dropped for Magma 2.29-9 compat (param removed from SplittingField).
+    K,rts := SplittingField(F : Abs := true);
     F`SplittingField := <K, rts>;
   end if;
 

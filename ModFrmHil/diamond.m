@@ -400,6 +400,10 @@ function HeckeCharacterSubspace(M, chi)
     if assigned M`is_new then
       M_sub`is_new := M`is_new;
     end if;
+    // propagate a forced backend to the subspace
+    if assigned M`force_indefinite then
+      M_sub`force_indefinite := M`force_indefinite;
+    end if;
 
     return M_sub;
 end function;
