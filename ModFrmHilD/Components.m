@@ -120,7 +120,7 @@ intrinsic Coefficient(f :: ModFrmHilDEltComp, nu :: FldNumElt
     a :=  HMFExpansionCoefficient(Expansion(f), M`FunDomainRepsOfPrec[bb][prec][nu]);
     if not InFunDomain then
         uc := UnitCharacters(Space(f))[bb];
-        a := a * Evaluate(uc, eps);
+        a := a * StrongCoerce(Parent(a), Evaluate(uc, eps));
     end if;
 
     return a;
@@ -341,7 +341,7 @@ intrinsic HMFGetLowerSetFromExpansion(f :: ModFrmHilDEltComp)
         for nuprime->exp_nuprime in M`FunDomainRepsOfPrec[bb][prec] do
             a := HMFExpansionCoefficient(f`Expansion, exp_nuprime);
             for eps->exp_nu in M`LowerSet[bb][nuprime] do
-                Append(~coeffs, a * Evaluate(uc, eps));
+                Append(~coeffs, a * StrongCoerce(Parent(a), Evaluate(uc, eps)));
                 Append(~exps, exp_nu);
             end for;
         end for;
