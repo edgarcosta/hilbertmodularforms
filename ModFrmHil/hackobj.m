@@ -418,7 +418,7 @@ The Al can be "Definite" or "Indefinite"};
           "The second argument must be \"Definite\" or \"Indefinite\"";
    // Allow current value of force_indefinite to be overwritten
    // TO DO: force definite (not so important, since this is usually the default)
-   if Al in {"Indefinite, indefinite"} then
+   if Al in {"Indefinite", "indefinite"} then
       M`force_indefinite := true;
    end if;
 end intrinsic;

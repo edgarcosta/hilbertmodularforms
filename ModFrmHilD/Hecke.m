@@ -85,10 +85,13 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 12, cop
       basis: A sequence of linearly independent ModFrmHilDElts
              whose span is preserved by all the Hecke operators.
       P: The largest norm of a prime ideal we check to establish a simultaneous eigenbasis
+      coprime_only: If true (default), only primes coprime to the level are used.
+             Set false to also use the bad-prime U_p operators, which are needed
+             to separate degeneracy-map oldforms.
     returns:
       A sequence of HMFs which are an eigenbasis for the Hecke operators of primes
       up to P. The forms are normalized where possible.
-      
+
     This function now works for both paritious and nonparitious forms by automatically
     choosing the appropriate coefficient access method.
   }
@@ -96,28 +99,57 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 12, cop
   N := Level(M);
   F := BaseField(MGRng);
   ZF := Integers(F);
-  hecke_matrices := [];
 
-  // if the weight is nonparitious, we work entirely with 
-  // Fourier coefficients ("elt coeffs", i.e. the a_nu) 
+  require #basis gt 0 : "basis must be nonempty";
+  n := #basis;
+
+  // if the weight is nonparitious, we work entirely with
+  // Fourier coefficients ("elt coeffs", i.e. the a_nu)
   // and avoid the "ideal coeffs" (the a_nn).
   k := Weight(Parent(basis[1]));
   if not IsParitious(k) then
     use_coeff := true;
   end if;
 
-  primes := (coprime_only) select PrimesUpTo(P, F : coprime_to:=N) else PrimesUpTo(P, F);
-  for pp in primes do
-    Append(~hecke_matrices, HeckeMatrix(basis, pp : use_coeff:=use_coeff));
-  end for;
-
   // B stores a matrix such that B * M * B^-1 is
-  // diagonal for every Hecke matrix M. 
+  // diagonal for every Hecke matrix M.
   // If e_i denotes the ith standard basis vector
-  // and v_i denotes the ith eigenvector in the 
-  // given basis, then this means that B^-1 e_i = v_i. 
+  // and v_i denotes the ith eigenvector in the
+  // given basis, then this means that B^-1 e_i = v_i.
   // Therefore, the ith column of B^-1 is v_i.
-  _, B := Diagonalization(hecke_matrices);
+  if n eq 1 then
+    // a one-dimensional Hecke-stable space is automatically an eigenspace,
+    // so no Hecke operators are needed to separate it.
+    B := IdentityMatrix(Rationals(), 1);
+  else
+    primes := (coprime_only) select PrimesUpTo(P, F : coprime_to:=N) else PrimesUpTo(P, F);
+
+    // We add Hecke matrices one prime at a time and stop as soon as the
+    // simultaneous eigenspaces are all one-dimensional, i.e. the tuples of
+    // eigenvalues across the computed operators are pairwise distinct. This
+    // avoids computing Hecke matrices for more primes than necessary, and
+    // guarantees the returned forms are genuine eigenforms rather than an
+    // arbitrary basis of a higher-dimensional shared eigenspace.
+    hecke_matrices := [];
+    B := IdentityMatrix(Rationals(), n);
+    split := false;
+    for pp in primes do
+      Append(~hecke_matrices, HeckeMatrix(basis, pp : use_coeff:=use_coeff));
+      // diags is the sequence of diagonalized Hecke matrices (over the
+      // splitting field), so diags[i][j][j] is the eigenvalue of the jth
+      // simultaneous eigenvector under the ith operator.
+      diags, B := Diagonalization(hecke_matrices);
+      eigtuples := [[diags[i][j][j] : i in [1 .. #hecke_matrices]] : j in [1 .. n]];
+      if #Seqset(eigtuples) eq n then
+        split := true;
+        break;
+      end if;
+    end for;
+
+    require split : Sprintf(
+      "Hecke operators of norm up to P=%o do not separate the space into " cat
+      "one-dimensional simultaneous eigenspaces; increase P.", P);
+  end if;
   Binv := B^-1;
 
   // coefficient ring of eigenforms
@@ -301,22 +333,43 @@ intrinsic HeckeMatrix(basis::SeqEnum[ModFrmHilDElt], nn::RngOrdIdl : use_coeff:=
       this space. 
   }
 
-  assert #LinearDependence(basis) eq 0;
-  rows := [];
+  n := #basis;
+  require n gt 0 : "basis must be nonempty";
 
+  // Apply the Hecke operator to each basis element.
+  gs := [Parent(basis[1]) | ];
   for f in basis do
-    g, _ := HeckeOperator(f, nn : use_coeff:=use_coeff);
-    lindep := LinearDependence(basis cat [g]);
-    require #lindep eq 1 : "Try increasing precision, #lindep was", #lindep;
-    lindep := lindep[1];
-    // We will transpose at the end. 
-    // For now, each row stores the
-    // coefficients of the linear combination 
-    // of basis vectors which give rise to g
-    Append(~rows, [-1 * lindep[i] / lindep[#basis + 1] : i in [1 .. #basis]]);
+    g := HeckeOperator(f, nn : use_coeff:=use_coeff);
+    Append(~gs, g);
   end for;
 
-  return Transpose(Matrix(rows));
+  // Build a single coefficient matrix for the basis together with its Hecke
+  // images, so that both share a coefficient ring, precision, and column
+  // indexing. Rows 1..n are the basis; rows n+1..2n are T(nn) applied to it.
+  // Computing one matrix and one linear solve replaces the previous
+  // per-basis-element LinearDependence calls, each of which rebuilt the basis
+  // coefficient matrix and computed a kernel from scratch (an O(n) redundancy
+  // per Hecke operator).
+  C := CoefficientsMatrix(basis cat gs);
+  ncols := Ncols(C);
+  A := Submatrix(C, 1, 1, n, ncols);          // basis
+  Bmat := Submatrix(C, n + 1, 1, n, ncols);   // Hecke images
+
+  require Rank(A) eq n :
+    "Try increasing precision: the basis is linearly dependent at the working precision";
+
+  // Solve X*A = Bmat, so that row j of X expresses T(nn)*basis[j] in the
+  // basis. Since the basis is linearly independent, the solution is unique.
+  cons, X := IsConsistent(A, Bmat);
+  require cons :
+    "Try increasing precision: a Hecke image is not in the span of the basis";
+
+  // Transpose so that columns (rather than rows) index the images, matching
+  // the convention expected by the eigenbasis reconstruction. Coerce into the
+  // square matrix algebra so the result is an AlgMatElt (as Diagonalization
+  // and the previous implementation expect), rather than a ModMatFldElt.
+  Tr := Transpose(X);
+  return MatrixAlgebra(BaseRing(Tr), n) ! Tr;
 end intrinsic;
 
 intrinsic HeckeMatrix(Mk::ModFrmHilD, nn::RngOrdIdl) -> Mtrx

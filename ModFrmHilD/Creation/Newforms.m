@@ -18,6 +18,10 @@ intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
     MF := HilbertCuspForms(Mk);
     vprintf HilbertModularForms: "new ";
     New := NewSubspace(MF);
+    // NewSubspace does not inherit force_indefinite; propagate it.
+    if assigned MF`force_indefinite and MF`force_indefinite then
+      New`force_indefinite := true;
+    end if;
     // FIXME: this prevents a downstream bug in Magma related to descending to the minimal_hecke_matrix_field
     SetRationalBasis(New);
     vprintf HilbertModularForms: "hecke character subspace ";

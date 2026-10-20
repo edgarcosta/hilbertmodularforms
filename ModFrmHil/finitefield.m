@@ -428,12 +428,16 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
           continue;
         end if;
 
+        // Anchor the component to M (not the top ambient MA) when M is a descended
+        // subspace, so operator(N) restricts M's already-descended Hecke operators.
+        anchor_to_M := not IsBianchi(M) and assigned M`basis_matrix_wrt_ambient;
+
         if IsBianchi(M) then
           N := BMF_with_ambient(MA);
           N`NewLevel := N`Level;
         else
           N := HMF0(BaseField(M), Level(M), Level(M), DirichletCharacter(M), Weight(M), CentralCharacter(M));
-          N`Ambient := MA;
+          N`Ambient := anchor_to_M select M else MA;
         end if;
         // give N same ambient as M (TO DO: but reconsider when to make M wrt ambient, rather than wrt raw?)
         N`NewSpace := M;
@@ -450,7 +454,17 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
           pseudo_inv := pseudo_inverse(kmat, complement);
         end if;
         N`Dimension := Nrows(kmat);
-        if assigned M`basis_matrix_wrt_ambient then
+        if anchor_to_M then
+          // kmat is already expressed wrt M, so use it directly
+          N`basis_matrix_wrt_ambient := kmat;
+          N`basis_matrix_wrt_ambient_inv := pseudo_inv;
+          if assigned M`basis_matrix then
+            N`basis_matrix := ChangeRing(kmat, BaseRing(A)) * A
+                                                     where A is M`basis_matrix;
+            N`basis_matrix_inv := Ai * ChangeRing(pseudo_inv, BaseRing(Ai))
+                                                     where Ai is M`basis_matrix_inv;
+          end if;
+        elif assigned M`basis_matrix_wrt_ambient then
           N`basis_matrix_wrt_ambient := ChangeRing(kmat, BaseRing(A)) * A
                                                    where A is M`basis_matrix_wrt_ambient;
           N`basis_matrix_wrt_ambient_inv := Ai * ChangeRing(pseudo_inv, BaseRing(Ai))
