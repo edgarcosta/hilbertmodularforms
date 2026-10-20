@@ -170,7 +170,6 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
       M`weight_base_field := Rationals();
       M`weight_dimension := 1;
       QQ := Rationals();
-      M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
     else
       // define weight_base_field = extension K/F containing Galois closure of F and
       // containing a root of every conjugate of the minimal polynomial of H.1
@@ -198,7 +197,6 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
       K := OptimizedRepresentation(K);
       embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
       Fspl := F`SplittingField[1];
-      M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
       M`weight_base_field:=K;
       vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
       vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
@@ -311,7 +309,7 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
 
     vprintf ModFrmHil: "Characteristic polynomial of Hecke algebra generator: ";
     vtime ModFrmHil:
-    if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K) then
+    if K cmpeq Rationals() or not (IsParallelWeight(M) and Order(DirichletCharacter(M)) eq 2) or IsFinite(K) then
       chi := CharacteristicPolynomial(t);
     else
       // parallel weight ==> poly is over Z

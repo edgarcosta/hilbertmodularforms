@@ -12,10 +12,12 @@ freeze;
 //
 //////////////////////////////////////////////////////////////////////////////
 
-import "hecke_field.m" : DegeneracyMapDomain, WeightRepresentation;
-import "hecke.m" : please_report, pseudo_inverse, basis_is_honest;
+import "hecke_field.m" : WeightRepresentation, hecke_matrix_field;
+import "hecke.m" : please_report, pseudo_inverse, basis_is_honest, ComputeNewSubspaceBasisMatricesUsingHeckeAction;
+import "weight_rep.m" : FiniteModulusCharFromHeckeChar, is_paritious;
 import "precompute.m" : get_rids, get_tps;
 import !"Geometry/ModFrmHil/proj1.m" : residue_class_reps;
+import "hackobj.m" : HMF0;
 
 debug := false;
 
@@ -23,54 +25,67 @@ debug := false;
 
 /* Here we define several record formats. */
 
-ProjectiveLineData:=recformat<FD:SeqEnum,                  // This is a fundamental domain for the the
-                                                           // for the action of the unit group on 
-							   // in some quaternion algebra on P^1(O/n).
+ProjectiveLineData:=recformat<
+  FD:SeqEnum,                  // This is a fundamental domain for the the
+                               // for the action of the unit group on 
+                               // in some quaternion algebra on P^1(O/n).
 
-                              Stabs:SeqEnum,               // Generators of the group of stabilizers, for each element in FD.
+  Stabs:SeqEnum,               // Generators of the group of stabilizers, for each element in FD.
 
-                              StabOrders:SeqEnum,          // Order of the group of stabilizers, for each element in FD.
+  StabOrders:SeqEnum,          // Order of the group of stabilizers, for each element in FD.
 
-                              P1List:SetIndx,              // Elements of the projective line P^1(O/n).
+  P1List:SetIndx,              // Elements of the projective line P^1(O/n).
 
-                              P1Rep:UserProgram,           // Function sending [u,v] to an element of P1List.
+  P1Rep:UserProgram,           // Function sending [u,v] to an element of P1List.
 
-			      Lookuptable:Assoc,           // Array indexed by P1List with values < FD index, unit index >
+  Lookuptable:Assoc,           // Array indexed by P1List with values < FD index, unit index >
 
-			      splitting_map,               // The splitting map mod n for the quaternion order.
+  splitting_map:Map,           // The splitting map mod n for the quaternion order.
 
-             		      Level:RngOrdIdl>;            // The level.
-                              
+  Level:RngOrdIdl,             // The level.
 
-ModFrmHilDirFact:=recformat<PLD,                           // A record with format ProjectiveLineData.
+  Quotient:Tup,                // The quotient ring ZF/N along with a map from
+                               // ZF to the ring
+                                                   
+  Character,                   // 0 if the nebentypus is trivial.
+                               // Otherwise, the output of 
+                               // FiniteModulusCharFromHeckeChar applied
+                               // to a Hecke character chi. 
+                               
+  CosetRepDict>;               // 0 if the nebentypus is trivial
+                               // Otherwise, an array indexed by P1List.
+                               // If the key is (b \\ d), 
+                               // the value is a matrix (a b \\ c d) in GL2(ZF/N),
+                               // i.e. a representative for (b \\ d) in GL2(ZF/N) / B
+                               // where B is the lower triangular Borel. 
 
-                            CFD:SetIndx,                   // Contributing elements of FD.
 
-                            basis_matrix:Mtrx,             // The rows of this matrix provide a basis for
-                                                           // the direct factor of the HMS.
+ModFrmHilDirFact:=recformat<
+  PLD,                         // A record with format ProjectiveLineData.
 
-                            basis_matrix_inv:Mtrx,         // basis_matrix*basis_matrix_inv=id.
+  CFD:SetIndx,                 // Contributing elements of FD.
 
-                            weight_rep:Map,                // The splitting map B -> M_2(K)^g -> GL(V_k) by 
-			    				   // which the quaternion algebra acts on the 
-							   // weight space V_k.
+  basis_matrix:Mtrx,           // The rows of this matrix provide a basis for
+                               // the direct factor of the HMS.
 
-                            weight_dimension:RngIntElt,    // Dimension of weight space.                
-            
-                            weight_base_field,             // The base field of the weight representation.
+  basis_matrix_inv:Mtrx,       // basis_matrix*basis_matrix_inv=id.
 
-			    max_order_units:SeqEnum>;      // The unit group in the maximal order.
+  weight_rep:Map,              // The splitting map B -> M_2(K)^g -> GL(V_k) by 
+                               // which the quaternion algebra acts on the 
+                               // weight space V_k.
 
-////////////////////////////////////////////////////////////////////////////
-// Low-level interface to the raw definite spaces.
-// This is a quick first draft, and may change completely in later versions.
+  weight_dimension:RngIntElt,  // Dimension of weight space.                
 
-hmf_raw_definite_record := recformat< QuaternionOrder, 
-                                      EichlerLevel,
-                                      SplittingMap,
-                                      RightIdealClassReps, 
-                                      Basis
-                                    >;
+  weight_base_field,           // The base field of the weight representation.
+
+  max_order_units:SeqEnum>;    // The unit group in the maximal order.
+
+hmf_raw_definite_record := recformat< 
+  QuaternionOrder, 
+  EichlerLevel,
+  SplittingMap,
+  RightIdealClassReps, 
+  Basis>;
 
 forward HilbertModularSpaceDirectFactors;
 
@@ -185,6 +200,56 @@ function SIntegralPseudoBasis(OH,S) // (OH::AlgAssVOrd, S::SeqEnum) -> SeqEnum
       Append(~NOHB, <scal^-1*OHB[l][1], scal*OHB[l][2]>);
    end for;
    return NOHB;
+end function;
+function get_compositum_field(wt_base_field, chi)
+  /*
+   * Computes the compositum of the weight base field and the field of definition
+   * of the nebentypus character chi. This is needed because twist_factor can
+   * produce elements in the cyclotomic field when chi is nontrivial.
+   *
+   * Input:
+   *   wt_base_field - The base field for the weight representation
+   *   chi - The nebentypus character (GrpHeckeElt)
+   *
+   * Output:
+   *   The compositum field over which quaternionic modular forms should be defined
+   */
+  if IsTrivial(chi) then
+    // Trivial nebentypus case - just use the weight base field
+    return wt_base_field;
+  else
+    // Nontrivial nebentypus - need compositum with cyclotomic field
+    chi_field := (Order(chi) le 2) select Rationals() else CyclotomicField(Order(chi));
+    if chi_field cmpeq Rationals() then
+      return wt_base_field;
+    else
+      return Compositum(wt_base_field, chi_field);
+    end if;
+  end if;
+end function;
+
+declare attributes ModFrmHil : weight_base_field_twisted;
+
+function big_hecke_matrix_field(M)
+  /*
+   * The stable field over which the definite big Hecke matrix (and the
+   * weight-representation blocks it is assembled from) lives: the weight base
+   * field, extended by Q(zeta_d) when the nebentypus is nontrivial (a no-op
+   * for order <= 2). Unlike hecke_matrix_field, this field is NEVER descended
+   * to the minimal field -- the big matrix is built once, before eigenform
+   * extraction, and must stay consistent with its (undescended) blocks.
+   *
+   * It is MEMOIZED on M because get_compositum_field builds a fresh Compositum
+   * on each call for order > 2, and Magma does not recognize independently
+   * constructed isomorphic number fields as equal: without memoization the
+   * several big-matrix call sites would each get a distinct field object and
+   * InsertBlock/coercion between them would fail.
+   */
+  if not assigned M`weight_base_field_twisted then
+    M`weight_base_field_twisted :=
+      get_compositum_field(M`weight_base_field, DirichletCharacter(M));
+  end if;
+  return M`weight_base_field_twisted;
 end function;
 
 
@@ -488,123 +553,295 @@ function minimal_generators(G)
    end for;
    return gens;
 end function;
-
-function ProjectiveLineOrbits(P1, P1rep, d, unit_map, units, split_map : DoStabs:=true)
-   // d is an ideal in the ring of integers of a number field, 
-   // P1 is ProjectiveLine(d) which comes with the function P1rep,
-   // unit_map is the map returned by UnitGroup for a quaternion order O,
-   // units contains its images, in a fixed ordering,
-   // split_map is the map to the ResidueMatrixRing(O,d).
-   // Returns the orbits of the unit group acting on P1, 
-   // and the stabilizers of the first element in each orbit.
+function coset_rep_dict(P1, P1rep, level, quot)
+  // Use ProjectiveLine to get all projective points [b:d]
+  // For each point, construct a matrix [a b \\ c d] in GL2(ZF)
   
-   OK := Order(d); 
-   Rd := quo<OK|d>;
-   _, n_seq := residue_class_reps(d);
+  N := level;
+  ZF := Order(N);
+  F := NumberField(ZF);
+  R, phi := Explode(quot);
 
-   U := Domain(unit_map);
-   UU := Universe(units);
-   assert Type(UU) eq AlgQuat;
-   assert units[1] in {UU|1,-1};
-   split_units := [u @ split_map : u in units];
-
-   Lookuptable := AssociativeArray(P1);
-
-   if Minimum(d) eq 1 then  // the trivial case
-      Lookuptable[P1[1]] := < 1, 1 >;
-      PLD := rec< ProjectiveLineData |
-                  Level := d,
-                  P1List := P1,
-                  P1Rep := P1rep,
-                  FD := [P1[1]],
-                  Lookuptable := Lookuptable,
-                  StabOrders := [#units],
-                  splitting_map:=split_map 
-                >;
-      if DoStabs then
-         PLD`Stabs := [[ [* UU!(u@unit_map), 1 *]
-                       : u in minimal_generators(sub< U | [u@@unit_map : u in units] >)]];
-      end if;
-      return PLD;
-   end if;
-
-   FD := [Universe(P1)| ]; 
-   Stabs := [];
-   StabOrders := [Integers()| ];
-
-   elts := Set(P1);
- 
-   vprintf ModFrmHil, 2: "ProjectiveLineOrbits: "; 
-   vtime ModFrmHil, 2:
-
-   while not IsEmpty(elts) do 
-      e := Rep(elts);
-      Append(~FD, e);
-      orbit := {};
-      stab := [];
-      // run through images of e under units,
-      // TO DO: skip acting by units[1] = +-1
-      for j := 1 to #units do
-         e0 := split_units[j] * e;
-         _, e1 := P1rep(e0, false, false);
-         if e1 notin orbit then
-            Exclude(~elts, e1);
-            Include(~orbit, e1);
-            Lookuptable[e1] := < #FD, j >;
-         elif e1 eq e then
-            Append(~stab, [* units[j] *]);
-         end if;
+  coset_reps := AssociativeArray();
+  if Minimum(N) eq 1 then
+    assert #P1 eq 1;
+    coset_reps[Rep(P1)] := Matrix(ZF, 2, 2, [1, 0, 0, 1]);
+    return coset_reps;
+  end if;
+  
+  for p in P1 do
+    // p is a 2x1 matrix representing [b; d]
+    b := ZF!(p[1,1] @@ phi);
+    d := ZF!(p[2,1] @@ phi);
+    
+    // Simple approach: try standard patterns
+    // Pattern 1: [1, b; 0, d] if d is a unit
+    if GCD(ideal<ZF | d>, N) eq 1*ZF then
+      mat := Matrix(ZF, 2, 2, [1, b, 0, d]);
+    // Pattern 2: [0, b; 1, d] if b is a unit  
+    elif GCD(ideal<ZF | b>, N) eq 1*ZF then
+      mat := Matrix(ZF, 2, 2, [0, b, 1, d]);
+    // Pattern 3: [1, b; 1, d] if d-b is a unit
+    elif GCD(ideal<ZF | d-b>, N) eq 1*ZF then
+      mat := Matrix(ZF, 2, 2, [1, b, 1, d]);
+    else
+      // Exhaustive search for small a, c
+      found := false;
+      all_elems := [ZF!(x @@ phi) : x in R];
+      // Sort elements to ensure deterministic iteration order
+      Sort(~all_elems);
+      for a in all_elems do
+        if found then break; end if;
+        for c in all_elems do
+          det_val := a*d - b*c;
+          if GCD(ideal<ZF | det_val>, N) eq 1*ZF then
+            mat := Matrix(ZF, 2, 2, [a, b, c, d]);
+            found := true;
+            break c;
+          end if;
+        end for;
       end for;
-
-      // assert #units eq (1+#stab) * #orbit;
-      Append(~StabOrders, 1+#stab);
-
-      if DoStabs then
-         // want stab to contain just generators of the stabilizer
-         stab_U := [s[1] @@ unit_map : s in stab];
-         stab_U_gens := minimal_generators(sub< U | stab_U >);
-         stab_gens := [stab[i] : i in [1..#stab] | stab_U[i] in stab_U_gens];
-         Append(~Stabs, stab_gens);
+      
+      if not found then
+        // This really shouldn't happen for a valid projective point
+        error "Could not find valid GL2 matrix for projective point", p;
       end if;
-   end while;
+    end if;
+    
+    coset_reps[p] := mat;
+  end for;
 
-   vprintf ModFrmHil, 2: "Stabilizers %o\n", Multiset(StabOrders);
+  assert Keys(coset_reps) eq P1;
+  return coset_reps;
+end function;
 
-   PLD := rec< ProjectiveLineData |
-               Level:=d,
-               P1List:=P1,
-               P1Rep:=P1rep,
-               FD:=FD,
-               Lookuptable:=Lookuptable,
-               StabOrders:=StabOrders,
-               splitting_map:=split_map
-          >;
-   if DoStabs then
-      PLD`Stabs:=Stabs;
-   end if;
-   return PLD;
+function ProjectiveLineOrbits(P1, P1rep, d, unit_map, units, split_map : DoStabs:=true, chi:=0)
+  // d is an ideal in the ring of integers of a number field, 
+  // P1 is ProjectiveLine(d) which comes with the function P1rep,
+  // unit_map is the map returned by UnitGroup for a quaternion order O,
+  // units contains its images, in a fixed ordering,
+  // split_map is the map to the ResidueMatrixRing(O,d).
+  // chi is a Hecke character
+  //
+  // Returns the orbits of the unit group acting on P1, 
+  // and the stabilizers of the first element in each orbit.
+  
+  OK := Order(d); 
+  Rd, phi := quo<OK|d>;
+  quot := <Rd, phi>;
 
+  U := Domain(unit_map);
+  UU := Universe(units);
+  assert Type(UU) eq AlgQuat;
+  assert units[1] in {UU|1,-1};
+  split_units := [u @ split_map : u in units];
+
+  Lookuptable := AssociativeArray(P1);
+
+  if Minimum(d) eq 1 then  // the trivial case
+    Lookuptable[P1[1]] := < 1, 1 >;
+    PLD := rec< ProjectiveLineData |
+                Level := d,
+                Quotient := quot,
+                P1List := P1,
+                P1Rep := P1rep,
+                FD := [P1[1]],
+                Lookuptable := Lookuptable,
+                StabOrders := [#units],
+                splitting_map := split_map,
+                CosetRepDict := 0,
+                Character := 0>;
+    if DoStabs then
+      PLD`Stabs := [[ [* UU!(u@unit_map), 1 *]
+                     : u in minimal_generators(sub< U | [u@@unit_map : u in units] >)]];
+    end if;
+    return PLD;
+  end if;
+
+  FD := [Universe(P1)| ]; 
+  Stabs := [];
+  StabOrders := [Integers()| ];
+
+  elts := Set(P1);
+  
+ 
+  vprintf ModFrmHil, 2: "ProjectiveLineOrbits: "; 
+  vtime ModFrmHil, 2:
+
+  while not IsEmpty(elts) do 
+    e := Rep(elts);
+    Append(~FD, e);
+    orbit := {};
+    stab := [];
+    // run through images of e under units,
+    // TO DO: skip acting by units[1] = +-1
+    for j := 1 to #units do
+      // split_units[j] contains the image of the jth unit
+      // under the residue map to M_2(ZF/N)
+      e0 := split_units[j] * e;
+
+      _, e1 := P1rep(e0, false, false);
+      if e1 notin orbit then
+        Exclude(~elts, e1);
+        Include(~orbit, e1);
+        // Lookuptable is keyed by e1 in P1reps (elements of P1)
+        // and stores the orbit representative index (#FD) and index
+        // of the unit (j) taking the representative e to e1
+        Lookuptable[e1] := < #FD, j >;
+      elif e1 eq e then
+        // we also store the stabilizers of each orbit representative e0
+        Append(~stab, [* units[j] *]);
+      end if;
+    end for;
+
+    // assert #units eq (1+#stab) * #orbit;
+    Append(~StabOrders, 1+#stab);
+
+    if DoStabs then
+      // want stab to contain just generators of the stabilizer
+      stab_U := [s[1] @@ unit_map : s in stab];
+      // takes the group generated by stab_U and returns the indices
+      // in stab_U which are required to generate this group
+      stab_U_gens := minimal_generators(sub< U | stab_U >);
+      // just the elements of stab whose indices appear in stab_U_gens
+      stab_gens := [stab[i] : i in [1..#stab] | stab_U[i] in stab_U_gens];
+      Append(~Stabs, stab_gens);
+    end if;
+  end while;
+
+  vprintf ModFrmHil, 2: "Stabilizers %o\n", Multiset(StabOrders);
+
+  // if the nebentypus is nontrivial, we compute its 
+  // "Dirichlet part" (its restriction to the ramified primes)
+  // as well as matrices in GL2(ZF/N) representing the 
+  // elements of P1 which get used later.
+  assert Type(chi) eq GrpHeckeElt;
+  if not IsTrivial(chi) then
+    psi := FiniteModulusCharFromHeckeChar(chi);
+    CosetRepDict := coset_rep_dict(P1, P1rep, d, quot);
+  else
+    psi := 0;
+    CosetRepDict := 0;
+  end if;
+
+  PLD := rec< ProjectiveLineData |
+             Level:=d,
+             Quotient:=quot,
+             P1List:=P1,
+             P1Rep:=P1rep,
+             FD:=FD,
+             Lookuptable:=Lookuptable,
+             StabOrders:=StabOrders,
+             splitting_map:=split_map,
+             Character:=psi,
+             CosetRepDict:=CosetRepDict
+        >;
+  if DoStabs then
+    PLD`Stabs:=Stabs;
+  end if;
+  return PLD;
+
+end function;
+
+function twist_factor(PLD, gamma, x : F:=0)
+  /*
+   * inputs
+   *   PLD::ProjectiveLineData - The record data of a projective line ZF/N
+   *   gamma::AlgAssVOrdElt - An element of an order of a quaternion algebra over F
+   *     We require that PLD`splitting_map(gamma), which sends gamma to a 2x2 matrix
+   *     over ZF/N, is invertible, and throw an error otherwise. 
+   *   x - An element of PLD`P1List
+   * returns 
+   *   A factor which shows up in the formulas for Brandt matrices with character
+   */
+  if PLD`Character cmpeq 0 then
+    // if the nebentypus is trivial
+    return 1;
+  else
+    N := PLD`Level;
+    ZF := Order(N);
+    assert x in PLD`P1List;
+    gamma_mod_N := PLD`splitting_map(gamma);
+
+    // print "gamma_mod_N", gamma_mod_N;
+
+    det_gamma := Determinant(gamma_mod_N);
+    // print "det_gamma integral", det_gamma in ZF;
+    // print "det_gamma", det_gamma, Parent(det_gamma);
+    // print "is coprime", IsCoprime(ideal<ZF | det_gamma>, N);
+
+    coset_rep_x_mod_N := PLD`CosetRepDict[x];
+
+    mat := gamma_mod_N * coset_rep_x_mod_N;
+    // do it in this way for type coercion reasons
+    mat_second_col := Matrix(ZF, [[mat[1][2]], [mat[2][2]]]);
+    // print "mat_second_col", mat_second_col, mat[1][2] in N, mat[2][2] in N, Norm(ideal<ZF | mat[1][2], mat[2][2]>);
+    // print mat[1][1] in N, mat[1][2] in N, mat[2][1] in N, mat[2][2] in N;
+    // pp := 2*ZF;
+    // print mat[1][1] in pp, mat[1][2] in pp, mat[2][1] in pp, mat[2][2] in pp;
+
+    _, y := PLD`P1Rep(mat_second_col, false, false);
+    
+    // a lower triangular (mod N) matrix
+    coset_rep_y_mod_N := PLD`CosetRepDict[y];
+    det_coset_rep_y := Determinant(coset_rep_y_mod_N);
+
+    coset_rep_y_detinv_lift := det_coset_rep_y @@ PLD`Quotient[2];
+    assert IsCoprime(ideal<ZF | det_coset_rep_y>, N);
+    coset_rep_y_invdet := Matrix(ZF, 
+                            [[coset_rep_y_mod_N[2][2], -coset_rep_y_mod_N[1][2]],
+                            [-coset_rep_y_mod_N[2][1], coset_rep_y_mod_N[1][1]]]);
+    borel_mat := coset_rep_y_detinv_lift * coset_rep_y_invdet * mat;
+    // check that it's actually lower triangular mod N!
+    assert borel_mat[1][2] in N;
+    if F cmpeq 0 then
+      return PLD`Character(borel_mat[2][2]);
+    else
+      return StrongCoerce(F, PLD`Character(borel_mat[2][2]));
+    end if;
+  end if;
 end function;
 
 
 
-function InvariantSpace(stab, weight_map, weight_dim, wt_base_field)
-   // Given a stabilizer stab (as sequence of quaternions), and a weight representation, 
-   // this returns the corresponding invariant space. 
+function InvariantSpace(PLD, orbit_idx, weight_map, weight_dim, compositum_field : weight:=0)
+  // Given a projective line record and the index of some orbit,
+  // along with a weight representation,
+  // returns the corresponding invariant space. 
 
-   A:=Domain(weight_map); 
-   F:=wt_base_field; 
-   V:=VectorSpace(F, weight_dim); 
-   V1:=V;
-   S := [A| u@Umap : u in Generators(U)] where U, Umap := UnitGroup(BaseField(A));
-   S cat:= [s[1] : s in stab | s[1] notin {A|1,-1}]; 
-   for s in S do 
+  stab := PLD`Stabs[orbit_idx];
+  x := PLD`FD[orbit_idx];
+  A:=Domain(weight_map); 
+  F:=compositum_field; 
+  V:=VectorSpace(F, weight_dim); 
+  V1:=V;
+  S := [A| u@Umap : u in Generators(U)] where U, Umap := UnitGroup(BaseField(A));
+  S cat:= [s[1] : s in stab | s[1] notin {A|1,-1}]; 
+  for s in S do 
+    if (weight cmpeq 0) or is_paritious(weight) then
       w := weight_map(s);
-      V1 meet:= Kernel(w - IdentityMatrix(F, weight_dim));
-      if Rank(V1) eq 0 then break; end if;
-   end for;
+    else
+      nrd_s := Norm(s);
+      // TODO abhijitm remove later for performance
+      assert IsUnit(nrd_s) and IsTotallyPositive(nrd_s);
+      // To avoid dealing with square roots, weight_map doesn't include the
+      // usual determinant twist on the weight representation. 
+      // As such, we need to deal with it separately. 
+      w := EltToShiftedHalfWeight(nrd_s, weight) * weight_map(s);
+    end if;
+      
+    V1 meet:= Kernel(w - twist_factor(PLD, s, x) * IdentityMatrix(F, weight_dim));
+    if Rank(V1) eq 0 then break; end if;
+  end for;
 
-   return BasisMatrix(V1);
+  // This is a matrix with weight_dim columns and
+  // r rows.
+  // When the nebentypus is trivial, r is the dimension
+  // of the subspace invariant under the stabilizer of the 
+  // chosen orbit. Otherwise, it's the dimension of a subspace
+  // on which each element of the stabilizer acts by a particular
+  // scalar determined by the nebentypus.
+  return BasisMatrix(V1);
 end function;
 
 
@@ -614,43 +851,68 @@ end function;
 // split_map LO -> M_2(O/d),
 // weight_map = weight_rep
 
-function HMSDF(P1, P1rep, LO, d, split_map, weight_map, weight_dim, wt_base_field)
+function HMSDF(P1, P1rep, LO, d, split_map, weight_map, weight_dim, hecke_matrix_field : chi:=0, weight:=0)
+  U, unit_map:=UnitGroup(LO); 
+  units:=[Algebra(LO)! unit_map(s): s in U];
+  // Dembele-Voight write the units as Gamma (or Gamma_i).
+  // Now, we compute the action of Gamma on P^1(ZF / d)
+  PLD:=ProjectiveLineOrbits(P1, P1rep, d, unit_map, units, split_map : chi:=chi); 
+  F := hecke_matrix_field;
+  // the jth entry of stabs consists of a list of 
+  // elements in Gamma which stabilize the 
+  // chosen representative of the jth orbit
+  stabs:=PLD`Stabs; 
+  // l indexes orbits of the Gamma action on P1(ZF / d) 
+  l:=1; 
+  repeat 
+    // this is a matrix with weight_dim columns and 
+    // some number of rows depending on the dimension
+    // of the subspace of the weight representation where
+    // the stabilizer of the lth orbit acts in a prescribed
+    // way (according to the nebentypus). 
+    M:=InvariantSpace(PLD, l, weight_map, weight_dim, F : weight:=weight);
+    if Rank(M) eq 0 then l:=l+1; end if;
+  until (l gt #stabs) or (Rank(M) ne 0);
 
-   U, unit_map:=UnitGroup(LO); 
-   units:=[Algebra(LO)! unit_map(s): s in U];
-   PLD:=ProjectiveLineOrbits(P1, P1rep, d, unit_map, units, split_map); 
-   F:=wt_base_field;
-   stabs:=PLD`Stabs; 
-   l:=1; 
-   repeat 
-      M:=InvariantSpace(stabs[l], weight_map, weight_dim, F);
-      if Rank(M) eq 0 then l:=l+1; end if;
-   until (l gt #stabs) or (Rank(M) ne 0);
+  // TODO abhijitm wait so max order units is being set to units??
+  if l gt #stabs then
+    return rec<ModFrmHilDirFact|PLD:=PLD, CFD:={@ @}, basis_matrix:=ZeroMatrix(F, 0, 0), 
+               basis_matrix_inv:=ZeroMatrix(F, 0, 0), weight_rep:=weight_map, 
+               weight_dimension:=weight_dim, weight_base_field:=F, max_order_units:=units>;
+  else
+    contrib_orbs:=[l];
+    for m0:=l+1 to #stabs do
+      // As before, this is a r x weight_dim matrix,
+      // where r depends on the orbit m0.
+      N:=InvariantSpace(PLD, m0, weight_map, weight_dim, F : weight:=weight);
+      if Rank(N) ne 0 then
+        Append(~contrib_orbs, m0);
+        // TODO abhijitm this seems really inefficient, 
+        // it looks like we are re-making the matrix from
+        // scratch each time instead of e.g. collecting the blocks
+        // and then synthesizing the space after.
+        nb_rows:=Nrows(M)+Nrows(N); 
+        nb_cols:=Ncols(M)+Ncols(N);
+        Q:=RMatrixSpace(F, nb_rows, nb_cols)!0; 
+        InsertBlock(~Q, M, 1, 1);
+        InsertBlock(~Q, N, Nrows(M)+1, Ncols(M)+1); 
+        M:=Q;
+      end if;
+    end for;
+    contrib_orbs := {@ x : x in contrib_orbs @}; // SetIndx is better than SeqEnum
+  end if;
+  // All in all, M looks like a block "diagonal" matrix, except the diagonal
+  // blocks are rectangular. Each diagonal block has weight_dim columns but
+  // a variable number of rows. As such, M has R rows and 
+  // weight_dim x #contrib_orbs columns.
+  // Don't forget that this M is the contribution from a single
+  // right ideal class of the quaternion order O.
+  
+  // This is a left inverse of M but Magma is bad with coercions
+  N:=Transpose(Solution(Transpose(M), ScalarMatrix(F, Rank(M), 1)));
 
-   if l gt #stabs then
-      return rec<ModFrmHilDirFact|PLD:=PLD, CFD:={@ @}, basis_matrix:=ZeroMatrix(F, 0, 0), 
-                 basis_matrix_inv:=ZeroMatrix(F, 0, 0), weight_rep:=weight_map, 
-                 weight_dimension:=weight_dim, weight_base_field:=F, max_order_units:=units>;
-   else
-      contrib_orbs:=[l];
-      for m0:=l+1 to #stabs do
-         N:=InvariantSpace(stabs[m0], weight_map, weight_dim, F);
-         if Rank(N) ne 0 then
-            Append(~contrib_orbs, m0);
-            nb_rows:=Nrows(M)+Nrows(N); 
-            nb_cols:=Ncols(M)+Ncols(N);
-            Q:=RMatrixSpace(F, nb_rows, nb_cols)!0; 
-            InsertBlock(~Q, M, 1, 1);
-            InsertBlock(~Q, N, Nrows(M)+1, Ncols(M)+1); 
-            M:=Q;
-         end if;
-      end for;
-      contrib_orbs := {@ x : x in contrib_orbs @}; // SetIndx is better than SeqEnum
-   end if;
-   N:=Transpose(Solution(Transpose(M), ScalarMatrix(F, Rank(M), 1)));
-
-   return rec<ModFrmHilDirFact|PLD:=PLD, CFD:=contrib_orbs, basis_matrix:=M, basis_matrix_inv:=N, 
-   	  		        weight_rep:=weight_map, weight_dimension:=weight_dim, 
+  return rec<ModFrmHilDirFact|PLD:=PLD, CFD:=contrib_orbs, basis_matrix:=M, basis_matrix_inv:=N, 
+    		        weight_rep:=weight_map, weight_dimension:=weight_dim, 
                                 weight_base_field:=F, max_order_units:=units>;
 end function;
 
@@ -660,68 +922,102 @@ end function;
 
 function HilbertModularSpaceDirectFactors(M)
   
-   if not assigned M`ModFrmHilDirFacts then 
+  if not assigned M`ModFrmHilDirFacts then 
+    
+    F := BaseField(M);
+    A := Algebra(QuaternionOrder(M));
+    d := Level(M)/Discriminant(A);
+
+    vprintf ModFrmHil, 2: "Projective line modulo ideal of norm %o: ", Norm(d);
+    vtime ModFrmHil, 2:
+    
+    P1, P1rep := ProjectiveLine(quo<Order(d)|d> : Type:="Matrix");
+
+    if not assigned M`splitting_map then
+      M`splitting_map := _ResidueMatrixRing(M`QuaternionOrder, d);
+    end if;
+    split_map := M`splitting_map;
+
+    // These can also be thought of as 
+    // \hat{alpha} \hat{O}_0(1) \hat{\alpha}^{-1} \cap B
+    // where \hat{alpha} ranges over double coset representatives
+    // for B* \ B*(A_F) / O_0(1)
+    LOs := [I`LeftOrder: I in get_rids(M)]; 
+
+    // parallel weight 2 and trivial nebentypus
+    if Seqset(Weight(M)) eq {2} and (Order(DirichletCharacter(M)) eq 1) then
+
+      HMDFs := [];
+      Q := Rationals();
       
-      F := BaseField(M);
-      A := Algebra(QuaternionOrder(M));
-      d := Level(M)/Discriminant(A);
+      // For weight 2, the weight representation is the identity map
+      I := IdentityMatrix(Q, 1);
+      Mat1 := Parent(I);
+      weight_rep := map< A -> Mat1 | q :-> I >;
 
-      vprintf ModFrmHil, 2: "Projective line modulo ideal of norm %o: ", Norm(d);
-      vtime ModFrmHil, 2:
-      P1, P1rep := ProjectiveLine(quo<Order(d)|d> : Type:="Matrix");
+      for LO in LOs do 
 
-      if not assigned M`splitting_map then
-         M`splitting_map := _ResidueMatrixRing(M`QuaternionOrder, d);
+        U, mU := UnitGroup(LO); 
+        units := [A| s @ mU : s in U];
+
+        PLD := ProjectiveLineOrbits(P1, P1rep, d, mU, units, split_map : DoStabs:=false, chi:=DirichletCharacter(M));
+
+        // number of orbits is the dimension
+        dim := #PLD`FD;
+        Id := MatrixRing(Rationals(), dim) ! 1;
+
+        Append(~HMDFs, 
+           rec< ModFrmHilDirFact | 
+                PLD := PLD, 
+                CFD := IndexedSet([1 .. dim]), // TO DO: get rid of this, and the basis_matrices
+                basis_matrix := Id, 
+                basis_matrix_inv := Id, 
+                weight_rep := weight_rep,
+                weight_dimension := 1, 
+                weight_base_field := Q, 
+                max_order_units := units
+              > );
+      end for;
+
+    else 
+
+      if not assigned M`weight_rep then
+        _ := WeightRepresentation(M);
       end if;
-      split_map := M`splitting_map;
-
-      LOs := [I`LeftOrder: I in get_rids(M)]; 
-
-      if Seqset(Weight(M)) eq {2} then // parallel weight 2
-
-         HMDFs := [];
-         Q := Rationals();
-
-         for LO in LOs do 
-
-            U, mU := UnitGroup(LO); 
-            units := [A| s @ mU : s in U];
-
-            PLD := ProjectiveLineOrbits(P1, P1rep, d, mU, units, split_map : DoStabs:=false);
-
-            dim := #PLD`FD;
-            Id := MatrixRing(Rationals(), dim) ! 1;
-
-            Append(~HMDFs, 
-               rec< ModFrmHilDirFact | 
-                    PLD := PLD, 
-                    CFD:= IndexedSet([1 .. dim]), // TO DO: get rid of this, and the basis_matrices
-                    basis_matrix := Id, 
-                    basis_matrix_inv := Id, 
-                    weight_dimension := 1, 
-                    weight_base_field := Q, 
-                    max_order_units := units
-                  > );
-         end for;
-
-      else 
-
-         if not assigned M`weight_rep then
-            _ := WeightRepresentation(M);
-         end if;
  
-         wr := M`weight_rep;
-         wd := M`weight_dimension;
-         wF := M`weight_base_field;
+      wr := M`weight_rep;
+      wd := M`weight_dimension;
+      wF := M`weight_base_field;
  
-         HMDFs := [HMSDF(P1, P1rep, LO, d, split_map, wr, wd, wF) : LO in LOs];
+      chi := DirichletCharacter(M);
 
-      end if; // parallel weight 2
+      // The big Hecke matrix lives over the field its weight-representation
+      // blocks live in: weight_base_field, extended by Q(zeta_d) when the
+      // nebentypus is nontrivial (twist_factor produces cyclotomic values).
+      // This is a STABLE field (a no-op = weight_base_field for order <= 2);
+      // it must not be the descending hecke_matrix_field, which can be shrunk
+      // to the minimal field during eigenform extraction and would then be
+      // inconsistent with the (undescended) weight-rep blocks.
+      hecke_mtrx_field := big_hecke_matrix_field(M);
+      
+      // print "number of left orders", #LOs, LOs;
+      // Each HMSDF returns a ModFrmHilDirFact record, and there's one for each
+      // right ideal class of the maximal order of B. 
+      //
+      // The basis_matrix of each HMSDF is a matrix with R rows and
+      // (weight_dim x #{orbits of P1 under the action of the units of the LO}) columns,
+      // where R is whatever it is.
+      //
+      // CFD for each HMSDF stores the indices of the orbits which 
+      // contribute nontrivially to R. 
+      HMDFs := [HMSDF(P1, P1rep, LO, d, split_map, wr, wd, hecke_mtrx_field : chi:=chi, weight:=Weight(M)) : LO in LOs];
 
-      M`ModFrmHilDirFacts := HMDFs;
-   end if;
-   
-   return M`ModFrmHilDirFacts;
+    end if; // parallel weight 2
+
+    M`ModFrmHilDirFacts := HMDFs;
+  end if;
+  
+  return M`ModFrmHilDirFacts;
 end function;
 
 
@@ -895,80 +1191,89 @@ forward ComputeBasisMatrixOfNewSubspaceDefinite;
 
 function BasisMatrixDefinite(M : EisensteinAllowed:=false)
 
-   if assigned M`basis_matrix then
-      return M`basis_matrix, M`basis_matrix_inv, M`Dimension;
-   elif EisensteinAllowed and not assigned M`Ambient and 
-      assigned M`basis_matrix_big 
-   then
-      return M`basis_matrix_big;
-   end if;
+  if assigned M`basis_matrix then
+    return M`basis_matrix, M`basis_matrix_inv, M`Dimension;
+  elif EisensteinAllowed and not assigned M`Ambient and 
+    assigned M`basis_matrix_big 
+  then
+    return M`basis_matrix_big;
+  end if;
 
-   if assigned M`Ambient then
+  if assigned M`Ambient then
 
-      ComputeBasisMatrixOfNewSubspaceDefinite(M);
-      dim := Nrows(M`basis_matrix);
+    ComputeBasisMatrixOfNewSubspaceDefinite(M);
+    dim := Nrows(M`basis_matrix);
 
-   else // M is ambient
+  else // M is ambient
 
-      weight2 := Seqset(Weight(M)) eq {2};
+    weight2trivchar := Seqset(Weight(M)) eq {2} and (Order(DirichletCharacter(M)) eq 1);
 
-      if not assigned M`basis_matrix_big then
-        easy := weight2 and Level(M) eq Discriminant(QuaternionOrder(M));
-        // easy = basis of space is given by the rids (ie each P^1 is trivial)
+    if not assigned M`basis_matrix_big then
+      easy := weight2trivchar and Level(M) eq Discriminant(QuaternionOrder(M));
+      // easy = basis of space is given by the rids (ie each P^1 is trivial)
 
-        if weight2 then
-          M`weight_base_field := Rationals();
-          M`weight_dimension := 1;
-        end if;
-
-        if easy then
-          // basis of M is given by rids
-          d := #get_rids(M);
-          Id := MatrixAlgebra(Rationals(), d) ! 1;
-          M`basis_matrix_big := Id;
-          M`basis_matrix_big_inv := Id;
-        else
-          HMDF := HilbertModularSpaceDirectFactors(M);
-          nrows := &+ [Nrows(HMDF[m]`basis_matrix): m in [1..#HMDF]];
-          ncols := &+ [Ncols(HMDF[m]`basis_matrix): m in [1..#HMDF]];
-          B := Matrix(BaseRing(HMDF[1]`basis_matrix), nrows, ncols, []);
-          row := 1; 
-          col := 1;
-          for hmdf in HMDF do 
-             if not IsEmpty(hmdf`CFD) then
-                InsertBlock(~B, hmdf`basis_matrix, row, col);
-                row +:= Nrows(hmdf`basis_matrix);
-                col +:= Ncols(hmdf`basis_matrix);
-             end if;
-          end for;
-          Binv := Transpose(Solution(Transpose(B), IdentityMatrix(BaseRing(B), Nrows(B))));
-          M`basis_matrix_big := B; 
-          M`basis_matrix_big_inv := Binv; 
-        end if;
+      if weight2trivchar then
+        M`weight_base_field := Rationals();
+        M`weight_dimension := 1;
       end if;
-        
-      if weight2 and not EisensteinAllowed then
-        RemoveEisenstein(~M);
-        dim := Nrows(M`basis_matrix);
-      elif weight2 then
-        dim := Nrows(M`basis_matrix_big) - #NarrowClassGroup(BaseField(M));
+
+      if easy then
+        // basis of M is given by rids
+        d := #get_rids(M);
+        Id := MatrixAlgebra(Rationals(), d) ! 1;
+        M`basis_matrix_big := Id;
+        M`basis_matrix_big_inv := Id;
       else
-        M`basis_matrix := M`basis_matrix_big;
-        M`basis_matrix_inv := M`basis_matrix_big_inv;
-        dim := Nrows(M`basis_matrix);
+        HMDF := HilbertModularSpaceDirectFactors(M);
+        // This will be the dimension of the space
+        nrows := &+ [Nrows(HMDF[m]`basis_matrix): m in [1..#HMDF]];
+        // This will be some multiple of weight_rep, 
+        ncols := &+ [Ncols(HMDF[m]`basis_matrix): m in [1..#HMDF]];
+        B := Matrix(BaseRing(HMDF[1]`basis_matrix), nrows, ncols, []);
+        row := 1; 
+        col := 1;
+        // B is a block "diagonal" matrix with rectangular blocks
+        // for each right ideal class of O. 
+        // Each block is itself a block diagonal matrix.
+        for hmdf in HMDF do 
+          if not IsEmpty(hmdf`CFD) then
+            InsertBlock(~B, hmdf`basis_matrix, row, col);
+            row +:= Nrows(hmdf`basis_matrix);
+            col +:= Ncols(hmdf`basis_matrix);
+          end if;
+        end for;
+        // As before, this is just a left inverse 
+        Binv := Transpose(Solution(Transpose(B), IdentityMatrix(BaseRing(B), Nrows(B))));
+        M`basis_matrix_big := B; 
+        M`basis_matrix_big_inv := Binv; 
       end if;
+    end if;
+      
+    // There are no "Eisenstein series" when we are not
+    // in parallel weight 2, I think.
+    if weight2trivchar and not EisensteinAllowed then
+      RemoveEisenstein(~M);
+      dim := Nrows(M`basis_matrix);
+    elif weight2trivchar then
+      dim := Nrows(M`basis_matrix_big) - #NarrowClassGroup(BaseField(M));
+    else
+      M`basis_matrix := M`basis_matrix_big;
+      M`basis_matrix_inv := M`basis_matrix_big_inv;
+      // This is the dimension of the space of quaternionic modular forms.
+      dim := Nrows(M`basis_matrix);
+    end if;
 
-   end if;
+  end if;
 
-   if not assigned M`Dimension then
-      M`Dimension := dim;
-   else 
-      error if M`Dimension ne dim,
-           "The space has been computed incorrectly!!!\n" * please_report;
-   end if;
+  if not assigned M`Dimension then
+    M`Dimension := dim;
+  else 
+    error if M`Dimension ne dim,
+         "The space has been computed incorrectly!!!\n" * please_report;
+  end if;
   
-   // Retrieve the answer (now cached)
-   return BasisMatrixDefinite(M : EisensteinAllowed:=EisensteinAllowed);
+  // Retrieve the answer (now cached)
+  return BasisMatrixDefinite(M : EisensteinAllowed:=EisensteinAllowed);
 end function;
 
 
@@ -978,230 +1283,321 @@ end function;
 
 // TO DO: sparse
 
-function HeckeOperatorDefiniteBig(M, p : Columns:="all")
+function HeckeOperatorDefiniteBig(M, p : Columns:="all", opposite_mode:=false)
 
-   assert not assigned M`Ambient; // M is an ambient
+  // print "HeckeOperatorDefiniteBig", IdealOneLine(p);
+  assert not assigned M`Ambient; // M is an ambient
 
-   // Caching
-   // HeckeBig and HeckeBigColumns must be assigned together
+  // Caching
+  // HeckeBig and HeckeBigColumns must be assigned together
 
-   cached, Tp := IsDefined(M`HeckeBig, p);
-   if cached then 
-     Tp := Matrix(Tp);
-     _, old_cols := IsDefined(M`HeckeBigColumns, p);
-     if Columns cmpeq "all" then
-       Columns := [1..Ncols(Tp)];
-     end if;
-     columns := [j : j in Columns | j notin old_cols];
-     if IsEmpty(columns) then
-       return Tp;
-     end if;
-   else
-     old_cols := [];
-     columns := Columns;
-   end if;
+  cached, tup := IsDefined(M`HeckeBig, p);
+  if cached then 
+    Tp, p_rep := Explode(tup);
+    Tp := Matrix(Tp);
+    _, old_cols := IsDefined(M`HeckeBigColumns, p);
+    if Columns cmpeq "all" then
+      Columns := [1..Ncols(Tp)];
+    end if;
+    columns := [j : j in Columns | j notin old_cols];
+    if IsEmpty(columns) then
+      return Tp, p_rep;
+    end if;
+  else
+    old_cols := [];
+    columns := Columns;
+  end if;
 
-   A := Algebra(QuaternionOrder(M));
-   N := Level(M);
-   weight2 := Seqset(Weight(M)) eq {2};
-   easy := weight2 and N eq Discriminant(QuaternionOrder(M));
-   // easy = basis of big space is given by the rids
+  A := Algebra(QuaternionOrder(M));
+  N := Level(M);
+  weight2trivchar := Seqset(Weight(M)) eq {2} and (Order(DirichletCharacter(M)) eq 1);
 
-   if not assigned M`basis_matrix then
-     _ := BasisMatrixDefinite(M : EisensteinAllowed);
-   end if;
-   dim := Ncols(M`basis_matrix_big);
+  // easy = basis of big space is given by the rids
+  easy := weight2trivchar and N eq Discriminant(QuaternionOrder(M));
 
-   F := M`weight_base_field; // = Q for parallel weight 2
-   if easy then
-     h := dim;
-   else
-     HMDF := M`ModFrmHilDirFacts; 
-     nCFD := [#xx`CFD : xx in HMDF];
-     h := #HMDF;
-     wd := M`weight_dimension; // = 1 for weight2
-   end if;
+  if not assigned M`basis_matrix then
+    _ := BasisMatrixDefinite(M : EisensteinAllowed);
+  end if;
+  // The big Hecke operator will be a dim x dim matrix.
+  // Note that this dim is *not* generally the 
+  // dimension of the space of quaternionic modular forms,
+  // but rather the dimension of the space in which we embed them.
+  dim := Ncols(M`basis_matrix_big);
 
-   // Columns/columns refer to actual columns of the big matrix, 
-   // Bcolumns to columns of large blocks, bcolumns to small blocks
+  F := big_hecke_matrix_field(M); // = Q for parallel weight 2, trivial nebentypus
+  if easy then
+    h := dim;
+  else
+    HMDF := M`ModFrmHilDirFacts; 
+    // i.e the number of orbits in the projective line
+    // (associated to each direct factor)
+    // which contribute nontrivially to the basis
+    nCFD := [#xx`CFD : xx in HMDF];
+    // the number of direct factors, i.e. the class number
+    // of O_0(1)
+    h := #HMDF;
+    wd := M`weight_dimension; // = 1 for weight2
+  end if;
 
-   if columns cmpeq "all" then
-     columns := [1..dim];
-   else
-     columns := Sort([Integers()| i : i in columns]);
-   end if;
-   assert not IsEmpty(columns) and columns subset [1..dim];
+  // Columns/columns refer to actual columns of the big matrix, 
+  // Bcolumns to columns of large blocks, bcolumns to small blocks
 
-   if not weight2 then // currently, higher weight doesn't use Columns
-     columns := [1 .. dim];
-   end if;
+  if columns cmpeq "all" then
+    columns := [1..dim];
+  else
+    columns := Sort([Integers()| i : i in columns]);
+  end if;
+  assert not IsEmpty(columns) and columns subset [1..dim];
 
-   if easy then
-     bcolumns := columns;
-     Bcolumns := columns;
-   elif columns eq [1 .. dim] then // full matrix 
-     bcolumns := [1 .. dim div wd];
-     Bcolumns := [1 .. h];
-   elif weight2 then 
-     bcolumns := columns;
-     Bcolumns := [];
-     b := 1;
-     for i := 1 to #HMDF do
-       e := b + nCFD[i] - 1;
-       if exists{x: x in [b..e] | x in columns} then
-         Append(~Bcolumns, i);
-       end if;
-       b := e + 1;
-     end for;
-   else
-     bcolumns := [];
-     Bcolumns := [];
-     b := 1;
-     for i := 1 to #HMDF do
-       for j := 1 to nCFD[i] do
-         e := b + wd - 1;
-         if exists{x: x in [b..e] | x in columns} then
-           Append(~bcolumns, e div wd);
-           Append(~Bcolumns, i);
-         end if;
-         b := e + 1;
-       end for;
-     end for;
-   end if;
+  if not weight2trivchar then // currently, higher weight and nontrivial nebentypus don't use Columns
+    columns := [1 .. dim];
+  end if;
 
-   if not cached then
-     Tp := MatrixRing(F, dim) ! 0; 
-   end if;
+  if easy then
+    bcolumns := columns;
+    Bcolumns := columns;
+  elif columns eq [1 .. dim] then 
+    // Full matrix - this always happens
+    // outside of parallel weight 2
+    // 
+    // Each large block, coming from a left order/right ideal class,
+    // has an associated P1, and the matrix consists of 
+    // small blocks for each orbit of this P1 (under the action under
+    // the units of the left order) which contribute nontrivially
+    // to the basis.
+    bcolumns := [1 .. dim div wd];
+    // one large block for each direct factor
+    Bcolumns := [1 .. h];
+  elif weight2trivchar then 
+    bcolumns := columns;
+    Bcolumns := [];
+    b := 1;
+    for i := 1 to #HMDF do
+      e := b + nCFD[i] - 1;
+      if exists{x: x in [b..e] | x in columns} then
+        Append(~Bcolumns, i);
+      end if;
+      b := e + 1;
+    end for;
+  end if;
+  
+  if not cached then
+    Tp := MatrixRing(F, dim) ! 0; 
+  end if;
 
 //"Starting with"; Tp;
 
 //"Columns:"; Columns; old_cols; columns; bcolumns; Bcolumns;
 
-   tp := get_tps(M, p : rows:=Bcolumns); // rows in precompute_tps are columns here
+  // This is independent of the weight and level -- it captures information
+  // about the ideals of the maximal quaternion order O (and in particular
+  // those of p-power reduced norm, I think). 
+  tp := get_tps(M, p : rows:=Bcolumns); // rows in precompute_tps are columns here
 
-   vprintf ModFrmHil: "%o%o column%o%o of big Hecke matrix (norm %o): ", 
-                      #columns eq dim select "All " else "", 
-                      #columns, 
-                      #columns gt 1 select "s" else "", 
-                      #columns gt 1 select "" else " (#"*Sprint(columns[1])*")", 
-                      Norm(p);
-   vtime ModFrmHil:
+  vprintf ModFrmHil: "%o%o column%o%o of big Hecke matrix (norm %o): ", 
+                     #columns eq dim select "All " else "", 
+                     #columns, 
+                     #columns gt 1 select "s" else "", 
+                     #columns gt 1 select "" else " (#"*Sprint(columns[1])*")", 
+                     Norm(p);
+  vtime ModFrmHil:
+  // dummy value, in case it doesn't get set later
+  lambda := 1;
+  if easy then
 
-   if easy then
+    for j in Bcolumns, i in [1..h] do 
+      bool, tpji := IsDefined(tp, <j,i>);
+      if bool then
+        Tp[i,j] := #tpji;
+      end if;
+    end for;
 
-      for j in Bcolumns, i in [1..h] do 
-         bool, tpji := IsDefined(tp, <j,i>);
-         if bool then
-            Tp[i,j] := #tpji;
-         end if;
-      end for;
+  else
 
-   else
+    sm := M`splitting_map;
+    
+    checkP1 := Valuation(N,p) gt 0;
 
-     sm := M`splitting_map;
-     
-     checkP1 := Valuation(N,p) gt 0;
+    // the indices of direct factors where there are actually
+    // orbits that contribute to the basis
+    inds := [l : l in [1..#HMDF] | nCFD[l] ne 0];
+    row := 0; 
+    col := 0;
 
-     inds := [l : l in [1..#HMDF] | nCFD[l] ne 0];
-     row := 0; 
-     col := 0;
+    for m in inds do 
+      // When not parallel weight 2 trivial nebentypus,
+      // Bcolumns is [1 .. h], where h is the class number 
+      // of the maximal order O.
+      if m in Bcolumns then
+        for l in inds do 
+          // I'm guessing it's undefined only if tpml is empty.
+          bool, tpml := IsDefined(tp, <m,l>);
+          // print "Norm p", Norm(p), "size of tpml", #tpml;
 
-     for m in inds do 
-        if m in Bcolumns then
-           for l in inds do 
-              bool, tpml := IsDefined(tp, <m,l>);
-              if bool then
-                 if weight2 then
-
-                    PLDl := HMDF[l]`PLD;
-                    FDl   := PLDl`FD; 
-                    FDm   := HMDF[m]`PLD`FD; 
-                    lookup:= PLDl`Lookuptable; 
-                    P1rep := PLDl`P1Rep;
-
-                    Tplm := ExtractBlock(Tp, row+1, col+1, #FDl, #FDm);
-                    mms := [mm : mm in [1..#FDm] | col+mm in bcolumns];
-                    for ll := 1 to #tpml do
-                       mat := tpml[ll] @ sm;
-                       for mm in mms do 
-                          u := mat * FDm[mm];
-                          bool, u0 := P1rep(u, checkP1, false);
-                          if bool then
-                             n := lookup[u0,1]; 
-                             // assert n eq Index(HMDF[l]`CFD, n);
-                             Tplm[n,mm] +:= 1;
-                          end if;
-                       end for;
-                    end for;
-                    InsertBlock(~Tp, Tplm, row+1, col+1);
-
-                 else
-
-                    PLDl  := HMDF[l]`PLD;
-                    FDl   := PLDl`FD; 
-                    FDm   := HMDF[m]`PLD`FD; 
-                    lookup:= PLDl`Lookuptable; 
-                    P1rep := PLDl`P1Rep;
-
-                    CFDl := HMDF[l]`CFD; 
-                    CFDm := HMDF[m]`CFD; 
-                    units1 := HMDF[l]`max_order_units; 
-                    weight_map := HMDF[l]`weight_rep; 
-
-                    Tplm := Matrix(F, wd*#CFDl, wd*#CFDm, []);
-
-                    for ll := 1 to #tpml do
-                       mat := tpml[ll] @ sm;
-                       for mm := 1 to #CFDm do
-                          u := mat * FDm[CFDm[mm]];
-                          bool, u0 := P1rep(u, checkP1, false);
-                          if bool then
-                             elt_data := lookup[u0]; 
-                             n := Index(CFDl, elt_data[1]);
-                             if n ne 0 then
-                                quat1 := units1[elt_data[2]]^-1 * tpml[ll]; 
-                                X := ExtractBlock(Tplm, (n-1)*wd+1, (mm-1)*wd+1, wd, wd);
-                                X +:= weight_map(quat1);
-                                InsertBlock(~Tplm, X, (n-1)*wd+1, (mm-1)*wd+1);
-                             end if;
-                          end if;
-                       end for;
-                    end for;
-                    InsertBlock(~Tp, Tplm, row+1, col+1);
-
-                 end if;
+          if bool then
+            // this isn't actually used if we are in paritious weight
+            // so we don't bother with the check in this case
+            // lambda := Norm(tpml[1]);
+            if not is_paritious(Weight(M)) then
+              // require that all the pi_i have the same reduced norm
+              // print "-------------- hi", [Norm(x) : x in tpml];
+              assert #{Norm(x) : x in tpml} le 1;
+              // TODO abhijitm can remove some of these asserts later
+              // print "-------- hi", Norm(lambda), Norm(p);
+              if m eq l and #tpml gt 0 then
+                lambda := Norm(tpml[1]);
+                assert Norm(lambda) eq Norm(p);
+                assert IsTotallyPositive(lambda);
               end if;
-              row +:= nCFD[l] * wd;
-           end for;
-        end if;
-        col +:= nCFD[m] * wd;
-        row := 0;
-     end for;
+            end if;
 
-   end if;
+            if weight2trivchar then
 
-   // new columns were computed, so renew the cache
-   M`HeckeBig[p] := SparseMatrix(Tp);
-   M`HeckeBigColumns[p] := Sort(old_cols cat columns);
+              PLDl := HMDF[l]`PLD;
+              FDl   := PLDl`FD; 
+              FDm   := HMDF[m]`PLD`FD; 
+              lookup:= PLDl`Lookuptable; 
+              P1rep := PLDl`P1Rep;
+
+              // get the #FDl x #FDm submatrix starting
+              // at row+1, col+1
+              Tplm := ExtractBlock(Tp, row+1, col+1, #FDl, #FDm);
+              mms := [mm : mm in [1..#FDm] | col+mm in bcolumns];
+              for ll := 1 to #tpml do
+                mat := tpml[ll] @ sm;
+                for mm in mms do 
+                  u := mat * FDm[mm];
+                  bool, u0 := P1rep(u, checkP1, false);
+                  if bool then
+                    n := lookup[u0,1]; 
+                    // assert n eq Index(HMDF[l]`CFD, n);
+                    Tplm[n,mm] +:= 1;
+                  end if;
+                end for;
+              end for;
+              InsertBlock(~Tp, Tplm, row+1, col+1);
+
+            else
+
+              PLDl  := HMDF[l]`PLD;
+              // This stores elements of the P1 associated
+              // to the lth right ideal class of O representing 
+              // each orbit (contributing or not)
+              FDl   := PLDl`FD; 
+
+              // Same for the mth right ideal class of O
+              FDm   := HMDF[m]`PLD`FD; 
+              // This maps a P1 element x to a unit of the lth left order
+              // which takes the orbit representative of x to x.
+              lookup:= PLDl`Lookuptable; 
+              P1rep := PLDl`P1Rep;
+
+              chi := DirichletCharacter(M);
+              // true iff the order of the nebentypus is bigger than 2
+              irrat_neb_field := not IsTrivial(chi) and Order(chi) gt 2;
+
+              // This is an indexed set of the contributing orbits of the
+              // lth P1 
+              CFDl := HMDF[l]`CFD; 
+              // Same for the mth P1
+              CFDm := HMDF[m]`CFD; 
+              // These are the units of the lth left order
+              units1 := HMDF[l]`max_order_units; 
+              weight_map := HMDF[l]`weight_rep; 
+
+              // the row/column block corresponding to the
+              // pair of direct factors (l, m) has dimension
+              // (wd * #CFDl) x (wd * #CFDm) because #CFDl 
+              // and #CFDm are the respective numbers of (contributing) 
+              // projective line orbits, and for each of these we have 
+              // an element of Wk(C).
+              //
+              // As a sanity check, these are the number of columns associated
+              // to the respective big blocks in basis_matrix. 
+              Tplm := Matrix(F, wd*#CFDl, wd*#CFDm, []);
+              
+              // print "norm prime", Norm(p), "number of tpml", #tpml;
+              // print "#CFDm", #CFDm;
+              for ll := 1 to #tpml do
+                // tpml[ll] is an element of O, and mat is the element mod N
+                mat := tpml[ll] @ sm;
+                // over contributing orbits of mm
+                for mm := 1 to #CFDm do
+                  // FDm[CFDm[mm]] is an element of the projective line,
+                  // so applying mat to it makes sense
+                  u := mat * FDm[CFDm[mm]];
+                  bool, u0 := P1rep(u, checkP1, false);
+                  // not totally sure why yet (TODO!) but when p | N, for
+                  // each mm there will be a unique ll such that not bool,
+                  // at least when #(Cls O) = 1. Importantly, I guess this 
+                  // means that unlike the level 1 story (or the story where
+                  // we don't do this projective line stuff), it's not as simple
+                  // as omitting a single element in tpml. 
+                  // if not bool then
+                    // print ll, mm, "not bool!";
+                  // end if;
+                  if bool then
+                    // this lookup is in the P1 associated to l!
+                    // It finds the orbit in l's P1 associated to 
+                    // mat(tpml[ll]) * FDM[CFDm[mm]]
+                    elt_data := lookup[u0]; 
+                    // elt_data[1] is an index in the fundamental domain of the 
+                    // P1 associated to l. 
+                    n := Index(CFDl, elt_data[1]);
+                    // If n is 0 then u0 corresponds to an orbit in l's P1 which does not 
+                    // have any quaternionic modular forms.
+                    if n ne 0 then
+                      // units1[elt_data[2]]^-1 is the unit which takes
+                      // the orbit rep of u0 to u0. 
+                      quat1 := units1[elt_data[2]]^-1 * tpml[ll]; 
+                      X := ExtractBlock(Tplm, (n-1)*wd+1, (mm-1)*wd+1, wd, wd);
+                      weight_matrix := weight_map(quat1);
+                      // Only use StrongCoerceMatrix when nebentypus order > 2 to avoid unnecessary overhead
+                      if irrat_neb_field then
+                        weight_matrix := StrongCoerceMatrix(F, weight_matrix);
+                      end if;
+                      Y := twist_factor(PLDl, quat1, FDm[CFDm[mm]])^-1 * weight_matrix;
+                      X := X + Y;
+                      InsertBlock(~Tplm, X, (n-1)*wd+1, (mm-1)*wd+1);
+                    end if;
+                  end if;
+                end for;
+              end for;
+              InsertBlock(~Tp, Tplm, row+1, col+1);
+
+            end if;
+          end if;
+          row +:= nCFD[l] * wd;
+        end for;
+      end if;
+      col +:= nCFD[m] * wd;
+      row := 0;
+    end for;
+
+  end if;
+
+  // new columns were computed, so renew the cache
+  M`HeckeBig[p] := <SparseMatrix(Tp), [lambda]>;
+  M`HeckeBigColumns[p] := Sort(old_cols cat columns);
 //"Now got columns",  M`HeckeBigColumns[p]; M`HeckeBig[p];
 
-   // Check Hecke invariance of Eisenstein subspace and its complement
-   if debug and M`HeckeBigColumns[p] eq [1..dim] then
-     if assigned M`InnerProductBig and Norm(p + N) eq 1 
-        and p@@cl eq NCl.0 where NCl, cl is NarrowClassGroup(BaseField(M))
-     then
-       assert Tp * M`InnerProductBig eq M`InnerProductBig * Transpose(Tp);
-     end if;
-     if assigned M`eisenstein_basis then
-       assert Rowspace(M`eisenstein_basis * Tp) subset Rowspace(M`eisenstein_basis);
-     end if;
-     if assigned M`basis_matrix then
-       printf "[debug] Checking space is preserved by Tp: "; time 
-       assert Rowspace(M`basis_matrix * Tp) subset Rowspace(M`basis_matrix);
-     end if;
-   end if;
+  // Check Hecke invariance of Eisenstein subspace and its complement
+  if debug and M`HeckeBigColumns[p] eq [1..dim] then
+    if assigned M`InnerProductBig and Norm(p + N) eq 1 
+       and p@@cl eq NCl.0 where NCl, cl is NarrowClassGroup(BaseField(M))
+    then
+      assert Tp * M`InnerProductBig eq M`InnerProductBig * Transpose(Tp);
+    end if;
+    if assigned M`eisenstein_basis then
+      assert Rowspace(M`eisenstein_basis * Tp) subset Rowspace(M`eisenstein_basis);
+    end if;
+    if assigned M`basis_matrix then
+      printf "[debug] Checking space is preserved by Tp: "; time 
+      assert Rowspace(M`basis_matrix * Tp) subset Rowspace(M`basis_matrix);
+    end if;
+  end if;
 
-   return Tp;
+  return Tp, [lambda];
 end function;
 
 
@@ -1210,6 +1606,7 @@ end function;
 
 function AtkinLehnerDefiniteBig(M, p)
 
+   // print "!!!!!!!!!!!!!!!! ATKIN LEHNER !!!!!!!!!!!!!!!!!!!!", Norm(p), IdealOneLine(p);
    assert not assigned M`Ambient; // M is an ambient
 
    if not assigned M`ALBig then
@@ -1241,12 +1638,12 @@ function AtkinLehnerDefiniteBig(M, p)
    nCFD := [#xx`CFD : xx in HMDF];
    h := #HMDF;
    wd := M`weight_dimension; // = 1 for weight2
-   F := M`weight_base_field; // = Q for weight2
+   F := big_hecke_matrix_field(M);
    sm := M`splitting_map;
 
    tp := get_tps(M, pe);
 
-   weight2 := Seqset(Weight(M)) eq {2};
+   weight2trivchar := (Seqset(Weight(M)) eq {2}) and (Order(DirichletCharacter(M)) eq 1);
 
    Wp := MatrixRing(F, dim) ! 0; 
 
@@ -1327,7 +1724,7 @@ function AtkinLehnerDefiniteBig(M, p)
             _, imN := PLDl`P1Rep(Matrix(1, imN), false, false);
          end if;
 
-         if weight2 then
+         if weight2trivchar then
 
             ll := PLDl`Lookuptable[imN, 1];  
             assert ll gt 0;
@@ -1353,7 +1750,8 @@ function AtkinLehnerDefiniteBig(M, p)
                units1     := HMDF[l]`max_order_units; 
                weight_map := HMDF[l]`weight_rep; 
 
-               quat1 := units1[u] ^ -1 * tp_elt[l,k];
+               quat1 := units1[u]^-1 * tp_elt[l,k];
+               // TODO abhijitm double check twist factor
                InsertBlock(~Wp, weight_map(quat1), r, c);
             end if;
 
@@ -1447,7 +1845,7 @@ function DegeneracyDown1DefiniteBig(M, p)
    HMDF := M`ModFrmHilDirFacts; 
    h := #HMDF;
    wd := M`weight_dimension; // = 1 for weight2
-   F := M`weight_base_field;
+   F := big_hecke_matrix_field(M);
 
    P1N := HMDF[1]`PLD`P1List;
 
@@ -1457,8 +1855,8 @@ function DegeneracyDown1DefiniteBig(M, p)
    C := P1_congruence_classes(P1N, N, Np);
 
    weight2 := Seqset(Weight(M)) eq {2};
-assert weight2;
-assert (M`DirichletCharacter cmpeq 1) or IsTrivial(M`DirichletCharacter);
+   assert weight2;
+   assert Order(DirichletCharacter(M)) eq 1;
 
    // TO DO: easy case where N/p = 1, get the matrix just using stab_orders
 
@@ -1469,7 +1867,7 @@ assert (M`DirichletCharacter cmpeq 1) or IsTrivial(M`DirichletCharacter);
 
       dl := wd*#HMDF[l]`CFD;
       if dl eq 0 then
-assert false;
+         assert false;
          continue;
       end if;
 
@@ -1707,8 +2105,10 @@ end function;
 // in the upward direction, from lower level to higher level.
 // Only implemented when p divides the level only once.
 
-function DegeneracyMapBlock(M1, M2, Tp, sm)
+function DegeneracyMapBlock(M1, M2, Tp, sm : weight2trivchar:=false)
 
+   // M1 and M2 are ModFrmHilDirFact records
+   
    M1PLD  := M1`PLD;
    M2PLD  := M2`PLD;
    d1     := M1PLD`Level; 
@@ -1724,7 +2124,8 @@ function DegeneracyMapBlock(M1, M2, Tp, sm)
 
    Rd1 := quo< Order(d1) | d1 >; // TO DO: don't need this?
 
-   if w eq 1 then // parallel weight 2
+   if weight2trivchar then // parallel weight 2 trivial nebentypus
+      assert w eq 1; // parallel weight 2
 
       B := Matrix(F, w*#FD1, w*#FD2, []);
 
@@ -1752,7 +2153,11 @@ function DegeneracyMapBlock(M1, M2, Tp, sm)
 
       B := Matrix(F, w*#CFD1, w*#CFD2, []);
 
+      // When called from DegeneracyMap, Tp contains the output of 
+      // get_tps(M1, p) for some prime p and M1 the domain of the 
+      // degeneracy map
       for l := 1 to #Tp do
+         
          tpl := Tp[l] @ sm;
          for m := 1 to #CFD2 do
             u := tpl * FD2[CFD2[m]];
@@ -1762,18 +2167,55 @@ function DegeneracyMapBlock(M1, M2, Tp, sm)
                elt_data := lookup[u01]; 
                n := Index(CFD1, elt_data[1]);
                if n ne 0 then 
-                  quat1:=units1[elt_data[2]]^-1*Tp[l]; 
-                  mat1:=ExtractBlock(B, (n-1)*w+1, (m-1)*w+1, w, w);
-                  mat1+:=weight_map(quat1);
+                  quat1 := units1[elt_data[2]]^-1*Tp[l]; 
+                  mat1 := ExtractBlock(B, (n-1)*w+1, (m-1)*w+1, w, w);
+                  mat1 +:= twist_factor(M1PLD, quat1, ProjectionMap(FD2[CFD2[m]], d1, Rd1, P1rep1))^-1 * weight_map(quat1);
                   InsertBlock(~B, mat1, (n-1)*w+1, (m-1)*w+1);
                end if;
             end if;
          end for;
       end for;
 
-   end if; // parallel weight 2
+   end if; 
 
    return B;
+end function;
+
+function DegeneracyMapDomain(M, d)
+   // Given an ambient space M and an integral ideal d such that NewLevel(M) | d | Level(M), 
+   // returns a space of level d and same weight as M, defined using internals that are
+   // compatible with M (same quaternion algebra, same splitting map and weight representation)
+
+   QO:=M`QuaternionOrder;
+   assert NewLevel(M) eq Discriminant(QO);
+   assert IsIntegral(d/NewLevel(M));
+   assert IsIntegral(Level(M)/d); 
+
+   if Order(DirichletCharacter(M)) eq 1 then
+      new_chi := DirichletCharacter(M);
+   else
+      chi := DirichletCharacter(M);
+      N := Level(M);
+      _, m_inf := Modulus(chi);
+      // ensure that the conductor of chi divides d
+      assert d subset Conductor(chi);
+      new_chi := Restrict(chi, d, m_inf);
+   end if;
+
+   // MUST use identical internal data: in particular, rids and weight_rep.
+   // Call low-level constructor to avoid complications with caching, and don't cache DM
+   // TO DO: use cached spaces, to avoid recomputing ModFrmHilDirFacts (that's the only advantage)
+   DM:=HMF0(BaseField(M), d, NewLevel(M), new_chi, Weight(M), CentralCharacter(M));
+   DM`QuaternionOrder:=QO;
+   DM`rids, DM`support:=get_rids(M);
+   DM`splitting_map:=M`splitting_map; // can use same splitting_map even though its level is larger than needed
+   DM`weight_base_field:=M`weight_base_field;
+   DM`weight_dimension:=M`weight_dimension;
+   if Seqset(Weight(M)) ne {2} then // nontrivial weight
+      DM`weight_rep:=M`weight_rep;
+      DM`splitting_field_emb_weight_base_field := M`splitting_field_emb_weight_base_field;
+   end if;
+   return DM;
 end function;
 
 
@@ -1781,7 +2223,7 @@ end function;
 // for some prime q, and either p = q or p = (1)
 // Only valid if M1 was created as a DegeneracyMapDomain of M2.
 
-function DegeneracyMap(M1, M2, p : Big:=false)
+function DegeneracyMap(M1, M2, p : Big:=false, EisensteinAllowed:=false)
 
    assert IsPrime(p) or Norm(p) eq 1;
    assert GCD(p*(M1`Level), M2`Level) eq p*(M1`Level);
@@ -1791,15 +2233,19 @@ function DegeneracyMap(M1, M2, p : Big:=false)
       assert IsIdentical(M1`weight_rep, M2`weight_rep); 
    end if;
 
+   // these have the same number of entries because 
+   // the quaternion orders are the same
    HMDF1 := HilbertModularSpaceDirectFactors(M1);
    HMDF2 := HilbertModularSpaceDirectFactors(M2);
 
    if Minimum(p) eq 1 then
+      // trivial degeneracy map
       tp:=AssociativeArray(CartesianProduct([1..#HMDF1],[1..#HMDF1]));
       for l:=1 to #HMDF1 do
          tp[<l,l>]:=[Algebra(M1`QuaternionOrder)!1];
       end for;
    else
+      // nontrivial degeneracy map
       tp:=get_tps(M1,p);
    end if;
 
@@ -1810,35 +2256,43 @@ function DegeneracyMap(M1, M2, p : Big:=false)
    w2 := M2`weight_dimension;
    assert w1 eq w2;
 
+   weight2trivchar := (w1 eq 1) and (Order(DirichletCharacter(M1)) eq 1) and (Order(DirichletCharacter(M2)) eq 1);
+   // #xx`CFD is the number of orbits in the projective line
+   // of xx which contribute nontrivially to the basis
    nCFD1 := [#xx`CFD : xx in HMDF1];
    nCFD2 := [#xx`CFD : xx in HMDF2];
+   // we restrict to the right ideal classes which contribute
+   // nontrivially to keep the linear algebra efficient
    inds1 := [l : l in [1..#HMDF1] | nCFD1[l] ne 0];
    inds2 := [m : m in [1..#HMDF2] | nCFD2[m] ne 0];
    row := 1; 
    col := 1;
+   // we have a copy of the weight rep for each orbit in each P1 
    D := Matrix(F, &+nCFD1 * w1, &+nCFD2 * w2, []); 
 
    for m in inds2 do
       for l in inds1 do 
          bool, tpml := IsDefined(tp, <m,l>);
          if bool then
-            Dlm := DegeneracyMapBlock(HMDF1[l], HMDF2[m], tpml, sm);
+            Dlm := DegeneracyMapBlock(HMDF1[l], HMDF2[m], tpml, sm : weight2trivchar:=weight2trivchar);
             InsertBlock(~D, Dlm, row, col); 
 //assert Nrows(Dlm) eq nCFD1[l] * w1;
 //assert Ncols(Dlm) eq nCFD2[m] * w2;
          end if;
+         // the contribution from the lth right ideal class
          row +:= nCFD1[l] * w1;
       end for;
+      // the contribution from the mth right ideal class
       col +:= nCFD2[m] * w2;
       row := 1;
    end for;
 
    // Two differences here
    if Big then
-      M1bm := BasisMatrixDefinite(M1 : EisensteinAllowed);
+      M1bm := BasisMatrixDefinite(M1 : EisensteinAllowed:=EisensteinAllowed);
       return M1bm * D;
    else
-      M1bm := BasisMatrixDefinite(M1);
+      M1bm := BasisMatrixDefinite(M1 : EisensteinAllowed:=EisensteinAllowed);
       _, M2bmi := BasisMatrixDefinite(M2);
       return M1`basis_matrix * D * M2bmi;
    end if;
@@ -1848,13 +2302,23 @@ end function;
 // Basis of a newspace (called only by BasisMatrixDefinite)
 
 procedure ComputeBasisMatrixOfNewSubspaceDefinite_general(M)
-   assert IsDefinite(M); 
+  assert IsDefinite(M); 
    MA := M`Ambient; // must be assigned with QuaternionOrder (unless NewLevel = Level)
    A,B:= BasisMatrixDefinite(MA);
 
-weight2 := Seqset(Weight(M)) eq {2};
-assert not weight2;
+   weight2 := Seqset(Weight(M)) eq {2};
+   weight2trivchar := weight2 and (Order(DirichletCharacter(M)) eq 1);
+   assert not weight2trivchar;
 
+   chi := DirichletCharacter(M);
+   
+   // If nebentypus is nontrivial, use Hecke action approach (shared helper function)
+   if Order(chi) ne 1 then
+      ComputeNewSubspaceBasisMatricesUsingHeckeAction(M, MA);
+      return;
+   end if;
+
+   // Otherwise, use degeneracy map + Atkin-Lehner approach (original code)
    O := Integers(BaseField(M));
    D := Discriminant(QuaternionOrder(M));
    L := Level(M);
@@ -1862,41 +2326,38 @@ assert not weight2;
    assert NewLevel(MA) eq D; 
    N := Lnew/D; 
    assert ISA(Type(N), RngOrdIdl); // integral
-   Nfact := Factorization(N);
+   valid_primes := [fact_tup : fact_tup in Factorization(N)];
 
    V := VectorSpace(BaseRing(A), Nrows(A)); 
    W := sub<V|>;
-   for m := 1 to #Nfact do
+   for m := 1 to #valid_primes do
       if Dimension(W) eq Dimension(V) then 
          break; 
       end if;
 
-      vprint ModFrmHil: "Computing oldforms relative to prime of norm", Norm(Nfact[m][1]);
+      vprint ModFrmHil: "Computing oldforms relative to prime of norm", Norm(valid_primes[m][1]);
       time0 := Cputime();
       IndentPush(); 
-      N1 := DegeneracyMapDomain(MA, L/Nfact[m][1]);
+      N1 := DegeneracyMapDomain(MA, L/valid_primes[m][1]);
       if Dimension(N1) eq 0 then
          IndentPop();
          continue;
       end if;
 
-      P, eP := Explode(Nfact[m]);
+      P, eP := Explode(valid_primes[m]);
 
       vprintf ModFrmHil: "Degeneracy maps between dimensions %o and %o: ", Dimension(MA), Dimension(N1);
       vtime ModFrmHil:
       D1 := DegeneracyMap(N1, MA, 1*O);
 
-      if eP eq 1 then
+      if (eP eq 1) and IsOne(GCD(P, N / P^eP)) and (not debug) then
          vtime ModFrmHil:
-         D2old := DegeneracyMap(N1, MA, P);
-      end if;
-
-      if eP gt 1 or debug then
+         D2 := DegeneracyMap(N1, MA, P);
+      else 
          AL := AtkinLehnerOperator(MA, P);
-         D2new := D1 * AL;
+         D2 := D1 * AL;
       end if;
 
-      D2 := eP eq 1 select D2old else D2new;
       old_space_mat := VerticalJoin(D1, D2);
 
       // checks
@@ -1904,7 +2365,7 @@ assert not weight2;
          assert Rank(old_space_mat) eq 2*Rank(D1);
          assert Rank(old_space_mat) eq 2*Rank(D2);
          if debug then
-            assert RowSpace(old_space_mat) eq RowSpace(D1) + RowSpace(D2new);
+            assert RowSpace(old_space_mat) eq RowSpace(D1) + RowSpace(D2);
          end if;
       end if;
 
@@ -1928,8 +2389,9 @@ procedure ComputeBasisMatrixOfNewSubspaceDefinite(M)
    assert IsDefinite(M); 
 
    weight2 := Seqset(Weight(M)) eq {2};
-   if not weight2 then
-      // TO DO implement IP
+   weight2trivchar := weight2 and (Order(DirichletCharacter(M)) eq 1);
+   if not weight2trivchar then
+      // TO DO implement IP for nontrivial nebentypus
       ComputeBasisMatrixOfNewSubspaceDefinite_general(M);
       return;
    end if;         
@@ -1951,7 +2413,7 @@ procedure ComputeBasisMatrixOfNewSubspaceDefinite(M)
                        Norm(N), [<Norm(t[1]), t[2]>  : t in Factorization(N)];
    IndentPush();
 
-   eisenstein_present := weight2;
+   eisenstein_present := weight2trivchar;
    Ds := <>;
    for t in Factorization(N) do
       P, e := Explode(t);

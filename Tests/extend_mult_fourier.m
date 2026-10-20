@@ -1,4 +1,3 @@
-// test-time: ~38s
 import "ModFrmHilD/Creation/CuspFormFromEigs.m" : coeff_from_ext_mult_fourier;
 
 procedure test(Mk, bb)
@@ -39,7 +38,7 @@ procedure test(Mk, bb)
   end for;
 
 
-  ExtendMultiplicativelyFourier(~coeffs, ~mfh_reps, Mk);
+  ExtendMultiplicatively(~coeffs, ~mfh_reps, Mk);
 
   coeffs_by_nu := AssociativeArray();
   coeffs_by_nu[bb] := AssociativeArray();

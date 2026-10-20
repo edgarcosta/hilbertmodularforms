@@ -65,13 +65,7 @@ intrinsic CuspFormBasis(
   k := Weight(Mk);
 
   // Weight 1 forms cannot be computed using Jacquet-Langlands transfer
-  // The Magma functionality for definite quaternion algebras doesn't currently support 
-  // nebentypus characters with nontrivial Dirichlet restrictions, so that is also
-  // computed using Hecke stability
-  if not &and[x ge 2 : x in k] or 
-    ((Degree(BaseField(Mk)) eq 2) and 
-      (not IsTrivial(DirichletRestriction(Character(Mk))))
-    ) then
+  if not &and[x ge 2 : x in k] then
     if SaveAndLoad then
       Mk`CuspFormBasis := LoadOrBuildAndSave(Mk, HeckeStabilityCuspBasis, "_cusp_space");
     else
@@ -85,9 +79,9 @@ intrinsic CuspFormBasis(
       Mk`CuspFormBasis := NewCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad) cat OldCuspFormBasis(Mk : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad);
     end if;
     // The contents of Mk`CuspFormBasis should be a basis for the space of cuspforms
-    // There's no independent way of checking the dimension when we use the indefinite method,
-    // so in that case we shouldn't bother checking the dimension.
-    if IsDefinite(HilbertCuspForms(Mk)) then
+    // There's no independent way of checking the dimension when we use the indefinite method
+    // or when the nebentypus is nontrivial, so in that case we shouldn't bother checking the dimension.
+    if IsDefinite(HilbertCuspForms(Mk)) and IsTrivial(Character(Mk)) then
       require CuspDimension(Mk) eq #Mk`CuspFormBasis : Sprintf("CuspDimension(Mk) = %o != %o = #Mk`CuspFormBasis", CuspDimension(Mk), #Mk`CuspFormBasis);
     end if;
   end if;

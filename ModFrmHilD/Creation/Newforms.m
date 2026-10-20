@@ -5,9 +5,6 @@ import "CuspFormFromEigs.m" : coeff_from_ext_mult_fourier;
 // Caching magma computations
 intrinsic MagmaNewformDecomposition(Mk::ModFrmHilD) -> List
   {return the NewformDecomposition in magma type}
-  if IsEven(Degree(BaseField(Mk))) then 
-    require IsTrivial(DirichletRestriction(Character(Mk))): "We only support Newforms for characters with trivial Dirichlet restriction, as we rely on the magma functionality";
-  end if;
   if not assigned Mk`MagmaNewformDecomposition then
     N := Level(Mk);
     k := Weight(Mk);
@@ -69,7 +66,7 @@ intrinsic MagmaNewCuspForms(Mk::ModFrmHilD) -> SeqEnum[ModFrmHilElt]
 end intrinsic;
 
 // Eigenforms new/old in Mk
-intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
+intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=true, UseFourierCoeffs:=false) -> SeqEnum[ModFrmHilDElt]
   {
     return the inclusions of f, as ModFrmHil(Elt), into M
 
@@ -86,7 +83,10 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
     In general, the field of definition will be the smallest field over which
     the Hecke operators are defined. See 
     https://magma.maths.usyd.edu.au/magma/handbook/text/1735
-    for some more about this. 
+    for some more about this.
+    
+    If UseFourierCoeffs is true, use the Fourier coefficient mode even for
+    paritious weights (for testing purposes).
   }
 
   if Type(f) eq ModFrmHil then
@@ -162,21 +162,27 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   coeffs := AssociativeArray();
   // stores a pi for each pp
   mfh_reps := AssociativeArray();
+  
+  // Determine whether to use Fourier coefficient mode
+  use_fourier_mode := (not IsParitious(Weight(Mk))) or UseFourierCoeffs;
+  
   vtime HilbertModularForms:
   for pp in primes do
-    if IsParitious(Weight(Mk)) then
-      coeffs[pp] :=  fn(pp);
-    else
+    if use_fourier_mode then
       coeffs[pp], mfh_reps[pp] := fn(pp);
+    else
+      coeffs[pp] :=  fn(pp);
     end if;
   end for;
   ZF := Integers(Mk);
 
-  if IsParitious(Weight(Mk)) then
-    ExtendMultiplicatively(~coeffs, N, k, chiH, primes, ideals : factorization:=func<n|Factorization(M, n)>);
+  if use_fourier_mode then
+    ExtendMultiplicatively(~coeffs, ~mfh_reps, Mk);
   else 
-    ExtendMultiplicativelyFourier(~coeffs, ~mfh_reps, Mk);
+    ExtendMultiplicatively(~coeffs, Mk);
   end if;
+
+  vprintf HilbertModularForms: "Building coefficient arrays for basis elements...\n";
 
   Tzeta_powers := [Tzeta^i : i in [0..Nrows(Tzeta) - 1]];
 
@@ -198,6 +204,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
     ddinv := dd^-1;
     // coefficients by bb
     CoeffsArray := [AssociativeArray() : _ in [1..Nrows(Tzeta)]];
+    
     for bb in NarrowClassGroupReps(M) do
       for i in [1..Nrows(Tzeta)] do
         CoeffsArray[i][bb] := AssociativeArray();
@@ -208,7 +215,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
           nnddinv := ZF !! nnddinv;
           bool, v := IsDefined(coeffs, ZF !! nn*ddinv);
         else
-          v := 0;
+          v := ZeroMatrix(CoefficientRing(Tzeta), Nrows(Tzeta));
         end if;
         for i in [1..Nrows(Tzeta)] do
           // Let f_j be the jth Galois conjugate of f and T a generator
@@ -230,14 +237,22 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
             CoeffsArray[i][bb][nu] := R!0;
           end if;
 
+          // Handle the case where v might be a scalar (shouldn't happen with the fix in CuspFormFromEigs.m)
+          if Type(v) ne AlgMatElt then
+            // Convert scalar to diagonal matrix
+            v := ScalarMatrix(Nrows(Tzeta), v);
+          end if;
+          
+          // Optimization: Trace(A*B) = sum_i (row_i(A) * col_i(B))
+          // This avoids computing the full matrix product
+          trace_val := &+[&+[Tzeta_powers[i][j,k] * v[k,j] : k in [1..Ncols(v)]] : j in [1..Nrows(Tzeta_powers[i])]];
+          
           if IsParitious(Weight(Mk)) then
-            a_nn := Trace(Tzeta_powers[i]*v);
-            CoeffsArray[i][bb][nu] := R!(bool select IdlCoeffToEltCoeff(a_nn, nu, k, R) else 0);
+            CoeffsArray[i][bb][nu] := R!(bool select IdlCoeffToEltCoeff(trace_val, nu, k, R) else 0);
           else
             // TODO abhijitm this is only tested in the case of N = NS, dd = ddinv = 1,
             // so I think in this setting bool is always true
-            a_nup := Trace(Tzeta_powers[i]*v);
-            a_nu := coeff_from_ext_mult_fourier(Mk, a_nup, mfh_reps[nn], nn);
+            a_nu := coeff_from_ext_mult_fourier(Mk, trace_val, mfh_reps[nn], nn);
             CoeffsArray[i][bb][nu] := R!(bool select a_nu else 0);
           end if;
         end for;
@@ -250,7 +265,7 @@ intrinsic Eigenforms(Mk::ModFrmHilD, f::Any, chi::GrpHeckeElt : GaloisDescent:=t
   return res;
 end intrinsic;
 
-intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD : GaloisDescent:=true) -> SeqEnum[ModFrmHilDElt]
+intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD : GaloisDescent:=true, UseFourierCoeffs:=false) -> SeqEnum[ModFrmHilDElt]
   {return the inclusion of MkN1 into MkN2}
   require Weight(MkN1) eq Weight(MkN2) : "the weights must match";
   require BaseField(MkN1) eq BaseField(MkN2) : "the base fields must match";
@@ -261,7 +276,7 @@ intrinsic OldCuspForms(MkN1::ModFrmHilD, MkN2::ModFrmHilD : GaloisDescent:=true)
   N2 := Level(MkN2);
   require N2 subset N1: "the level of the first argument must divide the level of the second argument";
   //require N2 ne N1: "the level of the first argument must differ from the level of the second argument";
-  return &cat[Eigenforms(MkN2, elt[1], elt[2] : GaloisDescent:=GaloisDescent) : elt in MagmaNewCuspForms(MkN1)];
+  return &cat[Eigenforms(MkN2, elt[1], elt[2] : GaloisDescent:=GaloisDescent, UseFourierCoeffs:=UseFourierCoeffs) : elt in MagmaNewCuspForms(MkN1)];
 end intrinsic;
 
 

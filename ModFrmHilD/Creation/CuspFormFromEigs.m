@@ -1,130 +1,182 @@
-// Generic extending multiplicatevely
-intrinsic ExtendMultiplicatively(~coeffs::Assoc, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::., prime_ideals::SeqEnum, ideals::SeqEnum[RngOrdIdl] : factorization:=false)
-  { set a_nn := prod(a_p^e : (p,e) in factorization(nn) }
-  // TODO: take character into acount
+procedure ExtendMultiplicativelyHelper(~coeffs, ~mfh_reps, M, N, k, chi, FourierCoeffMode)
+  prime_ideals := PrimeIdeals(M);
+  ideals := Ideals(M);
+  factorization := func<nn | Factorization(M, nn)>;
   
-  // We don't worry about putting things in the right coefficient field at this point
-  // TODO abhijitm there's probably a cleaner way to get 
-  // the zero ideal and unit ideal...
-  coeffs[0*N] := 0;
-  coeffs[N*N^-1] := 1;
-
-  k0 := Max(k);
-  if factorization cmpeq false then
-    factorization := Factorization;
+  // Initialize
+  ZF := Order(N);
+  F := NumberField(ZF);
+  
+  // Determine the type of coefficients by checking an existing coefficient
+  // When called from Newforms.m with GaloisDescent, coefficients are always matrices (Hecke operators)
+  // When called from CuspEigenformFromCoeffsAtPrimes, coefficients are scalars (eigenvalues)
+  is_matrix_mode := exists(nn){nn : nn in Keys(coeffs) | Type(coeffs[nn]) eq AlgMatElt};
+  
+  if is_matrix_mode then
+    // Matrix mode: Get dimensions from an existing coefficient
+    sample_coeff := coeffs[Rep({pp : pp in prime_ideals | IsDefined(coeffs, pp)})];
+    n := Nrows(sample_coeff);
+    R := BaseRing(sample_coeff);
+    coeffs[0*ZF] := ZeroMatrix(R, n, n);
+    coeffs[1*ZF] := IdentityMatrix(R, n);
+  else
+    // Scalar mode: Use scalar values
+    coeffs[0*ZF] := 0;
+    coeffs[1*ZF] := 1;
+  end if;
+  
+  if FourierCoeffMode then
+    mfh_reps[0*ZF] := 0;
+    mfh_reps[1*ZF] := 1;
   end if;
 
-  // set recursion
-  // ideals must be sorted by Norm
+  // set recursion for p^e
   max_norm := Norm(ideals[#ideals]);
   prec := Floor(Log(2, max_norm)) + 1;
   Q := Rationals();
-  // Power series ring for recursion
   QX<X, Y> := PolynomialRing(Q, 2);
   R<T> := PowerSeriesRing(QX : Precision := prec);
   recursion := Coefficients(1/(1 - X*T + Y*T^2));
-  // If good, then 1/(1 - a_p T + Chi(p)*Norm(p)^{k0-1} T^2) = 1 + a_p T + a_{p^2} T^2 + ...
-  // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
-  for p in prime_ideals do
-    Np := Norm(p);
-    if N subset p then
-      Npk := 0;
+  
+  vprintf HilbertModularForms: "ExtendMultiplicatively: Computing coefficients of p^e...\n";
+  t0 := Cputime();
+  
+  for pp in prime_ideals do
+    // Compute the second recursion parameter (Y in the power series)
+    if N subset pp then
+      y := 0;
     else
-      Npk := Np^(k0 - 1);
-    end if;
-    pe := p;
-    Npe := Np;
-    for e in [2..Floor(Log(Norm(p), max_norm))] do
-      pe *:= p; // p**e
-      Npe *:= Np;
-      // pe might not be in ideals, but still might show up as a factor
-      if Npe gt max_norm then
-        break;
+      if FourierCoeffMode then
+        // Nonparitious: use pi^(k-1) where pi is the totally positive generator
+        pi := mfh_reps[pp];
+        assert IsTotallyPositive(pi);
+        auts := AutsOfKReppingEmbeddingsOfF(F, F);
+        y := chi(pp) * &*[auts[i](pi)^(k[i] - 1) : i in [1 .. #k]];
+      else
+        // Paritious: use Norm(pp)^(k0-1)
+        k0 := Max(k);
+        y := chi(pp) * Norm(pp)^(k0 - 1);
       end if;
-      coeffs[pe] := Evaluate(recursion[e+1], [coeffs[p], Npk * chi(p)]);
+    end if;
+    
+    // Compute coefficients for prime powers p^e
+    ppe := pp;
+    for e in [2..Floor(Log(Norm(pp), max_norm))] do
+      ppe *:= pp;
+      coeffs[ppe] := Evaluate(recursion[e+1], [coeffs[pp], y]);
+      if FourierCoeffMode then
+        mfh_reps[ppe] := mfh_reps[pp]^e;
+      end if;
     end for;
   end for;
-  // extend multiplicatively
-  for n in ideals do
-    if not IsDefined(coeffs, n) then
-      coeffs[n] := StrongMultiply([* coeffs[pair[1]^pair[2]] : pair in factorization(n) *]);
+  
+  vprintf HilbertModularForms: "  Time for p^e coefficients: %.3o seconds\n", Cputime() - t0;
+  
+  vprintf HilbertModularForms: "ExtendMultiplicatively: Computing coefficients of general n...\n";
+  t1 := Cputime();
+  
+  // Build a map from ideals to their exponent vectors
+  // Each ideal nn = prod_i p_i^{e_i} is represented as a tuple (e_1, ..., e_r)
+  ideal_to_exponents := AssociativeArray();
+  exponents_to_ideal := AssociativeArray();
+  
+  for nn in ideals do
+    if nn eq 0*ZF then
+      continue;
+    end if;
+    fac := factorization(nn);
+    exps := [0 : _ in prime_ideals];
+    for pair in fac do
+      pp := pair[1];
+      e := pair[2];
+      idx := Index(prime_ideals, pp);
+      if idx ne 0 then
+        exps[idx] := e;
+      end if;
+    end for;
+    exp_tuple := <exps[i] : i in [1..#exps]>;
+    ideal_to_exponents[nn] := exp_tuple;
+    exponents_to_ideal[exp_tuple] := nn;
+  end for;
+  
+  // Sort ideals by L1 norm of their exponent vectors
+  // This ensures that when we compute a_nn, we've already computed all necessary factors
+  ideal_list := [nn : nn in ideals | nn ne 0*ZF and not IsDefined(coeffs, nn)];
+  l1_norms := [&+[e : e in ideal_to_exponents[nn]] : nn in ideal_list];
+  ParallelSort(~l1_norms, ~ideal_list);
+  
+  // Extend multiplicatively: for each ideal, compute using one multiplication
+  for nn in ideal_list do
+    exp_vec := ideal_to_exponents[nn];
+    
+    // Find the first nonzero exponent
+    j := 0;
+    for i in [1..#exp_vec] do
+      if exp_vec[i] ne 0 then
+        j := i;
+        break;
+      end if;
+    end for;
+    
+    if j eq 0 then
+      // This is the unit ideal, should already be defined
+      continue;
+    end if;
+    
+    // Compute nn = p_j^{e_j} * (nn / p_j^{e_j})
+    pp := prime_ideals[j];
+    ppe := pp^exp_vec[j];
+    nn_reduced := nn / ppe;
+    
+    // Compute a_nn = a_{p_j^{e_j}} * a_{nn / p_j^{e_j}}
+    if is_matrix_mode then
+      coeffs[nn] := coeffs[ppe] * coeffs[nn_reduced];
+    else
+      coeffs[nn] := StrongMultiply([* coeffs[ppe], coeffs[nn_reduced] *]);
+    end if;
+    
+    if FourierCoeffMode then
+      mfh_reps[nn] := mfh_reps[ppe] * mfh_reps[nn_reduced];
     end if;
   end for;
+  
+  vprintf HilbertModularForms: "  Time for general n coefficients: %.3o seconds\n", Cputime() - t1;
+end procedure;
+
+// Generic extending multiplicatively (paritious case only)
+intrinsic ExtendMultiplicatively(
+    ~coeffs::Assoc, 
+    Mk::ModFrmHilD
+    )
+  { 
+    Extends coefficients multiplicatively from prime powers to all ideals (paritious case).
+    
+    Inputs:
+      coeffs - associative array to be filled with coefficients
+      Mk - space of Hilbert modular forms
+  }
+  
+  dummy_reps := AssociativeArray();
+  ExtendMultiplicativelyHelper(~coeffs, ~dummy_reps, Parent(Mk), Level(Mk), Weight(Mk), Character(Mk), false);
 end intrinsic;
 
-// TODO abhijitm remove code reuse by combining this and the above? 
-// Also, the output of this function is strange because it's keyed by ideal
-// but stores Fourier coefficients. It makes sense in context of the current
-// Creation/Newforms.m code but it seems like there should be a cleaner way.
-intrinsic ExtendMultiplicativelyFourier(
+// Generic extending multiplicatively (nonparitious case with Fourier coefficients)
+intrinsic ExtendMultiplicatively(
     ~coeffs::Assoc,
     ~mfh_reps::Assoc,
     Mk::ModFrmHilD
     )
-  {}
-  F := BaseField(Mk);
-  ZF := Integers(F);
-  N := Level(Mk);
-  k := Weight(Mk);
-  chi := Character(Mk);
-  prime_ideals := PrimeIdeals(Parent(Mk));
-  ideals := Ideals(Parent(Mk));
-
-  coeffs[0*ZF] := 0;
-  coeffs[1*ZF] := 1;
-  mfh_reps[0*ZF] := 0;
-  mfh_reps[1*ZF] := 1;
-
-  // set recursion
-  // ideals must be sorted by Norm
-  max_norm := Norm(ideals[#ideals]);
-  prec := Floor(Log(2, max_norm)) + 1;
-  Q := Rationals();
-  // Power series ring for recursion
-  QX<X, Y> := PolynomialRing(Q, 2);
-  R<T> := PowerSeriesRing(QX : Precision := prec);
-  recursion := Coefficients(1/(1 - X*T + Y*T^2));
-  // If good, then 1/(1 - a_p T + Chi(p)*Norm(p)^{k0-1} T^2) = 1 + a_p T + a_{p^2} T^2 + ...
-  // If bad, then 1/(1 - a_p T) = 1 + a_p T + a_{p^2} T^2 + ...
-  for pp in prime_ideals do
-    // a totally positive element of F generating the ideal pp
-    pi := mfh_reps[pp];
-    if N subset pp then
-      z := 0;
-    else
-      auts := AutsOfKReppingEmbeddingsOfF(F, F);
-      z := &*[auts[i](pi)^(k[i] - 1) : i in [1 .. #k]];
-    end if;
-
-    assert IsTotallyPositive(pi);
-    ppe := pp; // will store p^e in the eth iteration
-    for e in [2..Floor(Log(Norm(pp), max_norm))] do
-      ppe *:= pp;
-      coeffs[ppe] := Evaluate(recursion[e+1], [coeffs[pp], chi(pp) * z]);  
-      mfh_reps[ppe] := pi^e;
-    end for;
-  end for;
-
-  for nn in ideals do
-    if IsZero(nn) or IsOne(nn) then
-      continue;
-    end if;
+  { 
+    Extends coefficients multiplicatively from prime powers to all ideals (nonparitious case).
+    Also tracks totally positive generators in mfh_reps.
     
-    // list of things to be multiplied
-    mult_list := [* *];
-    // The product of mfh_reps corresponding to the factorization of N.
-    // This will differ from nu (the rep associated to the ideal nn by
-    // IdealToRep(M, nn)) by a totally positive unit
-    // 
-    // We start with a generator of the (co)different because nu = dd^-1 * nn
-    mfh_nn := F!1;
-    for pair in Factorization(nn) do
-      Append(~mult_list, coeffs[pair[1]^pair[2]]);
-      mfh_nn *:= mfh_reps[pair[1]]^pair[2];
-    end for;
-    coeffs[nn] := StrongMultiply(mult_list);
-    mfh_reps[nn] := mfh_nn;
-  end for;
+    Inputs:
+      coeffs - associative array to be filled with coefficients
+      mfh_reps - associative array to be filled with totally positive generators
+      Mk - space of Hilbert modular forms
+  }
+  
+  ExtendMultiplicativelyHelper(~coeffs, ~mfh_reps, Parent(Mk), Level(Mk), Weight(Mk), Character(Mk), true);
 end intrinsic;
  
 function codifferent_generator(M)
@@ -192,27 +244,20 @@ intrinsic CuspEigenformFromCoeffsAtPrimes(
   }
   M := Parent(Mk);
   F := BaseField(Mk);
+  prime_ideals := PrimeIdeals(M);
+  ideals := Ideals(M);
 
   // get coefficients at every nn, not just the prime ideals
   if from_a_pp then
-    ExtendMultiplicatively(
-      ~coeffs_by_nn,
-      Level(Mk),
-      Weight(Mk),
-      Character(Mk),
-      PrimeIdeals(M),
-      Ideals(M) :
-      factorization:=func<n|Factorization(M, n)>
-      );
+    ExtendMultiplicatively(~coeffs_by_nn, Mk);
   else
     assert mfh_reps cmpne 0;
-    ExtendMultiplicativelyFourier(~coeffs_by_nn, ~mfh_reps, Mk);
+    ExtendMultiplicatively(~coeffs_by_nn, ~mfh_reps, Mk);
   end if;
 
   // TODO abhijitm once Jean's improvements are in, this construction
   // should be rewritten
   coeffs_by_nu := AssociativeArray();
-  
   for bb in NarrowClassGroupReps(M) do
     coeffs_by_nu[bb] := AssociativeArray();
     coeffs_by_nu[bb][F!0] := coeff_ring!0;

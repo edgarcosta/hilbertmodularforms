@@ -28,7 +28,7 @@ import "definite.m" : BasisMatrixDefinite,
 import "diamond.m" : operator;
 import "hecke_field.m" : hecke_matrix_field,
                          minimal_hecke_matrix_field;
-import "weight_rep.m" : is_paritious;
+import "weight_rep.m" : is_paritious; 
 
 debug := false;
 
@@ -275,6 +275,62 @@ function pseudo_inverse(B, C)
 end function;
 
 
+// Helper function to compute new/old subspace basis matrices using Hecke action
+// Used by both definite and indefinite methods when appropriate
+// Sets M`basis_matrix_wrt_ambient, M`basis_matrix_wrt_ambient_inv, M`basis_matrix, 
+// M`basis_matrix_inv, and M`basis_is_honest directly on M
+procedure ComputeNewSubspaceBasisMatricesUsingHeckeAction(M, MA)
+  // If MA is honest and we know its inner product, 
+  // then we can find an honest basis for M  
+  useIP := false;
+  if basis_is_honest(MA) then
+      // Check if inner product is implemented before trying to use it
+      bool, w := IsParallelWeight(MA);
+      bool and:= (Order(DirichletCharacter(MA)) eq 1);
+      if bool and w eq 2 then
+          try 
+              IP := InnerProductMatrix(MA);
+              useIP := true;
+          catch ERROR
+              if "implemented" notin ERROR`Object then 
+                  error ERROR`Object;
+              end if;
+          end try;
+      end if;
+  end if;
+  vprintf ModFrmHil: 
+      "Using naive method to determine new subspace (%ousing inner product)\n", 
+       useIP select "" else "not ";
+  V := VectorSpace(hecke_matrix_field(MA), Dimension(MA));
+  C := sub< V | >;
+  if useIP then
+      for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
+          C +:= NewAndOldSubspacesUsingHeckeAction(MA, pp[1] : OldOnly);
+      end for;
+      vprintf ModFrmHil, 2: "Computing new space as orthogonal complement of old space: "; 
+      vtime ModFrmHil, 2:
+      V := Kernel(Transpose(BasisMatrix(C)*IP));
+  else
+      for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
+          // An oldspace from pp only makes sense if the nebentypus is also "old" at pp
+          if (DirichletCharacter(M) cmpeq 1) or IsOne(GCD(pp[1], Conductor(DirichletCharacter(M)))) then
+              new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
+            V meet:= new;
+            C +:= old;
+          end if;
+      end for;
+  end if;
+  R := BaseRing(MA`basis_matrix);
+  bm_new := ChangeRing(BasisMatrix(V), R);
+  bm_old := ChangeRing(BasisMatrix(C), R);
+  M`basis_matrix_wrt_ambient := bm_new;
+  M`basis_matrix_wrt_ambient_inv := pseudo_inverse(bm_new, bm_old);
+  M`basis_matrix := M`basis_matrix_wrt_ambient * MA`basis_matrix;
+  M`basis_matrix_inv := MA`basis_matrix_inv * M`basis_matrix_wrt_ambient_inv;
+  M`basis_is_honest := useIP;
+end procedure;
+
+
 // Main function to trigger explicit computation of a space M
 
 function basis_matrix(M)
@@ -306,49 +362,7 @@ function basis_matrix(M)
     else
         MA := M`Ambient;
         _ := basis_matrix(MA);
-        // If MA is honest and we know its inner product, 
-        // then we can find an honest basis for M  
-        useIP := false;
-        if basis_is_honest(MA) then
-            try 
-                IP := InnerProductMatrix(MA);
-                useIP := true;
-            catch ERROR
-                if "implemented" notin ERROR`Object then 
-                    error ERROR`Object;
-                end if;
-            end try;
-        end if;
-        vprintf ModFrmHil: 
-            "Using naive method to determine new subspace (%ousing inner product)\n", 
-             useIP select "" else "not ";
-        V := VectorSpace(hecke_matrix_field(MA), Dimension(MA));
-        C := sub< V | >;
-        if useIP then
-            for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
-                C +:= NewAndOldSubspacesUsingHeckeAction(MA, pp[1] : OldOnly);
-            end for;
-            vprintf ModFrmHil, 2: "Computing new space as orthogonal complement of old space: "; 
-            vtime ModFrmHil, 2:
-            V := Kernel(Transpose(BasisMatrix(C)*IP));
-        else
-            for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
-                // An oldspace from pp only makes sense if the nebentypus is also "old" at pp
-                if (DirichletCharacter(M) cmpeq 1) or IsOne(GCD(pp[1], Conductor(DirichletCharacter(M)))) then
-                    new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
-                  V meet:= new;
-                  C +:= old;
-                end if;
-            end for;
-        end if;
-        R := BaseRing(MA`basis_matrix);
-        bm_new := ChangeRing(BasisMatrix(V), R);
-        bm_old := ChangeRing(BasisMatrix(C), R);
-        M`basis_matrix_wrt_ambient := bm_new;
-        M`basis_matrix_wrt_ambient_inv := pseudo_inverse(bm_new, bm_old);
-        M`basis_matrix := M`basis_matrix_wrt_ambient * MA`basis_matrix;
-        M`basis_matrix_inv := MA`basis_matrix_inv * M`basis_matrix_wrt_ambient_inv;
-        M`basis_is_honest := useIP;
+        ComputeNewSubspaceBasisMatricesUsingHeckeAction(M, MA);
 /*
  // for testing degeneracy (select the naive method above)
  bm := M`basis_matrix;
@@ -1063,25 +1077,32 @@ intrinsic SetRationalBasis(M::ModFrmHil)
  splitting field of K.)  The basis is then fixed, and all subsequent 
  computations with M will be done relative to this basis.}
 
-  if IsBianchi(M) 
-     or assigned M`QuaternionOrder and not IsDefinite(M) 
-     or Seqset(Weight(M)) eq {2}
-     or Dimension(M) eq 0 
+  if IsBianchi(M)
+     or assigned M`QuaternionOrder and not IsDefinite(M)
+     or (Seqset(Weight(M)) eq {2} and Order(DirichletCharacter(M)) le 2)
+     or Dimension(M) eq 0
   then
+    // At parallel weight 2 with trivial or quadratic nebentypus the Hecke matrices
+    // (equivalently, the Hecke algebra) can be defined over Rationals() -- even
+    // though individual eigenforms may have Fourier coefficients in a larger field.
+    // A higher-order nebentypus does NOT admit a rational model of the algebra
+    // (its minimal field is Q(zeta_d)), so we must not force Rationals() here;
+    // Q(zeta_d) is reached by the descent below instead. (This order<=2 gate is
+    // the only deviation from master in this intrinsic.)
     M`hecke_matrix_field := Rationals();
   end if;
 
-  // Check if M already has a rational basis
+  // Check if M already has a rational basis.
   if assigned M`hecke_matrix_field then
     // coerce cached Hecke if necessary
     H := M`hecke_matrix_field;
-    for P in Keys(M`Hecke) do 
+    for P in Keys(M`Hecke) do
       TP, p_reps := Explode(M`Hecke[P]);
       if BaseRing(TP) cmpne H then
         M`Hecke[P] := <change_hecke_matrix_ring(M, TP, H), p_reps>;
       end if;
     end for;
-    for P in Keys(M`HeckeCharPoly) do 
+    for P in Keys(M`HeckeCharPoly) do
       fP := M`HeckeCharPoly[P];
       if BaseRing(fP) cmpne H then
         M`HeckeCharPoly[P] := change_hecke_polynomial_ring(M, fP, H);
@@ -2466,6 +2487,8 @@ the same properties regarding dimensions of old and new spaces that hold for mod
    Nnew := NewLevel(M);
    require N subset p : "The space is already new at p, so this should not be called.";
    require Norm(Nnew + p) eq 1 : "The given space should have new level prime to p"; 
+   require N / Conductor(DirichletCharacter(M)) subset p : "There can be no oldspace \
+     contribution from p if the conductor of the nebentypus doesn't divide N / p";
 
    // Work out dimension of the p-old space by inclusion-exclusion
    Mp := space_with_level(M, N/p, Nnew);
@@ -2478,7 +2501,7 @@ the same properties regarding dimensions of old and new spaces that hold for mod
    end if;
 
    old_dimension := 2*Dimension(Mp);
-   if N subset p^2 then
+   if N / Conductor(DirichletCharacter(M)) subset p^2 then
      Mp2 := space_with_level(M, N/p^2, Nnew);
      old_dimension -:= Dimension(Mp2);
    end if;

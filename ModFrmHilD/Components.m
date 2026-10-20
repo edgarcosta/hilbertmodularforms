@@ -791,11 +791,12 @@ intrinsic MapCoefficients(m :: Map, f :: ModFrmHilDEltComp) -> ModFrmHilDEltComp
                         LowerSet := false, Prune := false);
 end intrinsic;
 
-intrinsic Inclusion(f :: ModFrmHilDEltComp, Mk :: ModFrmHilD, mm :: RngOrdIdl
+intrinsic Inclusion(f :: ModFrmHilDEltComp, Mk :: ModFrmHilD, mm :: RngOrdIdl :
+    ForceCoeffPath:=false
     ) -> ModFrmHilDEltComp
 
 {Takes a form f(z) and produces f(mm*z) in Mk (of level NN) with component
-ideal class [mm*bb].}
+ideal class [mm*bb]. ForceCoeffPath is used only for testing.}
 
     Mk_f := Space(f);
     M_f := Parent(Mk_f);
@@ -821,10 +822,17 @@ ideal class [mm*bb].}
 
     coeffs := AssociativeArray();
     mminv := mm^-1;
+    use_coeff_path := (not IsParitious(k)) or ForceCoeffPath;
+    if use_coeff_path then
+      // this will always return a value because if k is nonparitious
+      // then we require the narrow class number of F to be 1
+      _, muinv := IsNarrowlyPrincipal(mm^-1);
+    end if;
     mmbbpinv := (M`NarrowClassGroupRepsToIdealDual[mmbb])^(-1);
     for nn -> nu in IdealToRep(M)[mmbb] do
         if Norm(nu) * Norm(mmbbpinv) le prec and IsIntegral(nn * mminv) then 
-            if IsParitious(k) then
+            if not use_coeff_path then
+              // Use ideal coefficient path (standard for paritious forms)
               a_nn := Coefficient(f, ZF!!(nn*mminv));
               if IsParallel(k) then
                 coeffs[nu] := a_nn;
@@ -832,10 +840,10 @@ ideal class [mm*bb].}
                 coeffs[nu] := IdlCoeffToEltCoeff(a_nn, nu, k, coeff_ring);
               end if;
             else
+              // Use Fourier coefficient path (standard for nonparitious forms)
               // We avoid using ideal coefficients for nonparitious forms
               // so this fetches the appropriate Fourier coefficient instead
-              a_nu := Coefficient(f, IdealToRep(M, ZF!!(nn*mminv)));
-              coeffs[nu] := a_nu;
+              coeffs[nu] := Coefficient(f, nu * muinv);
             end if;
         else
             coeffs[nu] := coeff_ring ! 0;

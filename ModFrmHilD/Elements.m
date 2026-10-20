@@ -458,7 +458,8 @@ end intrinsic;
 
 ////////// ModFrmHilDElt: M_k(N1) -> M_k(N2) //////////
 
-intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
+intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl :
+    ForceCoeffPath:=false) -> SeqEnum[ModFrmHilDElt]
   {Takes a form f(z) and produces f(mm*z) in the space Mk}
 
   iotamf := AssociativeArray();
@@ -467,7 +468,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl) -> SeqEnum[
   M := Parent(Mk);
   for bb in Keys(Components(f)) do
     mmbb := NarrowClassRepresentative(M,mm*bb);
-    iotamf[mmbb] := Inclusion(Components(f)[bb], Mk, mm);
+    iotamf[mmbb] := Inclusion(Components(f)[bb], Mk, mm : ForceCoeffPath:=ForceCoeffPath);
   end for;
   return HMFSumComponents(Mk, iotamf);
 end intrinsic;
