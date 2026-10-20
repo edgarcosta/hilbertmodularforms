@@ -10,7 +10,7 @@ freeze;
 
 *****************************************************************************/
 
-import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne;
+import "indefinite.m" : ElementOfNormMinusOne;
 
 import "hackobj.m" : Ambient,
                      TopAmbient,

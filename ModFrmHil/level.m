@@ -8,7 +8,8 @@ freeze;
 //////////////////////////////////////////////////////////////////////////////
 
 import !"Geometry/ModFrmHil/proj1.m" : residue_class_reps;
-import !"Geometry/ModFrmHil/indefinite.m" : ElementOfNormMinusOne, LeftIdealGens;
+import "indefinite.m" : ElementOfNormMinusOne;
+import !"Geometry/ModFrmHil/indefinite.m" : LeftIdealGens;
 import !"Algebra/AlgQuat/enumerate.m" :
              EnumerativeSearchInternal, ReducedBasisInternal;
 import !"Geometry/GrpPSL2/GrpPSL2Shim/domain.m" : Vertices;
@@ -120,26 +121,19 @@ function InducedH1Internal(X, k);
 
   H, mH := quo<Z | ZcoB>;
 
-  ZB := Basis(Z);
-  // put the matrix coB - whose rows are coboundary elements in Z -
-  // into row echelon form
-  S := EchelonForm(Matrix(coB));
-  // remove zero rows, so only rows containing pivot columns are left
-  RemoveZeroRows(~S);
-  // the set of pivot columns
-  piv := [Min(Support(S[i])): i in [1..Nrows(S)]];
-  // pivot columns should be distinct
-  assert #SequenceToSet(piv) eq #piv;
-  // basis vectors of Z whose smallest nonzero entry isn't a 
-  // pivot columnn. Apparently these form a basis for Z/B
-  Htilde := [ZB[i] : i in [1..#ZB] | 
-                        Min(Support(ZB[i])) notin piv];
-  if #Htilde gt 0 then
-    // matrix on Z/B whose rows are the images of the cocycles in Htildee
-    mHtilde := Matrix([mH(h) : h in Htilde]);
-    assert Abs(Norm(Determinant(mHtilde))) eq 1;
-    // I think Htilde takes a basis vector of Z/B to its lift
-    Htilde := mHtilde^(-1)*Matrix(Htilde);
+  // Htilde's rows are cocycles in Z that map under mH to a basis of
+  // H = Z/B, i.e. Htilde is a section of mH onto a complement of the
+  // coboundaries; it is used downstream to pull the Hecke action back to
+  // a matrix on H1. We obtain it by lifting each basis vector of H through
+  // the quotient map (so mH(Htilde[i]) = H.i by construction). Lifting
+  // through mH rather than selecting cocycles from Basis(Z) keeps this
+  // independent of the (basis-order dependent) structure of Z, which matters
+  // for narrow class number > 1 at field-valued weight.
+  Hgens := [H.i : i in [1 .. Ngens(H)]];
+  if #Hgens eq 0 then
+    Htilde := [];
+  else
+    Htilde := Matrix([Z | h @@ mH : h in Hgens]);
   end if;
 
   X`H1s[k] := <Htilde, mH>;

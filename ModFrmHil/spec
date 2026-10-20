@@ -5,6 +5,7 @@
   hackobj.m
   hecke.m
   hecke_field.m
+  indefinite.m
   ideal_datum.m
   level.m
   precompute.m
