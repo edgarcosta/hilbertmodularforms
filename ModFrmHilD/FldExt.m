@@ -358,7 +358,14 @@ intrinsic SafeCompositum(K::Fld, L::Fld) -> Fld
     try
       return Compositum(NumberField(DefiningPolynomial(K)), L);
     catch e2
-      return Compositum(K, NumberField(DefiningPolynomial(L)));
+      try
+        return Compositum(K, NumberField(DefiningPolynomial(L)));
+      catch e3
+        // neither field normal: Compositum fails, so use CompositeFields
+        cfs := CompositeFields(K, L);
+        _, i := Max([Degree(c) : c in cfs]);
+        return cfs[i];
+      end try;
     end try;
   end try;
 end intrinsic;
