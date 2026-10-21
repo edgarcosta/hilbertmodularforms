@@ -184,7 +184,8 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
 
   This is the OFFLINE tool that PRODUCES witness maps (CI then re-checks stored maps
   with VerifyGradedIsomorphism). Method: write phi(x_i) with undetermined rational
-  coefficients over the weight-w_i monomials; impose that phi(g) lie in J for each
+  coefficients over the weight-w_i monomials that are standard modulo a Groebner basis
+  of J (the image is only defined modulo J); impose that phi(g) lie in J for each
   generator g of I by LINEAR ALGEBRA over Q (the functionals vanishing on J in that
   degree applied to the coefficient vector of phi(g)), not NormalForm (which needs a
   field base ring). Fixing the whole automorphism group of the target at once is
@@ -210,8 +211,11 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   n := Rank(R);
   wts := [Integers()! WeightedDegree(R.i) : i in [1..n]];
 
-  // undetermined phi(x_i) = sum_k a[.]*mon over weight-w_i monomials of R
-  monsByVar := [MonomialsOfWeightedDegree(R, wts[i]) : i in [1..n]];
+  // undetermined phi(x_i) = sum_k a[.]*mon over the weight-w_i monomials of R that are
+  // standard modulo J: phi(x_i) only matters modulo J, and a J-direction left in the
+  // parameterization makes every pinned system below positive-dimensional
+  monsByVar := [[m : m in MonomialsOfWeightedDegree(R, wts[i])
+                   | m eq R.i or NormalForm(m, J) eq m] : i in [1..n]];
   counts := [#m : m in monsByVar];
   N := &+counts;
   A := PolynomialRing(Q, N);
