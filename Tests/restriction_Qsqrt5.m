@@ -16,6 +16,20 @@ triv:=X!1;
 E2:=EisensteinSeries(M2, triv, triv);
 E6:=EisensteinSeries(M6, triv, triv);
 
+procedure test_rational_diagonal_restriction(f, M, ZF)
+  // Preserve the constant term and fractional coefficients without rescaling.
+  assert RestrictionToDiagonal(f, M, 1*ZF) eq Basis(ModularForms(Gamma0(1), 4))[1];
+  coeffs := RestrictionToDiagonal(f, M, 1*ZF : AsCoefficients := true);
+  assert coeffs[1] eq 1;
+
+  half := RestrictionToDiagonal(f/2, M, 1*ZF);
+  assert half eq Basis(BaseExtend(ModularForms(Gamma0(1), 4), Rationals()))[1]/2;
+  half_coeffs := RestrictionToDiagonal(f/2, M, 1*ZF : AsCoefficients := true);
+  assert [Coefficient(qExpansion(half, #half_coeffs), j) : j in [0..#half_coeffs - 1]] eq half_coeffs;
+end procedure;
+
+test_rational_diagonal_restriction(E2, M, ZF);
+
 f := 67*(2^5*3^3*5^2)^(-1)*(E2^3-E6);
 delta:= RestrictionToDiagonal(f,M,1*ZF);
 
