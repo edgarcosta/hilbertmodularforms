@@ -15,6 +15,7 @@ assert Dimension(schemes[1]) eq 2;
 M := GradedRingOfHMFs(F, 1);
 assert HilbertSeriesSanityCheck(M, NN, schemes);
 // Check generator weights against van der Geer-Zagier 1977
+// (Invent. Math. 42, 93-133), Thm 8 p.120: the even ring, in these weights.
 bb := NarrowClassGroupReps(M)[1];
 weights := Sort(&cat[[Weight(f)[1] : f in comp_data[bb][1][k]] : k in Keys(comp_data[bb][1])]);
 assert weights eq [2,4,6,6,8];

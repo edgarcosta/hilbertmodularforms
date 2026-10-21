@@ -1,6 +1,8 @@
 // test-time: ~43s
 // HilbertModularVariety end-to-end test: Q(sqrt(13)), level 2*ZF
 // 2 is inert in Q(sqrt(13)), so 2*ZF is a prime ideal of norm 4
+// Literature: van der Geer-Zagier 1977 (Invent. Math. 42, 93-133), Thm 9 p.120: the
+// symmetric even subring only.
 // Expected: 1 component, certified, dimension 2
 // Resources: ~46s CPU, ~220 MB RAM
 printf "HilbertModularVariety on Q(sqrt(13)), level 2*ZF...";

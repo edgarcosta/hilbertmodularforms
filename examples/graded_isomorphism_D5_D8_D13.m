@@ -3,8 +3,11 @@
 // solves; the three searches total about 20 seconds.
 //  D=8  (weights [2,4,6,14]):    ours (Fours)      -> Hirzebruch (SF)
 //  D=5  (weights [2,6,10,20]):   literature (fH)   -> ours (fO)
-//  D=13 (weights [2,4,6,6,8]):   vdG (F,G)         -> ours (F',G')  [permutes the two
+//  D=13 (weights [2,4,6,6,8]):   vdGZ (F,G)        -> ours (F',G')  [permutes the two
 //                                                    weight-6 generators]
+// Sources: D=8 Hirzebruch 1977 (LNM 627), Sec. 4, with Mueller 1983 (Math. Ann. 266);
+// D=5 Hirzebruch 1976 (Russian Math. Surveys 31:5), Cor. 1; D=13 van der Geer-Zagier
+// 1977 (Invent. Math. 42), Thm 8.
 // Success = the finder returns a map that VerifyGradedIsomorphism confirms (it need not
 // equal any by-hand map; any confirmed map is a valid witness).
 printf "SearchGradedIsomorphism on D=5, D=8, D=13...\n";

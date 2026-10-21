@@ -15,7 +15,9 @@ assert #schemes eq 1;
 assert Dimension(schemes[1]) eq 2;
 M := GradedRingOfHMFs(F, 1);
 assert HilbertSeriesSanityCheck(M, NN, schemes);
-// Check generator weights against Gundlach 1963
+// Check generator weights against Gundlach 1963 (Math. Ann. 152, 226-256), Satz 8-10
+// pp.247-248, which gives all weights [2,5,6,15], and Hirzebruch 1976 (Russian Math.
+// Surveys 31:5, 96-110), Cor. 1 pp.108-109, which states this even ring.
 bb := NarrowClassGroupReps(M)[1];
 weights := Sort(&cat[[Weight(f)[1] : f in comp_data[bb][1][k]] : k in Keys(comp_data[bb][1])]);
 assert weights eq [2,6,10,20];

@@ -1,6 +1,9 @@
 // test-time: ~11m
 // HilbertModularVariety end-to-end test: Q(sqrt(2)), level 3*ZF
 // 3 is inert in Q(sqrt(2)), so 3*ZF is a prime ideal of norm 9
+// Literature: Logan 2025 (Res. Number Theory 11, article 57), Sec. 4.6, lists this ring:
+// weights [2,2,2,4,6,6,8], 37 equations. Logan computed it with this package, so it tests
+// reproducibility, not an independent result.
 // Expected: 1 component, certified, dimension 2
 // Resources: ~15 min CPU, ~1231 MB RAM
 printf "HilbertModularVariety on Q(sqrt(2)), level 3*ZF...";

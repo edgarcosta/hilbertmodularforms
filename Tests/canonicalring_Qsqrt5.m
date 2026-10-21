@@ -1,3 +1,5 @@
+// Gundlach 1963 (Math. Ann. 152, 226-256), Satz 5 p.241, and Hammond 1966 (Amer. J.
+// Math. 88, 497-516), Sec. 5 p.508: the symmetric even ring is free on weights 2, 6, 10.
 printf "Testing the computation of the Canonical ring for Q(sqrt(5))...";
 
 F<nu> := QuadraticField(5);

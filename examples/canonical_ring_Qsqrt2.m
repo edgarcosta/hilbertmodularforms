@@ -6,6 +6,9 @@
 // The isomorphism is a stored witness map checked deterministically by
 // VerifyGradedIsomorphism (no version-dependent search).
 //
+// Sources: Hirzebruch 1977 (LNM 627, 287-323), Sec. 4 pp.311-316, with the correction in
+// Mueller 1983 (Math. Ann. 266, 83-103), p.99.
+//
 // Literature equation, citation, and the witness map (including the sign discussion):
 //   Verification/LiteratureEquations/2.2.8.1-1.1-Hirzebruch.m
 //

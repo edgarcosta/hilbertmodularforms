@@ -2,6 +2,9 @@
 // HilbertModularVariety end-to-end test: Q(sqrt(2)), level pp (norm 2)
 // pp is the unique prime above 2, with pp^2 = 2*ZF
 // Known: generators in weights [2,2,4,10], 1 relation in weight 20
+// Literature: van der Geer 1988 (Hilbert Modular Surfaces), VIII.2.8-2.10 pp.194-195,
+// gives the ring of the principal subgroup Gamma[2] of level (2) = pp^2. Compare the
+// even part of its invariants under the image of Gamma0(pp), a group of order 16.
 // Expected: 1 component, certified, dimension 2
 // Resources: ~10 min CPU, ~556 MB RAM
 printf "HilbertModularVariety on Q(sqrt(2)), level pp (norm 2)...";

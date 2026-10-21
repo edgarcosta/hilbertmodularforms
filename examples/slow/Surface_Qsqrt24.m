@@ -1,5 +1,8 @@
 // HilbertModularVariety end-to-end test: Q(sqrt(6)), disc=24, level 1
 // Multi-component: narrow class number h+ = 2
+// Literature: van der Geer 1978 (Math. Ann. 233, 163-179), Thms 5 and 7 pp.171-172 (SL2(O)
+// on H x H) and Thm 10 pp.175-176 (H x H^-, weights [1,2,3,4,6]). Compare after the
+// index-2 step from SL2(O) to GL2+.
 // Expected: 2 components, certified, each dimension 2
 // Resources: >10 min CPU (estimated)
 // EXCLUDED FROM CI: precompute.m L1070 row-sum assertion fails for h+=2
