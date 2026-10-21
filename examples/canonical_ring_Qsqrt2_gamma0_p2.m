@@ -1,7 +1,6 @@
 // Certify the even Gamma0(p2) invariants of van der Geer, Hilbert Modular Surfaces
 // (1988), VIII.2.9, p.195, against the stored canonical ring over Q(sqrt2).
 // Keep eval at top level: nesting it inside a procedure crashes the test runner.
-SetNthreads(4);
 J := LoadStoredCanonicalRing("2.2.8.1-2.1");
 R := Generic(J);
 assert VariableWeights(R) eq [2, 2, 4, 10];
