@@ -179,8 +179,8 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   weights). On success return true, PhiImages, PsiImages, with PhiImages the images
   phi(x_1),...,phi(x_n) of the source variables and PsiImages the images of the target
   variables under the inverse psi; the map is confirmed by VerifyGradedIsomorphism
-  before returning, so the verdict is stable across Magma versions. Returns
-  false, empty, empty if no map is found within the search.
+  before returning. Returns false, empty, empty if no map is found within the search;
+  a false result is inconclusive.
 
   This is the OFFLINE tool that PRODUCES witness maps (CI then re-checks stored maps
   with VerifyGradedIsomorphism). Method: write phi(x_i) with undetermined rational
@@ -192,17 +192,17 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   multiple of a power of x_1, can satisfy these equations in positive-dimensional
   families. To exclude them, the linear part of phi on each weight must be invertible
   (an extra unknown t_w with t_w*det - 1 = 0).
-  Fixing the whole automorphism group of the target at once is
-  intractable (the solution set is positive-dimensional). Instead we pin the diagonal
-  scalings of every single-generator variable weight EXCEPT the top-weight one (whose
-  scaling is then determined), which reduces the membership system to a
-  0-dimensional one solved by Variety in a fraction of a second; the remaining lower
-  diagonal scalings are searched over a small rational candidate set (signed powers of
-  two by default) ordered by height. Equal-weight generators (e.g. two weight-6 forms)
-  are left as a free linear block that Variety solves, so a map that permutes them (as
-  for the field of discriminant 13) is found automatically. Optional parameters:
+  We pin diagonals at single-generator weights, leaving the highest free when there
+  are at least two such weights. With none, pin the first variable's self-coefficient.
+  Search a small rational candidate set (signed powers of two by default) ordered by
+  height. Equal-weight generators are left as a free linear block.
+  Zero-dimensional pinned systems are solved by Variety. If automorphism parameters
+  remain free, specialize a maximally independent set of coordinates to 1.
+  Then try seven random specializations from 0, 1, -1, 2, -2, 1/2, -1/2. Only zero-dimensional slices
+  are solved. This randomized search can miss rational maps; every returned map is
+  certified. SetSeed makes the random specializations reproducible. Optional parameters:
   Candidates (rational values to try for each searched diagonal) and MaxAttempts (a cap
-  on the number of Variety solves). Requires I and J homogeneous with the same weights. }
+  on the number of diagonal tuples). Requires I and J homogeneous with the same weights. }
   R := Generic(I);
   require Generic(J) cmpeq R:
     "SearchGradedIsomorphism requires Generic(I) and Generic(J) to be the same ring";
@@ -314,28 +314,30 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   end function;
 
   SolvePinned := function(pins)
-    // pins: sequence of <A-index, value>; returns list of Variety points (may be empty).
-    // On a non-isomorphic or poorly-structured target this pinned membership system can be
-    // positive-dimensional, and Variety would throw "not zero-dimensional". Such a pinning
-    // yields no usable candidate map, so treat it as contributing no solutions and let the
-    // search move on; soundness is unaffected because every point that IS returned is still
-    // re-checked by VerifyGradedIsomorphism.
     Id := ideal< A | sys cat [ aa[p[1]] - p[2] : p in pins ] >;
-    if not IsZeroDimensional(Id) then
-      return [];
+    if IsZeroDimensional(Id) then
+      return Variety(Id);
     end if;
-    return Variety(Id);
+    dim, free := Dimension(Id);
+    if dim lt 0 then return []; end if;
+    // Independent coordinates have generically finite fibres, but special values can
+    // give empty or positive-dimensional slices. Retry without dropping the pins or
+    // invertibility equations; TestPoint certifies every candidate returned here.
+    values := [Q | 0,1,-1,2,-2,1/2,-1/2];
+    for trial in [1..8] do
+      slice := ideal< A | Basis(Id) cat
+        [ A.i - (trial eq 1 select Q!1 else Random(values)) : i in free ] >;
+      if IsZeroDimensional(slice) then
+        V := Variety(slice);
+        if #V gt 0 then return V; end if;
+      end if;
+    end for;
+    return [];
   end function;
 
-  // Choose which coefficients to pin/search so the membership system becomes
-  // 0-dimensional (Variety-fast). The target's automorphisms make the raw system
-  // positive-dimensional; pinning the single-generator diagonals removes almost all of
-  // it. With >= 2 single-generator weights we pin all but the top one (whose scaling is
-  // then determined by the relations) and search the rest; the searched values also fix
-  // the overall projective scale. With exactly one single-generator weight we search
-  // that one (to fix the scale). With none (all variables share weights, e.g. a plane
-  // cubic), we search the self-coefficient of the first variable to fix the scale; the
-  // remaining equal-weight block is a finite (0-dimensional) set that Variety resolves.
+  // Pin all but the highest single-generator diagonal, or the sole such diagonal.
+  // With no single-generator weight, pin the first variable's self-coefficient.
+  // SolvePinned specializes any remaining automorphism parameters.
   nsingle := #singleDiag;
   if nsingle ge 2 then
     searchIdx := singleDiag[1..nsingle-1];
