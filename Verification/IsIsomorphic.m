@@ -174,35 +174,14 @@ end intrinsic;
 
 intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], MaxAttempts := 100000)
   -> BoolElt, SeqEnum, SeqEnum
-{ Search for a graded-algebra isomorphism phi from Generic(I)/I to Generic(J)/J, where
-  Generic(I) and Generic(J) are the SAME weighted polynomial ring (identical variable
-  weights). On success return true, PhiImages, PsiImages, with PhiImages the images
-  phi(x_1),...,phi(x_n) of the source variables and PsiImages the images of the target
-  variables under the inverse psi; the map is confirmed by VerifyGradedIsomorphism
-  before returning, so the verdict is stable across Magma versions. Returns
-  false, empty, empty if no map is found within the search.
-
-  This is the OFFLINE tool that PRODUCES witness maps (CI then re-checks stored maps
-  with VerifyGradedIsomorphism). Method: write phi(x_i) with undetermined rational
-  coefficients over the weight-w_i monomials that are standard modulo a Groebner basis
-  of J (the image is only defined modulo J); impose that phi(g) lie in J for each
-  generator g of I by LINEAR ALGEBRA over Q (the functionals vanishing on J in that
-  degree applied to the coefficient vector of phi(g)), not NormalForm (which needs a
-  field base ring). Maps that are not isomorphisms, such as sending every x_i to a
-  multiple of a power of x_1, can satisfy these equations in positive-dimensional
-  families. To exclude them, the linear part of phi on each weight must be invertible
-  (an extra unknown t_w with t_w*det - 1 = 0).
-  Fixing the whole automorphism group of the target at once is
-  intractable (the solution set is positive-dimensional). Instead we pin the diagonal
-  scalings of every single-generator variable weight EXCEPT the top-weight one (whose
-  scaling is then determined), which reduces the membership system to a
-  0-dimensional one solved by Variety in a fraction of a second; the remaining lower
-  diagonal scalings are searched over a small rational candidate set (signed powers of
-  two by default) ordered by height. Equal-weight generators (e.g. two weight-6 forms)
-  are left as a free linear block that Variety solves, so a map that permutes them (as
-  for the field of discriminant 13) is found automatically. Optional parameters:
-  Candidates (rational values to try for each searched diagonal) and MaxAttempts (a cap
-  on the number of Variety solves). Requires I and J homogeneous with the same weights. }
+{A bounded-search test for a graded isomorphism from Generic(I)/I to Generic(J)/J,
+ with forward and inverse variable images on success.
+ The ambient rings must be the same weighted polynomial ring over the rationals;
+ a false result is inconclusive.
+ The parameter Candidates (default [], using signed powers 2^k for -3 <= k <= 4)
+ lists the searched diagonal values.
+ The parameter MaxAttempts (default 100000) bounds the diagonal tuples tried.
+ See also VerifyGradedIsomorphism, IsIsomorphic}
   R := Generic(I);
   require Generic(J) cmpeq R:
     "SearchGradedIsomorphism requires Generic(I) and Generic(J) to be the same ring";
@@ -249,6 +228,7 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
 
   // membership system: for each generator g of I, apply the functionals vanishing on
   // J in degree deg(g) to the coefficient vector of phi(g)
+  // NormalForm needs a field of coefficients, and phi(g) has coefficients in A.
   Jgens := [R! gj : gj in Generators(J)];
   Jdeg := [Integers()! WeightedDegree(gj) : gj in Jgens];
   sys := [];
@@ -311,28 +291,30 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   end function;
 
   SolvePinned := function(pins)
-    // pins: sequence of <A-index, value>; returns list of Variety points (may be empty).
-    // On a non-isomorphic or poorly-structured target this pinned membership system can be
-    // positive-dimensional, and Variety would throw "not zero-dimensional". Such a pinning
-    // yields no usable candidate map, so treat it as contributing no solutions and let the
-    // search move on; soundness is unaffected because every point that IS returned is still
-    // re-checked by VerifyGradedIsomorphism.
     Id := ideal< A | sys cat [ aa[p[1]] - p[2] : p in pins ] >;
-    if not IsZeroDimensional(Id) then
-      return [];
+    if IsZeroDimensional(Id) then
+      return Variety(Id);
     end if;
-    return Variety(Id);
+    dim, free := Dimension(Id);
+    if dim lt 0 then return []; end if;
+    // Independent coordinates have generically finite fibres, but special values can
+    // give empty or positive-dimensional slices. Retry without dropping the pins or
+    // invertibility equations; TestPoint certifies every candidate returned here.
+    values := [Q | 0, 1, -1, 2, -2, 1/2, -1/2];
+    for trial in [1..8] do
+      slice := ideal<A | Basis(Id) cat
+        [A.i - (trial eq 1 select Q!1 else Random(values)) : i in free]>;
+      if IsZeroDimensional(slice) then
+        V := Variety(slice);
+        if #V gt 0 then return V; end if;
+      end if;
+    end for;
+    return [];
   end function;
 
-  // Choose which coefficients to pin/search so the membership system becomes
-  // 0-dimensional (Variety-fast). The target's automorphisms make the raw system
-  // positive-dimensional; pinning the single-generator diagonals removes almost all of
-  // it. With >= 2 single-generator weights we pin all but the top one (whose scaling is
-  // then determined by the relations) and search the rest; the searched values also fix
-  // the overall projective scale. With exactly one single-generator weight we search
-  // that one (to fix the scale). With none (all variables share weights, e.g. a plane
-  // cubic), we search the self-coefficient of the first variable to fix the scale; the
-  // remaining equal-weight block is a finite (0-dimensional) set that Variety resolves.
+  // The searched values fix the projective scale. When there are two or more
+  // single-generator diagonals, the highest one is left to the relations, and
+  // SolvePinned specializes any parameters they leave free.
   nsingle := #singleDiag;
   if nsingle ge 2 then
     searchIdx := singleDiag[1..nsingle-1];
