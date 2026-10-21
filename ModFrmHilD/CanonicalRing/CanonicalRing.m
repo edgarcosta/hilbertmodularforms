@@ -1264,7 +1264,8 @@ end intrinsic;
 
 intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Is::SeqEnum[RngMPol]) -> BoolElt
   {Given a sequence Is of ideals defining graded rings, check if the sum of their Hilbert series agrees with the one coming from the trace formula (which includes all components)}
-  H_trace := HilbertSeries(M,NN);
+  // Component presentations each contribute a degree-zero constant.
+  H_trace := HilbertSeries(M, NN) + NarrowClassNumber(M) - 1;
   H_test := &+[HilbertSeries(I) : I in Is];
   vprintf HilbertModularForms: "series from trace formula = %o\n", H_trace;
   vprintf HilbertModularForms: "series from computed graded ring= %o\n", H_test;
