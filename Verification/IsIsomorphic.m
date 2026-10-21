@@ -191,6 +191,8 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   Q := Rationals();
   require BaseRing(R) cmpeq Q:
     "SearchGradedIsomorphism requires the ambient ring to be defined over the rationals";
+  // Magma algebra routines can consume random numbers even with fixed slices.
+  seed, step := GetSeed();
   n := Rank(R);
   wts := [Integers()! WeightedDegree(R.i) : i in [1..n]];
 
@@ -295,16 +297,26 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
     if IsZeroDimensional(Id) then
       return Variety(Id);
     end if;
-    dim, free := Dimension(Id);
+    dim := Dimension(Id);
     if dim lt 0 then return []; end if;
-    // Independent coordinates have generically finite fibres, but special values can
-    // give empty or positive-dimensional slices. Retry without dropping the pins or
-    // invertibility equations; TestPoint certifies every candidate returned here.
+    // Determinants can depend on high powers of torus parameters. Slicing their
+    // inverses can lose rational maps, so use map coefficients in weight order.
+    order := &cat[&cat[[offset[i] + k : k in [1..counts[i]]] : i in varsOfWt[w]] : w in wset];
     values := [Q | 0, 1, -1, 2, -2, 1/2, -1/2];
     for trial in [1..8] do
-      slice := ideal<A | Basis(Id) cat
-        [A.i - (trial eq 1 select Q!1 else Random(values)) : i in free]>;
-      if IsZeroDimensional(slice) then
+      slice := Id;
+      remaining := dim;
+      for i in order do
+        value := trial eq 1 select Q!1
+                 else values[1 + ((trial - 2 + dim - remaining) mod #values)];
+        candidate := ideal<A | Basis(slice) cat [aa[i] - value]>;
+        if Dimension(candidate) eq remaining - 1 then
+          slice := candidate;
+          remaining -:= 1;
+          if remaining eq 0 then break; end if;
+        end if;
+      end for;
+      if remaining eq 0 then
         V := Variety(slice);
         if #V gt 0 then return V; end if;
       end if;
@@ -348,8 +360,12 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
     V := SolvePinned(pins);
     for pt in V do
       ok, Phi, Psi := TestPoint(pt);
-      if ok then return true, Phi, Psi; end if;
+      if ok then
+        SetSeed(seed, step);
+        return true, Phi, Psi;
+      end if;
     end for;
   end for;
+  SetSeed(seed, step);
   return false, [R|], [R|];
 end intrinsic;
