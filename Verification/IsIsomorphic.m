@@ -188,7 +188,11 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   of J (the image is only defined modulo J); impose that phi(g) lie in J for each
   generator g of I by LINEAR ALGEBRA over Q (the functionals vanishing on J in that
   degree applied to the coefficient vector of phi(g)), not NormalForm (which needs a
-  field base ring). Fixing the whole automorphism group of the target at once is
+  field base ring). Maps that are not isomorphisms, such as sending every x_i to a
+  multiple of a power of x_1, can satisfy these equations in positive-dimensional
+  families. To exclude them, the linear part of phi on each weight must be invertible
+  (an extra unknown t_w with t_w*det - 1 = 0).
+  Fixing the whole automorphism group of the target at once is
   intractable (the solution set is positive-dimensional). Instead we pin the diagonal
   scalings of every single-generator variable weight EXCEPT the top-weight one (whose
   scaling is then determined), which reduces the membership system to a
@@ -218,7 +222,9 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
                    | m eq R.i or NormalForm(m, J) eq m] : i in [1..n]];
   counts := [#m : m in monsByVar];
   N := &+counts;
-  A := PolynomialRing(Q, N);
+  wset := Sort(SetToSequence({w : w in wts}));
+  // one extra unknown per weight, used below to force each weight block to be invertible
+  A := PolynomialRing(Q, N + #wset);
   aa := [A.i : i in [1..N]];
   RA := ChangeRing(R, A);
   PhiG := [RA | 0 : i in [1..n]];
@@ -232,7 +238,6 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
 
   // group variables by weight; single-generator weights get a "diagonal" unknown
   // (coefficient of x_i in phi(x_i)); equal-weight weights are left free
-  wset := Sort(SetToSequence({w : w in wts}));
   varsOfWt := AssociativeArray();
   for w in wset do varsOfWt[w] := [i : i in [1..n] | wts[i] eq w]; end for;
   singleDiag := [];   // A-variable indices of single-generator diagonals
@@ -272,6 +277,16 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
     pg := Evaluate(RA!(R!g), PhiG);
     cvec := [ MonomialCoefficient(pg, RA!Md[t]) : t in [1..#Md] ];
     for y in Kern do Append(~sys, &+[ (A!y[t])*cvec[t] : t in [1..#Md] ]); end for;
+  end for;
+
+  // Maps with a singular linear part on some weight block, e.g. x_i -> c_i*x_1^(w_i/2)
+  // for c on the cone over V(I), can satisfy every equation above and make each pinned
+  // system positive-dimensional. No automorphism of R has one, so exclude them with
+  // t_w*det(block_w) - 1.
+  for k in [1..#wset] do
+    vs := varsOfWt[wset[k]];
+    blk := Matrix(A, [[MonomialCoefficient(PhiG[i], RA.j) : j in vs] : i in vs]);
+    Append(~sys, A.(N+k)*Determinant(blk) - 1);
   end for;
 
   BuildPhi := function(pt)
