@@ -24,7 +24,8 @@ intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEn
   delta := F!(s@@m);
   K := ext<F | x^2-delta>;
   ff, ooff := Conductor(AbelianExtension(K));
-  if ff eq NN or (Dividing and IsIntegral(NN/ff) and &and[c in oo : c in ooff]) then
+  if (ff eq NN and Seqset(ooff) eq Seqset(oo)) or
+     (Dividing and IsIntegral(NN/ff) and &and[c in oo : c in ooff]) then
     Append(~Ks, K);
   end if;
   end for;
