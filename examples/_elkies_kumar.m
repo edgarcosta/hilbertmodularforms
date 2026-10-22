@@ -59,6 +59,29 @@ procedure check_excluded_loci(Jo, onChart, onTarget)
   end for;
 end procedure;
 
+// stored gives the stored generators on the chart X1 = 1, and chart maps stored
+// coordinates to a, b, t. They are mutually inverse between the double cover Jo and
+// the stored surface J.
+procedure check_stored_chart(J, Jo, Z, B, stored, chart)
+  K := Universe(stored);
+  for p in Basis(J) do
+    assert is_zero_on(Evaluate(p, stored), Jo);
+  end for;
+  n := #stored - 1;
+  V := PolynomialRing(Rationals(), n);
+  FV := FieldOfFractions(V);
+  point := [FV | 1] cat [FV.i : i in [1..n]];
+  JV := ideal<V | [Evaluate(p, [V | 1] cat [V.i : i in [1..n]]) : p in Basis(J)]>;
+  back := chart(point);
+  assert is_zero_on(Evaluate(Z^2 - B, back), JV);
+  for i in [2..n + 1] do
+    assert is_zero_on(Evaluate(stored[i], back) - point[i], JV);
+  end for;
+  for i in [1..3] do
+    assert is_zero_on(chart(stored)[i] - K.i, Jo);
+  end for;
+end procedure;
+
 // This order must agree with ConstructWeightedPolynomialRing(G).
 function generator_list(G)
   gens := [* *];
