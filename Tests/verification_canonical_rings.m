@@ -126,7 +126,10 @@ procedure test_stored_two_component_files()
        (-t^8 + t^6 - t^4 + t^2 - 1)/(t^6 - 3*t^4 + 3*t^2 - 1)]>,
     <28, ["1.1", "3.1"], [[2, 4, 4, 6, 6, 6, 8], [2, 2, 4, 6, 8]],
       [(-t^12 + t^10 - 2*t^8 - 2*t^4 + t^2 - 1)/(t^10 - 2*t^8 + t^6 - t^4 + 2*t^2 - 1),
-       (-t^12 - t^8 - t^4 - 1)/(t^10 - 2*t^8 + t^6 - t^4 + 2*t^2 - 1)]>
+       (-t^12 - t^8 - t^4 - 1)/(t^10 - 2*t^8 + t^6 - t^4 + 2*t^2 - 1)]>,
+    <33, ["1.1", "2.1"], [[2, 4, 4, 4, 6, 6, 6, 6, 8], [2, 2, 4, 4, 6]],
+      [(-t^8 + 2*t^6 - 4*t^4 + 2*t^2 - 1)/(t^6 - 3*t^4 + 3*t^2 - 1),
+       (-t^8 + t^6 - 2*t^4 + t^2 - 1)/(t^6 - 3*t^4 + 3*t^2 - 1)]>
   ];
   assert #stored_cases gt 0;
   for entry in stored_cases do
@@ -177,15 +180,6 @@ procedure test_stored_d12_series()
   assert [Q!row[4] : row in report] eq [series, series, 2*series];
 end procedure;
 test_stored_d12_series();
-
-missing := false;
-try
-  _ := Read("Verification/CanonicalRingEquations/2.2.33.1-1.1-gl-0.m");
-catch e
-  missing := true;
-end try;
-assert missing;
-print "UNVERIFIED D=33 MISSING";
 
 // === Cross-check: run HilbertModularVariety on Q(sqrt(13)) ===
 // Verify the output matches the stored reference equations
