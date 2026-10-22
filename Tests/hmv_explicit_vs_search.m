@@ -14,12 +14,13 @@ assert #schemes_search eq 1;
 assert Dimension(schemes_search[1]) eq 2;
 
 // Explicit-bounds mode (formerly the 4-arg overload)
-comp_data2, schemes_expl, cert2 := HilbertModularVariety(F, NN : GeneratorWeight := 8, RelationWeight := 16);
+comp_data2, schemes_expl, cert2, proofs2 := HilbertModularVariety(F, NN : GeneratorWeight := 8, RelationWeight := 16);
 // Explicit-bounds mode returns certified = false (it performs no Jacobian certification).
 // This is the distinguisher that GATES the branch: if an implementer adds the parameters but
 // forgets the explicit-bounds branch, the search path runs instead and returns certified = true,
 // so this single assertion fails. The Hilbert-series checks below would pass either way.
 assert not cert2;
+assert IsEmpty(proofs2);
 assert #schemes_expl eq 1;
 assert Dimension(schemes_expl[1]) eq 2;
 

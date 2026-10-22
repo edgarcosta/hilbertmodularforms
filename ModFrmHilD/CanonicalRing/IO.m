@@ -59,7 +59,7 @@ intrinsic WriteCanonicalRingComputationToString(F::FldNum, NN::RngOrdIdl : Alg :
   s := Sprintf("// level has label %o\n", LMFDBLabel(NN));
   s *:= Sprintf("// using %o algorithm\n", Alg);
 
-  comp_data, schemes, certified := HilbertModularVariety(F, NN : Alg := Alg);
+  comp_data, schemes, certified, domain_proofs := HilbertModularVariety(F, NN : Alg := Alg);
 
   // Stronger self-check than the Hilbert-series comparison below: assert that each stored
   // relation actually vanishes on the generator q-expansions. The series check only sees
@@ -79,12 +79,16 @@ intrinsic WriteCanonicalRingComputationToString(F::FldNum, NN::RngOrdIdl : Alg :
     G := CongruenceSubgroup("GL+", "Gamma0", F, NN, bb);
     label := LMFDBLabel(G);
     s *:= WriteCanonicalSurfaceToString(label, schemes[i]);
+    if #domain_proofs ge i then
+      proof := domain_proofs[i];
+      s *:= Sprintf("// Domain status: %o; method: %o\n", proof`Status, proof`Method);
+    end if;
   end for;
 
   if certified then
-    s *:= "// Certified: algebraic independence verified\n";
+    s *:= "// Certified: independence, domain, and Hilbert series verified\n";
   else
-    s *:= "// Warning: algebraic independence not certified\n";
+    s *:= "// Presentation not certified\n";
   end if;
   M := GradedRingOfHMFs(F, 1);
   sane, H_trace, H_test := HilbertSeriesSanityCheck(M, NN, schemes);

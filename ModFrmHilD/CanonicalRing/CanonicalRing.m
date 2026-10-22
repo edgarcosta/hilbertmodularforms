@@ -1022,6 +1022,173 @@ of level N. Generators are searched up to weight B, and relations up to weight 2
 end intrinsic;
 
 
+DomainProofFormat := recformat<
+  Ideal, Status, Method, Steps, Parameters, Point, LinearForm,
+  CharacteristicPolynomial
+>;
+
+function GradedDomainParameters(I, attempts)
+  R := Generic(I);
+  fs := [R | ];
+  J := I;
+  d := Dimension(I);
+  weights := Sort(Setseq({WeightedDegree(R.i) : i in [1..Rank(R)]}));
+  for degree in weights do
+    mons := MonomialsOfWeightedDegree(R, degree);
+    for trial in [1..attempts] do
+      f := &+[Random(-3,3)*m : m in mons];
+      K := J + ideal<R | f>;
+      if Dimension(K) eq Dimension(J)-1 then
+        Append(~fs, f);
+        J := K;
+        if #fs eq d then
+          return fs;
+        end if;
+      end if;
+    end for;
+  end for;
+  return [R | ];
+end function;
+
+intrinsic CertifyGradedDomain(I::RngMPol
+    : Parameters := [], ParameterAttempts := 4, SpecializationAttempts := 4,
+      PrimeTimeLimit := 30) -> BoolElt, Rec
+{Prove that a positive graded Q-algebra R/I is a domain. Return a boolean and
+an exact proof record tied to I, with Status "domain proved", "not a domain", or
+"domain unproved". Try factorization, complete intersection normality, and a
+Cohen-Macaulay specialization, then IsPrime in a separate Magma process with a
+PrimeTimeLimit in seconds (zero skips it). Parameters may supply a homogeneous
+system of parameters; otherwise try ParameterAttempts choices per variable weight.
+The record stores each attempted criterion and its evidence.}
+  R := Generic(I);
+  require BaseRing(R) cmpeq Rationals() : "Expected a polynomial ring over Q";
+  require &and[WeightedDegree(R.i) gt 0 : i in [1..Rank(R)]] and IsHomogeneous(I) :
+    "Expected a positive graded homogeneous ideal";
+  require Type(ParameterAttempts) eq RngIntElt and ParameterAttempts ge 0 and
+      Type(SpecializationAttempts) eq RngIntElt and SpecializationAttempts ge 0 and
+      Type(PrimeTimeLimit) eq RngIntElt and PrimeTimeLimit ge 0 :
+    "Expected nonnegative attempt counts and an integer time limit";
+  proof := rec<DomainProofFormat | Ideal := I, Status := "domain unproved",
+      Method := "", Steps := [* *], Parameters := [R | ], Point := []>;
+  if 1 in I then
+    proof`Status := "not a domain";
+    Append(~proof`Steps, <"proper ideal", "failed", 1>);
+    return false, proof;
+  end if;
+  rels := MinimalBasis(Scheme(AffineSpace(R), Basis(I)));
+  if #rels eq 0 then
+    proof`Status := "domain proved";
+    proof`Method := "polynomial ring";
+    Append(~proof`Steps, <"polynomial ring", "proved", 0>);
+    return true, proof;
+  end if;
+  if #rels eq 1 then
+    factors := Factorization(rels[1]);
+    proved := #factors eq 1 and factors[1][2] eq 1;
+    proof`Status := proved select "domain proved" else "not a domain";
+    proof`Method := "hypersurface factorization";
+    Append(~proof`Steps, <proof`Method, proof`Status, factors>);
+    return proved, proof;
+  end if;
+  Append(~proof`Steps, <"hypersurface factorization", "not applicable", #rels>);
+
+  d := Dimension(I);
+  c := Rank(R)-d;
+  if #rels eq c then
+    J := JacobianMatrix(rels);
+    singular := I + ideal<R | Minors(J,c)>;
+    sdim := Dimension(singular);
+    Append(~proof`Steps, <"complete intersection normality", "singular locus dimension", sdim>);
+    // A complete intersection is S2. R1 gives normality, and positive grading
+    // with degree-zero part Q makes a normal ring connected, hence a domain.
+    if sdim le d-2 then
+      proof`Status := "domain proved";
+      proof`Method := "complete intersection normality";
+      return true, proof;
+    end if;
+  else
+    Append(~proof`Steps, <"complete intersection normality", "not applicable", <#rels,c>>);
+  end if;
+
+  fs := [R | f : f in Parameters];
+  require #fs eq 0 or (#fs eq d and &and[f ne 0 and IsHomogeneous(f) and
+      WeightedDegree(f) gt 0 : f in fs]) : "Expected a homogeneous system of parameters";
+  if #fs eq 0 and ParameterAttempts gt 0 then
+    fs := GradedDomainParameters(I, ParameterAttempts);
+  end if;
+  proof`Parameters := fs;
+  if #fs eq d and d gt 0 then
+    J := I + ideal<R | fs>;
+    finite := Dimension(J) eq 0;
+    Append(~proof`Steps, <"homogeneous parameters", "finite quotient", finite>);
+    if finite then
+      H := HilbertSeries(I);
+      t := Parent(H).1;
+      target := H * &*[1-t^WeightedDegree(f) : f in fs];
+      HJ := HilbertSeries(J);
+      cm := HJ eq target;
+      Append(~proof`Steps, <"Cohen-Macaulay Hilbert series", "identity", <HJ,target,cm>>);
+      if cm then
+        r := Dimension(quo<R | J>);
+        for trial in [1..SpecializationAttempts] do
+          point := [Rationals() | Random(1,7) : f in fs];
+          fiber := quo<R | I + ideal<R | [fs[i]-point[i] : i in [1..d]]>>;
+          if not HasFiniteDimension(fiber) or Dimension(fiber) ne r then
+            Append(~proof`Steps, <"specialization", "fiber rank mismatch", point>);
+            continue;
+          end if;
+          y := &+[Random(-3,3)*R.i : i in [1..Rank(R)]];
+          chi := CharacteristicPolynomial(RepresentationMatrix(fiber!y));
+          irreducible := IsIrreducible(chi);
+          Append(~proof`Steps, <"specialization", "irreducible characteristic polynomial",
+              <point,y,chi,irreducible>>);
+          // The Hilbert-series identity makes A free over Q[fs]. A monic
+          // generic factorization would specialize to a factorization of chi.
+          if irreducible then
+            proof`Status := "domain proved";
+            proof`Method := "Cohen-Macaulay specialization";
+            proof`Point := point;
+            proof`LinearForm := y;
+            proof`CharacteristicPolynomial := chi;
+            return true, proof;
+          end if;
+        end for;
+      end if;
+    end if;
+  else
+    Append(~proof`Steps, <"homogeneous parameters", "not found", ParameterAttempts>);
+  end if;
+
+  if PrimeTimeLimit eq 0 then
+    Append(~proof`Steps, <"IsPrime", "budget exhausted", PrimeTimeLimit>);
+    return false, proof;
+  end if;
+  // Alarm terminates its process. Keep it in a child so expiry cannot kill
+  // the caller or turn an unfinished primality computation into a certificate.
+  input := Sprintf("Alarm(%o); SetNthreads(1); R<[x]> := %m; I := ideal<R | %m>;\n",
+      PrimeTimeLimit, R, rels);
+  input cat:= "if IsPrime(I) then print \"HMF_DOMAIN_PRIME\"; else print \"HMF_DOMAIN_COMPOSITE\"; end if; quit;\n";
+  try
+    output := Split(Pipe("magma -b", input), "\n");
+  catch e
+    output := [Sprint(e)];
+  end try;
+  if "HMF_DOMAIN_PRIME" in output then
+    proof`Status := "domain proved";
+    proof`Method := "IsPrime";
+    Append(~proof`Steps, <"IsPrime", "proved", PrimeTimeLimit>);
+    return true, proof;
+  elif "HMF_DOMAIN_COMPOSITE" in output then
+    proof`Status := "not a domain";
+    proof`Method := "IsPrime";
+    Append(~proof`Steps, <"IsPrime", "not a domain", PrimeTimeLimit>);
+  else
+    Append(~proof`Steps, <"IsPrime", "no result within budget", <PrimeTimeLimit,output>>);
+  end if;
+  return false, proof;
+end intrinsic;
+
+
 intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl
     : MaxB := 100, Alg := "Standard",
       NumberOfTraceForms := 0,
@@ -1032,15 +1199,17 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl
       ComputeNewGenerators := true,
       Precision := 100,
       PrecomputedGens := AssociativeArray(),
-      IdealClassesSupport := false) -> Assoc, SeqEnum, BoolElt
+      IdealClassesSupport := false,
+      DomainPrimeTimeLimit := 30) -> Assoc, SeqEnum, BoolElt, SeqEnum
 {Compute the graded ring of Hilbert modular forms of level N over F using Algorithm 1
 from the paper. The algorithm iterates over increasing weight bounds B:
 
 Phase 1: Find B_0 where the sum of per-component Hilbert series (from the computed
 presentation) matches the trace formula Hilbert series.
 
-Phase 2: Certify the presentation by finding n+1 algebraically independent elements
-(where n = [F:Q]) on each component via a Jacobian determinant check.
+Phase 2: Find n+1 algebraically independent elements (where n = [F:Q]) on each
+component via a Jacobian determinant check. Certify only if each component ideal is
+prime and the final Hilbert series agrees with the trace formula.
 
 If GeneratorWeight is set (nonzero), the algorithm skips the B-search and computes a
 presentation directly at the given GeneratorWeight/RelationWeight bounds per component,
@@ -1049,8 +1218,14 @@ returning certified = false (no Jacobian certification is performed in this mode
 Returns:
   comp_data - an associative array mapping component ideal bb to <Gens, Relations, Monomials>,
   schemes   - a sequence of schemes (one per component),
-  certified - whether the algebraic independence check passed.}
+  certified - whether algebraic independence, primality of each component ideal,
+              and agreement with the trace formula Hilbert series were verified,
+  domain_proofs - exact per-component domain records from CertifyGradedDomain.
+DomainPrimeTimeLimit bounds each fallback IsPrime call in seconds; zero skips it.
+An unproved domain returns certified = false and the available proof records.}
 
+  require Type(DomainPrimeTimeLimit) eq RngIntElt and DomainPrimeTimeLimit ge 0 :
+    "Expected a nonnegative integer DomainPrimeTimeLimit";
   n := Degree(F);
   ZF := Integers(F);
 
@@ -1078,7 +1253,7 @@ Returns:
       comp_data[bb] := dict;
       Append(~schemes, MakeScheme(dict[1], dict[2]));
     end for;
-    return comp_data, schemes, false;
+    return comp_data, schemes, false, [];
   end if;
 
   // PHASE 1: Find B_0 where Hilbert series matches
@@ -1134,6 +1309,8 @@ Returns:
     Append(~schemes, S);
   end for;
 
+  domain_proofs := [];
+
   // PHASE 2: Certify via algebraic independence (Jacobian check)
   for B := B_0 to MaxB by 2 do
     vprintf HilbertModularForms : "HilbertModularVariety Phase 2: B = %o\n", B;
@@ -1157,6 +1334,7 @@ Returns:
       end for;
     end if;
 
+    domain_proofs := [];
     all_certified := true;
     for bb in comps do
       if not CertifyAlgIndependent(comp_data[bb][1], comp_data[bb][2], n + 1
@@ -1168,13 +1346,35 @@ Returns:
     end for;
 
     if all_certified then
+      sane, H_trace, H_test := HilbertSeriesSanityCheck(M, N, schemes);
+      if not sane then
+        vprintf HilbertModularForms : "HilbertModularVariety Phase 2: HS mismatch at B = %o\n", B;
+        vprintf HilbertModularForms : "  trace formula: %o\n", H_trace;
+        vprintf HilbertModularForms : "  computed:      %o\n", H_test;
+        continue;
+      end if;
+
+      domain_proofs := [];
+      for S in schemes do
+        proved, proof := CertifyGradedDomain(Ideal(S) : PrimeTimeLimit := DomainPrimeTimeLimit);
+        Append(~domain_proofs, proof);
+        vprintf HilbertModularForms : "HilbertModularVariety: %o (%o) at B = %o\n",
+            proof`Status, proof`Method, B;
+        all_certified and:= proved;
+      end for;
+      if exists{p : p in domain_proofs | p`Status eq "domain unproved"} then
+        return comp_data, schemes, false, domain_proofs;
+      end if;
+    end if;
+
+    if all_certified then
       vprintf HilbertModularForms : "HilbertModularVariety Phase 2 complete: certified at B = %o\n", B;
-      return comp_data, schemes, true;
+      return comp_data, schemes, true, domain_proofs;
     end if;
   end for;
 
-  vprintf HilbertModularForms : "HilbertModularVariety: could not certify algebraic independence up to MaxB = %o\n", MaxB;
-  return comp_data, schemes, false;
+  vprintf HilbertModularForms : "HilbertModularVariety: could not certify the presentation up to MaxB = %o\n", MaxB;
+  return comp_data, schemes, false, domain_proofs;
 end intrinsic;
 
 
