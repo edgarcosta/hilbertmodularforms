@@ -70,6 +70,24 @@ function generator_list(G)
   return gens;
 end function;
 
+// coordinateMap carries the stored generators into the recomputed ring.
+// Verify the presentation before evaluating it on modular forms.
+function stored_generators(J, G, RG, relations, coordinateMap)
+  coordinateMap := [RG | RG!p : p in coordinateMap];
+  assert VerifyGradedIsomorphism(J, ConstructIdeal(RG, relations), coordinateMap,
+    GradedInverseImages(RG, coordinateMap));
+  gens := generator_list(G);
+  stored := AssociativeArray();
+  for p in coordinateMap do
+    k := WeightedDegree(p);
+    if not IsDefined(stored, k) then
+      stored[k] := [];
+    end if;
+    Append(~stored[k], Evaluate(p, gens));
+  end for;
+  return stored;
+end function;
+
 // For each k in weights, the weight-k monomials in G have rank dim M_k on the
 // q-expansions of M. So they span M_k, and the precision of M separates its forms.
 procedure check_monomial_ranks(M, G, RG, weights)
