@@ -19,6 +19,7 @@ fail the row-sum assertion in `precompute_tps` (`ModFrmHil/precompute.m`).
 | D=5 | Q(sqrt 5) canonical ring vs Gundlach/Hirzebruch, deterministic witness map | `canonical_ring_Qsqrt5.m` | CI |
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch double cover (rational sign c^2 = -C), deterministic witness map | `canonical_ring_Qsqrt2.m` | CI |
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier, deterministic witness map | `canonical_ring_Qsqrt13.m` | CI |
+| Elkies-Kumar, D=5 | Q(sqrt 5) level 1 vs Elkies-Kumar's Y_-(5): function fields isomorphic over Q, Siegel pullbacks give their Igusa-Clebsch map | `slow/elkies_kumar_D5.m` | nightly |
 | heavy cases (D=12,21 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | nightly |
 | known h+=2 failures (D=24,28,33) | end-to-end recompute | `slow/_Surface_Qsqrt*.m` | skipped |
 
