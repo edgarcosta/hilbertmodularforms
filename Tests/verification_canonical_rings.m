@@ -165,7 +165,7 @@ for entry in stored_cases do
   stored_certified := sane and &and guards;
   assert guards eq (D eq 12 select [false, false] else [true, true]);
   assert stored_certified eq (verdict eq "PASS");
-  if D eq 21 then
+  if D in {21, 24} then
     assert stored_certified and singleton_series[1] ne singleton_series[2];
     swapped := [<labels[1], components[2][2]>, <labels[2], components[1][2]>];
     swapped_sane, swapped_report := VerifyCanonicalRingComponents(label, swapped);
