@@ -25,6 +25,7 @@ fail the row-sum assertion in `precompute_tps` (`ModFrmHil/precompute.m`).
 | Elkies-Kumar, D=17 | Q(sqrt 17) level 1 vs Elkies-Kumar's Y_-(17): function fields isomorphic over Q, Siegel pullbacks give their Igusa-Clebsch map | `elkies_kumar_D17.m` | CI |
 | Elkies-Kumar, D=29 | Q(sqrt 29) level 1 vs Elkies-Kumar's Y_-(29): function fields isomorphic over Q, Siegel pullbacks give their Igusa-Clebsch map | `elkies_kumar_D29.m` | CI |
 | Elkies-Kumar, D=37 | Q(sqrt 37) level 1 vs Elkies-Kumar's Y_-(37): function fields isomorphic over Q, Siegel pullbacks give their Igusa-Clebsch map | `elkies_kumar_D37.m` | CI |
+| Elkies-Kumar, D=41 | Q(sqrt 41) level 1 vs Elkies-Kumar's Y_-(41): function fields isomorphic over Q, Siegel pullbacks give their Igusa-Clebsch map | `slow/elkies_kumar_D41.m` | nightly |
 | heavy cases (D=12,21 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | nightly |
 | known h+=2 failures (D=24,28,33) | end-to-end recompute | `slow/_Surface_Qsqrt*.m` | skipped |
 
