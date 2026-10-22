@@ -1,18 +1,21 @@
 // Algebraic certificate for the Theorem 5 invariant candidate and stored component 1.1.
 // Source: G. van der Geer, "Hilbert Modular Forms for the Field Q(sqrt(6))",
 // Math. Ann. 233 (1978), 163-179, Theorem 5 and equations (8), (9), pp. 171-172.
+
 // The candidate fixes a,u,b and negates v,d in that presentation.
 // Its geometric identification with the GL+ determinant-unit action is unproved.
+
 // Here a=sigma_2, u=t^2, b=sigma_3, v=Delta*t, d=delta. The generators are
 // [a*u/b, a, u, u^3/b, b, d*v*u/b^2, d*v/b], of weights [2,4,4,6,6,8,10].
 // The ideal is obtained by saturated elimination of the two published equations.
+
 // Theorem 7 as printed omits d*a/b and d*u/b in weight 6 (dimension 6 vs 8);
 // this even-weight certificate uses Theorem 5.
 LitData := function(Rsrc, Rtgt)
   assert VariableWeights(Rsrc) eq [2,4,4,6,6,8,10];
   assert VariableWeights(Rtgt) eq [2,4,4,6,6,8,10];
   x := [Rsrc.i : i in [1..7]];
-I := ideal<R | [
+I := ideal<Rsrc | [
 x[6]^5 - 16*x[1]^6*x[4]^3*x[7] - 216*x[1]^3*x[4]^4*x[7] - 729*x[4]^5*x[7] - 48*x[1]^10*x[3]*x[5]*x[7] - 64*x[1]^9*x[4]*x[5]*x[7] - 464*x[1]^6*x[4]^2*x[5]*x[7] - 59049/4*x[1]*x[3]*x[4]^3*x[5]*x[7] + 1458*x[4]^4*x[5]*x[7] - 248*x[1]^9*x[5]^2*x[7] + 200*x[1]*x[2]^4*x[5]^2*x[7] + 6286*x[1]^7*x[3]*x[5]^2*x[7] + 7015*x[1]^6*x[4]*x[5]^2*x[7] + 399313/12*x[1]^3*x[4]^2*x[5]^2*x[7] - 2291247/8*x[1]*x[3]*x[4]^2*x[5]^2*x[7] - 171279*x[4]^3*x[5]^2*x[7] + 102335/6*x[1]^6*x[5]^3*x[7] - 69515/6*x[1]^2*x[2]^2*x[5]^3*x[7] - 74969/2*x[1]^4*x[3]*x[5]^3*x[7] + 621139/8*x[1]^3*x[4]*x[5]^3*x[7] - 2024163/8*x[1]*x[3]*x[4]*x[5]^3*x[7] - 2024163/8*x[4]^2*x[5]^3*x[7] - 70715/6*x[1]^3*x[5]^4*x[7] + 1350*x[1]*x[2]*x[5]^4*x[7] - 625635/8*x[1]*x[3]*x[5]^4*x[7] - 636435/8*x[4]*x[5]^4*x[7] - 8*x[1]^5*x[3]*x[6]^2*x[7] + 16*x[1]^4*x[4]*x[6]^2*x[7] - 54*x[1]^2*x[3]*x[4]*x[6]^2*x[7] + 108*x[1]*x[4]^2*x[6]^2*x[7] - 46*x[1]^4*x[3]*x[6]*x[7]^2 + 108*x[1]^3*x[4]*x[6]*x[7]^2 - 2835/4*x[1]*x[3]*x[4]*x[6]*x[7]^2 + 108*x[4]^2*x[6]*x[7]^2 + 50*x[1]^3*x[3]*x[7]^3 + 2835/2*x[1]^2*x[4]*x[7]^3 + 69515/24*x[2]*x[4]*x[7]^3 - 19274/3*x[3]*x[4]*x[7]^3 - 50*x[1]^2*x[5]*x[7]^3 + 50*x[2]*x[5]*x[7]^3 - 70715/24*x[3]*x[5]*x[7]^3,
 x[1]^3*x[4]^3*x[5] + 27/4*x[4]^4*x[5] + 3*x[1]^7*x[3]*x[5]^2 + 4*x[1]^6*x[4]*x[5]^2 + 31/2*x[1]^3*x[4]^2*x[5]^2 - 2187/16*x[1]*x[3]*x[4]^2*x[5]^2 - 621/8*x[4]^3*x[5]^2 + 35/4*x[1]^6*x[5]^3 - 23/4*x[1]^2*x[2]^2*x[5]^3 - 73/4*x[1]^4*x[3]*x[5]^3 + 653/16*x[1]^3*x[4]*x[5]^3 - 1971/16*x[1]*x[3]*x[4]*x[5]^3 - 1971/16*x[4]^2*x[5]^3 - 23/4*x[1]^3*x[5]^4 - 621/16*x[1]*x[3]*x[5]^4 - 621/16*x[4]*x[5]^4 - 1/2*x[1]*x[3]*x[4]*x[6]*x[7] + 1/4*x[4]^2*x[6]*x[7] + 3/4*x[1]^2*x[4]*x[7]^2 + 23/16*x[2]*x[4]*x[7]^2 - 25/8*x[3]*x[4]*x[7]^2 - 23/16*x[3]*x[5]*x[7]^2,
 x[3]*x[6]^3 + 6*x[1]^4*x[3]*x[4]*x[7] + 4*x[1]^3*x[4]^2*x[7] + 81/2*x[1]*x[3]*x[4]^2*x[7] + 27*x[4]^3*x[7] - 2*x[1]^6*x[5]*x[7] + 2*x[1]^2*x[2]^2*x[5]*x[7] + 6*x[1]^4*x[3]*x[5]*x[7] - 15/2*x[1]^3*x[4]*x[5]*x[7] + 81/2*x[1]*x[3]*x[4]*x[5]*x[7] + 81/2*x[4]^2*x[5]*x[7] + 2*x[1]^3*x[5]^2*x[7] + 27/2*x[1]*x[3]*x[5]^2*x[7] + 27/2*x[4]*x[5]^2*x[7] - 1/2*x[1]*x[6]^2*x[7] + 1/2*x[6]*x[7]^2,
