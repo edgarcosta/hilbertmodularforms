@@ -19,6 +19,8 @@ fail the row-sum assertion in `precompute_tps` (`ModFrmHil/precompute.m`).
 | D=5 | Q(sqrt 5) canonical ring vs Gundlach/Hirzebruch, deterministic witness map | `canonical_ring_Qsqrt5.m` | CI |
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch double cover (rational sign c^2 = -C), deterministic witness map | `canonical_ring_Qsqrt2.m` | CI |
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier, deterministic witness map | `canonical_ring_Qsqrt13.m` | CI |
+| D=24, component 1.1 | Theorem 5 algebraic comparison under an assumed sign action | `canonical_ring_Qsqrt6.m` | CI |
+| D=24, component 2.1 | Corrected and twisted Theorem 10 algebraic comparison under an assumed sign action | `canonical_ring_Qsqrt6_comparison.m` | CI |
 | heavy cases (D=12,21 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | nightly |
 | known h+=2 failures (D=24,28,33) | end-to-end recompute | `slow/_Surface_Qsqrt*.m` | skipped |
 
@@ -40,7 +42,9 @@ generated certification. D=12 remains scrambled and awaits regeneration.
 Series agreement alone does not certify equation provenance or a literature
 isomorphism.
 
-No literature witness for D=12 or D=24 is included.
+No literature witness for D=12 is included.
+The D=24 examples compare the stored components with algebraic candidates.
+The sign actions and rational descent are assumptions, not geometric identifications.
 There is no level-1 literature witness here for D=21, D=28 or D=33.
 
 ## numerical-invariants paper (LuCaNT)
