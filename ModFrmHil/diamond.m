@@ -104,9 +104,10 @@ function operator(M, p, op)
       _ := WeightRepresentation(M);
     end if;
 
-    if not assigned M`hecke_matrix_field then
-      M`hecke_matrix_field := hecke_matrix_field(M);
-    end if;
+    // Do NOT eagerly set M`hecke_matrix_field here: for nonparitious indefinite
+    // weight it builds a fresh K(Sqrt(z)) distinct from the one baked into
+    // M`basis_matrix, so the tail coercion would fail on mismatched field objects.
+    // SetRationalBasis performs the proper parity-gated descent later.
 
     Gamma := FuchsianGroup(QuaternionOrder(M));
     if Type(N) eq RngInt then
