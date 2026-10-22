@@ -110,9 +110,10 @@ function change_hecke_matrix_ring(M, T, H)
     return T;
   end if;
 
-  // Paritious weights pin the descent conjugate via the marked places; nonparitious
-  // weights use the stored minimal_hecke_field_emb preimage.
-  if is_paritious(Weight(M)) then
+  // Paritious weights, and the definite method in any weight, pin the descent conjugate
+  // via the marked places; only indefinite-nonparitious spaces use the stored
+  // minimal_hecke_field_emb preimage (the K(Sqrt(z)) +/- convention is indefinite-only).
+  if is_paritious(Weight(M)) or IsDefinite(M) then
     K := BaseRing(T);
     if H cmpeq Rationals() or K cmpeq Rationals() then
       // Q on either side: no conjugate ambiguity.
@@ -155,7 +156,7 @@ function change_hecke_polynomial_ring(M, f, H)
   end if;
 
   // See change_hecke_matrix_ring above.
-  if is_paritious(Weight(M)) then
+  if is_paritious(Weight(M)) or IsDefinite(M) then
     K := BaseRing(f);
     if H cmpeq Rationals() or K cmpeq Rationals() then
       bool, fH := CanChangeRing(f, H);

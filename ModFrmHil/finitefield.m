@@ -299,7 +299,7 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
     K := hecke_matrix_field(M); // Hecke matrices should be over this, currently
 
     T, primes, v, _, P, t, comb := Explode(hecke_algebra(M : generator));
-    if is_paritious(Weight(M)) then
+    if is_paritious(Weight(M)) or IsDefinite(M) then
       assert BaseRing(t) eq K;
     else
       assert IsSubfield(BaseRing(t), K);
@@ -466,11 +466,12 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
         N`Dimension := Nrows(kmat);
         // Anchor the component to the raw top ambient MA and coerce its basis up to
         // MA's field with the conjugate that matches the descent in
-        // change_hecke_matrix_ring, gated on the same is_paritious predicate so the
-        // multi-orbit operators commute: paritious pins it via the marked places
-        // (strong_up_matrix); nonparitious keeps the K(Sqrt(z)) square class of
-        // minimal_hecke_field_emb, which plain ChangeRing carries.
-        parit := is_paritious(Weight(M));
+        // change_hecke_matrix_ring, gated on the same predicate so the multi-orbit
+        // operators commute: paritious (and the definite method in any weight) pin it
+        // via the marked places (strong_up_matrix); only indefinite-nonparitious keeps
+        // the K(Sqrt(z)) square class of minimal_hecke_field_emb, which plain ChangeRing
+        // carries.
+        parit := is_paritious(Weight(M)) or IsDefinite(M);
         if assigned M`basis_matrix_wrt_ambient then
           A := M`basis_matrix_wrt_ambient;
           Ai := M`basis_matrix_wrt_ambient_inv;
