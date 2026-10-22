@@ -284,10 +284,12 @@ end intrinsic;
 
 intrinsic VerifyCanonicalRingComponents(label::MonStgElt, components::SeqEnum)
     -> BoolElt, SeqEnum
-{ Compare the Hilbert series of <component label, ideal> pairs with the requested
-  field-level label. Require exactly one pair per narrow ideal class. Return a
-  boolean and <label, sane, H_trace, H_test> rows in input order, followed by "all".
-  Series agreement is separate from equation provenance and literature isomorphism. }
+{Whether the component Hilbert series match the dimension formula for the
+field-level label, and <label, sane, H_trace, H_test> rows in input order
+followed by their sum in an "all" row.
+The sequence components contains one <component label, homogeneous ideal> pair
+per narrow ideal class.
+See also LoadStoredCanonicalRings, HilbertSeriesSanityCheck}
   parts := Split(label, "-");
   require #parts eq 2: "Expected a field-level label";
   F := LMFDBField(parts[1]);
