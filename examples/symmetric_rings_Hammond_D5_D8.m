@@ -16,6 +16,7 @@ for i in [1..2] do
     L, phi, psi, fullCitation := LitData(R,R);
     assert VerifyGradedIsomorphism(L,J,phi,psi);
 
+    // Hirzebruch's fourth generator is skew (weight 20 for D=5, 14 for D=8).
     litTau := [R.1,R.2,R.3,-R.4];
     assert VerifyGradedIsomorphism(L,L,litTau,litTau);
     tau := [Evaluate(Evaluate(f,litTau),phi) : f in psi];

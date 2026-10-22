@@ -5,8 +5,8 @@
 // level-one rings for SL_2(O), with actual parallel weights as degrees.
 // Symmetric means f(z2,z1)=f(z1,z2), without a weight sign (Definition 1.2, p. 499).
 
-// Hammond uses Siegel restriction: h2, G6*, (theta^2)* for D=5, and
-// h2, (theta_2*)^2, G6* for D=8, ordered here by weight. The last theta
+// Hammond uses h2 alongside the Siegel restrictions G6*, (theta^2)* for D=5,
+// and (theta_2*)^2, G6* for D=8, ordered here by weight. The last theta
 // expression in each field generates the ideal of diagonal-vanishing forms.
 // His diagonal normalizations are h2*=g4 and (G6*)*=g6^2 (p. 507).
 
