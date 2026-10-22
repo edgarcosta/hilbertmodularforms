@@ -280,7 +280,13 @@ intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
     if not IsIsomorphic(K, L) then
       return false, _;
     end if;
-    return true, L!x;
+    // L!x can still throw for independently-constructed isomorphic fields;
+    // only trust it when it succeeds, otherwise fall through to root-matching.
+    try
+      return true, L!x;
+    catch e
+      coerce_failed := true;
+    end try;
   end if;
 
   // NB: we deliberately do NOT use Magma's built-in `IsCoercible(L, x)`/`L!x`
