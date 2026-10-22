@@ -456,7 +456,6 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
         if assigned M`hecke_matrix_field then
           N`hecke_matrix_field := M`hecke_matrix_field;
         end if;
-        field := hecke_matrix_field(N`Ambient);
         if #components eq 1 then
           pseudo_inv := kmat ^ -1;
         else
