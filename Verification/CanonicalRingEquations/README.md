@@ -86,8 +86,8 @@ regeneration or historical exporter certificates.
 | 28 | 1.1, 3.1 | stored-series | `705c8e5e516784e237cfb6982b18bba6b4f84babc74d84a04981966f9c3fe885` |
 | 33 | pending | MISSING: generation awaits a working route past the Magma assertion at precompute.m:1064 | none |
 
-The historical `STALE` headers and `// Sanity check failed!` lines in the stored
-h+=2 files predate the Hilbert-series fix for h+>1 and are inaccurate.
+The Hilbert-series failure claims in the historical `STALE` headers and
+`// Sanity check failed!` lines predate the Hilbert-series fix for h+>1 and are inaccurate.
 The old comparison omitted component constants. The equation files remain
 unchanged because literature data on another branch bind their SHA256 hashes.
 The ordered recheck determines their current status; D=12's structural failure
