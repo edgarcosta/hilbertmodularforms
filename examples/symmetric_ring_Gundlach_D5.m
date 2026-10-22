@@ -1,7 +1,6 @@
 // Gundlach, Math. Ann. 152 (1963), Satz 5-6, p.241: the abstract rational
 // presentation of the symmetric even ring for SL2(O_Q(sqrt5)).
 // The stored map does not identify his G_{-2}, G_{-6}, or Theta^2.
-// Geometric action evidence is retained in the symmetric-subring handoff.
 SetNthreads(4);
 H<t> := FunctionField(Rationals());
 expected := 1/((1-t^2)*(1-t^6)*(1-t^10));
