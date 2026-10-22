@@ -21,9 +21,9 @@ match the trace formula prediction from `HilbertSeries(M, NN)`.
 | `2.2.13.1-3.1-gl-0.m` | Q(sqrt(13)) | 3.1 | 1 |
 | `2.2.13.1-4.1-gl-0.m` | Q(sqrt(13)) | 4.1 | 1 |
 | `2.2.17.1-1.1-gl-0.m` | Q(sqrt(17)) | 1 | 1 |
-| `2.2.21.1-1.1-gl-0.m` | Q(sqrt(21)) | 1 | 2 (1.1, 3.1; stored-series only; historical STALE header; regen >4h / 50 GB) |
-| `2.2.24.1-1.1-gl-0.m` | Q(sqrt(6)) | 1 | 2 (1.1, 2.1; stored-series only; historical STALE header; historical precompute.m:1064 blocker) |
-| `2.2.28.1-1.1-gl-0.m` | Q(sqrt(7)) | 1 | 2 (1.1, 3.1; stored-series only; historical STALE header; historical precompute.m:1064 blocker) |
+| `2.2.21.1-1.1-gl-0.m` | Q(sqrt(21)) | 1 | 2 (1.1, 3.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration: >4h / 50 GB. |
+| `2.2.24.1-1.1-gl-0.m` | Q(sqrt(6)) | 1 | 2 (1.1, 2.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration blocker: precompute.m:1064. |
+| `2.2.28.1-1.1-gl-0.m` | Q(sqrt(7)) | 1 | 2 (1.1, 3.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration blocker: precompute.m:1064. |
 | `2.2.29.1-1.1-gl-0.m` | Q(sqrt(29)) | 1 | 1 |
 | `2.2.37.1-1.1-gl-0.m` | Q(sqrt(37)) | 1 | 1 |
 | `2.2.41.1-1.1-gl-0.m` | Q(sqrt(41)) | 1 | 1 |
