@@ -6,6 +6,8 @@
 // Here a=sigma_2, u=t^2, b=sigma_3, v=Delta*t, d=delta. The generators are
 // [a*u/b, a, u, u^3/b, b, d*v*u/b^2, d*v/b], of weights [2,4,4,6,6,8,10].
 // The ideal is obtained by saturated elimination of the two published equations.
+// Theorem 7 as printed omits d*a/b and d*u/b in weight 6 (dimension 6 vs 8);
+// this even-weight certificate uses Theorem 5.
 LitData := function(Rsrc, Rtgt)
   assert VariableWeights(Rsrc) eq [2,4,4,6,6,8,10];
   assert VariableWeights(Rtgt) eq [2,4,4,6,6,8,10];
