@@ -108,14 +108,16 @@ The **descent** (big → minimal) is where the subtlety lives.
 ## 3. The descent coercion: `change_hecke_matrix_ring` (hecke.m)
 
 Called from `operator()` (`diamond.m`) and `SetRationalBasis` to push a Hecke matrix `T` from its
-current (big) ring into `H` (minimal). It is **parity-gated**:
+current (big) ring into `H` (minimal). It is **gated on `is_paritious(Weight(M)) or IsDefinite(M)`**
+— the definite method descends like paritious (via the marked places); only the
+**indefinite-nonparitious** K(√z) case uses the stored `minimal_hecke_field_emb`:
 
 ```
-if is_paritious(Weight(M)) then
+if is_paritious(Weight(M)) or IsDefinite(M) then
     // build the marked-place-consistent embedding ONCE and descend by preimage:
     emb := strong_descent_emb(M, H, BaseRing(T));   // = hom<H -> K | StrongCoerce(K, H.1)>, cached
     return [ x @@ emb : x in Eltseq(T) ];           // + per-element-StrongCoerce + CanChangeRing fallbacks
-else (nonparitious)
+else (indefinite nonparitious only)
     return [ x @@ M`minimal_hecke_field_emb : x in Eltseq(T) ]   // the stored embedding's preimage
 ```
 
@@ -125,8 +127,10 @@ else (nonparitious)
   producing **non-commuting** descended operators on the harder cases. Pinning the conjugate via the
   marked places (StrongCoerce) fixes it. (Empirically: at `f9fcfcc2` plain `@@emb` passes the
   quadratic product test but **fails** the cubic one.)
-- For **nonparitious** spaces, StrongCoerce picks the **wrong** conjugate (§5 — the k₀ place), while
-  `x @@ minimal_hecke_field_emb` is correct. StrongCoerce is also ~20× slower there.
+- For **indefinite nonparitious** spaces, StrongCoerce picks the **wrong** conjugate (§5 — the k₀
+  place), while `x @@ minimal_hecke_field_emb` is correct. StrongCoerce is also ~20× slower there.
+  The **definite** method (even in nonparitious weight) has no K(√z) and descends correctly via the
+  marked places, so it takes the first branch — hence the `or IsDefinite(M)` in the gate.
 
 **Performance note (how the paritious branch is written):** the conjugate pinning *was* a
 per-element `StrongCoerce` (each call does `Roots` over the target field and populates the element
@@ -342,14 +346,16 @@ two things:
   nebentypus conductor); **do not assume a given `(k,χ)` "is" definite or indefinite without
   checking `IsDefinite`.**
 
-- **The §5 `K(√z)` / ±-involution machinery is indefinite-only.** So the `(2,2,3)+χ` cubic test is
-  *indefinite* (verified `IsDefinite=false`) and is the one nonparitious case the suite exercises —
-  which is why the nonparitious descent/up-coercion branches are what it stresses. A genuine
-  **definite-nonparitious** space has no `√z`, so StrongCoerce would likely be fine there; but the
-  parity gate keys on `is_paritious`, *not* backend, so it would route definite-nonparitious to the
-  `@@ emb` / `ChangeRing` branch. **No current test exercises definite-nonparitious**, so that path
-  is unvalidated here — revisit (and add a test) if/when definite-with-nebentypus lands. A separate
-  agent owns the definite-nebentypus work.
+- **The §5 `K(√z)` / ±-involution machinery is indefinite-only.** A genuine **definite-nonparitious**
+  space has no `√z`, so it must descend via the marked places (StrongCoerce), NOT via
+  `minimal_hecke_field_emb`. The §3 gate therefore reads `is_paritious(Weight(M)) or IsDefinite(M)`
+  so definite spaces (any parity) take the paritious-style branch; only indefinite-nonparitious keeps
+  the `minimal_hecke_field_emb` convention. This is now validated: the definite nonparitious `(2,3)+χ`
+  tests (`nonpar_23_squared`, `def_vs_indef_nonpar_23`) pass, and the latter checks def/indef
+  agreement directly. The indefinite nonparitious case is still exercised by the `(2,2,3)+χ` cubic
+  (`IsDefinite=false`). **Do not add `or IsDefinite` to the weight-rep det-twist gate
+  (`hecke_field.m` `WeightRepresentation`)** — that gate must stay parity-only, since definite and
+  indefinite nonparitious both drop the det twist the same way (adding it breaks the def/indef match).
 
 ---
 
@@ -374,6 +380,12 @@ two things:
   already contains the nebentypus field (§7). It's object identity, not size.
 - **`DetachSpec`/`AttachSpec` repeatedly in one interactive Magma session.** Corrupts Magma's
   intrinsic table. Restart the process for a fresh compile.
+- **Eagerly setting `M`hecke_matrix_field := hecke_matrix_field(M)` in `operator()` (diamond.m).**
+  For nonparitious indefinite weight `hecke_matrix_field(M)` builds a *fresh* `K(√z)` each call, distinct
+  from the one `basis_of_plus_subspace` bakes into `M`basis_matrix`; the tail coercion then fails
+  across two isomorphic-but-distinct objects, nondeterministically ("hecke_matrix_field seems to be
+  wrong"). Leave `M`hecke_matrix_field` unassigned during the ambient's own `operator()` run and let
+  `SetRationalBasis` descend later (§0 object identity).
 
 ---
 
