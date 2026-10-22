@@ -1047,6 +1047,39 @@ function GradedDomainParameters(I, attempts)
       end if;
     end for;
   end for;
+
+  // Greedy low-weight choices can prevent completion. Restart with whole
+  // systems, allowing different weights and repeated weights among d parameters.
+  if d le 0 or attempts eq 0 then
+    return [R | ];
+  end if;
+  patterns := [Sort([((i-1) mod #weights)+1 : i in [1..d]])];
+  indices := [1 : i in [1..d]];
+  while #patterns lt #weights do
+    if #Seqset(indices) gt 1 and indices notin patterns then
+      Append(~patterns, indices);
+    end if;
+    j := d;
+    while j gt 0 and indices[j] eq #weights do
+      j -:= 1;
+    end while;
+    if j eq 0 then
+      break;
+    end if;
+    next := indices[j]+1;
+    for k in [j..d] do
+      indices[k] := next;
+    end for;
+  end while;
+  monomials := [MonomialsOfWeightedDegree(R, degree) : degree in weights];
+  for pattern in patterns do
+    for trial in [1..attempts] do
+      fs := [R | &+[Random(-3,3)*m : m in monomials[i]] : i in pattern];
+      if Dimension(I + ideal<R | fs>) eq 0 then
+        return fs;
+      end if;
+    end for;
+  end for;
   return [R | ];
 end function;
 
@@ -1058,7 +1091,10 @@ an exact proof record tied to I, with Status "domain proved", "not a domain", or
 "domain unproved". Try factorization, complete intersection normality, and a
 Cohen-Macaulay specialization, then IsPrime in a separate Magma process with a
 PrimeTimeLimit in seconds (zero skips it). Parameters may supply a homogeneous
-system of parameters; otherwise try ParameterAttempts choices per variable weight.
+system of parameters; otherwise try ParameterAttempts choices per variable weight,
+then at most ParameterAttempts times the number of distinct weights whole systems.
+These cycle through distinct weights to fill the dimension, followed by other
+weight multisets of that length.
 The record stores each attempted criterion and its evidence.}
   R := Generic(I);
   require BaseRing(R) cmpeq Rationals() : "Expected a polynomial ring over Q";
