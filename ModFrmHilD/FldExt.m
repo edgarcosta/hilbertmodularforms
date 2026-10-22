@@ -296,25 +296,25 @@ intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
   // L, regardless of how K and L happen to have been constructed), and
   // disambiguate between the roots using the distinguished (marked) places
   // of K and L.
-  // NB: we cache as a list of <L, x, r> triples, keyed on the actual
-  // element x (compared with `eq`), rather than on x's minimal
-  // polynomial. Two distinct (Galois-conjugate) elements of K can share
-  // the exact same minimal polynomial while requiring different roots of
-  // it in L, so caching by minimal polynomial alone would let whichever
-  // conjugate got processed first silently poison the cache for the
-  // other. We also cache by object identity of L (via IsIdentical), not
-  // DefiningPolyCoeffs(L): two distinct Magma field objects (e.g. two
-  // compositum fields built at different points of a computation) can
-  // share the same defining polynomial without being the same object.
+  // NB: the cache is an AssociativeArray keyed by the element x (compared with
+  // `eq`), whose value is the list of <L, r> for the target fields x has been
+  // coerced into. We key on x, not its minimal polynomial: two distinct
+  // (Galois-conjugate) elements of K can share a minimal polynomial while
+  // needing different roots in L, so keying on the polynomial would let one
+  // conjugate poison the cache for the other. Within a key we match L by object
+  // identity (IsIdentical), not DefiningPolyCoeffs(L): two distinct Magma field
+  // objects can share a defining polynomial without being the same object.
   if not assigned K`Extensions then
-    K`Extensions := [* *];
+    K`Extensions := AssociativeArray();
   end if;
 
-  for entry in K`Extensions do
-    if IsIdentical(entry[1], L) and entry[2] eq x then
-      return true, entry[3];
-    end if;
-  end for;
+  if IsDefined(K`Extensions, x) then
+    for entry in K`Extensions[x] do
+      if IsIdentical(entry[1], L) then
+        return true, entry[2];
+      end if;
+    end for;
+  end if;
 
   f := MinimalPolynomial(x);
   rts := Roots(f, L);
@@ -333,7 +333,9 @@ intrinsic IsStrongCoercible(L::Fld, x::.) -> BoolElt, FldElt
   for tup in rts do
     r := tup[1];
     if Abs(ComplexField()!Evaluate(r, w) - x_eval) lt tol then
-      Append(~K`Extensions, <L, x, r>);
+      cur := IsDefined(K`Extensions, x) select K`Extensions[x] else [* *];
+      Append(~cur, <L, r>);
+      K`Extensions[x] := cur;
       return true, r;
     end if;
   end for;

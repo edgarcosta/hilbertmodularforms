@@ -91,19 +91,47 @@ function basis_is_honest(M)
          // (an ambient is automatically honest)
 end function;
 
+// The marked-place-consistent embedding H -> K (cached on M), H.1 |-> StrongCoerce(K, H.1).
+// Descending by its preimage x @@ emb agrees entry-by-entry with StrongCoerce(H, x), but
+// matches the root/marked place once (for the generator) rather than once per entry.
+function strong_descent_emb(M, H, K)
+  if not assigned M`strong_descent_embs then
+    M`strong_descent_embs := AssociativeArray();
+  end if;
+  key := <DefiningPolynomial(H), DefiningPolynomial(K)>;
+  if not IsDefined(M`strong_descent_embs, key) then
+    M`strong_descent_embs[key] := hom<H -> K | StrongCoerce(K, H.1)>;
+  end if;
+  return M`strong_descent_embs[key];
+end function;
+
 function change_hecke_matrix_ring(M, T, H)
   if BaseRing(T) cmpeq H then
     return T;
   end if;
 
-  // Paritious weights descend via StrongCoerce, which keeps multi-orbit Hecke
-  // operators commuting after the descent; nonparitious weights use the emb preimage.
+  // Paritious weights pin the descent conjugate via the marked places; nonparitious
+  // weights use the stored minimal_hecke_field_emb preimage.
   if is_paritious(Weight(M)) then
-    try
-      return Matrix(H, Nrows(T), Ncols(T), [StrongCoerce(H, x) : x in Eltseq(T)]);
-    catch e
-      vprintf ModFrmHil: "StrongCoerce failed in change_hecke_matrix_ring; using CanChangeRing\n";
-    end try;
+    K := BaseRing(T);
+    if H cmpeq Rationals() or K cmpeq Rationals() then
+      // Q on either side: no conjugate ambiguity.
+      bool, TH := CanChangeRing(T, H);
+      if bool then
+        return TH;
+      end if;
+    else
+      try
+        emb := strong_descent_emb(M, H, K);
+        return Matrix(H, Nrows(T), Ncols(T), [x @@ emb : x in Eltseq(T)]);
+      catch e
+        try
+          return Matrix(H, Nrows(T), Ncols(T), [StrongCoerce(H, x) : x in Eltseq(T)]);
+        catch e2
+          vprintf ModFrmHil: "StrongCoerce failed in change_hecke_matrix_ring; using CanChangeRing\n";
+        end try;
+      end try;
+    end if;
   elif assigned M`minimal_hecke_field_emb then
     emb := M`minimal_hecke_field_emb;
     if Domain(emb) cmpeq H then
@@ -126,14 +154,28 @@ function change_hecke_polynomial_ring(M, f, H)
     return f;
   end if;
 
-  // StrongCoerce for paritious weights, emb preimage for nonparitious (see above).
+  // See change_hecke_matrix_ring above.
   if is_paritious(Weight(M)) then
-    try
-      P := PolynomialRing(H);
-      return P![StrongCoerce(H, Coefficient(f, i)) : i in [0..Degree(f)]];
-    catch e
-      vprintf ModFrmHil: "StrongCoerce failed in change_hecke_polynomial_ring; using ChangeRing\n";
-    end try;
+    K := BaseRing(f);
+    if H cmpeq Rationals() or K cmpeq Rationals() then
+      bool, fH := CanChangeRing(f, H);
+      if bool then
+        return fH;
+      end if;
+    else
+      try
+        emb := strong_descent_emb(M, H, K);
+        P := PolynomialRing(H);
+        return P![Coefficient(f, i) @@ emb : i in [0..Degree(f)]];
+      catch e
+        try
+          P := PolynomialRing(H);
+          return P![StrongCoerce(H, Coefficient(f, i)) : i in [0..Degree(f)]];
+        catch e2
+          vprintf ModFrmHil: "StrongCoerce failed in change_hecke_polynomial_ring; using ChangeRing\n";
+        end try;
+      end try;
+    end if;
   elif assigned M`minimal_hecke_field_emb then
     emb := M`minimal_hecke_field_emb;
     if Domain(emb) cmpeq H then
@@ -207,7 +249,6 @@ function basis_of_plus_subspace(M)
   return plus_basis, minus_basis;
 end function;
 
-
 // Given matrices B and C specifying complementary row spaces
 // return a matrix Binv satisfying B*Binv = identity, C*Binv = zero
 
@@ -234,7 +275,7 @@ function pseudo_inverse(B, C)
 end function;
 
 
-// Main function to trigger explicit computation of a space M 
+// Main function to trigger explicit computation of a space M
 
 function basis_matrix(M)
   if not assigned M`basis_matrix then
