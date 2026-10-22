@@ -20,6 +20,14 @@ igusa_clebsch := func<s | [-24*s[4]/s[3], 4*s[1], -8*s[2]/3 - 32*s[1]*s[4]/s[3],
 
 absolute_invariants := func<v | [v[1]^5/v[4], v[1]^3*v[2]/v[4], v[1]^2*v[3]/v[4]]>;
 
+// The prime ideal of the double cover Z^2 = B: the only factor of Z^2 - B that
+// involves t, which has degree 2 in t.
+function double_cover_ideal(Z, B)
+  factors := [p[1] : p in Factorization(Numerator(Z^2 - B)) | Degree(p[1], 3) gt 0];
+  assert #factors eq 1 and Degree(factors[1], 3) eq 2;
+  return ideal<Parent(factors[1]) | factors[1]>;
+end function;
+
 // The published Igusa-Clebsch tuple IEK pulled back by phiFF has the absolute
 // invariants of II on the double cover Jo.
 procedure check_absolute_invariants(IEK, II, phiFF, Jo)
@@ -145,4 +153,21 @@ procedure check_siegel_dictionary(M, G, pullbacks)
   for i -> form in [* psi4, psi6, chi10, chi12 *] do
     assert IsZero(form - Evaluate(pullbacks[i], gens));
   end for;
+end procedure;
+
+// Swap is an automorphism of the stored ring J. On the chart it is the deck
+// transformation Z -> -Z of the double cover Jo; chart maps stored coordinates to
+// a, b, t.
+procedure check_swap_is_deck(J, G, stored, chart, Z, Jo)
+  swapped := AssociativeArray();
+  for k in Keys(G) do
+    swapped[k] := [Swap(form) : form in G[k]];
+  end for;
+  swapImages := ChangeOfPresentation(G, swapped);
+  assert VerifyGradedIsomorphism(J, J, swapImages, swapImages);
+  K := Universe(stored);
+  image := chart([Evaluate(p, stored) : p in swapImages]);
+  assert image[1] eq K.1 and image[2] eq K.2;
+  assert is_zero_on(Evaluate(Z, [K | K.1, K.2, image[3]]) + Z, Jo);
+  assert not Numerator(Z) in Jo;
 end procedure;
