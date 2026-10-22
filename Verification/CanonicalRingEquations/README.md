@@ -1,6 +1,6 @@
 # Canonical Ring Equations
 
-Thanks for checking these stored canonical rings against the evidence below.
+Thanks for helping verify these stored canonical rings.
 The files contain equations for Hilbert modular surfaces, exported by
 `WriteCanonicalRingComputationToFile` (see `ModFrmHilD/CanonicalRing/IO.m`).
 Each narrow-class component defines a weighted projective scheme `S`.
@@ -31,9 +31,9 @@ files with multiple components.
 
 `VerifyCanonicalRingComponents(label::MonStgElt, components::SeqEnum)
 -> BoolElt, SeqEnum` requires exactly one homogeneous ideal per narrow ideal
-class. It resolves each label to its actual ideal class. Input order and gaps
-between labels do not affect class matching. Missing, duplicate, unknown, and
-repeated-class entries raise errors. D=21 and D=28 use labels `1.1` and `3.1`.
+class. It resolves each label to its actual ideal class, regardless of input order.
+Labels need not be consecutive: D=21 and D=28 use `1.1` and `3.1`.
+Missing, duplicate, unknown, and repeated-class entries raise errors.
 Another ideal label representing the same class is accepted if coverage remains
 complete and distinct.
 
@@ -41,7 +41,7 @@ The report contains `<label, sane, H_trace, H_test>` rows in input order,
 followed by an `"all"` row. The boolean is true exactly when every row agrees.
 Each singleton series has constant 1; the full sum has constant `h+`, the narrow
 class number. Compare each ideal with its own singleton trace series and the
-sum with the full-support series. Do not average the full series.
+sum with the full-support series, without dividing by `h+`.
 Reordering intact pairs preserves the result. Swapping ideals between labels
 is detected when their singleton series differ; equal series cannot detect a
 swap, as in D=12.
@@ -66,7 +66,8 @@ swap, as in D=12.
 The component verifier checks series, not generator order or equation provenance.
 The ordered recheck records variable weights, relation degrees in each variable,
 applicable linear-generator guards, labels, singleton/full series and source SHA256.
-A minimal hypersurface's top generator must occur with degree at least two.
+For a single relation, the recheck requires degree at least two in the
+top-weight variable. This is a structural guard used by the recheck.
 Mixed linear terms in a multi-relation ideal alone do not establish elimination.
 Both D=12 components have weights `[2,14,4,6]` and a hypersurface relation linear
 in the weight-14 variable. They remain `UNVERIFIED` / `SCRAMBLED` despite matching
@@ -83,10 +84,10 @@ regeneration or historical exporter certificates.
 | 21 | 1.1, 3.1 | stored-series | `de7d3cd63616e713b49ccfc4d7100115088e47933c61d202ec3e38e7a7fa6cd7` |
 | 24 | 1.1, 2.1 | stored-series | `2551928b334e82d6101cea8ed6136d40d88142b82a65c7809978c2ef5f072bd6` |
 | 28 | 1.1, 3.1 | stored-series | `705c8e5e516784e237cfb6982b18bba6b4f84babc74d84a04981966f9c3fe885` |
-| 33 | pending | MISSING: generation awaits the h+>1 backend probe | none |
+| 33 | pending | MISSING: generation awaits a working route past the Magma assertion at precompute.m:1064 | none |
 
-The historical `STALE` / `FAIL` Hilbert-series header lines in the stored h+=2
-files predate the Hilbert-series fix for h+>1 and are no longer accurate.
+The historical `STALE` headers and `// Sanity check failed!` lines in the stored
+h+=2 files predate the Hilbert-series fix for h+>1 and are inaccurate.
 The old comparison omitted component constants. The equation files remain
 unchanged because literature data on another branch bind their SHA256 hashes.
 The ordered recheck determines their current status; D=12's structural failure
@@ -101,10 +102,20 @@ D=21, D=28 and D=33 have no level-1 literature witness here.
 
 ## Reusing the local batch bundle
 
-The existing `docs/superpowers/level1-d100/` scratch bundle records field outcomes;
-its `RUN.md` describes setup, generation budgets and reuse.
-The bundle and `docs/superpowers/multi-component/recheck-ordered.json` are
-excluded from git and must be copied separately to another checkout.
+The in-tree regression [Tests/verification_canonical_rings.m](../../Tests/verification_canonical_rings.m)
+repeats the ordered recheck: variable order, structural guards and singleton/full
+series for D=12/21/24/28, plus unequal-series swaps for D=21/24/28.
+Run it from the checkout root:
+
+```sh
+magma -b filename:=Tests/verification_canonical_rings.m exitsignal:='' run_tests.m
+```
+
+The `docs/superpowers/level1-d100/` bundle is local scratch and is not shipped
+with the repository. It records field outcomes; its `RUN.md` explains how to
+prepare runs, set generation budgets and reuse data.
+The bundle and `docs/superpowers/multi-component/recheck-ordered.json` are excluded
+from git. Copy them separately to use the following command in another checkout.
 With those artifacts present, run from the checkout root:
 
 ```sh
@@ -118,10 +129,10 @@ then reloads every component and compares fresh structure and series.
 It records `verification_kind=stored-series` under `runs/<D>/<attempt>/record.json`.
 Generated mode (`--evidence generated`, the default) requires exporter
 certificates and rejects stale/failed headers.
-Use it for newly generated candidates. Stored evidence cannot stand in for
-strict generated-output evidence or enable generated-run resume.
+Use it for newly generated candidates. Stored evidence cannot replace exporter
+certificates or resume a generation run.
 Both modes stage inputs without editing the equation store and retain reload
-logs and hashes. No additional outcome checker is required.
+logs and hashes. The bundle records these results itself.
 
 ## File status
 
@@ -145,12 +156,12 @@ logs and hashes. No additional outcome checker is required.
 | `2.2.37.1-1.1-gl-0.m` | Q(sqrt(37)) | 1 | 1 |
 | `2.2.41.1-1.1-gl-0.m` | Q(sqrt(41)) | 1 | 1 |
 
-### Stale (sanity check fails)
+### Stale (needs regeneration)
 
-These were generated with the old 4-arg `HilbertModularVariety` and have
-incorrect equations. They cannot be regenerated because these discriminants have
-narrow class number > 1 and hit the upstream Magma bug at `precompute.m:1064`
-(assertion failure in `precompute_tps` for the definite method).
+D=12's singleton and full series match after the h+>1 Hilbert-series fix,
+but its variable order is scrambled, as described in the h+=2 evidence table above.
+Regeneration is pending on a machine with enough memory; earlier runs exceeded
+four hours with 64 GB of memory.
 
 | File | Field | Level | h+ | Issue |
 |------|-------|-------|----|-------|
