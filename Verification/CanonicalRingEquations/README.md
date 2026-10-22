@@ -84,7 +84,7 @@ regeneration or historical exporter certificates.
 | 21 | 1.1, 3.1 | stored-series | `de7d3cd63616e713b49ccfc4d7100115088e47933c61d202ec3e38e7a7fa6cd7` |
 | 24 | 1.1, 2.1 | stored-series | `2551928b334e82d6101cea8ed6136d40d88142b82a65c7809978c2ef5f072bd6` |
 | 28 | 1.1, 3.1 | stored-series | `705c8e5e516784e237cfb6982b18bba6b4f84babc74d84a04981966f9c3fe885` |
-| 33 | pending | MISSING: generation awaits a working route past the Magma assertion at precompute.m:1064 | none |
+| 33 | 1.1, 2.1 | generated | `ac28bf14a5620836f8e89ea6c6faa9217f983916b4c10029047f6eec409dd669` |
 
 The Hilbert-series failure claims in the historical `STALE` headers and
 `// Sanity check failed!` lines predate the Hilbert-series fix for h+>1 and are inaccurate.
@@ -104,7 +104,7 @@ D=21, D=28 and D=33 have no level-1 literature witness here.
 
 The in-tree regression [Tests/verification_canonical_rings.m](../../Tests/verification_canonical_rings.m)
 repeats the ordered recheck: variable order, structural guards and singleton/full
-series for D=12/21/24/28, plus unequal-series swaps for D=21/24/28.
+series for D=12/21/24/28/33, plus unequal-series swaps for D=21/24/28/33.
 Run it from the checkout root:
 
 ```sh
@@ -153,6 +153,7 @@ logs and hashes. The bundle records these results itself.
 | `2.2.24.1-1.1-gl-0.m` | Q(sqrt(6)) | 1 | 2 (1.1, 2.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration blocker: precompute.m:1064. |
 | `2.2.28.1-1.1-gl-0.m` | Q(sqrt(7)) | 1 | 2 (1.1, 3.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration blocker: precompute.m:1064. |
 | `2.2.29.1-1.1-gl-0.m` | Q(sqrt(29)) | 1 | 1 |
+| `2.2.33.1-1.1-gl-0.m` | Q(sqrt(33)) | 1 | 2 (1.1, 2.1): generated; relation vanishing and algebraic independence certified. Independent reload passes variable order and singleton/full series. |
 | `2.2.37.1-1.1-gl-0.m` | Q(sqrt(37)) | 1 | 1 |
 | `2.2.41.1-1.1-gl-0.m` | Q(sqrt(41)) | 1 | 1 |
 
@@ -166,9 +167,3 @@ four hours with 64 GB of memory.
 | File | Field | Level | h+ | Issue |
 |------|-------|-------|----|-------|
 | `2.2.12.1-1.1-gl-0.m` | Q(sqrt(3)) | 1 | 2 | stale; regen runs >4h / 64 GB |
-
-### Missing
-
-| Label | Field | Level | h+ | Issue |
-|-------|-------|-------|----|-------|
-| `2.2.33.1-1.1-gl-0.m` | Q(sqrt(33)) | 1 | 2 | hits precompute.m:1064 before writing |

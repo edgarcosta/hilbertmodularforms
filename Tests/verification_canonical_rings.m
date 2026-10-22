@@ -126,7 +126,10 @@ stored_cases := [
      (-t^8+t^6-t^4+t^2-1)/(t^6-3*t^4+3*t^2-1)], "PASS">,
   <28, ["1.1", "3.1"], [[2, 4, 4, 6, 6, 6, 8], [2, 2, 4, 6, 8]],
     [(-t^12+t^10-2*t^8-2*t^4+t^2-1)/(t^10-2*t^8+t^6-t^4+2*t^2-1),
-     (-t^12-t^8-t^4-1)/(t^10-2*t^8+t^6-t^4+2*t^2-1)], "PASS">
+     (-t^12-t^8-t^4-1)/(t^10-2*t^8+t^6-t^4+2*t^2-1)], "PASS">,
+  <33, ["1.1", "2.1"], [[2, 4, 4, 4, 6, 6, 6, 6, 8], [2, 2, 4, 4, 6]],
+    [(-t^8+2*t^6-4*t^4+2*t^2-1)/(t^6-3*t^4+3*t^2-1),
+     (-t^8+t^6-2*t^4+t^2-1)/(t^6-3*t^4+3*t^2-1)], "PASS">
 ];
 for entry in stored_cases do
   D, labels, weights, singleton_series, verdict := Explode(entry);
@@ -165,7 +168,7 @@ for entry in stored_cases do
   stored_certified := sane and &and guards;
   assert guards eq (D eq 12 select [false, false] else [true, true]);
   assert stored_certified eq (verdict eq "PASS");
-  if D in {21, 24, 28} then
+  if D in {21, 24, 28, 33} then
     assert stored_certified and singleton_series[1] ne singleton_series[2];
     swapped := [<labels[1], components[2][2]>, <labels[2], components[1][2]>];
     swapped_sane, swapped_report := VerifyCanonicalRingComponents(label, swapped);
@@ -180,15 +183,6 @@ for entry in stored_cases do
     printf "PASS stored-series D=%o components=%o\n", D, #components;
   end if;
 end for;
-missing := false;
-try
-  _ := Read("Verification/CanonicalRingEquations/2.2.33.1-1.1-gl-0.m");
-catch e
-  missing := true;
-end try;
-assert missing;
-print "UNVERIFIED D=33 MISSING";
-
 // === Cross-check: run HilbertModularVariety on Q(sqrt(13)) ===
 // Verify the output matches the stored reference equations
 printf "Cross-checking HilbertModularVariety output vs reference for Q(sqrt(13))...";
