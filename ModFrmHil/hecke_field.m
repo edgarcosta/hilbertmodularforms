@@ -35,7 +35,8 @@ forward WeightRepresentation;
 /**************** New Attributes **********************/
 
 declare attributes ModFrmHil : minimal_hecke_field_emb,
-	                       splitting_field_emb_weight_base_field;
+	                       splitting_field_emb_weight_base_field,
+	                       strong_descent_embs; // Assoc: marked-place-consistent H -> K embeddings, cached for descent
 
 /********************************************************/
 

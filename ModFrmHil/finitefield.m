@@ -26,6 +26,22 @@ import "hecke_field.m" :
 
 forward WeightRepresentationFiniteField;
 
+// Coerce a matrix up into L via the marked-place-consistent embedding (the conjugate the
+// descent also uses), built once from the generator. Plain ChangeRing may pick a different
+// conjugate.
+function strong_up_matrix(L, Mat)
+  K := BaseRing(Mat);
+  if K cmpeq L then
+    return Mat;
+  end if;
+  if K cmpeq Rationals() then
+    // Q has a unique embedding, so there is no conjugate ambiguity.
+    return ChangeRing(Mat, L);
+  end if;
+  emb := hom<K -> L | StrongCoerce(L, K.1)>;
+  return Matrix(L, Nrows(Mat), Ncols(Mat), [emb(x) : x in Eltseq(Mat)]);
+end function;
+
 /**************** New intrinsics **********************/
 
 intrinsic HilbertCuspForms(
@@ -428,16 +444,12 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
           continue;
         end if;
 
-        // Anchor the component to M (not the top ambient MA) when M is a descended
-        // subspace, so operator(N) restricts M's already-descended Hecke operators.
-        anchor_to_M := not IsBianchi(M) and assigned M`basis_matrix_wrt_ambient;
-
         if IsBianchi(M) then
           N := BMF_with_ambient(MA);
           N`NewLevel := N`Level;
         else
           N := HMF0(BaseField(M), Level(M), Level(M), DirichletCharacter(M), Weight(M), CentralCharacter(M));
-          N`Ambient := anchor_to_M select M else MA;
+          N`Ambient := MA;
         end if;
         // give N same ambient as M (TO DO: but reconsider when to make M wrt ambient, rather than wrt raw?)
         N`NewSpace := M;
@@ -454,30 +466,41 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
           pseudo_inv := pseudo_inverse(kmat, complement);
         end if;
         N`Dimension := Nrows(kmat);
-        if anchor_to_M then
-          // kmat is already expressed wrt M, so use it directly
-          N`basis_matrix_wrt_ambient := kmat;
-          N`basis_matrix_wrt_ambient_inv := pseudo_inv;
-          if assigned M`basis_matrix then
-            N`basis_matrix := ChangeRing(kmat, BaseRing(A)) * A
-                                                     where A is M`basis_matrix;
-            N`basis_matrix_inv := Ai * ChangeRing(pseudo_inv, BaseRing(Ai))
-                                                     where Ai is M`basis_matrix_inv;
+        // Anchor the component to the raw top ambient MA and coerce its basis up to
+        // MA's field with the conjugate that matches the descent in
+        // change_hecke_matrix_ring, gated on the same is_paritious predicate so the
+        // multi-orbit operators commute: paritious pins it via the marked places
+        // (strong_up_matrix); nonparitious keeps the K(Sqrt(z)) square class of
+        // minimal_hecke_field_emb, which plain ChangeRing carries.
+        parit := is_paritious(Weight(M));
+        if assigned M`basis_matrix_wrt_ambient then
+          A := M`basis_matrix_wrt_ambient;
+          Ai := M`basis_matrix_wrt_ambient_inv;
+          if parit then
+            kmat_up := strong_up_matrix(BaseRing(A), kmat);
+            pinv_up := strong_up_matrix(BaseRing(Ai), pseudo_inv);
+          else
+            kmat_up := ChangeRing(kmat, BaseRing(A));
+            pinv_up := ChangeRing(pseudo_inv, BaseRing(Ai));
           end if;
-        elif assigned M`basis_matrix_wrt_ambient then
-          N`basis_matrix_wrt_ambient := ChangeRing(kmat, BaseRing(A)) * A
-                                                   where A is M`basis_matrix_wrt_ambient;
-          N`basis_matrix_wrt_ambient_inv := Ai * ChangeRing(pseudo_inv, BaseRing(Ai))
-                                                   where Ai is M`basis_matrix_wrt_ambient_inv;
-          N`basis_matrix := ChangeRing(N`basis_matrix_wrt_ambient, BaseRing(A)) * A
-                                                   where A is MA`basis_matrix;
-          N`basis_matrix_inv := Ai * ChangeRing(N`basis_matrix_wrt_ambient_inv, BaseRing(Ai))
-                                                   where Ai is MA`basis_matrix_inv;
+          N`basis_matrix_wrt_ambient := kmat_up * A;
+          N`basis_matrix_wrt_ambient_inv := Ai * pinv_up;
+          N`basis_matrix := ChangeRing(N`basis_matrix_wrt_ambient, BaseRing(C)) * C
+                                                   where C is MA`basis_matrix;
+          N`basis_matrix_inv := Ci * ChangeRing(N`basis_matrix_wrt_ambient_inv, BaseRing(Ci))
+                                                   where Ci is MA`basis_matrix_inv;
         else
-          N`basis_matrix := ChangeRing(kmat, BaseRing(A)) * A
-                                                   where A is M`basis_matrix;
-          N`basis_matrix_inv := Ai * ChangeRing(pseudo_inv, BaseRing(Ai))
-                                                   where Ai is M`basis_matrix_inv;
+          A := M`basis_matrix;
+          Ai := M`basis_matrix_inv;
+          if parit then
+            kmat_up := strong_up_matrix(BaseRing(A), kmat);
+            pinv_up := strong_up_matrix(BaseRing(Ai), pseudo_inv);
+          else
+            kmat_up := ChangeRing(kmat, BaseRing(A));
+            pinv_up := ChangeRing(pseudo_inv, BaseRing(Ai));
+          end if;
+          N`basis_matrix := kmat_up * A;
+          N`basis_matrix_inv := Ai * pinv_up;
         end if;
         if assigned M`basis_is_honest then
           N`basis_is_honest := M`basis_is_honest;
