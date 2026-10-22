@@ -165,6 +165,14 @@ for entry in stored_cases do
   stored_certified := sane and &and guards;
   assert guards eq (D eq 12 select [false, false] else [true, true]);
   assert stored_certified eq (verdict eq "PASS");
+  if D eq 21 then
+    assert stored_certified and singleton_series[1] ne singleton_series[2];
+    swapped := [<labels[1], components[2][2]>, <labels[2], components[1][2]>];
+    swapped_sane, swapped_report := VerifyCanonicalRingComponents(label, swapped);
+    assert not swapped_sane;
+    assert [row[2] : row in swapped_report] eq [false, false, true];
+    assert swapped_report[3] eq report[3];
+  end if;
   if verdict eq "SCRAMBLED" then
     assert not stored_certified;
     printf "UNVERIFIED D=%o SCRAMBLED; singleton/full series pass\n", D;
