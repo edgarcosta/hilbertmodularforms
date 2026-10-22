@@ -32,8 +32,8 @@ components := LoadStoredCanonicalRings("2.2.24.1-1.1");
 sane, report := VerifyCanonicalRingComponents("2.2.24.1-1.1", components);
 ```
 
-D=21, D=24 and D=28 have stored-series component certification.
-D=12 remains scrambled and awaits regeneration; D=33 has no stored file.
+D=21, D=24 and D=28 have stored-series component certification, and D=33 has
+generated certification. D=12 remains scrambled and awaits regeneration.
 Series agreement alone does not certify equation provenance or a literature
 isomorphism.
 

@@ -153,7 +153,7 @@ logs and hashes. The bundle records these results itself.
 | `2.2.24.1-1.1-gl-0.m` | Q(sqrt(6)) | 1 | 2 (1.1, 2.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration blocker: precompute.m:1064. |
 | `2.2.28.1-1.1-gl-0.m` | Q(sqrt(7)) | 1 | 2 (1.1, 3.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration blocker: precompute.m:1064. |
 | `2.2.29.1-1.1-gl-0.m` | Q(sqrt(29)) | 1 | 1 |
-| `2.2.33.1-1.1-gl-0.m` | Q(sqrt(33)) | 1 | 2 (1.1, 2.1): generated; relation vanishing and algebraic independence certified. Independent reload passes variable order and singleton/full series. |
+| `2.2.33.1-1.1-gl-0.m` | Q(sqrt(33)) | 1 | 2 (1.1, 2.1): generated; relation evaluations and algebraic independence checked by the exporter. Independent reload passes variable order and singleton/full series. |
 | `2.2.37.1-1.1-gl-0.m` | Q(sqrt(37)) | 1 | 1 |
 | `2.2.41.1-1.1-gl-0.m` | Q(sqrt(41)) | 1 | 1 |
 
