@@ -1180,7 +1180,7 @@ ComputeNewGenerators (default true) searches for missing generators when Generat
 Precision (default 100) is the minimum expansion precision when GeneratorWeight is positive.
 PrecomputedGens (default AssociativeArray()) supplies complete generator lists indexed by weight.
 IdealClassesSupport (default false) restricts presentations to the listed components;
-false includes all narrow ideal classes.
+false includes all narrow ideal classes, and strict subsets require F real quadratic.
 See also ConstructGeneratorsAndRelations, ApproximateGradedRing}
 
   n := Degree(F);
@@ -1245,8 +1245,8 @@ See also ConstructGeneratorsAndRelations, ApproximateGradedRing}
       Append(~Is, I_bb);
     end for;
 
-    // Check if the combined Hilbert series matches the trace formula
-    sane, H_trace, H_test := HilbertSeriesSanityCheck(M, N, Is);
+    sane, H_trace, H_test := HilbertSeriesSanityCheck(M, N, Is
+        : IdealClassesSupport := comps);
 
     if sane then
       B_0 := B;
@@ -1254,8 +1254,8 @@ See also ConstructGeneratorsAndRelations, ApproximateGradedRing}
       break;
     else
       vprintf HilbertModularForms : "HilbertModularVariety Phase 1: HS mismatch at B = %o\n", B;
-      vprintf HilbertModularForms : "  trace formula: %o\n", H_trace;
-      vprintf HilbertModularForms : "  computed:      %o\n", H_test;
+      vprintf HilbertModularForms : "  dimension formula: %o\n", H_trace;
+      vprintf HilbertModularForms : "  computed:          %o\n", H_test;
     end if;
   end for;
 
@@ -1397,22 +1397,59 @@ Returns -1 if the bound cannot be computed for this field.}
     return Maximum(m, Degree(Numerator(poly)));
 end intrinsic;
 
-intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Is::SeqEnum[RngMPol]) -> BoolElt
-  {Given a sequence Is of ideals defining graded rings, check if the sum of their Hilbert series agrees with the one coming from the trace formula (which includes all components)}
-  // Component presentations each contribute a degree-zero constant.
-  H_trace := HilbertSeries(M, NN) + NarrowClassNumber(M) - 1;
+intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Is::SeqEnum[RngMPol]
+    : IdealClassesSupport := false) -> BoolElt, FldFunRatUElt, FldFunRatUElt
+  {Whether the summed Hilbert series of the ideals Is equals the dimension
+  formula for M at level NN, followed by the formula series and the summed series.
+  IdealClassesSupport (default false) selects component representatives; false includes
+  all components, and strict subsets require a real quadratic base field.
+  See also HilbertSeries}
+  if IdealClassesSupport cmpeq false then
+    support := NarrowClassGroupReps(M);
+  else
+    support := IdealClassesSupport;
+  end if;
+  reps := SequenceToSet(NarrowClassGroupReps(M));
+  support_set := SequenceToSet(support);
+  require #support gt 0 and support_set subset reps :
+      "IdealClassesSupport must be a nonempty subset of the component representatives";
+
+  if support_set eq reps then
+    // Component presentations each contribute a degree-zero constant.
+    H_trace := HilbertSeries(M, NN) + NarrowClassNumber(M) - 1;
+  else
+    F := BaseField(M);
+    require IsRealQuadraticField(F) :
+        "Component Hilbert series require a real quadratic base field";
+    Q<t> := FunctionField(Rationals());
+    // HilbertSeries(Gamma) indexes weight 2m by t^m.
+    H_trace := &+[Q | Evaluate(HilbertSeries(CongruenceSubgroup("GL+", "Gamma0", F, NN, bb)), t^2)
+        : bb in support];
+  end if;
   H_test := &+[HilbertSeries(I) : I in Is];
-  vprintf HilbertModularForms: "series from trace formula = %o\n", H_trace;
+  vprintf HilbertModularForms: "series from dimension formula = %o\n", H_trace;
   vprintf HilbertModularForms: "series from computed graded ring= %o\n", H_test;
   return H_test eq H_trace, H_trace, H_test;
 end intrinsic;
 
-intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Rs::SeqEnum[RngMPolRes]) -> BoolElt
-  {Given a sequence Rs of graded rings, check if the sum of their Hilbert series agrees with the one coming from the trace formula (which includes all components)}
-  return HilbertSeriesSanityCheck(M, NN, [PreimageIdeal(ideal< R | 0>) : R in Rs]);
+intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Rs::SeqEnum[RngMPolRes]
+    : IdealClassesSupport := false) -> BoolElt, FldFunRatUElt, FldFunRatUElt
+  {Whether the summed Hilbert series of the graded rings Rs equals the dimension
+  formula for M at level NN, followed by the formula series and the summed series.
+  IdealClassesSupport (default false) selects component representatives; false includes
+  all components, and strict subsets require a real quadratic base field.
+  See also HilbertSeries}
+  return HilbertSeriesSanityCheck(M, NN, [PreimageIdeal(ideal<R | 0>) : R in Rs]
+      : IdealClassesSupport := IdealClassesSupport);
 end intrinsic;
 
-intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Ss::SeqEnum[Sch]) -> BoolElt
-  {Given a sequence Ss of surfaces, check if the sum of their Hilbert series agrees with the one coming from the trace formula (which includes all components)}
-  return HilbertSeriesSanityCheck(M, NN, [Ideal(S) : S in Ss]);
+intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Ss::SeqEnum[Sch]
+    : IdealClassesSupport := false) -> BoolElt, FldFunRatUElt, FldFunRatUElt
+  {Whether the summed Hilbert series of the schemes Ss equals the dimension
+  formula for M at level NN, followed by the formula series and the summed series.
+  IdealClassesSupport (default false) selects component representatives; false includes
+  all components, and strict subsets require a real quadratic base field.
+  See also HilbertSeries}
+  return HilbertSeriesSanityCheck(M, NN, [Ideal(S) : S in Ss]
+      : IdealClassesSupport := IdealClassesSupport);
 end intrinsic;
