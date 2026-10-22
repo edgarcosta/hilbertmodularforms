@@ -256,6 +256,61 @@ intrinsic LoadStoredCanonicalRing(label::MonStgElt) -> RngMPol
   return components[1][2];
 end intrinsic;
 
+intrinsic VerifyCanonicalRingComponents(label::MonStgElt, components::SeqEnum)
+    -> BoolElt, SeqEnum
+{ Compare the Hilbert series of <component label, ideal> pairs with the requested
+  field-level label. Require exactly one pair per narrow ideal class. Return a
+  boolean and <label, sane, H_trace, H_test> rows in input order, followed by "all".
+  Series agreement is separate from equation provenance and literature isomorphism. }
+  parts := Split(label, "-");
+  require #parts eq 2: "Expected a field-level label";
+  F := LMFDBField(parts[1]);
+  N := LMFDBIdeal(F, parts[2]);
+  M := GradedRingOfHMFs(F, 1);
+  reps := NarrowClassGroupReps(M);
+  require #components eq #reps:
+    "Expected exactly one component per narrow ideal class";
+
+  labels := [];
+  support := [];
+  for component in components do
+    require Type(component) eq Tup and #component eq 2:
+      "Expected <component label, ideal> pairs";
+    component_label, I := Explode(component);
+    require Type(component_label) eq MonStgElt and Type(I) eq RngMPol:
+      "Expected <component label, ideal> pairs";
+    require component_label notin labels:
+      Sprintf("Duplicate component label %o", component_label);
+    try
+      bb := LMFDBIdeal(F, component_label);
+    catch e
+      error Sprintf("Unknown component label %o: %o", component_label, e);
+    end try;
+    representative := NarrowClassGroupRepsMap(M)[bb @@ NarrowClassGroupMap(M)];
+    require representative notin support:
+      Sprintf("Component label %o represents the same narrow ideal class as another entry",
+        component_label);
+    require IsHomogeneous(I):
+      Sprintf("Component %o must have a homogeneous ideal", component_label);
+    Append(~labels, component_label);
+    Append(~support, representative);
+  end for;
+
+  report := [];
+  for i in [1..#components] do
+    sane, H_trace, H_test := HilbertSeriesSanityCheck(M, N, [components[i][2]]
+      : IdealClassesSupport := [support[i]]);
+    if i eq 1 then
+      Q := Parent(H_trace);
+    end if;
+    Append(~report, <labels[i], sane, Q!H_trace, Q!H_test>);
+  end for;
+  sane, H_trace, H_test := HilbertSeriesSanityCheck(M, N,
+    [component[2] : component in components]);
+  Append(~report, <"all", sane, Q!H_trace, Q!H_test>);
+  return &and[row[2] : row in report], report;
+end intrinsic;
+
 intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], MaxAttempts := 100000)
   -> BoolElt, SeqEnum, SeqEnum
 { Search for a graded-algebra isomorphism phi from Generic(I)/I to Generic(J)/J, where
