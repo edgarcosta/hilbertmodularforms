@@ -1,16 +1,16 @@
-// Algebraic certificate for the Theorem 5 invariant candidate and stored component 1.1.
+// Algebraic comparison of the Theorem 5 invariant candidate and stored component 1.1.
 // Source: G. van der Geer, "Hilbert Modular Forms for the Field Q(sqrt(6))",
 // Math. Ann. 233 (1978), 163-179, Theorem 5 and equations (8), (9), pp. 171-172.
 
-// The candidate fixes a,u,b and negates v,d in that presentation.
-// Its geometric identification with the GL+ determinant-unit action is unproved.
+// The assumed sign action fixes a,u,b and negates v,d in that presentation.
+// Its geometric identification with the GL+ determinant-unit action is pending.
 
 // Here a=sigma_2, u=t^2, b=sigma_3, v=Delta*t, d=delta. The generators are
 // [a*u/b, a, u, u^3/b, b, d*v*u/b^2, d*v/b], of weights [2,4,4,6,6,8,10].
 // The ideal is obtained by saturated elimination of the two published equations.
 
 // Theorem 7 as printed omits d*a/b and d*u/b in weight 6 (dimension 6 vs 8);
-// this even-weight certificate uses Theorem 5.
+// this even-weight comparison uses Theorem 5.
 LitData := function(Rsrc, Rtgt)
   assert VariableWeights(Rsrc) eq [2,4,4,6,6,8,10];
   assert VariableWeights(Rtgt) eq [2,4,4,6,6,8,10];
