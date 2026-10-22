@@ -66,4 +66,20 @@ catch e
     rejected := true;
 end try;
 assert rejected;
+// Replay the involutions induced by the literature presentations.
+for D in [5,13] do
+    J := LoadStoredCanonicalRing(Sprintf("2.2.%o.1-1.1",D));
+    R := Generic(J);
+    litfile := D eq 5 select "Verification/LiteratureEquations/2.2.5.1-1.1-Hirzebruch.m"
+        else "Verification/LiteratureEquations/2.2.13.1-1.1-vdGZagier.m";
+    LitData := eval(Read(litfile) cat "return LitData;");
+    L,phi,psi,citation := LitData(R,R);
+    assert VerifyGradedIsomorphism(L,J,phi,psi);
+    litTau := [i eq Rank(R) select -R.i else R.i : i in [1..Rank(R)]];
+    tau := [Evaluate(Evaluate(f,litTau),phi) : f in psi];
+    weights := D eq 5 select [2,6,10] else [2,4,6,6];
+    series := D eq 5 select 1/((1-t^2)*(1-t^6)*(1-t^10))
+        else (1-t^12)/((1-t^2)*(1-t^4)*(1-t^6)^2);
+    CheckPresentation(J,tau,weights,series);
+end for;
 print "PASS symmetric subring";
