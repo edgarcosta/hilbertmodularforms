@@ -60,7 +60,7 @@ for p in [K|a,b,a+4*b,a^2-b,II[1],II[4]] cat phiFF cat stored do
 end for;
 for p in [L|u,v,4*u-v-1,IEK[1],IEK[4],excludedEK] cat psiFF do assert p ne 0; end for;
 assert #hashes eq 2 and &and[#s eq 64:s in hashes];
-print "CHECK chart excludes X2=0, a=0, b=0, a+4*b=0, a^2-b=0, 4*u-v-1=0, I2=0, and source bad locus";
+print "CHECK chart excludes X1=0, a=0, b=0, a+4*b=0, a^2-b=0, 4*u-v-1=0, I2=0, and source bad locus";
 F:=QuadraticField(29); ZF:=Integers(F);
 M:=GradedRingOfHMFs(F,160);
 computed:=ConstructGeneratorsAndRelations(M,1*ZF,8,16);
