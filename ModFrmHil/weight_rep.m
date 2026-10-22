@@ -71,13 +71,13 @@ function FiniteModulusCharFromHeckeChar(chi)
   return psi;
 end function;
 
-function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
+function weight_map_arch(b, n : m:=[0 : _ in #n], chi:=0, residue_map:=0, K:=0, splittings:=0, hecke_matrix_field:=0)
   // b::AlgQuatElt or AlgAssVOrdElt
   // n::SeqEnum[RngIntElt]
   //
   // m::SeqEnum[FldRatElt] or SeqEnum[RngIntElt]
-  // X::IdealDatum - A struct encoding a character chi of 
-  //   modulus N and the mod N map from O to M2(ZF/N) produced by 
+  // chi::HeckeCharElt of modulus N
+  // residue_map::UserProgram, the mod N map from O to M2(ZF/N) produced by 
   //   ResidueMatrixRing.
   // K - FldNum
   // splittings - SeqEnum[AlgMatElt]
@@ -108,7 +108,7 @@ function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
 
   // parallel weight 2 case
   // TODO abhijitm should account for m
-  if n eq [0 : _ in [1 .. #n]] and Order(X`Character) eq 1 then
+  if n eq [0 : _ in [1 .. #n]] and ((chi cmpeq 0) or (chi cmpne 0 and Order(chi) eq 1)) then
     return MatrixRing(Integers(), 1)!1;
   end if;
 
@@ -135,14 +135,12 @@ function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
     end if;
   end for;
 
-  if X cmpne 0 then
-    // if X is given then X`Character should be defined
-    assert Type(X) eq IdealDatum;
-
+  if chi cmpne 0 then
+    // if chi is given then residue_map should also be given
+    assert residue_map cmpne 0;
     // if chi is trivial then we don't need to do anything
-    chi := X`Character;
     if not IsTrivial(chi) then
-      b_mod_N := X`ResidueMap(b);
+      b_mod_N := residue_map(b);
       // TODO abhijitm this should maybe be removed for performance
       // The character only really makes sense (it's only really a character) if
       // b is in O_0(N) \cap B^*. 
@@ -155,9 +153,11 @@ function weight_map_arch(b, n : m:=[0 : _ in #n], X:=0, K:=0, splittings:=0)
       // embedded properly. If the order of chi is 2 then we just multiply
       // by the value.
       if Order(chi) gt 2 then
-        K := Compositum(K, CyclotomicField(Order(chi)));
+        // in this case, we expect hecke_matrix_field to be given
+        // to us, so we don't need to find it ourselves
+        assert hecke_matrix_field cmpne 0;
         // the character should be evaluated on the bottom right entry
-        M := psi(b_mod_N[1][1]) * StrongCoerceMatrix(K, M);
+        M := psi(b_mod_N[1][1]) * StrongCoerceMatrix(hecke_matrix_field, M);
       else
         M := psi(b_mod_N[1][1]) * M;
       end if;
@@ -202,18 +202,18 @@ end function;
 // Computes the weight_rep_dim x weight_rep_dim matrix
 // of the action of b (which is assumed to be in O_0(N) for
 // N the ideal of X) on the weight representation. 
-function matrix_of_action(b, k, X)
+function matrix_of_action(b, k, X : hecke_matrix_field:=0)
   n := n_from_k(k);
   m := m_from_k(k);
 
   if is_par_wt_2(k) and IsTrivial(X`Character) then
     return IdentitySparseMatrix(Integers(), weight_rep_dim(k));
   else
-    return weight_map_arch(b, n : m:=m, X:=X);
+    return weight_map_arch(b, n : m:=m, chi:=X`Character, residue_map:=X`ResidueMap, hecke_matrix_field:=hecke_matrix_field);
   end if;
 end function;
 
-function matrix_of_induced_action(b, k, X)
+function matrix_of_induced_action(b, k, X : hecke_matrix_field:=0)
   /*********************************************************************
    * b::AlgAssVOrdElt - An element of a quaternion order O / F. 
    * k::SeqEnum[RngIntElt] - Weight of the space of modular forms being computed
@@ -250,7 +250,9 @@ function matrix_of_induced_action(b, k, X)
   m := m_from_k(k);
 
   // R will be the ring over which our matrices are defined
-  if is_par_wt_2(k) and IsTrivial(X`Character) then
+  if hecke_matrix_field cmpne 0 then
+    R := hecke_matrix_field;
+  elif is_par_wt_2(k) and IsTrivial(X`Character) then
     R := Integers();
   else
     _, K, _ := Splittings(Parent(b));
@@ -279,7 +281,7 @@ function matrix_of_induced_action(b, k, X)
     if is_par_wt_2(k) and IsTrivial(X`Character) then
       blocks[row_major_idx] := MatrixRing(R, 1)!1;
     else
-      blocks[row_major_idx] := weight_map_arch(bp, n : m:=m, X:=X);
+      blocks[row_major_idx] := weight_map_arch(bp, n : m:=m, chi:=X`Character, residue_map:=X`ResidueMap, hecke_matrix_field:=R);
     end if;
 
   end for;

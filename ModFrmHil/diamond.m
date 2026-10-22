@@ -72,21 +72,24 @@ function operator(M, p, op)
 
     bm := M`basis_matrix_wrt_ambient;
     bmi := M`basis_matrix_wrt_ambient_inv;
-    return bm * Tp * bmi;
+    Tp := bm * Tp * bmi;
+    p_reps := []; // Bianchi case doesn't use p_reps
 
   elif IsDefinite(M) then
 
     MA := TopAmbient(M);
     case op:
-      when "Hecke"   : Tp_big := HeckeOperatorDefiniteBig(MA, p);
+      when "Hecke"   : Tp_big, p_reps := HeckeOperatorDefiniteBig(MA, p);
       when "AL"      : Tp_big := AtkinLehnerDefiniteBig(MA, p);
+                       p_reps := []; // AL doesn't use p_reps
       when "DegDown1": Tp_big := DegeneracyDown1DefiniteBig(MA, p);
+                       p_reps := []; // DegDown1 doesn't use p_reps
       when "DegDownp": Tp_big := DegeneracyDownpDefiniteBig(MA, p);
+                       p_reps := []; // DegDownp doesn't use p_reps
       when "Diamond" : Tp_big := DiamondOperatorDefiniteBig(MA, p);
+                       p_reps := []; // Diamond doesn't use p_reps
     end case;
     Tp := restriction(M, Tp_big);
-    // TODO abhijitm, this never gets used, it's just to assign something
-    p_reps := [1];
 
   else // indefinite quat order
 
@@ -101,6 +104,11 @@ function operator(M, p, op)
       _ := WeightRepresentation(M);
     end if;
 
+    // Do NOT eagerly set M`hecke_matrix_field here: for nonparitious indefinite
+    // weight it builds a fresh K(Sqrt(z)) distinct from the one baked into
+    // M`basis_matrix, so the tail coercion would fail on mismatched field objects.
+    // SetRationalBasis performs the proper parity-gated descent later.
+
     Gamma := FuchsianGroup(QuaternionOrder(M));
     if Type(N) eq RngInt then
       // Over Q, Level/disc can collapse to RngInt; use built-in HeckeMatrix
@@ -111,9 +119,30 @@ function operator(M, p, op)
       p_reps := [];
     else
       case op:
-        when "Hecke" : Tp_big, p_reps := HeckeMatrix2(Gamma, N, p, Weight(M), DirichletCharacter(M));
-        when "AL"    : Tp_big := HeckeMatrix2(Gamma, N, p, Weight(M), DirichletCharacter(M) : UseAtkinLehner);
-                       p_reps := [];
+        when "Hecke" : Tp_big, p_reps := HeckeMatrix2(
+                                            Gamma,
+                                            N,
+                                            p,
+                                            Weight(M),
+                                            DirichletCharacter(M));
+                       // Build H^1 over its natural field (weight field (x) Q(zeta_d));
+                       // Tp is coerced to M`hecke_matrix_field by the tail below.
+                       // Do NOT force HeckeMatrixField here: for nonparitious weight
+                       // M`hecke_matrix_field is the relative K(sqrt(z)) +/- extension,
+                       // which is the WRONG field for the induced H^1 action and makes
+                       // the coefficient module inconsistent (y * Zp fails).
+                       // Normalize p_reps to always be a list
+                       if Type(p_reps) ne SeqEnum then
+                         p_reps := [p_reps];
+                       end if;
+        when "AL"    : Tp_big := HeckeMatrix2(
+                                    Gamma,
+                                    N,
+                                    p,
+                                    Weight(M),
+                                    DirichletCharacter(M) :
+                                    UseAtkinLehner);
+                       p_reps := []; // AL doesn't use p_reps
       end case;
     end if;
     bm, bmi := basis_matrix(M);

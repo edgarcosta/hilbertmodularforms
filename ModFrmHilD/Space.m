@@ -440,7 +440,7 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
 
   // the trace formula does not currently support
   // nonparallel weight
-  if not IsParallel(Weight(Mk)) then
+  if not IsParallel(Weight(Mk)) or not IsTrivial(Character(Mk)) then
     version := "builtin";
   end if;
   
@@ -460,7 +460,6 @@ intrinsic CuspDimension(Mk::ModFrmHilD : version:="trace") -> RngIntElt
   if not assigned Mk`CuspDimension then
     k := Weight(Mk);
     if version eq "builtin" then
-	       //      require IsTrivial(DirichletRestriction(Character(Mk))): "we rely on magma built-in functions, which only works for characters whose associated Dirichlet character is trivial";
       Mk`CuspDimension := Dimension(HilbertCuspForms(Mk));
     else
       M := Parent(Mk);
@@ -587,6 +586,68 @@ intrinsic IsParallel(k::SeqEnum[RngIntElt]) -> BoolElt
       false otherwise
   }
   return #SequenceToSet(k) eq 1;
+end intrinsic;
+
+intrinsic CuspFormsNewAtD(Mk::ModFrmHilD, D::RngOrdIdl) -> SeqEnum[ModFrmHilDElt]
+  {
+    input:
+      Mk: A space of Hilbert modular forms of level N
+      D: An ideal (will use its squarefree part)
+    returns:
+      A basis for the space of cusp forms in Mk that are new at the squarefree part of D.
+      A form is included if and only if it's not in the image of a 
+      degeneracy map from N/p for any prime p dividing the squarefree part of D.
+      
+      When the squarefree part of D equals N, this should give the same result as NewCuspFormBasis(Mk).
+      When D = 1, this should give the same result as CuspFormBasis(Mk).
+  }
+  
+  N := Level(Mk);
+  ZF := Integers(Parent(Mk));
+  
+  // Compute the squarefree part of D
+  factorization := Factorization(D);
+  if #factorization eq 0 then
+    // D = 1, so D_squarefree = 1
+    D_squarefree := ideal<ZF | 1>;
+  else
+    D_squarefree := &*[p[1] : p in factorization];
+  end if;
+  
+  require N subset D_squarefree : "The squarefree part of D must divide the level N";
+    
+  M := Parent(Mk);
+  k := Weight(Mk);
+  chi := Character(Mk);
+  _, m_inf := Modulus(chi);
+  
+  // Start with the newforms.
+  //
+  // Collect forms that are new at the squarefree part of D by iterating over all proper divisors of N
+  // and including newforms only if (N/N') is coprime to the squarefree part of D
+  new_at_D_forms := NewCuspFormBasis(Mk);
+  
+  divisors := Exclude(Divisors(N), N);
+  for N_prime in divisors do
+    // Check if (N/N') is coprime to the squarefree part of D
+    quotient := N/N_prime;
+    if IsCoprime(quotient, D_squarefree) then  // gcd(quotient, D_squarefree) = 1
+      // Only consider forms if the character can be restricted
+      if N_prime subset Conductor(chi) then
+        chi_res := Restrict(chi, N_prime, m_inf);
+        Mk_smaller := HMFSpace(M, N_prime, k, chi_res);
+        
+        // Get newforms from this level and include all their inclusions
+        newforms := NewCuspFormBasis(Mk_smaller);
+        for f in newforms do
+          new_at_D_forms cat:= Inclusion(f, Mk);
+        end for;
+      end if;
+    end if;
+  end for;
+
+  
+  return new_at_D_forms;
 end intrinsic;
 
 intrinsic DefaultCoefficientRing(Mk::ModFrmHilD) -> FldNum

@@ -1,4 +1,3 @@
-// test-time: ~36s
 function hecke_eigs(F, N, k, MD)
   /***
    * F::FldNum - Base field of HMFs
@@ -29,7 +28,8 @@ function hecke_eigs(F, N, k, MD)
   hecke_eig_dict[0*ZF] := 0;
   hecke_eig_dict[1*ZF] := 1;
 
-  ExtendMultiplicatively(~hecke_eig_dict, N, k, triv, primes, ideals : factorization:=func<n|Factorization(MD, n)>);
+  Mk := HMFSpace(MD, N, k, triv);
+  ExtendMultiplicatively(~hecke_eig_dict, Mk);
   return hecke_eig_dict;
 end function;
 

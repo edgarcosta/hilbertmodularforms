@@ -1,6 +1,7 @@
 import "definite.m":
   _ResidueMatrixRing,
-  HMSDF;
+  HMSDF,
+  get_compositum_field;
 import "hackobj.m" :
   Ambient,
   BMF_with_ambient,
@@ -25,19 +26,45 @@ import "precompute.m" :
 
 import "indefinite.m" : ElementOfNormMinusOne;
 
-import "hackobj.m" : HMF0;
-
 import "weight_rep.m" : weight_map_arch, is_paritious;
 import "hecke.m" : get_image_of_eps_nonparit;
-
-forward WeightRepresentation;
-
-/**************** New Attributes **********************/
 
 declare attributes ModFrmHil : minimal_hecke_field_emb,
 	                       splitting_field_emb_weight_base_field,
 	                       strong_descent_embs; // Assoc: marked-place-consistent H -> K embeddings, cached for descent
 
+forward WeightRepresentation;
+
+/********************************************************/
+//
+// The field objects used for Hecke computations, from largest to smallest:
+//
+//   weight_base_field (set in WeightRepresentation)
+//     The field of the weight representation H^* -> GL(V_k): Rationals() for
+//     parallel weight 2, otherwise the field K from Splittings(H) -- an
+//     extension of F, Galois over Q, that splits the quaternion algebra and
+//     contains the roots realizing the weight. It does NOT depend on the
+//     nebentypus character.
+//
+//   big_hecke_matrix_field = weight_base_field (x) Q(zeta_d)   (in definite.m)
+//     The STABLE field over which the definite big Hecke matrix is assembled
+//     from its weight-representation blocks. Equal to weight_base_field for a
+//     trivial or quadratic (order <= 2) character; extended by the cyclotomic
+//     field of the character otherwise. Memoized, and NEVER descended.
+//
+//   hecke_matrix_field (below)
+//     The field the Hecke operators returned to callers currently live over.
+//     It STARTS equal to big_hecke_matrix_field but is STATEFUL: SetRationalBasis
+//     descends M`hecke_matrix_field to the minimal field below. Do not use it
+//     where a stable field is required (e.g. assembling the big matrix).
+//
+//   minimal_hecke_matrix_field (below)
+//     The smallest field the Hecke algebra can be defined over. Governed by the
+//     Galois stabilizer of the weight, composed with Q(zeta_d): Rationals() for
+//     parallel weight with order <= 2 character, Q(zeta_d) for parallel weight
+//     with higher-order character, and FixedField(weight stabilizer) (x) Q(zeta_d)
+//     in general. This is the descent target used by SetRationalBasis.
+//
 /********************************************************/
 
 function splitting_field_embedding_to_weight_field(F, K, target)
@@ -63,10 +90,23 @@ function hecke_matrix_field(M)
     if not assigned TopAmbient(M)`weight_base_field then
       _ := WeightRepresentation(TopAmbient(M));
     end if;
-    if is_paritious(Weight(M)) then
-	    return TopAmbient(M)`weight_base_field;
+    if is_paritious(Weight(M)) or IsDefinite(M) then
+      // Hecke matrices live over the weight base field, extended by Q(zeta_d)
+      // for a nontrivial nebentypus (a no-op for order <= 2). The IsDefinite
+      // guard is routing, not pinning: the K(sqrt(z)) +/- extension in the
+      // else-branch below only exists for the indefinite method; the definite
+      // method builds its matrices over weight_base_field (x) Q(zeta_d) even
+      // in nonparitious weight. We do NOT cache this onto M`hecke_matrix_field,
+      // so SetRationalBasis stays free to descend it to the minimal field.
+      H := TopAmbient(M)`weight_base_field;
+      if not (Order(DirichletCharacter(M)) eq 1) then
+        chi := DirichletCharacter(M);
+        H := get_compositum_field(H, chi);
+      end if;
+      return H;
     else
-      // if the weight is nonparitious, the Hecke matrices on the entire
+      // if the weight is nonparitious and we are using
+      // the indefinite method, the Hecke matrices on the entire
       // H1 will be over the weight base field but the + and - subspaces
       // will be defined over a quadratic extension
       O := QuaternionOrder(M);
@@ -109,14 +149,20 @@ function minimal_hecke_matrix_field(M)
   bool, minimal := HasAttribute(M, "hecke_matrix_field_is_minimal");
   if bool and minimal then
     H := M`hecke_matrix_field;
-	  M`minimal_hecke_field_emb := IdentityHomomorphism(H);
+    M`minimal_hecke_field_emb := IdentityHomomorphism(H);
   elif assigned M`Ambient then
     H := minimal_hecke_matrix_field(M`Ambient);
-	  M`minimal_hecke_field_emb := M`Ambient`minimal_hecke_field_emb;
+    M`minimal_hecke_field_emb := M`Ambient`minimal_hecke_field_emb;
   elif IsParallelWeight(M) then
-     H := Rationals();
-	   K := hecke_matrix_field(M);
-	   M`minimal_hecke_field_emb := hom<H->K|>;
+    K := hecke_matrix_field(M);
+    if Order(DirichletCharacter(M)) le 2 then
+      H := Rationals();
+      M`minimal_hecke_field_emb := hom<H -> K | >;
+    else
+      // parallel weight is paritious, so the Hecke matrices descend via
+      // StrongCoerce and no minimal_hecke_field_emb is needed.
+      H := CyclotomicField(Order(DirichletCharacter(M)));
+    end if;
   else
     vprintf ModFrmHil: "Figuring out the \'Hecke matrix field\' ... "; 
     time0 := Cputime();
@@ -138,48 +184,20 @@ function minimal_hecke_matrix_field(M)
     act := func< w,g | [w[i] : i in Eltseq(g^-1)] >;
     Gw := sub< G | [g : g in G | act(w,g) eq w] > where w is Weight(M);
     Gw_in_Aut := sub< Aut | [h@@Aut_to_G : h in Generators(Gw)] >;
-    H := FixedField(Kgal, Gw_in_Aut);  
-    // add here the field embedding once we fix that
+    H := FixedField(Kgal, Gw_in_Aut);
     is_sub, emb_fixed := IsSubfield(H, Kgal);
     assert is_sub;
     assert assigned M`weight_rep;
-    assert assigned M`splitting_field_emb_weight_base_field; // WeightRepresentation should set it
+    assert assigned M`splitting_field_emb_weight_base_field;
     M`minimal_hecke_field_emb := M`splitting_field_emb_weight_base_field * emb_fixed;
-
-    // Making sure we composed in the right order
     assert Domain(M`minimal_hecke_field_emb) eq H;
-    
+
+    H := get_compositum_field(H, DirichletCharacter(M));
+
     vprintf ModFrmHil: "Time: %o\n", Cputime(time0);
   end if;
+
   return H;
-end function;
-
-// from definite.m
-
-function DegeneracyMapDomain(M, d)
-   // Given an ambient space M and an integral ideal d such that NewLevel(M) | d | Level(M), 
-   // returns a space of level d and same weight as M, defined using internals that are
-   // compatible with M (same quaternion algebra, same splitting map and weight representation)
-
-   QO:=M`QuaternionOrder;
-   assert NewLevel(M) eq Discriminant(QO);
-   assert IsIntegral(d/NewLevel(M));
-   assert IsIntegral(Level(M)/d); 
-
-   // MUST use identical internal data: in particular, rids and weight_rep.
-   // Call low-level constructor to avoid complications with caching, and don't cache DM
-   // TO DO: use cached spaces, to avoid recomputing ModFrmHilDirFacts (that's the only advantage)
-   DM:=HMF0(BaseField(M), d, NewLevel(M), DirichletCharacter(M), Weight(M), CentralCharacter(M));
-   DM`QuaternionOrder:=QO;
-   DM`rids, DM`support:=get_rids(M);
-   DM`splitting_map:=M`splitting_map; // can use same splitting_map even though its level is larger than needed
-   DM`weight_base_field:=M`weight_base_field;
-   DM`weight_dimension:=M`weight_dimension;
-   if Seqset(Weight(M)) ne {2} then // nontrivial weight
-      DM`weight_rep:=M`weight_rep;
-      DM`splitting_field_emb_weight_base_field := M`splitting_field_emb_weight_base_field;
-   end if;
-   return DM;
 end function;
 
 function WeightRepresentation(M) // ModFrmHil -> Map
@@ -201,7 +219,7 @@ function WeightRepresentation(M) // ModFrmHil -> Map
          Mat1 := Parent(I);
          M`weight_rep := map< H -> Mat1 | q :-> I >;
          M`weight_base_field := Rationals();
-         M`weight_dimension := 1; 
+         M`weight_dimension := 1;
          QQ := Rationals();
          M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
       else

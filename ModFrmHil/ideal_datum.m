@@ -21,7 +21,8 @@ declare attributes IdealDatum:
   CosetReps,
   CosetRepsByP1,
   InducedModuleMtrxs,
-  H1s;
+  H1s,
+  HeckeMatrixField;
 
 declare attributes GrpPSL2 : ideal_data;
 
@@ -30,7 +31,8 @@ forward Gamma0Cosets;
 intrinsic cIdealDatum(
               Gamma::GrpPSL2, I::RngOrdIdl : 
               chi:=HeckeCharacterGroup(I, [1 .. Degree(NumberField(Order(I)))]).0,
-              residue_map:=0
+              residue_map:=0,
+              HeckeMatrixField:=0
               ) -> IdealDatum
   {
     inputs:
@@ -79,6 +81,9 @@ intrinsic cIdealDatum(
 
   X`InducedModuleMtrxs := AssociativeArray();
   X`H1s := AssociativeArray();
+
+  // this might be 0
+  X`HeckeMatrixField := HeckeMatrixField;
 
   Gamma`ideal_data[I][chi] := X;
   return X;
@@ -236,8 +241,8 @@ function induced_module_mtrxs_of_gens(X, k)
 
   Ms := AssociativeArray();
   for i in [1 .. #gens] do
-    Ms[i] := matrix_of_induced_action(gens[i], k, X);
-    Ms[-i] := matrix_of_induced_action(gens[i]^(-1), k, X);
+    Ms[i] := matrix_of_induced_action(gens[i], k, X : hecke_matrix_field:=X`HeckeMatrixField);
+    Ms[-i] := matrix_of_induced_action(gens[i]^(-1), k, X : hecke_matrix_field:=X`HeckeMatrixField);
   end for;
 
   X`InducedModuleMtrxs[k] := Ms;

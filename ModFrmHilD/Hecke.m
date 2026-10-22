@@ -153,7 +153,7 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 12, cop
   Binv := B^-1;
 
   // coefficient ring of eigenforms
-  L := Parent(B[1][1]);
+  L := BaseRing(B);
   if F eq Rationals() then
     K := L;
   elif L eq Rationals() then
@@ -167,7 +167,6 @@ intrinsic Eigenbasis(M::ModFrmHilD, basis::SeqEnum[ModFrmHilDElt] : P := 12, cop
   end if;
    
   basis := [ChangeCoefficientRing(f, K) : f in basis];
-  K := CoefficientRing(basis[1]);
   eigs := [];
 
   // the columns of P should be the coefficients

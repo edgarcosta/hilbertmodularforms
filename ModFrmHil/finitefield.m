@@ -170,7 +170,6 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
       M`weight_base_field := Rationals();
       M`weight_dimension := 1;
       QQ := Rationals();
-      M`splitting_field_emb_weight_base_field := hom<QQ->QQ|>;
     else
       // define weight_base_field = extension K/F containing Galois closure of F and
       // containing a root of every conjugate of the minimal polynomial of H.1
@@ -198,7 +197,6 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
       K := OptimizedRepresentation(K);
       embeddings_F_to_K := [hom<F->K | K!r> : r in rts]; // same embeddings, now into extended field K
       Fspl := F`SplittingField[1];
-      M`splitting_field_emb_weight_base_field := hom<Fspl->K | K!Fspl.1>;
       M`weight_base_field:=K;
       vprintf ModFrmHil: "Field chosen for weight representation:%O", weight_field, "Maximal";
       vprintf ModFrmHil: "Using model of weight_field given by %o over Q\n", DefiningPolynomial(K);
@@ -301,7 +299,7 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
     K := hecke_matrix_field(M); // Hecke matrices should be over this, currently
 
     T, primes, v, _, P, t, comb := Explode(hecke_algebra(M : generator));
-    if is_paritious(Weight(M)) then
+    if is_paritious(Weight(M)) or IsDefinite(M) then
       assert BaseRing(t) eq K;
     else
       assert IsSubfield(BaseRing(t), K);
@@ -311,7 +309,7 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
 
     vprintf ModFrmHil: "Characteristic polynomial of Hecke algebra generator: ";
     vtime ModFrmHil:
-    if K cmpeq Rationals() or not IsParallelWeight(M) or IsFinite(K) then
+    if K cmpeq Rationals() or not (IsParallelWeight(M) and Order(DirichletCharacter(M)) eq 2) or IsFinite(K) then
       chi := CharacteristicPolynomial(t);
     else
       // parallel weight ==> poly is over Z
@@ -458,7 +456,6 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
         if assigned M`hecke_matrix_field then
           N`hecke_matrix_field := M`hecke_matrix_field;
         end if;
-        field := hecke_matrix_field(N`Ambient);
         if #components eq 1 then
           pseudo_inv := kmat ^ -1;
         else
@@ -468,11 +465,12 @@ that are irreducible as Hecke modules, and returns this list of new spaces }
         N`Dimension := Nrows(kmat);
         // Anchor the component to the raw top ambient MA and coerce its basis up to
         // MA's field with the conjugate that matches the descent in
-        // change_hecke_matrix_ring, gated on the same is_paritious predicate so the
-        // multi-orbit operators commute: paritious pins it via the marked places
-        // (strong_up_matrix); nonparitious keeps the K(Sqrt(z)) square class of
-        // minimal_hecke_field_emb, which plain ChangeRing carries.
-        parit := is_paritious(Weight(M));
+        // change_hecke_matrix_ring, gated on the same predicate so the multi-orbit
+        // operators commute: paritious (and the definite method in any weight) pin it
+        // via the marked places (strong_up_matrix); only indefinite-nonparitious keeps
+        // the K(Sqrt(z)) square class of minimal_hecke_field_emb, which plain ChangeRing
+        // carries.
+        parit := is_paritious(Weight(M)) or IsDefinite(M);
         if assigned M`basis_matrix_wrt_ambient then
           A := M`basis_matrix_wrt_ambient;
           Ai := M`basis_matrix_wrt_ambient_inv;

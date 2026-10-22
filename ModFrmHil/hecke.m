@@ -28,7 +28,7 @@ import "definite.m" : BasisMatrixDefinite,
 import "diamond.m" : operator;
 import "hecke_field.m" : hecke_matrix_field,
                          minimal_hecke_matrix_field;
-import "weight_rep.m" : is_paritious;
+import "weight_rep.m" : is_paritious; 
 
 debug := false;
 
@@ -110,9 +110,10 @@ function change_hecke_matrix_ring(M, T, H)
     return T;
   end if;
 
-  // Paritious weights pin the descent conjugate via the marked places; nonparitious
-  // weights use the stored minimal_hecke_field_emb preimage.
-  if is_paritious(Weight(M)) then
+  // Paritious weights, and the definite method in any weight, pin the descent conjugate
+  // via the marked places; only indefinite-nonparitious spaces use the stored
+  // minimal_hecke_field_emb preimage (the K(Sqrt(z)) +/- convention is indefinite-only).
+  if is_paritious(Weight(M)) or IsDefinite(M) then
     K := BaseRing(T);
     if H cmpeq Rationals() or K cmpeq Rationals() then
       // Q on either side: no conjugate ambiguity.
@@ -155,7 +156,7 @@ function change_hecke_polynomial_ring(M, f, H)
   end if;
 
   // See change_hecke_matrix_ring above.
-  if is_paritious(Weight(M)) then
+  if is_paritious(Weight(M)) or IsDefinite(M) then
     K := BaseRing(f);
     if H cmpeq Rationals() or K cmpeq Rationals() then
       bool, fH := CanChangeRing(f, H);
@@ -275,6 +276,62 @@ function pseudo_inverse(B, C)
 end function;
 
 
+// Helper function to compute new/old subspace basis matrices using Hecke action
+// Used by both definite and indefinite methods when appropriate
+// Sets M`basis_matrix_wrt_ambient, M`basis_matrix_wrt_ambient_inv, M`basis_matrix, 
+// M`basis_matrix_inv, and M`basis_is_honest directly on M
+procedure ComputeNewSubspaceBasisMatricesUsingHeckeAction(M, MA)
+  // If MA is honest and we know its inner product, 
+  // then we can find an honest basis for M  
+  useIP := false;
+  if basis_is_honest(MA) then
+      // Check if inner product is implemented before trying to use it
+      bool, w := IsParallelWeight(MA);
+      bool and:= (Order(DirichletCharacter(MA)) eq 1);
+      if bool and w eq 2 then
+          try 
+              IP := InnerProductMatrix(MA);
+              useIP := true;
+          catch ERROR
+              if "implemented" notin ERROR`Object then 
+                  error ERROR`Object;
+              end if;
+          end try;
+      end if;
+  end if;
+  vprintf ModFrmHil: 
+      "Using naive method to determine new subspace (%ousing inner product)\n", 
+       useIP select "" else "not ";
+  V := VectorSpace(hecke_matrix_field(MA), Dimension(MA));
+  C := sub< V | >;
+  if useIP then
+      for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
+          C +:= NewAndOldSubspacesUsingHeckeAction(MA, pp[1] : OldOnly);
+      end for;
+      vprintf ModFrmHil, 2: "Computing new space as orthogonal complement of old space: "; 
+      vtime ModFrmHil, 2:
+      V := Kernel(Transpose(BasisMatrix(C)*IP));
+  else
+      for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
+          // An oldspace from pp only makes sense if the nebentypus is also "old" at pp
+          if (DirichletCharacter(M) cmpeq 1) or IsOne(GCD(pp[1], Conductor(DirichletCharacter(M)))) then
+              new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
+            V meet:= new;
+            C +:= old;
+          end if;
+      end for;
+  end if;
+  R := BaseRing(MA`basis_matrix);
+  bm_new := ChangeRing(BasisMatrix(V), R);
+  bm_old := ChangeRing(BasisMatrix(C), R);
+  M`basis_matrix_wrt_ambient := bm_new;
+  M`basis_matrix_wrt_ambient_inv := pseudo_inverse(bm_new, bm_old);
+  M`basis_matrix := M`basis_matrix_wrt_ambient * MA`basis_matrix;
+  M`basis_matrix_inv := MA`basis_matrix_inv * M`basis_matrix_wrt_ambient_inv;
+  M`basis_is_honest := useIP;
+end procedure;
+
+
 // Main function to trigger explicit computation of a space M
 
 function basis_matrix(M)
@@ -306,49 +363,7 @@ function basis_matrix(M)
     else
         MA := M`Ambient;
         _ := basis_matrix(MA);
-        // If MA is honest and we know its inner product, 
-        // then we can find an honest basis for M  
-        useIP := false;
-        if basis_is_honest(MA) then
-            try 
-                IP := InnerProductMatrix(MA);
-                useIP := true;
-            catch ERROR
-                if "implemented" notin ERROR`Object then 
-                    error ERROR`Object;
-                end if;
-            end try;
-        end if;
-        vprintf ModFrmHil: 
-            "Using naive method to determine new subspace (%ousing inner product)\n", 
-             useIP select "" else "not ";
-        V := VectorSpace(hecke_matrix_field(MA), Dimension(MA));
-        C := sub< V | >;
-        if useIP then
-            for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
-                C +:= NewAndOldSubspacesUsingHeckeAction(MA, pp[1] : OldOnly);
-            end for;
-            vprintf ModFrmHil, 2: "Computing new space as orthogonal complement of old space: "; 
-            vtime ModFrmHil, 2:
-            V := Kernel(Transpose(BasisMatrix(C)*IP));
-        else
-            for pp in Factorization(NewLevel(M)/NewLevel(MA)) do
-                // An oldspace from pp only makes sense if the nebentypus is also "old" at pp
-                if (DirichletCharacter(M) cmpeq 1) or IsOne(GCD(pp[1], Conductor(DirichletCharacter(M)))) then
-                    new, old := NewAndOldSubspacesUsingHeckeAction(MA, pp[1]);
-                  V meet:= new;
-                  C +:= old;
-                end if;
-            end for;
-        end if;
-        R := BaseRing(MA`basis_matrix);
-        bm_new := ChangeRing(BasisMatrix(V), R);
-        bm_old := ChangeRing(BasisMatrix(C), R);
-        M`basis_matrix_wrt_ambient := bm_new;
-        M`basis_matrix_wrt_ambient_inv := pseudo_inverse(bm_new, bm_old);
-        M`basis_matrix := M`basis_matrix_wrt_ambient * MA`basis_matrix;
-        M`basis_matrix_inv := MA`basis_matrix_inv * M`basis_matrix_wrt_ambient_inv;
-        M`basis_is_honest := useIP;
+        ComputeNewSubspaceBasisMatricesUsingHeckeAction(M, MA);
 /*
  // for testing degeneracy (select the naive method above)
  bm := M`basis_matrix;
@@ -1063,25 +1078,32 @@ intrinsic SetRationalBasis(M::ModFrmHil)
  splitting field of K.)  The basis is then fixed, and all subsequent 
  computations with M will be done relative to this basis.}
 
-  if IsBianchi(M) 
-     or assigned M`QuaternionOrder and not IsDefinite(M) 
-     or Seqset(Weight(M)) eq {2}
-     or Dimension(M) eq 0 
+  if IsBianchi(M)
+     or assigned M`QuaternionOrder and not IsDefinite(M)
+     or (Seqset(Weight(M)) eq {2} and Order(DirichletCharacter(M)) le 2)
+     or Dimension(M) eq 0
   then
+    // At parallel weight 2 with trivial or quadratic nebentypus the Hecke matrices
+    // (equivalently, the Hecke algebra) can be defined over Rationals() -- even
+    // though individual eigenforms may have Fourier coefficients in a larger field.
+    // A higher-order nebentypus does NOT admit a rational model of the algebra
+    // (its minimal field is Q(zeta_d)), so we must not force Rationals() here;
+    // Q(zeta_d) is reached by the descent below instead. (This order<=2 gate is
+    // the only deviation from master in this intrinsic.)
     M`hecke_matrix_field := Rationals();
   end if;
 
-  // Check if M already has a rational basis
+  // Check if M already has a rational basis.
   if assigned M`hecke_matrix_field then
     // coerce cached Hecke if necessary
     H := M`hecke_matrix_field;
-    for P in Keys(M`Hecke) do 
+    for P in Keys(M`Hecke) do
       TP, p_reps := Explode(M`Hecke[P]);
       if BaseRing(TP) cmpne H then
         M`Hecke[P] := <change_hecke_matrix_ring(M, TP, H), p_reps>;
       end if;
     end for;
-    for P in Keys(M`HeckeCharPoly) do 
+    for P in Keys(M`HeckeCharPoly) do
       fP := M`HeckeCharPoly[P];
       if BaseRing(fP) cmpne H then
         M`HeckeCharPoly[P] := change_hecke_polynomial_ring(M, fP, H);
@@ -1224,307 +1246,6 @@ function NewformsOfDegree1Implemented(M)
   return bool and k eq 2;
 end function;
 
-// TO DO: Sort (by default?)
-/*
-intrinsic NewformDecomposition(M::ModFrmHil : Dimensions:=0) -> List
-{Given a new space M of Hilbert modular forms, this decomposes M into subspaces 
- that are irreducible as Hecke modules, and returns this list of new spaces}
-
-  // Check if full decomposition is stored
-  bool, ND := HasAttribute(M, "NewformDecomposition");
-  if bool and Dimension(M) eq &+ [Integers()| Dimension(N) : N in ND] then
-    if Dimensions cmpeq 0 then
-      return ND;
-    elif Type(Dimensions) eq RngIntElt then
-      return [* N : N in ND | Dimension(N) eq Dimensions *];
-    else
-      return [* N : N in ND | Dimension(N) in Dimensions *];
-    end if;
-  end if;
-
-  dim := Dimension(M : UseFormula := false);
-
-  if Dimensions cmpeq 0 then
-    Dimensions := [1..dim];
-  elif Type(Dimensions) eq RngIntElt then
-    Dimensions := [Dimensions];
-  else
-    require ISA(Type(Dimensions), Setq) and Type(Universe(Dimensions)) eq RngInt: 
-            "'Dimensions' should be a sequence of integers";
-  end if;
-
-  require IsNew(M) or dim eq 0 :
-         "Currently implemented only for new spaces (constructed using NewSubspace)";
-
-  if assigned M`HeckeIrreducible and M`HeckeIrreducible then
-    // M was constructed by NewformDecomposition
-    if not assigned M`HeckeMethod then
-      M`HeckeMethod := 1;
-    end if;
-    ND := [* M *];
-
-  elif dim eq 0 then 
-    ND := [* *]; 
-
-  // TO DO
-  //elif dim eq 1 then 
-  //  endow M with the attributes of an eigenspace
-  //  ND := [* M *]; 
-  //
-
-  elif Dimensions eq [1] and NewformsOfDegree1Implemented(M)
-and dim ne 1 // beware recursion
-  then
-    return [* Parent(f) : f in NewformsOfDegree1(M) *];
-
-  else
-
-// !!!!! possibly don't SetRationalBasis first !!!!!
-// SetRationalBasis(M);
-
-    K := hecke_matrix_field(M); // Hecke matrices should be over this, currently
-
-    T, primes, v, _, P, t, comb := Explode(hecke_algebra(M : generator));
-    assert BaseRing(t) eq K;
-
-    vprintf ModFrmHil: "Characteristic polynomial of Hecke algebra generator: "; 
-    vtime ModFrmHil:
-    if K eq Rationals() or not IsParallelWeight(M) then
-      chi := CharacteristicPolynomial(t);
-    else
-      // parallel weight ==> poly is over Z
-      apbound := &+ [Abs(comb[i])*HeckeEigenvalueBound(M,primes[i]) 
-                    : i in [1..#primes] | comb[i] ne 0];
-      bound := dim*apbound^dim;
-      chi := CharacteristicPolynomialViaCRT(t, bound);
-    end if;
-
-    // decomposition should be over the true hecke field (= Q for parallel weight)
-    chi := ChangeRing(chi, minimal_hecke_matrix_field(M));
-
-    vprintf ModFrmHil: "Factoring the polynomial: "; 
-    vtime ModFrmHil:
-    fact := Factorization(chi);
-    assert forall{tup: tup in fact | tup[2] eq 1};
-
-    if #fact eq 1 then
-      M`HeckeIrreducible := true;
-    end if;
-
-    vprintf ModFrmHil: "Decomposition dimensions: %o = %o\n", dim, [Degree(tup[1]) : tup in fact];
-
-    fact1 := Dimensions cmpeq 0 select fact 
-                                else [tup: tup in fact | Degree(tup[1]) in Dimensions];
-    if IsEmpty(fact1) then
-      return [* *]; 
-    end if;
-    // TO DO: elif #fact eq 1 then
-
-    // CHECK: each field should either be totally real or a CM field
-    vprintf ModFrmHil, 2: "Checking the eigenvalue fields look okay: ";
-    vtime ModFrmHil, 2:
-    for tup in fact1 do
-      if BaseRing(K) cmpeq Rationals() then
-        real_pols := [* tup[1] *];
-      else
-        real_pols := [* Polynomial([Real(Conjugate(c,i)) : c in Eltseq(tup[1])]) 
-                      : i in [1..Degree(K)] *];
-      end if;
-      real_roots := [#Roots(pol) : pol in real_pols];
-      okay := &and [num eq Degree(tup[1]) : num in real_roots] or &and [num eq 0 : num in real_roots];
-      error if not okay,
-        "Serious bug detected!!!\nThe eigenvalue fields are not of the expected kind.\n" * please_report;
-    end for;
-
-    // Construct the irreducible subspaces, in some form.
-    // Here we have lots of choices:
-    // (1) proceed as Allan did over Q: write down trivial basis of each component 
-    //     using the trick below, then echelon using rational reconstruction. 
-    // (2) write down a nicer basis by taking images, so that action of known 
-    //     heckes is integral.  Use LLL.  Don't find inverse change of basis:
-    //     obtain hecke matrices in new basis via CRT, since they are integral.
-    // (3) Don't write down a basis.  Compute an eigenform by doing Nullspace 
-    //     over an extension (use rational reconstruction).  Hecke operators on
-    //     each subspace are obtained as representation matrices of eigenvalues.
-
-HeckeMethod := assigned M`HeckeMethod 
-               select M`HeckeMethod else 1;
-
-if HeckeMethod eq 4 then 
- "\nWARNING!!!  Method 4 was specified in NewformDecomposition!" *
- "\n\nThis method transcends normal dimensions: it exists in a" *
- "\nhyperspatial paradigm whose existentiality is not known to be" *
- "\nconsistent with the Magma philosophy. This may be dangerous.";
-end if;
-
-    if HeckeMethod eq 0 then
-
-      // Obvious way to decompose:
-      components := [* KernelMatrix(Evaluate(tup[1], t)) : tup in fact *];
-
-      "WARNING: Method 0 was selected!!! (Usefulness = 0)";
-
-    elif HeckeMethod eq 1 then
-
-      // Write down basis of each component.
-      // For each prime factor f with chi = f*g, the corresponding newform space is 
-      // Ker f(t) = Im g(t) which has (rational) basis [v*g(t)*t^i : 0 <= i < deg(g)]
-
-      // First write down (rational) basis [v*t^i : 0 <= i < dim]
-      v_images := ZeroMatrix(K, dim, dim);
-      InsertBlock(~v_images, v, 1, 1);
-      vti := v;
-      vprintf ModFrmHil: "Spinning: ";
-      vtime ModFrmHil: 
-      for i := 1 to dim-1 do 
-        vti := vti * t;
-        InsertBlock(~v_images, vti, i+1, 1);
-      end for;
-
-      components := [* *];
-      vprintf ModFrmHil: "Decomposing: ";
-      vtime ModFrmHil: 
-      for tup in fact do 
-        f := tup[1];
-        g := chi div f;
-        d := Degree(f);
-        vprintf ModFrmHil: "%o ", d;
-        gcoeffs := ChangeRing(Vector(Eltseq(g)), K);
-        // build left-multiplier matrix (rows determine basis elements)
-        coeff_mat := ZeroMatrix(K, d, dim);
-        for i := 1 to d do 
-          InsertBlock(~coeff_mat, gcoeffs, i, i);
-        end for;
-        bas_mat := coeff_mat * v_images;
-        // better echelonize now, will be needed immediately below (in method 1)
-        vprintf ModFrmHil, 3: "Echelonizing basis: ";
-        vtime ModFrmHil, 3: 
-        bas_mat := EchelonForm(bas_mat); 
-        Append(~components, bas_mat);
-      end for;
-
-    end if;
-
-    if HeckeMethod le 1 then
-
-      // TO DO: the hecke_matrix_field business here might not be correct
-      // Previously we had SetRationalBasis on M and its ambient at the start. 
-      // Here we do have a rational basis of each component (at least in method 1).
-
-      MA := Ambient(M);
-      ND := [* *];
-      vprintf ModFrmHil: "Setting up newform spaces: ";
-      vtime ModFrmHil: 
-
-      for k := 1 to #components do
-        kmat := components[k];
-        if Nrows(kmat) notin Dimensions then
-          continue;
-        end if;
-
-        if IsBianchi(M) then
-          N := BMF_with_ambient(MA);
-          N`NewLevel := N`Level;
-        else
-          N := HMF0(BaseField(M), Level(M), Level(M), DirichletCharacter(M), Weight(M), CentralCharacter(M)); 
-          N`Ambient := MA;
-        end if;
-        // give N same ambient as M (TO DO: but reconsider when to make M wrt ambient, rather than wrt raw?)
-        N`NewSpace := M;
-        N`is_new := true;
-        N`HeckeIrreducible := true;
-        if assigned M`hecke_matrix_field then
-          N`hecke_matrix_field := M`hecke_matrix_field;
-        end if;
-        field := hecke_matrix_field(N`Ambient);
-        if #components eq 1 then
-          pseudo_inv := kmat ^ -1;
-        else
-          complement := VerticalJoin(<components[i] : i in [1..#components] | i ne k>);
-          pseudo_inv := pseudo_inverse(kmat, complement);
-        end if;
-        N`Dimension := Nrows(kmat);
-        if assigned M`basis_matrix_wrt_ambient then
-          N`basis_matrix_wrt_ambient := ChangeRing(kmat, BaseRing(A)) * A
-                                                   where A is M`basis_matrix_wrt_ambient;
-          N`basis_matrix_wrt_ambient_inv := Ai * ChangeRing(pseudo_inv, BaseRing(Ai))
-                                                   where Ai is M`basis_matrix_wrt_ambient_inv;
-          N`basis_matrix := ChangeRing(N`basis_matrix_wrt_ambient, BaseRing(A)) * A 
-                                                   where A is MA`basis_matrix;
-          N`basis_matrix_inv := Ai * ChangeRing(N`basis_matrix_wrt_ambient_inv, BaseRing(Ai)) 
-                                                   where Ai is MA`basis_matrix_inv;
-        else
-          N`basis_matrix := ChangeRing(kmat, BaseRing(A)) * A
-                                                   where A is M`basis_matrix;
-          N`basis_matrix_inv := Ai * ChangeRing(pseudo_inv, BaseRing(Ai))
-                                                   where Ai is M`basis_matrix_inv;
-        end if;
-        if assigned M`basis_is_honest then
-          N`basis_is_honest := M`basis_is_honest;
-        end if;
-        Append(~ND, N);
-      end for; // k
-
-    else
-      assert HeckeMethod ge 3; // Method 2 does not exist!
- 
-      if HeckeMethod eq 3 then
-        "WARNING: Method 3 was selected for Hecke eigenform computations!!!";
-        "         It's a very inefficient method (just warm-up for method 4)";
-      end if;
-
-      ND := [* *];
-
-      assert K eq BaseRing(t);
-      vprintf ModFrmHil, 2: "Checking hecke_algebra_generator (should take no time): "; 
-      vtime ModFrmHil, 2:
-      assert t eq &+ [comb[i]*HeckeOperator(M,primes[i]) : i in [1..#primes]];
-      M`hecke_algebra_generator := <primes, comb, t>; // this must never be changed
-
-      vprintf ModFrmHil: "Setting up newform spaces: "; 
-      vtime ModFrmHil:
-      for tup in fact1 do 
-        // Construct eigenvalue field E
-        f := tup[1];
-        if Degree(f) eq 1 then
-          E := BaseRing(f);
-          e := Roots(f)[1][1];
-        else
-  	  E := ext< BaseRing(f) | f >; e:=E.1;// TO DO: Check:=false ?
-        end if;
-
-        // This space will not need any basis matrix stuff.
-        // Hecke eigenvalues will be calculated from data stored in the eigenform.
-
-        N := HMF0(BaseField(M), Level(M), Level(M), DirichletCharacter(M), Weight(M), CentralCharacter(M)); 
-        N`Ambient := M;    // eigenvectors are expressed wrt the basis of M
-        N`NewSpace := M;   // (this is used in best_column -- why not use ambient?)
-        N`HeckeIrreducible := true;
-        N`is_new := true;
-        N`Dimension := Degree(f);
-
-        // eigenvalue corresponding to N`Ambient`hecke_algebra_generator
-        // TO DO: if debug, check it really is an eigenvalue of that
-        N`hecke_algebra_generator_eigenvalue := e; 
-
-        Append(~ND, N);
-      end for;
-
-    end if; // HeckeMethod
-
-    for i := 1 to #ND do
-      ND[i]`HeckeMethod := HeckeMethod;
-    end for;
-
-  end if;
-
-  if &+ [Integers()| Dimension(N) : N in ND] eq Dimension(M) then
-    M`NewformDecomposition := ND;
-  end if;
-
-  return ND;
-end intrinsic;
-*/
 
 // Find an eigenvector of M mod P with eigenvalue e mod P
 // Returns false if eigenspace mod P is not dimension 1
@@ -2466,6 +2187,8 @@ the same properties regarding dimensions of old and new spaces that hold for mod
    Nnew := NewLevel(M);
    require N subset p : "The space is already new at p, so this should not be called.";
    require Norm(Nnew + p) eq 1 : "The given space should have new level prime to p"; 
+   require N / Conductor(DirichletCharacter(M)) subset p : "There can be no oldspace \
+     contribution from p if the conductor of the nebentypus doesn't divide N / p";
 
    // Work out dimension of the p-old space by inclusion-exclusion
    Mp := space_with_level(M, N/p, Nnew);
@@ -2478,7 +2201,7 @@ the same properties regarding dimensions of old and new spaces that hold for mod
    end if;
 
    old_dimension := 2*Dimension(Mp);
-   if N subset p^2 then
+   if N / Conductor(DirichletCharacter(M)) subset p^2 then
      Mp2 := space_with_level(M, N/p^2, Nnew);
      old_dimension -:= Dimension(Mp2);
    end if;
