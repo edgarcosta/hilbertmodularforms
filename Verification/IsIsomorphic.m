@@ -157,19 +157,103 @@ intrinsic GradedInverseImages(R::RngMPol, PhiImages::SeqEnum) -> SeqEnum
   return Psi;
 end intrinsic;
 
-intrinsic LoadStoredCanonicalRing(label::MonStgElt) -> RngMPol
-{ Load the stored canonical-ring ideal for the LMFDB variety <label>
-  (e.g. "2.2.13.1-1.1") from Verification/CanonicalRingEquations/<label>-gl-0.m,
-  as an ideal in the file's weighted polynomial ring. Single-component files only;
-  errors on multi-component (h+ = 2) files, which have one scheme per narrow-class
-  component and need a component-wise loader. }
+intrinsic LoadStoredCanonicalRings(label::MonStgElt) -> SeqEnum
+{ Load the trusted Magma source in Verification/CanonicalRingEquations/<label>-gl-0.m.
+  Return <component label, ideal> pairs in file order, each in its stored polynomial
+  ring. Require unique labels, matching variety metadata and one scheme per component. }
   filename := Sprintf("Verification/CanonicalRingEquations/%o-gl-0.m", label);
-  s := Read(filename);
-  ncomp := #[ m : m in Split(s, "\n") | Position(m, "component with label") gt 0 ];
-  require ncomp le 1:
-    Sprintf("%o has %o components; LoadStoredCanonicalRing handles single-component files only", filename, ncomp);
-  R, A, eqns, S := eval (s cat "\nreturn R, A, eqns, S;");
-  return ideal< R | eqns >;
+  parts := Split(label, "-");
+  require #parts eq 2: "Expected a field-level label";
+  labels := [];
+  component := "";
+  metadata := false;
+  complete := false;
+  ring_defined := false;
+  ambient_defined := false;
+  equations_defined := false;
+  statement := "";
+  code := "stored_components := [];\n";
+  component_prefix := "//componentwithlabel";
+  variety_prefix := "//Hilbertmodularvarietywithlabel";
+  level_prefix := "//levelhaslabel";
+  for line in Split(Read(filename), "\n") do
+    compact := StripWhiteSpace(line);
+    if Position(compact, component_prefix) eq 1 then
+      require component eq "" or (complete and StripWhiteSpace(statement) eq ""):
+        Sprintf("%o: incomplete component %o", filename, component);
+      component := compact[#component_prefix+1..#compact];
+      require #component gt 0: Sprintf("%o: empty component label", filename);
+      require component notin labels:
+        Sprintf("%o: duplicate component label %o", filename, component);
+      Append(~labels, component);
+      metadata := false;
+      complete := false;
+      ring_defined := false;
+      ambient_defined := false;
+      equations_defined := false;
+    elif Position(compact, variety_prefix) eq 1 then
+      variety := compact[#variety_prefix+1..#compact];
+      require component ne "" and not metadata and
+        variety eq label cat "-" cat component cat "-gl-0":
+        Sprintf("%o: conflicting variety metadata for component %o", filename, component);
+      metadata := true;
+    elif Position(compact, level_prefix) eq 1 then
+      require compact[#level_prefix+1..#compact] eq parts[2]:
+        Sprintf("%o: conflicting level metadata", filename);
+    else
+      comment := Position(line, "//");
+      source_line := comment gt 0 select line[1..comment-1] else line;
+      for character in Eltseq(source_line cat "\n") do
+        statement cat:= character;
+        code cat:= character;
+        if character eq ";" then
+          require component ne "" and metadata:
+            Sprintf("%o: missing component or variety metadata", filename);
+          require not complete:
+            Sprintf("%o: extra statement after component %o scheme", filename, component);
+          compact_statement := StripWhiteSpace(statement);
+          if Position(compact_statement, "R<") eq 1 or
+            Position(compact_statement, "R:=") eq 1 then
+            ring_defined := true;
+          elif Position(compact_statement, "A:=") eq 1 then
+            require ring_defined:
+              Sprintf("%o: incomplete ring for component %o", filename, component);
+            ambient_defined := true;
+          elif Position(compact_statement, "eqns:=") eq 1 then
+            require ring_defined:
+              Sprintf("%o: incomplete ring for component %o", filename, component);
+            equations_defined := true;
+          end if;
+          if Position(compact_statement, "S:=") eq 1 then
+            require ring_defined and ambient_defined and equations_defined:
+              Sprintf("%o: incomplete scheme for component %o", filename, component);
+            require Position(compact_statement, "S:=Scheme(") eq 1:
+              Sprintf("%o: expected a scheme for component %o", filename, component);
+            // Capture before the next block replaces R, eqns and S.
+            code cat:= Sprintf("\nAppend(~stored_components, <\"%o\", ideal< R | eqns >>);\n",
+              component);
+            complete := true;
+          end if;
+          statement := "";
+        end if;
+      end for;
+    end if;
+  end for;
+  require #labels gt 0: Sprintf("%o: no labeled components", filename);
+  require complete and StripWhiteSpace(statement) eq "":
+    Sprintf("%o: incomplete component %o", filename, component);
+  return eval (code cat "\nreturn stored_components;");
+end intrinsic;
+
+intrinsic LoadStoredCanonicalRing(label::MonStgElt) -> RngMPol
+{ Load the single stored canonical-ring ideal for the field-level label
+  (e.g. "2.2.13.1-1.1"), in its stored polynomial ring. Files with multiple
+  components require LoadStoredCanonicalRings. }
+  components := LoadStoredCanonicalRings(label);
+  require #components eq 1:
+    Sprintf("%o has %o components; LoadStoredCanonicalRing handles single-component files only",
+      label, #components);
+  return components[1][2];
 end intrinsic;
 
 intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], MaxAttempts := 100000)
