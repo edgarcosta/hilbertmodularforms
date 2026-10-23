@@ -751,7 +751,8 @@ intrinsic AlgebraicallyIndependent(forms::SeqEnum[ModFrmHilDElt]
     : IdealClassesSupport := false) -> BoolElt
 {Check if the given forms are algebraically independent using the Jacobian criterion.
 The forms should all have the same parallel weight, and there should be n+1 of them where
-n = [F:Q]. Returns true if algebraic independence is certified on at least one component.}
+n = [F:Q]. Returns true if algebraic independence is certified on at least one component.
+Exponents outside that component's Fourier lattice have known zero coefficients.}
 
   n := Degree(BaseField(GradedRing(forms[1])));
   require #forms eq n + 1 : "Expected n+1 forms where n = degree of the base field";
@@ -795,17 +796,10 @@ n = [F:Q]. Returns true if algebraic independence is certified on at least one c
     prec_bb := Min([Precision(g) : g in ratio_comps]);
     ratios := [LowerSetExpansion(g) : g in ratio_comps];
 
-    // Keep only the exactly-computed coefficients of det(J). Its coefficient at
-    // exponent e is a sum, over the columns j, of convolutions whose column-j
-    // factor is the ratio expansion differentiated in q_j; every summand reads a
-    // ratio coefficient at an input a + u_j with 0 <= a <= e. Such an input is
-    // known exactly unless it is "bad": totally positive (inside the cone, where
-    // the ratio may be nonzero) yet beyond the stored lower set. A bad input
-    // d forbids exactly the coefficients e >= d - u_j (for the column j it derives
-    // in). So det(J)'s coefficient at e is exact iff e dominates no threshold
-    // d - u_j; a surviving nonzero one certifies independence, while a provably
-    // dependent input (det(J) identically zero) has none and insufficient
-    // precision yields a conservative false.
+    // An unknown ratio coefficient at d can affect det(J) at e >= d - u_j.
+    // Only totally positive exponents in the Fourier lattice beyond the stored
+    // lower set are unknown; coefficients outside that lattice are zero.
+    // A surviving nonzero determinant coefficient certifies independence.
     stored := {};
     for p in [q : q in M`PrecisionsByComponent[bb] | q le prec_bb] do
       for nu -> _ in M`FunDomainRepsOfPrec[bb][p] do
@@ -817,6 +811,7 @@ n = [F:Q]. Returns true if algebraic independence is certified on at least one c
 
     F_base := BaseField(M);
     E2N := ExpToNuMatrices(M)[bb];
+    fourier_lattice := NarrowClassGroupRepsToIdealDual(M)[bb];
     // Precompute the real embeddings of the exponent-to-nu map (F is totally real),
     // so total positivity of nu(d) is a sign check on the vector d * EMBED, with an
     // exact fallback for borderline entries.
@@ -846,16 +841,17 @@ n = [F:Q]. Returns true if algebraic independence is certified on at least one c
     detmons := Monomials(detJ);
 
     if #detmons ne 0 then
-      // A bad input (totally positive, beyond the stored lower set) at exponent d
-      // forbids every determinant coefficient e >= d - u_j. Every input to an
-      // examined coefficient lies within the determinant's own bounding box (plus
-      // one derivative step), so enumerate the bad inputs there, collect the
-      // thresholds d - u_j and reduce them to their minimal points.
+      // Every input to an examined coefficient lies in this bounding box plus
+      // one derivative step. Unknown inputs forbid coefficients e >= d - u_j.
       Bmax := [Max([Exponents(m)[k] : m in detmons]) + 1 : k in [1..n]];
       thresh := {};
       for d in CartesianProduct([{0..Bmax[k]} : k in [1..n]]) do
         dd := [di : di in d];
         if dd in stored then
+          continue;
+        end if;
+        nu := F_base ! Eltseq(Vector(Rationals(), dd) * E2N);
+        if nu notin fourier_lattice then
           continue;
         end if;
         if is_totpos(dd) then
