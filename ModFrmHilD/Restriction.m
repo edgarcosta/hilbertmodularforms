@@ -1,3 +1,30 @@
+function ClassicalNebentypusOfRestriction(chiF, N, ZF)
+  // chiF - the Hilbert nebentypus (GrpHeckeElt) of the HMF being restricted
+  // N    - the rational classical level (RngIntElt)
+  // ZF   - the ring of integers of the base field
+  //
+  // Returns the classical Dirichlet character psi mod N (over Q) carried by
+  // the diagonal restriction, or `false` if it cannot be matched. For a
+  // positive rational integer n coprime to N the restricted form has
+  // nebentypus value psi(n) = chiF(n*ZF): the diagonal embedding sends the
+  // lower-right entry d of a Gamma_0(N) matrix to the principal ideal (d),
+  // so the automorphy character is chiF evaluated there. Evaluating on
+  // positive representatives of the unit generators automatically bakes in
+  // the correct parity psi(-1) = (-1)^(classical weight), since chiF's
+  // archimedean type is what makes it compatible with the weight.
+  ord := Order(chiF);
+  Cf := CyclotomicField(ord);
+  G := DirichletGroup(N, Cf);
+  ug := UnitGenerators(G);
+  targets := [Cf ! chiF((Integers()!u)*ZF) : u in ug];
+  for d in Elements(G) do
+    if [Cf ! d(u) : u in ug] eq targets then
+      return MinimalBaseRingCharacter(d);
+    end if;
+  end for;
+  return false;
+end function;
+
 intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngOrdIdl : AsCoefficients:=false) -> Any
   {Given an HMF f of weight k = [k_1,...,k_n] (not necessarily parallel), returns the classical modular
   form of weight Sum(k) and level obtained from restricting the component bb of the HMF to the diagonal,
@@ -56,7 +83,23 @@ intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngOrdIdl
     return [IsDefined(raw_coeffs, e) select raw_coeffs[e] else 0 : e in [0 .. max_exp]];
   end if;
 
-  modForms := ModularForms(Gamma0(N),classical_weight);
+  // The restriction lands in M_k(Gamma_0(N), psi) where psi is the classical
+  // nebentypus induced by the Hilbert nebentypus. When psi is trivial this is
+  // the usual Gamma_0(N) space; otherwise we must build the space with that
+  // character, or the coercion below fails ("series does not define a modular
+  // form in the space"). This happens whenever classical_weight is odd (the
+  // trivial-character space is {0} then) or the Hilbert nebentypus restricts
+  // to a nontrivial Dirichlet character.
+  chiF := Character(Parent(f));
+  if IsTrivial(chiF) then
+    modForms := ModularForms(Gamma0(N), classical_weight);
+  else
+    psi := ClassicalNebentypusOfRestriction(chiF, N, ZF);
+    require psi cmpne false :
+      "Could not determine the classical nebentypus of the restriction; use AsCoefficients:=true instead";
+    modForms := IsTrivial(psi) select ModularForms(Gamma0(N), classical_weight)
+                                 else ModularForms(psi, classical_weight);
+  end if;
   return modForms!(denom*(restriction + O(q^(prec))));
 end intrinsic;
 
