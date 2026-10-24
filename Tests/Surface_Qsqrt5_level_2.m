@@ -1,6 +1,9 @@
 // test-time: ~18m
 // HilbertModularVariety end-to-end test: Q(sqrt(5)), level 2*ZF
 // 2 is inert in Q(sqrt(5)), so 2*ZF is a prime ideal of norm 4
+// Literature: Hirzebruch 1976 (Russian Math. Surveys 31:5, 96-110), Thm 2 p.108, gives the
+// even ring of the principal subgroup Gamma(2); compare its invariants under
+// Gamma0(2)/Gamma(2) = A4.
 // Expected: 1 component, certified, dimension 2
 // Resources: ~33 min CPU, ~1135 MB RAM
 printf "HilbertModularVariety on Q(sqrt(5)), level 2*ZF...";

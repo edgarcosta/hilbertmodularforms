@@ -6,6 +6,9 @@
 // by a witness map stored alongside the literature equations and checked
 // deterministically by VerifyGradedIsomorphism (no version-dependent search).
 //
+// Source: van der Geer-Zagier 1977 (Invent. Math. 42, 93-133), Thm 8 p.120: the even
+// ring, weights [2,4,6,6,8], with its two relations.
+//
 // Literature equations, citation, and the witness map:
 //   Verification/LiteratureEquations/2.2.13.1-1.1-vdGZagier.m
 //
