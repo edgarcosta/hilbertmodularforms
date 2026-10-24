@@ -254,10 +254,12 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
 
   // membership system: for each generator g of I, apply the functionals vanishing on
   // J in degree deg(g) to the coefficient vector of phi(g)
-  Jgens := [R! gj : gj in Generators(J)];
+  // SmallBasis retains shorter input relations after HilbertSeries or NormalForm
+  // caches a larger Groebner basis.
+  Jgens := [R! gj : gj in SmallBasis(J)];
   Jdeg := [Integers()! WeightedDegree(gj) : gj in Jgens];
   sys := [];
-  for g in Generators(I) do
+  for g in SmallBasis(I) do
     dg := Integers()! WeightedDegree(R!g);
     Md := MonomialsOfWeightedDegree(R, dg);
     pos := AssociativeArray();
