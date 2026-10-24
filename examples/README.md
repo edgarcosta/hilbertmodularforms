@@ -19,6 +19,31 @@ a CI runner live in `examples/slow/` and are skipped by CI; run them manually wi
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier, deterministic witness map | `canonical_ring_Qsqrt13.m` | CI |
 | heavy cases (D=12,21,24,28,33 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | slow (CI-skipped) |
 
+## Stored rings with multiple components
+
+Use `LoadStoredCanonicalRings(label)` to load every narrow-class component.
+The singular `LoadStoredCanonicalRing(label)` accepts only single-component
+files. See [the equation-store contract](../Verification/CanonicalRingEquations/README.md)
+for label matching, singleton/full reports and evidence kinds.
+
+```magma
+AttachSpec("spec");
+components := LoadStoredCanonicalRings("2.2.24.1-1.1");
+sane, report := VerifyCanonicalRingComponents("2.2.24.1-1.1", components);
+```
+
+D=21, D=24 and D=28 have stored-series component certification, and D=33 has
+generated certification. D=12 remains scrambled and awaits regeneration.
+Series agreement alone does not certify equation provenance or a literature
+isomorphism.
+
+D=12 and D=24 literature examples remain pending until their witness
+continuations are integrated. Those continuations adopt the plural loader,
+check every component's series, and select the literature-matched component
+by its narrow-class label, group, and action for `VerifyGradedIsomorphism`.
+No literature claim for either field follows from the stored-series check.
+There is no level-1 literature witness here for D=21, D=28 or D=33.
+
 ## numerical-invariants paper (LuCaNT)
 
 | Example | File | Status |
