@@ -15,12 +15,13 @@ intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEn
   _<x> := PolynomialRing(F);
   oo := InfinityModulus;
 
-  U, m := SUnitGroup(NN);
-  Usq, msq := quo<U | [2*u : u in Generators(U)]>;
+  // The Selmer group includes square classes from the S-class group's 2-torsion.
+  S := {Parent(NN) | pp[1] : pp in Factorization(NN)};
+  Selmer, m := pSelmerGroup(2, S);
   Ks := [];
-  for usq in Usq do
-  if usq eq Id(Usq) then continue; end if;
-  delta := m(usq@@msq);
+  for s in Selmer do
+  if s eq Id(Selmer) then continue; end if;
+  delta := F!(s@@m);
   K := ext<F | x^2-delta>;
   ff, ooff := Conductor(AbelianExtension(K));
   if ff eq NN or (Dividing and IsIntegral(NN/ff) and &and[c in oo : c in ooff]) then
