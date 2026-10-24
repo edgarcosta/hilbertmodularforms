@@ -19,7 +19,8 @@ assert #label gt 0;
 assert "R<[x]>" in s;
 assert "Scheme" in s;
 assert "eqns" in s;
-assert "Certified" in s or "Warning" in s;
+assert "Certified: independence, domain, and Hilbert series verified" in s;
+assert "Domain status: domain proved; method: complete intersection normality" in s;
 assert "Sanity check" in s;
 
 printf "PASSED (CPU: %os, Wall: %os, Mem: %oMB)\n", Cputime(t0), Time(walltime), GetMemoryUsage() div (1024^2);
