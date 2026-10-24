@@ -24,6 +24,8 @@ match the trace formula prediction from `HilbertSeries(M, NN)`.
 | `2.2.29.1-1.1-gl-0.m` | Q(sqrt(29)) | 1 | 1 |
 | `2.2.37.1-1.1-gl-0.m` | Q(sqrt(37)) | 1 | 1 |
 | `2.2.41.1-1.1-gl-0.m` | Q(sqrt(41)) | 1 | 1 |
+| `2.2.53.1-1.1-gl-0.m` | Q(sqrt(53)) | 1 | 1 |
+| `2.2.61.1-1.1-gl-0.m` | Q(sqrt(61)) | 1 | 1 |
 
 ### Stale (sanity check fails)
 

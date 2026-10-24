@@ -9,6 +9,7 @@
 // number > 1 and their regeneration hits the upstream Magma bug at
 // precompute.m:1064 (definite method).
 
+SetNthreads(1);
 
 // === Q(sqrt(5)), level 1 [disc=5, label 2.2.5.1-1.1] ===
 printf "Verifying Q(sqrt(5)) level 1...";
@@ -119,6 +120,30 @@ F41 := LMFDBField("2.2.41.1"); ZF41 := Integers(F41);
 M41 := GradedRingOfHMFs(F41, 1);
 assert HilbertSeriesSanityCheck(M41, 1*ZF41, [I]);
 printf "PASSED\n";
+
+
+printf "Verifying Q(sqrt(53)) level 1...";
+I := eval (Read("Verification/CanonicalRingEquations/2.2.53.1-1.1-gl-0.m") cat "return Ideal(S);");
+F53 := LMFDBField("2.2.53.1"); ZF53 := Integers(F53);
+M53 := GradedRingOfHMFs(F53, 1);
+assert HilbertSeriesSanityCheck(M53, 1*ZF53, [I]);
+SetSeed(1);
+proved, proof := CertifyGradedDomain(I);
+assert proved and proof`Status eq "domain proved";
+assert proof`Method eq "Cohen-Macaulay specialization";
+printf "PASSED (domain proved by %o)\n", proof`Method;
+
+
+printf "Verifying Q(sqrt(61)) level 1...";
+I := eval (Read("Verification/CanonicalRingEquations/2.2.61.1-1.1-gl-0.m") cat "return Ideal(S);");
+F61 := LMFDBField("2.2.61.1"); ZF61 := Integers(F61);
+M61 := GradedRingOfHMFs(F61, 1);
+assert HilbertSeriesSanityCheck(M61, 1*ZF61, [I]);
+SetSeed(1);
+proved, proof := CertifyGradedDomain(I);
+assert proved and proof`Status eq "domain proved";
+assert proof`Method eq "Cohen-Macaulay specialization";
+printf "PASSED (domain proved by %o)\n", proof`Method;
 
 
 // === Cross-check: run HilbertModularVariety on Q(sqrt(13)) ===
