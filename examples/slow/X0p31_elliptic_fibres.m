@@ -1,5 +1,7 @@
 // Worked example (SLOW, CI-skipped): the singular-fibre configuration of the
-// elliptic fibration on X_0(p31) over Q(sqrt 5), proved UNCONDITIONALLY over Q.
+// elliptic fibration on X_0(p31) over Q(sqrt 5).  The I_n fibres are proved
+// UNCONDITIONALLY over Q; the multiplicity m = 2 of the multiple fibre is not
+// (see examples/X0p31_plurigenera.m).
 //
 // Run manually:
 //   magma -b filename:=examples/slow/X0p31_elliptic_fibres.m exitsignal:='' run_tests.m
@@ -10,8 +12,10 @@
 // Q(t) has deg N = deg D = 24, and D factors over Q as
 //     D = l6^6 * l2^2 * q4^4 * o8      (l6,l2 linear; q4 irred deg 2; o8 irred deg 8),
 // giving singular fibres
-//     I_6 + I_2 (both rational) + 2 I_4 (a conjugate pair) + 8 I_1 (one Galois orbit),
-// plus the double fibre _2 I_0 at t = 0.  Sum e(F_v) = 24 = e(Y).
+//     I_6 + I_2 (both rational) + 2 I_4 (a conjugate pair) + 8 I_1 (one Galois orbit).
+// These give Sum e(F_v) = 24 = e(Y), so the multiple fibre m {Omega = 0} has
+// type _m I_0.  It lies over t = 7271/110028, where F1 - t F2 is a multiple of
+// Omega^2.
 //
 // Method (exact j(t0) in Q, no rational point on the fibre needed): adjoin the
 // pencil equation F1 - t0 F2 to the saved Baily-Borel model to cut out the
@@ -22,8 +26,9 @@
 // j(t0) off the Jacobian of its genus-one model.  Then N/D is recovered by exact
 // rational interpolation and PROVED equal to j by the exact identity holding at
 // 72 > 49 = deg N + deg D + 1 points -- a polynomial identity in Q(t), with no
-// height or reduction hypothesis.  Cf. examples/X0p31_plurigenera.m (fast, exact
-// P_1,P_2 and the m=2 certificate) and the mod-p version in WorkInProgress/.
+// height or reduction hypothesis.  Cf. examples/X0p31_plurigenera.m (fast: exact
+// P_1, P_2 and the conic pencil; m = 2 conditional) and the mod-p version in
+// WorkInProgress/.
 //
 // Written flat (no procedure wrapper): the runner evaluates this file in `eval`.
 
@@ -96,9 +101,9 @@ part := Reverse(Sort(&cat[[f[2] : i in [1..Degree(f[1])]] : f in FD]));
 assert part eq [6,4,4,2,1,1,1,1,1,1,1,1];        // I_6 + 2 I_4 + I_2 + 8 I_1
 assert &+part eq 24;                             // = e(Y)
 assert {* Degree(f[1]) : f in FD | f[2] eq 4 *} eq {* 2 *};   // the two I_4 are a conjugate pair
-assert Evaluate(D,Q!0) ne 0;                     // t=0 not a pole: double fibre _2 I_0
+assert Evaluate(D,Q!0) ne 0;                     // t = 0 is not a pole
 // forced ramification of a genuine functional invariant
 assert {* f[2] : f in Factorization(N) *}        eq {* 3^^#Factorization(N) *};   // j=0 : all mult 3
 assert {* f[2] : f in Factorization(N-1728*D) *} eq {* 2^^#Factorization(N-1728*D) *}; // j=1728: mult 2
 
-printf "singular fibres: I_6 + 2 I_4 + I_2 + 8 I_1  (sum e = 24 = e(Y)),  + double fibre _2 I_0.\n";
+printf "singular fibres: I_6 + 2 I_4 + I_2 + 8 I_1  (sum e = 24 = e(Y)),  + multiple fibre _m I_0 (m = 2 conditional).\n";
