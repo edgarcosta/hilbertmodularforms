@@ -1,5 +1,5 @@
 // Exact domain certificates for graded presentations over Q.
-SetNthreads(4);
+SetNthreads(1);
 SetSeed(1);
 Q := Rationals();
 R<x,y,z,w> := PolynomialRing(Q, 4);
