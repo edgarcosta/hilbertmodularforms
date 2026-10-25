@@ -43,7 +43,7 @@ intrinsic EisensteinSeries(
   coeff_ring := (IsDivisibleBy(m, l)) select DefaultCoefficientRing(Mk) else CyclotomicField(l);
 
   for bb in NarrowClassGroupReps(M) do
-    ddbb := NarrowClassRepresentative(M,dd*bb);
+    ddbb := NarrowClassRepresentative(M,bb*ddinv);
     coeffs[ddbb] := AssociativeArray();
     coeffs[ddbb][0] := StrongCoerce(coeff_ring, constant_term[bb]);
 
