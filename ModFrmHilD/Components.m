@@ -796,7 +796,7 @@ intrinsic Inclusion(f :: ModFrmHilDEltComp, Mk :: ModFrmHilD, mm :: RngOrdIdl :
     ) -> ModFrmHilDEltComp
 
 {Takes a form f(z) and produces f(mm*z) in Mk (of level NN) with component
-ideal class [mm*bb]. ForceCoeffPath is used only for testing.}
+ideal class [bb/mm]. ForceCoeffPath is used only for testing.}
 
     Mk_f := Space(f);
     M_f := Parent(Mk_f);
@@ -817,7 +817,7 @@ ideal class [mm*bb]. ForceCoeffPath is used only for testing.}
     require N2 subset mm: "Ideal mm does not divide level of Mk";
 
     bb := ComponentIdeal(f);
-    mmbb := NarrowClassRepresentative(M, mm * bb);
+    mmbb := NarrowClassRepresentative(M, bb / mm);
     prec := Min(Norm(mm) * Precision(f), Precision(M));
 
     coeffs := AssociativeArray();
