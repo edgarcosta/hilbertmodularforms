@@ -1201,11 +1201,12 @@ The record stores each attempted criterion and its evidence.}
   end if;
   // Alarm terminates its process. Keep it in a child so expiry cannot kill
   // the caller or turn an unfinished primality computation into a certificate.
+  // Magma's launcher exports MAGMA_CMD, so the child need not be on PATH.
   input := Sprintf("Alarm(%o); SetNthreads(1); R<[x]> := %m; I := ideal<R | %m>;\n",
       PrimeTimeLimit, R, rels);
   input cat:= "if IsPrime(I) then print \"HMF_DOMAIN_PRIME\"; else print \"HMF_DOMAIN_COMPOSITE\"; end if; quit;\n";
   try
-    output := Split(Pipe("magma -b", input), "\n");
+    output := Split(Pipe("\"${MAGMA_CMD:-magma}\" -b", input), "\n");
   catch e
     output := [Sprint(e)];
   end try;
