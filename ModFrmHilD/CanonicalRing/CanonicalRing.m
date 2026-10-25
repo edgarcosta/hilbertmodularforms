@@ -1027,7 +1027,73 @@ DomainProofFormat := recformat<
   CharacteristicPolynomial
 >;
 
+function SparseGradedDomainParameters(I)
+  R := Generic(I);
+  if Dimension(I) ne 3 then
+    return [R | ];
+  end if;
+  weights := Sort(Setseq({WeightedDegree(R.i) : i in [1..Rank(R)]}));
+  weightIndices := [[i : i in [1..Rank(R)] | WeightedDegree(R.i) eq w] : w in weights];
+  H := HilbertSeries(I);
+  t := Parent(H).1;
+  patterns := [];
+  for a in [1..#weights] do
+    for b in [a..#weights] do
+      for c in [b..#weights] do
+        degrees := [weights[a],weights[b],weights[c]];
+        // A finite parameter quotient makes H times these factors a polynomial.
+        if Degree(Denominator(H * &*[1-t^w : w in degrees])) eq 0 then
+          Append(~patterns, <&*degrees,[a,b,c]>);
+        end if;
+      end for;
+    end for;
+  end for;
+  Sort(~patterns);
+  for phase in [1..2] do
+    pools := [* *];
+    for inds in weightIndices do
+      pool := [[i] : i in inds];
+      if phase eq 2 then
+        for size in [2..#inds] do
+          pool cat:= Sort([Sort(Setseq(s)) : s in Subsets(Seqset(inds),size)]);
+        end for;
+      end if;
+      Append(~pools, pool);
+    end for;
+    for p in patterns do
+      a := p[2][1]; b := p[2][2]; c := p[2][3];
+      for i in [1..#pools[a]] do
+        jmin := a eq b select i+1 else 1;
+        for j in [jmin..#pools[b]] do
+          kmin := b eq c select j+1 else 1;
+          for k in [kmin..#pools[c]] do
+            supports := [pools[a][i],pools[b][j],pools[c][k]];
+            if phase eq 2 and &and[#s eq 1 : s in supports] then
+              continue;
+            end if;
+            mat := Matrix(Rationals(),
+                [[j in s select 1 else 0 : j in [1..Rank(R)]] : s in supports]);
+            if Rank(mat) lt 3 then
+              continue;
+            end if;
+            fs := [R | &+[R.i : i in s] : s in supports];
+            // Partial dimension checks can cost much more than a finite quotient.
+            if Dimension(I + ideal<R | fs>) eq 0 then
+              return fs;
+            end if;
+          end for;
+        end for;
+      end for;
+    end for;
+  end for;
+  return [R | ];
+end function;
+
 function GradedDomainParameters(I, attempts)
+  sparse := SparseGradedDomainParameters(I);
+  if #sparse gt 0 then
+    return sparse;
+  end if;
   R := Generic(I);
   fs := [R | ];
   J := I;
@@ -1091,7 +1157,9 @@ an exact proof record tied to I, with Status "domain proved", "not a domain", or
 "domain unproved". Try factorization, complete intersection normality, and a
 Cohen-Macaulay specialization, then IsPrime in a separate Magma process with a
 PrimeTimeLimit in seconds (zero skips it). Parameters may supply a homogeneous
-system of parameters; otherwise try ParameterAttempts choices per variable weight,
+system of parameters. With ParameterAttempts positive, first try triples of distinct
+generators, then nonempty sums of generators of the same weight, in dimension three.
+If no sparse system is found, try ParameterAttempts choices per variable weight,
 then at most ParameterAttempts times the number of distinct weights whole systems.
 These cycle through distinct weights to fill the dimension, followed by other
 weight multisets of that length.
