@@ -8,7 +8,7 @@ on:
 
 env:
   # Increase this value to reset cache when MAGMA_URL changes.
-  MAGMA_CACHE_NUMBER: 2.29-8
+  MAGMA_CACHE_NUMBER: 2.30-1
 
 jobs:
 
