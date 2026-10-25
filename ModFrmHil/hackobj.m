@@ -975,16 +975,11 @@ intrinsic Dimension(M::ModFrmHil : UseFormula:=true) -> RngIntElt
 
   if not UseFormula
       or Seqset(Weight(M)) ne {2}
-      or (DirichletCharacter(M) cmpne 1 and Order(DirichletCharacter(M)) ne 1)
+      or (DirichletCharacter(M) cmpne 1
+          and Conductor(DirichletCharacter(M)) ne 1*Integers(BaseField(M)))
   then
-      // The class-number dimension formula below is only valid for trivial
-      // nebentypus; with a nontrivial character we must read the dimension off
-      // the (character-twisted) basis matrix instead. For a nontrivial
-      // nebentypus at parallel weight 2 there are no Eisenstein series on the
-      // definite side (the Eisenstein subspace would correspond to a narrow
-      // class character eta with eta o nrd matching chi on \hat{O}^x, but
-      // nrd(\hat{O}^x) is trivial under any narrow class character, forcing chi
-      // trivial), so the raw space is already cuspidal.
+      // The class-number formula requires trivial finite nebentypus.
+      // The Hecke character is imposed later by the diamond projection.
       if definite then
         _ := BasisMatrixDefinite(M : EisensteinAllowed);
       else

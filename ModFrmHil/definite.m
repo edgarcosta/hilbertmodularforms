@@ -1251,10 +1251,12 @@ function BasisMatrixDefinite(M : EisensteinAllowed:=false)
       
     // There are no "Eisenstein series" when we are not
     // in parallel weight 2, I think.
-    if weight2trivchar and not EisensteinAllowed then
+    eisenstein_present := Seqset(Weight(M)) eq {2}
+      and Conductor(DirichletCharacter(M)) eq 1*Integers(BaseField(M));
+    if eisenstein_present and not EisensteinAllowed then
       RemoveEisenstein(~M);
       dim := Nrows(M`basis_matrix);
-    elif weight2trivchar then
+    elif eisenstein_present then
       dim := Nrows(M`basis_matrix_big) - #NarrowClassGroup(BaseField(M));
     else
       M`basis_matrix := M`basis_matrix_big;
