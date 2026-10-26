@@ -59,7 +59,7 @@ intrinsic CuspFormBasis(
   }
 
   if assigned Mk`CuspFormBasis then
-    return Mk`CuspFormBasis;
+    return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
   end if;
 
   k := Weight(Mk);

@@ -31,3 +31,4 @@ procedure TestCachedSupport(basis)
 end procedure;
 
 TestCachedSupport(NewEisensteinBasis);
+TestCachedSupport(CuspFormBasis);
