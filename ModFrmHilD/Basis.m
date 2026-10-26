@@ -260,7 +260,7 @@ intrinsic EisensteinBasis(
   {returns a basis for the space of Eisenstein series of Mk of }
 
   if assigned Mk`EisensteinBasis then
-    return Mk`EisensteinBasis;
+    return SubBasis(Mk`EisensteinBasis, IdealClassesSupport, Symmetric);
   end if;
 
   if not IsParallel(Weight(Mk)) then
