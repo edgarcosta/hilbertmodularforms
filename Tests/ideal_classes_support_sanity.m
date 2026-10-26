@@ -1,4 +1,4 @@
-SetNthreads(4);
+SetNthreads(1);
 printf "Checking Hilbert-series sanity on a strict component subset...\n";
 F := QuadraticField(3);
 N := 1*Integers(F);
@@ -43,7 +43,7 @@ sane6, H_trace6, H_test6 := HilbertSeriesSanityCheck(M6, N6, [I6]
 assert sane6;
 assert H_trace6 eq expected6;
 assert H_test6 eq expected6;
-assert H_trace6 ne (HilbertSeries(M6, N6) + 1)/2;
+assert H_trace6 ne HilbertSeries(M6, N6)/2;
 assert not HilbertSeriesSanityCheck(M6, N6, [I6]
     : IdealClassesSupport := [N6]);
 printf "Unequal components checked: selected dimensions differ from the average\n";
@@ -62,6 +62,6 @@ for bb7 in comps7 do
     assert not sane7;
     H7 +:= H_trace7;
 end for;
-assert H7 eq HilbertSeries(M7, N7) + 1;
+assert H7 eq HilbertSeries(M7, N7);
 printf "Components without elliptic points agree with the total trace series\n";
 printf "PASSED\n";

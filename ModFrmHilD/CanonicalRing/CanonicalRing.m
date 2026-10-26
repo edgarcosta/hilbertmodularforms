@@ -1276,8 +1276,7 @@ intrinsic HilbertSeriesSanityCheck(M::ModFrmHilDGRng, NN::RngOrdIdl, Is::SeqEnum
   end if;
 
   if SequenceToSet(support) eq SequenceToSet(NarrowClassGroupReps(M)) then
-    // Component presentations each contribute a degree-zero constant.
-    H_trace := HilbertSeries(M, NN) + NarrowClassNumber(M) - 1;
+    H_trace := HilbertSeries(M, NN);
   else
     F := BaseField(M);
     require IsRealQuadraticField(F) :
