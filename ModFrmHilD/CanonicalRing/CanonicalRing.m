@@ -1027,7 +1027,7 @@ DomainProofFormat := recformat<
   CharacteristicPolynomial
 >;
 
-function SparseGradedDomainParameters(I)
+function SparseGradedDomainParameters(I, budget)
   R := Generic(I);
   if Dimension(I) ne 3 then
     return [R | ];
@@ -1049,6 +1049,7 @@ function SparseGradedDomainParameters(I)
     end for;
   end for;
   Sort(~patterns);
+  checked := 0;
   for phase in [1..2] do
     pools := [* *];
     for inds in weightIndices do
@@ -1077,6 +1078,10 @@ function SparseGradedDomainParameters(I)
               continue;
             end if;
             fs := [R | &+[R.i : i in s] : s in supports];
+            if checked ge budget then
+              return [R | ];
+            end if;
+            checked +:= 1;
             // Partial dimension checks can cost much more than a finite quotient.
             if Dimension(I + ideal<R | fs>) eq 0 then
               return fs;
@@ -1090,7 +1095,7 @@ function SparseGradedDomainParameters(I)
 end function;
 
 function GradedDomainParameters(I, attempts)
-  sparse := SparseGradedDomainParameters(I);
+  sparse := SparseGradedDomainParameters(I, 64*attempts);
   if #sparse gt 0 then
     return sparse;
   end if;
@@ -1159,7 +1164,8 @@ Cohen-Macaulay specialization, then IsPrime in a separate Magma process with a
 PrimeTimeLimit in seconds (zero skips it). Parameters may supply a homogeneous
 system of parameters. With ParameterAttempts positive, first try triples of distinct
 generators, then nonempty sums of generators of the same weight, in dimension three.
-If no sparse system is found, try ParameterAttempts choices per variable weight,
+Test at most 64*ParameterAttempts sparse quotients. If none is finite within this
+budget, try ParameterAttempts choices per variable weight,
 then at most ParameterAttempts times the number of distinct weights whole systems.
 These cycle through distinct weights to fill the dimension, followed by other
 weight multisets of that length.
