@@ -1249,8 +1249,9 @@ function BasisMatrixDefinite(M : EisensteinAllowed:=false)
       end if;
     end if;
       
-    // There are no "Eisenstein series" when we are not
-    // in parallel weight 2, I think.
+    // Eisenstein vectors factor through the reduced norm.
+    // Invariance under the norm-one group at every real place forces parallel
+    // weight 2, regardless of the nebentypus character.
     eisenstein_present := Seqset(Weight(M)) eq {2}
       and Conductor(DirichletCharacter(M)) eq 1*Integers(BaseField(M));
     if eisenstein_present and not EisensteinAllowed then
