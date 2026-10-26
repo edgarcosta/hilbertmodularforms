@@ -5,10 +5,9 @@ import "CuspFormFromEigs.m" : codifferent_generator;
 intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEnum[RngIntElt] : Dividing := true)
   -> SeqEnum[FldAlg]
   {
-    Naive!  Returns the set of quadratic field extensions of conductor equal to NN*oo where 
-    oo is InfinityModulus, indexing a subset of real places (as Magma numbers them)
-    as in their class field theory machinery.  Use Dividing to allow those with 
-    conductor dividing NN*oo.
+    Returns quadratic field extensions whose conductor divides NN*oo, where
+    oo is InfinityModulus, indexing real places as in Magma's class field theory.
+    With Dividing := false, returns only extensions with conductor equal to NN*oo.
   }
   ZZF := Order(NN);
   F := NumberField(ZZF);
@@ -24,7 +23,10 @@ intrinsic QuadraticExtensionsWithConductor(NN::RngOrdIdl, InfinityModulus::SeqEn
   delta := F!(s@@m);
   K := ext<F | x^2-delta>;
   ff, ooff := Conductor(AbelianExtension(K));
-  if ff eq NN or (Dividing and IsIntegral(NN/ff) and &and[c in oo : c in ooff]) then
+  valid_conductor := Dividing select
+    (IsIntegral(NN/ff) and Seqset(ooff) subset Seqset(oo)) else
+    (ff eq NN and Seqset(ooff) eq Seqset(oo));
+  if valid_conductor then
     Append(~Ks, K);
   end if;
   end for;
