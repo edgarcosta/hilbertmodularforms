@@ -225,19 +225,23 @@ function basis_of_plus_subspace(M)
     plus_basis := KernelMatrix(T-1);
     minus_basis := KernelMatrix(T+1);
   else
-    // TODO abhijitm I don't think it matters which one is + and which is -,
-    // since the other Hecke operators should act the same on both?
     T := ChangeRing(T, hecke_matrix_field(M));
-    assert #Eigenvalues(T) eq 2;
-    eig := Rep(Eigenvalues(T))[1];
-
     z := get_image_of_eps_nonparit(M);
     // Sanity check eig^2 = z^-1, compared via the marked embedding F -> K that builds
     // hecke_matrix_field. The old check F!(eig^2) eq z^-1 relied on Magma's natural coercion
     // K -> F, which is unreliable across versions (it disagrees with the splitting embedding
     // in 2.29-8), so we compare inside K instead.
     embs := WeightBaseEmbeddings(QuaternionOrder(M));
+    evs := Eigenvalues(T);
+    assert #evs eq 2;
+    // T is the complex-conjugation involution, with eigenvalues +eig, -eig and
+    // eig^2 = embs[1](z^-1). hecke_matrix_field = ext<K | x^2 - embs[1](z)>, so pin
+    // eig to the canonical root (BaseRing(T).1)^-1, fixing the sqrt(z) square class
+    // reproducibly across runs. V+ and V- are isomorphic Hecke modules, so the sign
+    // choice is otherwise immaterial.
+    eig := (BaseRing(T).1)^-1;
     assert eig^2 eq BaseRing(T) ! embs[1](z^-1);
+    assert eig in {ev[1] : ev in evs};   // eig is genuinely an eigenvalue of T
     plus_basis := KernelMatrix(T - eig);
     minus_basis := KernelMatrix(T + eig);
   end if;
