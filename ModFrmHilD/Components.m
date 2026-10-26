@@ -812,12 +812,13 @@ ideal class [bb/mm]. ForceCoeffPath is used only for testing.}
 
     require Weight(Mk_f) eq k: "Weight(f) is not equal to Weight(Mk)";
     require chif eq Restrict(chi, mf, pf): "Character(f) is not equal to Character(Mk)";
-    require UnitCharacters(Mk_f) eq UnitCharacters(Mk): "UnitCharacters(f) is not equal to UnitCharacters(Mk)";
     require N2 subset N1: "Level of f does not divide level of Mk";
     require N2 subset mm: "Ideal mm does not divide level of Mk";
 
     bb := ComponentIdeal(f);
     mmbb := NarrowClassRepresentative(M, bb / mm);
+    require UnitCharacters(Mk_f)[bb] eq UnitCharacters(Mk)[mmbb]:
+        "Unit characters of source and target components do not match";
     prec := Min(Norm(mm) * Precision(f), Precision(M));
 
     coeffs := AssociativeArray();
