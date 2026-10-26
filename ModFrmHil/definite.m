@@ -1249,12 +1249,15 @@ function BasisMatrixDefinite(M : EisensteinAllowed:=false)
       end if;
     end if;
       
-    // There are no "Eisenstein series" when we are not
-    // in parallel weight 2, I think.
-    if weight2trivchar and not EisensteinAllowed then
+    // Eisenstein vectors factor through the reduced norm.
+    // Invariance under the norm-one group at every real place forces parallel
+    // weight 2, regardless of the nebentypus character.
+    eisenstein_present := Seqset(Weight(M)) eq {2}
+      and Conductor(DirichletCharacter(M)) eq 1*Integers(BaseField(M));
+    if eisenstein_present and not EisensteinAllowed then
       RemoveEisenstein(~M);
       dim := Nrows(M`basis_matrix);
-    elif weight2trivchar then
+    elif eisenstein_present then
       dim := Nrows(M`basis_matrix_big) - #NarrowClassGroup(BaseField(M));
     else
       M`basis_matrix := M`basis_matrix_big;
@@ -1391,7 +1394,7 @@ function HeckeOperatorDefiniteBig(M, p : Columns:="all", opposite_mode:=false)
 
   // This is independent of the weight and level -- it captures information
   // about the ideals of the maximal quaternion order O (and in particular
-  // those of p-power reduced norm, I think). 
+  // their subideals of relative reduced norm p).
   tp := get_tps(M, p : rows:=Bcolumns); // rows in precompute_tps are columns here
 
   vprintf ModFrmHil: "%o%o column%o%o of big Hecke matrix (norm %o): ", 
