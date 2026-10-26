@@ -487,7 +487,7 @@ intrinsic Inclusion(f::ModFrmHilDElt, Mk::ModFrmHilD, mm::RngOrdIdl :
   mminv := mm^-1;
   M := Parent(Mk);
   for bb in Keys(Components(f)) do
-    mmbb := NarrowClassRepresentative(M,mm*bb);
+    mmbb := NarrowClassRepresentative(M,bb*mminv);
     iotamf[mmbb] := Inclusion(Components(f)[bb], Mk, mm : ForceCoeffPath:=ForceCoeffPath);
   end for;
   return HMFSumComponents(Mk, iotamf);
