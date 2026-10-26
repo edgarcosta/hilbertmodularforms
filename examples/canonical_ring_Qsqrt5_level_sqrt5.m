@@ -1,6 +1,7 @@
 // Certifies the Q(sqrt5) level (sqrt5) ring against the D5 invariants of
 // Hirzebruch, LNM 627 (1977), pp.305-310, using c^2 = 5*C.
-// This rational model becomes the printed c^2 = C model after scaling c by sqrt(5).
+// Over Q(sqrt(5)), c_rational = sqrt(5)*c_printed (so c_printed = c_rational/sqrt(5))
+// identifies c_rational^2 = 5*C with the printed model c_printed^2 = C.
 
 J := LoadStoredCanonicalRing("2.2.5.1-5.1");
 R := Generic(J);

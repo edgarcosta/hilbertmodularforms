@@ -3,7 +3,8 @@
 //
 // M(Gamma0((sqrt5))) = M(Gamma(sqrt5))^D5.
 // The complex Gamma(sqrt5) ring is C[A0,A1,A2,c]/(c^2-C), weights (1,1,1,5).
-// We choose the rational model c^2 = 5*C, obtained by replacing c by sqrt(5)*c.
+// Over Q(sqrt(5)), c_rational = sqrt(5)*c_printed (so c_printed = c_rational/sqrt(5))
+// identifies c_rational^2 = 5*C with the printed model c_printed^2 = C.
 // Its even D5 invariants match Verification/CanonicalRingEquations/2.2.5.1-5.1-gl-0.m.
 LitData := function(Rsrc, Rtgt)
   weights := [2, 2, 6, 10, 10];
