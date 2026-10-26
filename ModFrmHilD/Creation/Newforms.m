@@ -1,5 +1,5 @@
 import "../../ModFrmHil/diamond.m" : HeckeCharacterSubspace;
-import !"Geometry/ModFrmHil/hecke.m" : hecke_algebra;
+import "../../ModFrmHil/hecke.m" : hecke_algebra;
 import "CuspFormFromEigs.m" : coeff_from_ext_mult_fourier;
 
 // Caching magma computations
