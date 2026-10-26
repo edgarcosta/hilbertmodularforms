@@ -69,3 +69,4 @@ procedure TestOldSymmetricCache(old_basis, d, n, k)
 end procedure;
 
 TestOldSymmetricCache(OldEisensteinBasis, 5, 32, 4);
+TestOldSymmetricCache(OldCuspFormBasis, 17, 25, 2);

@@ -244,7 +244,7 @@ intrinsic OldCuspFormBasis(
       if D subset Conductor(chi) then
         chi_res := Restrict(chi, D, m_inf);
         Mk_D := HMFSpace(M, D, k, chi_res);
-        Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : Symmetric:=Symmetric, GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
+        Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
       end if;
     end for;
   end if;
