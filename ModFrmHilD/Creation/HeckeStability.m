@@ -68,6 +68,26 @@ intrinsic HeckeStableSubspace(
 end intrinsic;
 
 
+function HeckeProofPrecisionError(M, prec, ncoeff, dimcheck)
+    // PopulateFunDomainReps has one index per integral ideal, plus one
+    // constant coefficient in each narrow class.
+    nconstants := NarrowClassNumber(M);
+    needed := 0;
+    if dimcheck gt nconstants then
+        bound := Max(1, prec);
+        norms := [Norm(nn) : nn in IdealsUpTo(bound, Integers(M))];
+        while #norms + nconstants lt dimcheck do
+            bound *:= 2;
+            norms := [Norm(nn) : nn in IdealsUpTo(bound, Integers(M))];
+        end while;
+        Sort(~norms);
+        needed := norms[dimcheck - nconstants];
+    end if;
+    return Sprintf("Cannot certify the Hecke-stability proof: working precision %o gives %o coefficients for dimension %o. " cat
+                   "The coefficient count needs at least precision %o; this lower bound does not guarantee linear independence. " cat
+                   "Rerun at a higher precision or with Prove := false.", prec, ncoeff, dimcheck, needed);
+end function;
+
 // Computes a basis of cuspidal weight 1 forms.
 intrinsic HeckeStabilityCuspBasis(
     Mk::ModFrmHilD
@@ -256,10 +276,27 @@ intrinsic HeckeStabilityCuspBasis(
         end if;
 
         if prove then
-            vprintf HilbertModularForms: "Need to verify that the precision is large enough to compute the space larger space\n";
+            vprintf HilbertModularForms: "Verifying that the proof basis is independent at the working precision\n";
 
-            Vcheck := Basis(HMFSpace(M, N, [d*(k[i] + eis_k) : i in [1 .. n]]));
-            assert #LinearDependence(Vcheck) eq 0;
+            Mcheck := HMFSpace(M, N, [d*(k[i] + eis_k) : i in [1 .. n]]);
+            // Parallel weights use the trace formula, without constructing a basis.
+            if IsParallel(Weight(Mcheck)) or assigned Mcheck`Dimension then
+                dimcheck := Dimension(Mcheck);
+                ncoeff := NumberOfCoefficients(M);
+                require ncoeff ge dimcheck :
+                    HeckeProofPrecisionError(M, Precision(M), ncoeff, dimcheck);
+            end if;
+            Vcheck := Basis(Mcheck);
+            if #LinearDependence(Vcheck) ne 0 then
+                prec := Min([Precision(f) : f in Vcheck]);
+                ncoeff := &+[#FunDomainRepsUpToPrec(M, bb, prec)
+                             : bb in NarrowClassGroupReps(M)];
+                require false : Sprintf("Cannot certify the Hecke-stability proof: " cat
+                    "the proof basis is linearly dependent at working precision %o " cat
+                    "(%o coefficients for dimension %o). " cat
+                    "Rerun at a higher precision or with Prove := false.",
+                    prec, ncoeff, #Vcheck);
+            end if;
         end if;
 
         return V;
