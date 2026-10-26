@@ -50,7 +50,7 @@ procedure test_unequal_components()
     assert sane;
     assert H_trace eq expected;
     assert H_test eq expected;
-    assert H_trace ne (HilbertSeries(M, N) + 1)/2;
+    assert H_trace ne HilbertSeries(M, N)/2;
     assert not HilbertSeriesSanityCheck(M, N, [I]
         : IdealClassesSupport := [N]);
 end procedure;
@@ -72,7 +72,7 @@ procedure test_components_without_elliptic_points()
         // HilbertSeries(Gamma) indexes weight 2m by t^m.
         H +:= Evaluate(HilbertSeries(Gamma), t^2);
     end for;
-    assert H eq HilbertSeries(M, N) + 1;
+    assert H eq HilbertSeries(M, N);
 end procedure;
 
 test_strict_component_subset();
