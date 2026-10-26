@@ -329,7 +329,7 @@ intrinsic OldEisensteinBasis(
     for D in divisors do
       chi_D := Restrict(chi, D, [1..Degree(BaseField(Mk))]);
       Mk_D := HMFSpace(M, D, k, chi_D);
-      Mk`OldEisensteinBasis cat:= &cat[Inclusion(f, Mk) : f in NewEisensteinBasis(Mk_D : Symmetric := Symmetric)];
+      Mk`OldEisensteinBasis cat:= &cat[Inclusion(f, Mk) : f in NewEisensteinBasis(Mk_D)];
     end for;
   end if;
   return SubBasis(Mk`OldEisensteinBasis, IdealClassesSupport, Symmetric);

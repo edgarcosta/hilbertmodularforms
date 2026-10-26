@@ -40,3 +40,32 @@ end procedure;
 
 TestOldSupport(OldEisensteinBasis, "Eisenstein");
 TestOldSupport(OldCuspFormBasis, "cusp");
+
+// A first symmetric request must leave nonsymmetric oldforms available in the cache.
+procedure TestOldSymmetricCache(old_basis, d, n, k)
+  F := QuadraticField(d);
+  ZF := Integers(F);
+  M := GradedRingOfHMFs(F, 30);
+  Mk := HMFSpace(M, n*ZF, [k,k]);
+  full := old_basis(Mk);
+  symmetric := old_basis(Mk : Symmetric := true);
+  assert #full gt #symmetric;
+  assert #symmetric gt 0;
+  assert &and[IsSymmetric(f) : f in symmetric];
+
+  M2 := GradedRingOfHMFs(F, 30);
+  Mk2 := HMFSpace(M2, n*ZF, [k,k]);
+  direct := old_basis(Mk2 : Symmetric := true);
+  after := old_basis(Mk2);
+  assert #after eq #full;
+  assert RowSpace(CoefficientsMatrix(after)) eq RowSpace(CoefficientsMatrix(full));
+  assert #direct eq #symmetric;
+  assert RowSpace(CoefficientsMatrix(direct)) eq
+      RowSpace(CoefficientsMatrix(symmetric));
+  again := old_basis(Mk2 : Symmetric := true);
+  assert #again eq #symmetric;
+  assert RowSpace(CoefficientsMatrix(again)) eq
+      RowSpace(CoefficientsMatrix(symmetric));
+end procedure;
+
+TestOldSymmetricCache(OldEisensteinBasis, 5, 32, 4);
