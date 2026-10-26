@@ -1394,7 +1394,7 @@ function HeckeOperatorDefiniteBig(M, p : Columns:="all", opposite_mode:=false)
 
   // This is independent of the weight and level -- it captures information
   // about the ideals of the maximal quaternion order O (and in particular
-  // those of p-power reduced norm, I think). 
+  // their subideals of relative reduced norm p).
   tp := get_tps(M, p : rows:=Bcolumns); // rows in precompute_tps are columns here
 
   vprintf ModFrmHil: "%o%o column%o%o of big Hecke matrix (norm %o): ", 
