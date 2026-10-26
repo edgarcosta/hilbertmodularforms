@@ -287,9 +287,7 @@ intrinsic NewEisensteinBasis(
       A list of forms spanning the space of new Eisenstein series
   }
 
-  if assigned Mk`NewEisensteinBasis then
-	  return Mk`NewEisensteinBasis;
-  else
+  if not assigned Mk`NewEisensteinBasis then
     pairs := EisensteinAdmissibleCharacterPairs(Mk);
     Mk`NewEisensteinBasis := &cat[GaloisOrbitDescent(EisensteinSeries(Mk, pair[1], pair[2])) : pair in pairs];
   end if;
