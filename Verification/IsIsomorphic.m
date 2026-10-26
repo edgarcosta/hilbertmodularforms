@@ -196,11 +196,14 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   n := Rank(R);
   wts := [Integers()! WeightedDegree(R.i) : i in [1..n]];
 
-  // undetermined phi(x_i) = sum_k a[.]*mon over the weight-w_i monomials of R that are
-  // standard modulo J: phi(x_i) only matters modulo J, and a J-direction left in the
-  // parameterization makes every pinned system below positive-dimensional
+  // A relation with a linear variable term can change diagonal pins and weight
+  // blocks under reduction. Keep all image monomials at these weights.
+  Jgens := [R!gj : gj in Generators(J)];
+  linearWeights := {wts[i] : i in [1..n] |
+    exists{g : g in Jgens | MonomialCoefficient(g, R.i) ne 0}};
   monsByVar := [[m : m in MonomialsOfWeightedDegree(R, wts[i])
-                   | m eq R.i or NormalForm(m, J) eq m] : i in [1..n]];
+                   | wts[i] in linearWeights or m eq R.i
+                     or NormalForm(m, J) eq m] : i in [1..n]];
   counts := [#m : m in monsByVar];
   N := &+counts;
   wset := Sort(SetToSequence({w : w in wts}));
@@ -231,7 +234,6 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   // membership system: for each generator g of I, apply the functionals vanishing on
   // J in degree deg(g) to the coefficient vector of phi(g)
   // NormalForm needs a field of coefficients, and phi(g) has coefficients in A.
-  Jgens := [R! gj : gj in Generators(J)];
   Jdeg := [Integers()! WeightedDegree(gj) : gj in Jgens];
   sys := [];
   for g in Generators(I) do
