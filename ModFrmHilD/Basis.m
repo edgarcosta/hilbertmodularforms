@@ -59,7 +59,7 @@ intrinsic CuspFormBasis(
   }
 
   if assigned Mk`CuspFormBasis then
-    return Mk`CuspFormBasis;
+    return SubBasis(Mk`CuspFormBasis, IdealClassesSupport, Symmetric);
   end if;
 
   k := Weight(Mk);
@@ -244,7 +244,7 @@ intrinsic OldCuspFormBasis(
       if D subset Conductor(chi) then
         chi_res := Restrict(chi, D, m_inf);
         Mk_D := HMFSpace(M, D, k, chi_res);
-        Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric, GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
+        Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
       end if;
     end for;
   end if;
@@ -260,7 +260,7 @@ intrinsic EisensteinBasis(
   {returns a basis for the space of Eisenstein series of Mk of }
 
   if assigned Mk`EisensteinBasis then
-    return Mk`EisensteinBasis;
+    return SubBasis(Mk`EisensteinBasis, IdealClassesSupport, Symmetric);
   end if;
 
   if not IsParallel(Weight(Mk)) then
@@ -287,9 +287,7 @@ intrinsic NewEisensteinBasis(
       A list of forms spanning the space of new Eisenstein series
   }
 
-  if assigned Mk`NewEisensteinBasis then
-	  return Mk`NewEisensteinBasis;
-  else
+  if not assigned Mk`NewEisensteinBasis then
     pairs := EisensteinAdmissibleCharacterPairs(Mk);
     Mk`NewEisensteinBasis := &cat[GaloisOrbitDescent(EisensteinSeries(Mk, pair[1], pair[2])) : pair in pairs];
   end if;
@@ -331,7 +329,7 @@ intrinsic OldEisensteinBasis(
     for D in divisors do
       chi_D := Restrict(chi, D, [1..Degree(BaseField(Mk))]);
       Mk_D := HMFSpace(M, D, k, chi_D);
-      Mk`OldEisensteinBasis cat:= &cat[Inclusion(f, Mk) : f in NewEisensteinBasis(Mk_D : IdealClassesSupport := IdealClassesSupport, Symmetric := Symmetric)];
+      Mk`OldEisensteinBasis cat:= &cat[Inclusion(f, Mk) : f in NewEisensteinBasis(Mk_D)];
     end for;
   end if;
   return SubBasis(Mk`OldEisensteinBasis, IdealClassesSupport, Symmetric);
