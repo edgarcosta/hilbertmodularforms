@@ -825,9 +825,8 @@ ideal class [bb/mm]. ForceCoeffPath is used only for testing.}
     mminv := mm^-1;
     use_coeff_path := (not IsParitious(k)) or ForceCoeffPath;
     if use_coeff_path then
-      // this will always return a value because if k is nonparitious
-      // then we require the narrow class number of F to be 1
-      _, muinv := IsNarrowlyPrincipal(mm^-1);
+      // The component representatives make bb/(mm*mmbb) narrowly principal.
+      _, muinv := IsNarrowlyPrincipal(bb/(mm*mmbb));
     end if;
     mmbbpinv := (M`NarrowClassGroupRepsToIdealDual[mmbb])^(-1);
     for nn -> nu in IdealToRep(M)[mmbb] do
