@@ -317,8 +317,8 @@ intrinsic Splittings(B::AlgQuat) -> SeqEnum[Map], FldNum, FldNum
   if assigned F`SplittingField then
     K,rts := Explode(F`SplittingField);
   else
-    // Opt dropped for Magma 2.29-9 compat (param removed from SplittingField).
-    K,rts := SplittingField(F : Abs := true);
+    // Keep this cache unoptimized, as in finitefield.m.
+    K,rts := SplittingField(F : Abs := true, Optimize := false);
     F`SplittingField := <K, rts>;
   end if;
 

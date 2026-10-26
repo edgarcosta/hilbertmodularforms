@@ -37,6 +37,17 @@ end procedure;
 
 R<x> := PolynomialRing(Rationals());
 
+K := NumberField(x^4 - x^3 + 3*x^2 - 2*x + 4);
+_, _, F := IsCM(K);
+k := HeckeCharWeightFromWeight(K, F, [1, 3]);
+X := cHMFGrossencharsTorsor(K, k, 1*Integers(K));
+a := EvaluateNoncompactInfinityType(X, K!-1);
+b := EvaluateNoncompactInfinityType(X, K!-1);
+c := EvaluateNoncompactInfinityType(X, K!-1 : nonpar_hack:=true);
+assert IsIdentical(Parent(a), Parent(b));
+assert IsIdentical(Parent(a), Parent(c));
+assert a eq b and a eq c;
+
 test(QuadraticField(5), false, []);
 test(QuadraticField(-1), true, []);
 test(NumberField(x^3-2), false, []);

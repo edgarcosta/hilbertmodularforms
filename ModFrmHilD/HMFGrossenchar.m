@@ -12,6 +12,8 @@
  * algebraic finite-order characters, and we want neither of these restrictions. 
  ******************************************************************************/
 
+declare attributes FldNum : InfinityTypeSplittingField;
+
 declare type HMFGrossencharsTorsor [HMFGrossenchar];
 declare attributes HMFGrossencharsTorsor:
   BaseField, // FldNum - A number field, say with r real places and s complex places
@@ -150,6 +152,17 @@ end intrinsic;
 
 //////////////////////////////// HMFGrossencharsTorsor helpers
 
+function infinity_type_splitting_field(K)
+  if IsGalois(K) then
+    return K;
+  end if;
+  // Infinity-type values and root-of-unity keys must share a parent.
+  if not assigned K`InfinityTypeSplittingField then
+    K`InfinityTypeSplittingField := SplittingField(K : Optimize:=false);
+  end if;
+  return K`InfinityTypeSplittingField;
+end function;
+
 // TODO abhijitm this function name is unfortunate as it works
 // on either a unit of K or an element of K+
 function eval_inf_type_at_rou_or_tot_real(X, x)
@@ -172,7 +185,7 @@ function eval_inf_type_at_rou_or_tot_real(X, x)
   // we require that K is CM 
   assert b;
 
-  K_gal := (IsGalois(K)) select K else SplittingField(K);
+  K_gal := infinity_type_splitting_field(K);
   // auts is a length 2n list where the last n are complex conjugates
   // of the first n. 
   auts := AutsOfKReppingEmbeddingsOfF(K, K_gal);
@@ -241,7 +254,7 @@ intrinsic EvaluateNoncompactInfinityType(X::HMFGrossencharsTorsor, x::FldElt : n
     return Rationals()!1;
   end if;
 
-  K_gal := (IsGalois(K)) select K else SplittingField(K);
+  K_gal := infinity_type_splitting_field(K);
   auts := AutsOfKReppingEmbeddingsOfF(K, K_gal);
   gal_conjs_of_x := [aut(x) : aut in auts];
   
@@ -331,7 +344,7 @@ intrinsic IsNonempty(X::HMFGrossencharsTorsor) -> BoolElt, GrpDrchNFElt
       X`MarkedDrchChar := Dv.0;
     else
       K := X`BaseField;
-      E := (IsGalois(K)) select K else SplittingField(K);
+      E := infinity_type_splitting_field(K);
       D, D_map := RayResidueRing(mod_fin, mod_inf);
       D_gens := SetToSequence(Generators(D));
       // largest possible order of an element in D
