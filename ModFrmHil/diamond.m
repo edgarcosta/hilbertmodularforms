@@ -2,7 +2,8 @@ import "definite.m":
   AtkinLehnerDefiniteBig,
   DegeneracyDown1DefiniteBig,
   DegeneracyDownpDefiniteBig,
-  HeckeOperatorDefiniteBig;
+  HeckeOperatorDefiniteBig,
+  twist_factor;
 import "hackobj.m" :
   IsBianchi,
   TopAmbient;
@@ -229,7 +230,11 @@ function DiamondOperatorDefiniteBig(M, J)
 
     N := Level(M);
     weight2 := Seqset(Weight(M)) eq {2};
-    easy := weight2 and N eq Discriminant(QuaternionOrder(M));
+    // The easy path is a pure ideal-class permutation, valid only for trivial
+    // nebentypus; a nontrivial character goes through the block construction
+    // below, which applies the twist_factor.
+    easy := weight2 and N eq Discriminant(QuaternionOrder(M))
+            and IsTrivial(DirichletCharacter(M));
     // easy = basis of big space is given by the rids
 
     if (not assigned M`rids) then
@@ -298,6 +303,10 @@ function DiamondOperatorDefiniteBig(M, J)
     zero := MatrixAlgebra(F_weight, wd)!0;
     blocks := [[zero : j in [1..h]] : i in [1..h]];
     weight2 := Seqset(Weight(M)) eq {2};
+    // A nontrivial Dirichlet nebentypus twists each block by the character
+    // (twist_factor), as in HeckeOperatorDefiniteBig; guarded so the trivial case
+    // skips the Borel decomposition.
+    neb_nontrivial := not IsTrivial(DirichletCharacter(M));
     vprintf HilbertModularForms, 1 :
 	"Constructing the big representation matrix...\n";
     for I_src_idx in [1..hh] do
@@ -309,9 +318,14 @@ function DiamondOperatorDefiniteBig(M, J)
 	I_dest := I[I_dest_idx];
 	alpha_I := alphas[I_src_idx];
 	t0 := Cputime();
-	for idx->a_src in fds[I_src_idx] do
+	// Iterate the contributing orbits (CFD) of the source class; rid_idx is
+	// numbered by contributing orbits (nCFD offsets), matching
+	// HeckeOperatorDefiniteBig.
+	CFD_src := HMDF[I_src_idx]`CFD;
+	for mm := 1 to #CFD_src do
+	    a_src := fds[I_src_idx][CFD_src[mm]];
 	    rid_idx := &+nCFD[1..I_src_idx-1];
-	    rid_idx +:= idx;
+	    rid_idx +:= mm;
 	    _, Ja := p1reps[I_dest_idx](sm(alpha_I)*a_src, true, false);
 	    elt_data := lookups[I_dest_idx][Ja];
 	    tgt_idx := Index(HMDF[I_dest_idx]`CFD, elt_data[1]);
@@ -319,10 +333,14 @@ function DiamondOperatorDefiniteBig(M, J)
 	    target_idx +:= tgt_idx;
 	    u := HMDF[I_dest_idx]`max_order_units[elt_data[2]];
 
+	    g := u^(-1)*alpha_I;
 	    if weight2 then
 		alpha_rep := IdentityMatrix(F_weight, 1);
 	    else
-		alpha_rep := M`weight_rep(u^(-1)*alpha_I);
+		alpha_rep := M`weight_rep(g);
+	    end if;
+	    if neb_nontrivial then
+		alpha_rep := twist_factor(HMDF[I_dest_idx]`PLD, g, a_src)^-1 * alpha_rep;
 	    end if;
 	    blocks[target_idx][rid_idx] := alpha_rep;
 	end for;

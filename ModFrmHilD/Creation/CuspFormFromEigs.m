@@ -71,7 +71,31 @@ procedure ExtendMultiplicativelyHelper(~coeffs, ~mfh_reps, M, N, k, chi, Fourier
   end for;
   
   vprintf HilbertModularForms: "  Time for p^e coefficients: %.3o seconds\n", Cputime() - t0;
-  
+
+  // Unify all scalar coefficients into one compositum field up front so the
+  // general-n loop multiplies within a single parent (StrongMultiply's fast path)
+  // instead of building a compositum per ideal, which is the dominant cost at high
+  // precision.
+  if not is_matrix_mode then
+    parents := [* *];
+    for key in Keys(coeffs) do
+      c := coeffs[key];
+      if Type(c) in [FldRatElt, RngIntElt] then continue; end if;
+      P := Parent(c);
+      if not exists{Q : Q in parents | Q cmpeq P} then Append(~parents, P); end if;
+    end for;
+    Kc := false;
+    for P in parents do
+      Kc := (Kc cmpeq false) select P else SafeCompositum(Kc, P);
+    end for;
+    // single shared parent => Kc = P and the coercions below are identity
+    if Kc cmpne false then
+      for key in Keys(coeffs) do
+        coeffs[key] := StrongCoerce(Kc, coeffs[key]);
+      end for;
+    end if;
+  end if;
+
   vprintf HilbertModularForms: "ExtendMultiplicatively: Computing coefficients of general n...\n";
   t1 := Cputime();
   
