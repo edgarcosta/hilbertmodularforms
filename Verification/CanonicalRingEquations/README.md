@@ -48,91 +48,80 @@ swap, as in D=12.
 
 ## Evidence kinds
 
-- **stored-series:** the installed source SHA256 matches a complete ordered
-  recheck, and fresh singleton/full Hilbert-series comparisons agree.
-  Weights must be nondecreasing and applicable linear-generator guards must
-  hold. This certifies components under the stored-data contract.
-  Historical q-expansion relation evaluations and algebraic-independence
-  certificates are unavailable; these checks do not recreate them.
-- **generated:** a new export retains relation evaluations on generator
-  q-expansions in exact exported order and an algebraic-independence certificate.
-  Independent reload checks complete class coverage, structure, and all series.
-  Records retain source/output hashes, backend, precision, bounds, and resources.
-- **literature-isomorphism:** `VerifyGradedIsomorphism` checks a stored witness
-  and its inverse for the selected component and literature ring.
-  This is separate from series certification. An unsuccessful witness search
-  is inconclusive.
+- **stored-series:** The in-tree regression checks component labels, stored
+  variable weights, structural guards, and singleton/full Hilbert series.
+  This checks the stored presentation's structure and dimensions.
+  It does not evaluate relations on generator q-expansions or prove
+  algebraic independence.
+- **generated:** The stored file records the exporter's algebraic-independence
+  and Hilbert-series results in comments.
+  The exporter in `ModFrmHilD/CanonicalRing/IO.m` also evaluates relations on
+  generator q-expansions before writing equations.
+  Reloading the equations cannot repeat those evaluations: the equation files
+  contain neither the generator q-expansions nor the independence certificates.
+- **literature-isomorphism:** `VerifyGradedIsomorphism` checks a witness and
+  its inverse for the selected component and literature ring.
+  An unsuccessful witness search is inconclusive.
 
-The component verifier checks series, not generator order or equation provenance.
-The ordered recheck records variable weights, relation degrees in each variable,
-applicable linear-generator guards, labels, singleton/full series and source SHA256.
-For a single relation, the recheck requires degree at least two in the
-top-weight variable. This is a structural guard used by the recheck.
+The component verifier checks Hilbert series.
+The regression adds checks for nondecreasing variable weights and the absence
+of bare linear generator terms in the stored relations.
+For a single relation, it also requires degree at least two in the
+variable of greatest weight.
+These structural guards do not establish that the equations define the
+claimed modular forms.
 Mixed linear terms in a multi-relation ideal alone do not establish elimination.
-Both D=12 components have weights `[2,14,4,6]` and a hypersurface relation linear
-in the weight-14 variable. They remain `UNVERIFIED` / `SCRAMBLED` despite matching
-series. Regeneration is pending. Failed, scrambled or missing data require
-regeneration; incomplete rechecks remain pending.
-A passing ordered stored file can receive stored-series certification without
-regeneration or historical exporter certificates.
 
-### Current h+=2 evidence (2026-10-22)
+### Current h+=2 evidence
 
-| D | Labels | Evidence | Source SHA256 |
+For each discriminant D, the file is `2.2.<D>.1-1.1-gl-0.m` in this directory.
+The evidence column describes checks in
+[Tests/verification_canonical_rings.m](../../Tests/verification_canonical_rings.m)
+and comments in the stored files.
+The hashes identify the exact equation files described here.
+
+| D | Labels | Evidence a reader can check | Source SHA256 |
 |---|---|---|---|
-| 12 | 1.1, 2.1 | UNVERIFIED: SCRAMBLED; regeneration pending | `6a2111010443229a9670575e582ba1caf6a875b8f8904174daeb192417f0e637` |
-| 21 | 1.1, 3.1 | stored-series | `de7d3cd63616e713b49ccfc4d7100115088e47933c61d202ec3e38e7a7fa6cd7` |
-| 24 | 1.1, 2.1 | stored-series | `2551928b334e82d6101cea8ed6136d40d88142b82a65c7809978c2ef5f072bd6` |
-| 28 | 1.1, 3.1 | stored-series | `705c8e5e516784e237cfb6982b18bba6b4f84babc74d84a04981966f9c3fe885` |
-| 33 | 1.1, 2.1 | generated | `ac28bf14a5620836f8e89ea6c6faa9217f983916b4c10029047f6eec409dd669` |
+| 12 | 1.1, 2.1 | UNVERIFIED / SCRAMBLED: the regression expects matching singleton/full series, but both components fail the structural guards. Both have weights `[2,14,4,6]` and a relation linear in the weight-14 variable. | `6a2111010443229a9670575e582ba1caf6a875b8f8904174daeb192417f0e637` |
+| 21 | 1.1, 3.1 | stored-series: The regression checks both components' weights, structural guards, and singleton/full series. Swapping the ideals between labels fails the singleton comparisons. The file retains a historical STALE header. | `de7d3cd63616e713b49ccfc4d7100115088e47933c61d202ec3e38e7a7fa6cd7` |
+| 24 | 1.1, 2.1 | stored-series: The regression checks both components' weights, structural guards, and singleton/full series. Swapping the ideals between labels fails the singleton comparisons. The file retains a historical STALE header. | `2551928b334e82d6101cea8ed6136d40d88142b82a65c7809978c2ef5f072bd6` |
+| 28 | 1.1, 3.1 | stored-series: The regression checks both components' weights, structural guards, and singleton/full series. Swapping the ideals between labels fails the singleton comparisons. The file retains a historical STALE header. | `705c8e5e516784e237cfb6982b18bba6b4f84babc74d84a04981966f9c3fe885` |
+| 33 | 1.1, 2.1 | generated: The file records algebraic independence verified and Hilbert series agreeing. The regression checks both components' weights, structural guards, singleton/full series, and rejection of swapped ideals. | `ac28bf14a5620836f8e89ea6c6faa9217f983916b4c10029047f6eec409dd669` |
 
-The Hilbert-series failure claims in the historical `STALE` headers and
-`// Sanity check failed!` lines predate the Hilbert-series fix for h+>1 and are inaccurate.
-The old comparison omitted component constants. The equation files remain
-unchanged because literature data on another branch bind their SHA256 hashes.
-The ordered recheck determines their current status; D=12's structural failure
-still requires regeneration.
+The historical `STALE` headers and `// Sanity check failed!` comments record
+comparisons made before the h+>1 Hilbert-series fix.
+The regression expects matching series for all five fields, including D=12.
+D=12 remains unverified because its stored presentation fails the structural guards.
 
-No literature-isomorphism certificate for D=12/21/24/28/33 is supplied here.
-D=12 and D=24 literature examples remain pending until their witness
-continuations are integrated. Those continuations adopt the plural loader,
-check every component's series, and verify the witness only on the component
-matching the literature's group and action.
-D=21, D=28 and D=33 have no level-1 literature witness here.
+No literature-isomorphism witness for D=12/21/24/28/33 is supplied here.
 
-## Reusing the local batch bundle
+## Reproducing the stored checks
 
-The in-tree regression [Tests/verification_canonical_rings.m](../../Tests/verification_canonical_rings.m)
-repeats the ordered recheck: variable order, structural guards and singleton/full
-series for D=12/21/24/28/33, plus unequal-series swaps for D=21/24/28/33.
-Run it from the checkout root:
+Run the in-tree regression from the checkout root:
 
 ```sh
 magma -b filename:=Tests/verification_canonical_rings.m exitsignal:='' run_tests.m
 ```
 
-The `docs/superpowers/level1-d100/` bundle is local scratch and is not shipped
-with the repository. It records field outcomes; its `RUN.md` explains how to
-prepare runs, set generation budgets and reuse data.
-The bundle and `docs/superpowers/multi-component/recheck-ordered.json` are excluded
-from git. Copy them separately to use the following command in another checkout.
-With those artifacts present, run from the checkout root:
+It checks the stored variable order, structural guards and singleton/full
+series for D=12/21/24/28/33, plus unequal-series swaps for D=21/24/28/33.
+Its expected output includes `UNVERIFIED D=12 SCRAMBLED; singleton/full series pass`
+and `PASS stored-series D=<D> components=2` for D=21/24/28/33.
+Those lines describe stored-data checks, including for the generated D=33 file.
+The test also checks the single-component files and recomputes the D=13
+level-1 ring with `HilbertModularVariety`.
+
+To compare the equation files with the hashes above, run from the checkout root:
 
 ```sh
-python3 docs/superpowers/level1-d100/batch.py verify --D 24 \
-  --input Verification/CanonicalRingEquations/2.2.24.1-1.1-gl-0.m \
-  --evidence stored --recheck docs/superpowers/multi-component/recheck-ordered.json
+sha256sum Verification/CanonicalRingEquations/2.2.12.1-1.1-gl-0.m \
+  Verification/CanonicalRingEquations/2.2.21.1-1.1-gl-0.m \
+  Verification/CanonicalRingEquations/2.2.24.1-1.1-gl-0.m \
+  Verification/CanonicalRingEquations/2.2.28.1-1.1-gl-0.m \
+  Verification/CanonicalRingEquations/2.2.33.1-1.1-gl-0.m
 ```
 
-Stored mode requires a complete passing recheck for the exact input SHA256,
-then reloads every component and compares fresh structure and series.
-It records `verification_kind=stored-series` under `runs/<D>/<attempt>/record.json`.
-Generated mode (`--evidence generated`, the default) requires exporter
-certificates and rejects stale/failed headers.
-Use it for newly generated candidates. Stored evidence cannot replace exporter
-certificates or resume a generation run.
-Both modes stage inputs without editing the equation store and retain reload
-logs and hashes. The bundle records these results itself.
+A matching hash identifies the stored source; it does not certify the equations.
 
 ## File status
 
@@ -149,11 +138,11 @@ logs and hashes. The bundle records these results itself.
 | `2.2.13.1-3.1-gl-0.m` | Q(sqrt(13)) | 3.1 | 1 |
 | `2.2.13.1-4.1-gl-0.m` | Q(sqrt(13)) | 4.1 | 1 |
 | `2.2.17.1-1.1-gl-0.m` | Q(sqrt(17)) | 1 | 1 |
-| `2.2.21.1-1.1-gl-0.m` | Q(sqrt(21)) | 1 | 2 (1.1, 3.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration: >4h / 50 GB. |
-| `2.2.24.1-1.1-gl-0.m` | Q(sqrt(6)) | 1 | 2 (1.1, 2.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration blocker: precompute.m:1064. |
-| `2.2.28.1-1.1-gl-0.m` | Q(sqrt(7)) | 1 | 2 (1.1, 3.1): stored equations passed each component's Hilbert-series check and the variable-order check. The equations were not regenerated or re-derived; the historical STALE header remains. Historical regeneration blocker: precompute.m:1064. |
+| `2.2.21.1-1.1-gl-0.m` | Q(sqrt(21)) | 1 | 2 (1.1, 3.1); stored-series checks listed above; historical STALE header. |
+| `2.2.24.1-1.1-gl-0.m` | Q(sqrt(6)) | 1 | 2 (1.1, 2.1); stored-series checks listed above; historical STALE header. |
+| `2.2.28.1-1.1-gl-0.m` | Q(sqrt(7)) | 1 | 2 (1.1, 3.1); stored-series checks listed above; historical STALE header. |
 | `2.2.29.1-1.1-gl-0.m` | Q(sqrt(29)) | 1 | 1 |
-| `2.2.33.1-1.1-gl-0.m` | Q(sqrt(33)) | 1 | 2 (1.1, 2.1): generated; relation evaluations and algebraic independence checked by the exporter. Independent reload passes variable order and singleton/full series. |
+| `2.2.33.1-1.1-gl-0.m` | Q(sqrt(33)) | 1 | 2 (1.1, 2.1); exporter results recorded in file comments; stored-series checks listed above. |
 | `2.2.37.1-1.1-gl-0.m` | Q(sqrt(37)) | 1 | 1 |
 | `2.2.41.1-1.1-gl-0.m` | Q(sqrt(41)) | 1 | 1 |
 
@@ -161,9 +150,9 @@ logs and hashes. The bundle records these results itself.
 
 D=12's singleton and full series match after the h+>1 Hilbert-series fix,
 but its variable order is scrambled, as described in the h+=2 evidence table above.
-Regeneration is pending on a machine with enough memory; earlier runs exceeded
-four hours with 64 GB of memory.
+The stored header records a failed historical series check and a regeneration
+blocker at `precompute.m:1064`; the regression checks the structural failure.
 
 | File | Field | Level | h+ | Issue |
 |------|-------|-------|----|-------|
-| `2.2.12.1-1.1-gl-0.m` | Q(sqrt(3)) | 1 | 2 | stale; regen runs >4h / 64 GB |
+| `2.2.12.1-1.1-gl-0.m` | Q(sqrt(3)) | 1 | 2 | UNVERIFIED / SCRAMBLED; structural guards fail |
