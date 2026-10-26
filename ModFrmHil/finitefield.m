@@ -113,7 +113,7 @@ intrinsic HilbertCuspFormsFiniteField(
   if assigned F`SplittingField then
     K,rts:=Explode(F`SplittingField);
   else
-    K,rts:=SplittingField(F : Abs:=true, Opt:=false);
+    K,rts:=SplittingField(F : Abs:=true, Optimize:=false);
     F`SplittingField:=<K, rts>;
   end if;
   embeddings_F_to_K:=[hom<F->K | r> : r in rts];
@@ -176,7 +176,7 @@ function WeightRepresentationFiniteField(M, p) // ModFrmHil -> Map
       if assigned F`SplittingField then
         K,rts:=Explode(F`SplittingField);
       else
-        K,rts:=SplittingField(F : Abs:=true, Opt:=false);
+        K,rts:=SplittingField(F : Abs:=true, Optimize:=false);
         F`SplittingField:=<K, rts>;
       end if;
       embeddings_F_to_K:=[hom<F->K | r> : r in rts];

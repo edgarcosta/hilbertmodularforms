@@ -2213,7 +2213,10 @@ function DegeneracyMapDomain(M, d)
    DM`weight_dimension:=M`weight_dimension;
    if Seqset(Weight(M)) ne {2} then // nontrivial weight
       DM`weight_rep:=M`weight_rep;
-      DM`splitting_field_emb_weight_base_field := M`splitting_field_emb_weight_base_field;
+      // Mod-p spaces from finitefield.m do not set this embedding.
+      if assigned M`splitting_field_emb_weight_base_field then
+         DM`splitting_field_emb_weight_base_field := M`splitting_field_emb_weight_base_field;
+      end if;
    end if;
    return DM;
 end function;

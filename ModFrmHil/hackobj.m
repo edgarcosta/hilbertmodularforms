@@ -44,7 +44,8 @@ declare attributes ModFrmHil :
 
   Field,                     // = F = BaseField(M), required to be an absolute field (for efficiency)
   Level,                     // = Level(M) = an ideal in Integers(F)
-  DirichletCharacter,        // always assigned: a GrpHeckeElt with modulus Level(M)
+  DirichletCharacter,        // always assigned: a GrpHeckeElt with modulus Level(M), or the integer 1
+                             // (trivial character) over Rationals() and for Bianchi spaces
 
   Weight,                    // = Weight(M) = a sequence of integers, corresponding to InfinitePlaces(F)
   CentralCharacter,          // Only used internally.
@@ -217,7 +218,7 @@ intrinsic Print(x::ModFrmHil, level::MonStgElt)
       printf "\n    New level: ";
       _ := ideal_print_on_one_line(NewLevel(x), level); 
     end if;
-    if not IsTrivial(x`DirichletCharacter) then
+    if x`DirichletCharacter cmpne 1 and not IsTrivial(x`DirichletCharacter) then
       printf "\n    Dirichlet character: %o", x`DirichletCharacter;
     end if;
     printf "\n    Weight: %o", Weight(x);
@@ -297,9 +298,7 @@ function BMF_with_ambient(A)
   M`Ambient := A;
   M`Field := A`Field;
   M`Level := A`Level;
-  // Set trivial character
-  H := HeckeCharacterGroup(A`Level, [1..Degree(A`Field)]);
-  M`DirichletCharacter := H.0;
+  M`DirichletCharacter := 1;
   M`Weight := [2];
   M`CentralCharacter := 0;
   M`is_cuspidal := true; // always true, currently
@@ -470,10 +469,10 @@ function HMF0(F, N, Nnew, Chi, k, C)
   M`Field := F;
   M`Level := N;
   M`NewLevel := Nnew;
-  // Chi must always be a GrpHeckeElt
-  assert Type(Chi) eq GrpHeckeElt;
+  // Chi is a GrpHeckeElt, or the integer 1 over Rationals()
+  assert Type(Chi) eq GrpHeckeElt or (Type(F) eq FldRat and Chi cmpeq 1);
   // The (finite) modulus of chi should be N if the character is nontrivial
-  assert (Order(Chi) eq 1) or (Modulus(Chi) eq N);
+  assert Chi cmpeq 1 or Order(Chi) eq 1 or Modulus(Chi) eq N;
   M`DirichletCharacter := Chi;
   M`Weight := k;
   M`CentralCharacter := C;
@@ -487,7 +486,7 @@ function HMF0(F, N, Nnew, Chi, k, C)
   M`DegDown1 := AssociativeArray();
   M`DegDownp := AssociativeArray();
   M`Diamond := AssociativeArray();
-  if forall{w : w in k | w eq 2} and Order(Chi) le 2 then
+  if forall{w : w in k | w eq 2} and (Chi cmpeq 1 or Order(Chi) le 2) then
     M`hecke_matrix_field := Rationals();
     M`hecke_matrix_field_is_minimal := true;
   else
@@ -502,14 +501,15 @@ function HMF(F, N, k : Chi:=1, QuaternionOrder:=0)
 
   // TO DO: errors should be passed back to the calling intrinsic
 
-  // Convert Chi=1 to the trivial character
-  if Chi cmpeq 1 then
+  // Convert Chi=1 to the trivial character. Over Rationals() the level is an
+  // ideal of Z, which has no HeckeCharacterGroup, so 1 stays as the sentinel.
+  if Chi cmpeq 1 and Type(F) ne FldRat then
     H := HeckeCharacterGroup(N, [1..Degree(F)]);
     Chi := H.0;  // trivial character
   end if;
 
   // Check cache only for trivial character
-  if IsTrivial(Chi) then
+  if Chi cmpeq 1 or IsTrivial(Chi) then
     bool, M := is_cached_hmf(QuaternionOrder, F, N, k);
     if bool then
       return M;
@@ -975,7 +975,7 @@ intrinsic Dimension(M::ModFrmHil : UseFormula:=true) -> RngIntElt
 
   if not UseFormula
       or Seqset(Weight(M)) ne {2}
-      or Order(DirichletCharacter(M)) ne 1
+      or (DirichletCharacter(M) cmpne 1 and Order(DirichletCharacter(M)) ne 1)
   then
       // The class-number dimension formula below is only valid for trivial
       // nebentypus; with a nontrivial character we must read the dimension off

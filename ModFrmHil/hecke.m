@@ -1084,7 +1084,7 @@ intrinsic SetRationalBasis(M::ModFrmHil)
 
   if IsBianchi(M)
      or assigned M`QuaternionOrder and not IsDefinite(M)
-     or (Seqset(Weight(M)) eq {2} and Order(DirichletCharacter(M)) le 2)
+     or (Seqset(Weight(M)) eq {2} and (DirichletCharacter(M) cmpeq 1 or Order(DirichletCharacter(M)) le 2))
      or Dimension(M) eq 0
   then
     // At parallel weight 2 with trivial or quadratic nebentypus the Hecke matrices
