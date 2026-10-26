@@ -183,12 +183,13 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   a false result is inconclusive.
 
   This is the OFFLINE tool that PRODUCES witness maps (CI then re-checks stored maps
-  with VerifyGradedIsomorphism). Method: write phi(x_i) with undetermined rational
-  coefficients over the weight-w_i monomials that are standard modulo a Groebner basis
-  of J (the image is only defined modulo J); impose that phi(g) lie in J for each
-  generator g of I by LINEAR ALGEBRA over Q (the functionals vanishing on J in that
-  degree applied to the coefficient vector of phi(g)), not NormalForm (which needs a
-  field base ring). Maps that are not isomorphisms, such as sending every x_i to a
+  with VerifyGradedIsomorphism). Write phi(x_i) with undetermined rational coefficients
+  over the standard weight-w_i monomials modulo J. At weights where a target relation
+  has a linear variable term, retain all monomials to preserve diagonal pins and linear
+  blocks. Impose phi(g) in J for each generator g of I using linear algebra over Q:
+  apply the functionals vanishing on J in that degree to the coefficient vector of
+  phi(g). This avoids NormalForm over a coefficient ring that is not a field.
+  Maps that are not isomorphisms, such as sending every x_i to a
   multiple of a power of x_1, can satisfy these equations in positive-dimensional
   families. To exclude them, the linear part of phi on each weight must be invertible
   (an extra unknown t_w with t_w*det - 1 = 0).
@@ -219,11 +220,14 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   n := Rank(R);
   wts := [Integers()! WeightedDegree(R.i) : i in [1..n]];
 
-  // undetermined phi(x_i) = sum_k a[.]*mon over the weight-w_i monomials of R that are
-  // standard modulo J: phi(x_i) only matters modulo J, and a J-direction left in the
-  // parameterization makes every pinned system below positive-dimensional
+  // A relation with a linear variable term can change diagonal pins and weight
+  // blocks under reduction. Keep all image monomials at these weights.
+  Jgens := [R! gj : gj in Generators(J)];
+  linearWeights := {wts[i] : i in [1..n] |
+    exists{g : g in Jgens | MonomialCoefficient(g, R.i) ne 0}};
   monsByVar := [[m : m in MonomialsOfWeightedDegree(R, wts[i])
-                   | m eq R.i or NormalForm(m, J) eq m] : i in [1..n]];
+                   | wts[i] in linearWeights or m eq R.i
+                     or NormalForm(m, J) eq m] : i in [1..n]];
   counts := [#m : m in monsByVar];
   N := &+counts;
   wset := Sort(SetToSequence({w : w in wts}));
@@ -254,7 +258,6 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
 
   // membership system: for each generator g of I, apply the functionals vanishing on
   // J in degree deg(g) to the coefficient vector of phi(g)
-  Jgens := [R! gj : gj in Generators(J)];
   Jdeg := [Integers()! WeightedDegree(gj) : gj in Jgens];
   sys := [];
   for g in Generators(I) do

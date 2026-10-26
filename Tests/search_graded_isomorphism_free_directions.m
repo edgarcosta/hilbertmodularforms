@@ -1,7 +1,7 @@
 // Diagonal pins leave torus parameters or free shifts in these rings.
 // Rational slices must recover maps without advancing the caller's random state.
 printf "SearchGradedIsomorphism with free automorphism parameters...\n";
-SetNthreads(4);
+SetNthreads(1);
 Q := Rationals();
 
 procedure RoundTrip(name, I, phi0)
