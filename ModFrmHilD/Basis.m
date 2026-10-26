@@ -244,7 +244,7 @@ intrinsic OldCuspFormBasis(
       if D subset Conductor(chi) then
         chi_res := Restrict(chi, D, m_inf);
         Mk_D := HMFSpace(M, D, k, chi_res);
-        Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : IdealClassesSupport:=IdealClassesSupport, Symmetric:=Symmetric, GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
+        Mk`OldCuspFormBasis cat:= &cat[Inclusion(f, Mk) : f in NewCuspFormBasis(Mk_D : Symmetric:=Symmetric, GaloisDescent:=GaloisDescent, SaveAndLoad:=SaveAndLoad)];
       end if;
     end for;
   end if;
@@ -331,7 +331,7 @@ intrinsic OldEisensteinBasis(
     for D in divisors do
       chi_D := Restrict(chi, D, [1..Degree(BaseField(Mk))]);
       Mk_D := HMFSpace(M, D, k, chi_D);
-      Mk`OldEisensteinBasis cat:= &cat[Inclusion(f, Mk) : f in NewEisensteinBasis(Mk_D : IdealClassesSupport := IdealClassesSupport, Symmetric := Symmetric)];
+      Mk`OldEisensteinBasis cat:= &cat[Inclusion(f, Mk) : f in NewEisensteinBasis(Mk_D : Symmetric := Symmetric)];
     end for;
   end if;
   return SubBasis(Mk`OldEisensteinBasis, IdealClassesSupport, Symmetric);
