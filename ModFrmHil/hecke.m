@@ -820,7 +820,6 @@ function hecke_algebra(M : generator:=false, minimal:=true)
 
     i := 0;
     repeat
-      dim0 := dim;
       // get another prime pp
       while IsEmpty(primes_n) do
         n +:= 1;
@@ -849,17 +848,8 @@ function hecke_algebra(M : generator:=false, minimal:=true)
         dim, vec, orbit := dimension_lower_bound(U : maxdim:=da, tries:=1, 
                                                  vector:=vec, suborbit:=orbit);
       end if;
-      // We very rarely choose a bad random large prime P, 
-      // but if M decomposes into many pieces, occasionally
-      // choose a bad random vector.  (Either way, we then
-      // compute unnecessary hecke operators.)
-      // The work here (esp for raw spaces) is harder than
-      // computing Hecke operators (at least for definite), 
-      // so take tries = 1, and sometimes reuse P and vec.
-assert dim ge dim0; // unless bad P
-      if dim le dim0 then
-        Prune(~primes_used);
-      end if;
+      // A fresh prime or vector can lower the bound. Retain every operator
+      // used to build the cached orbit; the second pass removes redundancies.
     until dim eq da;
 
 if minimal then
