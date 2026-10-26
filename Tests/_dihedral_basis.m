@@ -26,7 +26,7 @@ psi := Extend(chi, G);
 assert chi eq Restrict(psi, H);
 
 Mk1 := HMFSpace(M, N, [1,1], chi);
-Sk1 := HeckeStabilityCuspBasis(Mk1 : prove:=false);
+Sk1 := HeckeStabilityCuspBasis(Mk1 : Proof:=true);
 Dk1 := DihedralBasis(Mk1);
 
 // there should be one dihedral form of this level
@@ -37,7 +37,7 @@ assert #LinearDependence(Dk1) eq 0;
 assert #LinearDependence(Sk1 cat Dk1) eq #Dk1;
 
 Mk2 := HMFSpace(M, 2*N, [1,1], psi);
-Sk2 := HeckeStabilityCuspBasis(Mk2 : prove:=false, stable_only:=true);
+Sk2 := HeckeStabilityCuspBasis(Mk2 : Proof:=true, stable_only:=true);
 Dk2_old := OldDihedralBasis(Mk2);
 
 // Dk2_old should be linearly independent
@@ -78,7 +78,7 @@ H := HeckeCharacterGroup(N, [1,2]);
 chi := H.1; 
 
 Mk := HMFSpace(M, N, [1,3], chi);
-Sk := HeckeStabilityCuspBasis(Mk : prove:=false);
+Sk := HeckeStabilityCuspBasis(Mk : Proof:=true);
 Dk := DihedralBasis(Mk);
 
 // there should be one dihedral form of this level

@@ -6,7 +6,7 @@ procedure test_probabilistic_dihedrality()
     N := ideal<ZF | 241, 2*ZF.2 + 137>;
     H := HeckeCharacterGroup(N, [1,2]);
     Mk := HMFSpace(M, N, [1,1], H.1^11);
-    Sk := CuspFormBasis(Mk : Prove := true);
+    Sk := CuspFormBasis(Mk : Proof := true);
     assert #Sk eq 1;
     assert ProbabilisticDihedralTest(Sk[1]);
 end procedure;

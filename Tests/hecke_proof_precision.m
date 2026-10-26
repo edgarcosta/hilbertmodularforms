@@ -10,7 +10,7 @@ procedure test_hecke_proof_precision_lower_bound()
 
     raised := false;
     try
-        _ := CuspFormBasis(Mk : Prove := true);
+        _ := CuspFormBasis(Mk : Proof := true);
     catch e
         message := Sprint(e);
         assert "working precision 50" in message;
@@ -18,7 +18,7 @@ procedure test_hecke_proof_precision_lower_bound()
         assert "dimension 38" in message;
         assert "at least precision 81" in message;
         assert "this lower bound does not guarantee linear independence" in message;
-        assert "Prove := false" in message;
+        assert "Proof := false" in message;
         raised := true;
     end try;
     assert raised;
@@ -31,15 +31,15 @@ procedure test_hecke_proof_precision_lower_bound()
     catch e
         message := Sprint(e);
         assert "working precision 50" in message;
-        assert "Prove := false" in message;
+        assert "Proof := false" in message;
         raised := true;
     end try;
     assert raised;
     Mhigh := GradedRingOfHMFs(F, 81);
     Mkhigh := HMFSpace(Mhigh, N, [1,1], H.1^11);
-    Sk := CuspFormBasis(Mkhigh : Prove := true);
+    Sk := CuspFormBasis(Mkhigh : Proof := true);
     assert #Sk eq 1;
-    assert #HeckeStabilityCuspBasis(Mkhigh : prove := true) eq 1;
+    assert #HeckeStabilityCuspBasis(Mkhigh : Proof := true) eq 1;
     assert Precision(Mhigh) eq 81;
     assert Precision(M) eq 50;
 end procedure;
@@ -55,7 +55,7 @@ procedure test_hecke_proof_empty_space()
         Order(c) eq 2 and IsGamma1EisensteinWeight(c, 1)];
     assert #characters gt 0;
     Mk := HMFSpace(M, N, [1,1], characters[1]);
-    assert IsEmpty(CuspFormBasis(Mk : Prove := true));
+    assert IsEmpty(CuspFormBasis(Mk : Proof := true));
     assert Precision(M) eq 50;
 end procedure;
 

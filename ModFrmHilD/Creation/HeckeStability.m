@@ -85,14 +85,14 @@ function HeckeProofPrecisionError(M, prec, ncoeff, dimcheck)
     end if;
     return Sprintf("Cannot certify the Hecke-stability proof: working precision %o gives %o coefficients for dimension %o. " cat
                    "The coefficient count needs at least precision %o; this lower bound does not guarantee linear independence. " cat
-                   "Rerun at a higher precision or with Prove := false.", prec, ncoeff, dimcheck, needed);
+                   "Rerun at a higher precision or with Proof := false.", prec, ncoeff, dimcheck, needed);
 end function;
 
 // Computes a basis of cuspidal weight 1 forms.
 intrinsic HeckeStabilityCuspBasis(
     Mk::ModFrmHilD
     :
-    prove:=true,
+    Proof:=true,
     stable_only:=false,
     smallest_prime:=true,
     SaveAndLoad:=false,
@@ -100,7 +100,7 @@ intrinsic HeckeStabilityCuspBasis(
     ) -> SeqEnum[ModFrmHilDElt]
     {
       Compute the space Mk using the Hecke stability method.
-        - The optional parameter prove is true or false.
+        - The optional parameter Proof is true or false.
           If true, we verify that we had enough precision to check the 
           equality of the potentially meromorphic form with a holomorphic one.
         - The optional parameter stable_only is true or false.
@@ -275,7 +275,7 @@ intrinsic HeckeStabilityCuspBasis(
           end for;
         end if;
 
-        if prove then
+        if Proof then
             vprintf HilbertModularForms: "Verifying that the proof basis is independent at the working precision\n";
 
             Mcheck := HMFSpace(M, N, [d*(k[i] + eis_k) : i in [1 .. n]]);
@@ -294,7 +294,7 @@ intrinsic HeckeStabilityCuspBasis(
                 require false : Sprintf("Cannot certify the Hecke-stability proof: " cat
                     "the proof basis is linearly dependent at working precision %o " cat
                     "(%o coefficients for dimension %o). " cat
-                    "Rerun at a higher precision or with Prove := false.",
+                    "Rerun at a higher precision or with Proof := false.",
                     prec, ncoeff, #Vcheck);
             end if;
         end if;

@@ -13,7 +13,7 @@ procedure test_base_change_weight_one()
     H := HeckeCharacterGroup(N, [1,2]);
     chi := Extend(NormInduction(F, psi), H);
     Mk := HMFSpace(M, N, [1,1], chi);
-    Sk := CuspFormBasis(Mk : Prove := true);
+    Sk := CuspFormBasis(Mk : Proof := true);
     assert #Sk eq 1;
     assert #LinearDependence(Append(Sk, g)) eq 1;
     assert ProbabilisticDihedralTest(Sk[1]);

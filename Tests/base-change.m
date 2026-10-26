@@ -7,7 +7,7 @@ procedure test_base_change_weight_two()
     assert #S_Q eq 1;
     g := BaseChange(M, S_Q[1]);
 
-    Sk := CuspFormBasis(Mk : Prove := true);
+    Sk := CuspFormBasis(Mk : Proof := true);
     assert #Sk gt 0;
     assert #LinearDependence(Append(Sk, g)) eq 1;
 end procedure;

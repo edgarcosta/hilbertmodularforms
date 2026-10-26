@@ -8,7 +8,7 @@ N:= 23*ZF;
 H := HeckeCharacterGroup(N, [1,2]);
 chi := H.1^11; // (H.1^11); // aka 11 mod 22
 M1chi := HMFSpace(M, N, [1,1], chi);
-Space := HeckeStabilityCuspBasis(M1chi : prove := false, stable_only := true);
+Space := HeckeStabilityCuspBasis(M1chi : Proof := true, stable_only := true);
 f := Space[1];
 f := f/Coefficient(f, 1*ZF);
 
@@ -354,7 +354,7 @@ N:= 23*ZF;
 H := HeckeCharacterGroup(N, [1,2]);
 chi := H.1^11*H.2*H.3; 
 M1chi := HMFSpace(M, N, [1,1], chi);
-Space := HeckeStabilityCuspBasis(M1chi : prove := false, stable_only := true);
+Space := HeckeStabilityCuspBasis(M1chi : Proof := true, stable_only := true);
 // was 4 when prec was 25 (e87a1a2 bumped prec to 500 without
 // re-verifying this). At prec=500 the stable subspace is 6-dimensional
 // and linearly independent -- 25 was too low precision for Hecke
