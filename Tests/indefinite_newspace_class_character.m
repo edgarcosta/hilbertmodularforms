@@ -1,0 +1,14 @@
+SetNthreads(1);
+SetSeed(1);
+P<x> := PolynomialRing(Rationals());
+F := NumberField(x^3 - 4*x - 1);
+ZF := Integers(F);
+p := [p : p in PrimesUpTo(2, F) | Norm(p) eq 2][1];
+N := p^2;
+X := HeckeCharacterGroup(N, [1,2,3]);
+chi := [c : c in Elements(X) | Conductor(c) eq 1*ZF and Order(c) eq 2][1];
+M := NewSubspace(HilbertCuspForms(F, N, chi, [2,2,2]));
+assert not IsDefinite(M);
+dim := Dimension(M);
+printf "Indefinite class-character newspace: dimension %o (expected 0)\n", dim;
+assert dim eq 0;

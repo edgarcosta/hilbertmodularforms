@@ -976,11 +976,12 @@ intrinsic Dimension(M::ModFrmHil : UseFormula:=true) -> RngIntElt
   if not UseFormula
       or Seqset(Weight(M)) ne {2}
       or (DirichletCharacter(M) cmpne 1
-          and Conductor(DirichletCharacter(M)) ne 1*Integers(BaseField(M)))
+          and ((definite and Conductor(DirichletCharacter(M)) ne 1*Integers(BaseField(M)))
+               or (not definite and Order(DirichletCharacter(M)) ne 1)))
   then
-      // The class-number formula requires trivial finite nebentypus.
-      // The Hecke character is imposed later by the diamond projection.
       if definite then
+        // The class-number formula requires trivial finite nebentypus.
+        // The Hecke character is imposed later by the diamond projection.
         _ := BasisMatrixDefinite(M : EisensteinAllowed);
       else
         M`Dimension := Rank(basis_matrix(M));
