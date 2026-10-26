@@ -369,7 +369,13 @@ intrinsic SafeCompositum(K::Fld, L::Fld) -> Fld
       try
         return Compositum(K, NumberField(DefiningPolynomial(L)));
       catch e3
-        // neither field normal: Compositum fails, so use CompositeFields
+        // neither field normal: Compositum fails, so use CompositeFields.
+        // If K and L are isomorphic, return K, keeping the field minimal and the
+        // object stable for callers that compare/combine results, rather than a
+        // fresh Max-degree CompositeFields entry.
+        if IsIsomorphic(K, L) then
+          return K;
+        end if;
         cfs := CompositeFields(K, L);
         _, i := Max([Degree(c) : c in cfs]);
         return cfs[i];
@@ -446,12 +452,22 @@ intrinsic StrongMultiply(A::List : K:=false) -> FldElt
       The product of the elements in A, as an element of K.
   }
 
-  // perform normal multiplication if all the objects 
+  // perform normal multiplication if all the objects
   // are of the same type
   if &and[Parent(x) cmpeq Parent(A[1]) : x in A] then
     return &*[x : x in A];
   end if;
-      
+
+  // Fast path: if K is unset and all non-scalar elements share one parent P, that
+  // P is the compositum -- use it directly (scalars coerce into any field),
+  // avoiding a per-call SafeCompositum.
+  if K cmpeq false then
+    ns := [* x : x in A | Type(x) notin [FldRatElt, RngIntElt] *];
+    if #ns gt 0 and &and[Parent(x) cmpeq Parent(ns[1]) : x in ns] then
+      K := Parent(ns[1]);
+    end if;
+  end if;
+
   // If K is not assigned, it should be the compositum
   // of all the elements
   if K cmpeq false then
@@ -479,10 +495,19 @@ intrinsic StrongAdd(A::List : K:=false) -> FldElt
       The sum of the elements in A, as an element of K.
   }
 
-  // perform normal addition if all the objects 
+  // perform normal addition if all the objects
   // are of the same type
   if &and[Parent(x) cmpeq Parent(A[1]) : x in A] then
     return &+[x : x in A];
+  end if;
+
+  // Fast path (see StrongMultiply): if all non-scalar elements share one parent,
+  // use it directly, avoiding a per-call SafeCompositum.
+  if K cmpeq false then
+    ns := [* x : x in A | Type(x) notin [FldRatElt, RngIntElt] *];
+    if #ns gt 0 and &and[Parent(x) cmpeq Parent(ns[1]) : x in ns] then
+      K := Parent(ns[1]);
+    end if;
   end if;
 
   // If K is not assigned, it should be the compositum

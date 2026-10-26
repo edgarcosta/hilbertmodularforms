@@ -402,6 +402,17 @@ intrinsic '*'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f*g with the same level}
   require GradedRing(f) eq GradedRing(g): "we only support multiplication inside the same graded ring";
   require Level(f) eq Level(g): "we only support multiplication with the same level";
+  // Reconcile coefficient rings once, up front: doing it per-component runs
+  // SafeCompositum separately per narrow class rep, landing components over
+  // distinct field objects that fail HMFSumComponents' equality check when
+  // h+(F) > 1.
+  Rf := CoefficientRing(f);
+  Rg := CoefficientRing(g);
+  if Rf ne Rg then
+    Rfg := SafeCompositum(Rf, Rg);
+    f := ChangeCoefficientRing(f, Rfg);
+    g := ChangeCoefficientRing(g, Rfg);
+  end if;
   comp_f := Components(f);
   comp_g := Components(g);
   comp := AssociativeArray();
@@ -415,6 +426,15 @@ intrinsic '/'(f::ModFrmHilDElt, g::ModFrmHilDElt) -> ModFrmHilDElt
   {return f/g with the same level}
   require GradedRing(f) eq GradedRing(g): "we only support multiplication inside the same graded ring";
   require Level(f) eq Level(g): "we only support multiplication with the same level";
+  // Reconcile coefficient rings once, up front (see '*' above for why the
+  // per-component path breaks when h+(F) > 1).
+  Rf := CoefficientRing(f);
+  Rg := CoefficientRing(g);
+  if Rf ne Rg then
+    Rfg := SafeCompositum(Rf, Rg);
+    f := ChangeCoefficientRing(f, Rfg);
+    g := ChangeCoefficientRing(g, Rfg);
+  end if;
   comp_f := Components(f);
   comp_g := Components(g);
   comp := AssociativeArray();
