@@ -46,8 +46,8 @@ intrinsic HeckeOperatorIdeal(f::ModFrmHilDElt, mm::RngOrdIdl : B:=false) -> ModF
       // of the zeta functions associated with Hilbert Modular Forms
       for aa in Divisors(ZF!!(nn + mm)) do
         if nn eq 0*ZF then
-          //takes care if the coefficients for the zero ideal are different
-          c +:= StrongMultiply([* chi(aa), Norm(aa)^(k0 - 1), Coefficients(f)[NarrowClassRepresentative(M, bb*mm/aa^2)][ZF!0] *] : K:=K);
+          // Constants use the component shift of the positive ideals nn*mm/aa^2.
+          c +:= StrongMultiply([* chi(aa), Norm(aa)^(k0 - 1), Coefficients(f)[NarrowClassRepresentative(M, bb*aa^2/mm)][ZF!0] *] : K:=K);
         else
           cf := Coefficient(f, ZF!!(aa^(-2) * nn * mm));
           c +:= StrongMultiply([* chi(aa), Norm(aa)^(k0 - 1), cf *] : K:=K);
