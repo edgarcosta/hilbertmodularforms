@@ -111,7 +111,7 @@ end intrinsic;
 
 
 intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
-  {returns Basis for the vector space spanned by the inputted forms}
+  {Return a basis for the input span over the compositum of its coefficient fields.}
   if #generators eq 0 then return generators; end if;
   M := GradedRing(generators[1]);
   bbs := NarrowClassGroupReps(M);
@@ -120,7 +120,8 @@ intrinsic Basis(generators::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
   E := EchelonForm(C);
   r := Rank(E);
   Mk := Parent(generators[1]);
-  return [Mk | HMF(Mk, Eltseq(row), nus, bbs : prec:=prec) : row in Rows(E)[1..r] ];
+  return [Mk | HMF(Mk, Eltseq(row), nus, bbs :
+                  prec:=prec, coeff_ring:=BaseRing(E)) : row in Rows(E)[1..r] ];
 end intrinsic;
 
 intrinsic Intersection(V::SeqEnum[ModFrmHilDElt], W::SeqEnum[ModFrmHilDElt]) -> SeqEnum[ModFrmHilDElt]
