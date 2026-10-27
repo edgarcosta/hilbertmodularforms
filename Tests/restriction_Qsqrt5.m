@@ -16,6 +16,16 @@ triv:=X!1;
 E2:=EisensteinSeries(M2, triv, triv);
 E6:=EisensteinSeries(M6, triv, triv);
 
+assert RestrictionToDiagonal(E2, M, 1*ZF) eq Basis(ModularForms(Gamma0(1), 4))[1];
+coeffs := RestrictionToDiagonal(E2, M, 1*ZF : AsCoefficients := true);
+assert coeffs[1] eq 1;
+
+half := RestrictionToDiagonal(E2/2, M, 1*ZF);
+assert half eq Basis(BaseExtend(ModularForms(Gamma0(1), 4), Rationals()))[1]/2;
+half_coeffs := RestrictionToDiagonal(E2/2, M, 1*ZF : AsCoefficients := true);
+assert half_coeffs eq [c/2 : c in coeffs];
+assert [Coefficient(qExpansion(half, #half_coeffs), j) : j in [0..#half_coeffs-1]] eq half_coeffs;
+
 f := 67*(2^5*3^3*5^2)^(-1)*(E2^3-E6);
 delta:= RestrictionToDiagonal(f,M,1*ZF);
 

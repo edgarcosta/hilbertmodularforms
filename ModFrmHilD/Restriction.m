@@ -10,17 +10,16 @@ intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngOrdIdl
   F := M`BaseField;
   ZF := Integers(F);
   NN := Level(f);
-  N := Integers()!(Denominator(NN)^(-1)*Generator((Denominator(NN)*NN) meet Integers()));
+  // The component group requires its lower-left entry to lie in NN*bb.
+  N := Integers()!Generator((NN*bb) meet Integers());
   D := Different(ZF);
   classical_weight := &+Weight(f);
   fbb := f`Components[bb];
-  b := Integers()!(Denominator(bb)^(-1)*Generator((Denominator(bb)*bb) meet Integers()));
 
   if not AsCoefficients then
     C := BaseField(F);
     R<q> := PowerSeriesRing(C);
     restriction := R!0;
-    // modForms only accepts integer coefficients
     denom := 1;
   else
     raw_coeffs := AssociativeArray();
@@ -30,8 +29,8 @@ intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngOrdIdl
   for j in [0 .. Precision(fbb)] do
     tracej := PositiveElementsOfTrace(bb * D^(-1), j);
     norms := [Norm(nu) : nu in tracej];
-    coefficient := 0;
-    exp := j div b;
+    coefficient := j eq 0 select Coefficient(fbb, F!0) else 0;
+    exp := j;
     if #norms gt 0 then
       if (Max(norms) * Norm(D)) gt Precision(fbb) then
         break j;
@@ -57,7 +56,10 @@ intrinsic RestrictionToDiagonal(f::ModFrmHilDElt,M::ModFrmHilDGRng,bb::RngOrdIdl
   end if;
 
   modForms := ModularForms(Gamma0(N),classical_weight);
-  return modForms!(denom*(restriction + O(q^(prec))));
+  if denom ne 1 then
+    modForms := BaseExtend(modForms, Rationals());
+  end if;
+  return modForms!(restriction + O(q^(prec)));
 end intrinsic;
 
 intrinsic PositiveElementsOfTrace(aa::RngOrdFracIdl, t::RngIntElt) -> SeqEnum[RngOrdFracIdl]
