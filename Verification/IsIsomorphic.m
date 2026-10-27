@@ -179,25 +179,33 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   weights). On success return true, PhiImages, PsiImages, with PhiImages the images
   phi(x_1),...,phi(x_n) of the source variables and PsiImages the images of the target
   variables under the inverse psi; the map is confirmed by VerifyGradedIsomorphism
-  before returning, so the verdict is stable across Magma versions. Returns
-  false, empty, empty if no map is found within the search.
+  before returning. Returns false, empty, empty if no map is found within the search;
+  a false result is inconclusive.
 
   This is the OFFLINE tool that PRODUCES witness maps (CI then re-checks stored maps
-  with VerifyGradedIsomorphism). Method: write phi(x_i) with undetermined rational
-  coefficients over the weight-w_i monomials; impose that phi(g) lie in J for each
-  generator g of I by LINEAR ALGEBRA over Q (the functionals vanishing on J in that
-  degree applied to the coefficient vector of phi(g)), not NormalForm (which needs a
-  field base ring). Fixing the whole automorphism group of the target at once is
-  intractable (the solution set is positive-dimensional). Instead we pin the diagonal
-  scalings of every single-generator variable weight EXCEPT the top-weight one (whose
-  scaling is then determined), which reduces the membership system to a
-  0-dimensional one solved by Variety in a fraction of a second; the remaining lower
-  diagonal scalings are searched over a small rational candidate set (signed powers of
-  two by default) ordered by height. Equal-weight generators (e.g. two weight-6 forms)
-  are left as a free linear block that Variety solves, so a map that permutes them (as
-  for the field of discriminant 13) is found automatically. Optional parameters:
+  with VerifyGradedIsomorphism). Write phi(x_i) with undetermined rational coefficients
+  over the standard weight-w_i monomials modulo J. At weights where a target relation
+  has a linear variable term, retain all monomials to preserve diagonal pins and linear
+  blocks. Impose phi(g) in J for each generator g of I using linear algebra over Q:
+  apply the functionals vanishing on J in that degree to the coefficient vector of
+  phi(g). This avoids NormalForm over a coefficient ring that is not a field.
+  Maps that are not isomorphisms, such as sending every x_i to a
+  multiple of a power of x_1, can satisfy these equations in positive-dimensional
+  families. To exclude them, the linear part of phi on each weight must be invertible
+  (an extra unknown t_w with t_w*det - 1 = 0).
+  We pin diagonals at single-generator weights, leaving the highest free when there
+  are at least two such weights. With none, pin the first variable's self-coefficient.
+  Search a small rational candidate set (signed powers of two by default) ordered by
+  height. Equal-weight generators are left as a free linear block.
+  Zero-dimensional pinned systems are solved by Variety. If automorphism parameters
+  remain free, try eight deterministic rational slices of the map coefficients,
+  considering coefficients of the lowest-weight images first. Keep a specialization
+  only when it lowers the dimension by one; never specialize determinant unknowns.
+  Only zero-dimensional slices are solved. This bounded search can miss rational
+  maps; every returned map is certified. The caller's random state is unchanged.
+  Optional parameters:
   Candidates (rational values to try for each searched diagonal) and MaxAttempts (a cap
-  on the number of Variety solves). Requires I and J homogeneous with the same weights. }
+  on the number of diagonal tuples). Requires I and J homogeneous with the same weights. }
   R := Generic(I);
   require Generic(J) cmpeq R:
     "SearchGradedIsomorphism requires Generic(I) and Generic(J) to be the same ring";
@@ -207,14 +215,24 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   Q := Rationals();
   require BaseRing(R) cmpeq Q:
     "SearchGradedIsomorphism requires the ambient ring to be defined over the rationals";
+  // Magma algebra routines can consume random numbers even with fixed slices.
+  seed, step := GetSeed();
   n := Rank(R);
   wts := [Integers()! WeightedDegree(R.i) : i in [1..n]];
 
-  // undetermined phi(x_i) = sum_k a[.]*mon over weight-w_i monomials of R
-  monsByVar := [MonomialsOfWeightedDegree(R, wts[i]) : i in [1..n]];
+  // A relation with a linear variable term can change diagonal pins and weight
+  // blocks under reduction. Keep all image monomials at these weights.
+  Jgens := [R! gj : gj in Generators(J)];
+  linearWeights := {wts[i] : i in [1..n] |
+    exists{g : g in Jgens | MonomialCoefficient(g, R.i) ne 0}};
+  monsByVar := [[m : m in MonomialsOfWeightedDegree(R, wts[i])
+                   | wts[i] in linearWeights or m eq R.i
+                     or NormalForm(m, J) eq m] : i in [1..n]];
   counts := [#m : m in monsByVar];
   N := &+counts;
-  A := PolynomialRing(Q, N);
+  wset := Sort(SetToSequence({w : w in wts}));
+  // one extra unknown per weight, used below to force each weight block to be invertible
+  A := PolynomialRing(Q, N + #wset);
   aa := [A.i : i in [1..N]];
   RA := ChangeRing(R, A);
   PhiG := [RA | 0 : i in [1..n]];
@@ -228,7 +246,6 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
 
   // group variables by weight; single-generator weights get a "diagonal" unknown
   // (coefficient of x_i in phi(x_i)); equal-weight weights are left free
-  wset := Sort(SetToSequence({w : w in wts}));
   varsOfWt := AssociativeArray();
   for w in wset do varsOfWt[w] := [i : i in [1..n] | wts[i] eq w]; end for;
   singleDiag := [];   // A-variable indices of single-generator diagonals
@@ -241,7 +258,6 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
 
   // membership system: for each generator g of I, apply the functionals vanishing on
   // J in degree deg(g) to the coefficient vector of phi(g)
-  Jgens := [R! gj : gj in Generators(J)];
   Jdeg := [Integers()! WeightedDegree(gj) : gj in Jgens];
   sys := [];
   for g in Generators(I) do
@@ -270,6 +286,16 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
     for y in Kern do Append(~sys, &+[ (A!y[t])*cvec[t] : t in [1..#Md] ]); end for;
   end for;
 
+  // Maps with a singular linear part on some weight block, e.g. x_i -> c_i*x_1^(w_i/2)
+  // for c on the cone over V(I), can satisfy every equation above and make each pinned
+  // system positive-dimensional. No automorphism of R has one, so exclude them with
+  // t_w*det(block_w) - 1.
+  for k in [1..#wset] do
+    vs := varsOfWt[wset[k]];
+    blk := Matrix(A, [[MonomialCoefficient(PhiG[i], RA.j) : j in vs] : i in vs]);
+    Append(~sys, A.(N+k)*Determinant(blk) - 1);
+  end for;
+
   BuildPhi := function(pt)
     Phi := [R | 0 : i in [1..n]];
     o := 0;
@@ -295,28 +321,41 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   end function;
 
   SolvePinned := function(pins)
-    // pins: sequence of <A-index, value>; returns list of Variety points (may be empty).
-    // On a non-isomorphic or poorly-structured target this pinned membership system can be
-    // positive-dimensional, and Variety would throw "not zero-dimensional". Such a pinning
-    // yields no usable candidate map, so treat it as contributing no solutions and let the
-    // search move on; soundness is unaffected because every point that IS returned is still
-    // re-checked by VerifyGradedIsomorphism.
     Id := ideal< A | sys cat [ aa[p[1]] - p[2] : p in pins ] >;
-    if not IsZeroDimensional(Id) then
-      return [];
+    if IsZeroDimensional(Id) then
+      return Variety(Id);
     end if;
-    return Variety(Id);
+    dim := Dimension(Id);
+    if dim lt 0 then return []; end if;
+    // Determinants can depend on high powers of torus parameters. Slicing their
+    // inverses can lose rational maps, so use map coefficients in weight order.
+    order := &cat[ &cat[ [offset[i]+k : k in [1..counts[i]]]
+                         : i in varsOfWt[w] ] : w in wset ];
+    values := [Q | 0,1,-1,2,-2,1/2,-1/2];
+    for trial in [1..8] do
+      slice := Id;
+      remaining := dim;
+      for i in order do
+        value := trial eq 1 select Q!1
+                 else values[1 + ((trial-2 + dim-remaining) mod #values)];
+        candidate := ideal< A | Basis(slice) cat [aa[i] - value] >;
+        if Dimension(candidate) eq remaining - 1 then
+          slice := candidate;
+          remaining -:= 1;
+          if remaining eq 0 then break; end if;
+        end if;
+      end for;
+      if remaining eq 0 then
+        V := Variety(slice);
+        if #V gt 0 then return V; end if;
+      end if;
+    end for;
+    return [];
   end function;
 
-  // Choose which coefficients to pin/search so the membership system becomes
-  // 0-dimensional (Variety-fast). The target's automorphisms make the raw system
-  // positive-dimensional; pinning the single-generator diagonals removes almost all of
-  // it. With >= 2 single-generator weights we pin all but the top one (whose scaling is
-  // then determined by the relations) and search the rest; the searched values also fix
-  // the overall projective scale. With exactly one single-generator weight we search
-  // that one (to fix the scale). With none (all variables share weights, e.g. a plane
-  // cubic), we search the self-coefficient of the first variable to fix the scale; the
-  // remaining equal-weight block is a finite (0-dimensional) set that Variety resolves.
+  // Pin all but the highest single-generator diagonal, or the sole such diagonal.
+  // With no single-generator weight, pin the first variable's self-coefficient.
+  // SolvePinned specializes any remaining automorphism parameters.
   nsingle := #singleDiag;
   if nsingle ge 2 then
     searchIdx := singleDiag[1..nsingle-1];
@@ -350,8 +389,12 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
     V := SolvePinned(pins);
     for pt in V do
       ok, Phi, Psi := TestPoint(pt);
-      if ok then return true, Phi, Psi; end if;
+      if ok then
+        SetSeed(seed, step);
+        return true, Phi, Psi;
+      end if;
     end for;
   end for;
+  SetSeed(seed, step);
   return false, [R|], [R|];
 end intrinsic;
