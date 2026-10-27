@@ -10,20 +10,34 @@ match the trace formula prediction from `HilbertSeries(M, NN)`.
 
 ### Current (sanity check passes)
 
-| File | Field | Level | Components |
-|------|-------|-------|------------|
-| `2.2.5.1-1.1-gl-0.m` | Q(sqrt(5)) | 1 | 1 |
-| `2.2.5.1-4.1-gl-0.m` | Q(sqrt(5)) | 4.1 | 1 |
-| `2.2.5.1-5.1-gl-0.m` | Q(sqrt(5)) | 5.1 | 1 |
-| `2.2.8.1-1.1-gl-0.m` | Q(sqrt(2)) | 1 | 1 |
-| `2.2.8.1-2.1-gl-0.m` | Q(sqrt(2)) | 2.1 | 1 |
-| `2.2.13.1-1.1-gl-0.m` | Q(sqrt(13)) | 1 | 1 |
-| `2.2.13.1-3.1-gl-0.m` | Q(sqrt(13)) | 3.1 | 1 |
-| `2.2.13.1-4.1-gl-0.m` | Q(sqrt(13)) | 4.1 | 1 |
-| `2.2.17.1-1.1-gl-0.m` | Q(sqrt(17)) | 1 | 1 |
-| `2.2.29.1-1.1-gl-0.m` | Q(sqrt(29)) | 1 | 1 |
-| `2.2.37.1-1.1-gl-0.m` | Q(sqrt(37)) | 1 | 1 |
-| `2.2.41.1-1.1-gl-0.m` | Q(sqrt(41)) | 1 | 1 |
+| File | Field | Level | Components | Literature |
+|------|-------|-------|------------|------------|
+| `2.2.5.1-1.1-gl-0.m` | Q(sqrt(5)) | 1 | 1 | Hirzebruch 1976, Cor. 1; Gundlach 1963 (all weights) |
+| `2.2.5.1-4.1-gl-0.m` | Q(sqrt(5)) | 4.1 | 1 | Hirzebruch 1976, Thm 2 (Gamma(2); compare A4-invariants) |
+| `2.2.5.1-5.1-gl-0.m` | Q(sqrt(5)) | 5.1 | 1 | Hirzebruch 1977, Sec. 3 (Gamma(sqrt5); compare D5-invariants) |
+| `2.2.8.1-1.1-gl-0.m` | Q(sqrt(2)) | 1 | 1 | Hirzebruch 1977, Sec. 4; Mueller 1983 |
+| `2.2.8.1-2.1-gl-0.m` | Q(sqrt(2)) | 2.1 | 1 | van der Geer 1988, VIII.2.8-2.10 (Gamma[2]; compare invariants) |
+| `2.2.13.1-1.1-gl-0.m` | Q(sqrt(13)) | 1 | 1 | van der Geer-Zagier 1977, Thm 8 |
+| `2.2.13.1-3.1-gl-0.m` | Q(sqrt(13)) | 3.1 | 1 | none known |
+| `2.2.13.1-4.1-gl-0.m` | Q(sqrt(13)) | 4.1 | 1 | van der Geer-Zagier 1977, Thm 9 (symmetric even only) |
+| `2.2.17.1-1.1-gl-0.m` | Q(sqrt(17)) | 1 | 1 | Mayer 2007, Thm 6.5.1; Hermann 1981 (symmetric even only) |
+| `2.2.29.1-1.1-gl-0.m` | Q(sqrt(29)) | 1 | 1 | Williams 2020, Prop. 12 |
+| `2.2.37.1-1.1-gl-0.m` | Q(sqrt(37)) | 1 | 1 | Williams 2020, Prop. 17 |
+| `2.2.41.1-1.1-gl-0.m` | Q(sqrt(41)) | 1 | 1 | none known |
+
+Literature references for the table above (pages, and what each source covers, are in
+the matching `Tests/Surface_Qsqrt*.m` and `examples/canonical_ring_Qsqrt*.m` headers):
+
+- Gundlach 1963: Math. Ann. 152, 226-256.
+- Hirzebruch 1976: Russian Math. Surveys 31:5, 96-110.
+- Hirzebruch 1977: LNM 627, 287-323.
+- Mueller 1983: Math. Ann. 266, 83-103.
+- van der Geer-Zagier 1977: Invent. Math. 42, 93-133.
+- van der Geer 1988: Hilbert Modular Surfaces.
+- Hermann 1981: Math. Ann. 256, 191-197.
+- Mayer 2007: thesis, RWTH Aachen.
+- Williams 2020: J. Algebra 559, 679-711 (arXiv:1809.08623; relations in the
+  ancillary files Qsqrt29.txt and Qsqrt37.txt).
 
 ### Stale (sanity check fails)
 

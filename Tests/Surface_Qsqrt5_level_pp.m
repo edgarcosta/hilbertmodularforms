@@ -2,6 +2,9 @@
 // HilbertModularVariety end-to-end test: Q(sqrt(5)), level pp (norm 5)
 // pp is the unique prime above 5, with pp^2 = 5*ZF
 // Known: generators in weights [2,2,6,10,10], relations in weights [12,20]
+// Literature: Hirzebruch 1977 (LNM 627, 287-323), Sec. 3 pp.308-309, gives the ring of the
+// principal subgroup Gamma(sqrt5) in all weights. Compare the even part of its invariants
+// under Gamma0(pp)/Gamma(pp), which acts as D5.
 // Expected: 1 component, certified, dimension 2
 // Resources: ~9 min CPU, ~499 MB RAM
 printf "HilbertModularVariety on Q(sqrt(5)), level pp (norm 5)...";

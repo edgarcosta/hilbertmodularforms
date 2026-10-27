@@ -5,6 +5,10 @@
 // ring over Q, to Hirzebruch's equations, via a stored witness map checked
 // deterministically by VerifyGradedIsomorphism (no version-dependent search).
 //
+// Sources: Gundlach 1963 (Math. Ann. 152, 226-256), Satz 8-10 pp.247-248, all weights
+// [2,5,6,15]; Hirzebruch 1976 (Russian Math. Surveys 31:5, 96-110), Cor. 1 pp.108-109,
+// the even ring [2,6,10,20] and its weight-40 relation.
+//
 // Literature equation, citation, and the witness map:
 //   Verification/LiteratureEquations/2.2.5.1-1.1-Hirzebruch.m
 //

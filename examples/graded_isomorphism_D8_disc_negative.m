@@ -1,6 +1,6 @@
 // No-false-positive check for SearchGradedIsomorphism (Verification/IsIsomorphic.m) on the
 // D=8 canonical ring against the WRONG-SIGN discriminant relation.  The literature model of
-// the Q(sqrt(8)) canonical ring in weights [2,4,6,14] is
+// the Q(sqrt(8)) canonical ring in weights [2,4,6,14] (Hirzebruch 1977, LNM 627, Sec. 4) is
 //     27*X14^2 - disc,
 // and it IS isomorphic to ours (see examples/graded_isomorphism_D5_D8_D13.m).  Flipping the
 // sign to 27*X14^2 + disc gives a ring with the SAME Hilbert series but no graded

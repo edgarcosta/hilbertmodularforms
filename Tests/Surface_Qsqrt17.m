@@ -15,7 +15,10 @@ assert #schemes eq 1;
 assert Dimension(schemes[1]) eq 2;
 M := GradedRingOfHMFs(F, 1);
 assert HilbertSeriesSanityCheck(M, NN, schemes);
-// Check generator weights against Hermann 1983 / Mayer 2007
+// Check generator weights against Mayer 2007 (thesis, RWTH Aachen), Thm 6.5.1 p.134,
+// a ring with multipliers in half-integral weights; compare its even trivial-multiplier
+// part. Hermann 1981 (Math. Ann. 256, 191-197), Satz 5, has only the symmetric even
+// subring [2,4,4,6,6].
 bb := NarrowClassGroupReps(M)[1];
 weights := Sort(&cat[[Weight(f)[1] : f in comp_data[bb][1][k]] : k in Keys(comp_data[bb][1])]);
 assert weights eq [2,4,4,6,6,6,8];

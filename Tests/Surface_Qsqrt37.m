@@ -16,6 +16,8 @@ assert Dimension(schemes[1]) eq 2;
 M := GradedRingOfHMFs(F, 1);
 assert HilbertSeriesSanityCheck(M, NN, schemes);
 // Check generator weights against Williams 2020
+// (J. Algebra 559, 679-711; arXiv:1809.08623), Prop. 17: all weights, relations in the
+// arXiv ancillary file Qsqrt37.txt; compare the even part.
 bb := NarrowClassGroupReps(M)[1];
 weights := Sort(&cat[[Weight(f)[1] : f in comp_data[bb][1][k]] : k in Keys(comp_data[bb][1])]);
 assert weights eq [2,2,4,4,6,6,6,6,6,8,8];
