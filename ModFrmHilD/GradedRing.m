@@ -53,7 +53,6 @@ declare attributes ModFrmHilDGRng:
   // used by HMFSeriesRing, as we always want to use the same RngMPol
   RngMPol,
   Automorphisms, // Automorphism group of F
-  LocalSquares, // Local squares stored for trace
   CodifferentGenerator, // Totally positive generator of the codifferent
   QuadExtWithConductorCache, // Assoc: N -> Ks, from QuadraticExtensionsWithConductor
   GrossencharsSetCache; // Assoc: N -> Sprint(k_hmf) -> K -> S, from PossibleGrossencharsOfRelQuadExt
@@ -372,9 +371,6 @@ intrinsic GradedRingOfHMFs(F::FldNum, prec::RngIntElt) -> ModFrmHilDGRng
   M`LValues := AssociativeArray();
   M`QuadExtWithConductorCache := AssociativeArray();
   M`GrossencharsSetCache := AssociativeArray();
-
-  // initialize - LocalSquares
-  M`LocalSquares := AssociativeArray();
 
   return M;
 end intrinsic;

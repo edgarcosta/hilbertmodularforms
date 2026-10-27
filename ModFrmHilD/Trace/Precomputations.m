@@ -7,7 +7,6 @@ This file contains the following routines used for the Trace.m code:
   - HMFTracePrecomputation: A procedure that does the precomputations for the trace code (stores class number, unit index, and discriminants of rings of integers)
   - PrecomputeTraceForm: Does precomputations the trace form t
   - PrecomputeTraceForm: Does precomputations for a series of trace forms T(a_1)t, ..., T(a_n)t specified by a list of ideals [a_1,...,a_n]
-  - LocalSquare: Stores values of local squares - in order to ensure that we don't repeat computations. (This can be removed if we)
 */
 
 import "../SaveAndLoad.m": default_dir;
@@ -245,27 +244,4 @@ intrinsic PrecomputeTraceForms(M::ModFrmHilDGRng, L::SeqEnum[RngOrdIdl])
   {Given a list of ideals L = [aa,bb, ...], precomputes values to generate traceforms t_aa, t_bb, ... }
   A := SetToSequence({ ii * aa : ii in Ideals(M), aa in L }); // Set of ideals
   HMFTracePrecomputation(M,A);
-end intrinsic;
-
-
-/* Caching Local Squares
-// Computing Artin symbols is the 3rd most expensive computation for the trace code (after class numbers and unit indices).
-To compute the Artin symbol (K/pp) for the extension K = F[x] / (x^2 - D) and a prime pp, we need to
-  (1) Compute the ring of integers ZK and check if pp | disc(ZK) => return 0
-  (2) Check if D is a local square in the completion F_pp => return 1, else -1
-Since the local square computation is performed many times, we store the results to M to avoid repeating computations */
-intrinsic LocalSquare(M::ModFrmHilDGRng, d::RngOrdElt, pp::RngOrdIdl) -> RngIntElt
-  {Checks if D is a local square in the completion F_pp}
-
-  // initialize - LocalSquares[pp]
-  if not IsDefined(M`LocalSquares,pp) then
-    M`LocalSquares[pp] := AssociativeArray();
-  end if;
-
-  // initialize - LocalSquares[pp][d]
-  if not IsDefined(M`LocalSquares[pp],d) then
-    M`LocalSquares[pp][d] := IsLocalSquare(d,pp) select 1 else -1;
-  end if;
-
-  return M`LocalSquares[pp][d];
 end intrinsic;
