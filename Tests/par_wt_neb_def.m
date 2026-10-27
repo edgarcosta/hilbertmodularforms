@@ -43,7 +43,7 @@ assert Order(chi) eq 2;
 Mk := HMFSpace(M, N, k, chi);
 
 Sk_def := CuspFormBasis(Mk);
-Sk_hs := HeckeStabilityCuspBasis(Mk : prove:=false, stable_only:=true);
+Sk_hs := HeckeStabilityCuspBasis(Mk : Proof:=true, stable_only:=true);
 
 assert #LinearDependence(Sk_def) eq 0;
 assert #Sk_hs eq #Sk_def;

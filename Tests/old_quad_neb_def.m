@@ -16,7 +16,7 @@ Mk := HMFSpace(M, N, k, chi);
 Sk := CuspFormBasis(Mk);
 
 
-Sk_hs := HeckeStabilityCuspBasis(Mk : stable_only:=true, prove:=false);
+Sk_hs := HeckeStabilityCuspBasis(Mk : stable_only:=true, Proof:=true);
 
 assert #Intersection(Sk, Sk_hs) eq #Sk;
 assert #Sk eq 4;

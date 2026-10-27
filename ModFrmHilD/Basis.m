@@ -47,14 +47,14 @@ intrinsic CuspFormBasis(
   ViaTraceForm:=false,
   SaveAndLoad:=false,
   StableOnly:=false,
-  Prove:=true
+  Proof:=true
   ) -> SeqEnum[ModFrmHilDElt]
   {
     returns a basis for cuspspace of M of weight k.
 
-    Prove is passed through to HeckeStabilityCuspBasis's `prove` parameter
+    Proof is passed through to HeckeStabilityCuspBasis's `Proof` parameter
     on the Hecke-stability code path (weight 1, or nontrivial Dirichlet
-    restriction over a quadratic base field); set Prove:=false to trade
+    restriction over a quadratic base field); set Proof:=false to trade
     provable correctness for speed.
   }
 
@@ -69,7 +69,7 @@ intrinsic CuspFormBasis(
     if SaveAndLoad then
       Mk`CuspFormBasis := LoadOrBuildAndSave(Mk, HeckeStabilityCuspBasis, "_cusp_space");
     else
-      Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk : prove := Prove, stable_only:=StableOnly);
+      Mk`CuspFormBasis := HeckeStabilityCuspBasis(Mk : Proof := Proof, stable_only:=StableOnly);
     end if;
   else
     ViaTraceForm and:= IsParallel(k) and GaloisDescent and (k[1] mod 2) eq 0;

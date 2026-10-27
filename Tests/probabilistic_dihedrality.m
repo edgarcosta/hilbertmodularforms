@@ -1,11 +1,14 @@
-F := QuadraticField(5);
-prec := 180;
-M := GradedRingOfHMFs(F, prec);
-N := 23*Integers(F);
-H := HeckeCharacterGroup(N, [1,2]);
-chi := H.1^11;
-Mk := HMFSpace(M, N, [1,1], chi);
-Sk := CuspFormBasis(Mk);
-assert #Sk eq 1;
-f := Sk[1];
-assert ProbabilisticDihedralTest(f);
+// The norm-241 weight-one cusp space consists of one dihedral form.
+procedure test_probabilistic_dihedrality()
+    F := QuadraticField(5);
+    ZF := Integers(F);
+    M := GradedRingOfHMFs(F, 100);
+    N := ideal<ZF | 241, 2*ZF.2 + 137>;
+    H := HeckeCharacterGroup(N, [1,2]);
+    Mk := HMFSpace(M, N, [1,1], H.1^11);
+    Sk := CuspFormBasis(Mk : Proof := true);
+    assert #Sk eq 1;
+    assert ProbabilisticDihedralTest(Sk[1]);
+end procedure;
+
+test_probabilistic_dihedrality();

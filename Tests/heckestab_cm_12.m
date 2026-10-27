@@ -15,7 +15,7 @@ H := HeckeCharacterGroup(N, [1, 2]);
 chi := H.1;
 
 Mk := HMFSpace(M, N, [1, 2], chi);
-Sk := CuspFormBasis(Mk : StableOnly:=true, Prove:=false);
+Sk := CuspFormBasis(Mk : StableOnly:=true, Proof:=true);
 assert #Sk eq 2;
 
 // the Hecke-stable dimension matches the predicted number of CM forms

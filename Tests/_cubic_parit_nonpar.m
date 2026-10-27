@@ -15,7 +15,7 @@ k := [1,1,3];
 chi := HeckeCharacterGroup(N, [1,2,3]).1;
 
 Mk := HMFSpace(M, N, k, chi);
-Sk := HeckeStabilityCuspBasis(Mk : prove:=false, stable_only:=true);
+Sk := HeckeStabilityCuspBasis(Mk : Proof:=true, stable_only:=true);
 Dk := DihedralBasis(Mk);
 
 assert #Sk eq 1;
