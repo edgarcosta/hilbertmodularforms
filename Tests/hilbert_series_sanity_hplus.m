@@ -1,4 +1,4 @@
-SetNthreads(4);
+SetNthreads(1);
 printf "Checking Hilbert-series sanity with narrow class number 2...";
 F := QuadraticField(3);
 M := GradedRingOfHMFs(F, 1);
