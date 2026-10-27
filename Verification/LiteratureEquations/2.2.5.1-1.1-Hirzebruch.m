@@ -3,9 +3,8 @@
 // Verification/CanonicalRingEquations/2.2.5.1-1.1-gl-0.m.
 //
 // Sources: K.-B. Gundlach, Math. Ann. 152 (1963), 226-256 (original determination of
-// the ring for Q(sqrt 5)); F. Hirzebruch, "The ring of Hilbert modular forms for real
-// quadratic fields of small discriminant", LNM 627 (1977), 287-323 (the presentation
-// used here).
+// the ring for Q(sqrt 5)); F. Hirzebruch, Russian Math. Surveys 31:5 (1976), 96-110,
+// Cor. 1, pp. 108-109, eq. (16) (the presentation used here).
 //
 // Generators in weights [2, 6, 10, 20] (w, x, y, z for the literature; X2, X6, X10,
 // X20 for ours). Hirzebruch's single relation for the surface:
@@ -33,7 +32,7 @@ LitData := function(Rsrc, Rtgt)
     -4194304*X2^2*X6*X10 + 4194304*X2*X6^3 - 33554432*X20 + 218103808*X10^2 ];
   PsiImages := [ Rsrc | p : p in GradedInverseImages(Rtgt, PhiImages) ];
 
-  citation := "Gundlach, Math. Ann. 152 (1963); Hirzebruch, LNM 627 (1977), 287-323 (Q(sqrt 5))";
+  citation := "Gundlach, Math. Ann. 152 (1963); Hirzebruch, Russian Math. Surveys 31:5 (1976), Cor. 1, pp. 108-109, eq. (16) (Q(sqrt 5))";
   return I, PhiImages, PsiImages, citation;
 end function;
 return LitData;
