@@ -673,7 +673,13 @@ function dimension_lower_bound(U : maxdim:=-1, tries:=1, vector:=0, suborbit:=0)
     vectors := [vector];
     assert tries eq 1;
   else
-    vectors := [[Random(100) : i in [1..n]] : t in [1..tries]];
+    vectors := [];
+    for t in [1..tries] do
+      repeat
+        v := [Random(100) : i in [1..n]];
+      until V!v ne V!0;
+      Append(~vectors, v);
+    end for;
     assert suborbit cmpeq 0;
   end if;
   dims := [];
