@@ -1,3 +1,7 @@
+declare verbose HMFTrace, 3;
+
+import "EmbeddingNumbers.m": local_square;
+
 
 ///////////////////////////////////////////////////
 //                                               //
@@ -22,11 +26,9 @@ Notes
 * Computing unit index and class groups. The big bottleneck is precomputing the
 class numbers #CL(K) and Hasse unit index [ZK^* : ZF^*] for lots of CM-extensions K/F.
 - I have some code to quickly compute the Hasse unit index without doing the class group.
-* Once the precomputation is completed, FastArtinSymbol is the main bottleneck. */
+*/
 
 ///////////////////////////////// ModFrmHilD: Trace //////////////////////////////////////////////
-
-declare verbose HMFTrace, 3;
 
 intrinsic Trace(Mk::ModFrmHilD, mm::RngOrdIdl : precomp := false) -> RngElt
   {Finds the trace of Hecke Operator T(mm) on Mk}
@@ -63,6 +65,47 @@ end intrinsic;
 
 
 
+//////////////////// Embedding Numbers over Unit index (Precomputations) ////////////////////
+
+function precomp_embedding_number_over_unit_index(M, data, NN, aa)
+  // data is [t, n, key, c] for the order ZF[x]/(x^2 - t*x + n) in K = F(sqrt(t^2 - 4*n)).
+  // ClassNumbersPrecomputation stores the data of K under key, a conjugate under Aut(F) of the
+  // square class of t^2 - 4*n. The automorphism M`Automorphisms[c] maps key to that class and
+  // the stored discriminant to the discriminant of ZK.
+  F := BaseField(M);
+  ZF := Integers(M);
+  NNfact := Factorization(NN);
+  t, n, key, c := Explode(data);
+  // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*]
+  h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]);
+  f := M`Automorphisms[Integers()!c];
+  DD := ZF!!f(DD);
+  D := t^2 - 4*n;
+  hw := h / w;
+  ff := Sqrt((D*ZF)/DD);
+
+  conductorsum := 0;
+  for bb in Divisors(ideal<ZF | ff * aa^(-1)>) do
+    // Artin symbol = ( local_square(F, D, pp[1]) ) + (Valuation(DD, pp[1]) eq 0) code
+    term := Norm(bb) * (&*([1] cat [1 - local_square(F, D, pp[1]) * Norm(pp[1])^(-1) :
+      pp in Factorization(bb) | Valuation(DD, pp[1]) eq 0]));
+    for pair in NNfact do
+      pp, e := Explode(pair);
+      f := Valuation(bb, pp);
+      g := Valuation(DD, pp);
+      A := (g eq 0) select local_square(F, D, pp) else 0;
+      term *:= OptimalEmbeddings(e, 2*f, g, A, pp);
+    end for;
+    conductorsum +:= term;
+  end for;
+
+  embeds := hw * conductorsum;
+
+  return embeds;
+end function;
+
+
+
 ///////////////////////////////// ModFrmHilD: TraceProduct ////////////////////////////////////////////
 
 intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp := false) -> RngElt
@@ -74,7 +117,6 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
   k := Weight(Mk);
   chi := Character(Mk);
   ZF := Integers(M);
-  NNfact := Factorization(NN);
   ZK := Parent(chi)`TargetRing;
   BPrimes := [ p[1] : p in Factorization(mm) | Valuation(NN,p[1]) gt 0 ]; // Bad Primes
 
@@ -113,10 +155,10 @@ intrinsic TraceProduct(Mk::ModFrmHilD, mm::RngOrdIdl, aa::RngOrdIdl : precomp :=
     wk := Coefficient(WeightFactor(n,t,k[1]+2),k[1]); // Weight Factor
     // Embedding numbers
     if precomp then
-      emb := PrecompEmbeddingNumberOverUnitIndex(M, data, NNfact, aa);
+      emb := precomp_embedding_number_over_unit_index(M, data, NN, aa);
       emb := t eq 0 select emb else 2*emb; // Factor of 2 accounts for x^2 +/- bx + a.
     else
-      emb := EmbeddingNumberOverUnitIndex(M, data, NNfact, aa);
+      emb := EmbeddingNumberOverUnitIndex(M, data, NN, aa);
     end if;
     // Adjust for bad primes
     if #BPrimes ne 0 then
@@ -189,8 +231,8 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
     Include(~done, pair);
     mult := t ne 0 select 2 else 1;
     // C(u,t)
-    C := EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa);
-    vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", u, t, EmbeddingNumberOverUnitIndex(M, [t,u], Factorization(NN), aa);
+    C := EmbeddingNumberOverUnitIndex(M, [t, u], NN, aa);
+    vprintf HMFTrace : "ConductorSum: <%o, %o> %o\n", u, t, C;
     vprintf HMFTrace : "WeightFactor: <%o, %o> %o\n", u, t, WeightFactor(u, t, prec);
     res +:= (-1)^n * mult * C * WeightFactor(u, t, prec);
   end for;
@@ -241,21 +283,7 @@ Index of Summation
 
 Embedding Numbers over Unit Index
 
-  * Helper functions
-    - FastArtinSymbol                                  (Fast implementation of artin symbol)
-    - ClassNumberOverUnitIndex                         (Computes the class number and a unit index)
-
-  * EmbeddingNumberOverUnitIndex                       (Computes Embedding numbers for an order x^2 + bx + a over a unit index)
-    - OptimalEmbeddings                                (Computes optimal embedding number for an order x^2 + bx + a using a formula.)
-      * Subroutine: OptimalEmbeddingsOdd
-      * Subroutine: OptimalEmbeddingsEven
-
-
-  * PrecompEmbeddingNumbersOverUnitIndex               (Computes Embedding numbers for an order x^2 + bx + a over a unit index)
-    - OptimalEmbedding                                 (Computes optimal embedding number for an order x^2 + bx + a using a formula.)
-      * Subroutine: OptimalEmbeddingsOdd
-      * Subroutine: OptimalEmbeddingsEven
-
+  * EmbeddingNumbers.m contains the field-level embedding count and local factors.
 
 Class Group and Unit Index
 
@@ -469,208 +497,15 @@ end intrinsic;
 //                                               //
 ///////////////////////////////////////////////////
 
-// Functions
-
-function FastArtinSymbol(D, pp, DD)
-  /* {Returns the artin symbol (K/pp) which is 0 if pp ramifies, -1, if pp splits and
-  1 if pp is inert in the extension K = F(x) / (x^2 - D) where ZK has discrminant DD} */
-  // D element of F for generating the field K = F(x) / (x^2 - D)
-  // pp prime ideal of F
-  // DD discriminant of the maximal order K
-  if Valuation(DD,pp) gt 0 then
-    return 0;
-  elif IsLocalSquare(D,pp) then
-    return 1;
-  else
-    return -1;
-  end if;
-end function;
-
-function ClassNumberOverUnitIndex(M,K)
-  // K CM quadratic extension of F
-  // M ModFrmHilDGRng
-  vprintf HMFTrace, 3 : "K = %o\n", K;
-  UF := UnitGroup(M);
-  mUF := UnitGroupMap(M);
-  Kabs := AbsoluteField(K);
-  ZKabs := Integers(Kabs);
-  UK, mUK := UnitGroup(ZKabs);
-  _, mKabstoK := IsIsomorphic(Kabs,K);
-  hK := ClassNumber(Kabs); // h = Class number
-  // Unit index w = 2 * [ZK^* : ZF^*]
-  UnitIndex := 2 * #quo< UK | [ (mKabstoK(mUF(u)))@@mUK : u in Generators(UF) ] >;
-  return hK / UnitIndex;
-end function;
-
-
-/////////////////////////////////// Embedding Numbers over Unit index  //////////////////////////////////////////////
-
-intrinsic EmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, FactNN::SeqEnum, aa::RngOrdIdl) -> RngElt
-  {Returns a count for the number of embeddings of the order S = ZF[x] / x^2 - tx + n into a Eichler order O(nn) of
-  level NN in the definite quaternion algebra B/F with index aa up to units [O(nn)^* : ZF^*]}
-  //
-  // data = [t, n] coefficients for the polynomial x^2 - tx + n
-  // FactNN = Factorization of the ideal NN
-  // Mk HMFSpace (carries field F, ring of integers ZF, level NN, and unit group + unit group map UF, mUF)
-  // aa ideal for the diamond operator
-  //
-
-  // Preliminaries
-  ZF := Integers(M);
-  F := BaseField(M);
+intrinsic EmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, level::RngOrdIdl,
+  diamond_ideal::RngOrdIdl) -> FldRatElt
+  {The unit-normalized Eichler embedding count for data = [t, n], the given level and the
+  diamond ideal diamond_ideal over the totally real base field of M. The discriminant
+  t^2 - 4*n defines a CM order, and level and diamond_ideal are nonzero integral ideals}
   t, n := Explode(data);
-  D := t^2 - 4*n;
-  _<x> := PolynomialRing(ZF);
-  K := ext<F | x^2 - D >;
-  ZK := Integers(K);
-  DD := Discriminant(ZK);
-  hw := ClassNumberOverUnitIndex(M,K); // Computes h/w where h = class number of K and w = unit index of 2 * [ZK^* : ZF^*]
-  ff := Sqrt((D*ZF)/DD); // Conductor
-
-  // Sum over conductors
-  conductorsum := 0;
-  if ff subset aa then // check if aa divides ff
-    for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
-      term := Norm(bb) * (&*([1] cat [1 - FastArtinSymbol(D,pp[1],DD) * Norm(pp[1])^(-1) : pp in Factorization(bb)]));
-      // Embedding numbers
-      for pair in FactNN do
-        pp, e := Explode(pair); // prime and exponent
-        f := Valuation(bb,pp); // Conductor
-        g := Valuation(DD,pp); // Valuation of Discriminant
-        A := (g eq 0) select LocalSquare(M,D,pp) else 0; // Artin Symbol
-        term *:= OptimalEmbeddings(e, 2*f, g, A, pp);
-      end for;
-      conductorsum +:= term;
-    end for;
-  end if;
-
-  // embedding number
-  embeds := hw * conductorsum;
-
-  return embeds;
+  F := BaseField(M);
+  return EmbeddingNumberOverUnitIndex(F, Integers(F)!(t^2 - 4*n), level, diamond_ideal);
 end intrinsic;
-
-
-/////////////////////////////////// Embedding Numbers over Unit index (Precomputations)  //////////////////////////////////////////////
-
-intrinsic PrecompEmbeddingNumberOverUnitIndex(M::ModFrmHilDGRng, data::SeqEnum, NNfact::SeqEnum, aa::RngOrdIdl) -> RngElt
-  {Returns a count for the number of embeddings of the order S = ZF[x] / x^2 - tx + n into a Eichler order O(nn) of
-  level NN in the definite quaternion algebra B/F with index aa up to units [O(nn)^* : ZF^*]}
-  //
-  // t, n coefficients for the polynomial x^2 - tx + n
-  // NNfact = Factorization of the ideal NN for the level
-  // M ModFrmHilDGRng (carries field F, ring of integers ZF, and unit group + unit group map UF, mUF)
-  // aa ideal for the diamond operator
-  //
-  // Notes: The key obtained from discriminant hash (key) represents a square class that is conjugate to D. We recover the square class of d (and the discriminant DD)
-  // from the automorphism f = M`Aut[c] which satifies f(key) = d and f(DD) = disc(d).
-  //
-  // Following is old and not in use. By setting d = key if c = 0 and d = Conjugate(key) if c = 1 and then running LocalSquare(M,d,pp[1]) instead of LocalSquare(M,D,pp[1]),
-  // we reduce the number of computations for LocalSquare() to 1/3 of its orginal size. However, this seems like an unnecessary and confusing simplification.
-  //
-  // d := (c eq 1) select Conjugate(key) else key;
-  //
-
-  // Preliminaries
-  ZF := Integers(M);
-  t, n, key, c := Explode(data);
-  h, w, DD := Explode(ClassNumbersPrecomputation(M)[key]); // h = class number of K, w = unit index of 2 * [ZK^* : ZF^*]
-  f := M`Automorphisms[ Integers()!c ]; // automorphism for converting discriminant
-  DD := ZF !! f(DD); // DD = discriminant of maximal order
-  D := t^2 - 4*n; // Discriminant of order
-  hw := h / w; // Computes h/w where h = class number of K and w = unit index of 2 * [ZK^* : ZF^*]
-  ff := Sqrt((D*ZF)/DD); // Conductor
-
-  // Conductor Sum
-  conductorsum := 0;
-  for bb in Divisors( ideal< ZF | ff * aa^(-1) > ) do
-    // Artin symbol = ( LocalSquare(M,D,pp[1]) ) + (Valuation(DD,pp[1]) eq 0) code
-    term := Norm(bb) * (&*([1] cat [1 - LocalSquare(M,D,pp[1]) * Norm(pp[1])^(-1) : pp in Factorization(bb) | Valuation(DD,pp[1]) eq 0 ]));
-    // Embedding numbers
-    for pair in NNfact do
-      pp, e := Explode(pair);
-      f := Valuation(bb,pp); // Conductor
-      g := Valuation(DD,pp); // Valuation of Discriminant
-      A := (g eq 0) select LocalSquare(M,D,pp) else 0; // Artin Symbol
-      term *:= OptimalEmbeddings(e, 2*f, g, A, pp);
-    end for;
-    conductorsum +:= term;
-  end for;
-
-  // embedding number
-  embeds := hw * conductorsum;
-
-  return embeds;
-end intrinsic;
-
-
-///////////////////////////////////// Optimal Embeddings ///////////////////////////////////////////////
-
-intrinsic OptimalEmbeddings(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
-  {Computes embedding numbers for x^2 - d * pi^(f) mod pp^e where:
-  - e is a positive integer,
-  - f is a positive even integer,
-  - pp is a prime ideal,
-  - A = (K/pp) is the artin symbol for the local field K = F_pp[x] / (x^2 - D), and
-  - d = disc(ZK) is the fundamental discriminant of the integers of K with g = Valuation(d,pp) }
-
-  // Preliminaries
-  q := Norm(pp); // Size of residue field
-
-  // Case 1 : p is odd
-  if IsOdd(q) then
-    return f eq 0 select OptimalEmbeddingsOdd(e,f,g,A,pp) else OptimalEmbeddingsOdd(e,f,g,A,pp) + ExactQuotient(OptimalEmbeddingsOdd(e+1,f,g,A,pp), q);
-  // Case 2 : p is even
-  else
-    return f + g eq 0 select OptimalEmbeddingsEven(e,f,g,A,pp) else OptimalEmbeddingsEven(e,f,g,A,pp) + ExactQuotient(OptimalEmbeddingsEven(e+1,f,g,A,pp), q);
-  end if;
-end intrinsic;
-
-
-
-intrinsic OptimalEmbeddingsOdd(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
-  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^f where g = power of pp in discriminant of maximal order, A = (K/pp) is the artin symbol K = F[x]/(x^2-D)}
-
-  // Size of residue field
-  q := Norm(pp);
-
-  // Embedding Numbers
-  if f + g ge e then // Case 1 : f >= e
-    N := q^(Floor(e/2));
-  else // Case 2 : f < e
-    N := q^(ExactQuotient(f,2)) * A * (1 + A);
-  end if;
-  return N;
-end intrinsic;
-
-
-
-intrinsic OptimalEmbeddingsEven(e::RngIntElt, f::RngIntElt, g::RngIntElt, A::RngIntElt, pp::RngOrdIdl) -> RngIntElt
-  {Returns all solutions to x^2 - D mod pp^e where D = d*pi^(g+f) where g = power of pp in discriminant of maximal order, A = (K/pp) is the artin symbol K = F[x]/(x^2-D)}
-
-  // Preliminaries
-  q := Norm(pp); // Size of residue field
-  ZF := Order(pp);
-  v := Valuation(2*ZF,pp); // Valuation of 2*ZF
-
-  // Embedding Numbers
-  if g + f ge (e + 2*v) then // Case 1 : g + 2f >= e + 2v
-    N := q^(Floor(e/2));
-  else // Case 2 : g + 2f < e + 2v
-    if IsOdd(g) then // Subcase 2.1 : g is odd
-      N := 0;
-    else // Subcase 2.2 : g is even
-      if e le (f + 1 - A^2) then // Subsubcase 2.2.1 e <= f when pp is split or inert and e <= 2f+1 when pp is ramified
-        N := q^(Floor(e/2));
-      else // Subsubcase 2.2.2 e > 2f when pp is split or inert and e > f+1 when pp is ramified
-        N := q^( ExactQuotient(f,2) ) * A * (1 + A);
-      end if;
-    end if;
-  end if;
-  return N;
-end intrinsic;
-
-
 
 
 ///////////////////////////////////////////////////
