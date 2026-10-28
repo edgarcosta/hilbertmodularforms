@@ -2,19 +2,22 @@
 // despite having the numerical invariants of a K3 surface.
 //
 // p31 is the prime above 31 of norm 31 (LMFDB label 31.2); Y is the minimal
-// resolution of the Baily-Borel model.  This certifies, with EXACT (algebraic)
-// computations only:
+// resolution of the Baily-Borel model.  EXACT (algebraic) computations give:
 //   * P_1 = dim S_2 = 1  and  P_2 = 2               (Section-9 method)
-//   * the multiple fibre has multiplicity m = 2      (exact certificate)
-//   * hence P_3 = 1 + floor(3/2) = 2 and P_n = 1 + floor(n/2).
+//   * M_4 = Sym^2 M_2, so |2K_Y| is a pencil of conics in P(M_2); its
+//     discriminant is l_1 * l_2^2, and the unique rank-1 (double-line) member
+//     is Omega^2 = y_3^2.
 // Since chi = 2, P_2 = 2 already excludes K3 (P_2 = 1) and general type
 // (P_2 = chi + K^2_min >= 3), so kappa(Y) = 1.
 //
-// The m = 2 certificate is exact: M_4 = Sym^2 M_2, so |2K_Y| is a pencil of
-// conics in P(M_2); its discriminant is l_1 * l_2^2, and the unique rank-1
-// (double-line) member is Omega^2 = y_3^2, giving a multiplicity-2 fibre.
-// (Cf. Lemma "P_n = 1 + floor(n(m-1)/m)" in the accompanying note; P_3 = 2 in
-// turn forces m = 2, so the two determinations agree.)
+// CONDITIONAL: the multiple fibre has multiplicity m = 2, hence
+// P_3 = 1 + floor(3/2) = 2 and P_n = 1 + floor(n/2) (Lemma
+// "P_n = 1 + floor(n(m-1)/m)" in the accompanying note).  The double line does
+// not prove m = 2: with K_Y = (m-1) F_red, |2K_Y| = (m-2) F_red + |m F_red|, so
+// Omega^2 is a square member for every m >= 2.  An exact proof that |2K_Y| has
+// no fixed part, or an exact P_3 = 2, would give m = 2.
+// WorkInProgress/plurigenera_P3_X0p31_Qsqrt5.m finds P_3 = 2, but evaluates the
+// elliptic-point conditions numerically.
 //
 // Written flat (no procedure wrapper): the test runner evaluates this file
 // inside an `eval`.
@@ -80,7 +83,7 @@ P2 := #S4 - Rank(Matrix(Rationals(), 2, #S4,
 assert P1 eq 1 and P2 eq 2;
 printf "P_1 = %o, P_2 = %o\n", P1, P2;
 
-// ---- exact m = 2 certificate: |2K_Y| is a conic pencil with disc l1 * l2^2 ----
+// ---- |2K_Y| is a conic pencil with disc l1 * l2^2 ----
 idx   := [<i,j> : j in [i..3], i in [1..3]];
 quads := [ybasis[t[1]]*ybasis[t[2]] : t in idx];       // the 6 monomials y_i y_j
 nus := []; for nu -> a in Coefficients(Components(quads[1])[1*ZF]) do
@@ -112,10 +115,11 @@ assert &+[g[2] : g in fac] eq 3 and {* g[2] : g in fac *} eq {* 1, 2 *};   // l1
 dbl := [g[1] : g in fac | g[2] eq 2][1];
 cs := MonomialCoefficient(dbl, s); ct := MonomialCoefficient(dbl, t);
 s0 := ct ne 0 select F!1 else F!0; t0 := ct ne 0 select -cs/ct else F!1;
-assert Rank(s0*M1 + t0*M2m) eq 1;                      // rank-1 => double line => 2*{Omega=0}
-m := 2;
+assert Rank(s0*M1 + t0*M2m) eq 1;                      // the double line Omega^2
 
+// m = 2 is assumed, not proved here (see the header)
+m := 2;
 P3 := 1 + (3*(m-1)) div m;
-assert P3 eq 2;
-printf "multiple-fibre multiplicity m = %o, so P_3 = %o and P_n = 1 + floor(n/2).\n", m, P3;
+printf "if the multiple fibre has multiplicity m = %o, then P_3 = %o and P_n = 1 + floor(n/2).\n",
+       m, P3;
 printf "X_0(p31)/Q(sqrt5): kappa = 1 (properly elliptic), K3 numerical invariants.\n";
