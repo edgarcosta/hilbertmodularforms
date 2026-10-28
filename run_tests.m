@@ -1,7 +1,11 @@
-// usage: magma target:=SUBSTRING exitsignal:=BOOL run_tests.m
-// filename and target are full relative paths, e.g. Tests/foo.m or examples/foo.m
+// Usage: magma [filename:=PATH | target:=SUBSTRING] exitsignal:=BOOL run_tests.m
+// filename is one relative path; target matches paths, including slow/ subdirectories.
+// With neither, run only files directly in Tests/ and examples/.
 if assigned filename then
   tests := [filename];
+elif assigned target and target ne "" then
+  tests := Split(Pipe("ls Tests/*.m Tests/slow/*.m examples/*.m examples/slow/*.m 2>/dev/null",
+                      ""), "\n");
 else
   tests := Split(Pipe("ls Tests/*.m examples/*.m 2>/dev/null", ""), "\n");
 end if;

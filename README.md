@@ -24,11 +24,17 @@ A convenience file `config.m` is also provided, which attaches the spec and sets
 Tests live in `Tests/` and are run via the included `Makefile`:
 
 ```bash
-make check                  # run all tests in parallel (uses all CPU cores)
-make check/<testfile.m>     # run a single test
+make check                  # Tests/ and examples/, using all CPU cores
+make check-slow             # Tests/slow/ and examples/slow/
+make check/<testfile.m>      # one file; check/slow/<testfile.m> for a slow file
 make debug/<testfile.m>     # run a single test with debug-on-error
 make clean                  # clear cached precomputed data
 ```
+
+CI runs `Tests/` and `examples/` on master pushes and pushes to ready PRs without merge conflicts.
+Files taking over about 20 minutes belong in `Tests/slow/` or `examples/slow/`, run nightly on master.
+Start the Tests workflow from the Actions tab to run both tiers on any branch.
+CI skips known failures whose filenames start with an underscore.
 
 Each test file is a Magma script that uses `assert`. Individual tests can also be run directly:
 
@@ -68,7 +74,7 @@ Package specification files; see the Magma [handbook section on packages](http:/
 
 ## Examples and work in progress
 
-- `examples/` holds the paper's worked examples that run in CI (the X0(11) modular curve, Igusa invariants, the cyclic cubic threefold example with syzygy-computed equations, numerical surface invariants), each a self-contained script; `examples/slow/` holds the heavy cases CI skips. The canonical-ring witness examples are listed as pending in `examples/README.md`.
+- `examples/` holds the papers' worked examples; `examples/slow/` holds the expensive cases, run nightly. See `examples/README.md` for the files by paper section.
 - `WorkInProgress/` contains demonstrations and exploratory scripts that may or may not currently run end-to-end.
 
 ## Scripts and data

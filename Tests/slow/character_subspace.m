@@ -21,7 +21,7 @@ for d in fund_discs do
 end for;
 strs := [Sprintf("dim_list[%o] := %o;\n", k, dim_list[k]) : k in Sort(SetToSequence(Keys(dim_list)))];
 output_str := &cat strs;
-fprintf "hilbertmodularforms/Tests/character_subspace.m", "%o", output_str;
+fprintf "hilbertmodularforms/Tests/slow/character_subspace.m", "%o", output_str;
 */
 
 dim_list[<5, [ 2, 2 ]>] := [ 0, 0, 0, 0, 0, 1, 1, 0, 0 ];
