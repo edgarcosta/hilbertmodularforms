@@ -12,6 +12,12 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
 
+  # The slow tier (Tests/slow/ and examples/slow/) runs nightly and on manual runs only.
+  schedule:
+    - cron: '23 3 * * *'
+
+  workflow_dispatch:
+
 # A new event on a PR cancels the run it supersedes. The event name is part of the
 # group because each PR event fires both PR triggers, and the skipped run must not
 # cancel the real one. Every other run gets a group of its own: in a shared group a
@@ -35,6 +41,7 @@ jobs:
     needs: has_access
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      slow-matrix: ${{ steps.set-matrix.outputs.slow-matrix }}
     steps:
       # Under pull_request_target this is the base branch, so the scripts that run
       # here never come from a fork.
@@ -57,15 +64,14 @@ jobs:
 
       - id: set-matrix
         working-directory: ${{ github.event_name == 'pull_request_target' && 'pr-head' || '.' }}
+        shell: bash
         run: |
-          matrix=$((
-            echo '{ "target" : ['
-            ls -1 Tests/*.m examples/*.m 2>/dev/null | grep -v '/_' | sed -r 's/^([^,]*)(,?)$/"\1"\2/'  | paste -sd "," -
-            echo " ]}"
-          ) | jq -c .)
-          echo $matrix
-          echo $matrix | jq .
-          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          matrix=$(ls -1 Tests/*.m examples/*.m | grep -v '/_' | jq -R . | jq -sc '{target: .}')
+          slow_matrix=$({ ls -1 Tests/slow/*.m examples/slow/*.m 2>/dev/null || true; } | { grep -v '/_' || true; } | jq -R . | jq -sc '{target: .}')
+          echo "$matrix" | jq .
+          echo "$slow_matrix" | jq .
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "slow-matrix=$slow_matrix" >> "$GITHUB_OUTPUT"
 
   check-matrix:
     runs-on: ubuntu-latest
@@ -166,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run tests
     needs: [has_access, matrix, prime-magma]
-    if: needs.has_access.outputs.has_access == 'true'
+    if: needs.has_access.outputs.has_access == 'true' && github.event_name != 'schedule'
     timeout-minutes: 180
 
     strategy:
@@ -225,5 +231,58 @@ jobs:
 
       - name: Run tests
         shell: bash
+        env:
+          TEST_FILE: ${{ matrix.target }}
         run: |
-          ./magma/magma -b target:=${{matrix.target}} exitsignal:="" run_tests.m
+          ./magma/magma -b filename:="$TEST_FILE" exitsignal:="" run_tests.m
+
+  test-slow:
+    runs-on: ubuntu-latest
+    name: Run slow tests
+    needs: [has_access, matrix, prime-magma]
+    # Only users with write access can schedule or start a run by hand, so this job
+    # skips the permission check that the test job makes.
+    if: >-
+      needs.has_access.outputs.has_access == 'true' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
+      fromJson(needs.matrix.outputs.slow-matrix).target[0] != null
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix: ${{ fromJson(needs.matrix.outputs.slow-matrix) }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache magma
+        uses: actions/cache@v3
+        id: magmacache
+        with:
+          path: |
+            ./magma
+          key:
+            ${{ env.MAGMA_CACHE_NUMBER }}
+
+      - name: Install magma
+        env:
+          MAGMA_URL: ${{ secrets.MAGMA_URL }}
+        shell: bash
+        if: steps.magmacache.outputs.cache-hit != 'true'
+        run: |
+          wget "$MAGMA_URL" -O magma.tar.gz --quiet
+          tar xf magma.tar.gz
+
+      - name: Create dummy network device
+        shell: bash
+        run: |
+          sudo ip link add dumdum type dummy
+          sudo ifconfig dumdum hw ether `./magma/magma -d | grep "Valid MAC addresses" -A1 | tail -n1`
+          echo | ./magma/magma
+
+      - name: Run tests
+        shell: bash
+        env:
+          TEST_FILE: ${{ matrix.target }}
+        run: |
+          ./magma/magma -b filename:="$TEST_FILE" exitsignal:="" run_tests.m

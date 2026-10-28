@@ -1,7 +1,6 @@
 // HilbertModularVariety end-to-end test: Q(sqrt(41)), level 1
 // Expected: 1 component (h+ = 1), certified, dimension 2
 // Resources: >4 hours CPU (timed out at 4h)
-// EXCLUDED FROM CI: exceeds reasonable CI time limits
 printf "HilbertModularVariety on Q(sqrt(41)), level 1...";
 t0 := Cputime(); walltime := Time();
 F := QuadraticField(41);

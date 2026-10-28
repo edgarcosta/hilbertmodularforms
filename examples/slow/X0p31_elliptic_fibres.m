@@ -1,4 +1,4 @@
-// Worked example (SLOW, CI-skipped): the singular-fibre configuration of the
+// Worked example (SLOW): the singular-fibre configuration of the
 // elliptic fibration on X_0(p31) over Q(sqrt 5), proved UNCONDITIONALLY over Q.
 //
 // Run manually:
