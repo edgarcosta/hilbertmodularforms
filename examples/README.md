@@ -17,6 +17,7 @@ fail the row-sum assertion in `precompute_tps` (`ModFrmHil/precompute.m`).
 | Hilbert modular threefolds | cyclic cubic relation hunt at precisions 450 and 700: unconditional relation-freeness of the 7-generator model through degree 26, phantom-kernel table (spurious relations at the truncation frontier at every precision), free-count vs dimension table through degree 40 | `slow/cyclic_cubic_threefold_certify.m` | nightly |
 | Hilbert modular threefolds | D=49 level (2) weight 4 defect-to-q-expansion bridge, both cusps: full four-row vanishing matrix via the Fricke involution, rank 4, surviving dimension 2, witnessing the arXiv:2501.15719 positive Kodaira-dimension row | `d49_level2_defect_bridge.m` | CI |
 | D=5 | Q(sqrt 5) canonical ring vs Gundlach/Hirzebruch, deterministic witness map | `canonical_ring_Qsqrt5.m` | CI |
+| D=5 | Q(sqrt 5) symmetric even ring vs Gundlach and Hammond: free on weights 2, 6, 10, equal to the swap-fixed subring of the stored ring | `symmetric_ring_Qsqrt5.m` | CI |
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch double cover (rational sign c^2 = -C), deterministic witness map | `canonical_ring_Qsqrt2.m` | CI |
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier, deterministic witness map | `canonical_ring_Qsqrt13.m` | CI |
 | heavy cases (D=12,21 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | nightly |
@@ -55,6 +56,7 @@ over Q to the literature equations, via a stored witness map in
 `Verification/LiteratureEquations/` checked deterministically by `VerifyGradedIsomorphism`):
 
     % Verified in examples/canonical_ring_Qsqrt5.m  (our canonical ring is graded-isomorphic over Q to Hirzebruch's, via a stored witness map).
+    % Verified in examples/symmetric_ring_Qsqrt5.m  (D=5 symmetric even ring; Gundlach and Hammond, as the swap-fixed subring of our ring).
     % Verified in examples/canonical_ring_Qsqrt2.m  (D=8; Hirzebruch's double cover, rational sign c^2 = -C).
     % Verified in examples/canonical_ring_Qsqrt13.m (van der Geer and Zagier).
 
