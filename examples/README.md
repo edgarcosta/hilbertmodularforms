@@ -20,6 +20,7 @@ fail the row-sum assertion in `precompute_tps` (`ModFrmHil/precompute.m`).
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch double cover (rational sign c^2 = -C), deterministic witness map | `canonical_ring_Qsqrt2.m` | CI |
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier, deterministic witness map | `canonical_ring_Qsqrt13.m` | CI |
 | D=13 level (2) | van der Geer-Zagier Theorem 9 with eta0 adjoined, in the generated swap-fixed quotient | `symmetric_ring_Qsqrt13_level2.m` | CI |
+| D=13 symmetric ring | van der Geer-Zagier Theorem 7, geometric swap and exact Hilbert series | `symmetric_ring_Qsqrt13.m` | CI |
 | heavy cases (D=12,21 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | nightly |
 | known h+=2 failures (D=24,28,33) | end-to-end recompute | `slow/_Surface_Qsqrt*.m` | skipped |
 
@@ -63,3 +64,4 @@ All three canonical-ring examples run green in CI; the D=5 stored `CanonicalRing
 file was regenerated with the sorted-generator-order fix in this branch.
 
     % Verified in examples/symmetric_ring_Qsqrt13_level2.m (Theorem 9 with eta0 adjoined; full generation remains conditional on the quotient being a domain).
+    % Verified in examples/symmetric_ring_Qsqrt13.m (van der Geer and Zagier, Theorem 7, for the level-one symmetric ring).
