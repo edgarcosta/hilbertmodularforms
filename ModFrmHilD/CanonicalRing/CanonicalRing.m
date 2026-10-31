@@ -171,39 +171,119 @@ end intrinsic;
 //////////////////////////////////////////////////////////////////////
 
 
-// Iteratively looks for generators up to MaxWeightGens and relations up to a MaxWeightRelations.
-// I recommend using ConstructGeneratorsAndRelations at high precision (200-1000) and MaxWeightGens ~ 10
-// and MaxWeightRelations as high as you want.
+function jacobian_index_tuples(weights, count, total, first)
+  if count eq 0 then
+    return total eq 0 select [[]] else [];
+  end if;
+  tuples := [];
+  for i := first to #weights - count + 1 do
+    if weights[i] gt 0 and weights[i] le total then
+      for rest in $$(weights, count - 1, total - weights[i], i + 1) do
+        Append(~tuples, [i] cat rest);
+      end for;
+    end if;
+  end for;
+  return tuples;
+end function;
+
+procedure weighted_jacobian_candidate(gens, indices, Mk, ~expansions, ~candidate)
+  candidate := false;
+  M := Parent(Mk);
+  n := Degree(BaseField(M));
+  bbs := NarrowClassGroupReps(M);
+  inputs := [*gens[i] : i in indices*];
+  for f in inputs do
+    if GradedRing(f) ne M or Level(f) ne Level(Mk)
+        or #Weight(f) ne n or Weight(f)[1] le 0
+        or not &and[w eq Weight(f)[1] : w in Weight(f)]
+        or Keys(Components(f)) ne SequenceToSet(bbs)
+        or (not ISA(Type(CoefficientRing(f)), FldNum)
+            and Type(CoefficientRing(f)) ne FldRat) then
+      return;
+    end if;
+  end for;
+  productParent := &*[M | Parent(f) : f in inputs];
+  MJ := HMFSpace(M, Level(Mk), Weight(Mk), Character(productParent)
+      : unitcharacters := UnitCharacters(productParent));
+  if MJ ne Mk then
+    return;
+  end if;
+
+  try
+    K := Rationals();
+    for f in inputs do
+      if CoefficientRing(f) ne K then
+        K := SafeCompositum(K, CoefficientRing(f));
+      end if;
+    end for;
+    prec := Min([Precision(f) : f in inputs]);
+    components := AssociativeArray();
+    for bb in bbs do
+      ps := [];
+      for i in indices do
+        key := <i, bb>;
+        if not IsDefined(expansions, key) or expansions[key][1] ne K then
+          f := gens[i];
+          if CoefficientRing(f) ne K then
+            f := ChangeCoefficientRing(f, K);
+          end if;
+          expansions[key] := <K, LowerSetExpansion(Components(f)[bb])>;
+        end if;
+        p := expansions[key][2];
+        if Type(Parent(p)) ne RngMPol or Rank(Parent(p)) ne n then
+          return;
+        end if;
+        Append(~ps, p);
+      end for;
+      Rq := Parent(ps[1]);
+      ps := [Rq!p : p in ps];
+      rows := [Weight(inputs[i])[1]*ps[i] : i in [1..n + 1]]
+          cat &cat[[Rq.j*Derivative(ps[i], j) : i in [1..n + 1]] : j in [1..n]];
+      det := Determinant(Matrix(Rq, n + 1, n + 1, rows));
+      // Build every component from the same full inputs. Determinants on some components,
+      // extended by zero to the rest, need not lie in the product-character space MJ.
+      components[bb] := HMFComponent(MJ, bb, det, prec : LowerSet := true);
+    end for;
+    candidate := HMFSumComponents(MJ, components);
+    vprintf HilbertModularForms, 2 : "Jacobian computed at weight %o on %o components\n",
+        Weight(Mk)[1], #bbs;
+  catch e
+    vprintf HilbertModularForms, 2 : "Jacobian declined: unsupported expansions (%o)\n", e;
+    candidate := false;
+  end try;
+end procedure;
+
 intrinsic ConstructGeneratorsAndRelations(
   M::ModFrmHilDGRng,
   N::RngOrdIdl,
   MaxWeightGens::RngIntElt,
   MaxWeightRelations::RngIntElt
   :
-  LowestWeight:=2,
-  Alg:="Standard",
-  IdealClassesSupport:=false,
-  Symmetric:=false,
-  ComputeNewGenerators:=true,
+  LowestWeight := 2,
+  Alg := "Standard",
+  IdealClassesSupport := false,
+  Symmetric := false,
+  JacobianGenerator := false,
+  ComputeNewGenerators := true,
   NumberOfTraceForms := 0,
-  PrecomputedGens:=AssociativeArray()
-  ) -> Any
-  {
-  Find generators and relations in M of level N. Generators will have parallel weight upto MaxWeightGens, and relations will have parallel upto MaxWeightRelations.
-  Return a three Associative arrays, indexed by weight, corresponding to generators, relations and the monomials.
-
-  The Parameters control the behaviour of this function as follows:
-
-  'LowestWeight'         :  Specifiy the lowest weight for the generators.
-  'Alg'                  :  passed to ComplementBasis.
-  'IdealClassesSupport'  :  Restrict the support of the generators to a given set of components.
-  'Symmetric'      :  Restrict the generators to be invariant under the automorphisms of the base field F, i.e., invariant under the swap map.
-  'PrecomputedGens'      :  An AssociativeArray to provide precomputed generators.
-                            It is presumed that PrecomputedGens[k] contains all generators of weight `k`.
-
-  'ComputeNewGenerators' : Determine if the algorithm will search for missing generators, or if it can be assumed
-                           that all of the generators have been provided as PrecomputedGens.
-  }
+  PrecomputedGens := AssociativeArray()
+  ) -> Tup
+{A tuple of generator, relation and monomial associative arrays for level N in the
+Hilbert modular forms ring M over a totally real field.
+The arrays are indexed by parallel weight.
+MaxWeightGens bounds generator weights and MaxWeightRelations bounds relation weights.
+LowestWeight (default 2) specifies the initial generator weight; only 2 is supported.
+Alg (default "Standard") selects the ComplementBasis algorithm.
+IdealClassesSupport (default false) restricts generators to the listed components;
+false includes all narrow ideal classes.
+Symmetric (default false) restricts generators to forms invariant under base-field automorphisms.
+JacobianGenerator (default false) tries weighted Jacobians of positive parallel-weight
+generators when the ordinary class number is one and Symmetric is false.
+ComputeNewGenerators (default true) searches for generators missing from PrecomputedGens.
+NumberOfTraceForms (default 0) selects how many trace forms to try during basis completion.
+PrecomputedGens (default AssociativeArray()) supplies generators indexed by weight,
+assumed complete in each supplied weight.
+See also ApproximateGradedRing}
 
   if IdealClassesSupport cmpeq false then
     IdealClassesSupport := NarrowClassGroupReps(M); // the default is all ideals classes
@@ -217,6 +297,12 @@ intrinsic ConstructGeneratorsAndRelations(
   CoeffCount := NumberOfCoefficients(M);
 
   have_dim_formula := IdealClassesSupport eq NarrowClassGroupReps(M) and not Symmetric;
+  tryJacobian := JacobianGenerator and not Symmetric;
+  if tryJacobian and ClassNumber(BaseField(M)) ne 1 then
+    vprint HilbertModularForms : "Jacobian declined: ordinary class number is not one";
+    tryJacobian := false;
+  end if;
+  jacobianExpansions := AssociativeArray();
   KnownRelations := false;
 
   // Computing Trace forms 
@@ -330,14 +416,48 @@ intrinsic ConstructGeneratorsAndRelations(
 
       knownDim := have_dim_formula select Dimension(Mk) else false;
 
-      basisWeightk := ExtendBasis(weightedSymBasis, Mk :
+      augmentedBasis := weightedSymBasis;
+      if tryJacobian and (knownDim cmpeq false or #augmentedBasis lt knownDim) then
+        weights := [Weight(f)[1] : f in gens];
+        for indices in jacobian_index_tuples(weights, n + 1, k - 2, 1) do
+          weighted_jacobian_candidate(gens, indices, Mk, ~jacobianExpansions, ~candidate);
+          if candidate cmpeq false then
+            continue;
+          end if;
+          prec := Min([Precision(f) : f in augmentedBasis cat [candidate]]);
+          r := #augmentedBasis eq 0 select 0 else
+              Rank(CoefficientsMatrix(augmentedBasis
+                  : IdealClasses := IdealClassesSupport, prec := prec));
+          if r ne #augmentedBasis then
+            continue;
+          end if;
+          if Rank(CoefficientsMatrix(augmentedBasis cat [candidate]
+              : IdealClasses := IdealClassesSupport, prec := prec)) eq r + 1 then
+            if #augmentedBasis eq 0 then
+              augmentedBasis := Basis([candidate]);
+            else
+              // ComplementBasis needs a common coefficient field and precision on both sides.
+              commonForms := ChangeToCompositumOfCoefficientFields(augmentedBasis cat [candidate]);
+              commonPrefix := [f + 0*commonForms[#commonForms] : f in commonForms[1..r]];
+              augmentedBasis cat:= ComplementBasis(commonPrefix, Basis(commonForms) : Alg := Alg);
+            end if;
+            vprintf HilbertModularForms :
+                "Jacobian accepted at weight %o on %o components (rank %o -> %o)\n",
+                k, #Keys(Components(candidate)), r, r + 1;
+            if knownDim cmpne false and #augmentedBasis eq knownDim then
+              break;
+            end if;
+          end if;
+        end for;
+      end if;
+      basisWeightk := ExtendBasis(augmentedBasis, Mk :
                                   Alg := Alg,
                                   KnownMkDimension := knownDim,
                                   IdealClassesSupport := IdealClassesSupport,
                                   TraceFormIdeals := TraceFormIdeals,
                                   Symmetric := Symmetric);
 
-      newGens := basisWeightk[#weightedSymBasis + 1 .. #basisWeightk];
+      newGens := basisWeightk[fromLowerWeightDim + 1 .. #basisWeightk];
 
       // Update the generators of degree k based on the computed weight k forms.
       if #newGens gt 0 then
@@ -1009,15 +1129,28 @@ intrinsic ApproximateGradedRing(M::ModFrmHilDGRng, N::RngOrdIdl, B::RngIntElt
     : IdealClassesSupport := false, Alg := "Standard",
       NumberOfTraceForms := 0,
       Symmetric := false,
+      JacobianGenerator := false,
       PrecomputedGens := AssociativeArray()) -> Tup
-{Compute generators and relations for the graded ring of Hilbert modular forms
-of level N. Generators are searched up to weight B, and relations up to weight 2*B
-(heuristically, we hope that relations can have degree up to the sum of any two generator weights).}
+{The tuple ConstructGeneratorsAndRelations(M, N, B, 2*B) for level N in the Hilbert modular
+forms ring M over a totally real field. Its generator, relation and monomial associative
+arrays are indexed by parallel weight; generator weights are bounded by B and relation
+weights by 2*B.
+IdealClassesSupport (default false) restricts generators to the listed components;
+false includes all narrow ideal classes.
+Alg (default "Standard") selects the ComplementBasis algorithm.
+NumberOfTraceForms (default 0) selects how many trace forms to try during basis completion.
+Symmetric (default false) restricts generators to forms invariant under base-field automorphisms.
+JacobianGenerator (default false) tries weighted Jacobians of positive parallel-weight
+generators when the ordinary class number is one and Symmetric is false.
+PrecomputedGens (default AssociativeArray()) supplies generators indexed by weight,
+assumed complete in each supplied weight.
+See also ConstructGeneratorsAndRelations, HilbertModularVariety}
   return ConstructGeneratorsAndRelations(M, N, B, 2*B
       : IdealClassesSupport := IdealClassesSupport,
         Alg := Alg,
         NumberOfTraceForms := NumberOfTraceForms,
         Symmetric := Symmetric,
+        JacobianGenerator := JacobianGenerator,
         PrecomputedGens := PrecomputedGens);
 end intrinsic;
 
@@ -1026,6 +1159,7 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl
     : MaxB := 100, Alg := "Standard",
       NumberOfTraceForms := 0,
       Symmetric := false,
+      JacobianGenerator := false,
       GeneratorWeight := 0,
       RelationWeight := 0,
       LowestWeight := 2,
@@ -1033,23 +1167,30 @@ intrinsic HilbertModularVariety(F::FldNum, N::RngOrdIdl
       Precision := 100,
       PrecomputedGens := AssociativeArray(),
       IdealClassesSupport := false) -> Assoc, SeqEnum, BoolElt
-{Compute the graded ring of Hilbert modular forms of level N over F using Algorithm 1
-from the paper. The algorithm iterates over increasing weight bounds B:
-
-Phase 1: Find B_0 where the sum of per-component Hilbert series (from the computed
-presentation) matches the trace formula Hilbert series.
-
-Phase 2: Certify the presentation by finding n+1 algebraically independent elements
-(where n = [F:Q]) on each component via a Jacobian determinant check.
-
-If GeneratorWeight is set (nonzero), the algorithm skips the B-search and computes a
-presentation directly at the given GeneratorWeight/RelationWeight bounds per component,
-returning certified = false (no Jacobian certification is performed in this mode).
-
-Returns:
-  comp_data - an associative array mapping component ideal bb to <Gens, Relations, Monomials>,
-  schemes   - a sequence of schemes (one per component),
-  certified - whether the algebraic independence check passed.}
+{Component presentations, schemes, and a certification flag for level N Hilbert modular
+forms over F, a totally real field. The first result maps component ideals to
+<generators, relations, monomials>, each indexed by parallel weight; the second lists
+the corresponding schemes. The search first matches the combined Hilbert series to
+the trace formula, then certifies algebraic independence on each component.
+MaxB (default 100) bounds the weight search and certification attempts.
+Alg (default "Standard") selects the ComplementBasis algorithm.
+NumberOfTraceForms (default 0) selects how many trace forms to try during basis completion.
+Symmetric (default false) restricts generators to forms invariant under base-field automorphisms.
+JacobianGenerator (default false) tries weighted Jacobians of positive parallel-weight
+generators when the ordinary class number is one and Symmetric is false.
+GeneratorWeight (default 0), when positive, skips the search and returns an uncertified
+presentation with generator weights bounded by this value.
+RelationWeight (default 0) bounds relation weights in that mode;
+0 uses twice GeneratorWeight.
+LowestWeight (default 2) specifies the initial generator weight in that mode;
+only 2 is supported.
+ComputeNewGenerators (default true) searches for generators missing from PrecomputedGens
+in that mode.
+Precision (default 100) is the minimum expansion precision in that mode.
+PrecomputedGens (default AssociativeArray()) supplies generators indexed by weight,
+assumed complete in each supplied weight.
+IdealClassesSupport (default false) restricts the computation to the listed components;
+false includes all narrow ideal classes}
 
   n := Degree(F);
   ZF := Integers(F);
@@ -1073,7 +1214,8 @@ Returns:
     for bb in comps do
       dict := ConstructGeneratorsAndRelations(R, N, GeneratorWeight, relW
           : LowestWeight := LowestWeight, Alg := Alg, IdealClassesSupport := [bb],
-            Symmetric := Symmetric, NumberOfTraceForms := NumberOfTraceForms,
+            Symmetric := Symmetric, JacobianGenerator := JacobianGenerator,
+            NumberOfTraceForms := NumberOfTraceForms,
             ComputeNewGenerators := ComputeNewGenerators, PrecomputedGens := PrecomputedGens);
       comp_data[bb] := dict;
       Append(~schemes, MakeScheme(dict[1], dict[2]));
@@ -1097,6 +1239,7 @@ Returns:
           : IdealClassesSupport := [bb], Alg := Alg,
             NumberOfTraceForms := NumberOfTraceForms,
             Symmetric := Symmetric,
+            JacobianGenerator := JacobianGenerator,
             PrecomputedGens := PrecomputedGens);
       comp_data[bb] := dict;
     end for;
@@ -1147,6 +1290,7 @@ Returns:
             : IdealClassesSupport := [bb], Alg := Alg,
               NumberOfTraceForms := NumberOfTraceForms,
               Symmetric := Symmetric,
+              JacobianGenerator := JacobianGenerator,
               PrecomputedGens := PrecomputedGens);
         comp_data[bb] := dict;
       end for;
