@@ -24,11 +24,14 @@ A convenience file `config.m` is also provided, which attaches the spec and sets
 Tests live in `Tests/` and are run via the included `Makefile`:
 
 ```bash
-make check                  # run all tests in parallel (uses all CPU cores)
-make check/<testfile.m>     # run a single test
+make check                  # run Tests/ and examples/ in parallel (uses all CPU cores)
+make check-slow             # run Tests/slow/ and examples/slow/ in parallel
+make check/<testfile.m>     # run a single test (check/slow/<testfile.m> for a slow one)
 make debug/<testfile.m>     # run a single test with debug-on-error
 make clean                  # clear cached precomputed data
 ```
+
+CI runs the files directly in `Tests/` and `examples/` on every push to master and to a pull request that is out of draft and has no merge conflict. Files that take more than about 20 minutes live in `Tests/slow/` and `examples/slow/`, and CI runs them nightly on master. Starting the Tests workflow by hand from the Actions tab runs both sets on the branch you choose, including a branch with no pull request. CI skips files whose names start with an underscore, which are known failures.
 
 Each test file is a Magma script that uses `assert`. Individual tests can also be run directly:
 
@@ -68,7 +71,7 @@ Package specification files; see the Magma [handbook section on packages](http:/
 
 ## Examples and work in progress
 
-- `examples/` holds the paper's worked examples that run in CI (the X0(11) modular curve, Igusa invariants, the cyclic cubic threefold example with syzygy-computed equations, numerical surface invariants), each a self-contained script; `examples/slow/` holds the heavy cases CI skips. The canonical-ring witness examples are listed as pending in `examples/README.md`.
+- `examples/` holds the paper's worked examples (the X0(11) modular curve, numerical surface invariants, the canonical-ring witnesses), each a self-contained script that CI runs alongside `Tests/`; `examples/slow/` holds the expensive ones (Igusa invariants, the cyclic cubic threefold example with syzygy-computed equations), which CI runs nightly. `examples/README.md` maps the papers' sections to their example files.
 - `WorkInProgress/` contains demonstrations and exploratory scripts that may or may not currently run end-to-end.
 
 ## Scripts and data

@@ -1,14 +1,14 @@
-// HilbertModularVariety end-to-end test: Q(sqrt(6)), disc=24, level 1
+// HilbertModularVariety end-to-end test: Q(sqrt(7)), disc=28, level 1
 // Multi-component: narrow class number h+ = 2
 // Expected: 2 components, certified, each dimension 2
 // Resources: >10 min CPU (estimated)
-// EXCLUDED FROM CI: precompute.m L1070 row-sum assertion fails for h+=2
-// fields. "assert &+[#tps[<j,i>]] eq num" -- Hecke-neighbour enumeration
-// in precompute_tps misses elements when the narrow class group is
-// non-trivial and prime P is in support of right-ideal classes.
-printf "HilbertModularVariety on Q(sqrt(6)) (disc=24), level 1 (h+=2)...";
+// Known failure for h+=2 fields: the row-sum assertion in precompute_tps
+// (ModFrmHil/precompute.m) fails. The Hecke-neighbour enumeration there misses
+// elements when the narrow class group is nontrivial and P is in the support
+// of the right-ideal classes.
+printf "HilbertModularVariety on Q(sqrt(7)) (disc=28), level 1 (h+=2)...";
 t0 := Cputime(); walltime := Time();
-F := QuadraticField(6);
+F := QuadraticField(7);
 ZF := Integers(F);
 NN := 1*ZF;
 comp_data, schemes, certified := HilbertModularVariety(F, NN : MaxB := 20);
