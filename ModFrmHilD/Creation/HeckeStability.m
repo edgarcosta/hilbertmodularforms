@@ -4,7 +4,8 @@ intrinsic HeckeStableSubspace(
     use_fourier:=false
     ) -> SeqEnum
     {
-    Given a sequence of forms V and an ideal pp, compute a basis of the subspace of span(V) that is stable under the Hecke operator T_pp.
+    Given forms V and an ideal pp, compute a basis of the largest
+    subspace of span(V) stable under the Hecke operator T_pp.
     }
     if not use_fourier then
       hecke_operator := func<f | HeckeOperator(f, pp)>;
@@ -19,52 +20,35 @@ intrinsic HeckeStableSubspace(
       return V;
     end if;
 
-    // compute the kernel of Tp
-    // we include the kernel in our final output
-    // because it is also Hecke stable
-    TpV := [hecke_operator(f) : f in V];
-    lindep := LinearDependence(TpV);
-    Tp_kernel := [Normalize(&+[vec[i]*V[i] : i in [1 .. #V]]) : vec in lindep];
-
-    // removing the kernel before entering the
-    // iterative intersection loop
-    V := [V[i] : i in PivotRows(CoefficientsMatrix(TpV))];
-    
-    // If all forms were in the kernel, return just the kernel
-
-    if #V eq 0 then
-      return Tp_kernel;
-    end if;
-    
-    Vprev := V;
-    dimprev := #V;
-
-    for _ in [1 .. #V+1] do
+    Vprev := Basis(V);
+    while #Vprev gt 0 do
+        dimprev := #Vprev;
         vprintf HilbertModularForms:  "Current dim = %o\n", dimprev;
         TpVprev := [hecke_operator(g) : g in Vprev];
-        Vnew := Intersection(Vprev, Basis(TpVprev));
+
+        // A relation a*Vprev + b*T(Vprev) = 0 gives b*Vprev in
+        // Vprev with Hecke image in Vprev, including kernel vectors.
+        lindep := LinearDependence(Vprev cat TpVprev);
+        Vnew := Basis([Universe(Vprev) |
+            Normalize(&+[vec[dimprev+i]*Vprev[i] : i in [1..dimprev]])
+            : vec in lindep]);
         dimnew := #Vnew;
 
         vprintf HilbertModularForms: "New dim = %o\n", dimnew;
 
         if dimnew eq 0 then
-            return Tp_kernel;
+            return Vnew;
         end if;
 
         require dimnew le dimprev: "Something went wrong, probably need to increase precision.";
 
-        // If the iterative intersection process has stabilized,
-        // then exit the loop.
         if dimprev eq dimnew then
-            return Vnew cat Tp_kernel;
+            return Vnew;
         end if;
 
-        assert #Vnew eq dimnew;
-
         Vprev := Vnew;
-        dimprev := #Vprev;
-    end for;
-
+    end while;
+    return Vprev;
 end intrinsic;
 
 

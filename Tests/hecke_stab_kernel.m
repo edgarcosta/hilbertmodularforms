@@ -27,13 +27,15 @@ B_22 := CuspFormBasis(M_22);
 // lies in the kernel of the action of Tpp on
 // on V. 
 V := [f/eis^2 : f in B_44];
-W := HeckeStableSubspace(V, pp);
+for use_fourier in [false, true] do
+  W := HeckeStableSubspace(V, pp : use_fourier:=use_fourier);
 
-// TODO abhijitm I have absolutely no clue why U cat W does
-// work but it doesn't seem to so here we are.
-WcatB22 := W;
-for b in B_22 do
-  Append(~WcatB22, b);
+  // TODO abhijitm I have absolutely no clue why U cat W does
+  // work but it doesn't seem to so here we are.
+  WcatB22 := W;
+  for b in B_22 do
+    Append(~WcatB22, b);
+  end for;
+
+  assert #LinearDependence(WcatB22) eq #B_22;
 end for;
-
-assert #LinearDependence(WcatB22) eq #B_22;
