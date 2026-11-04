@@ -156,3 +156,37 @@ intrinsic SymmetricSubringPresentation(I::RngMPol, swap_images::SeqEnum)
   H := FunctionField(Rationals());
   return K, images, H!HilbertSeries(K);
 end intrinsic;
+
+function is_geometric_swap(M, N, G, I, tau, weights, precision)
+  R := Generic(I);
+  if #tau ne Rank(R) or not Keys(G) subset Seqset(weights) then
+    return false;
+  end if;
+  for w in weights do
+    space := HMFSpace(M, N, [w, w]);
+    if not &and[IsOne(u) : u in Values(UnitCharacters(space))] then
+      return false;
+    end if;
+    mons := Setseq(MonomialsOfWeightedDegree(R, w));
+    forms := EvaluateMonomials(G, mons);
+    extra := IsDefined(G, w) select [Swap(g) : g in G[w]] else [];
+    coeffs := CoefficientsMatrix(forms cat extra : prec := precision);
+    A := RowSubmatrix(coeffs, 1, #forms);
+    // Rank(A) = dim M_w proves spanning and injective truncation at precision.
+    // Equal truncated rows therefore prove equality of forms in M_w.
+    known := Dimension(space);
+    if Rank(A) ne known or Rank(coeffs) ne known then return false; end if;
+    row := func<f | Vector(BaseRing(A), [MonomialCoefficient(f, m) : m in mons])>;
+    if &or[row(f)*A ne 0 : f in Basis(I) | WeightedDegree(f) eq w] then
+      return false;
+    end if;
+    offset := #[v : v in VariableWeights(R) | v lt w];
+    for j in [1..#extra] do
+      f := tau[offset + j];
+      if not IsHomogeneous(f) or row(f)*A ne coeffs[#forms + j] then
+        return false;
+      end if;
+    end for;
+  end for;
+  return true;
+end function;
