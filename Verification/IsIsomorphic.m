@@ -196,9 +196,14 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   n := Rank(R);
   wts := [Integers()! WeightedDegree(R.i) : i in [1..n]];
 
+  // SmallBasis retains shorter input relations after HilbertSeries or NormalForm
+  // caches a larger Groebner basis. An input relation can mix degrees, but its
+  // homogeneous parts lie in the homogeneous ideal and still generate it.
+  homogeneous_relations := func<K | [R | h : h in HomogeneousComponents(R!g),
+    g in SmallBasis(K) | h ne 0]>;
+  Jgens := homogeneous_relations(J);
   // A relation with a linear variable term can change diagonal pins and weight
   // blocks under reduction. Keep all image monomials at these weights.
-  Jgens := [R!gj : gj in Generators(J)];
   linearWeights := {wts[i] : i in [1..n] |
     exists{g : g in Jgens | MonomialCoefficient(g, R.i) ne 0}};
   monsByVar := [[m : m in MonomialsOfWeightedDegree(R, wts[i])
@@ -236,7 +241,7 @@ intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], Max
   // NormalForm needs a field of coefficients, and phi(g) has coefficients in A.
   Jdeg := [Integers()! WeightedDegree(gj) : gj in Jgens];
   sys := [];
-  for g in Generators(I) do
+  for g in homogeneous_relations(I) do
     dg := Integers()! WeightedDegree(R!g);
     Md := MonomialsOfWeightedDegree(R, dg);
     pos := AssociativeArray();
