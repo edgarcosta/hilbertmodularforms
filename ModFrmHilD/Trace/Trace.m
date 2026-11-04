@@ -226,7 +226,9 @@ intrinsic HilbertSeriesCusp(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> R
 end intrinsic;
 
 intrinsic HilbertSeries(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> RngSerPowElt
-  {Compute the Hilbert Series for the full space, Eisenstein and cuspidal}
+  {The Hilbert series of M at level NN, with one constant per narrow ideal class.
+  The parameter prec (default false) is unused.
+  See also HilbertSeriesCusp}
   // Hilbert Series for Cusp Space
   ans := HilbertSeriesCusp(M, NN : prec:=false);
   R<X> := Parent(ans);
@@ -234,7 +236,7 @@ intrinsic HilbertSeries(M::ModFrmHilDGRng, NN::RngOrdIdl : prec:=false) -> RngSe
   Mk := HMFSpace(M,NN,[2 : i in [1..Degree(Order(NN))]]);
   n := NumberOfCusps(Mk);
   ans +:= n/(1-X^2);
-  ans -:= (n-1);
+  ans -:= n - NarrowClassNumber(M);
   return ans;
 end intrinsic;
 
