@@ -1,0 +1,173 @@
+// Examples select these routines with eval and an appended return statement.
+// CI skips this support file because its name starts with an underscore.
+
+// The record each witness file Verification/ElkiesKumar/2.2.D.1-1.1.m returns.
+// P and K are the ring and function field of the chart a, b, t, where the stored
+// surface is Z^2 = branch. Q and L are those of Elkies-Kumar's model z^2 = f.
+// Witnesses for D >= 13 set storedInComputed; only D = 41 sets the four after it.
+witness_format := recformat<P, K, Q, L, f, Z, branch, phiFF, psiFF, pullbacks,
+  excludedEK, IEK, storedInComputed, stored, cachedInStored, reconstruction,
+  retainedQuadratic>;
+
+// I must be prime so nonzero denominators are invertible in its function field.
+is_zero_on := func<x, I | Numerator(x) in I and not Denominator(x) in I>;
+is_unit_on := func<x, I | not Numerator(x) in I and not Denominator(x) in I>;
+
+// The Igusa-Clebsch invariants [I2, I4, I6, I10] from the values of psi4, psi6, chi10
+// and chi12, with the conversion of Mestre/Qsqrt3.m.
+igusa_clebsch := func<s | [-24*s[4]/s[3], 4*s[1], -8*s[2]/3 - 32*s[1]*s[4]/s[3],
+  -2^14*s[3]]>;
+
+absolute_invariants := func<v | [v[1]^5/v[4], v[1]^3*v[2]/v[4], v[1]^2*v[3]/v[4]]>;
+
+// The prime ideal of the double cover Z^2 = B: the only factor of Z^2 - B that
+// involves t, which has degree 2 in t.
+function double_cover_ideal(Z, B)
+  factors := [p[1] : p in Factorization(Numerator(Z^2 - B)) | Degree(p[1], 3) gt 0];
+  assert #factors eq 1 and Degree(factors[1], 3) eq 2;
+  return ideal<Parent(factors[1]) | factors[1]>;
+end function;
+
+// The published Igusa-Clebsch tuple IEK pulled back by phiFF has the absolute
+// invariants of II on the double cover Jo.
+procedure check_absolute_invariants(IEK, II, phiFF, Jo)
+  published := absolute_invariants(IEK);
+  modular := absolute_invariants(II);
+  for i in [1..3] do
+    assert is_zero_on(Evaluate(published[i], phiFF) - modular[i], Jo);
+  end for;
+end procedure;
+
+// phiFF and psiFF are mutually inverse rational maps between the double cover Jo
+// (Z^2 = B over the chart) and Elkies-Kumar's z^2 = f. The deck transformation deck
+// fixes Z^2 - B and negates the third coordinate of phiFF.
+procedure check_inverse_maps(Jo, f, Z, B, phiFF, psiFF, deck)
+  K := Universe(phiFF);
+  L := Universe(psiFF);
+  Q := Parent(f);
+  JE := ideal<Q | Q.3^2 - f>;
+  assert Numerator(Evaluate(Q.3^2 - f, phiFF)) in Jo;
+  assert Numerator(Evaluate(Z^2 - B, psiFF)) in JE;
+  for i in [1..3] do
+    assert is_zero_on(Evaluate(psiFF[i], phiFF) - K.i, Jo);
+    assert is_zero_on(Evaluate(phiFF[i], psiFF) - L.i, JE);
+  end for;
+  assert Evaluate(Z^2 - B, deck) eq Z^2 - B;
+  assert [Evaluate(p, deck) : p in phiFF] eq [phiFF[1], phiFF[2], -phiFF[3]];
+end procedure;
+
+// The excluded loci are proper closed subsets: each function in onChart is a unit on
+// the double cover Jo, and each function in onTarget is nonzero.
+procedure check_excluded_loci(Jo, onChart, onTarget)
+  for p in onChart do
+    assert is_unit_on(p, Jo);
+  end for;
+  for p in onTarget do
+    assert p ne 0;
+  end for;
+end procedure;
+
+// stored gives the stored generators on the chart X1 = 1, and chart maps stored
+// coordinates to a, b, t. They are mutually inverse between the double cover Jo and
+// the stored surface J.
+procedure check_stored_chart(J, Jo, Z, B, stored, chart)
+  K := Universe(stored);
+  for p in Basis(J) do
+    assert is_zero_on(Evaluate(p, stored), Jo);
+  end for;
+  n := #stored - 1;
+  V := PolynomialRing(Rationals(), n);
+  FV := FieldOfFractions(V);
+  point := [FV | 1] cat [FV.i : i in [1..n]];
+  JV := ideal<V | [Evaluate(p, [V | 1] cat [V.i : i in [1..n]]) : p in Basis(J)]>;
+  back := chart(point);
+  assert is_zero_on(Evaluate(Z^2 - B, back), JV);
+  for i in [2..n + 1] do
+    assert is_zero_on(Evaluate(stored[i], back) - point[i], JV);
+  end for;
+  for i in [1..3] do
+    assert is_zero_on(chart(stored)[i] - K.i, Jo);
+  end for;
+end procedure;
+
+// This order must agree with ConstructWeightedPolynomialRing(G).
+function generator_list(G)
+  gens := [* *];
+  for k in Sort(Setseq(Keys(G))) do
+    for form in G[k] do
+      Append(~gens, form);
+    end for;
+  end for;
+  return gens;
+end function;
+
+// coordinateMap carries the stored generators into the recomputed ring.
+// Verify the presentation before evaluating it on modular forms.
+function stored_generators(J, G, RG, relations, coordinateMap)
+  coordinateMap := [RG | RG!p : p in coordinateMap];
+  assert VerifyGradedIsomorphism(J, ConstructIdeal(RG, relations), coordinateMap,
+    GradedInverseImages(RG, coordinateMap));
+  gens := generator_list(G);
+  stored := AssociativeArray();
+  for p in coordinateMap do
+    k := WeightedDegree(p);
+    if not IsDefined(stored, k) then
+      stored[k] := [];
+    end if;
+    Append(~stored[k], Evaluate(p, gens));
+  end for;
+  return stored;
+end function;
+
+// For each k in weights, the weight-k monomials in G have rank dim M_k on the
+// q-expansions of M. So they span M_k, and the precision of M separates its forms.
+procedure check_monomial_ranks(M, G, RG, weights)
+  for k in weights do
+    monomials := [m : m in MonomialsOfWeightedDegree(RG, k)];
+    rank := Rank(CoefficientsMatrix(EvaluateMonomials(G, monomials)));
+    assert rank eq Dimension(HMFSpace(M, [k, k]));
+  end for;
+end procedure;
+
+// G satisfies the stored relations J, which have the Hilbert series of the trace
+// formula.
+procedure check_stored_relations(M, G, J)
+  gens := generator_list(G);
+  for p in Basis(J) do
+    assert IsZero(Evaluate(p, gens));
+  end for;
+  assert HilbertSeriesSanityCheck(M, 1*Integers(BaseField(M)), [J]);
+end procedure;
+
+// A norm -1 unit makes the determinant-unit quotient trivial, so the minus
+// parts omitted by UniversalIgusa vanish. The inverse different lies in the
+// principal narrow class, the component supporting G.
+procedure check_siegel_dictionary(M, G, pullbacks)
+  F := BaseField(M);
+  ZF := Integers(F);
+  U, unitmap := UnitGroup(F);
+  assert ClassNumber(F) eq 1 and Norm(unitmap(U.2)) eq -1;
+  assert NarrowClassRepresentative(M, Different(ZF)^-1) eq 1*ZF;
+  psi4, psi6, _, _, chi10, chi12 := UniversalIgusa(M);
+  gens := generator_list(G);
+  for i -> form in [* psi4, psi6, chi10, chi12 *] do
+    assert IsZero(form - Evaluate(pullbacks[i], gens));
+  end for;
+end procedure;
+
+// Swap is an automorphism of the stored ring J. On the chart it is the deck
+// transformation Z -> -Z of the double cover Jo; chart maps stored coordinates to
+// a, b, t.
+procedure check_swap_is_deck(J, G, stored, chart, Z, Jo)
+  swapped := AssociativeArray();
+  for k in Keys(G) do
+    swapped[k] := [Swap(form) : form in G[k]];
+  end for;
+  swapImages := ChangeOfPresentation(G, swapped);
+  assert VerifyGradedIsomorphism(J, J, swapImages, swapImages);
+  K := Universe(stored);
+  image := chart([Evaluate(p, stored) : p in swapImages]);
+  assert image[1] eq K.1 and image[2] eq K.2;
+  assert is_zero_on(Evaluate(Z, [K | K.1, K.2, image[3]]) + Z, Jo);
+  assert not Numerator(Z) in Jo;
+end procedure;
