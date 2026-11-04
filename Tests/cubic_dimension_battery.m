@@ -1,8 +1,4 @@
-// test-time: ~4 min. Thorough validation of the degree > 2 trace-formula dimension fix.
-// Runs in parallel with Tests/cubic_trace_dimension.m (the focused regression), which
-// carries the full diagnosis. The fix rewires the nonprecomp local optimal-embedding count
-// in ModFrmHilD/Trace/Trace.m to the Hijikata closed form OptimalEmbeddings already used by
-// the precomp path.
+// test-time: ~4 min.
 //
 // This file deliberately does NOT cross-check against builtin HilbertCuspForms: that backend
 // is flaky for some of these fields (e.g. the disc-1556 narrow-class-number-2 cubic at weight
