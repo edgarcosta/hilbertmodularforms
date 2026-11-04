@@ -1,5 +1,5 @@
 // Slow driver for the cyclic cubic threefold model (see
-// examples/cyclic_cubic_threefold.m): regenerates the unconditional
+// examples/slow/cyclic_cubic_threefold.m): regenerates the unconditional
 // relation-freeness certificates at precision 450 and the dimension bookkeeping
 // through degree 40.  Runtime: roughly 5-10 minutes on a workstation (the
 // trace precompute for the three split primes above 13 is disk-cached under

@@ -3,7 +3,7 @@
 # The Makefile's check/%.m and debug/%.m pattern rules collapse on a shared
 # basename, so a duplicate would silently run the wrong file.
 set -eu
-dups=$(ls -1 Tests/*.m examples/*.m examples/slow/*.m 2>/dev/null \
+dups=$(ls -1 Tests/*.m Tests/slow/*.m examples/*.m examples/slow/*.m 2>/dev/null \
        | xargs -n1 basename | sort | uniq -d)
 if [ -n "$dups" ]; then
   echo "Duplicate test basenames across Tests/ and examples/:"

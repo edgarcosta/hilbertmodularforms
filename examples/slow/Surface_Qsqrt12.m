@@ -3,7 +3,6 @@
 // Each component has gens [2,14,4,6] (same structure as Q(sqrt(2)))
 // Expected: 2 components, certified, each dimension 2
 // Resources: >4 hours CPU (timed out at 4h)
-// EXCLUDED FROM CI: exceeds reasonable CI time limits
 printf "HilbertModularVariety on Q(sqrt(3)) (disc=12), level 1 (h+=2)...";
 t0 := Cputime(); walltime := Time();
 F := QuadraticField(3);
