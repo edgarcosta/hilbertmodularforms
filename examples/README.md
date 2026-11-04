@@ -17,6 +17,7 @@ a CI runner live in `examples/slow/` and are skipped by CI; run them manually wi
 | D=5 | Q(sqrt 5) canonical ring vs Gundlach/Hirzebruch, deterministic witness map | `canonical_ring_Qsqrt5.m` | CI |
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch double cover (rational sign c^2 = -C), deterministic witness map | `canonical_ring_Qsqrt2.m` | CI |
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier, deterministic witness map | `canonical_ring_Qsqrt13.m` | CI |
+| D=17 | Q(sqrt 17) canonical ring vs even, trivial-multiplier subring of Mayer's literal Thm 6.5.1 presentation, deterministic witness maps | `canonical_ring_Qsqrt17.m` | CI |
 | heavy cases (D=12,21,24,28,33 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | slow (CI-skipped) |
 
 ## numerical-invariants paper (LuCaNT)
@@ -54,6 +55,7 @@ over Q to the literature equations, via a stored witness map in
     % Verified in examples/canonical_ring_Qsqrt5.m  (our canonical ring is graded-isomorphic over Q to Hirzebruch's, via a stored witness map).
     % Verified in examples/canonical_ring_Qsqrt2.m  (D=8; Hirzebruch's double cover, rational sign c^2 = -C).
     % Verified in examples/canonical_ring_Qsqrt13.m (van der Geer and Zagier).
+    % Verified in examples/canonical_ring_Qsqrt17.m (even, trivial-multiplier subring of Mayer's literal Thm 6.5.1 presentation).
 
-All three canonical-ring examples run green in CI; the D=5 stored `CanonicalRingEquations/`
-file was regenerated with the sorted-generator-order fix in this branch.
+These canonical-ring examples are included in CI. For D=17, the abstract
+presentation is certified; its Fourier normalization remains unresolved.
