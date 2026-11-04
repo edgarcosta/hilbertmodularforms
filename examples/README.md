@@ -18,6 +18,7 @@ fail the row-sum assertion in `precompute_tps` (`ModFrmHil/precompute.m`).
 | Hilbert modular threefolds | D=49 level (2) weight 4 defect-to-q-expansion bridge, both cusps: full four-row vanishing matrix via the Fricke involution, rank 4, surviving dimension 2, witnessing the arXiv:2501.15719 positive Kodaira-dimension row | `d49_level2_defect_bridge.m` | CI |
 | D=5 | Q(sqrt 5) canonical ring vs Gundlach/Hirzebruch, deterministic witness map | `canonical_ring_Qsqrt5.m` | CI |
 | D=8 | Q(sqrt 8) canonical ring vs Hirzebruch double cover (rational sign c^2 = -C), deterministic witness map | `canonical_ring_Qsqrt2.m` | CI |
+| D=8 | Q(sqrt 2) symmetric even ring vs Hammond: free on weights 2, 4, 6, equal to the swap-fixed subring of the stored ring | `symmetric_ring_Qsqrt2.m` | CI |
 | D=13 | Q(sqrt 13) canonical ring vs van der Geer-Zagier, deterministic witness map | `canonical_ring_Qsqrt13.m` | CI |
 | heavy cases (D=12,21 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | nightly |
 | known h+=2 failures (D=24,28,33) | end-to-end recompute | `slow/_Surface_Qsqrt*.m` | skipped |
@@ -56,6 +57,7 @@ over Q to the literature equations, via a stored witness map in
 
     % Verified in examples/canonical_ring_Qsqrt5.m  (our canonical ring is graded-isomorphic over Q to Hirzebruch's, via a stored witness map).
     % Verified in examples/canonical_ring_Qsqrt2.m  (D=8; Hirzebruch's double cover, rational sign c^2 = -C).
+    % Verified in examples/symmetric_ring_Qsqrt2.m  (D=8; Hammond, as the swap-fixed subring of our ring).
     % Verified in examples/canonical_ring_Qsqrt13.m (van der Geer and Zagier).
 
 All three canonical-ring examples run green in CI; the D=5 stored `CanonicalRingEquations/`
