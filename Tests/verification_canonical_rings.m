@@ -1,14 +1,6 @@
-// Verify precomputed canonical ring equations from Verification/CanonicalRingEquations/
-// against trace formula Hilbert series.
-// For each file, we eval the equation file (which defines a Scheme S),
-// then check that HilbertSeriesSanityCheck passes.
-// These tests are purely algebraic (no HMF basis computation), so they run quickly.
-// Resources: ~60s, <2 GB RAM
-//
-// Files for D=12,21,24,28,33 are NOT tested here because they have narrow class
-// number > 1 and their regeneration hits the upstream Magma bug at
-// precompute.m:1064 (definite method).
-
+// Stored canonical-ring equations agree with the trace-formula Hilbert series.
+// Stored-series checks do not rerun q-expansion relation evaluations.
+SetNthreads(1);
 
 // === Q(sqrt(5)), level 1 [disc=5, label 2.2.5.1-1.1] ===
 printf "Verifying Q(sqrt(5)) level 1...";
@@ -120,6 +112,74 @@ M41 := GradedRingOfHMFs(F41, 1);
 assert HilbertSeriesSanityCheck(M41, 1*ZF41, [I]);
 printf "PASSED\n";
 
+
+// Each stored file keeps its variable order, passes the structural guards and matches the
+// literal singleton series and their sum.
+procedure test_stored_two_component_files()
+  Q<t> := FunctionField(Rationals());
+  stored_cases := [
+    <21, ["1.1", "3.1"], [[2, 4, 6, 6, 8], [2, 4, 4, 6, 10]],
+      [(-t^12 + t^10 - t^8 - t^4 + t^2 - 1)/(t^10 - 2*t^8 + t^6 - t^4 + 2*t^2 - 1),
+       (-t^12 + t^10 - 2*t^8 + 2*t^6 - 2*t^4 + t^2 - 1)/(t^10 - 2*t^8 + t^6 - t^4 + 2*t^2 - 1)]>,
+    <24, ["1.1", "2.1"], [[2, 4, 4, 6, 6, 8, 10], [2, 2, 4, 10]],
+      [(-t^8 + 2*t^6 - 3*t^4 + 2*t^2 - 1)/(t^6 - 3*t^4 + 3*t^2 - 1),
+       (-t^8 + t^6 - t^4 + t^2 - 1)/(t^6 - 3*t^4 + 3*t^2 - 1)]>,
+    <28, ["1.1", "3.1"], [[2, 4, 4, 6, 6, 6, 8], [2, 2, 4, 6, 8]],
+      [(-t^12 + t^10 - 2*t^8 - 2*t^4 + t^2 - 1)/(t^10 - 2*t^8 + t^6 - t^4 + 2*t^2 - 1),
+       (-t^12 - t^8 - t^4 - 1)/(t^10 - 2*t^8 + t^6 - t^4 + 2*t^2 - 1)]>,
+    <33, ["1.1", "2.1"], [[2, 4, 4, 4, 6, 6, 6, 6, 8], [2, 2, 4, 4, 6]],
+      [(-t^8 + 2*t^6 - 4*t^4 + 2*t^2 - 1)/(t^6 - 3*t^4 + 3*t^2 - 1),
+       (-t^8 + t^6 - 2*t^4 + t^2 - 1)/(t^6 - 3*t^4 + 3*t^2 - 1)]>
+  ];
+  assert #stored_cases gt 0;
+  for entry in stored_cases do
+    D, labels, weights, singleton_series := Explode(entry);
+    label := Sprintf("2.2.%o.1-1.1", D);
+    components := LoadStoredCanonicalRings(label);
+    assert [c[1] : c in components] eq labels;
+    assert not (Generic(components[1][2]) cmpeq Generic(components[2][2]));
+    guards := [];
+    for i in [1..#components] do
+      I := components[i][2];
+      R := Generic(I);
+      assert VariableWeights(R) eq weights[i];
+      eqns := Basis(I);
+      assert forall{f : f in eqns | Parent(f) cmpeq R};
+      guard := &and[MonomialCoefficient(f, R.j) eq 0 : f in eqns, j in [1..#weights[i]]];
+      if #eqns eq 1 then
+        _, top := Max(weights[i]);
+        guard := guard and Degree(eqns[1], top) ge 2;
+      end if;
+      ordered := &and[weights[i][j] le weights[i][j + 1] : j in [1..#weights[i] - 1]];
+      Append(~guards, ordered and guard);
+    end for;
+    sane, report := VerifyCanonicalRingComponents(label, components);
+    assert sane and #report eq 3;
+    assert [row[1] : row in report] eq labels cat ["all"];
+    expected := singleton_series cat [&+singleton_series];
+    for i in [1..#report] do
+      row := report[i];
+      assert row[2] and Q!row[3] eq expected[i] and Q!row[4] eq expected[i];
+      assert Parent(row[3]) cmpeq Parent(report[1][3]);
+      assert Parent(row[4]) cmpeq Parent(report[1][3]);
+    end for;
+    assert guards eq [true, true];
+  end for;
+end procedure;
+test_stored_two_component_files();
+
+// D=12's stored presentation is scrambled, so only its Hilbert series is pinned: the
+// series holds for the stored file and for a correct regeneration.
+procedure test_stored_d12_series()
+  Q<t> := FunctionField(Rationals());
+  label := "2.2.12.1-1.1";
+  components := LoadStoredCanonicalRings(label);
+  sane, report := VerifyCanonicalRingComponents(label, components);
+  series := (-t^12 + t^10 - t^8 + t^6 - t^4 + t^2 - 1)/(t^10 - 2*t^8 + t^6 - t^4 + 2*t^2 - 1);
+  assert sane;
+  assert [Q!row[4] : row in report] eq [series, series, 2*series];
+end procedure;
+test_stored_d12_series();
 
 // === Cross-check: run HilbertModularVariety on Q(sqrt(13)) ===
 // Verify the output matches the stored reference equations

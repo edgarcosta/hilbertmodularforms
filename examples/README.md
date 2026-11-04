@@ -22,6 +22,27 @@ fail the row-sum assertion in `precompute_tps` (`ModFrmHil/precompute.m`).
 | heavy cases (D=12,21 are h+=2; D=41 is heavy level-1) | end-to-end recompute | `slow/Surface_Qsqrt*.m`, `slow/GradedRing_Qsqrt*.m` | nightly |
 | known h+=2 failures (D=24,28,33) | end-to-end recompute | `slow/_Surface_Qsqrt*.m` | skipped |
 
+## Stored rings with multiple components
+
+Use `LoadStoredCanonicalRings(label)` to load every narrow-class component.
+The singular `LoadStoredCanonicalRing(label)` accepts only single-component
+files. See [the equation-store contract](../Verification/CanonicalRingEquations/README.md)
+for label matching, singleton/full reports and evidence kinds.
+
+```c++
+AttachSpec("spec");
+components := LoadStoredCanonicalRings("2.2.24.1-1.1");
+sane, report := VerifyCanonicalRingComponents("2.2.24.1-1.1", components);
+```
+
+D=21, D=24 and D=28 have stored-series component certification, and D=33 has
+generated certification. D=12 remains scrambled and awaits regeneration.
+Series agreement alone does not certify equation provenance or a literature
+isomorphism.
+
+No literature witness for D=12 or D=24 is included.
+There is no level-1 literature witness here for D=21, D=28 or D=33.
+
 ## numerical-invariants paper (LuCaNT)
 
 | Example | File | Status |

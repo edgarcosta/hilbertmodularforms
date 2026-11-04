@@ -157,19 +157,186 @@ intrinsic GradedInverseImages(R::RngMPol, PhiImages::SeqEnum) -> SeqEnum
   return Psi;
 end intrinsic;
 
+function stored_component_code(filename, label)
+  parts := Split(label, "-");
+  if #parts ne 2 then
+    error "Expected a field-level label";
+  end if;
+  labels := [];
+  component := "";
+  metadata := false;
+  complete := false;
+  ring_defined := false;
+  ambient_defined := false;
+  equations_defined := false;
+  statement := "";
+  code := "stored_components := [];\n";
+  component_prefix := "//componentwithlabel";
+  variety_prefix := "//Hilbertmodularvarietywithlabel";
+  level_prefix := "//levelhaslabel";
+  for line in Split(Read(filename), "\n") do
+    compact := StripWhiteSpace(line);
+    if Position(compact, component_prefix) eq 1 then
+      if not (component eq "" or (complete and StripWhiteSpace(statement) eq "")) then
+        error Sprintf("%o: incomplete component %o", filename, component);
+      end if;
+      component := compact[#component_prefix + 1..#compact];
+      if #component eq 0 then
+        error Sprintf("%o: empty component label", filename);
+      end if;
+      if component in labels then
+        error Sprintf("%o: duplicate component label %o", filename, component);
+      end if;
+      Append(~labels, component);
+      metadata := false;
+      complete := false;
+      ring_defined := false;
+      ambient_defined := false;
+      equations_defined := false;
+    elif Position(compact, variety_prefix) eq 1 then
+      variety := compact[#variety_prefix + 1..#compact];
+      if not (component ne "" and not metadata and
+        variety eq label cat "-" cat component cat "-gl-0") then
+        error Sprintf("%o: conflicting variety metadata for component %o", filename, component);
+      end if;
+      metadata := true;
+    elif Position(compact, level_prefix) eq 1 then
+      if not (compact[#level_prefix + 1..#compact] eq parts[2]) then
+        error Sprintf("%o: conflicting level metadata", filename);
+      end if;
+    else
+      comment := Position(line, "//");
+      source_line := comment gt 0 select line[1..comment - 1] else line;
+      for character in Eltseq(source_line cat "\n") do
+        statement cat:= character;
+        code cat:= character;
+        if character eq ";" then
+          if not (component ne "" and metadata) then
+            error Sprintf("%o: missing component or variety metadata", filename);
+          end if;
+          if complete then
+            error Sprintf("%o: extra statement after component %o scheme", filename, component);
+          end if;
+          compact_statement := StripWhiteSpace(statement);
+          if Position(compact_statement, "R<") eq 1 or
+            Position(compact_statement, "R:=") eq 1 then
+            ring_defined := true;
+          elif Position(compact_statement, "A:=") eq 1 then
+            if not ring_defined then
+              error Sprintf("%o: incomplete ring for component %o", filename, component);
+            end if;
+            ambient_defined := true;
+          elif Position(compact_statement, "eqns:=") eq 1 then
+            if not ring_defined then
+              error Sprintf("%o: incomplete ring for component %o", filename, component);
+            end if;
+            equations_defined := true;
+          end if;
+          if Position(compact_statement, "S:=") eq 1 then
+            if not (ring_defined and ambient_defined and equations_defined) then
+              error Sprintf("%o: incomplete scheme for component %o", filename, component);
+            end if;
+            if Position(compact_statement, "S:=Scheme(") ne 1 then
+              error Sprintf("%o: expected a scheme for component %o", filename, component);
+            end if;
+            // Capture before the next block replaces R, eqns and S.
+            code cat:= Sprintf("\nAppend(~stored_components, <\"%o\", ideal< R | eqns >>);\n",
+              component);
+            complete := true;
+          end if;
+          statement := "";
+        end if;
+      end for;
+    end if;
+  end for;
+  if #labels eq 0 then
+    error Sprintf("%o: no labeled components", filename);
+  end if;
+  if not (complete and StripWhiteSpace(statement) eq "") then
+    error Sprintf("%o: incomplete component %o", filename, component);
+  end if;
+  return code cat "\nreturn stored_components;";
+end function;
+
+intrinsic LoadStoredCanonicalRings(label::MonStgElt
+    : SourceFile := Sprintf("Verification/CanonicalRingEquations/%o-gl-0.m", label))
+    -> SeqEnum
+{The <component label, ideal> pairs stored for the field-level label, in file
+order, with each ideal in its stored polynomial ring.
+SourceFile (default Verification/CanonicalRingEquations/<label>-gl-0.m,
+relative to the current directory) names the trusted Magma source.
+See also LoadStoredCanonicalRing, VerifyCanonicalRingComponents}
+  require Type(SourceFile) eq MonStgElt: "SourceFile must be a string";
+  filename := SourceFile;
+  return eval stored_component_code(filename, label);
+end intrinsic;
+
 intrinsic LoadStoredCanonicalRing(label::MonStgElt) -> RngMPol
-{ Load the stored canonical-ring ideal for the LMFDB variety <label>
-  (e.g. "2.2.13.1-1.1") from Verification/CanonicalRingEquations/<label>-gl-0.m,
-  as an ideal in the file's weighted polynomial ring. Single-component files only;
-  errors on multi-component (h+ = 2) files, which have one scheme per narrow-class
-  component and need a component-wise loader. }
-  filename := Sprintf("Verification/CanonicalRingEquations/%o-gl-0.m", label);
-  s := Read(filename);
-  ncomp := #[ m : m in Split(s, "\n") | Position(m, "component with label") gt 0 ];
-  require ncomp le 1:
-    Sprintf("%o has %o components; LoadStoredCanonicalRing handles single-component files only", filename, ncomp);
-  R, A, eqns, S := eval (s cat "\nreturn R, A, eqns, S;");
-  return ideal< R | eqns >;
+{The stored canonical-ring ideal for the field-level label in its stored
+polynomial ring, for a file with one component.
+See also LoadStoredCanonicalRings, VerifyCanonicalRingComponents}
+  components := LoadStoredCanonicalRings(label);
+  require #components eq 1:
+    Sprintf("%o has %o components; LoadStoredCanonicalRing handles single-component files only",
+      label, #components);
+  return components[1][2];
+end intrinsic;
+
+intrinsic VerifyCanonicalRingComponents(label::MonStgElt, components::SeqEnum)
+    -> BoolElt, SeqEnum
+{Whether the component Hilbert series match the dimension formula for the
+field-level label, and <label, sane, H_trace, H_test> rows in input order
+followed by their sum in an "all" row.
+The sequence components contains one <component label, homogeneous ideal> pair
+per narrow ideal class.
+See also LoadStoredCanonicalRings, HilbertSeriesSanityCheck}
+  parts := Split(label, "-");
+  require #parts eq 2: "Expected a field-level label";
+  F := LMFDBField(parts[1]);
+  N := LMFDBIdeal(F, parts[2]);
+  M := GradedRingOfHMFs(F, 1);
+  reps := NarrowClassGroupReps(M);
+  require #components eq #reps:
+    "Expected exactly one component per narrow ideal class";
+
+  labels := [];
+  support := [];
+  for component in components do
+    require Type(component) eq Tup and #component eq 2:
+      "Expected <component label, ideal> pairs";
+    component_label, I := Explode(component);
+    require Type(component_label) eq MonStgElt and Type(I) eq RngMPol:
+      "Expected <component label, ideal> pairs";
+    require component_label notin labels:
+      Sprintf("Duplicate component label %o", component_label);
+    try
+      bb := LMFDBIdeal(F, component_label);
+    catch e
+      error Sprintf("Unknown component label %o: %o", component_label, e);
+    end try;
+    representative := NarrowClassGroupRepsMap(M)[bb @@ NarrowClassGroupMap(M)];
+    require representative notin support:
+      Sprintf("Component label %o represents the same narrow ideal class as another entry",
+        component_label);
+    require IsHomogeneous(I):
+      Sprintf("Component %o must have a homogeneous ideal", component_label);
+    Append(~labels, component_label);
+    Append(~support, representative);
+  end for;
+
+  report := [];
+  for i in [1..#components] do
+    sane, H_trace, H_test := HilbertSeriesSanityCheck(M, N, [components[i][2]]
+      : IdealClassesSupport := [support[i]]);
+    if i eq 1 then
+      Q := Parent(H_trace);
+    end if;
+    Append(~report, <labels[i], sane, Q!H_trace, Q!H_test>);
+  end for;
+  sane, H_trace, H_test := HilbertSeriesSanityCheck(M, N,
+    [component[2] : component in components]);
+  Append(~report, <"all", sane, Q!H_trace, Q!H_test>);
+  return &and[row[2] : row in report], report;
 end intrinsic;
 
 intrinsic SearchGradedIsomorphism(I::RngMPol, J::RngMPol : Candidates := [], MaxAttempts := 100000)
